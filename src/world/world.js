@@ -30,6 +30,18 @@ export class World {
     this._initTrees(data.trees);
   }
 
+  /** WGS 84 ve stupních na herní metry. */
+  gpsToWorld(lat, lon) {
+    const origin = this.meta.origin;
+    return { x: (lon - origin.lon) * origin.kx, z: (origin.lat - lat) * origin.ky };
+  }
+
+  /** Herní metry na WGS 84 ve stupních. */
+  worldToGps(x, z) {
+    const origin = this.meta.origin;
+    return { lat: origin.lat - z / origin.ky, lon: origin.lon + x / origin.kx };
+  }
+
   chunkIndex(x, z) {
     const cx = Math.floor((x - this.minX) / CHUNK);
     const cz = Math.floor((z - this.minZ) / CHUNK);

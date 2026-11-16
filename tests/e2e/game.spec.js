@@ -107,6 +107,50 @@ test('tramvaj lze použít a uložený postup přežije opětovné načtení', a
   expect(errors).toEqual([]);
 });
 
+test('uložení verze 1 a kontrolní trasy E01', async ({ page }) => {
+  const save = {
+    x: -42, z: 52, hour: 17.5, money: 1460,
+    stats: { deliveries: 4 }, found: ['Plzeňský Prazdroj'],
+  };
+  await page.addInitScript((save) => {
+    localStorage.setItem('plzen-naplno-v1', JSON.stringify({ v: 1, ...save }));
+  }, save);
+  await page.goto('/?debug&view=620&shadows=0');
+  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  const restored = await page.evaluate(() => {
+    const g = window.__game;
+    return { x: g.player.x, z: g.player.z, hour: g.hour, money: g.money, stats: g.stats,
+      found: g.jobs.landmarks.filter((landmark) => landmark.found).map((landmark) => landmark.name) };
+  });
+  expect(restored).toEqual(save);
+
+  const gps = await page.evaluate(() => {
+    const world = window.__game.world;
+    return [[49.7475, 13.3776], [49.74268195, 13.59419935], [49.7196333, 13.6920319]].map(([lat, lon]) => {
+      const { x, z } = world.gpsToWorld(lat, lon);
+      return { x, z, ...world.worldToGps(x, z) };
+    });
+  });
+  expect(gps).toEqual([
+    { lat: 49.7475, lon: 13.3776, x: 0, z: 0 },
+    { lat: 49.74268195, lon: 13.59419935, x: expect.closeTo(15609.448757, 6), z: expect.closeTo(535.882793, 6) },
+    { lat: 49.7196333, lon: 13.6920319, x: expect.closeTo(22659.849305, 6), z: expect.closeTo(3099.445841, 6) },
+  ]);
+
+  await page.getByRole('button', { name: 'Pokračovat', exact: true }).click();
+  await page.evaluate(() => window.__freeze(true));
+  for (const destination of [[780.8, 129.8], [-349.6, -5062]]) {
+    const routed = await page.evaluate(([x, z]) => {
+      const { jobs } = window.__game;
+      jobs.setWaypoint(x, z);
+      window.__step(1 / 60);
+      // Nouzová přímá značka obsahuje jen dvě souřadnice.
+      return jobs.route?.length > 2;
+    }, destination);
+    expect(routed, `Trasa k bodu ${destination}`).toBe(true);
+  }
+});
+
 test('mobilní ovládání pohybuje hráčem a otevírá mapu', async ({ browser }) => {
   const context = await browser.newContext({ ...devices['iPhone 13'], viewport: { width: 844, height: 390 } });
   const page = await context.newPage(), errors = [];

@@ -7,16 +7,16 @@ import os
 import pickle
 import sys
 import time
+from tempfile import TemporaryDirectory
 
 import osmium
 
-from area import BBOX      # jih, západ, sever, východ – herní oblast
-from osm_source import read_pbf_timestamp
-
-MARGIN = 0.004  # ~400 m přesah, aby se cesty na okraji neusekly
+from area import BBOX, OSM_BBOX
+from map_sources import sha256
+from osm_source import OSM_URL, read_pbf_timestamp
 
 RAW = os.path.join(os.path.dirname(__file__), "..", "data-raw")
-S, W, N, E = BBOX[0] - MARGIN, BBOX[1] - MARGIN, BBOX[2] + MARGIN, BBOX[3] + MARGIN
+S, W, N, E = OSM_BBOX
 
 
 class Handler(osmium.SimpleHandler):
@@ -60,18 +60,32 @@ class Handler(osmium.SimpleHandler):
 
 def main():
     src = os.path.join(RAW, "plzensky-latest.osm.pbf")
+    before = os.stat(src)
     timestamp = read_pbf_timestamp(src)
+    with open(src, "rb") as source:
+        checksum = sha256(source)
     t = time.time()
     h = Handler()
     h.apply_file(src, locations=True)
+    after = os.stat(src)
+    if (not os.path.samestat(before, after) or before.st_mtime_ns != after.st_mtime_ns
+            or before.st_size != after.st_size):
+        raise ValueError("Zdrojové PBF se při čtení změnilo; spusťte výřez znovu.")
     # ponech jen relace, které mají aspoň jednoho člena v oblasti
     keep = {}
     for rid, (tags, members) in h.rels.items():
         if any((m[0] == "w" and m[1] in h.ways) or (m[0] == "n" and m[1] in h.nodes) for m in members):
             keep[rid] = (tags, members)
-    out = {"bbox": BBOX, "osmTimestamp": timestamp, "nodes": h.nodes, "ways": h.ways, "rels": keep}
-    with open(os.path.join(RAW, "extract.pkl"), "wb") as f:
-        pickle.dump(out, f, protocol=pickle.HIGHEST_PROTOCOL)
+    out = {
+        "bbox": BBOX, "osmTimestamp": timestamp,
+        "source": {"url": OSM_URL, "sha256": checksum, "extractBbox": OSM_BBOX},
+        "nodes": h.nodes, "ways": h.ways, "rels": keep,
+    }
+    with TemporaryDirectory(dir=RAW) as directory:
+        path = os.path.join(directory, "extract.pkl")
+        with open(path, "wb") as f:
+            pickle.dump(out, f, protocol=pickle.HIGHEST_PROTOCOL)
+        os.replace(path, os.path.join(RAW, "extract.pkl"))
     print(f"uzly s tagy: {len(h.nodes)}, cesty: {len(h.ways)}, relace: {len(keep)}, {time.time() - t:.0f} s")
 
 

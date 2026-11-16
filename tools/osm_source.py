@@ -1,6 +1,8 @@
 """Datum mapových dat pochází z hlavičky PBF, ne z času stažení nebo sestavení."""
 from datetime import datetime, timezone
 
+OSM_URL = "https://download.openstreetmap.fr/extracts/europe/czech_republic/plzensky-latest.osm.pbf"
+
 
 def normalize_timestamp(value):
     if not isinstance(value, str) or not value.strip():

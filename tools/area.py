@@ -14,3 +14,6 @@ EAST = WEST + DEM_COLS * DEM_STEP        # 13,4854
 
 # jih, západ, sever, východ
 BBOX = (SOUTH, WEST, NORTH, EAST)
+
+OSM_MARGIN = 0.004  # přesah pracovního výřezu, ve stupních
+OSM_BBOX = (SOUTH - OSM_MARGIN, WEST - OSM_MARGIN, NORTH + OSM_MARGIN, EAST + OSM_MARGIN)

@@ -127,8 +127,15 @@ python3 tools/build_data.py
 | `build_data.py` | spočítá výšky budov a vyrobí kompaktní soubory pro hru |
 | `terrain.py` | pomocný modul: výšková síť terénu, zarovnání pod silnicemi, hladiny, výšky mostů |
 | `osm_source.py` | ověření a přenos data OSM z hlavičky zdrojového PBF |
+| `coordinates.py` | obousměrný převod mezi WGS 84 a herními metry |
 
 Surová data (stovky MB) se ukládají do `data-raw/`, která se do repozitáře nenahrává.
+
+Pro sestavení do samostatné složky použij `python3 tools/build_data.py --output-dir data-raw/kandidat`.
+Výškopis se opakovaně používá spolu se soubory `dmp.npy.json` a `dmr.npy.json`, které obsahují
+rozsah, parametry exportu a kontrolní součet. `fetch_dem.py` obnoví starý nebo neplatný výškopis.
+Při změně rozsahu spusť také `extract_osm.py` znovu. Postup obnovy ze stejných vstupů a výsledky
+kontrol jsou v [protokolu etapy E01](docs/E01.md).
 
 Datum OSM se čte z položky `osmosis_replication_timestamp` přímo v hlavičce staženého PBF,
 ukládá se do `extract.pkl` a odtud do `meta.json` jako `osmTimestamp` (UTC) se zdrojem

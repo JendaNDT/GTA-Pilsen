@@ -12,6 +12,7 @@ Výstupy:
 Souřadnice: metry, počátek na náměstí Republiky, x = východ, z = jih.
 Vyžaduje: pip install numpy
 """
+import argparse
 import json
 import math
 import os
@@ -20,28 +21,20 @@ import struct
 import sys
 import time
 from collections import defaultdict
+from tempfile import TemporaryDirectory
 
 import numpy as np
 
 import terrain as terrain_mod
+from area import BBOX, OSM_BBOX
+from coordinates import ORIGIN, to_xz, world_bounds
+from map_sources import load_dem
 from terrain import Terrain
 from osm_source import extract_timestamp
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RAW = os.path.join(HERE, "..", "data-raw")
 OUT = os.path.join(HERE, "..", "public", "data")
-
-# počátek herního světa: střed náměstí Republiky
-LAT0, LON0 = 49.7475, 13.3776
-KY = 111224.0   # metrů na stupeň zeměpisné šířky (pro 49,75° s. š.)
-KX = 72066.0    # metrů na stupeň zeměpisné délky
-
-from area import BBOX as DEM_BBOX  # jih, západ, sever, východ (stejné území jako výškopis)
-
-
-def to_xz(lat, lon):
-    return ((lon - LON0) * KX, -(lat - LAT0) * KY)
-
 
 # ---------------------------------------------------------------- zápis ----
 
@@ -266,18 +259,17 @@ def assemble_rings(way_list):
 
 class Dem:
     def __init__(self):
-        dmp = np.load(os.path.join(RAW, "dmp.npy"))
-        dmr = np.load(os.path.join(RAW, "dmr.npy"))
+        dmp, dmp_source = load_dem(os.path.join(RAW, "dmp.npy"))
+        dmr, dmr_source = load_dem(os.path.join(RAW, "dmr.npy"))
+        self.sources = {"dmp": dmp_source, "dmr": dmr_source}
         self.diff = dmp - dmr
         self.diff[(dmp < -1000) | (dmr < -1000)] = 0
         self.dmr = dmr          # holý terén (pro tvar krajiny)
         del dmp
         self.H, self.W = self.diff.shape
-        s, w, n, e = DEM_BBOX
-        self.x0 = (w - LON0) * KX            # západní okraj
-        self.z0 = -(n - LAT0) * KY           # severní okraj
-        self.px = (e - w) * KX / self.W      # metrů na pixel (x)
-        self.pz = (n - s) * KY / self.H      # metrů na pixel (z)
+        self.x0, east, self.z0, south = world_bounds(BBOX)
+        self.px = (east - self.x0) / self.W   # metrů na pixel (x)
+        self.pz = (south - self.z0) / self.H  # metrů na pixel (z)
 
     def sample_polygon(self, ring, holes=()):
         """Vrátí výšky (DMP − DMR) pixelů uvnitř půdorysu."""
@@ -586,7 +578,7 @@ def build_buildings(ex, dem):
     return out
 
 
-def pack_buildings(blds):
+def pack_buildings(path, blds):
     n = len(blds)
     ax = np.zeros(n, np.int32)
     az = np.zeros(n, np.int32)
@@ -626,7 +618,7 @@ def pack_buildings(blds):
         if b["name"]:
             names.append([i, b["name"]])
     b_ring[n] = len(ring_start) - 1
-    write_pack(os.path.join(OUT, "buildings.bin"), {"count": n, "names": names}, {
+    write_pack(path, {"count": n, "names": names}, {
         "ax": ax, "az": az, "hTop": h_top, "hWall": h_wall, "hMin": h_min,
         "kind": kind, "flags": flags, "levels": levels, "colour": colour, "roofColour": roof_colour,
         "roofInset": roof_inset,
@@ -948,7 +940,7 @@ def build_land(ex):
     return out, lines
 
 
-def pack_land(polys, lines):
+def pack_land(path, polys, lines):
     n = len(polys)
     cls = np.array([p["cls"] for p in polys], np.uint8)
     p_ring = np.zeros(n + 1, np.uint32)
@@ -976,7 +968,7 @@ def pack_land(polys, lines):
             lx.append(round(x * 10))
             lz.append(round(z * 10))
     l_start[ln] = len(lx)
-    write_pack(os.path.join(OUT, "land.bin"), {"count": n, "lineCount": ln, "names": names, "classes": LAND}, {
+    write_pack(path, {"count": n, "lineCount": ln, "names": names, "classes": LAND}, {
         "cls": cls, "pRing": p_ring, "ringStart": np.array(ring_start, np.uint32),
         "vx": np.array(vx, np.int32), "vz": np.array(vz, np.int32),
         "lCls": np.array([l["cls"] for l in lines], np.uint8), "lStart": l_start,
@@ -1307,18 +1299,20 @@ def find_landmarks(ex):
 
 # --------------------------------------------------------------- main ------
 
-def main():
-    os.makedirs(OUT, exist_ok=True)
+def build(output):
     t0 = time.time()
     with open(os.path.join(RAW, "extract.pkl"), "rb") as f:
         ex = pickle.load(f)
     timestamp = extract_timestamp(ex)
+    osm_source = ex.get("source", {})
+    if ex.get("bbox") != BBOX or osm_source.get("extractBbox") != OSM_BBOX or not osm_source.get("sha256"):
+        raise ValueError("Výřez OSM chybí nebo neodpovídá nastavení. Spusťte znovu tools/extract_osm.py.")
     print("načítám výškopis…")
     dem = Dem()
 
     print("budovy…")
     blds = build_buildings(ex, dem)
-    pack_buildings(blds)
+    pack_buildings(os.path.join(output, "buildings.bin"), blds)
 
     print("silnice…")
     roads, road_names = build_roads(ex)
@@ -1326,14 +1320,12 @@ def main():
     rails = build_rails(ex)
     print("plochy…")
     polys, wlines = build_land(ex)
-    pack_land(polys, wlines)
+    pack_land(os.path.join(output, "land.bin"), polys, wlines)
     print(f"  ploch: {len(polys)}, linií: {len(wlines)}")
 
     print("terén…")
-    s_, w_, n_, e_ = ex["bbox"]
-    bx0, bz1 = to_xz(s_, w_)
-    bx1, bz0 = to_xz(n_, e_)
-    ter = Terrain(dem, (bx0, bx1, bz0, bz1))
+    bounds = world_bounds(BBOX)
+    ter = Terrain(dem, bounds)
     raw_min, raw_max = float(ter.h.min()), float(ter.h.max())
     # terén se zarovná pod sjízdnými silnicemi, pěšími zónami a kolejemi (mimo mosty a tunely)
     ter.burn_lines([r for r in roads if r["cls"] <= 14 and not (r["flags"] & 6)], lambda r: r["w"] / 2)
@@ -1342,15 +1334,15 @@ def main():
     clipped = ter.quantize()
     nb = ter.bridge_heights(roads, lambda r: bool(r["flags"] & 2))
     nb += ter.bridge_heights(rails, lambda r: bool(r["flags"] & 2))
-    ter.write(os.path.join(OUT, "terrain.bin"), write_pack)
+    ter.write(os.path.join(output, "terrain.bin"), write_pack)
     print(f"  síť {ter.cols} × {ter.rows} po {terrain_mod.G:.0f} m, výšky {raw_min:.0f}–{raw_max:.0f} m n. m., "
           f"základ {ter.base} m, vodních bodů {n_water}, mostů {nb}, strmých řádků {clipped}")
 
-    pack_lines(os.path.join(OUT, "roads.bin"), roads, {},
+    pack_lines(os.path.join(output, "roads.bin"), roads, {},
                extra=(("cls", np.uint8), ("w", np.float32), ("lanes", np.uint8), ("speed", np.uint8),
                       ("flags", np.uint8), ("name", np.uint16), ("layer", np.int8)))
     print(f"  silnic a cest: {len(roads)}, názvů: {len(road_names)}")
-    pack_lines(os.path.join(OUT, "rails.bin"), rails, {}, extra=(("cls", np.uint8), ("flags", np.uint8)))
+    pack_lines(os.path.join(output, "rails.bin"), rails, {}, extra=(("cls", np.uint8), ("flags", np.uint8)))
 
     print("MHD…")
     transit = build_transit(ex)
@@ -1359,29 +1351,41 @@ def main():
     pois, trees = build_pois(ex, dem, road_names)
     landmarks = find_landmarks(ex)
     tr = np.array([[round(x * 10), round(z * 10)] for x, z in trees], np.int32)
-    write_pack(os.path.join(OUT, "trees.bin"), {"count": len(trees)}, {"x": tr[:, 0].copy(), "z": tr[:, 1].copy()})
+    write_pack(os.path.join(output, "trees.bin"), {"count": len(trees)}, {"x": tr[:, 0].copy(), "z": tr[:, 1].copy()})
 
-    s, w, n, e = ex["bbox"]
-    x_min, z_max = to_xz(s, w)
-    x_max, z_min = to_xz(n, e)
     meta = {
-        "origin": {"lat": LAT0, "lon": LON0, "kx": KX, "ky": KY},
-        "bounds": {"minX": round(x_min), "maxX": round(x_max), "minZ": round(z_min), "maxZ": round(z_max)},
+        "origin": ORIGIN,
+        "bounds": dict(zip(("minX", "maxX", "minZ", "maxZ"), map(round, bounds))),
         "osmTimestamp": timestamp,
         "osmTimestampSource": "pbf-header",
+        "sources": {"bbox": BBOX, "osm": osm_source, "elevation": dem.sources},
         "baseElevation": ter.base,
         "roadNames": road_names,
         "transit": transit,
         "landmarks": landmarks,
     }
     meta.update(pois)
-    with open(os.path.join(OUT, "meta.json"), "w", encoding="utf-8") as f:
+    meta_path = os.path.join(output, "meta.json")
+    with open(meta_path, "w", encoding="utf-8") as f:
         json.dump(meta, f, ensure_ascii=False, separators=(",", ":"))
-    print(f"  meta.json: {os.path.getsize(os.path.join(OUT, 'meta.json')) / 1e6:.2f} MB")
+    print(f"  meta.json: {os.path.getsize(meta_path) / 1e6:.2f} MB")
     print(f"  podniky: {len(pois['food'])}, adresy: {len(pois['addresses'])}, stromy: {len(trees)}, "
           f"věže/komíny: {len(pois['towers'])}, památky: {len(landmarks)}, čtvrti: {len(pois['places'])}")
     print(f"hotovo za {time.time() - t0:.0f} s")
 
 
+def main(output=None):
+    output = os.path.abspath(OUT if output is None else output)
+    parent = os.path.dirname(output)
+    os.makedirs(parent, exist_ok=True)
+    with TemporaryDirectory(dir=parent) as staging:
+        build(staging)
+        os.makedirs(output, exist_ok=True)
+        for name in os.listdir(staging):
+            os.replace(os.path.join(staging, name), os.path.join(output, name))
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output-dir", help="výstupní složka (výchozí public/data)")
+    sys.exit(main(parser.parse_args().output_dir))
