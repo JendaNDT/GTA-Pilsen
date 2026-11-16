@@ -1,0 +1,43 @@
+name: Kontroly projektu
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20.19.0, 22.12.0, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: tools/requirements.txt
+      - run: npm ci
+      - run: python -m pip install -r tools/requirements.txt
+      - run: npm test
+      - run: npm run test:python
+      - run: python -m py_compile tools/*.py
+      - run: npm audit --audit-level=moderate
+      - run: npm run build
+      - if: matrix.node == 24
+        run: npx playwright install --with-deps chromium
+      - if: matrix.node == 24
+        run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure() && matrix.node == 24
+        with:
+          name: browser-test-results
+          path: test-results/
+          retention-days: 7

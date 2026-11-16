@@ -39,10 +39,11 @@ Na dotykové obrazovce se objeví páčka a tlačítka.
 
 ## Jak hru spustit u sebe
 
-Je potřeba [Node.js](https://nodejs.org) verze 18 nebo novější.
+Je potřeba [Node.js](https://nodejs.org) 20.19+ nebo 22.12+ (doporučená verze je 24 LTS,
+uložená také v `.nvmrc`). Node.js 18 a 21 už nejsou podporované.
 
 ```bash
-npm install
+npm ci
 ```
 
 ```bash
@@ -59,15 +60,47 @@ npm run build
 
 Výsledek je ve složce `dist/` – obyčejné statické soubory, které jde nahrát na jakýkoli hosting.
 
+## Kontroly před odesláním změn
+
+Regresní testy kolizí, terénu, silničního grafu a distribuovaných dat:
+
+```bash
+npm test
+```
+
+Testy přípravy dat (po instalaci Python závislostí uvedených níže):
+
+```bash
+npm run test:python
+```
+
+Testy hry v Chromiu ověřují chůzi, mapu a navigaci, auto, vrtulník, rozvoz,
+tramvaj, uložení postupu a mobilní dotykové ovládání. Používají debug režim pro
+řízený čas a přesun k interakcím; mobil je emulovaný, nejde o měření výkonu telefonu.
+
+```bash
+npx playwright install chromium
+npm run build
+npm run test:e2e
+```
+
+Testy si samy spustí lokální server nad `dist/`. GitHub Actions spouští testy JavaScriptu
+a Pythonu, audit závislostí a sestavení na Node.js 20.19, 22.12 a 24; na Node.js 24 také
+testy v prohlížeči. Neúspěšný průchod prohlížečem uloží trasu a snímek obrazovky jako artefakt.
+
 ## Odkud jsou data a jak je obnovit
 
 Hotová herní data jsou v repozitáři ve složce `public/data/` (asi 14 MB, při stahování do prohlížeče zhruba 6,5 MB), takže ke spuštění
 není potřeba nic stahovat. Skripty ve složce `tools/` je umí vyrobit znovu z aktuálních zdrojů
-(potřebují Python 3 a balíčky `numpy`, `tifffile` a `osmium`):
+(potřebují Python 3.10+ a balíčky `numpy`, `tifffile`, `osmium` a `Pillow`):
 
 ```bash
-pip install numpy tifffile osmium
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r tools/requirements.txt
 ```
+
+Ve Windows se virtuální prostředí aktivuje příkazem `.venv\Scripts\activate`.
 
 ```bash
 python3 tools/fetch_osm.py
@@ -93,8 +126,19 @@ python3 tools/build_data.py
 | `extract_osm.py` | vybere z výřezu jen oblast hry |
 | `build_data.py` | spočítá výšky budov a vyrobí kompaktní soubory pro hru |
 | `terrain.py` | pomocný modul: výšková síť terénu, zarovnání pod silnicemi, hladiny, výšky mostů |
+| `osm_source.py` | ověření a přenos data OSM z hlavičky zdrojového PBF |
 
 Surová data (stovky MB) se ukládají do `data-raw/`, která se do repozitáře nenahrává.
+
+Datum OSM se čte z položky `osmosis_replication_timestamp` přímo v hlavičce staženého PBF,
+ukládá se do `extract.pkl` a odtud do `meta.json` jako `osmTimestamp` (UTC) se zdrojem
+`osmTimestampSource: "pbf-header"`. Datum sestavení ani nově stažený stavový soubor ho
+nenahrazují. PBF bez data nebo starší výřez bez této položky se odmítne; výřez je třeba
+znovu vytvořit příkazem `python3 tools/extract_osm.py`.
+
+U přiložené historické datové sady není původní datum doloženo. Proto má
+`osmTimestamp: null` a `osmTimestampSource: "unknown-legacy"`; menu „O hře“ tuto skutečnost
+zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 
 ## Zdroje a licence dat
 

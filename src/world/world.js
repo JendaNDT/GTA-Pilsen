@@ -310,7 +310,18 @@ export class World {
 
   removeObstacles(list) {
     for (let k = 0; k < list.length; k += 3) {
-      this.obstacles.delete(Math.floor(list[k] / 16) * 4096 + Math.floor(list[k + 1] / 16));
+      const key = Math.floor(list[k] / 16) * 4096 + Math.floor(list[k + 1] / 16);
+      const arr = this.obstacles.get(key);
+      if (!arr) continue;
+      // Buňku mohou sdílet sousední dlaždice. Odeber jen jednu odpovídající
+      // položku; i dvě totožné překážky mohou mít různé vlastníky.
+      for (let i = 0; i < arr.length; i += 3) {
+        if (arr[i] === list[k] && arr[i + 1] === list[k + 1] && arr[i + 2] === list[k + 2]) {
+          arr.splice(i, 3);
+          break;
+        }
+      }
+      if (!arr.length) this.obstacles.delete(key);
     }
   }
 
