@@ -25,6 +25,7 @@ import numpy as np
 
 import terrain as terrain_mod
 from terrain import Terrain
+from osm_source import extract_timestamp
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RAW = os.path.join(HERE, "..", "data-raw")
@@ -1311,6 +1312,7 @@ def main():
     t0 = time.time()
     with open(os.path.join(RAW, "extract.pkl"), "rb") as f:
         ex = pickle.load(f)
+    timestamp = extract_timestamp(ex)
     print("načítám výškopis…")
     dem = Dem()
 
@@ -1362,16 +1364,11 @@ def main():
     s, w, n, e = ex["bbox"]
     x_min, z_max = to_xz(s, w)
     x_max, z_min = to_xz(n, e)
-    state = ""
-    sp = os.path.join(RAW, "plzensky.state.txt")
-    if os.path.exists(sp):
-        for line in open(sp, encoding="utf-8"):
-            if line.startswith("timestamp="):
-                state = line.split("=", 1)[1].strip().replace("\\", "")
     meta = {
         "origin": {"lat": LAT0, "lon": LON0, "kx": KX, "ky": KY},
         "bounds": {"minX": round(x_min), "maxX": round(x_max), "minZ": round(z_min), "maxZ": round(z_max)},
-        "osmTimestamp": state,
+        "osmTimestamp": timestamp,
+        "osmTimestampSource": "pbf-header",
         "baseElevation": ter.base,
         "roadNames": road_names,
         "transit": transit,

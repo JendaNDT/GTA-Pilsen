@@ -5,3 +5,6 @@ data-raw/
 *.log
 .DS_Store
 __pycache__/
+playwright-report/
+test-results/
+.venv/

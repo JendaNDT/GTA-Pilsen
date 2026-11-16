@@ -25,7 +25,7 @@ async function fetchBuffer(url, onBytes) {
   return out.buffer;
 }
 
-function parsePack(buf) {
+export function parsePack(buf) {
   const dv = new DataView(buf);
   const magic = String.fromCharCode(dv.getUint8(0), dv.getUint8(1), dv.getUint8(2), dv.getUint8(3));
   if (magic !== 'PLZ1') throw new Error('Neznámý formát dat');

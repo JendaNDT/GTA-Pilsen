@@ -11,6 +11,7 @@ import time
 import osmium
 
 from area import BBOX      # jih, západ, sever, východ – herní oblast
+from osm_source import read_pbf_timestamp
 
 MARGIN = 0.004  # ~400 m přesah, aby se cesty na okraji neusekly
 
@@ -59,6 +60,7 @@ class Handler(osmium.SimpleHandler):
 
 def main():
     src = os.path.join(RAW, "plzensky-latest.osm.pbf")
+    timestamp = read_pbf_timestamp(src)
     t = time.time()
     h = Handler()
     h.apply_file(src, locations=True)
@@ -67,7 +69,7 @@ def main():
     for rid, (tags, members) in h.rels.items():
         if any((m[0] == "w" and m[1] in h.ways) or (m[0] == "n" and m[1] in h.nodes) for m in members):
             keep[rid] = (tags, members)
-    out = {"bbox": BBOX, "nodes": h.nodes, "ways": h.ways, "rels": keep}
+    out = {"bbox": BBOX, "osmTimestamp": timestamp, "nodes": h.nodes, "ways": h.ways, "rels": keep}
     with open(os.path.join(RAW, "extract.pkl"), "wb") as f:
         pickle.dump(out, f, protocol=pickle.HIGHEST_PROTOCOL)
     print(f"uzly s tagy: {len(h.nodes)}, cesty: {len(h.ways)}, relace: {len(keep)}, {time.time() - t:.0f} s")

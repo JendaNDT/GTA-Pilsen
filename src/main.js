@@ -34,7 +34,7 @@ const HELP_HTML = IS_TOUCH ? `
     <tr><td>N · Esc</td><td>posunout čas o 3 hodiny · menu</td></tr>
   </table>`;
 
-const ABOUT_HTML = `
+const ABOUT_HTML = (meta) => `
   <h3>O hře</h3>
   <p>Otevřený svět postavený ze skutečných dat Plzně a okolí (zhruba 327 km², od Horní Břízy a Třemošné
   po Štěnovice a Starý Plzenec): terén s kopci a údolími řek, půdorysy a výšky zhruba 73 tisíc budov,
@@ -45,6 +45,9 @@ const ABOUT_HTML = `
   <p>Mapová data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">přispěvatelé OpenStreetMap</a>
   (licence ODbL). Terén vychází z digitálního modelu reliéfu DMR 5G, výšky budov z rozdílu modelu povrchu
   DMP 1G a DMR 5G © <a href="https://www.cuzk.gov.cz" target="_blank" rel="noopener">ČÚZK</a>.</p>
+  <p>Datum mapových dat OpenStreetMap: ${meta.osmTimestamp
+    ? `${new Date(meta.osmTimestamp).toLocaleString('cs-CZ', { timeZone: 'UTC' })} UTC`
+    : 'u této starší datové sady není doloženo'}.</p>
   <p>Vzhled budov (barvy, okna) a provoz jsou vymyšlené, názvy ulic, podniků a zastávek jsou skutečné.
   Hra je nezávislý fanouškovský projekt a není oficiálním produktem města ani dopravního podniku.</p>
   <p>Inspirováno projektem HrejBrno.cz.</p>`;
@@ -95,7 +98,7 @@ async function boot() {
   $('menu-buttons').classList.remove('hidden');
   $('btn-play').textContent = game.hasSave ? 'Pokračovat' : 'Hrát';
   $('panel-help').innerHTML = HELP_HTML;
-  $('panel-about').innerHTML = ABOUT_HTML;
+  $('panel-about').innerHTML = ABOUT_HTML(data.meta);
   if (IS_TOUCH) $('touch').classList.remove('hidden');
 
   let running = false, last = 0, firstPlay = true;
