@@ -120,3 +120,36 @@ body.touch #prompt { bottom: 46%; }
 .panel td:first-child { white-space: nowrap; padding-right: 14px; font-weight: 700; }
 .panel a { color: var(--amber); }
 #credits { margin-top: 14px; font-size: 12px; opacity: .65; text-align: center; }
+
+/* ---------- malé obrazovky (telefon na šířku) ---------- */
+@media (max-height: 520px) {
+  #mapwrap { width: 118px; }
+  #minimap { width: 118px; height: 118px; border-width: 2px; }
+  #clock { font-size: 11px; margin-top: 2px; }
+  #money { font-size: 16px; padding: 4px 10px; }
+  #place b { font-size: 15px; }
+  #place span { font-size: 11px; }
+  #toast { top: 54px; gap: 5px; width: min(60vw, 460px); }
+  #toast div { font-size: 13px; padding: 6px 12px; }
+  #toast div.big { font-size: 15px; }
+  #mission { top: 92px; font-size: 12px; padding: 7px 9px; max-width: 46vw; }
+  #mission .timer { font-size: 15px; }
+  #speedo b { font-size: 30px; }
+  #stick { width: 108px; height: 108px; bottom: max(40px, env(safe-area-inset-bottom)); }
+  .tb { width: 54px; height: 54px; font-size: 19px; }
+  #tb-gas { width: 66px; height: 66px; bottom: 112px; right: 18px; }
+  #tb-brake { right: 94px; bottom: 62px; }
+  #tb-hand { right: 18px; bottom: 42px; }
+  #tb-act { right: 94px; bottom: 128px; }
+  #tb-job { right: 144px; top: 10px; width: 40px; height: 40px; font-size: 16px; }
+  #tb-map { right: 190px; top: 10px; width: 40px; height: 40px; font-size: 16px; }
+  body.touch #btn-menu { top: 96px; width: 34px; height: 34px; }
+  body.touch #mission { left: 56px; }
+  #menu-card { padding: 16px 18px; }
+  #menu .sub { margin: 4px 0 12px; }
+  #menu-buttons { grid-template-columns: 1fr 1fr; }
+  #menu-buttons button.primary { grid-column: 1 / -1; }
+  #menu-buttons button.ghost { grid-column: 1 / -1; }
+}
+#rotate-tip { display: none; margin-top: 10px; font-size: 13px; color: var(--amber); }
+@media (orientation: portrait) and (pointer: coarse) { #rotate-tip { display: block; } }

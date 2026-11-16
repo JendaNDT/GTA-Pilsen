@@ -178,6 +178,29 @@ def point_in_ring(x, z, ring):
     return inside
 
 
+def obb_fill(ring):
+    """Poměr plochy půdorysu k ploše nejmenšího opsaného obdélníku (1 = obdélník)."""
+    best = None
+    n = len(ring)
+    for i in range(n):
+        x1, z1 = ring[i]
+        x2, z2 = ring[(i + 1) % n]
+        dx, dz = x2 - x1, z2 - z1
+        ln = math.hypot(dx, dz)
+        if ln < 0.3:
+            continue
+        dx /= ln
+        dz /= ln
+        us = [p[0] * dx + p[1] * dz for p in ring]
+        vs = [-p[0] * dz + p[1] * dx for p in ring]
+        a = (max(us) - min(us)) * (max(vs) - min(vs))
+        if best is None or a < best:
+            best = a
+    if not best:
+        return 0.0
+    return abs(signed_area(ring)) / best
+
+
 def assemble_rings(way_list):
     """Spojí cesty (seznamy (ids, pts)) do uzavřených prstenců podle id uzlů."""
     rings = []
@@ -384,9 +407,13 @@ def build_buildings(ex, dem):
         for i in grid.get((int(cx // 100), int(cz // 100)), ()):
             o = outlines[i]
             if point_in_ring(cx, cz, o["ring"]):
-                o["has_parts"] = True
+                o["parts_area"] = o.get("parts_area", 0.0) + p["area"]
                 p["parent"] = o
                 break
+    for o in outlines:
+        # obrys se nekreslí jen tehdy, když ho části pokrývají skoro celý
+        if o.get("parts_area", 0.0) >= 0.6 * o["area"]:
+            o["has_parts"] = True
 
     out = []
     t0 = time.time()
@@ -460,13 +487,31 @@ def build_buildings(ex, dem):
             h_top = h_wall = h_flat = est + min_h
         stats[src] += 1
 
-        # sedlová střecha: jednoduchý čtyřúhelníkový půdorys rodinného domu
-        gable = False
-        if (len(it["ring"]) == 4 and not it["holes"] and kind in (0, 1) and 35 < area < 420
+        # šikmé střechy
+        gable = False     # sedlová střecha na čtyřúhelníkovém půdorysu
+        ridge = False     # obecná střecha s hřebenem (valbová, jehlanová)
+        hip = 0
+        roof_shape = tags.get("roof:shape", "")
+        roof_h = parse_len(tags.get("roof:height"))
+        pitched_tag = roof_shape in ("gabled", "hipped", "half-hipped", "pitched", "pyramidal", "mansard", "gambrel")
+        if roof_h and roof_shape != "flat" and (tag_h or src.startswith("dem")) and not it["holes"]:
+            top = tag_h or h_top
+            if top - roof_h > 2.0:
+                h_top, h_wall = top, top - roof_h
+                ridge = True
+                hip = 2 if roof_shape == "pyramidal" else (0 if roof_shape == "gabled" else 1)
+        elif (len(it["ring"]) == 4 and not it["holes"] and kind in (0, 1) and 35 < area < 420
                 and src == "dem" and h_top - h_wall > 1.6 and h_wall > 2.4 and h_top < 16
-                and tags.get("roof:shape", "gabled") in ("gabled", "hipped", "half-hipped", "pitched")):
+                and roof_shape in ("", "gabled", "hipped", "half-hipped", "pitched")):
             gable = True
-        if not gable:
+        elif (not it["holes"] and src == "dem" and h_top - h_wall > 1.8 and h_wall > 2.4
+                and len(it["ring"]) <= 12 and roof_shape != "flat"
+                and ((kind in (0, 1) and 35 < area < 650 and h_top < 17 and obb_fill(it["ring"]) > 0.8)
+                     or (kind == 6 and h_top - h_wall > 3.0)
+                     or pitched_tag)):
+            ridge = True
+            hip = 1
+        if not gable and not ridge:
             h_wall = h_top = h_flat
         h_top = max(2.2, min(h_top, 220.0))
         h_wall = max(2.0, min(h_wall, h_top))
@@ -474,6 +519,12 @@ def build_buildings(ex, dem):
         flags = 0
         if gable:
             flags |= 1
+        if ridge:
+            flags |= 2
+            if hip == 2:
+                flags |= 32     # jehlan (věž)
+            elif hip == 0:
+                flags |= 64     # sedlová (bez valby)
         if is_part:
             flags |= 4
         if it.get("has_parts"):
@@ -1104,14 +1155,14 @@ def build_pois(ex, dem, road_names):
 
 # památky: (název ve hře, hledaný text v OSM, krátký popis)
 LANDMARKS = [
-    ("Katedrála sv. Bartoloměje", ["Katedrála svatého Bartoloměje", "katedrála svatého Bartoloměje"]),
+    ("Katedrála sv. Bartoloměje", ["svatý Bartoloměj", "Katedrála svatého Bartoloměje"]),
     ("Velká synagoga", ["Velká synagoga"]),
-    ("Radnice", ["Radnice", "Plzeňská radnice"]),
-    ("Plzeňský Prazdroj", ["Plzeňský Prazdroj", "Pivovar Plzeňský Prazdroj", "Návštěvnické centrum Plzeňský Prazdroj"]),
-    ("Stadion ve Štruncových sadech", ["Doosan Arena", "Stadion města Plzně", "Štruncovy sady"]),
+    ("Radnice", ["Magistrát města Plzně", "Radnice"]),
+    ("Plzeňský Prazdroj", ["Historická brána Prazdroj", "Návštěvnické centrum Plzeňský Prazdroj"]),
+    ("Stadion ve Štruncových sadech", ["Doosan Arena", "Stadion města Plzně"]),
     ("Techmania Science Center", ["Techmania Science Center", "Techmania"]),
     ("Zoologická a botanická zahrada", ["Zoologická a botanická zahrada města Plzně", "Zoologická a botanická zahrada", "ZOO Plzeň"]),
-    ("Velké divadlo", ["Velké divadlo", "Divadlo Josefa Kajetána Tyla"]),
+    ("Velké divadlo", ["Divadlo Josefa Kajetána Tyla - Velké divadlo", "Velké divadlo"]),
     ("Nové divadlo", ["Nové divadlo"]),
     ("Hlavní nádraží", ["Plzeň hlavní nádraží"]),
     ("Západočeské muzeum", ["Západočeské muzeum", "Západočeské muzeum v Plzni"]),
@@ -1119,29 +1170,24 @@ LANDMARKS = [
     ("Lochotínský amfiteátr", ["Amfiteátr Lochotín", "Lochotínský amfiteátr", "Amfiteátr"]),
     ("Věznice Bory", ["Věznice Plzeň", "Věznice Bory", "Věznice Plzeň-Bory"]),
     ("Borský park", ["Borský park"]),
-    ("Velký bolevecký rybník", ["Velký bolevecký rybník", "Velký Bolevecký rybník"]),
+    ("Velký bolevecký rybník", ["Velký Bolevecký rybník", "Velký bolevecký rybník"]),
     ("DEPO2015", ["DEPO2015"]),
-    ("Pivovarské muzeum", ["Pivovarské muzeum"]),
+    ("Pivovarské muzeum", ["Pivovarské muzeum v Plzni", "Pivovarské muzeum"]),
     ("Zimní stadion", ["Logspeed CZ Aréna", "Home Monitoring Aréna", "Zimní stadion"]),
     ("Západočeská univerzita", ["Západočeská univerzita v Plzni", "Západočeská univerzita"]),
     ("Fakultní nemocnice Lochotín", ["Fakultní nemocnice Plzeň - Lochotín", "Fakultní nemocnice Lochotín", "Fakultní nemocnice Plzeň"]),
     ("Mlýnská strouha", ["Mlýnská strouha"]),
-    ("Loosovy interiéry", ["Loosovy interiéry", "Brummelův dům"]),
-    ("Rozhledna Sylván", ["Sylván", "Rozhledna Sylván"]),
-    ("Rozhledna Chlum", ["Chlum", "Rozhledna Chlum"]),
-    ("Kostel sv. Jana Nepomuckého", ["Kostel svatého Jana Nepomuckého", "kostel svatého Jana Nepomuckého"]),
-    ("Plzeňská teplárenská", ["Plzeňská teplárenská", "Teplárna"]),
-    ("Škoda – hlavní brána", ["Škoda Transportation", "Škoda"]),
+    ("Loosovy interiéry", ["Loosovy interiéry - Brummelův dům", "Loosovy interiéry"]),
+    ("Rozhledna Sylván", ["Sylván (rozhledna)", "Sylván"]),
+    ("Rozhledna Chlum", ["rozhledna Chlum", "Rozhledna Chlum"]),
     ("Kalikovský mlýn", ["Kalikovský mlýn"]),
-    ("Hřbitov u sv. Mikuláše", ["Mikulášský hřbitov"]),
     ("Meditační zahrada", ["Meditační zahrada", "Památník obětem zla"]),
     ("Lobezský park", ["Lobezský park"]),
     ("Ústřední hřbitov", ["Ústřední hřbitov"]),
-    ("Papírna", ["Papírna"]),
-    ("Saský most", ["Saský most"]),
+    ("Papírna", ["Papírna Plzeň"]),
     ("Wilsonův most", ["Wilsonův most"]),
     ("Košutecké jezírko", ["Košutecké jezírko"]),
-    ("Seneca / Šídlovák", ["Šídlovský rybník", "Šídlovák"]),
+    ("Šídlovský rybník", ["Šídlovský rybník", "Šídlovák"]),
 ]
 
 

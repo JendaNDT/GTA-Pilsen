@@ -1,0 +1,331 @@
+// Ukazatele na obrazovce, minimapa a velká mapa.
+import { CHUNK, DRIVABLE_MAX, RC, LC, BF } from '../config.js';
+
+const $ = (id) => document.getElementById(id);
+
+const MAP_LAND = {
+  [LC.FARMLAND]: '#3a4436', [LC.MEADOW]: '#35483a', [LC.GRASS]: '#35503c', [LC.RESIDENTIAL]: '#343f49',
+  [LC.COMMERCIAL]: '#37414a', [LC.INDUSTRIAL]: '#3a4047', [LC.RAILWAY]: '#3b3d42', [LC.ALLOTMENTS]: '#365039',
+  [LC.CEMETERY]: '#33493a', [LC.FOREST]: '#274b34', [LC.SCRUB]: '#2e4d38', [LC.PARK]: '#2f5a3c',
+  [LC.PITCH]: '#356a44', [LC.PARKING]: '#3c444c', [LC.PLAZA]: '#4a5058', [LC.WATER]: '#2d6394',
+  [LC.SAND]: '#6b6650', [LC.CONSTRUCTION]: '#484640', [LC.GARDEN]: '#30553b', [LC.PLAYGROUND]: '#55543f',
+};
+const MAP_BG = '#2b353e';
+
+/** Kreslí mapové dlaždice (512 m) do mezipaměti; používá je minimapa. */
+export class MapTiles {
+  constructor(world) {
+    this.world = world;
+    this.T = 512; this.PX = 384;
+    this.tiles = new Map();
+    this.budget = 0;
+    const L = world.l;
+    this.cols = Math.ceil((world.maxX - world.minX) / this.T);
+    this.rows = Math.ceil((world.maxZ - world.minZ) / this.T);
+    this.land = new Array(this.cols * this.rows);
+    for (let i = 0; i < world.lCount; i++) {
+      const r0 = L.pRing[i];
+      let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
+      for (let v = L.ringStart[r0], ve = L.ringStart[L.pRing[i + 1]]; v < ve; v++) {
+        const x = L.vx[v] * 0.1, z = L.vz[v] * 0.1;
+        if (x < x0) x0 = x; if (x > x1) x1 = x; if (z < z0) z0 = z; if (z > z1) z1 = z;
+      }
+      const a0 = Math.max(0, Math.floor((x0 - world.minX) / this.T)), a1 = Math.min(this.cols - 1, Math.floor((x1 - world.minX) / this.T));
+      const b0 = Math.max(0, Math.floor((z0 - world.minZ) / this.T)), b1 = Math.min(this.rows - 1, Math.floor((z1 - world.minZ) / this.T));
+      for (let b = b0; b <= b1; b++) for (let a = a0; a <= a1; a++) (this.land[b * this.cols + a] || (this.land[b * this.cols + a] = [])).push(i);
+    }
+  }
+
+  landPath(g, i) {
+    const L = this.world.l;
+    g.beginPath();
+    for (let rg = L.pRing[i], r1 = L.pRing[i + 1]; rg < r1; rg++) {
+      const v0 = L.ringStart[rg], v1 = L.ringStart[rg + 1];
+      for (let v = v0; v < v1; v++) {
+        if (v === v0) g.moveTo(L.vx[v] * 0.1, L.vz[v] * 0.1); else g.lineTo(L.vx[v] * 0.1, L.vz[v] * 0.1);
+      }
+      g.closePath();
+    }
+  }
+
+  drawRoads(g, ci, major) {
+    const w = this.world, pieces = w.rPieces[ci];
+    if (!pieces) return;
+    const R = w.r, px = w.rpx, pz = w.rpz;
+    for (let q = 0; q < pieces.length; q += 3) {
+      const i = pieces[q], cls = R.cls[i];
+      const isMajor = cls <= RC.TERTIARY_LINK;
+      if (isMajor !== major) continue;
+      if (cls > RC.PEDESTRIAN) continue;
+      g.beginPath();
+      g.moveTo(px[pieces[q + 1]], pz[pieces[q + 1]]);
+      for (let k = pieces[q + 1] + 1; k <= pieces[q + 2]; k++) g.lineTo(px[k], pz[k]);
+      g.lineWidth = Math.max(R.w[i], major ? 7 : 4.5);
+      g.strokeStyle = major ? '#c5ccd3' : cls === RC.SERVICE ? '#69757f' : cls === RC.PEDESTRIAN ? '#8e8a80' : '#8d99a3';
+      g.stroke();
+    }
+  }
+
+  build(tx, tz) {
+    const w = this.world;
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = this.PX;
+    const g = cv.getContext('2d');
+    const s = this.PX / this.T;
+    const x0 = w.minX + tx * this.T, z0 = w.minZ + tz * this.T;
+    g.fillStyle = MAP_BG; g.fillRect(0, 0, this.PX, this.PX);
+    g.setTransform(s, 0, 0, s, -x0 * s, -z0 * s);
+    const land = this.land[tz * this.cols + tx];
+    if (land) for (const i of land) { this.landPath(g, i); g.fillStyle = MAP_LAND[w.l.cls[i]] || MAP_BG; g.fill('evenodd'); }
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    const c0x = Math.floor((x0 - w.minX) / CHUNK) - 1, c0z = Math.floor((z0 - w.minZ) / CHUNK) - 1;
+    const n = this.T / CHUNK + 2;
+    const each = (fn) => {
+      for (let dz = 0; dz < n; dz++) for (let dx = 0; dx < n; dx++) {
+        const cx = c0x + dx, cz = c0z + dz;
+        if (cx < 0 || cz < 0 || cx >= w.cols || cz >= w.rows) continue;
+        fn(cz * w.cols + cx);
+      }
+    };
+    each((ci) => this.drawRoads(g, ci, false));
+    each((ci) => this.drawRoads(g, ci, true));
+    // koleje tramvají
+    g.strokeStyle = '#b08d2e'; g.lineWidth = 1.6;
+    each((ci) => {
+      const rails = w.railChunks[ci];
+      if (!rails) return;
+      for (const ri of rails) {
+        const r = w.rails[ri];
+        if (r.cls !== 0) continue;
+        g.beginPath(); g.moveTo(r.pts[0], r.pts[1]);
+        for (let k = 2; k < r.pts.length; k += 2) g.lineTo(r.pts[k], r.pts[k + 1]);
+        g.stroke();
+      }
+    });
+    g.fillStyle = '#566472';
+    const B = w.b;
+    each((ci) => {
+      const list = w.bChunks[ci];
+      if (!list) return;
+      g.beginPath();
+      for (const i of list) {
+        if (B.flags[i] & BF.PART) continue;
+        const rg = B.bRing[i];
+        const v0 = B.ringStart[rg], v1 = B.ringStart[rg + 1];
+        g.moveTo(w.bvx[v0], w.bvz[v0]);
+        for (let v = v0 + 1; v < v1; v++) g.lineTo(w.bvx[v], w.bvz[v]);
+        g.closePath();
+      }
+      g.fill();
+    });
+    return cv;
+  }
+
+  get(tx, tz) {
+    if (tx < 0 || tz < 0 || tx >= this.cols || tz >= this.rows) return null;
+    const key = tz * this.cols + tx;
+    let t = this.tiles.get(key);
+    if (!t) {
+      if (this.budget <= 0) return null;
+      this.budget--;
+      t = this.build(tx, tz);
+      this.tiles.set(key, t);
+      if (this.tiles.size > 40) this.tiles.delete(this.tiles.keys().next().value);
+    }
+    return t;
+  }
+}
+
+export class Hud {
+  constructor(world) {
+    this.world = world;
+    this.tiles = new MapTiles(world);
+    this.el = {
+      hud: $('hud'), money: $('money'), wanted: $('wanted'), health: $('health').firstElementChild,
+      street: $('street'), district: $('district'), mission: $('mission'), toast: $('toast'),
+      prompt: $('prompt'), speedo: $('speedo'), kmh: $('kmh'), vehname: $('vehname'), clock: $('clock'),
+      minimap: $('minimap'), touch: $('touch'),
+    };
+    this.el.wanted.innerHTML = '<i></i><i></i><i></i><i></i><i></i>';
+    this.mm = this.el.minimap.getContext('2d');
+    this.cache = {};
+    this.frame = 0;
+    this.big = null;
+  }
+
+  show(on) { this.el.hud.classList.toggle('hidden', !on); }
+
+  _set(key, value, fn) { if (this.cache[key] !== value) { this.cache[key] = value; fn(value); } }
+
+  money(v) { this._set('money', Math.round(v), (x) => { this.el.money.textContent = `${x.toLocaleString('cs-CZ')} Kč`; }); }
+  wanted(n) { this._set('wanted', n, (x) => { [...this.el.wanted.children].forEach((c, i) => c.classList.toggle('on', i < x)); }); }
+  health(p) { this._set('health', Math.round(p), (x) => { this.el.health.style.width = `${x}%`; this.el.health.style.background = x > 50 ? '#5fd38d' : x > 25 ? '#f2b632' : '#e2483d'; }); }
+  place(street, district) {
+    this._set('street', street, (x) => { this.el.street.textContent = x; });
+    this._set('district', district, (x) => { this.el.district.textContent = x; });
+  }
+  clock(h) {
+    const hh = Math.floor(h) % 24, mm = Math.floor((h % 1) * 60 / 10) * 10;
+    this._set('clock', hh * 100 + mm, () => { this.el.clock.textContent = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`; });
+  }
+  speed(kmh, name) {
+    this._set('speedoOn', kmh !== null, (on) => this.el.speedo.classList.toggle('hidden', !on));
+    if (kmh === null) return;
+    this._set('kmh', Math.round(Math.abs(kmh)), (x) => { this.el.kmh.textContent = x; });
+    this._set('vehname', name, (x) => { this.el.vehname.textContent = x; });
+  }
+  prompt(html) {
+    this._set('prompt', html || '', (x) => { this.el.prompt.innerHTML = x; this.el.prompt.classList.toggle('hidden', !x); });
+  }
+  mission(html) {
+    this._set('mission', html || '', (x) => { this.el.mission.innerHTML = x; this.el.mission.classList.toggle('hidden', !x); });
+  }
+  toast(text, cls = '', ms = 3600) {
+    const d = document.createElement('div');
+    if (cls) d.className = cls;
+    d.textContent = text;
+    this.el.toast.appendChild(d);
+    while (this.el.toast.children.length > (innerHeight < 520 ? 2 : 3)) this.el.toast.firstElementChild.remove();
+    setTimeout(() => d.remove(), ms);
+  }
+
+  /** Minimapa: střed = hráč, nahoře = směr pohledu kamery. */
+  minimap(px, pz, camYaw, heading, markers, route) {
+    this.frame++;
+    if (this.frame % 2) return;
+    this.tiles.budget = 1;
+    const g = this.mm, S = this.el.minimap.width, R = S / 2;
+    const radius = 240, k = R / radius;
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.fillStyle = MAP_BG; g.fillRect(0, 0, S, S);
+    g.save();
+    g.translate(R, R);
+    const theta = camYaw - Math.PI;
+    g.rotate(theta);
+    g.scale(k, k);
+    g.translate(-px, -pz);
+    const T = this.tiles.T, w = this.world;
+    const reach = radius * 1.45;
+    const tx0 = Math.floor((px - reach - w.minX) / T), tx1 = Math.floor((px + reach - w.minX) / T);
+    const tz0 = Math.floor((pz - reach - w.minZ) / T), tz1 = Math.floor((pz + reach - w.minZ) / T);
+    for (let tz = tz0; tz <= tz1; tz++) for (let tx = tx0; tx <= tx1; tx++) {
+      const t = this.tiles.get(tx, tz);
+      if (t) g.drawImage(t, w.minX + tx * T, w.minZ + tz * T, T + 0.5, T + 0.5);
+    }
+    if (route && route.length >= 4) {
+      g.beginPath(); g.moveTo(px, pz);
+      for (let i = 0; i < route.length; i += 2) g.lineTo(route[i], route[i + 1]);
+      g.strokeStyle = '#f2b632'; g.lineWidth = 9; g.lineJoin = 'round'; g.lineCap = 'round'; g.globalAlpha = 0.9; g.stroke(); g.globalAlpha = 1;
+    }
+    g.restore();
+    // značky (držené na okraji, když jsou mimo)
+    const cos = Math.cos(theta), sin = Math.sin(theta);
+    for (const m of markers) {
+      let dx = (m.x - px) * k, dz = (m.z - pz) * k;
+      let sx = dx * cos - dz * sin, sy = dx * sin + dz * cos;
+      const d = Math.hypot(sx, sy), lim = R - 9;
+      if (d > lim) { if (m.local) continue; sx *= lim / d; sy *= lim / d; }
+      g.beginPath();
+      g.arc(R + sx, R + sy, m.size || 5, 0, Math.PI * 2);
+      g.fillStyle = m.color; g.fill();
+      g.lineWidth = 1.5; g.strokeStyle = '#101820'; g.stroke();
+    }
+    // hráč
+    g.save();
+    g.translate(R, R);
+    g.rotate(Math.PI - (heading - theta));
+    g.beginPath(); g.moveTo(0, -9); g.lineTo(6.5, 7); g.lineTo(0, 3.5); g.lineTo(-6.5, 7); g.closePath();
+    g.fillStyle = '#ffffff'; g.fill(); g.lineWidth = 1.5; g.strokeStyle = '#101820'; g.stroke();
+    g.restore();
+    // sever
+    const nx = R + (0 * cos - -1 * sin) * (R - 12), ny = R + (0 * sin + -1 * cos) * (R - 12);
+    g.fillStyle = '#e2483d'; g.font = 'bold 13px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('S', nx, ny);
+  }
+
+  // ---------------------------------------------------------- velká mapa ----
+  _bigBase(size) {
+    const w = this.world;
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = size;
+    const g = cv.getContext('2d');
+    const span = Math.max(w.playMaxX - w.playMinX, w.playMaxZ - w.playMinZ);
+    const s = size / span;
+    g.fillStyle = MAP_BG; g.fillRect(0, 0, size, size);
+    g.setTransform(s, 0, 0, s, -w.playMinX * s, -w.playMinZ * s);
+    for (let i = 0; i < w.lCount; i++) {
+      const col = MAP_LAND[w.l.cls[i]];
+      if (!col) continue;
+      this.tiles.landPath(g, i); g.fillStyle = col; g.fill('evenodd');
+    }
+    g.lineCap = 'round'; g.lineJoin = 'round';
+    const R = w.r, px = w.rpx, pz = w.rpz;
+    for (let pass = 0; pass < 2; pass++) {
+      for (let i = 0; i < w.rCount; i++) {
+        const cls = R.cls[i];
+        if (cls > DRIVABLE_MAX || cls === RC.SERVICE) continue;
+        const major = cls <= RC.TERTIARY_LINK;
+        if (major !== (pass === 1)) continue;
+        g.beginPath();
+        const a = w.rOff[i], b = w.rOff[i + 1];
+        g.moveTo(px[a], pz[a]);
+        for (let k = a + 1; k < b; k++) g.lineTo(px[k], pz[k]);
+        g.lineWidth = major ? 2.6 / s : 1.1 / s;
+        g.strokeStyle = major ? '#c5ccd3' : '#77838d';
+        g.stroke();
+      }
+    }
+    g.strokeStyle = '#b08d2e'; g.lineWidth = 1.2 / s;
+    for (const r of w.rails) {
+      if (r.cls !== 0) continue;
+      g.beginPath(); g.moveTo(r.pts[0], r.pts[1]);
+      for (let k = 2; k < r.pts.length; k += 2) g.lineTo(r.pts[k], r.pts[k + 1]);
+      g.stroke();
+    }
+    return { cv, s };
+  }
+
+  /** Vykreslí velkou mapu do daného plátna; vrací funkci pro převod kliknutí na souřadnice světa. */
+  bigMap(canvas, state) {
+    const w = this.world;
+    const css = Math.floor(Math.min(innerWidth * 0.96, innerHeight * 0.8));
+    const dpr = Math.min(devicePixelRatio || 1, 2);
+    const size = Math.floor(css * dpr);
+    canvas.style.width = canvas.style.height = `${css}px`;
+    if (!this.big || this.big.cv.width !== size) this.big = this._bigBase(size);
+    canvas.width = canvas.height = size;
+    const g = canvas.getContext('2d');
+    g.drawImage(this.big.cv, 0, 0);
+    const s = this.big.s;
+    const X = (x) => (x - w.playMinX) * s, Z = (z) => (z - w.playMinZ) * s;
+    const dot = (x, z, r, fill, stroke = '#101820') => {
+      g.beginPath(); g.arc(X(x), Z(z), r * dpr, 0, Math.PI * 2); g.fillStyle = fill; g.fill(); g.lineWidth = 1.5 * dpr; g.strokeStyle = stroke; g.stroke();
+    };
+    for (const lm of state.landmarks) dot(lm.x, lm.z, lm.found ? 4.5 : 3, lm.found ? '#f2b632' : '#7d8790');
+    for (const h of state.helis) dot(h.x, h.z, 4, '#7fd0ff');
+    if (state.route && state.route.length >= 4) {
+      g.beginPath(); g.moveTo(X(state.px), Z(state.pz));
+      for (let i = 0; i < state.route.length; i += 2) g.lineTo(X(state.route[i]), Z(state.route[i + 1]));
+      g.strokeStyle = '#f2b632'; g.lineWidth = 3 * dpr; g.lineJoin = 'round'; g.stroke();
+    }
+    for (const m of state.markers) dot(m.x, m.z, 6, m.color);
+    // názvy čtvrtí
+    g.font = `${11 * dpr}px system-ui, sans-serif`; g.textAlign = 'center'; g.fillStyle = 'rgba(245,241,230,.75)';
+    for (const p of w.meta.places) {
+      if (p[3] !== 'suburb' && p[3] !== 'village') continue;
+      if (p[0] < w.playMinX || p[0] > w.playMaxX || p[1] < w.playMinZ || p[1] > w.playMaxZ) continue;
+      g.fillText(p[2], X(p[0]), Z(p[1]));
+    }
+    // hráč
+    g.save();
+    g.translate(X(state.px), Z(state.pz));
+    g.rotate(Math.PI - state.heading);
+    g.beginPath(); g.moveTo(0, -11 * dpr); g.lineTo(7.5 * dpr, 8 * dpr); g.lineTo(0, 4 * dpr); g.lineTo(-7.5 * dpr, 8 * dpr); g.closePath();
+    g.fillStyle = '#fff'; g.fill(); g.lineWidth = 2 * dpr; g.strokeStyle = '#101820'; g.stroke();
+    g.restore();
+    return (clientX, clientY) => {
+      const r = canvas.getBoundingClientRect();
+      return { x: w.playMinX + ((clientX - r.left) / r.width) * size / s, z: w.playMinZ + ((clientY - r.top) / r.height) * size / s };
+    };
+  }
+}

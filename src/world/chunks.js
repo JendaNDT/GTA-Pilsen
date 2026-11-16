@@ -51,7 +51,7 @@ function styleFor(world, i) {
     case BK.CIVIC:
       wall = pick(PAL.civic, r); roof = h < 22 && r3 < 0.5 ? pick(PAL.houseRoof, r2) : pick(PAL.flatRoof, r2); style = 3; bay = 3.2; floorH = 3.8; break;
     case BK.RELIGIOUS:
-      wall = pick(PAL.stone, r); roof = r2 < 0.4 ? PAL.copper : pick(PAL.houseRoof, r2); style = 6; bay = 4.5; floorH = Math.max(6, Math.min(h, 16)); break;
+      wall = pick(PAL.stone, r); roof = r2 < 0.4 ? PAL.copper : pick(PAL.houseRoof, r2); style = 6; bay = 5.5; floorH = Math.max(7, Math.min(h, 18)); break;
     case BK.TOWER:
       wall = pick(PAL.stone, r); roof = pick(PAL.flatRoof, r2); style = 0; break;
     default: {
@@ -117,7 +117,7 @@ class Buf {
 class DecalBuf {
   constructor() { this.p = []; this.c = []; this.i = []; this.vc = 0; }
   v(x, z, col) {
-    this.p.push(x, 0, z);
+    this.p.push(x, -0.01, z);
     this.c.push(col[0] * 255, col[1] * 255, col[2] * 255);
     return this.vc++;
   }
@@ -155,7 +155,9 @@ function buildBuildings(world, list) {
     const kind = B.kind[i];
     const top = world.bTop[i];
     const gable = (flags & BF.GABLE) !== 0;
-    let wallTop = gable ? world.bWall[i] : top;
+    const nOuter0 = B.ringStart[B.bRing[i] + 1] - B.ringStart[B.bRing[i]];
+    const ridge = (flags & BF.RIDGE) !== 0 && B.bRing[i + 1] - B.bRing[i] === 1 && nOuter0 >= 3;
+    let wallTop = gable || ridge ? world.bWall[i] : top;
     let base = world.bBase[i];
     if (kind === BK.ROOF) base = Math.max(base, top - 0.35);
     const r0 = B.bRing[i], r1 = B.bRing[i + 1];
@@ -202,6 +204,52 @@ function buildBuildings(world, list) {
       const cxm = (X[0] + X[1] + X[2] + X[3]) / 4, czm = (Z[0] + Z[1] + Z[2] + Z[3]) / 4;
       buf.face(X[Bq], y, Z[Bq], X[Cq], y, Z[Cq], m1x, top, m1z, m1x - cxm, 0, m1z - czm, st.wall, 1);
       buf.face(X[D], y, Z[D], X[A], y, Z[A], m2x, top, m2z, m2x - cxm, 0, m2z - czm, st.wall, 1);
+    } else if (ridge) {
+      // hřebenová střecha: hřeben v delší ose nejmenšího opsaného obdélníku
+      const s = B.ringStart[r0], n = nOuter;
+      let bestA = 1e18, ux = 1, uz = 0, u0 = 0, u1 = 0, w0 = 0, w1 = 0;
+      for (let a = 0; a < n; a++) {
+        const b = (a + 1) % n;
+        let dx = vx[s + b] - vx[s + a], dz = vz[s + b] - vz[s + a];
+        const l = Math.hypot(dx, dz);
+        if (l < 0.3) continue;
+        dx /= l; dz /= l;
+        let a0 = 1e9, a1 = -1e9, b0 = 1e9, b1 = -1e9;
+        for (let q = 0; q < n; q++) {
+          const u = vx[s + q] * dx + vz[s + q] * dz, w = -vx[s + q] * dz + vz[s + q] * dx;
+          if (u < a0) a0 = u; if (u > a1) a1 = u; if (w < b0) b0 = w; if (w > b1) b1 = w;
+        }
+        const area = (a1 - a0) * (b1 - b0);
+        if (area < bestA) {
+          bestA = area;
+          if (a1 - a0 >= b1 - b0) { ux = dx; uz = dz; u0 = a0; u1 = a1; w0 = b0; w1 = b1; }
+          else { ux = -dz; uz = dx; u0 = b0; u1 = b1; w0 = -a1; w1 = -a0; }
+        }
+      }
+      const len = u1 - u0, wid = w1 - w0;
+      const hip = (flags & BF.PYRAMID) ? 1e9 : (flags & BF.NO_HIP) ? 0.02 : 0.5;
+      const half = Math.max(0, len / 2 - Math.min(len / 2, wid * hip));
+      const uc = (u0 + u1) / 2, wc = (w0 + w1) / 2;
+      const proj = (x, z) => {
+        let u = x * ux + z * uz;
+        if (u < uc - half) u = uc - half; else if (u > uc + half) u = uc + half;
+        // zpět do světových souřadnic: bod (u, wc)
+        return [u * ux - wc * uz, u * uz + wc * ux];
+      };
+      const y = wallTop;
+      const shade = (nx) => 0.86 + 0.14 * Math.max(0, nx);
+      for (let a = 0; a < n; a++) {
+        const b = (a + 1) % n;
+        const ax = vx[s + a], az = vz[s + a], bx = vx[s + b], bz = vz[s + b];
+        const ra = proj(ax, az), rb = proj(bx, bz);
+        const ex = bz - az, ez = -(bx - ax);
+        const el = Math.hypot(ex, ez) || 1;
+        const k = shade((ex / el) * 0.6 + (ez / el) * 0.4);
+        buf.face(ax, y, az, bx, y, bz, rb[0], top, rb[1], ex / el * 0.3, 1, ez / el * 0.3, st.roof, k);
+        if (Math.hypot(ra[0] - rb[0], ra[1] - rb[1]) > 0.05) {
+          buf.face(ax, y, az, rb[0], top, rb[1], ra[0], top, ra[1], ex / el * 0.3, 1, ez / el * 0.3, st.roof, k);
+        }
+      }
     } else {
       const flat = [];
       const holes = [];

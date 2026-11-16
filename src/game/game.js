@@ -1,0 +1,583 @@
+// Řízení hry: stav hráče, kamera, pravidla (hledanost, zdraví, peníze), ukládání.
+import * as THREE from 'three';
+import { QUALITY, RC, DRIVABLE_MAX, IS_TOUCH, DEBUG } from '../config.js';
+import { World } from '../world/world.js';
+import { ChunkManager } from '../world/chunks.js';
+import { Environment } from '../world/scene.js';
+import { makeDecalMaterial, makeWaterMaterial, env } from '../world/materials.js';
+import { VehicleManager, Car, wrapAngle } from '../entities/vehicles.js';
+import { Player, PedManager } from '../entities/player.js';
+import { TransitManager } from '../entities/transit.js';
+import { Heli } from '../entities/heli.js';
+import { Hud } from './hud.js';
+import { Jobs } from './missions.js';
+import { GameAudio } from './audio.js';
+import { input, pollInput, endFrame } from './input.js';
+
+const SAVE_KEY = 'plzen-naplno-v1';
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const _road = {};
+const _v = new THREE.Vector3();
+const START = { x: -42, z: 52 };
+
+export class Game {
+  constructor(renderer, data) {
+    this.renderer = renderer;
+    this.scene = new THREE.Scene();
+    this.camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.4, QUALITY.view * 1.35);
+    this.world = new World(data);
+    this.decalMat = makeDecalMaterial();
+    this.waterMat = makeWaterMaterial();
+    this.env = new Environment(this.scene, this.world, this.decalMat, this.waterMat);
+    this.chunks = new ChunkManager(this.scene, this.world, this.decalMat);
+    this.hud = new Hud(this.world);
+    this.audio = new GameAudio();
+    this.vehicles = new VehicleManager(this.scene, this.world, this);
+    this.peds = new PedManager(this.scene, this.world, this);
+    this.transit = new TransitManager(this.scene, this.world, this);
+    this.player = new Player(this.scene, this.world);
+    // vrtulníky: heliporty z mapy (FN Lochotín, pivovar, Bory) a jeden na náměstí Republiky
+    this.helis = [[106, -1596], [984, -396], [-266, 1314], [48, 52]].map(([x, z], i) => {
+      const p = this._heliSpot(x, z);
+      return new Heli(this.scene, this.world, p.x, p.z, i * 1.3);
+    });
+    this.mode = 'foot'; this.car = null; this.heli = null; this.ride = null;
+    this.focus = this.player;
+    this.money = 500; this.wanted = 0; this.cool = 0; this.bust = 0; this.hour = 9;
+    this.stats = {};
+    this.time = 0; this.envTimer = 0; this.placeTimer = 0; this.promptTimer = 0; this.saveTimer = 20; this.waterTimer = 0;
+    this.camYaw = 2.4; this.camPitch = 0.3; this.zoom = 1; this.camDist = 6; this.lookIdle = 9; this.camMode = 0;
+    this.shake = 0; this.crashCool = 0; this.wantedCool = 0;
+    this.paused = true; this.mapOpen = false;
+    this.fpsAcc = 0; this.fpsN = 0; this.pixelRatio = Math.min(devicePixelRatio || 1, QUALITY.pixelRatio);
+    this.jobs = new Jobs(this);
+    this._load();
+    this.player.yaw = this.camYaw;
+    this._spawnStarterCar();
+    this.hud.money(this.money);
+    if (DEBUG) window.__game = this;
+  }
+
+  // ----------------------------------------------------------- ukládání ----
+  _load() {
+    let s = null;
+    try { s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); } catch { s = null; }
+    let x = START.x, z = START.z;
+    if (s && s.v === 1) {
+      this.money = s.money ?? 500; this.hour = s.hour ?? 9; this.stats = s.stats || {};
+      if (Number.isFinite(s.x) && this.world.inBounds(s.x, s.z, 60)) { x = s.x; z = s.z; }
+      const found = new Set(s.found || []);
+      for (const lm of this.jobs.landmarks) lm.found = found.has(lm.name);
+      this.hasSave = true;
+    }
+    const p = this._clearSpot(x, z, 0.6);
+    this.player.place(p.x, p.z, 0);
+  }
+
+  save() {
+    try {
+      const f = this.focus;
+      localStorage.setItem(SAVE_KEY, JSON.stringify({
+        v: 1, money: this.money, hour: this.hour, stats: this.stats, x: Math.round(f.x), z: Math.round(f.z),
+        found: this.jobs.landmarks.filter((l) => l.found).map((l) => l.name),
+      }));
+    } catch { /* úložiště nemusí být dostupné */ }
+  }
+
+  static clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch { /* nic */ } }
+
+  /** Najde poblíž volné místo (mimo budovy a vodu). */
+  _clearSpot(x, z, r) {
+    const w = this.world;
+    for (let ring = 0; ring < 14; ring++) {
+      for (let a = 0; a < (ring ? 8 : 1); a++) {
+        const px = x + Math.cos(a * 0.785) * ring * 4, pz = z + Math.sin(a * 0.785) * ring * 4;
+        if (w.buildingAt(px, pz) < 0 && !w.collideCircle(px, pz, r + 0.4, 0.2, 1.7) && !w.isWater(px, pz)) return { x: px, z: pz };
+      }
+    }
+    const rd = w.nearestRoad(x, z, 300, DRIVABLE_MAX, 0, _road);
+    return rd ? { x: rd.x, z: rd.z } : { x, z };
+  }
+
+  /** Místo pro vrtulník: mimo vozovku a s volným okolím (na střeše heliportu zůstane, kde je). */
+  _heliSpot(x, z) {
+    const w = this.world;
+    if (w.buildingAt(x, z) >= 0) return { x, z };
+    for (let ring = 0; ring < 10; ring++) {
+      for (let a = 0; a < (ring ? 8 : 1); a++) {
+        const px = x + Math.cos(a * 0.785) * ring * 6, pz = z + Math.sin(a * 0.785) * ring * 6;
+        const r = w.nearestRoad(px, pz, 14, DRIVABLE_MAX, 0, _road);
+        if (r && r.dist < w.r.w[r.road] / 2 + 5) continue;
+        if (w.buildingAt(px, pz) < 0 && !w.collideCircle(px, pz, 6, 0.2, 3) && !w.isWater(px, pz)) return { x: px, z: pz };
+      }
+    }
+    return { x, z };
+  }
+
+  _spawnStarterCar() {
+    const w = this.world, p = this.player;
+    const r = w.nearestRoad(p.x, p.z, 120, RC.LIVING, RC.TERTIARY, {});
+    if (!r) return;
+    const hw = w.r.w[r.road] / 2;
+    const x = r.x - r.dz * (hw + 0.8), z = r.z + r.dx * (hw + 0.8);
+    if (w.collideCircle(x, z, 2.2, 0.3, 1.5)) return;
+    const car = this.vehicles.add(new Car('hatch', 0xc8922e));
+    car.mode = 'parked';
+    car.place(x, z, Math.atan2(r.dx, r.dz));
+    this.player.lastCar = car;
+  }
+
+  // -------------------------------------------------------------- akce ----
+  addMoney(n) { this.money = Math.max(0, this.money + n); this.hud.money(this.money); }
+
+  addWanted(n, reason) {
+    if (this.wantedCool > 0) return;
+    this.wantedCool = 2.5;
+    const before = this.wanted;
+    this.wanted = Math.min(5, this.wanted + n);
+    this.cool = 0;
+    if (this.wanted > before) this.hud.toast(`${reason} – jde po tobě policie!`, 'bad');
+  }
+
+  _enterCar(car) {
+    const p = this.player;
+    if (car.mode === 'ai' || car.mode === 'police') {
+      const lx = Math.cos(car.yaw), lz = -Math.sin(car.yaw);
+      this.peds.spawnAt(car.x + lx * (car.type.wid / 2 + 0.7), car.z + lz * (car.type.wid / 2 + 0.7), car.yaw + Math.PI / 2);
+      this.hud.toast(car.typeId === 'police' ? 'Ukrást policejní auto? Odvážné.' : '„Hej! To je moje auto!“');
+      if (car.typeId === 'police') this.addWanted(2, 'Krádež policejního vozu');
+      else if (Math.random() < 0.6) this.addWanted(1, 'Krádež auta');
+      car.vx = Math.sin(car.yaw) * car.speed; car.vz = Math.cos(car.yaw) * car.speed;
+    }
+    car.mode = 'player'; car.wasAI = false; car.noDriver = true;
+    this.car = car; this.mode = 'car'; this.focus = car;
+    p.mesh.visible = false; p.lastCar = car;
+    this.lookIdle = 9;
+    this.audio.door();
+  }
+
+  _exitCar() {
+    const car = this.car, p = this.player, w = this.world;
+    if (Math.abs(car.speed) > 5) { this.hud.toast('Nejdřív zpomal.'); return; }
+    const lx = Math.cos(car.yaw), lz = -Math.sin(car.yaw);
+    const off = car.type.wid / 2 + 0.75;
+    let x = car.x + lx * off, z = car.z + lz * off;
+    if (w.collideCircle(x, z, 0.4, 0.2, 1.7)) {
+      x = car.x - lx * off; z = car.z - lz * off;
+      if (w.collideCircle(x, z, 0.4, 0.2, 1.7)) { x = w.hit.x; z = w.hit.z; }
+    }
+    car.mode = 'loose'; car.rest = 0; car.noDriver = true; car.wasAI = false;
+    this.car = null; this.mode = 'foot'; this.focus = p;
+    p.place(x, z, 0); p.yaw = car.yaw; p.mesh.visible = true;
+    this.audio.door();
+    this.audio.engine(false, 0, 0);
+    this.save();
+  }
+
+  _enterHeli(h) {
+    h.occupied = true; this.heli = h; this.mode = 'heli'; this.focus = h;
+    this.player.mesh.visible = false;
+    this.lookIdle = 9;
+    this.audio.door();
+    this.hud.toast(IS_TOUCH ? 'Vrtulník: páčka = let, ▲ nahoru, ▼ dolů.' : 'Vrtulník: mezerník = nahoru, Shift = dolů, W/S = vpřed/vzad, A/D = otáčení.', '', 6000);
+  }
+
+  _exitHeli() {
+    const h = this.heli, p = this.player;
+    if (!h.landed || h.speed > 2) { this.hud.toast('Vystoupit jde až po přistání.'); return; }
+    h.occupied = false;
+    const lx = Math.cos(h.yaw), lz = -Math.sin(h.yaw);
+    this.heli = null; this.mode = 'foot'; this.focus = p;
+    p.place(h.x + lx * 2.2, h.z + lz * 2.2, h.y); p.mesh.visible = true;
+    this.audio.door();
+  }
+
+  _board(v) {
+    this.ride = v; this.mode = 'transit'; this.focus = v;
+    this.player.mesh.visible = false;
+    this.audio.door();
+    this.lookIdle = 9;
+  }
+
+  _alight() {
+    const v = this.ride, p = this.player;
+    if (v.v > 0.8) { this.hud.toast('Vystoupit jde až v zastávce.'); return; }
+    const o = this.transit.exitPoint(v, {});
+    const c = this._clearSpot(o.x, o.z, 0.4);
+    this.ride = null; this.mode = 'foot'; this.focus = p;
+    p.place(c.x, c.z, 0); p.mesh.visible = true;
+    this.audio.door();
+  }
+
+  _nearestHeli() {
+    const p = this.player;
+    for (const h of this.helis) {
+      if (Math.hypot(h.x - p.x, h.z - p.z) < 5 && Math.abs(h.y - p.y) < 2.5) return h;
+    }
+    return null;
+  }
+
+  doAction() {
+    if (this.mode === 'car') return this._exitCar();
+    if (this.mode === 'heli') return this._exitHeli();
+    if (this.mode === 'transit') return this._alight();
+    const p = this.player;
+    const h = this._nearestHeli();
+    if (h) return this._enterHeli(h);
+    if (p.y < 1) {
+      const car = this.vehicles.nearestEnterable(p.x, p.z);
+      if (car) return this._enterCar(car);
+      const v = this.transit.boardable(p.x, p.z);
+      if (v) return this._board(v);
+    }
+    return null;
+  }
+
+  /** Klávesa R: vrátí hráče (i s autem) na nejbližší silnici. */
+  unstuck() {
+    const f = this.focus, w = this.world;
+    if (this.mode === 'transit' || this.mode === 'heli') return;
+    const r = w.nearestRoad(f.x, f.z, 400, RC.LIVING, 0, _road);
+    if (!r) return;
+    if (this.mode === 'car') { this.car.place(r.x, r.z, Math.atan2(r.dx, r.dz)); this.car.health = Math.max(this.car.health, 40); }
+    else this.player.place(r.x, r.z, 0);
+    this.hud.toast('Zpět na silnici.');
+  }
+
+  // -------------------------------------------------- události ze světa ----
+  onCrash(car, impact, other) {
+    const mine = !!this.car && (car === this.car || other === this.car);
+    const f = this.focus;
+    if ((car.x - f.x) ** 2 + (car.z - f.z) ** 2 < 70 * 70 && this.crashCool <= 0) {
+      this.audio.crash(impact * (mine ? 1 : 0.5));
+      this.crashCool = 0.18;
+    }
+    if (!mine) return;
+    this.shake = Math.min(1, this.shake + impact / 25);
+    if (impact > 13) this._hurt((impact - 13) * 2.2);
+    const o = car === this.car ? other : car;
+    if (o && o.typeId === 'police') this.addWanted(1, 'Náraz do policejního vozu');
+    else if (o && o.wasAI && impact > 6) {
+      this.vehicles.crashPoints++;
+      if (this.vehicles.crashPoints >= 3) { this.vehicles.crashPoints = 0; this.addWanted(1, 'Nebezpečná jízda'); }
+    }
+    if (this.car && this.car.health <= 0 && !this.car.deadToast) {
+      this.car.deadToast = true;
+      this.hud.toast('Auto je na odpis. Najdi si jiné.', 'bad');
+    }
+  }
+
+  onPedHit(ped, car, speed) {
+    this.audio.crash(5);
+    if (car === this.car) this.addWanted(1, 'Srazil jsi chodce');
+  }
+
+  _hurt(n) {
+    const p = this.player;
+    p.health = Math.max(0, p.health - n);
+    if (p.health <= 0) this._hospital();
+  }
+
+  _serviceNear(kind) {
+    const f = this.focus;
+    let best = null, bd = 1e18;
+    for (const s of this.world.meta.services) {
+      if (s[2] !== kind) continue;
+      const d = (s[0] - f.x) ** 2 + (s[1] - f.z) ** 2;
+      if (d < bd) { bd = d; best = s; }
+    }
+    return best;
+  }
+
+  _toFoot(x, z) {
+    if (this.car) { this.car.mode = 'loose'; this.car.noDriver = true; this.car.wasAI = false; this.car = null; }
+    if (this.heli) { this.heli.occupied = false; this.heli = null; }
+    this.ride = null;
+    this.mode = 'foot'; this.focus = this.player;
+    const c = this._clearSpot(x, z, 0.5);
+    this.player.place(c.x, c.z, 0);
+    this.player.mesh.visible = true;
+    this.audio.engine(false, 0, 0);
+  }
+
+  _hospital() {
+    const s = this._serviceNear('hospital');
+    const fee = Math.min(this.money, 300);
+    this.addMoney(-fee);
+    this._toFoot(s ? s[0] : START.x, s ? s[1] : START.z);
+    this.player.health = 100;
+    this.wanted = 0;
+    this.hud.toast(`Probral ses v nemocnici${s && s[3] ? ` (${s[3]})` : ''}. Ošetření: ${fee} Kč.`, 'bad', 5000);
+    this.save();
+  }
+
+  _busted() {
+    const s = this._serviceNear('police');
+    const fine = Math.min(this.money, Math.max(200, Math.round(this.money * 0.1 / 10) * 10));
+    this.addMoney(-fine);
+    this._toFoot(s ? s[0] : START.x, s ? s[1] : START.z);
+    this.wanted = 0; this.bust = 0; this.cool = 0;
+    this.stats.busted = (this.stats.busted || 0) + 1;
+    this.hud.toast(`Zatčen! Pokuta ${fine} Kč.`, 'bad', 5000);
+    this.audio.fail();
+    this.save();
+  }
+
+  _updateWanted(dt) {
+    const f = this.focus;
+    let near = 1e9;
+    for (const c of this.vehicles.cars) if (c.mode === 'police') near = Math.min(near, Math.hypot(c.x - f.x, c.z - f.z));
+    if (this.wanted > 0) {
+      if (near > 125) this.cool += dt; else this.cool = 0;
+      if (this.cool > 11 + 3 * this.wanted) {
+        this.wanted--; this.cool = 0;
+        if (this.wanted === 0) { this.hud.toast('Policie tě ztratila.'); this.vehicles.crashPoints = 0; }
+      }
+      const speed = Math.hypot(f.vx || 0, f.vz || 0);
+      if (near < 7.5 && speed < 2.2 && (this.mode === 'foot' || this.mode === 'car')) this.bust += dt;
+      else this.bust = Math.max(0, this.bust - dt * 2);
+      if (this.bust > 2.2) this._busted();
+    } else this.bust = 0;
+    this.audio.setSiren(this.wanted > 0 && near < 170 ? 1 - near / 170 : 0);
+  }
+
+  // ------------------------------------------------------------- kamera ----
+  _updateCamera(dt) {
+    const f = this.focus, w = this.world;
+    this.camYaw -= input.lookDX * 0.0052;
+    this.camPitch = clamp(this.camPitch + input.lookDY * 0.004, 0.04, 1.35);
+    if (input.zoom) this.zoom = clamp(this.zoom * (input.zoom > 0 ? 1.12 : 0.89), 0.55, 3.2);
+    if (input.lookDX || input.lookDY) this.lookIdle = 0; else this.lookIdle += dt;
+
+    let height = 1.5, base = 5.2, follow = null;
+    if (this.mode === 'car') {
+      height = 1.25; base = 7.2 + Math.min(4.5, Math.abs(this.car.speed) * 0.075);
+      if (Math.abs(this.car.speed) > 1.5) follow = this.car.speed < -1.5 && this.car.reverseTime > 0.8 ? this.car.yaw + Math.PI : this.car.yaw;
+    } else if (this.mode === 'heli') { height = 2; base = 15; if (this.heli.speed > 3 || !this.heli.landed) follow = this.heli.yaw; }
+    else if (this.mode === 'transit') { height = 2.6; base = this.ride.isTram ? 20 : 15; follow = this.ride.yaw; }
+    else if (Math.hypot(this.player.vx, this.player.vz) > 1.2 && this.lookIdle > 1.6) follow = this.player.yaw;
+    if (this.camMode === 1) base *= 1.9;
+    if (follow !== null && this.lookIdle > (this.mode === 'foot' ? 1.6 : 0.9)) {
+      const rate = this.mode === 'foot' ? 0.9 : 2.6;
+      this.camYaw += wrapAngle(follow - this.camYaw) * Math.min(1, dt * rate);
+    }
+    this.camYaw = wrapAngle(this.camYaw);
+
+    const fx = Math.sin(this.camYaw), fz = Math.cos(this.camYaw);
+    const cp = Math.cos(this.camPitch), sp = Math.sin(this.camPitch);
+    const ty = (f.y || 0) + height;
+    let dist = base * this.zoom;
+    const cx = f.x - fx * dist * cp, cz = f.z - fz * dist * cp, cy = ty + dist * sp;
+    const t = w.raycast(f.x, f.z, cx, cz, (ty + cy) / 2 - 0.3);
+    if (t < 1) dist = Math.max(1.3, dist * t - 0.5);
+    this.camDist += (dist - this.camDist) * Math.min(1, dt * (dist < this.camDist ? 18 : 3.5));
+    dist = this.camDist;
+    const cam = this.camera;
+    cam.position.set(f.x - fx * dist * cp, Math.max(0.35, ty + dist * sp), f.z - fz * dist * cp);
+    if (this.shake > 0.01) {
+      cam.position.x += (Math.random() - 0.5) * this.shake * 0.5;
+      cam.position.y += (Math.random() - 0.5) * this.shake * 0.5;
+      this.shake *= Math.exp(-6 * dt);
+    }
+    _v.set(f.x + fx * 1.5, ty + 0.2, f.z + fz * 1.5);
+    cam.lookAt(_v);
+    const speed = Math.hypot(f.vx || 0, f.vz || 0);
+    const fov = 60 + Math.min(14, speed * 0.3);
+    if (Math.abs(cam.fov - fov) > 0.1) { cam.fov += (fov - cam.fov) * Math.min(1, dt * 3); cam.updateProjectionMatrix(); }
+    this.camInfo = this.camInfo || {};
+    this.camInfo.x = cam.position.x; this.camInfo.z = cam.position.z; this.camInfo.fx = fx; this.camInfo.fz = fz;
+  }
+
+  // -------------------------------------------------------------- krok ----
+  update(dt) {
+    pollInput();
+    this.time += dt;
+    this.crashCool -= dt; this.wantedCool -= dt;
+    const p = this.player;
+
+    if (input.pressed.has('map')) this.toggleMap();
+    if (this.mapOpen) { endFrame(); return; }
+    if (input.pressed.has('action')) this.doAction();
+    if (input.pressed.has('job')) this.jobs.toggle();
+    if (input.pressed.has('camera')) this.camMode = (this.camMode + 1) % 2;
+    if (input.pressed.has('reset')) this.unstuck();
+    if (input.pressed.has('horn') && this.mode === 'car') this.audio.horn();
+    if (input.pressed.has('time')) { this.hour = (this.hour + 3) % 24; this.envTimer = 0; }
+
+    // denní doba: celý den trvá 32 minut
+    this.hour = (this.hour + dt / 80) % 24;
+    this.envTimer -= dt;
+    if (this.envTimer <= 0) { this.envTimer = 0.5; this.env.setHour(this.hour); this.hud.clock(this.hour); }
+    env.time.value = this.time;
+
+    // pohyb podle režimu
+    if (this.mode === 'foot') {
+      const fx = Math.sin(this.camYaw), fz = Math.cos(this.camYaw);
+      const dx = fx * input.moveY - fz * input.moveX, dz = fz * input.moveY + fx * input.moveX;
+      const fall = p.update(dt, dx, dz, input.run, input.handbrake);
+      if (fall > 0) { this._hurt(fall); this.audio.crash(8); }
+      if (p.health < 100) p.health = Math.min(100, p.health + dt * 0.8);
+      this.audio.engine(false, 0, 0); this.audio.setSkid(0); this.audio.setRotor(0);
+    } else if (this.mode === 'car') {
+      const car = this.car;
+      car.reverseTime = car.speed < -1 ? (car.reverseTime || 0) + dt : 0;
+      this.vehicles.stepDynamic(car, dt, input.moveY, input.moveX, input.handbrake);
+      const rpm = clamp(Math.abs(car.speed) / car.type.maxSpeed, 0, 1);
+      this.audio.engine(true, (rpm * 3.2) % 1 * 0.55 + rpm * 0.45, Math.abs(input.moveY));
+      this.audio.setSkid(car.skid || 0); this.audio.setRotor(0);
+      this.waterTimer -= dt;
+      if (this.waterTimer <= 0) {
+        this.waterTimer = 0.3;
+        if (this.world.isWater(car.x, car.z) && !this.world.onRoad(car.x, car.z, 2.5)) {
+          this.audio.splash();
+          this.hud.toast('Auto skončilo ve vodě.', 'bad');
+          const x = car.x, z = car.z;
+          this.car = null; this.vehicles.remove(car);
+          this.mode = 'foot'; this.focus = p; p.place(x, z, 0); p.mesh.visible = true;
+        }
+      }
+    } else if (this.mode === 'heli') {
+      const lift = (input.handbrake ? 1 : 0) - (input.down ? 1 : 0) + (IS_TOUCH && input.touchDrive ? input.moveY : 0);
+      const impact = this.heli.update(dt, IS_TOUCH && input.touchDrive ? 0 : input.moveY, input.moveX, clamp(lift, -1, 1));
+      if (impact > 0) { this._hurt(impact * 3); this.audio.crash(impact); }
+      this.audio.engine(false, 0, 0); this.audio.setSkid(0);
+    }
+    let rotor = 0;
+    for (const h of this.helis) {
+      if (h !== this.heli) h.update(dt, 0, 0, 0);
+      const d = Math.hypot(h.x - this.focus.x, h.z - this.focus.z);
+      rotor = Math.max(rotor, (h.rotor / 30) * Math.max(0, 1 - d / 120));
+    }
+    this.audio.setRotor(rotor);
+
+    // svět
+    const onFoot = this.mode === 'foot';
+    this.transit.update(dt, this.focus, this.vehicles.cars, onFoot);
+    const obs = this.vehicles.obstacles;
+    obs.length = 0;
+    for (const o of this.transit.obstacles) obs.push(o);
+    if (onFoot) obs.push(p);
+    // stojící vrtulníky jsou pro auta pevná překážka
+    const heavy = this.transit.heavy;
+    for (const h of this.helis) {
+      if (h.y > 1.5) continue;
+      obs.push(h);
+      const hx = Math.sin(h.yaw), hz = Math.cos(h.yaw);
+      heavy.push({ x: h.x + hx * 0.6, z: h.z + hz * 0.6, r: 1.5, vx: h.vx, vz: h.vz }, { x: h.x - hx * 2.6, z: h.z - hz * 2.6, r: 0.8, vx: h.vx, vz: h.vz });
+    }
+    this.vehicles.update(dt, this.focus, this.camInfo, heavy);
+    this.peds.update(dt, this.focus, this.camInfo, this.vehicles.cars);
+    // hráče pěšky může srazit auto
+    if (onFoot && p.stun <= 0) {
+      for (const c of this.vehicles.cars) {
+        const dx = p.x - c.x, dz = p.z - c.z;
+        if (dx * dx + dz * dz > 16) continue;
+        const cfx = Math.sin(c.yaw), cfz = Math.cos(c.yaw);
+        const along = dx * cfx + dz * cfz, across = dx * cfz - dz * cfx;
+        if (Math.abs(along) < c.halfLen + 0.3 && Math.abs(across) < c.radius + 0.25 && p.y < 1.4) {
+          const sgn = across >= 0 ? 1 : -1;
+          p.x += cfz * sgn * (c.radius + 0.3 - Math.abs(across)); p.z -= cfx * sgn * (c.radius + 0.3 - Math.abs(across));
+          const sp = Math.hypot(c.vx, c.vz);
+          if (sp > 4) { this._hurt(sp * 2.4); p.stun = 0.7; p.vx = c.vx * 0.5; p.vz = c.vz * 0.5; this.audio.crash(sp); this.shake = 0.6; }
+        }
+      }
+    }
+    this.jobs.update(dt);
+    this._updateWanted(dt);
+    this._updateCamera(dt);
+    this.env.update(this.camera);
+    const fast = Math.hypot(this.focus.vx || 0, this.focus.vz || 0) > 18;
+    this.chunks.update(this.focus.x, this.focus.z, QUALITY.view, fast ? 2 : 1);
+    this._updateHud(dt);
+
+    this.saveTimer -= dt;
+    if (this.saveTimer <= 0) { this.saveTimer = 20; this.save(); }
+    endFrame();
+  }
+
+  _updateHud(dt) {
+    const hud = this.hud, f = this.focus, w = this.world;
+    hud.wanted(this.wanted);
+    hud.health(this.player.health);
+    if (this.mode === 'car') hud.speed(this.car.speed * 3.6, `${this.car.type.name}${this.car.health < 40 ? ' · poškozené' : ''}`);
+    else if (this.mode === 'heli') hud.speed(this.heli.speed * 3.6, `Vrtulník · výška ${Math.round(this.heli.y)} m`);
+    else if (this.mode === 'transit') hud.speed(this.ride.v * 3.6, `${this.ride.isTram ? 'Tramvaj' : 'Trolejbus'} ${this.ride.route.ref} → ${this.ride.route.to}`);
+    else hud.speed(null);
+
+    this.placeTimer -= dt;
+    if (this.placeTimer <= 0) {
+      this.placeTimer = 0.4;
+      const r = w.nearestRoad(f.x, f.z, 45, RC.PEDESTRIAN, 0, _road);
+      const name = r ? w.roadNames[w.r.name[r.road]] : '';
+      hud.place(name || '', w.districtAt(f.x, f.z));
+    }
+    this.promptTimer -= dt;
+    if (this.promptTimer <= 0) {
+      this.promptTimer = 0.15;
+      const key = IS_TOUCH ? 'F' : 'F';
+      let html = '';
+      if (this.mode === 'foot') {
+        const p = this.player;
+        const h = this._nearestHeli();
+        const car = !h && p.y < 1 ? this.vehicles.nearestEnterable(p.x, p.z) : null;
+        const v = !h && !car && p.y < 1 ? this.transit.boardable(p.x, p.z) : null;
+        if (h) html = `<kbd>${key}</kbd>Nasednout do vrtulníku`;
+        else if (car) html = `<kbd>${key}</kbd>${car.mode === 'parked' || car.mode === 'loose' ? 'Nastoupit' : 'Sebrat auto'} · ${car.type.name}`;
+        else if (v) html = `<kbd>${key}</kbd>Nastoupit · ${v.isTram ? 'tramvaj' : 'trolejbus'} ${v.route.ref} → ${v.route.to}`;
+        else if (p.swimming) html = 'Plaveš…';
+      } else if (this.mode === 'transit') {
+        const st = this.ride.route.nextStop(this.ride.s - 1);
+        html = this.ride.v < 0.8 ? `<kbd>${key}</kbd>Vystoupit${this.ride.stopTarget ? ` · ${this.ride.stopTarget[1]}` : ''}` : (st ? `Příští zastávka: ${st[1]}` : 'Konečná');
+      } else if (this.mode === 'heli' && this.heli.landed && this.heli.speed < 2) html = `<kbd>${key}</kbd>Vystoupit`;
+      hud.prompt(html);
+    }
+    // minimapa
+    const markers = this.jobs.markers();
+    for (const c of this.vehicles.cars) if (c.mode === 'police') markers.push({ x: c.x, z: c.z, color: Math.floor(this.time * 4) % 2 ? '#3d8bfd' : '#e2483d', size: 4.5, local: true });
+    for (const h of this.helis) if (h !== this.heli) markers.push({ x: h.x, z: h.z, color: '#7fd0ff', size: 4, local: true });
+    for (const lm of this.jobs.landmarks) if (!lm.found) markers.push({ x: lm.x, z: lm.z, color: '#aab3ba', size: 3.5, local: true });
+    hud.minimap(f.x, f.z, this.camYaw, f.yaw || 0, markers, this.jobs.route);
+  }
+
+  toggleMap(force) {
+    const el = document.getElementById('bigmap');
+    this.mapOpen = force !== undefined ? force : !this.mapOpen;
+    el.classList.toggle('hidden', !this.mapOpen);
+    if (this.mapOpen) this.drawBigMap();
+  }
+
+  drawBigMap() {
+    const f = this.focus;
+    const found = this.jobs.landmarks.filter((l) => l.found).length;
+    this.mapToWorld = this.hud.bigMap(document.getElementById('bigmap-canvas'), {
+      px: f.x, pz: f.z, heading: f.yaw || 0, landmarks: this.jobs.landmarks, helis: this.helis,
+      markers: this.jobs.markers(), route: this.jobs.route,
+    });
+    document.getElementById('bigmap-legend').innerHTML =
+      `Památky: <b>${found}/${this.jobs.landmarks.length}</b> · žlutě objevené, šedě neobjevené · modře vrtulníky · klepnutím do mapy nastavíš cíl navigace`;
+  }
+
+  render() {
+    this.renderer.render(this.scene, this.camera);
+  }
+
+  /** Přizpůsobí rozlišení výkonu zařízení. */
+  adapt(dt) {
+    this.fpsAcc += dt; this.fpsN++;
+    if (this.fpsAcc < 2) return;
+    const fps = this.fpsN / this.fpsAcc;
+    this.fps = fps;
+    this.fpsAcc = 0; this.fpsN = 0;
+    const max = Math.min(devicePixelRatio || 1, QUALITY.pixelRatio);
+    let pr = this.pixelRatio;
+    if (fps < 30 && pr > 0.7) pr = Math.max(0.7, pr * 0.85);
+    else if (fps > 56 && pr < max) pr = Math.min(max, pr * 1.1);
+    if (pr !== this.pixelRatio) { this.pixelRatio = pr; this.renderer.setPixelRatio(pr); }
+  }
+
+  resize() {
+    this.camera.aspect = innerWidth / innerHeight;
+    this.camera.updateProjectionMatrix();
+    this.renderer.setSize(innerWidth, innerHeight);
+  }
+}

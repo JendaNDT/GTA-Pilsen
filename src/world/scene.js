@@ -97,10 +97,14 @@ function buildLand(world, mats) {
       const tz = Math.min(T - 1, Math.max(0, Math.floor(((sz / cnt) - world.minZ) / spanZ * T)));
       const buf = get(group, tz * T + tx);
       const tris = Earcut.triangulate(flat, holes, 2);
-      for (let t = 0; t < tris.length; t++) {
-        const q = tris[t] * 2;
-        buf.p.push(flat[q], 0, flat[q + 1]);
-        buf.c.push(col[0], col[1], col[2]);
+      for (let t = 0; t < tris.length; t += 3) {
+        const a = tris[t] * 2;
+        let b = tris[t + 1] * 2, c = tris[t + 2] * 2;
+        // trojúhelník musí být přivrácený nahoru
+        const ny = (flat[b + 1] - flat[a + 1]) * (flat[c] - flat[a]) - (flat[b] - flat[a]) * (flat[c + 1] - flat[a + 1]);
+        if (ny < 0) { const q = b; b = c; c = q; }
+        buf.p.push(flat[a], -0.03, flat[a + 1], flat[b], -0.03, flat[b + 1], flat[c], -0.03, flat[c + 1]);
+        buf.c.push(col[0], col[1], col[2], col[0], col[1], col[2], col[0], col[1], col[2]);
       }
     }
   }
@@ -119,8 +123,8 @@ function buildLand(world, mats) {
       dx /= l; dz /= l;
       const nx = -dz * hw, nz = dx * hw;
       const ex = dx * hw * 0.5, ez = dz * hw * 0.5;
-      wbuf.p.push(x1 - nx - ex, 0, z1 - nz - ez, x1 + nx - ex, 0, z1 + nz - ez, x2 + nx + ex, 0, z2 + nz + ez,
-        x1 - nx - ex, 0, z1 - nz - ez, x2 + nx + ex, 0, z2 + nz + ez, x2 - nx + ex, 0, z2 - nz + ez);
+      wbuf.p.push(x1 - nx - ex, -0.03, z1 - nz - ez, x2 + nx + ex, -0.03, z2 + nz + ez, x1 + nx - ex, -0.03, z1 + nz - ez,
+        x1 - nx - ex, -0.03, z1 - nz - ez, x2 - nx + ex, -0.03, z2 - nz + ez, x2 + nx + ex, -0.03, z2 + nz + ez);
       for (let q = 0; q < 6; q++) wbuf.c.push(wcol[0], wcol[1], wcol[2]);
     }
   }
@@ -189,12 +193,45 @@ export class Environment {
     const half = 14000;
     const gg = new THREE.PlaneGeometry(half * 2, half * 2);
     gg.rotateX(-Math.PI / 2);
+    gg.translate(0, -1, 0);      // pod úrovní terénu – uvnitř mapy ji překrývá podklad města
     this.groundMat = new THREE.MeshBasicMaterial({ color: GROUND_HEX, depthWrite: false });
     const ground = new THREE.Mesh(gg, this.groundMat);
     ground.renderOrder = 5;
     ground.frustumCulled = false;
     scene.add(ground);
     this.groundBase = new THREE.Color(GROUND_HEX);
+
+    // podklad města: kde je hustá zástavba, je zem „dlážděná“, jinde zelená
+    const S = 1024;
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = S;
+    const g2 = cv.getContext('2d');
+    g2.fillStyle = '#9aa873';
+    g2.fillRect(0, 0, S, S);
+    g2.fillStyle = '#a9a69c';
+    const kx = S / (world.maxX - world.minX), kz = S / (world.maxZ - world.minZ);
+    for (let i = 0; i < world.bCount; i++) {
+      const w = world.bMaxX[i] - world.bMinX[i], d = world.bMaxZ[i] - world.bMinZ[i];
+      const area = w * d;
+      if (area < 40) continue;
+      g2.globalAlpha = Math.min(0.5, 0.1 + area / 3000);
+      g2.beginPath();
+      g2.arc(((world.bMinX[i] + world.bMaxX[i]) / 2 - world.minX) * kx, ((world.bMinZ[i] + world.bMaxZ[i]) / 2 - world.minZ) * kz,
+        (26 + Math.sqrt(area) * 0.6) * kx, 0, Math.PI * 2);
+      g2.fill();
+    }
+    const tex = new THREE.CanvasTexture(cv);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 4;
+    // jemné dělení kvůli přesnosti hloubky (obří trojúhelníky by „prosvítaly“ přes boty a kola)
+    const cg = new THREE.PlaneGeometry(world.maxX - world.minX, world.maxZ - world.minZ, 48, 48);
+    cg.rotateX(-Math.PI / 2);
+    cg.translate((world.minX + world.maxX) / 2, -0.05, (world.minZ + world.maxZ) / 2);
+    this.cityMat = new THREE.MeshBasicMaterial({ map: tex, depthWrite: false });
+    const city = new THREE.Mesh(cg, this.cityMat);
+    city.renderOrder = 5.5;
+    city.frustumCulled = false;
+    scene.add(city);
 
     scene.add(buildLand(world, { decal: decalMat, water: waterMat }));
     this.hour = 10;
@@ -233,6 +270,7 @@ export class Environment {
     this.decalMat.color.copy(this.tint);
     this.waterMat.color.copy(this.tint);
     this.groundMat.color.copy(this.groundBase).multiply(this.tint);
+    this.cityMat.color.copy(this.tint);
     this.day = day;
   }
 
