@@ -1,0 +1,122 @@
+:root {
+  --ink: #101820;
+  --amber: #f2b632;
+  --paper: #f5f1e6;
+  --red: #e2483d;
+  --blue: #3d8bfd;
+  --panel: rgba(16, 24, 32, 0.78);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--ink); color: var(--paper);
+  overscroll-behavior: none; touch-action: none; user-select: none; -webkit-user-select: none; }
+canvas#game { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+.hidden { display: none !important; }
+button { font: inherit; color: inherit; cursor: pointer; }
+
+/* ---------- HUD ---------- */
+#hud { position: fixed; inset: 0; pointer-events: none; }
+#hud > * { position: absolute; }
+#topleft { left: max(14px, env(safe-area-inset-left)); top: max(12px, env(safe-area-inset-top)); display: flex;
+  flex-direction: column; gap: 6px; align-items: flex-start; }
+#money { background: var(--panel); padding: 6px 12px; border-radius: 10px; font-weight: 800; font-size: 20px;
+  letter-spacing: .3px; color: var(--amber); font-variant-numeric: tabular-nums; }
+#wanted { display: flex; gap: 4px; height: 18px; }
+#wanted i { width: 16px; height: 16px; border-radius: 4px; background: rgba(255,255,255,.18); display: block; }
+#wanted i.on { background: var(--blue); box-shadow: 0 0 8px var(--blue); animation: beacon .5s steps(2) infinite; }
+#wanted i.on:nth-child(even) { animation-delay: .25s; }
+@keyframes beacon { 50% { background: var(--red); box-shadow: 0 0 8px var(--red); } }
+#health { width: 120px; height: 7px; border-radius: 4px; background: rgba(0,0,0,.45); overflow: hidden; }
+#health i { display: block; height: 100%; width: 100%; background: #5fd38d; transition: width .2s; }
+
+#mapwrap { right: max(14px, env(safe-area-inset-right)); top: max(12px, env(safe-area-inset-top)); width: 176px; }
+#minimap { width: 176px; height: 176px; border-radius: 50%; border: 3px solid rgba(16,24,32,.85);
+  box-shadow: 0 4px 18px rgba(0,0,0,.4); background: #26323c; display: block; pointer-events: auto; }
+#clock { text-align: center; margin-top: 4px; font-size: 13px; font-weight: 700; opacity: .9;
+  text-shadow: 0 1px 3px #000; font-variant-numeric: tabular-nums; }
+
+#place { left: 50%; top: max(12px, env(safe-area-inset-top)); transform: translateX(-50%); text-align: center;
+  text-shadow: 0 1px 4px rgba(0,0,0,.9); pointer-events: none; }
+#place b { display: block; font-size: 18px; }
+#place span { font-size: 13px; opacity: .85; }
+
+#mission { left: max(14px, env(safe-area-inset-left)); top: 108px; max-width: min(320px, 70vw); background: var(--panel);
+  padding: 10px 12px; border-radius: 12px; border-left: 4px solid var(--amber); font-size: 14px; line-height: 1.35; }
+#mission b { color: var(--amber); }
+#mission .timer { font-variant-numeric: tabular-nums; font-weight: 800; font-size: 18px; }
+
+#toast { left: 50%; top: 22%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px;
+  align-items: center; width: min(92vw, 560px); }
+#toast div { background: var(--panel); padding: 10px 16px; border-radius: 12px; font-size: 16px; text-align: center;
+  animation: pop .25s ease-out; }
+#toast div.big { font-size: 22px; font-weight: 800; color: var(--amber); }
+#toast div.bad { color: #ff8d84; }
+@keyframes pop { from { transform: scale(.8); opacity: 0; } }
+
+#prompt { left: 50%; bottom: 20%; transform: translateX(-50%); background: var(--panel); padding: 8px 14px;
+  border-radius: 10px; font-size: 15px; white-space: nowrap; }
+#prompt kbd { background: var(--amber); color: var(--ink); border-radius: 5px; padding: 1px 7px; font-weight: 800;
+  font-family: inherit; margin-right: 6px; }
+
+#speedo { right: max(18px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom));
+  text-align: right; text-shadow: 0 2px 6px rgba(0,0,0,.8); }
+#speedo b { font-size: 44px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
+#speedo span { font-size: 14px; margin-left: 4px; opacity: .8; }
+#speedo em { display: block; font-style: normal; font-size: 13px; opacity: .85; }
+
+#btn-menu { left: max(14px, env(safe-area-inset-left)); bottom: max(14px, env(safe-area-inset-bottom));
+  pointer-events: auto; width: 40px; height: 40px; border-radius: 10px; border: 0; background: var(--panel); font-size: 18px; }
+
+/* ---------- dotykové ovládání ---------- */
+#touch { inset: 0; pointer-events: none; }
+#touch > * { position: absolute; pointer-events: auto; }
+#stick { left: max(22px, env(safe-area-inset-left)); bottom: max(70px, env(safe-area-inset-bottom)); width: 124px;
+  height: 124px; border-radius: 50%; background: rgba(255,255,255,.10); border: 2px solid rgba(255,255,255,.25); }
+#stick i { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px; border-radius: 50%;
+  background: rgba(255,255,255,.45); }
+.tb { width: 62px; height: 62px; border-radius: 50%; border: 2px solid rgba(255,255,255,.3);
+  background: rgba(16,24,32,.55); font-size: 22px; font-weight: 800; }
+.tb.on { background: var(--amber); color: var(--ink); }
+#tb-gas { right: 24px; bottom: 150px; width: 76px; height: 76px; }
+#tb-brake { right: 110px; bottom: 90px; }
+#tb-hand { right: 24px; bottom: 70px; }
+#tb-act { right: 110px; bottom: 170px; background: rgba(242,182,50,.75); color: var(--ink); }
+#tb-job { right: 200px; top: 14px; width: 46px; height: 46px; font-size: 18px; }
+#tb-map { right: 254px; top: 14px; width: 46px; height: 46px; font-size: 18px; }
+body.touch #speedo { right: 50%; transform: translateX(50%); bottom: 10px; text-align: center; }
+body.touch #btn-menu { bottom: auto; top: 150px; }
+body.touch #prompt { bottom: 46%; }
+
+/* ---------- velká mapa ---------- */
+#bigmap { position: fixed; inset: 0; background: rgba(10,14,18,.92); display: flex; align-items: center;
+  justify-content: center; flex-direction: column; gap: 10px; z-index: 5; touch-action: none; }
+#bigmap-canvas { max-width: 96vw; max-height: 82vh; border-radius: 12px; background: #1b242c; touch-action: none; }
+#bigmap-legend { font-size: 13px; opacity: .85; text-align: center; padding: 0 12px; }
+#bigmap-close { border: 0; background: var(--amber); color: var(--ink); font-weight: 800; padding: 10px 22px;
+  border-radius: 10px; }
+
+/* ---------- menu ---------- */
+#menu { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column;
+  background: radial-gradient(120% 90% at 50% 10%, rgba(34,52,68,.72), rgba(10,14,18,.94)); z-index: 10; padding: 16px; }
+#menu-card { width: min(520px, 100%); max-height: 88vh; overflow: auto; text-align: center; padding: 26px 22px;
+  border-radius: 20px; background: rgba(16,24,32,.82); border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 20px 60px rgba(0,0,0,.5); touch-action: pan-y; }
+#menu h1 { margin: 0; font-size: clamp(38px, 9vw, 60px); letter-spacing: -1.5px; line-height: 1; font-weight: 900; }
+#menu h1 span { color: var(--amber); font-style: italic; }
+#menu .sub { margin: 8px 0 22px; opacity: .8; font-size: 16px; }
+#bar { height: 8px; background: rgba(255,255,255,.12); border-radius: 4px; overflow: hidden; }
+#bar i { display: block; height: 100%; width: 0; background: var(--amber); transition: width .2s; }
+#loadtext { margin-top: 10px; font-size: 14px; opacity: .8; }
+#menu-buttons { display: grid; gap: 10px; }
+#menu-buttons button { border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.06); padding: 13px;
+  border-radius: 12px; font-size: 17px; font-weight: 700; }
+#menu-buttons button.primary { background: var(--amber); color: var(--ink); border-color: var(--amber); font-size: 21px; }
+#menu-buttons button.ghost { font-size: 14px; font-weight: 500; opacity: .7; border-style: dashed; }
+.panel { text-align: left; font-size: 14.5px; line-height: 1.5; margin-top: 16px; padding-top: 14px;
+  border-top: 1px solid rgba(255,255,255,.12); user-select: text; -webkit-user-select: text; }
+.panel h3 { margin: 12px 0 4px; color: var(--amber); font-size: 15px; }
+.panel table { width: 100%; border-collapse: collapse; }
+.panel td { padding: 3px 0; vertical-align: top; }
+.panel td:first-child { white-space: nowrap; padding-right: 14px; font-weight: 700; }
+.panel a { color: var(--amber); }
+#credits { margin-top: 14px; font-size: 12px; opacity: .65; text-align: center; }

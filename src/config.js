@@ -1,0 +1,42 @@
+// Společné konstanty a nastavení podle zařízení.
+
+export const IS_TOUCH = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+export const IS_MOBILE = IS_TOUCH && Math.min(screen.width, screen.height) < 900;
+
+const params = new URLSearchParams(location.search);
+export const DEBUG = params.has('debug');
+export const PARAMS = params;
+
+export const CHUNK = 256;            // velikost dlaždice světa v metrech
+export const COLL_CELL = 64;         // buňka kolizní mřížky
+
+export const QUALITY = IS_MOBILE
+  ? { view: 620, pixelRatio: 1.5, traffic: 12, peds: 8, parked: 26, treesPerForestChunk: 110, shadows: false }
+  : { view: 1250, pixelRatio: 2, traffic: 34, peds: 22, parked: 60, treesPerForestChunk: 320, shadows: false };
+
+if (params.has('view')) QUALITY.view = +params.get('view');
+
+// třídy silnic (stejné číslování jako v tools/build_data.py)
+export const RC = {
+  MOTORWAY: 0, MOTORWAY_LINK: 1, TRUNK: 2, TRUNK_LINK: 3, PRIMARY: 4, PRIMARY_LINK: 5,
+  SECONDARY: 6, SECONDARY_LINK: 7, TERTIARY: 8, TERTIARY_LINK: 9, UNCLASSIFIED: 10,
+  RESIDENTIAL: 11, LIVING: 12, SERVICE: 13, PEDESTRIAN: 14, TRACK: 15, FOOTWAY: 16,
+  PATH: 17, CYCLEWAY: 18, STEPS: 19,
+};
+export const DRIVABLE_MAX = 13;
+
+export const RF = { ONEWAY: 1, BRIDGE: 2, TUNNEL: 4, ROUNDABOUT: 8, LIT: 16, PRIVATE: 32, AISLE: 64 };
+
+// třídy ploch
+export const LC = {
+  FARMLAND: 1, MEADOW: 2, GRASS: 3, RESIDENTIAL: 4, COMMERCIAL: 5, INDUSTRIAL: 6, RAILWAY: 7,
+  ALLOTMENTS: 8, CEMETERY: 9, FOREST: 10, SCRUB: 11, PARK: 12, PITCH: 13, PARKING: 14,
+  PLAZA: 15, WATER: 16, SAND: 17, CONSTRUCTION: 18, GARDEN: 19, PLAYGROUND: 20,
+};
+
+// druhy budov
+export const BK = {
+  GENERIC: 0, HOUSE: 1, APARTMENTS: 2, COMMERCIAL: 3, INDUSTRIAL: 4, CIVIC: 5, RELIGIOUS: 6,
+  GARAGE: 7, ROOF: 8, TRANSPORT: 10, FARM: 11, TOWER: 12,
+};
+export const BF = { GABLE: 1, PART: 4, HAS_PARTS: 8, NO_COLLIDE: 16 };
