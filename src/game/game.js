@@ -557,6 +557,7 @@ export class Game {
     this.mapOpen = force !== undefined ? force : !this.mapOpen;
     el.classList.toggle('hidden', !this.mapOpen);
     if (this.mapOpen) this.drawBigMap();
+    else if (el.contains(document.activeElement)) document.activeElement.blur();
   }
 
   drawBigMap() {

@@ -39,9 +39,18 @@ test('chůze, navigace, auto, vrtulník a dokončení rozvozu', async ({ page })
   await action(page, 'KeyF');
   expect(await page.evaluate(() => __game.mode)).toBe('car');
   await page.keyboard.down('w');
-  await page.evaluate(() => __step(1 / 60, 120));
+  const speed = await page.evaluate(() => {
+    const { vehicles, car } = window.__game;
+    // Pro zkoušku rozjezdu uvolni vozovku.
+    for (const other of [...vehicles.cars]) if (other !== car) vehicles.remove(other);
+    const spawnTimer = vehicles.spawnTimer;
+    vehicles.spawnTimer = 3;
+    window.__step(1 / 60, 120);
+    vehicles.spawnTimer = spawnTimer;
+    return car.speed;
+  });
   await page.keyboard.up('w');
-  expect(await page.evaluate(() => __game.car.speed)).toBeGreaterThan(5);
+  expect(speed).toBeGreaterThan(5);
   await page.evaluate(() => { __game.car.vx = __game.car.vz = __game.car.speed = 0; });
   await action(page, 'KeyF');
   expect(await page.evaluate(() => __game.mode)).toBe('foot');
@@ -149,6 +158,115 @@ test('uložení verze 1 a kontrolní trasy E01', async ({ page }) => {
     }, destination);
     expect(routed, `Trasa k bodu ${destination}`).toBe(true);
   }
+});
+
+test('Rokycany jsou vyhledatelné a průjezdné po D5 i po místních silnicích', async ({ page }, testInfo) => {
+  await boot(page);
+  await action(page, 'KeyM');
+  const query = page.getByRole('searchbox', { name: 'Najít obec nebo památku' });
+  await query.pressSequentially('rokycany');
+  await expect(page.getByRole('button', { name: 'Rokycany', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Nádraží Rokycany', exact: true }).click();
+  await expect(query).toBeHidden();
+  await page.evaluate(() => window.__step(1 / 60));
+  const stationRoute = await page.evaluate(() => window.__game.jobs.route);
+  expect(stationRoute.length).toBeGreaterThan(100);
+  expect(stationRoute.at(-2)).toBeCloseTo(15467, -1);
+
+  await action(page, 'KeyM');
+  await query.fill('masarykovo namesti');
+  await query.press('Enter');
+  await expect(query).toBeHidden();
+  await page.evaluate(() => window.__step(1 / 60));
+  expect(await page.evaluate(() => window.__game.jobs.waypoint.x)).toBeCloseTo(15609, -1);
+
+  const results = await page.evaluate(() => {
+    const g = window.__game, w = g.world, car = g.player.lastCar;
+    // Průjezd simuluje jen tento vůz, takže ostatní vozidla nesmějí zůstat stát v trase.
+    for (const other of [...g.vehicles.cars]) if (other !== car) g.vehicles.remove(other);
+    g.vehicles.obstacles.length = 0;
+    car.temper = 1;
+    const plzen = w.nearestNode(g.player.x, g.player.z, 250);
+    const square = w.nearestNode(g.jobs.waypoint.x, g.jobs.waypoint.z, 250);
+    const path = (from, to) => {
+      const edges = w.findPath(from, to, 12000);
+      if (!edges?.length) throw new Error(`Chybí silniční trasa ${from} → ${to}.`);
+      return edges;
+    };
+    const viaD5 = (from, to, checkpoint, direction) => {
+      let best = 100, chosen = -1;
+      for (let edge = 0; edge < w.edgeCount; edge++) {
+        if (w.r.cls[w.eRoad[edge]] !== 0) continue;
+        const a = w.eFrom[edge], b = w.eTo[edge];
+        if (Math.sign(w.nodeX[b] - w.nodeX[a]) !== direction) continue;
+        const distance = Math.hypot(w.nodeX[a] - checkpoint[0], w.nodeZ[a] - checkpoint[1]);
+        if (distance < best) { best = distance; chosen = edge; }
+      }
+      if (chosen < 0) throw new Error('Na kontrolním místě chybí jízdní směr D5.');
+      return [...path(from, w.eFrom[chosen]), chosen, ...path(w.eTo[chosen], to)];
+    };
+    const cases = [
+      ['Po místních do Rokycan', path(plzen, square)],
+      ['Po místních do Plzně', path(square, plzen)],
+      ['Po D5 do Rokycan', viaD5(plzen, square, [12298, 311], 1)],
+      ['Po D5 do Plzně', viaD5(square, plzen, [12291, 299], -1)],
+    ];
+    const drive = (edges) => {
+      const first = edges[0], destination = w.eTo[edges.at(-1)];
+      const position = {};
+      w.edgePoint(first, 0, 0, position);
+      car.place(position.x, position.z, Math.atan2(position.tx, position.tz));
+      Object.assign(car, { edge: first, s: 0, lane: 0, blocked: 0, dead: false });
+      let next = 1, maxOffRoad = 0, seamStep = 0;
+      const pickNext = g.vehicles._pickNext;
+      g.vehicles._pickNext = () => {
+        car.next = edges[next++] ?? -1;
+        car.nextLane = 0;
+        car.turnSlow = 3;
+      };
+      try {
+        g.vehicles._pickNext(car);
+        for (let tick = 0; tick < 60_000 && !car.dead; tick++) {
+          const x = car.x, y = car.y;
+          g.vehicles.stepAI(car, 0.05);
+          if ((x <= 7769 && car.x > 7769) || (x >= 7769 && car.x < 7769)) {
+            seamStep = Math.max(seamStep, Math.abs(car.y - y));
+          }
+          if (tick % 30 === 0) {
+            const road = w.nearestRoad(car.x, car.z, 100, 13, 0, {});
+            maxOffRoad = Math.max(maxOffRoad, road?.dist ?? 100);
+          }
+          if (tick % 160 === 0) g.chunks.update(car.x, car.z, 620, 6);
+        }
+      } finally {
+        g.vehicles._pickNext = pickNext;
+      }
+      g.chunks.update(car.x, car.z, 620, 6);
+      car.sync();
+      window.__view(car.x - 8, car.y + 4, car.z - 8, car.x, car.y + 1, car.z);
+      return {
+        metres: Math.round(edges.reduce((sum, edge) => sum + w.eLen[edge], 0)),
+        motorwayMetres: Math.round(edges.reduce((sum, edge) =>
+          sum + (w.r.cls[w.eRoad[edge]] === 0 ? w.eLen[edge] : 0), 0)),
+        distanceToEnd: Math.hypot(car.x - w.nodeX[destination], car.z - w.nodeZ[destination]),
+        completed: car.dead && next === edges.length + 1,
+        seamStep, maxOffRoad,
+      };
+    };
+    g._enterCar(car);
+    return cases.map(([name, edges]) => ({ name, ...drive(edges) }));
+  });
+
+  await testInfo.attach('kontrolní průjezdy E02', { body: JSON.stringify(results, null, 2), contentType: 'application/json' });
+  for (const result of results) {
+    expect(result.completed, result.name).toBe(true);
+    expect(result.metres, result.name).toBeGreaterThan(15_000);
+    expect(result.distanceToEnd, result.name).toBeLessThan(15);
+    expect(result.maxOffRoad, result.name).toBeLessThan(12);
+    expect(result.seamStep, result.name).toBeLessThan(0.5);
+  }
+  expect(results.slice(0, 2).map((result) => result.motorwayMetres)).toEqual([0, 0]);
+  for (const result of results.slice(2)) expect(result.motorwayMetres, result.name).toBeGreaterThan(3000);
 });
 
 test('mobilní ovládání pohybuje hráčem a otevírá mapu', async ({ browser }) => {

@@ -6,12 +6,11 @@ otevřených dat. Běží na počítači i na mobilu, bez instalace.
 
 ## Co ve hře je
 
-- **Celá Plzeň i s okolím**: území 16,6 × 19,7 km (zhruba 327 km²) – od Horní Břízy, Třemošné
-  a Zruče-Sence na severu po Útušice a hrad Radyni na jihu, od Vejprnic na západě po
-  Starý Plzenec a Dolany na východě. 73 tisíc budov (skoro tři čtvrtiny se skutečnou výškou
-  z měření ČÚZK), 33 tisíc silnic a cest, řeky, rybníky, lesy a parky.
+- **Z Plzně až do Rokycan.** Území má 27,0 × 19,7 km (zhruba 532 km²). Z Plzně dojedeš do
+  Rokycan po D5 nebo po místních silnicích. Mapa obsahuje 96 tisíc budov (přibližně tři čtvrtiny
+  s výškou z měření ČÚZK), 39 tisíc silnic a cest, řeky, rybníky, lesy a parky.
 - **Skutečný terén**: kopce a údolí řek podle výškopisu ČÚZK (Lochotín je o 60 m výš než náměstí
-  Republiky, Chlum o 100 m, Radyně o 250 m), 811 mostů s mostovkou, zábradlím a pilíři. Auta se naklánějí podle
+  Republiky, Chlum o 100 m, Radyně o 250 m), 1083 silničních a kolejových mostů s mostovkou. Auta se naklánějí podle
   svahu, do kopce zpomalují a z mostu se dá spadnout.
 - **MHD podle skutečných linek**: tramvaje 1, 2 a 4 a trolejbusy jezdí po svých trasách a staví
   v zastávkách se skutečnými názvy. Dá se nastoupit a svézt.
@@ -20,7 +19,8 @@ otevřených dat. Běží na počítači i na mobilu, bez instalace.
 - **Policie**: za krádež auta nebo nebezpečnou jízdu po tobě jde, dá se ujet nebo skončit s pokutou.
 - **Vrtulníky**: stojí na heliportech (FN Lochotín, pivovar, Bory) a na náměstí Republiky,
   přistávat jde i na střechách.
-- **50 míst k objevení** (od katedrály po Radyni, Krkavec a Air Park ve Zruči), střídání dne a noci, velká mapa s navigací, ukládání postupu.
+- **52 míst k objevení** včetně Masarykova náměstí a nádraží v Rokycanech. Velká mapa podporuje
+  hledání obcí a památek, hra střídá den a noc a ukládá postup.
 
 ## Ovládání
 
@@ -31,7 +31,7 @@ otevřených dat. Běží na počítači i na mobilu, bez instalace.
 | Mezerník | ruční brzda, skok, ve vrtulníku stoupání |
 | F nebo E | nastoupit / vystoupit |
 | J | vzít nebo zrušit zakázku |
-| M | velká mapa (kliknutím nastavíš cíl) |
+| M | velká mapa (vyhledej místo nebo kliknutím nastav cíl) |
 | C · H · R | kamera · klakson · vrátit na silnici |
 | N · Esc | posunout čas o 3 hodiny · menu |
 
@@ -90,7 +90,7 @@ testy v prohlížeči. Neúspěšný průchod prohlížečem uloží trasu a sn�
 
 ## Odkud jsou data a jak je obnovit
 
-Hotová herní data jsou v repozitáři ve složce `public/data/` (asi 14 MB, při stahování do prohlížeče zhruba 6,5 MB), takže ke spuštění
+Hotová herní data jsou v repozitáři ve složce `public/data/` (asi 19,7 MB, s kompresí gzip asi 9,1 MB), takže ke spuštění
 není potřeba nic stahovat. Skripty ve složce `tools/` je umí vyrobit znovu z aktuálních zdrojů
 (potřebují Python 3.10+ a balíčky `numpy`, `tifffile`, `osmium` a `Pillow`):
 
@@ -129,13 +129,13 @@ python3 tools/build_data.py
 | `osm_source.py` | ověření a přenos data OSM z hlavičky zdrojového PBF |
 | `coordinates.py` | obousměrný převod mezi WGS 84 a herními metry |
 
-Surová data (stovky MB) se ukládají do `data-raw/`, která se do repozitáře nenahrává.
+Surová data (asi 1,8 GB pro výřez do Rokycan) se ukládají do `data-raw/`, která se do repozitáře nenahrává.
 
 Pro sestavení do samostatné složky použij `python3 tools/build_data.py --output-dir data-raw/kandidat`.
 Výškopis se opakovaně používá spolu se soubory `dmp.npy.json` a `dmr.npy.json`, které obsahují
 rozsah, parametry exportu a kontrolní součet. `fetch_dem.py` obnoví starý nebo neplatný výškopis.
-Při změně rozsahu spusť také `extract_osm.py` znovu. Postup obnovy ze stejných vstupů a výsledky
-kontrol jsou v [protokolu etapy E01](docs/E01.md).
+Při změně rozsahu spusť také `extract_osm.py` znovu. Postup obnovy ze stejných vstupů je
+v [protokolu E01](docs/E01.md). Výřez do Rokycan a průjezdy popisuje [protokol E02](docs/E02.md).
 
 Datum OSM se čte z položky `osmosis_replication_timestamp` přímo v hlavičce staženého PBF,
 ukládá se do `extract.pkl` a odtud do `meta.json` jako `osmTimestamp` (UTC) se zdrojem

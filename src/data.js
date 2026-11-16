@@ -41,13 +41,13 @@ export function parsePack(buf) {
 
 // přibližné velikosti souborů (bajty) pro ukazatel průběhu
 const FILES = [
-  ['buildings', 'data/buildings.bin', 4_350_000],
-  ['roads', 'data/roads.bin', 1_510_000],
-  ['land', 'data/land.bin', 2_190_000],
-  ['terrain', 'data/terrain.bin', 5_280_000],
-  ['rails', 'data/rails.bin', 74_000],
-  ['trees', 'data/trees.bin', 130_000],
-  ['meta', 'data/meta.json', 441_000],
+  ['buildings', 'data/buildings.bin', 5_670_000],
+  ['roads', 'data/roads.bin', 1_830_000],
+  ['land', 'data/land.bin', 2_940_000],
+  ['terrain', 'data/terrain.bin', 8_550_000],
+  ['rails', 'data/rails.bin', 87_000],
+  ['trees', 'data/trees.bin', 152_000],
+  ['meta', 'data/meta.json', 503_000],
 ];
 
 export async function loadAll(onProgress) {

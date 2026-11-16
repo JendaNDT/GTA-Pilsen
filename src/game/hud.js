@@ -289,7 +289,7 @@ export class Hud {
     const w = this.world;
     // mapa má poměr stran herního území a vejde se na obrazovku
     const aspect = (w.playMaxX - w.playMinX) / (w.playMaxZ - w.playMinZ);
-    const cssH = Math.floor(Math.min(innerHeight * 0.8, (innerWidth * 0.96) / aspect));
+    const cssH = Math.floor(Math.min(innerHeight * 0.8, Math.max(40, innerHeight - 115), (innerWidth * 0.96) / aspect));
     const cssW = Math.floor(cssH * aspect);
     const dpr = Math.min(devicePixelRatio || 1, 2);
     const pw = Math.floor(cssW * dpr), ph = Math.floor(cssH * dpr);
@@ -311,12 +311,27 @@ export class Hud {
       g.strokeStyle = '#f2b632'; g.lineWidth = 3 * dpr; g.lineJoin = 'round'; g.stroke();
     }
     for (const m of state.markers) dot(m.x, m.z, 6, m.color);
-    // názvy čtvrtí
-    g.font = `${11 * dpr}px system-ui, sans-serif`; g.textAlign = 'center'; g.fillStyle = 'rgba(245,241,230,.75)';
-    for (const p of w.meta.places) {
-      if (p[3] !== 'suburb' && p[3] !== 'village' && p[3] !== 'town') continue;
-      if (p[0] < w.playMinX || p[0] > w.playMaxX || p[1] < w.playMinZ || p[1] > w.playMaxZ) continue;
-      g.fillText(p[2], X(p[0]), Z(p[1]));
+    // Nejdřív pojmenuj města, potom přidej čitelné názvy obcí a čtvrtí.
+    const priority = { city: 0, town: 0, village: 1, suburb: 2 };
+    const labels = w.meta.places.filter((p) => priority[p[3]] !== undefined)
+      .sort((a, b) => priority[a[3]] - priority[b[3]]);
+    const occupied = [];
+    g.textAlign = 'center'; g.lineJoin = 'round'; g.strokeStyle = '#101820'; g.lineWidth = 3 * dpr;
+    for (const [x, z, name, type] of labels) {
+      if (x < w.playMinX || x > w.playMaxX || z < w.playMinZ || z > w.playMaxZ) continue;
+      const town = priority[type] === 0;
+      const size = (town ? 13 : 11) * dpr;
+      g.font = `${town ? 'bold ' : ''}${size}px system-ui, sans-serif`;
+      const half = g.measureText(name).width / 2 + 3 * dpr;
+      const cx = Math.max(half, Math.min(pw - half, X(x)));
+      const cz = Math.max(size + 2 * dpr, Math.min(ph - 3 * dpr, Z(z) - (town ? 12 : 3) * dpr));
+      const rect = { left: cx - half, right: cx + half, top: cz - size, bottom: cz + 3 * dpr };
+      if (occupied.some((other) => rect.left < other.right && rect.right > other.left
+        && rect.top < other.bottom && rect.bottom > other.top)) continue;
+      occupied.push(rect);
+      g.fillStyle = town ? '#f5f1e6' : 'rgba(245,241,230,.88)';
+      g.strokeText(name, cx, cz);
+      g.fillText(name, cx, cz);
     }
     // hráč
     g.save();

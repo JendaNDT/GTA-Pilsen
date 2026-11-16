@@ -1264,6 +1264,12 @@ LANDMARKS = [
     ("Nákupní centrum Olympia", ["Olympia"]),
 ]
 
+# Přesné objekty v Rokycanech mají v OSM jména sdílená s jinými místy a vztažnými body.
+LANDMARK_WAYS = [
+    ("Masarykovo náměstí (Rokycany)", 48787149),
+    ("Nádraží Rokycany", 81988976),
+]
+
 
 def find_landmarks(ex):
     idx = defaultdict(list)
@@ -1291,6 +1297,13 @@ def find_landmarks(ex):
             missing.append(title)
             continue
         x, z = to_xz(hit[0], hit[1])
+        out.append([round(x, 1), round(z, 1), title])
+    for title, osm_id in LANDMARK_WAYS:
+        way = ex["ways"].get(osm_id)
+        if way is None:
+            missing.append(title)
+            continue
+        x, z = to_xz(*centroid(way[2]))
         out.append([round(x, 1), round(z, 1), title])
     if missing:
         print("   nenalezené památky:", ", ".join(missing))

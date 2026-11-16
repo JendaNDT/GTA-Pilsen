@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { loadAll } from './data.js';
 import { Game } from './game/game.js';
 import { initInput, input } from './game/input.js';
+import { initMapSearch } from './game/map-search.js';
 import { QUALITY, IS_TOUCH, IS_MOBILE, DEBUG, PARAMS } from './config.js';
 
 const $ = (id) => document.getElementById(id);
@@ -18,7 +19,7 @@ const HELP_HTML = IS_TOUCH ? `
     <tr><td>⎵</td><td>ruční brzda, pěšky skok</td></tr>
     <tr><td>F</td><td>nastoupit / vystoupit (auto, tramvaj, vrtulník)</td></tr>
     <tr><td>✉</td><td>vzít nebo zrušit zakázku na rozvoz jídla</td></tr>
-    <tr><td>🗺</td><td>velká mapa (klepnutím nastavíš cíl)</td></tr>
+    <tr><td>🗺</td><td>velká mapa (vyhledej místo nebo klepnutím nastav cíl)</td></tr>
     <tr><td>Tah prstem</td><td>otáčení kamery</td></tr>
   </table>` : `
   <h3>Ovládání</h3>
@@ -28,7 +29,7 @@ const HELP_HTML = IS_TOUCH ? `
     <tr><td>Mezerník</td><td>ruční brzda, pěšky skok, ve vrtulníku stoupání</td></tr>
     <tr><td>F nebo E</td><td>nastoupit / vystoupit (auto, tramvaj, vrtulník)</td></tr>
     <tr><td>J</td><td>vzít nebo zrušit zakázku na rozvoz jídla</td></tr>
-    <tr><td>M</td><td>velká mapa (kliknutím nastavíš cíl navigace)</td></tr>
+    <tr><td>M</td><td>velká mapa (vyhledej místo nebo kliknutím nastav cíl)</td></tr>
     <tr><td>Myš</td><td>tažením otáčíš kameru, kolečkem přibližuješ</td></tr>
     <tr><td>C · H · R</td><td>kamera · klakson · vrátit na silnici</td></tr>
     <tr><td>N · Esc</td><td>posunout čas o 3 hodiny · menu</td></tr>
@@ -36,9 +37,8 @@ const HELP_HTML = IS_TOUCH ? `
 
 const ABOUT_HTML = (meta) => `
   <h3>O hře</h3>
-  <p>Otevřený svět postavený ze skutečných dat Plzně a okolí (zhruba 327 km², od Horní Břízy a Třemošné
-  po Štěnovice a Starý Plzenec): terén s kopci a údolími řek, půdorysy a výšky zhruba 73 tisíc budov,
-  silnice a mosty, tramvajové a trolejbusové linky se zastávkami, parky, restaurace i adresy.</p>
+  <p>Otevřený svět postavený ze skutečných dat od Plzně po Rokycany. Najdeš v něm kopce a údolí řek,
+  půdorysy a výšky budov, silnice a mosty, tramvajové a trolejbusové linky, parky, restaurace i adresy.</p>
   <p>Co se dá dělat: chodit, půjčovat si auta, vozit se tramvají a trolejbusem, létat vrtulníkem,
   rozvážet jídlo ze skutečných podniků, objevovat památky a ujíždět policii.</p>
   <h3>Zdroje dat</h3>
@@ -130,11 +130,14 @@ async function boot() {
   $('btn-menu').addEventListener('click', openMenu);
   $('bigmap-close').addEventListener('click', () => game.toggleMap(false));
   $('minimap').addEventListener('click', () => { if (running) game.toggleMap(true); });
+  const setDestination = ({ x, z }) => {
+    game.jobs.setWaypoint(x, z);
+    game.toggleMap(false);
+  };
+  initMapSearch(game.world, setDestination);
   $('bigmap-canvas').addEventListener('click', (e) => {
     if (!game.mapToWorld) return;
-    const p = game.mapToWorld(e.clientX, e.clientY);
-    game.jobs.setWaypoint(p.x, p.z);
-    game.toggleMap(false);
+    setDestination(game.mapToWorld(e.clientX, e.clientY));
   });
   addEventListener('resize', () => { game.resize(); if (!running) game.render(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden && running) openMenu(); });

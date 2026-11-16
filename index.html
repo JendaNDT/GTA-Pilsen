@@ -40,9 +40,16 @@
   </div>
 
   <div id="bigmap" class="hidden">
+    <div id="bigmap-controls">
+      <form id="bigmap-search" role="search">
+        <input id="bigmap-query" type="search" aria-label="Najít obec nebo památku"
+          placeholder="Najít obec nebo památku" autocomplete="off" enterkeyhint="go">
+        <ul id="bigmap-results" aria-label="Výsledky hledání" aria-live="polite"></ul>
+      </form>
+      <button id="bigmap-close">Zavřít mapu</button>
+    </div>
     <canvas id="bigmap-canvas"></canvas>
     <div id="bigmap-legend"></div>
-    <button id="bigmap-close">Zavřít mapu</button>
   </div>
 
   <div id="menu">

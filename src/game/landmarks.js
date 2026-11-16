@@ -51,4 +51,6 @@ export const LANDMARK_INFO = {
   'Radnice v Horní Bříze': 'Město známé těžbou kaolinu a keramickými závody.',
   'Letiště Letkov': 'Sportovní letiště na východním okraji Plzně.',
   'Nákupní centrum Olympia': 'Velké nákupní centrum na jihovýchodním okraji Plzně.',
+  'Masarykovo náměstí (Rokycany)': 'Historické centrum Rokycan s klasicistní radnicí a kamennou kašnou.',
+  'Nádraží Rokycany': 'Železniční stanice na trati z Plzně do Prahy. Vedle budovy je autobusové nádraží.',
 };
