@@ -83,18 +83,16 @@ export class VehicleManager {
     }
     const hwid = car.type.wid * 0.42, lx = fz, lz = -fx;
     const yL = w.groundY(car.x + lx * hwid, car.z + lz * hwid, hint), yR = w.groundY(car.x - lx * hwid, car.z - lz * hwid, hint);
-    if (car.y > g + 0.3 || car.vy > 2.5) {
-      // ve vzduchu
-      car.air = true;
-      car.vy -= 21 * dt;
-      car.y += car.vy * dt;
-      if (car.y <= g) { impact = -car.vy; car.y = g; car.vy = 0; car.air = false; }
+    // svislá rychlost, jakou auto stoupá nebo klesá, když kopíruje povrch
+    const slopeV = (car.vx * fx + car.vz * fz) * (yf - yr) / (2 * hl);
+    // setrvačnost: kam by auto doletělo volným pádem; když je to nad povrchem, je ve vzduchu
+    const vyb = car.vy - 21 * dt, yb = car.y + vyb * dt;
+    if (yb > g + 0.03) {
+      car.y = yb; car.vy = vyb;
+      car.air = yb - g > 0.25;
     } else {
-      const prev = car.y;
-      car.y += (g - car.y) * Math.min(1, dt * 22);
-      car.vy = dt > 0 ? clamp((car.y - prev) / dt, -30, 30) : 0;     // rychlost stoupání – na hraně kopce z ní vznikne skok
-      if (car.vy < 0) car.vy = 0;
-      car.air = false;
+      if (car.air) impact = slopeV - car.vy;        // dopad: o kolik rychleji auto padalo, než klesá povrch
+      car.y = g; car.vy = slopeV; car.air = false;
     }
     const k = Math.min(1, dt * (car.air ? 2 : 12));
     car.gPitch += (Math.atan2(yr - yf, 2 * hl) - car.gPitch) * k;
@@ -399,12 +397,12 @@ export class VehicleManager {
     const diff = wrapAngle(want - car.yaw);
     let vmax = Math.min(34, car.type.maxSpeed * 0.62);
     vmax = 7 + (vmax - 7) * Math.max(0, Math.cos(diff)) ** 2;
-    if (!target.isCar) vmax = Math.min(vmax, Math.max(0, (dist - 5.5) * 1.6));     // chodce nepřejíždět, zastavit u něj
+    if (!target.isCar) vmax = Math.min(vmax, Math.sqrt(2 * 8 * Math.max(0, dist - 7)));   // chodce nepřejíždět: včas dobrzdit a zastavit u něj
     else if (dist < 14) vmax = Math.min(vmax, Math.max(4, Math.hypot(target.vx || 0, target.vz || 0) + dist * 0.6));
     let limit = this._obstacleLimit(car, vmax, target);
     if (car.blocked > 1.2) limit = Math.max(limit, 4);
     if (car.speed < limit) car.speed = Math.min(limit, car.speed + car.type.accel * 0.8 * dt);
-    else car.speed = Math.max(limit, car.speed - 14 * dt);
+    else car.speed = Math.max(limit, car.speed - 17 * dt);
     car.blocked = car.speed < 0.5 ? car.blocked + dt : 0;
     const maxTurn = 2.9 * dt * Math.min(1, car.speed / 3 + 0.15);
     car.yaw += clamp(diff, -maxTurn, maxTurn);

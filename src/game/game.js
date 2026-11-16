@@ -330,7 +330,7 @@ export class Game {
         if (this.wanted === 0) { this.hud.toast('Policie tě ztratila.'); this.vehicles.crashPoints = 0; }
       }
       const speed = Math.hypot(f.vx || 0, f.vz || 0);
-      if (near < 7.5 && speed < 2.2 && (this.mode === 'foot' || this.mode === 'car')) this.bust += dt;
+      if (near < 9 && speed < 2.2 && (this.mode === 'foot' || this.mode === 'car')) this.bust += dt;
       else this.bust = Math.max(0, this.bust - dt * 2);
       if (this.bust > 2.2) this._busted();
     } else this.bust = 0;

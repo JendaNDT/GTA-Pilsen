@@ -8,6 +8,9 @@ otevřených dat. Běží na počítači i na mobilu, bez instalace.
 
 - **Celá Plzeň**: zhruba 120 km², 48 tisíc budov (tři čtvrtiny se skutečnou výškou z měření ČÚZK),
   26 tisíc silnic a cest, řeky, rybníky, lesy a parky.
+- **Skutečný terén**: kopce a údolí řek podle výškopisu ČÚZK (Lochotín je o 60 m výš než náměstí
+  Republiky, Chlum o 100 m), 575 mostů s mostovkou, zábradlím a pilíři. Auta se naklánějí podle
+  svahu, do kopce zpomalují a z mostu se dá spadnout.
 - **MHD podle skutečných linek**: tramvaje 1, 2 a 4 a trolejbusy jezdí po svých trasách a staví
   v zastávkách se skutečnými názvy. Dá se nastoupit a svézt.
 - **Auta**: zaparkovaná i v provozu, osm typů, jízdní fyzika se smykem a poškozením.
@@ -56,7 +59,7 @@ Výsledek je ve složce `dist/` – obyčejné statické soubory, které jde nah
 
 ## Odkud jsou data a jak je obnovit
 
-Hotová herní data jsou v repozitáři ve složce `public/data/` (asi 6 MB), takže ke spuštění
+Hotová herní data jsou v repozitáři ve složce `public/data/` (asi 8 MB), takže ke spuštění
 není potřeba nic stahovat. Skripty ve složce `tools/` je umí vyrobit znovu z aktuálních zdrojů
 (potřebují Python 3 a balíčky `numpy`, `tifffile` a `osmium`):
 
@@ -86,17 +89,20 @@ python3 tools/build_data.py
 | `fetch_dem.py` | stáhne výškopis ČÚZK (povrch DMP 1G a terén DMR 5G) pro oblast Plzně |
 | `extract_osm.py` | vybere z výřezu jen oblast hry |
 | `build_data.py` | spočítá výšky budov a vyrobí kompaktní soubory pro hru |
+| `terrain.py` | pomocný modul: výšková síť terénu, zarovnání pod silnicemi, hladiny, výšky mostů |
 
 Surová data (stovky MB) se ukládají do `data-raw/`, která se do repozitáře nenahrává.
 
 ## Zdroje a licence dat
 
 - Mapová data © [přispěvatelé OpenStreetMap](https://www.openstreetmap.org/copyright), licence ODbL.
-- Výšky budov jsou spočítané jako rozdíl digitálního modelu povrchu DMP 1G a digitálního modelu
-  reliéfu DMR 5G © [ČÚZK](https://www.cuzk.cz).
+- Terén vychází z digitálního modelu reliéfu DMR 5G a výšky budov z rozdílu digitálního modelu
+  povrchu DMP 1G a DMR 5G © [ČÚZK](https://www.cuzk.cz). Terén je pro hru zjednodušený na síť
+  po 8 metrech a pod silnicemi zarovnaný.
 
-Skutečné jsou půdorysy a výšky budov, průběh ulic, linky a zastávky MHD, názvy ulic, podniků
-a adresy. Vymyšlené jsou barvy a okna domů, provoz, chodci a terén (hra je zatím plochá).
+Skutečné jsou půdorysy a výšky budov, tvar terénu, průběh ulic, linky a zastávky MHD, názvy ulic,
+podniků a adresy. Vymyšlené jsou barvy a okna domů, provoz a chodci. Výšky mostovek jsou dopočítané
+(mezi konci mostu vedou rovně), tunely hra zatím neumí – silnice v nich vedou po povrchu.
 
 Hra je nezávislý fanouškovský projekt, není oficiálním produktem města Plzně ani dopravního podniku.
 Inspirací byl projekt [HrejBrno.cz](https://www.hrejbrno.cz/).
@@ -104,6 +110,6 @@ Inspirací byl projekt [HrejBrno.cz](https://www.hrejbrno.cz/).
 ## Jak je hra postavená
 
 - [Three.js](https://threejs.org) pro 3D grafiku, [Vite](https://vitejs.dev) pro sestavení.
-- `src/world/` – svět: načtení dat, kolize, silniční síť, stavba 3D geometrie po dlaždicích.
+- `src/world/` – svět: načtení dat, terén a mosty, kolize, silniční síť, stavba 3D geometrie po dlaždicích.
 - `src/entities/` – auta, chodci, tramvaje, vrtulník a jejich modely.
 - `src/game/` – pravidla hry, kamera, ovládání, mapa, zakázky, zvuky.

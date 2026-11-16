@@ -36,14 +36,15 @@ const HELP_HTML = IS_TOUCH ? `
 
 const ABOUT_HTML = `
   <h3>O hře</h3>
-  <p>Otevřený svět postavený ze skutečných dat Plzně: půdorysy a výšky zhruba 48 tisíc budov, silnice,
-  tramvajové a trolejbusové linky se zastávkami, řeky, parky, restaurace i adresy.</p>
+  <p>Otevřený svět postavený ze skutečných dat Plzně: terén s kopci a údolími řek, půdorysy a výšky
+  zhruba 48 tisíc budov, silnice a mosty, tramvajové a trolejbusové linky se zastávkami, parky,
+  restaurace i adresy.</p>
   <p>Co se dá dělat: chodit, půjčovat si auta, vozit se tramvají a trolejbusem, létat vrtulníkem,
   rozvážet jídlo ze skutečných podniků, objevovat památky a ujíždět policii.</p>
   <h3>Zdroje dat</h3>
   <p>Mapová data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">přispěvatelé OpenStreetMap</a>
-  (licence ODbL). Výšky budov jsou vypočteny z digitálního modelu povrchu DMP 1G a modelu reliéfu DMR 5G
-  © <a href="https://www.cuzk.gov.cz" target="_blank" rel="noopener">ČÚZK</a>.</p>
+  (licence ODbL). Terén vychází z digitálního modelu reliéfu DMR 5G, výšky budov z rozdílu modelu povrchu
+  DMP 1G a DMR 5G © <a href="https://www.cuzk.gov.cz" target="_blank" rel="noopener">ČÚZK</a>.</p>
   <p>Vzhled budov (barvy, okna) a provoz jsou vymyšlené, názvy ulic, podniků a zastávek jsou skutečné.
   Hra je nezávislý fanouškovský projekt a není oficiálním produktem města ani dopravního podniku.</p>
   <p>Inspirováno projektem HrejBrno.cz.</p>`;

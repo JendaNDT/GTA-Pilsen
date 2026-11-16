@@ -4,3 +4,4 @@ data-raw/
 .vercel/
 *.log
 .DS_Store
+__pycache__/
