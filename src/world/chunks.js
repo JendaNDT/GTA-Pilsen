@@ -71,6 +71,8 @@ function styleFor(world, i) {
   }
   const col = B.colour[i];
   if (col) { _c.setHex(col & 0xffffff); wall = [_c.r, _c.g, _c.b]; }
+  const rcol = B.roofColour ? B.roofColour[i] : 0;
+  if (rcol) { _c.setHex(rcol & 0xffffff); roof = [_c.r, _c.g, _c.b]; }
   // jemná odchylka jasu, ať nejsou sousední domy stejné
   const k = 0.9 + r3 * 0.18;
   return { wall: [wall[0] * k, wall[1] * k, wall[2] * k], roof, style, bay, floorH };

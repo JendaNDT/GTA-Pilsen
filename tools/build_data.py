@@ -532,11 +532,14 @@ def build_buildings(ex, dem):
         if kind == 8:
             flags |= 16     # přístřešek: bez kolizí
         colour = tags.get("building:colour") or ""
+        if not colour and is_part and "parent" in it:
+            colour = it["parent"]["tags"].get("building:colour") or ""
+        roof_colour = tags.get("roof:colour") or ROOF_MATERIAL.get(tags.get("roof:material", ""), "")
         name = tags.get("name")
         out.append({
             "ring": it["ring"], "holes": it["holes"], "kind": kind, "flags": flags,
             "h_top": h_top, "h_wall": h_wall, "h_min": min(min_h, h_top - 1.0) if min_h else 0.0,
-            "levels": int(levels or 0), "name": name, "colour": colour, "area": area,
+            "levels": int(levels or 0), "name": name, "colour": colour, "roof_colour": roof_colour, "area": area,
             "tags": tags,
         })
     print(f"  budovy: {len(out)} ({dict(stats)}), {time.time() - t0:.0f} s")
@@ -554,6 +557,7 @@ def pack_buildings(blds):
     flags = np.zeros(n, np.uint8)
     levels = np.zeros(n, np.uint8)
     colour = np.zeros(n, np.uint32)
+    roof_colour = np.zeros(n, np.uint32)
     b_ring = np.zeros(n + 1, np.uint32)
     ring_start = [0]
     vdx = []
@@ -570,6 +574,7 @@ def pack_buildings(blds):
         flags[i] = b["flags"]
         levels[i] = min(b["levels"], 255)
         colour[i] = parse_colour(b["colour"])
+        roof_colour[i] = parse_colour(b["roof_colour"])
         b_ring[i] = len(ring_start) - 1
         for rg in [b["ring"]] + b["holes"]:
             for (x, z) in rg:
@@ -581,18 +586,22 @@ def pack_buildings(blds):
     b_ring[n] = len(ring_start) - 1
     write_pack(os.path.join(OUT, "buildings.bin"), {"count": n, "names": names}, {
         "ax": ax, "az": az, "hTop": h_top, "hWall": h_wall, "hMin": h_min,
-        "kind": kind, "flags": flags, "levels": levels, "colour": colour,
+        "kind": kind, "flags": flags, "levels": levels, "colour": colour, "roofColour": roof_colour,
         "bRing": b_ring, "ringStart": np.array(ring_start, np.uint32),
         "vdx": np.array(vdx, np.int16), "vdz": np.array(vdz, np.int16),
     })
 
 
+# barva střechy podle materiálu (měď časem zezelená)
+ROOF_MATERIAL = {"copper": "#5f8f7b", "slate": "#4a4d52", "roof_tiles": "#9c4a36", "tile": "#9c4a36",
+                 "metal": "#8d949b", "tar_paper": "#3f4246", "concrete": "#8a8a86", "glass": "#7fa3b8"}
+
 CSS_COLOURS = {
     "white": 0xf2f2f2, "black": 0x222222, "grey": 0x8c8c8c, "gray": 0x8c8c8c, "red": 0xb23a2e,
     "brown": 0x7a5234, "yellow": 0xe6c84a, "green": 0x4f8a4b, "blue": 0x3d6fb0, "orange": 0xd9822b,
     "beige": 0xe0d2b0, "pink": 0xe8a7b5, "cream": 0xf1e6c4, "tan": 0xc9ac80, "silver": 0xc0c0c0,
-    "maroon": 0x7a2a2a, "lightgrey": 0xcfcfcf, "lightgray": 0xcfcfcf, "darkgrey": 0x555555,
-    "darkgray": 0x555555, "ivory": 0xf4f0dc, "lightyellow": 0xf3ecb8, "lightblue": 0xa9c8e6,
+    "maroon": 0x7a2a2a, "lightgrey": 0xcfcfcf, "lightgray": 0xcfcfcf, "darkgrey": 0x77726a,
+    "darkgray": 0x77726a, "ivory": 0xf4f0dc, "lightyellow": 0xf3ecb8, "lightblue": 0xa9c8e6,
 }
 
 
