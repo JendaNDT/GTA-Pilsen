@@ -6,10 +6,12 @@ otevřených dat. Běží na počítači i na mobilu, bez instalace.
 
 ## Co ve hře je
 
-- **Celá Plzeň**: zhruba 120 km², 48 tisíc budov (tři čtvrtiny se skutečnou výškou z měření ČÚZK),
-  26 tisíc silnic a cest, řeky, rybníky, lesy a parky.
+- **Celá Plzeň i s okolím**: území 16,6 × 19,7 km (zhruba 327 km²) – od Horní Břízy, Třemošné
+  a Zruče-Sence na severu po Útušice a hrad Radyni na jihu, od Vejprnic na západě po
+  Starý Plzenec a Dolany na východě. 73 tisíc budov (skoro tři čtvrtiny se skutečnou výškou
+  z měření ČÚZK), 33 tisíc silnic a cest, řeky, rybníky, lesy a parky.
 - **Skutečný terén**: kopce a údolí řek podle výškopisu ČÚZK (Lochotín je o 60 m výš než náměstí
-  Republiky, Chlum o 100 m), 575 mostů s mostovkou, zábradlím a pilíři. Auta se naklánějí podle
+  Republiky, Chlum o 100 m, Radyně o 250 m), 811 mostů s mostovkou, zábradlím a pilíři. Auta se naklánějí podle
   svahu, do kopce zpomalují a z mostu se dá spadnout.
 - **MHD podle skutečných linek**: tramvaje 1, 2 a 4 a trolejbusy jezdí po svých trasách a staví
   v zastávkách se skutečnými názvy. Dá se nastoupit a svézt.
@@ -18,7 +20,7 @@ otevřených dat. Běží na počítači i na mobilu, bez instalace.
 - **Policie**: za krádež auta nebo nebezpečnou jízdu po tobě jde, dá se ujet nebo skončit s pokutou.
 - **Vrtulníky**: stojí na heliportech (FN Lochotín, pivovar, Bory) a na náměstí Republiky,
   přistávat jde i na střechách.
-- **33 památek k objevení**, střídání dne a noci, velká mapa s navigací, ukládání postupu.
+- **50 míst k objevení** (od katedrály po Radyni, Krkavec a Air Park ve Zruči), střídání dne a noci, velká mapa s navigací, ukládání postupu.
 
 ## Ovládání
 
@@ -59,7 +61,7 @@ Výsledek je ve složce `dist/` – obyčejné statické soubory, které jde nah
 
 ## Odkud jsou data a jak je obnovit
 
-Hotová herní data jsou v repozitáři ve složce `public/data/` (asi 8 MB), takže ke spuštění
+Hotová herní data jsou v repozitáři ve složce `public/data/` (asi 14 MB, při stahování do prohlížeče zhruba 6,5 MB), takže ke spuštění
 není potřeba nic stahovat. Skripty ve složce `tools/` je umí vyrobit znovu z aktuálních zdrojů
 (potřebují Python 3 a balíčky `numpy`, `tifffile` a `osmium`):
 
@@ -85,6 +87,7 @@ python3 tools/build_data.py
 
 | Skript | Co dělá |
 | --- | --- |
+| `area.py` | jediné místo, kde je zadaný rozsah herního území (stačí změnit a spustit ostatní skripty) |
 | `fetch_osm.py` | stáhne výřez OpenStreetMap pro Plzeňský kraj |
 | `fetch_dem.py` | stáhne výškopis ČÚZK (povrch DMP 1G a terén DMR 5G) pro oblast Plzně |
 | `extract_osm.py` | vybere z výřezu jen oblast hry |

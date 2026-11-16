@@ -35,7 +35,7 @@ LAT0, LON0 = 49.7475, 13.3776
 KY = 111224.0   # metrů na stupeň zeměpisné šířky (pro 49,75° s. š.)
 KX = 72066.0    # metrů na stupeň zeměpisné délky
 
-DEM_BBOX = (49.700, 13.300, 49.800, 13.450)  # jih, západ, sever, východ
+from area import BBOX as DEM_BBOX  # jih, západ, sever, východ (stejné území jako výškopis)
 
 
 def to_xz(lat, lon):
@@ -1192,7 +1192,7 @@ def build_pois(ex, dem, road_names):
 
     places = []
     for la, lo, t in nodes.values():
-        if t.get("place") in ("suburb", "quarter", "neighbourhood", "village", "hamlet", "city") and t.get("name"):
+        if t.get("place") in ("suburb", "quarter", "neighbourhood", "village", "hamlet", "city", "town") and t.get("name"):
             x, z = to_xz(la, lo)
             places.append([round(x), round(z), t["name"], t["place"]])
 
@@ -1251,6 +1251,24 @@ LANDMARKS = [
     ("Wilsonův most", ["Wilsonův most"]),
     ("Košutecké jezírko", ["Košutecké jezírko"]),
     ("Šídlovský rybník", ["Šídlovský rybník", "Šídlovák"]),
+    # okolí Plzně
+    ("Hrad Radyně", ["Hrad Radyně", "Radyně (zříc.)"]),
+    ("Rotunda sv. Petra a Pavla", ["Hůrka (rotunda)"]),
+    ("Radnice ve Starém Plzenci", ["Městská radnice Starý Plzenec"]),
+    ("Zřícenina hradu Litice", ["zřícenina hradu Litice", "Hrad Litice"]),
+    ("Přehrada České údolí", ["Přehrada České údolí"]),
+    ("Zámek Křimice", ["zámek Křimice"]),
+    ("Zámek Malesice", ["Zámek Malesice"]),
+    ("Zřícenina Kyjov", ["Zřícenina Kyjov", "Kyjov zřícenina"]),
+    ("Rozhledna Krkavec", ["Krkavec (rozhledna)"]),
+    ("Kamenný rybník", ["Kamenný rybník"]),
+    ("Kolomazná pec", ["Kolomazná pec"]),
+    ("Air Park Zruč", ["Air Park Zruč"]),
+    ("Zřícenina Věžka", ["Věžka"]),
+    ("Radnice v Třemošné", ["Městský úřad Třemošná"]),
+    ("Radnice v Horní Bříze", ["Městský úřad Horní Bříza"]),
+    ("Letiště Letkov", ["Letiště Letkov"]),
+    ("Nákupní centrum Olympia", ["Olympia"]),
 ]
 
 

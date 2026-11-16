@@ -1,0 +1,16 @@
+"""Herní území – jediné místo, kde se nastavuje jeho rozsah.
+
+Výškopis ČÚZK se stahuje v pravidelné síti s krokem DEM_STEP stupňů (server vrací čtvercové
+pixely ve stupních), proto je rozsah území zadán jako počátek + celý počet pixelů.
+"""
+
+DEM_STEP = 1.8e-5            # ~2,0 m ve směru sever–jih, ~1,3 m ve směru západ–východ
+DEM_COLS, DEM_ROWS = 12800, 9840
+DEM_TILES = (4, 6)           # dlaždice stahování (sloupce, řady); větší kusy server odmítá chybou 500
+
+SOUTH, WEST = 49.668, 13.255
+NORTH = SOUTH + DEM_ROWS * DEM_STEP      # 49,8451
+EAST = WEST + DEM_COLS * DEM_STEP        # 13,4854
+
+# jih, západ, sever, východ
+BBOX = (SOUTH, WEST, NORTH, EAST)

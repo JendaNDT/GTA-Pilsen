@@ -78,7 +78,7 @@ export class Environment {
     const half = 16000;
     const gg = new THREE.PlaneGeometry(half * 2, half * 2);
     gg.rotateX(-Math.PI / 2);
-    gg.translate(0, -34, 0);
+    gg.translate(0, -80, 0);
     this.groundMat = new THREE.MeshLambertMaterial({ color: GROUND_HEX });
     const ground = new THREE.Mesh(gg, this.groundMat);
     ground.frustumCulled = false;

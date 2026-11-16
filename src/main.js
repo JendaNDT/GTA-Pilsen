@@ -36,9 +36,9 @@ const HELP_HTML = IS_TOUCH ? `
 
 const ABOUT_HTML = `
   <h3>O hře</h3>
-  <p>Otevřený svět postavený ze skutečných dat Plzně: terén s kopci a údolími řek, půdorysy a výšky
-  zhruba 48 tisíc budov, silnice a mosty, tramvajové a trolejbusové linky se zastávkami, parky,
-  restaurace i adresy.</p>
+  <p>Otevřený svět postavený ze skutečných dat Plzně a okolí (zhruba 327 km², od Horní Břízy a Třemošné
+  po Štěnovice a Starý Plzenec): terén s kopci a údolími řek, půdorysy a výšky zhruba 73 tisíc budov,
+  silnice a mosty, tramvajové a trolejbusové linky se zastávkami, parky, restaurace i adresy.</p>
   <p>Co se dá dělat: chodit, půjčovat si auta, vozit se tramvají a trolejbusem, létat vrtulníkem,
   rozvážet jídlo ze skutečných podniků, objevovat památky a ujíždět policii.</p>
   <h3>Zdroje dat</h3>

@@ -10,8 +10,8 @@ import time
 
 import osmium
 
-# jih, západ, sever, východ – herní oblast
-BBOX = (49.700, 13.300, 49.800, 13.450)
+from area import BBOX      # jih, západ, sever, východ – herní oblast
+
 MARGIN = 0.004  # ~400 m přesah, aby se cesty na okraji neusekly
 
 RAW = os.path.join(os.path.dirname(__file__), "..", "data-raw")

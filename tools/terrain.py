@@ -12,7 +12,7 @@ import numpy as np
 
 G = 8.0          # rozteč sítě v metrech
 CHUNK = 256      # velikost herní dlaždice (síť je na ni zarovnaná)
-Q = 0.05         # krok uložené výšky v metrech
+Q = 0.1          # krok uložené výšky v metrech (jemnější krok jen zvětšuje soubor)
 
 
 def box_mean(a, ry, rx):

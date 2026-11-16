@@ -2,8 +2,8 @@
 import { CHUNK, COLL_CELL, DRIVABLE_MAX, RF, RC, LC, BF } from '../config.js';
 
 export const SURF = 0.05;    // o kolik nad terénem leží povrch, po kterém se jezdí (kvůli vrstvě asfaltu)
-const KEY_OFF = 80000;       // posun, aby byly kvantované souřadnice kladné
-const KEY_MUL = 262144;
+const KEY_OFF = 250000;      // posun, aby byly kvantované souřadnice (decimetry) kladné – stačí na ±25 km
+const KEY_MUL = 524288;
 
 export class World {
   constructor(data) {
@@ -717,8 +717,8 @@ export class World {
     }
     this.water = water;
 
-    // hrubá maska povrchů: bit 1 = les, 2 = měkký povrch (tráva, pole), 4 = voda
-    const S = 1024;
+    // hrubá maska povrchů: bit 1 = les, 2 = měkký povrch (tráva, pole), 4 = voda (~10 m na bod)
+    const S = 2048;
     const cv = document.createElement('canvas');
     cv.width = cv.height = S;
     const g = cv.getContext('2d', { willReadFrequently: true });

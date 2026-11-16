@@ -14,13 +14,12 @@ import urllib.request
 import numpy as np
 import tifffile
 
-# musí odpovídat BBOX ve fetch_osm.py (jih, západ, sever, východ)
-BBOX = (49.700, 13.300, 49.800, 13.450)
-# Server vrací čtvercové pixely ve stupních a výřez si jinak sám upraví,
-# proto musí poměr stran obrázku přesně odpovídat poměru stran výřezu ve
-# stupních (0,15° : 0,10° = 3 : 2). Vychází ~1,3 m na pixel v ose x a 2 m v ose z.
-W, H = 8340, 5560
-COLS, ROWS = 2, 4            # dlaždice (limit serveru 15000 x 4100 px)
+from area import BBOX, DEM_COLS, DEM_ROWS, DEM_TILES
+
+# Server vrací čtvercové pixely ve stupních a výřez si jinak sám upraví, proto musí poměr
+# stran obrázku přesně odpovídat poměru stran výřezu ve stupních (viz area.py).
+W, H = DEM_COLS, DEM_ROWS
+COLS, ROWS = DEM_TILES
 OUT_DIR = os.path.join(os.path.dirname(__file__), "..", "data-raw")
 URL = ("https://ags.cuzk.cz/arcgis2/rest/services/{svc}/ImageServer/exportImage"
        "?bbox={w},{s},{e},{n}&bboxSR=4326&imageSR=4326&size={pw},{ph}"

@@ -244,14 +244,13 @@ export class Hud {
   }
 
   // ---------------------------------------------------------- velká mapa ----
-  _bigBase(size) {
+  _bigBase(pw, ph) {
     const w = this.world;
     const cv = document.createElement('canvas');
-    cv.width = cv.height = size;
+    cv.width = pw; cv.height = ph;
     const g = cv.getContext('2d');
-    const span = Math.max(w.playMaxX - w.playMinX, w.playMaxZ - w.playMinZ);
-    const s = size / span;
-    g.fillStyle = MAP_BG; g.fillRect(0, 0, size, size);
+    const s = pw / (w.playMaxX - w.playMinX);
+    g.fillStyle = MAP_BG; g.fillRect(0, 0, pw, ph);
     g.setTransform(s, 0, 0, s, -w.playMinX * s, -w.playMinZ * s);
     for (let i = 0; i < w.lCount; i++) {
       const col = MAP_LAND[w.l.cls[i]];
@@ -288,12 +287,15 @@ export class Hud {
   /** Vykreslí velkou mapu do daného plátna; vrací funkci pro převod kliknutí na souřadnice světa. */
   bigMap(canvas, state) {
     const w = this.world;
-    const css = Math.floor(Math.min(innerWidth * 0.96, innerHeight * 0.8));
+    // mapa má poměr stran herního území a vejde se na obrazovku
+    const aspect = (w.playMaxX - w.playMinX) / (w.playMaxZ - w.playMinZ);
+    const cssH = Math.floor(Math.min(innerHeight * 0.8, (innerWidth * 0.96) / aspect));
+    const cssW = Math.floor(cssH * aspect);
     const dpr = Math.min(devicePixelRatio || 1, 2);
-    const size = Math.floor(css * dpr);
-    canvas.style.width = canvas.style.height = `${css}px`;
-    if (!this.big || this.big.cv.width !== size) this.big = this._bigBase(size);
-    canvas.width = canvas.height = size;
+    const pw = Math.floor(cssW * dpr), ph = Math.floor(cssH * dpr);
+    canvas.style.width = `${cssW}px`; canvas.style.height = `${cssH}px`;
+    if (!this.big || this.big.cv.width !== pw || this.big.cv.height !== ph) this.big = this._bigBase(pw, ph);
+    canvas.width = pw; canvas.height = ph;
     const g = canvas.getContext('2d');
     g.drawImage(this.big.cv, 0, 0);
     const s = this.big.s;
@@ -312,7 +314,7 @@ export class Hud {
     // názvy čtvrtí
     g.font = `${11 * dpr}px system-ui, sans-serif`; g.textAlign = 'center'; g.fillStyle = 'rgba(245,241,230,.75)';
     for (const p of w.meta.places) {
-      if (p[3] !== 'suburb' && p[3] !== 'village') continue;
+      if (p[3] !== 'suburb' && p[3] !== 'village' && p[3] !== 'town') continue;
       if (p[0] < w.playMinX || p[0] > w.playMaxX || p[1] < w.playMinZ || p[1] > w.playMaxZ) continue;
       g.fillText(p[2], X(p[0]), Z(p[1]));
     }
@@ -325,7 +327,7 @@ export class Hud {
     g.restore();
     return (clientX, clientY) => {
       const r = canvas.getBoundingClientRect();
-      return { x: w.playMinX + ((clientX - r.left) / r.width) * size / s, z: w.playMinZ + ((clientY - r.top) / r.height) * size / s };
+      return { x: w.playMinX + ((clientX - r.left) / r.width) * pw / s, z: w.playMinZ + ((clientY - r.top) / r.height) * ph / s };
     };
   }
 }
