@@ -1,3 +1,4 @@
+import { formatDay, formatTime, WEEKDAYS, weekday } from './clock.js';
 // Ukazatele na obrazovce, minimapa a velká mapa.
 import { CHUNK, DRIVABLE_MAX, RC, LC, BF } from '../config.js';
 
@@ -143,7 +144,9 @@ export class Hud {
     this.el = {
       hud: $('hud'), money: $('money'), wanted: $('wanted'), health: $('health').firstElementChild,
       street: $('street'), district: $('district'), mission: $('mission'), toast: $('toast'),
-      prompt: $('prompt'), speedo: $('speedo'), kmh: $('kmh'), vehname: $('vehname'), clock: $('clock'),
+      prompt: $('prompt'), speedo: $('speedo'), kmh: $('kmh'), speedlimit: $('speedlimit'), vehname: $('vehname'), clock: $('clock'),
+      clockTime: $('clock-time'), clockDay: $('clock-day'), mapDate: $('bigmap-date'),
+      stopBoard: $('stop-board'), stopName: $('stop-name'), stopDepartures: $('stop-departures'),
       minimap: $('minimap'), touch: $('touch'),
     };
     this.el.wanted.innerHTML = '<i></i><i></i><i></i><i></i><i></i>';
@@ -164,15 +167,60 @@ export class Hud {
     this._set('street', street, (x) => { this.el.street.textContent = x; });
     this._set('district', district, (x) => { this.el.district.textContent = x; });
   }
-  clock(h) {
-    const hh = Math.floor(h) % 24, mm = Math.floor((h % 1) * 60 / 10) * 10;
-    this._set('clock', hh * 100 + mm, () => { this.el.clock.textContent = `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`; });
+  clock(calendar, visible) {
+    this._set('clockVisible', visible, (value) => {
+      this.el.clock.classList.toggle('hidden', !value);
+      this.el.mapDate.classList.toggle('hidden', !value);
+    });
+    this._set('clockMinute', Math.floor(calendar.seconds / 60), () => {
+      const time = formatTime(calendar.seconds);
+      this.el.clockTime.dateTime = time;
+      this.el.clockTime.textContent = time;
+    });
+    this._set('clockDate', calendar.day, (day) => {
+      const name = WEEKDAYS[weekday(day)];
+      this.el.clockDay.textContent = name;
+      const iso = formatDay(day), [year, month, date] = iso.split('-');
+      const time = this.el.mapDate.firstElementChild;
+      time.dateTime = iso;
+      time.textContent = `${name} ${Number(date)}. ${Number(month)}. ${year}`;
+    });
+  }
+
+  departures(board) {
+    const key = board ? JSON.stringify(board) : '';
+    this._set('departures', key, () => {
+      this.el.stopBoard.classList.toggle('hidden', !board);
+      if (!board) return;
+      this.el.stopName.textContent = board.stop;
+      const nodes = board.rows.map(({ time, ref, destination }) => {
+        const row = document.createElement('li'), departure = document.createElement('time');
+        departure.dateTime = formatTime(time);
+        departure.textContent = departure.dateTime;
+        const label = document.createElement('span');
+        label.textContent = `${ref} → ${destination}`;
+        row.append(departure, label);
+        return row;
+      });
+      if (!nodes.length) {
+        const empty = document.createElement('li');
+        empty.textContent = 'Bez odjezdu v příštích 90 min';
+        nodes.push(empty);
+      }
+      this.el.stopDepartures.replaceChildren(...nodes);
+    });
   }
   speed(kmh, name) {
     this._set('speedoOn', kmh !== null, (on) => this.el.speedo.classList.toggle('hidden', !on));
     if (kmh === null) return;
     this._set('kmh', Math.round(Math.abs(kmh)), (x) => { this.el.kmh.textContent = x; });
     this._set('vehname', name, (x) => { this.el.vehname.textContent = x; });
+  }
+  speedLimit(limit) {
+    this._set('speedlimit', limit, (value) => {
+      this.el.speedlimit.textContent = value || '';
+      this.el.speedlimit.classList.toggle('hidden', !value);
+    });
   }
   prompt(html) {
     this._set('prompt', html || '', (x) => { this.el.prompt.innerHTML = x; this.el.prompt.classList.toggle('hidden', !x); });
@@ -190,7 +238,7 @@ export class Hud {
   }
 
   /** Minimapa: střed = hráč, nahoře = směr pohledu kamery. */
-  minimap(px, pz, camYaw, heading, markers, route) {
+  minimap(px, pz, camYaw, heading, markers, route, walkRoute) {
     this.frame++;
     if (this.frame % 2) return;
     this.tiles.budget = 1;
@@ -217,6 +265,8 @@ export class Hud {
       for (let i = 0; i < route.length; i += 2) g.lineTo(route[i], route[i + 1]);
       g.strokeStyle = '#f2b632'; g.lineWidth = 9; g.lineJoin = 'round'; g.lineCap = 'round'; g.globalAlpha = 0.9; g.stroke(); g.globalAlpha = 1;
     }
+    this._drawWalk(g, walkRoute, 1 / k);
+    this._drawClosures(g, 1 / k);
     g.restore();
     // značky (držené na okraji, když jsou mimo)
     const cos = Math.cos(theta), sin = Math.sin(theta);
@@ -244,6 +294,29 @@ export class Hud {
   }
 
   // ---------------------------------------------------------- velká mapa ----
+  _drawWalk(g, route, pixel) {
+    if (!route?.length) return;
+    g.save();
+    g.beginPath(); g.moveTo(route[0], route[1]);
+    for (let i = 2; i < route.length; i += 2) g.lineTo(route[i], route[i + 1]);
+    g.setLineDash([1, 4].map((n) => n * pixel));
+    g.lineWidth = 2.8 * pixel; g.lineCap = 'round'; g.strokeStyle = '#75d9ff'; g.stroke();
+    g.restore();
+  }
+
+  _drawClosures(g, pixel) {
+    g.save();
+    g.beginPath();
+    for (const [x, z, dx, dz, width] of this.world.roadClosures) {
+      const half = Math.max(width / 2 + 1, 3.4 * pixel);
+      g.moveTo(x - dz * half, z + dx * half); g.lineTo(x + dz * half, z - dx * half);
+    }
+    g.lineCap = 'round';
+    g.lineWidth = 4.4 * pixel; g.strokeStyle = '#161b20'; g.stroke();
+    g.lineWidth = 2.1 * pixel; g.strokeStyle = '#ff625b'; g.stroke();
+    g.restore();
+  }
+
   _bigBase(pw, ph) {
     const w = this.world;
     const cv = document.createElement('canvas');
@@ -281,6 +354,7 @@ export class Hud {
       for (let k = 2; k < r.pts.length; k += 2) g.lineTo(r.pts[k], r.pts[k + 1]);
       g.stroke();
     }
+    this._drawClosures(g, Math.min(devicePixelRatio || 1, 2) / s);
     return { cv, s };
   }
 
@@ -289,7 +363,7 @@ export class Hud {
     const w = this.world;
     // mapa má poměr stran herního území a vejde se na obrazovku
     const aspect = (w.playMaxX - w.playMinX) / (w.playMaxZ - w.playMinZ);
-    const cssH = Math.floor(Math.min(innerHeight * 0.8, Math.max(40, innerHeight - 115), (innerWidth * 0.96) / aspect));
+    const cssH = Math.floor(Math.min(innerHeight * 0.8, Math.max(40, innerHeight - 140), (innerWidth * 0.96) / aspect));
     const cssW = Math.floor(cssH * aspect);
     const dpr = Math.min(devicePixelRatio || 1, 2);
     const pw = Math.floor(cssW * dpr), ph = Math.floor(cssH * dpr);
@@ -310,6 +384,10 @@ export class Hud {
       for (let i = 0; i < state.route.length; i += 2) g.lineTo(X(state.route[i]), Z(state.route[i + 1]));
       g.strokeStyle = '#f2b632'; g.lineWidth = 3 * dpr; g.lineJoin = 'round'; g.stroke();
     }
+    g.save();
+    g.setTransform(s, 0, 0, s, -w.playMinX * s, -w.playMinZ * s);
+    this._drawWalk(g, state.walkRoute, dpr / s);
+    g.restore();
     for (const m of state.markers) dot(m.x, m.z, 6, m.color);
     // Nejdřív pojmenuj města, potom přidej čitelné názvy obcí a čtvrtí.
     const priority = { city: 0, town: 0, village: 1, suburb: 2 };

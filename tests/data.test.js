@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-import { parsePack } from '../src/data.js';
+import { parsePack, assetFingerprint } from '../src/data.js';
 
 const buffer = async (name) => {
   const data = await readFile(new URL(`../public/data/${name}.bin`, import.meta.url));
@@ -57,4 +57,36 @@ test('metadata obsahují datum OSM s doloženým zdrojem nebo výslovně neznám
     assert.match(meta.osmTimestamp, /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$/);
     assert.ok(Number.isFinite(Date.parse(meta.osmTimestamp)));
   }
+});
+
+test('všechny balíčky měřeného centra mají platné indexy a jednoho vlastníka náhrady OSM', async () => {
+  const root = new URL('../public/detail/city/', import.meta.url);
+  const index = JSON.parse(await readFile(new URL('index.json', root)));
+  const osm = await buffer('buildings'), terrain = await buffer('terrain');
+  assert.equal(index.osm, assetFingerprint(osm));
+  assert.equal(index.terrain, assetFingerprint(terrain));
+  assert.equal(new Set(index.districts.map(([id]) => id)).size, 10);
+  const b = parsePack(osm), replacements = new Set();
+  const blobs = await Promise.all(index.tiles.map(async ([x, z, name, , matched]) => ({
+    x, z, name, matched, bytes: await readFile(new URL(name, root)),
+  })));
+  let records = 0;
+  for (const { x, z, name, matched, bytes } of blobs) {
+    const pack = parsePack(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
+    assert.equal(pack.header.cx, x);
+    assert.equal(pack.header.cz, z);
+    records += pack.header.count;
+    for (const i of matched) {
+      assert.ok(i >= 0 && i < b.header.count && !replacements.has(i), `${name} #${i}`);
+      replacements.add(i);
+    }
+    const size = pack.p.length;
+    assert.equal(size % 3, 0);
+    for (const key of ['n', 'c', 'win']) assert.equal(pack[key].length, size);
+    for (const key of ['i', 'roof']) {
+      assert.equal(pack[key].length % 3, 0);
+      assert.ok(pack[key].every((i) => i < size / 3), `${name}.${key}`);
+    }
+  }
+  assert.equal(records, index.buildings);
 });

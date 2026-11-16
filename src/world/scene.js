@@ -1,6 +1,6 @@
 // Obloha, světla, stíny a denní doba. (Terén a povrch země kreslí chunks.js.)
 import * as THREE from 'three';
-import { QUALITY } from '../config.js';
+import { QUALITY, PARAMS } from '../config.js';
 import { env, getPoolMaterial } from './materials.js';
 
 export const GROUND_HEX = 0x9aa873;
@@ -32,7 +32,7 @@ function makeSky() {
         col += sunCol * (pow(s, 700.0) * 5.0 + pow(s, 14.0) * 0.22 + pow(s, 3.0) * 0.06);
         // hvězdy
         vec2 sp = floor(d.xz / (abs(d.y) + 0.4) * 180.0);
-        float star = step(0.9975, h21(sp)) * night * smoothstep(0.05, 0.3, d.y);
+        float star = step(0.9987, h21(sp)) * night * smoothstep(0.07, 0.35, d.y) * 0.45;
         // mraky: vrstva ve výšce, promítnutá podle směru pohledu
         vec2 cp = d.xz / (d.y + 0.16) * 1.15 + vec2(time * 0.004, time * 0.0015);
         float c = fbm(cp);
@@ -51,6 +51,7 @@ function makeSky() {
   return mesh;
 }
 
+const MOON_DIR = new THREE.Vector3(-0.4, 0.75, 0.3).normalize();
 const _right = new THREE.Vector3(), _upv = new THREE.Vector3(), _tgt = new THREE.Vector3();
 
 export class Environment {
@@ -87,6 +88,7 @@ export class Environment {
     this.hour = 10;
     this.tint = new THREE.Color();
     this.sunDir = new THREE.Vector3(0, 1, 0);
+    env.wetPaving.value = QUALITY.heritageDetail && PARAMS.get("wet") === "1" ? 1 : 0;
     this.setHour(this.hour);
   }
 
@@ -101,7 +103,7 @@ export class Environment {
     env.night.value = night;
 
     const dir = this.sunDir.set(Math.cos(ang) * 0.75, Math.max(0.16, elev * 0.95), 0.5).normalize();
-    if (elev < -0.02) dir.set(-0.4, 0.75, 0.3).normalize();        // měsíc
+    dir.lerp(MOON_DIR, 1 - THREE.MathUtils.smoothstep(elev, -0.24, -0.035)).normalize();
     const top = new THREE.Color(0x3a7fd0).lerp(new THREE.Color(0x050915), 1 - day);
     const hor = new THREE.Color(0xc3dcee).lerp(new THREE.Color(0xf0a060), dusk * 0.85).lerp(new THREE.Color(0x121a2c), 1 - day);
     const sunCol = new THREE.Color(0xfff4e0).lerp(new THREE.Color(0xff9a4a), dusk).multiplyScalar(elev > -0.05 ? 1 : 0.22);
@@ -115,6 +117,7 @@ export class Environment {
 
     this.sun.color.copy(new THREE.Color(0xfff0d8).lerp(new THREE.Color(0xffa05a), dusk)).lerp(new THREE.Color(0x9fb2e6), 1 - day);
     this.sun.intensity = 0.62 + 1.45 * day;
+    this.sun.shadow.intensity = 0.43 + 0.48 * day * (1 - dusk * 0.50);
     this.hemi.color.copy(new THREE.Color(0xe2ebf7).lerp(new THREE.Color(0x6f83c0), 1 - day));
     this.hemi.groundColor.copy(new THREE.Color(0x9a927c).lerp(new THREE.Color(0x343a52), 1 - day));
     this.hemi.intensity = 0.95 + 0.6 * day;

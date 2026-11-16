@@ -1,5 +1,8 @@
 // Herní svět: dekódování dat, prostorové indexy, kolize, silniční graf.
 import { CHUNK, COLL_CELL, DRIVABLE_MAX, RF, RC, LC, BF } from '../config.js';
+import { Tunnel, TUNNEL_HEIGHT } from './tunnels.js';
+import { TurnRules } from './turns.js';
+import { Traffic } from '../game/traffic.js';
 
 export const SURF = 0.05;    // o kolik nad terénem leží povrch, po kterém se jezdí (kvůli vrstvě asfaltu)
 const KEY_OFF = 250000;      // posun, aby byly kvantované souřadnice (decimetry) kladné – stačí na ±25 km
@@ -22,12 +25,43 @@ export class World {
     this._initTerrain(data.terrain);
     this._initBuildings(data.buildings);
     this._initRoads(data.roads);
+    this.archedBridges = new Map(data.roads.header.archedBridges ?? []);
+    this.tunnelRoads = new Set(data.roads.header.tunnels ?? []);
+    this.tunnels = [...this.tunnelRoads].map((road) => new Tunnel(this, road));
+    this.tunnelApproaches = new Map();
+    if (this.tunnels.length) {
+      const portals = new Map(this.tunnels.flatMap((t) => t.portals.map((p) => [`${p.x},${p.z}`, p])));
+      for (let i = 0; i < this.rCount; i++) {
+        if (this.tunnelRoads.has(i) || this.r.cls[i] !== RC.MOTORWAY) continue;
+        const a = this.rOff[i], b = this.rOff[i + 1] - 1;
+        const start = portals.get(`${this.rpx[a]},${this.rpz[a]}`);
+        const end = portals.get(`${this.rpx[b]},${this.rpz[b]}`);
+        if (start || end) this.tunnelApproaches.set(i, { start, end });
+      }
+    }
     this._initGraph();
+    this.turns = new TurnRules(this, data.meta.traffic?.restrictions);
+    this.traffic = new Traffic(this, data.meta.traffic);
     this._initLand(data.land);
     this._initRails(data.rails);
     this._initBridges();
     this.trees = data.trees;
     this._initTrees(data.trees);
+    this.roadClosures = data.meta.roadClosures ?? [];
+    this.closureChunks = new Map();
+    for (const closure of this.roadClosures) {
+      const [x, z, dx, dz, width] = closure;
+      const ci = this.chunkIndex(x, z);
+      if (!this.closureChunks.has(ci)) this.closureChunks.set(ci, []);
+      this.closureChunks.get(ci).push(closure);
+      const obstacles = [];
+      const sections = Math.ceil(width / 1.15);
+      for (let i = 0; i < sections; i++) {
+        const side = width * ((i + 0.5) / sections - 0.5);
+        obstacles.push(x - dz * side, z + dx * side, 0.66);
+      }
+      this.addObstacles(obstacles);
+    }
   }
 
   /** WGS 84 ve stupních na herní metry. */
@@ -97,7 +131,7 @@ export class World {
     const seg = [];     // x1, z1, y1, x2, z2, y2, poloviční šířka, druh (0 silnice, 1 tramvaj, 2 železnice)
     const R = this.r, px = this.rpx, pz = this.rpz, py = this.rpy;
     for (let i = 0; i < this.rCount; i++) {
-      if (!(R.flags[i] & RF.BRIDGE)) continue;
+      if (!(R.flags[i] & RF.BRIDGE) || (R.flags[i] & RF.SHARED_DECK)) continue;
       const cls = R.cls[i];
       const hw = this.deckHalfWidth(i);
       for (let k = this.rOff[i], ke = this.rOff[i + 1] - 1; k < ke; k++) seg.push(px[k], pz[k], py[k], px[k + 1], pz[k + 1], py[k + 1], hw, cls <= DRIVABLE_MAX ? 0 : 3);
@@ -127,6 +161,8 @@ export class World {
 
   /** Poloviční šířka mostovky silnice (včetně chodníků). */
   deckHalfWidth(road) {
+    // Wilsonův most má podle městské dokumentace včetně chodníků 15 metrů.
+    if (this.roadNames?.[this.r.name?.[road]] === 'Wilsonův most') return 7.5;
     const cls = this.r.cls[road], hw = this.r.w[road] / 2;
     if (cls <= RC.LIVING) return hw + 2.0;
     if (cls <= DRIVABLE_MAX) return hw + 0.5;
@@ -159,6 +195,8 @@ export class World {
    * Kdo stojí pod mostem, zůstane na terénu; kdo na most najede, drží se mostovky.
    */
   groundY(x, z, yHint = 1e9) {
+    const tunnel = this.tunnelAt(x, z, yHint, 0, true);
+    if (tunnel) return tunnel.floor;
     const t = this.heightAt(x, z) + SURF;
     const d = this.deckAt(x, z, yHint + 0.9);
     return d > t ? d : t;
@@ -169,6 +207,18 @@ export class World {
     const g = this.groundY(x, z, yMax);
     const r = this.roofAt(x, z, yMax);
     return r > g ? r : g;
+  }
+
+  /** Najde správnou výškovou úroveň; nad tunelem platí povrch kopce. */
+  tunnelAt(x, z, y, margin = 0, openApproach = false) {
+    const res = this._tunnelPosition ??= {};
+    for (const tunnel of this.tunnels ?? []) {
+      if (!tunnel.position(x, z, tunnel.halfWidth + margin, res)) continue;
+      if (!res.inside && (openApproach || y === Infinity)) return res;
+      if (y >= res.floor + TUNNEL_HEIGHT || y < res.floor - 2) continue;
+      return res;
+    }
+    return null;
   }
 
   // ------------------------------------------------------------ budovy ----
@@ -234,6 +284,15 @@ export class World {
     const hit = this.hit || (this.hit = { x: 0, z: 0, nx: 0, nz: 0, depth: 0, building: -1 });
     hit.x = x; hit.z = z; hit.nx = 0; hit.nz = 0; hit.depth = 0; hit.building = -1;
     let any = false;
+    const tube = this.tunnelAt(x, z, y, r + 0.4);
+    if (tube && tube.distance > tube.tunnel.halfWidth - r && tube.distance > 0
+        && (tube.inside || this.heightAt(x, z) > y + 0.25)) {
+      hit.nx = (tube.x - x) / tube.distance;
+      hit.nz = (tube.z - z) / tube.distance;
+      hit.depth = tube.distance - tube.tunnel.halfWidth + r;
+      hit.x += hit.nx * hit.depth; hit.z += hit.nz * hit.depth;
+      any = true;
+    }
     const B = this.b, vx = this.bvx, vz = this.bvz;
     const cx0 = Math.max(0, Math.floor((x - r - this.minX) / COLL_CELL)), cx1 = Math.min(this.gcols - 1, Math.floor((x + r - this.minX) / COLL_CELL));
     const cz0 = Math.max(0, Math.floor((z - r - this.minZ) / COLL_CELL)), cz1 = Math.min(this.grows - 1, Math.floor((z + r - this.minZ) / COLL_CELL));
@@ -245,7 +304,10 @@ export class World {
           const i = this.bCellItems[k];
           x = hit.x; z = hit.z;
           if (x + r < this.bMinX[i] || x - r > this.bMaxX[i] || z + r < this.bMinZ[i] || z - r > this.bMaxZ[i]) continue;
-          if (y >= this.bTop[i] - 0.25 || yTop <= this.bBase[i]) continue;
+          const importedRoof = this.heritage?.replaced.has(i) && y > this.bGround[i] + 2.5
+            ? this.heritage.roofHeight(x, z) : -Infinity;
+          const top = Number.isFinite(importedRoof) ? importedRoof : this.bTop[i];
+          if (y >= top - 0.25 || yTop <= this.bBase[i]) continue;
           // nejbližší bod na obvodu + test, zda je střed uvnitř
           let best = 1e9, bx = 0, bz = 0, inside = false;
           const r0 = B.bRing[i], r1 = B.bRing[i + 1];
@@ -354,10 +416,12 @@ export class World {
   /** Výška střechy v bodě (-1e9 = žádná). Bere jen střechy do výšky maxY (aby šlo stát pod převisem). */
   roofAt(x, z, maxY = 1e9) {
     const c = this.cellIndex(x, z);
-    let h = -1e9;
+    const imported = this.heritage?.roofHeight(x, z) ?? -Infinity;
+    let h = Number.isFinite(imported) && imported <= maxY ? imported : -1e9;
     for (let k = this.bCellStart[c], ke = this.bCellStart[c + 1]; k < ke; k++) {
       const i = this.bCellItems[k];
       if (x < this.bMinX[i] || x > this.bMaxX[i] || z < this.bMinZ[i] || z > this.bMaxZ[i]) continue;
+      if (Number.isFinite(imported) && this.heritage.replaced.has(i)) continue;
       const top = this.bTop[i];
       if (top <= h || top > maxY) continue;
       if (this._pointInBuilding(i, x, z)) h = top;
@@ -488,10 +552,12 @@ export class World {
    * Nejbližší úsek silnice. maxClass omezuje třídu (např. DRIVABLE_MAX).
    * Vrací objekt {road, seg, t, dist, x, z, dx, dz} nebo null.
    */
-  nearestRoad(x, z, maxDist = 60, maxClass = 99, minClass = 0, out) {
+  nearestRoad(x, z, maxDist = 60, maxClass = 99, minClass = 0, out, y, publicOnly = false) {
     const res = out || {};
     let best = maxDist * maxDist, found = false;
     const R = this.r, px = this.rpx, pz = this.rpz;
+    const tube = y === undefined ? null : this.tunnelAt(x, z, y);
+    const tunnelRoad = tube?.inside ? tube.tunnel.road : -1;
     const cx0 = Math.max(0, Math.floor((x - maxDist - this.minX) / COLL_CELL)), cx1 = Math.min(this.gcols - 1, Math.floor((x + maxDist - this.minX) / COLL_CELL));
     const cz0 = Math.max(0, Math.floor((z - maxDist - this.minZ) / COLL_CELL)), cz1 = Math.min(this.grows - 1, Math.floor((z + maxDist - this.minZ) / COLL_CELL));
     for (let cz = cz0; cz <= cz1; cz++) for (let cx = cx0; cx <= cx1; cx++) {
@@ -499,6 +565,9 @@ export class World {
       for (let q = this.segCellStart[c], qe = this.segCellStart[c + 1]; q < qe; q++) {
         const k = this.segCellItems[q];
         const road = this.roadOfPt[k];
+        if (publicOnly && (R.flags[road] & RF.PRIVATE)) continue;
+        if (tunnelRoad >= 0 && tunnelRoad !== road) continue;
+        if (y !== undefined && tunnelRoad < 0 && this.tunnelRoads.has(road)) continue;
         const cls = R.cls[road];
         if (cls > maxClass || cls < minClass) continue;
         const x1 = px[k], z1 = pz[k], dx = px[k + 1] - x1, dz = pz[k + 1] - z1;
@@ -529,7 +598,12 @@ export class World {
   // -------------------------------------------------------------- graf ----
   _initGraph() {
     const R = this.r, px = this.rpx, pz = this.rpz, pOff = this.rOff;
-    const key = (k) => (Math.round(px[k] * 10) + KEY_OFF) * KEY_MUL + (Math.round(pz[k] * 10) + KEY_OFF);
+    const key = (k) => {
+      const coord = (Math.round(px[k] * 10) + KEY_OFF) * KEY_MUL + (Math.round(pz[k] * 10) + KEY_OFF);
+      const road = this.roadOfPt?.[k];
+      // Ve stejné souřadnici se s povrchem propojí jen konce tunelu u portálů.
+      return this.tunnelRoads?.has(road) && k > pOff[road] && k < pOff[road + 1] - 1 ? -coord - 1 : coord;
+    };
     const uses = new Map();
     const drivable = (i) => R.cls[i] <= DRIVABLE_MAX;
     for (let i = 0; i < this.rCount; i++) {
@@ -616,6 +690,15 @@ export class World {
     return -1;
   }
 
+  roadSpeed(road, forward) {
+    return (forward ? this.r.speedForward : this.r.speedBackward)?.[road] ?? this.r.speed[road];
+  }
+
+  turnContext(from, to, context = 0) {
+    if (this.r.flags[this.eRoad[to]] & RF.PRIVATE) return -1;
+    return this.turns?.advance(from, to, context) ?? 0;
+  }
+
   /** Bod na hraně ve vzdálenosti d od jejího začátku (ve směru jízdy), s bočním posunem vpravo. */
   edgePoint(e, d, side, out) {
     const px = this.rpx, pz = this.rpz;
@@ -639,27 +722,24 @@ export class World {
   }
 
   /** Nejbližší uzel grafu k bodu (přes nejbližší sjízdnou silnici). */
-  nearestNode(x, z, maxDist = 150) {
-    const r = this.nearestRoad(x, z, maxDist, DRIVABLE_MAX, 0, this._tmpRoad2 || (this._tmpRoad2 = {}));
+  nearestNode(x, z, maxDist = 150, y) {
+    const r = this.nearestRoad(x, z, maxDist, DRIVABLE_MAX, 0, this._tmpRoad2 || (this._tmpRoad2 = {}), y, true);
     if (!r) return -1;
     let e = this.edgeOfPt[r.seg];
     if (e < 0) return -1;
+    if (y !== undefined && this.tunnelRoads.has(r.road)) return this.eTo[e];
     const dA = Math.hypot(this.nodeX[this.eFrom[e]] - x, this.nodeZ[this.eFrom[e]] - z);
     const dB = Math.hypot(this.nodeX[this.eTo[e]] - x, this.nodeZ[this.eTo[e]] - z);
     return dA < dB ? this.eFrom[e] : this.eTo[e];
   }
 
   /** A* – vrátí pole hran z uzlu a do uzlu b (nebo null). */
-  findPath(a, b, maxExpand = 6000) {
+  findPath(a, b, maxExpand = 6000, incoming = -1, initialContext = 0) {
     if (a < 0 || b < 0) return null;
     if (a === b) return [];
-    const nN = this.nodeCount;
-    if (!this._g) {
-      this._g = new Float32Array(nN); this._came = new Int32Array(nN); this._stamp = new Uint32Array(nN);
-      this._closed = new Uint32Array(nN); this._tick = 0;
-    }
-    const g = this._g, came = this._came, stamp = this._stamp, closed = this._closed;
-    const tick = ++this._tick;
+    const best = new Map();
+    const stateKey = (node, edge, context) => (context || this.turns?.relevant(edge))
+      ? this.nodeCount + context * this.edgeCount + edge : node;
     const heap = [];        // dvojice (f, uzel)
     const push = (f, n) => {
       let i = heap.length; heap.push(f, n);
@@ -687,38 +767,36 @@ export class World {
       return n;
     };
     const bx = this.nodeX[b], bz = this.nodeZ[b];
-    g[a] = 0; stamp[a] = tick; came[a] = -1;
-    push(Math.hypot(this.nodeX[a] - bx, this.nodeZ[a] - bz), a);
+    const start = stateKey(a, incoming, initialContext);
+    best.set(start, { score: 0, node: a, edge: incoming, context: initialContext, previous: null });
+    push(Math.hypot(this.nodeX[a] - bx, this.nodeZ[a] - bz), start);
     let expanded = 0;
+    const closed = new Set();
     while (heap.length) {
-      const n = pop();
-      if (n === b) break;
-      if (closed[n] === tick) continue;
-      closed[n] = tick;
+      const key = pop();
+      if (closed.has(key)) continue;
+      const state = best.get(key), n = state.node;
+      if (n === b) {
+        const path = [];
+        for (let at = state; at.previous; at = at.previous) path.push(at.edge);
+        return path.reverse();
+      }
+      closed.add(key);
       if (++expanded > maxExpand) return null;
       for (let q = this.outStart[n], qe = this.outStart[n + 1]; q < qe; q++) {
         const e = this.outEdges[q], m = this.eTo[e];
+        const context = this.turnContext(state.edge, e, state.context);
+        if (context < 0) continue;
         const road = this.eRoad[e];
         const cost = this.eLen[e] * (this.r.cls[road] >= RC.SERVICE ? 1.6 : 1);
-        const ng = g[n] + cost;
-        if (stamp[m] !== tick || ng < g[m]) {
-          g[m] = ng; stamp[m] = tick; came[m] = e;
-          push(ng + Math.hypot(this.nodeX[m] - bx, this.nodeZ[m] - bz), m);
+        const next = stateKey(m, e, context), score = state.score + cost;
+        if (score < (best.get(next)?.score ?? Infinity)) {
+          best.set(next, { score, node: m, edge: e, context, previous: state });
+          push(score + Math.hypot(this.nodeX[m] - bx, this.nodeZ[m] - bz), next);
         }
       }
     }
-    if (stamp[b] !== tick) return null;
-    const path = [];
-    let n = b;
-    while (n !== a) {
-      const e = came[n];
-      if (e < 0) return null;
-      path.push(e);
-      n = this.eFrom[e];
-      if (path.length > 4000) return null;
-    }
-    path.reverse();
-    return path;
+    return null;
   }
 
   // ------------------------------------------------------------ plochy ----

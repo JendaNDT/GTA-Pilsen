@@ -5,6 +5,11 @@ import { CHUNK, QUALITY, BK, BF, RC, RF, LC, DRIVABLE_MAX } from '../config.js';
 import { makeBuildingMaterial, makeDecalMaterial, makeTerrainMaterial, getPoolMaterial, env } from './materials.js';
 import { Parts, getDetailMaterial } from '../entities/models.js';
 import { SURF } from './world.js';
+import { TUNNEL_HEIGHT } from './tunnels.js';
+import { buildTrafficMeshes } from './traffic-meshes.js';
+import { Heritage, pavingChunk } from './heritage.js';
+import { FORGE, forgeXZ } from './mill.js';
+import { Districts } from './districts.js';
 
 const _c = new THREE.Color();
 function lin(hex) { _c.setHex(hex); return [_c.r, _c.g, _c.b]; }
@@ -31,8 +36,23 @@ const PAL = {
   copper: lin(0x5f8f7b),
 };
 
+const PLZEN = {
+  // Obvod × druh zástavby. Zachovává barvy, které jsou uvedené přímo u budovy v OSM.
+  stucco: [
+    [0xcfc8b3, 0xe1d9c8, 0xd2c2a7, 0xd9d6cb], // sever
+    [0xe0caaf, 0xd7c7a6, 0xdfd3bd, 0xd2c5b6], // Slovany
+    [0xe5d4b5, 0xd4bca2, 0xdbd3bf, 0xd3cbbb], // střed a západ
+    [0xddd0b6, 0xcaad94, 0xd5c6b5, 0xd5d6c7], // Doubravka
+    [0xe4d4b5, 0xded5c4, 0xd8c5a8, 0xd0cbbb], // okrajové obvody
+  ].map((zone) => zone.map(lin)),
+  estates: [0xd0cfbf, 0xc7c6b4, 0xdad2bf, 0xd3c7b1, 0xc4c7c2, 0xd6d1c7].map(lin),
+  brick: [0x9b6452, 0xaa7f67, 0xa06f63, 0x987764].map(lin),
+  metal: [0x818985, 0x899497, 0x9fa39d, 0x8f8e86].map(lin),
+  tiles: [0x804f43, 0x8c4e3a, 0x98624c, 0x685754, 0x9b6754, 0x6d5551].map(lin),
+};
+
 /** Vzhled budovy: barva zdi a střechy, styl oken, rozteč oken a výška patra. */
-function styleFor(world, i) {
+function styleFor(world, i, district) {
   const B = world.b;
   const kind = B.kind[i];
   // výška zdí (bez šikmé střechy) – podle ní se pozná panelák od činžáku
@@ -70,6 +90,25 @@ function styleFor(world, i) {
         wall = pick(PAL.tenement, r); roof = dist < 2300 && r3 < 0.7 ? pick(PAL.houseRoof, r2) : pick(PAL.flatRoof, r2);
         style = dist < 2300 ? 3 : 1; bay = 2.7; floorH = 3.3;
       }
+    }
+  }
+  if (Math.hypot(cx - (FORGE.x - 39.5), cz - (FORGE.z + 13.3)) < 105 && (kind === BK.HOUSE || kind === BK.GENERIC)) {
+    wall = pick(PAL.house, r * 0.6);
+    roof = pick(PAL.houseRoof, 0.27 + r2 * 0.72);
+    if (h < 4.5 && footprint < 85) { wall = lin(0x82705e); style = 0; }
+  }
+  if (district) {
+    const historic = dist < 1800 || district === 2 && dist < 2900;
+    if (kind === BK.INDUSTRIAL || kind === BK.FARM) {
+      wall = pick(r < 0.36 ? PLZEN.brick : PLZEN.metal, r2);
+      roof = pick(PLZEN.metal, r3);
+    } else if (style === 2) {
+      wall = pick(PLZEN.estates, r);
+    } else if (style === 1 || style === 3) {
+      wall = pick(PLZEN.stucco[Math.min(district, 5) - 1], r);
+      if (B.flags[i] & (BF.GABLE | BF.RIDGE | BF.INSET | BF.PYRAMID)) roof = pick(PLZEN.tiles, r2);
+      else if (dist >= 430) roof = pick(PAL.flatRoof, r2);
+      if (style === 3 && !historic && kind !== BK.CIVIC) { style = 1; floorH = 3.05; }
     }
   }
   const col = B.colour[i];
@@ -220,13 +259,13 @@ function insetRing(vx, vz, s, n, d) {
   return null;
 }
 
-function buildBuildings(world, list) {
+function buildBuildings(world, list, replaced, district) {
   const B = world.b, vx = world.bvx, vz = world.bvz;
   const buf = new Buf();
   for (const i of list) {
     const flags = B.flags[i];
-    if (flags & BF.HAS_PARTS) continue;
-    const st = styleFor(world, i);
+    if ((flags & BF.HAS_PARTS) || replaced.has(i)) continue;
+    const st = styleFor(world, i, district);
     const kind = B.kind[i];
     const top = world.bTop[i];
     const gable = (flags & BF.GABLE) !== 0;
@@ -448,6 +487,25 @@ function densePath(xs, zs, ys, s, e, a, b, step) {
   };
 }
 
+/** Vozovku u portálu tvoří samostatný pás s přesným podélným profilem. */
+function trimApproach(D, start, end) {
+  const outside = (p, x, z) => (x - p.outside.x) * p.dx + (z - p.outside.z) * p.dz <= 0;
+  if (start) {
+    const i = D.x.findIndex((x, k) => outside(start, x, D.z[k]));
+    if (i < 0) return false;
+    D.x.splice(0, i, start.outside.x); D.z.splice(0, i, start.outside.z);
+    D.px = start.x; D.pz = start.z;
+  }
+  if (end) {
+    const i = D.x.findLastIndex((x, k) => outside(end, x, D.z[k]));
+    if (i < 0) return false;
+    D.x.splice(i + 1, D.x.length, end.outside.x); D.z.splice(i + 1, D.z.length, end.outside.z);
+    D.nx = end.x; D.nz = end.z;
+  }
+  D.n = D.x.length;
+  return D.n >= 2;
+}
+
 /** Směr kolmý na čáru v bodě k (průměr sousedních úseků) + měřítko pro ostré lomy. */
 const _nrm = { x: 0, z: 0, scale: 1, dot: 1 };
 function pathNormal(D, k) {
@@ -475,7 +533,7 @@ function ribbon(world, buf, D, hw, col, lateral, lift, capStart, capEnd, center)
   const n = D.n;
   let pL = -1, pC = -1, pR = -1;
   for (let k = 0; k < n; k++) {
-    const yFn = D.y ? ((kk) => () => D.y[kk] + lift)(k) : (x, z) => world.heightAt(x, z) + SURF + lift;
+    const yFn = D.y ? () => D.y[k] + lift : (x, z) => world.heightAt(x, z) + SURF + lift;
     const nr = pathNormal(D, k);
     const nx = nr.x, nz = nr.z, sc = nr.scale;
     if (nr.dot < 0.93) buf.disc(D.x[k] + nx * lateral, D.z[k] + nz * lateral, hw, col, yFn);
@@ -559,6 +617,104 @@ function bridgeSlab(world, solid, D, hw, railings, topCol) {
   }
 }
 
+function stoneBridge(world, solid, D, hw, arches) {
+  const a = [D.x[0], D.z[0]], b = [D.x.at(-1), D.z.at(-1)];
+  const length = Math.hypot(b[0] - a[0], b[1] - a[1]);
+  const nx = (a[1] - b[1]) / length, nz = (b[0] - a[0]) / length;
+  const stone = lin(0xa69b87);
+  const deck = (t) => D.y[0] * (1 - t) + D.y.at(-1) * t;
+  const point = (t, side, y) => [a[0] + (b[0] - a[0]) * t + nx * side, y, a[1] + (b[1] - a[1]) * t + nz * side];
+  const bed = Math.min(world.heightAt(...a), world.heightAt(...b),
+    world.heightAt((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)) - 1.1;
+  const segments = arches * 24;
+  const soffit = (t) => {
+    const local = (t * arches) % 1;
+    const span = Math.max(0, 1 - ((local - 0.5) / 0.44) ** 2);
+    return bed + Math.sqrt(span) * Math.max(0.2, deck(t) - bed - 0.85);
+  };
+  for (let i = 0; i < segments; i++) {
+    const t0 = i / segments, t1 = (i + 1) / segments;
+    const y0 = deck(t0) - 0.04, y1 = deck(t1) - 0.04;
+    const u0 = soffit(t0), u1 = soffit(t1);
+    solid.quad(point(t0, -hw, y0), point(t1, -hw, y1), point(t1, hw, y1), point(t0, hw, y0), COL.sidewalk);
+    solid.quad(point(t0, -hw, u0), point(t0, hw, u0), point(t1, hw, u1), point(t1, -hw, u1), stone, 0.66);
+    for (const side of [-hw, hw]) {
+      solid.quad(point(t0, side, u0), point(t1, side, u1), point(t1, side, y1 + 0.95), point(t0, side, y0 + 0.95), stone);
+      const inner = side - Math.sign(side) * 0.32;
+      solid.quad(point(t0, inner, y0), point(t1, inner, y1), point(t1, inner, y1 + 0.95), point(t0, inner, y0 + 0.95), stone, 0.88);
+      solid.quad(point(t0, side, y0 + 0.95), point(t1, side, y1 + 0.95), point(t1, inner, y1 + 0.95), point(t0, inner, y0 + 0.95), stone);
+    }
+  }
+}
+
+function drawClosure(world, solid, [x, z, dx, dz, width]) {
+  const white = lin(0xf5ede0), red = lin(0xc92320), base = lin(0x545357);
+  const count = Math.ceil((width + 0.5) / 0.65);
+  const point = (side, ahead, lift) => {
+    const px = x - dz * side + dx * ahead, pz = z + dx * side + dz * ahead;
+    return [px, world.heightAt(px, pz) + lift, pz];
+  };
+  for (let i = 0; i < count; i++) {
+    const a = (width + 0.5) * (i / count - 0.5), b = (width + 0.5) * ((i + 1) / count - 0.5);
+    for (const end of [-0.24, 0.24]) {
+      solid.quad(point(a, end, 0.28), point(b, end, 0.28), point(b, end, 0.88), point(a, end, 0.88), i % 2 ? white : red);
+    }
+    solid.quad(point(a, -0.24, 0.88), point(b, -0.24, 0.88), point(b, 0.24, 0.88), point(a, 0.24, 0.88), white);
+  }
+  for (const side of [-width / 2, width / 2, 0]) {
+    const [px, y, pz] = point(side, 0, 0);
+    solid.box(px, y - 0.15, y + 0.67, pz, 0.18, base);
+  }
+}
+
+function buildTunnel(world, tunnel) {
+  const solid = new SolidBuf(), lights = new SolidBuf();
+  const concrete = lin(0x696963), ceiling = lin(0x33343a), road = lin(0x41454d);
+  const white = lin(0xcfd3d7), amber = lin(0xffe4b3);
+  const { points, halfWidth: hw } = tunnel;
+  const D = densePath(points.map((p) => p.x), points.map((p) => p.z), points.map((p) => p.y),
+    0, points.length - 1, 0, points.length - 1, 4);
+  const sections = Array.from({ length: D.n }, (_, k) => {
+    const { x, z, scale } = pathNormal(D, k);
+    return (side, h) => [D.x[k] + x * side * scale, D.y[k] + h, D.z[k] + z * side * scale];
+  });
+  const [start, end] = tunnel.portals;
+  const beyond = (p, k) => (D.x[k] - p.x) * p.dx + (D.z[k] - p.z) * p.dz;
+  const wallTop = (at, side) => {
+    const [x, y, z] = at(side, 0);
+    return Math.max(0.03, world.heightAt(x, z) - y + 0.12);
+  };
+  const H = TUNNEL_HEIGHT;
+  for (let k = 0; k < D.n - 1; k++) {
+    const a = sections[k], b = sections[k + 1];
+    const inside = beyond(start, k) >= -0.01 && beyond(end, k + 1) >= -0.01;
+    solid.quad(a(-hw, 0), b(-hw, 0), b(hw, 0), a(hw, 0), road);
+    for (const side of [-hw, hw]) {
+      const h0 = inside ? H : wallTop(a, side), h1 = inside ? H : wallTop(b, side);
+      solid.quad(a(side, -0.2), b(side, -0.2), b(side, h1), a(side, h0), concrete);
+      const line = side - Math.sign(side) * 0.85;
+      lights.quad(a(line - 0.06, 0.014), b(line - 0.06, 0.014), b(line + 0.06, 0.014), a(line + 0.06, 0.014), white);
+    }
+    if (k % 3 !== 0) lights.quad(a(-0.07, 0.014), b(-0.07, 0.014), b(0.07, 0.014), a(0.07, 0.014), white);
+    if (!inside) continue;
+    solid.quad(a(-hw, H), a(hw, H), b(hw, H), b(-hw, H), ceiling);
+    if (k % 5 === 0) {
+      for (const side of [-hw + 0.32, hw - 0.32]) {
+        lights.quad(a(side - 0.12, H - 0.05), a(side + 0.12, H - 0.05), b(side + 0.12, H - 0.05), b(side - 0.12, H - 0.05), amber);
+      }
+    }
+  }
+  for (const p of tunnel.portals) {
+    const point = (side, height) => [p.x - p.dz * side, p.y + height, p.z + p.dx * side];
+    const outer = hw + 0.65;
+    solid.quad(point(-outer, H), point(outer, H), point(outer, H + 0.9), point(-outer, H + 0.9), concrete);
+    for (const side of [-1, 1]) {
+      solid.quad(point(side * hw, 0), point(side * outer, 0), point(side * outer, H), point(side * hw, H), concrete);
+    }
+  }
+  return { solid: solid.geometry(), lights: lights.geometry() };
+}
+
 function buildRoads(world, ci) {
   const pieces = world.rPieces[ci];
   const R = world.r, px = world.rpx, pz = world.rpz, py = world.rpy, off = world.rOff;
@@ -568,14 +724,22 @@ function buildRoads(world, ci) {
       const i = pieces[q], s = pieces[q + 1], e = pieces[q + 2];
       const a = off[i], b = off[i + 1] - 1;
       const cls = R.cls[i], w = R.w[i], flags = R.flags[i];
+      if (world.tunnelRoads.has(i) || (flags & RF.SHARED_DECK)) continue;
       const bridge = (flags & RF.BRIDGE) !== 0;
       const paved = cls <= DRIVABLE_MAX || cls === RC.PEDESTRIAN;
       if (!paved && !bridge) continue;            // pěšiny a chodníky jsou nakreslené v textuře země
       const hw = w / 2;
       const D = densePath(px, pz, bridge ? py : null, s, e, a, b, bridge ? 1e9 : 4);
+      const approach = world.tunnelApproaches.get(i);
+      const start = s === a && approach?.start, end = e === b && approach?.end;
+      if ((start || end) && !trimApproach(D, start, end)) continue;
       const col = bridge && cls <= DRIVABLE_MAX ? COL.bridge : roadColor(cls);
-      ribbon(world, asphalt, D, hw, col, 0, 0, s === a, e === b, hw > 2.2 && !bridge);
-      if (bridge) bridgeSlab(world, solid, D, world.deckHalfWidth(i), true, cls <= RC.LIVING ? COL.sidewalk : COL.concrete);
+      ribbon(world, asphalt, D, hw, col, 0, 0, s === a && !start, e === b && !end, hw > 2.2 && !bridge);
+      if (bridge) {
+        const arches = world.archedBridges.get(i);
+        if (arches) stoneBridge(world, solid, D, world.deckHalfWidth(i), arches);
+        else bridgeSlab(world, solid, D, world.deckHalfWidth(i), true, cls <= RC.LIVING ? COL.sidewalk : COL.concrete);
+      }
       // vodorovné značení
       if (cls <= RC.UNCLASSIFIED && !(flags & RF.ROUNDABOUT)) {
         const lanes = R.lanes[i];
@@ -614,7 +778,32 @@ function buildRoads(world, ci) {
       if (rail.y) bridgeSlab(world, solid, D, rail.cls === 1 ? 2.4 : 1.7, true, COL.concrete);
     }
   }
+  for (const closure of world.closureChunks.get(ci) ?? []) drawClosure(world, solid, closure);
+  const traffic = world.traffic.chunks.get(ci);
+  if (traffic) drawTrafficMarkings(world, marks, traffic);
   return { asphalt: asphalt.geometry(), marks: marks.geometry(), solid: solid.geometry() };
+}
+
+function drawTrafficMarkings(world, buf, traffic) {
+  const color = lin(0xf4f2dc);
+  const strip = (a, b, halfWidth) => {
+    const dx = b[0] - a[0], dz = b[1] - a[1], length = Math.hypot(dx, dz);
+    if (length < 0.05) return;
+    const nx = -dz / length * halfWidth, nz = dx / length * halfWidth;
+    const v = (x, z) => buf.v(x, world.groundY(x, z) + 0.075, z, color);
+    buf.quad(v(a[0] - nx, a[1] - nz), v(a[0] + nx, a[1] + nz),
+      v(b[0] + nx, b[1] + nz), v(b[0] - nx, b[1] - nz));
+  };
+  for (const { a, b } of traffic.lines) strip(a, b, 0.21);
+  for (const crossing of traffic.crossings) {
+    const { a, dx, dz, length } = crossing;
+    const count = Math.max(2, Math.round((length - 0.8) / 0.95));
+    for (let i = 0; i < count; i++) {
+      const d = 0.4 + (i + 0.5) * (length - 0.8) / count;
+      const x = a[0] + dx * d, z = a[1] + dz * d;
+      strip([x - dz * 1.45, z + dx * 1.45], [x + dz * 1.45, z - dx * 1.45], 0.23);
+    }
+  }
 }
 
 // ---------------------------------------------------------------- terén ----
@@ -749,10 +938,21 @@ function drawGround(mgr, ci, S) {
         const cls = L.cls[i];
         if (LAND_GROUP[cls] !== group) continue;
         polyPath(i);
-        g.fillStyle = LAND_HEX[cls];
+        g.fillStyle = cls === LC.PLAZA && mgr.chunks.get(ci)?.district ? '#b9ae9c' : LAND_HEX[cls];
         g.fill('evenodd');
       }
     }
+  }
+  const forgeBasin = cx0 < FORGE.x + 126 && cx0 + CHUNK > FORGE.x - 126 &&
+    cz0 < FORGE.z + 126 && cz0 + CHUNK > FORGE.z - 126;
+  if (forgeBasin) {
+    // Trávníky v areálu hamru. Cesty a vodní plochy se kreslí v dalších průchodech.
+    const lawn = g.createRadialGradient(FORGE.x, FORGE.z + 7, 17, FORGE.x, FORGE.z + 7, 125);
+    lawn.addColorStop(0, 'rgba(137,147,105,0.91)');
+    lawn.addColorStop(0.47, 'rgba(147,159,111,0.70)');
+    lawn.addColorStop(1, 'rgba(147,159,111,0)');
+    g.fillStyle = lawn;
+    g.fillRect(cx0, cz0, CHUNK, CHUNK);
   }
   // potoky
   const lines = mgr.landIndex.lines[ci];
@@ -761,11 +961,21 @@ function drawGround(mgr, ci, S) {
     for (const i of lines) {
       const cls = L.lCls[i];
       g.lineWidth = cls === 0 ? 8 : cls === 1 ? 5 : cls === 2 ? 2.2 : 1.2;
+      if (forgeBasin) {
+        g.save();
+        g.beginPath();
+        g.rect(cx0 - 1, cz0 - 1, CHUNK + 2, CHUNK + 2);
+        const bounds = [[4.2, -20], [13.5, -20], [12.5, 20], [4.2, 20]];
+        bounds.forEach(([x, z], index) => index ? g.lineTo(...forgeXZ(x, z)) : g.moveTo(...forgeXZ(x, z)));
+        g.closePath();
+        g.clip('evenodd');
+      }
       g.beginPath();
       for (let v = L.lStart[i], ve = L.lStart[i + 1]; v < ve; v++) {
         if (v === L.lStart[i]) g.moveTo(L.lx[v] * 0.1, L.lz[v] * 0.1); else g.lineTo(L.lx[v] * 0.1, L.lz[v] * 0.1);
       }
       g.stroke();
+      if (forgeBasin) g.restore();
     }
   }
   // sousední dlaždice (pásy přesahují přes hranu)
@@ -794,11 +1004,12 @@ function drawGround(mgr, ci, S) {
       if (!pieces) continue;
       for (let q = 0; q < pieces.length; q += 3) {
         const i = pieces[q], cls = R.cls[i], flags = R.flags[i];
-        if (flags & RF.BRIDGE) continue;
+        if ((flags & RF.BRIDGE) || world.tunnelRoads.has(i)) continue;
         let width, style;
         if (pass === 0) {           // chodníky podél ulic
           if (cls < RC.PRIMARY || cls > RC.LIVING || cls === RC.PRIMARY_LINK || cls === RC.SECONDARY_LINK || (flags & RF.TUNNEL)) continue;
-          width = R.w[i] + 4; style = HEX.sidewalk;
+          width = R.w[i] + 4;
+          style = mgr.districts.at(px[world.rOff[i]], pz[world.rOff[i]]) ? '#a8a399' : HEX.sidewalk;
         } else if (pass === 1) {    // pěšiny, cyklostezky, polní cesty
           if (cls <= RC.PEDESTRIAN) continue;
           width = R.w[i]; style = roadHex(cls);
@@ -1011,15 +1222,28 @@ function buildLamps(world, ci) {
 const STAGES = 4;       // 0 terén, 1 budovy, 2 silnice a mosty, 3 stromy a lampy
 
 export class ChunkManager {
-  constructor(scene, world, renderer) {
+  constructor(scene, world, renderer, heritage) {
     this.scene = scene;
     this.world = world;
     this.renderer = renderer;
     this.chunks = new Map();
     this.buildingMat = makeBuildingMaterial();
+    this.paintedBuildings = QUALITY.heritageDetail ? makeBuildingMaterial({ textures: true }) : this.buildingMat;
+    this.districts = new Districts(heritage.districts);
+    this.heritage = new Heritage(world, heritage);
     this.asphaltMat = makeDecalMaterial({ polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -6 });
     this.marksMat = makeDecalMaterial({ polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -14 });
     this.solidMat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
+    if (world.tunnels.length) {
+      const lightMat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide });
+      for (const tunnel of world.tunnels) {
+        const geo = buildTunnel(world, tunnel);
+        const structure = new THREE.Mesh(geo.solid, this.solidMat);
+        structure.castShadow = true;
+        structure.receiveShadow = true;
+        scene.add(structure, new THREE.Mesh(geo.lights, lightMat));
+      }
+    }
     this.density = buildDensity(world);
     this.landIndex = buildLandIndex(world);
     this.scratch = new Map();
@@ -1040,6 +1264,21 @@ export class ChunkManager {
     return tex;
   }
 
+  _buildBuildings(ci, ch) {
+    const list = this.heritage.buildings(ci);
+    const geo = list ? buildBuildings(this.world, list, this.heritage.replaced, ch.district) : null;
+    if (ch.regularBuildings) {
+      ch.group.remove(ch.regularBuildings);
+      ch.regularBuildings.geometry.dispose();
+    }
+    ch.regularBuildings = geo ? new THREE.Mesh(geo, ch.district && ch.dist < 420 ? this.paintedBuildings : this.buildingMat) : null;
+    if (ch.regularBuildings) {
+      ch.regularBuildings.castShadow = true;
+      ch.regularBuildings.receiveShadow = true;
+      ch.group.add(ch.regularBuildings);
+    }
+  }
+
   /** Provede další krok stavby dlaždice. */
   _step(ci, ch) {
     const w = this.world;
@@ -1050,19 +1289,24 @@ export class ChunkManager {
       const geo = buildTerrain(w, x0, z0);
       ch.texSize = ch.dist < 420 ? this.texNear : this.texFar;
       ch.tex = this._texture(ci, ch.texSize);
-      ch.terrainMat = makeTerrainMaterial(ch.tex);
+      const portals = w.tunnels.flatMap((tunnel) => tunnel.portalCuts(x0, z0, CHUNK));
+      ch.terrainMat = makeTerrainMaterial(ch.tex, portals, pavingChunk(x0, z0), QUALITY.heritageDetail);
       const m = new THREE.Mesh(geo, ch.terrainMat);
       m.receiveShadow = true; m.renderOrder = 5;
       add(m, geo);
     } else if (ch.stage === 1) {
-      const list = w.bChunks[ci];
-      const geo = list ? buildBuildings(w, list) : null;
-      if (geo) { const m = new THREE.Mesh(geo, this.buildingMat); m.castShadow = true; m.receiveShadow = true; add(m, geo); }
+      ch.heritage = this.heritage.build(ci, ch);
+      this._buildBuildings(ci, ch);
     } else if (ch.stage === 2) {
       const roads = buildRoads(w, ci);
       if (roads.solid) { const m = new THREE.Mesh(roads.solid, this.solidMat); m.castShadow = true; m.receiveShadow = true; add(m, roads.solid); }
       if (roads.asphalt) { const m = new THREE.Mesh(roads.asphalt, this.asphaltMat); m.renderOrder = 14; m.receiveShadow = true; add(m, roads.asphalt); ch.asphalt = m; }
       if (roads.marks) { const m = new THREE.Mesh(roads.marks, this.marksMat); m.renderOrder = 16; m.receiveShadow = true; add(m, roads.marks); ch.marks = m; }
+      const entries = w.traffic.chunks.get(ci);
+      if (entries && (entries.signs.length || entries.heads.length)) {
+        ch.traffic = buildTrafficMeshes(w, entries);
+        add(ch.traffic.group);
+      }
     } else {
       const trees = buildTrees(w, ci, x0, z0);
       for (const m of trees.meshes) { m.matrixAutoUpdate = false; ch.group.add(m); }
@@ -1082,15 +1326,18 @@ export class ChunkManager {
 
   _dispose(ch) {
     this.scene.remove(ch.group);
+    this.heritage.dispose(ch);
+    ch.regularBuildings?.geometry.dispose();
     for (const g of ch.disposables) g.dispose();
     for (const m of ch.trees) m.dispose();
     if (ch.tex) ch.tex.dispose();
     if (ch.terrainMat) ch.terrainMat.dispose();
+    ch.traffic?.dispose();
     this.world.removeObstacles(ch.obstacles);
   }
 
   /** Udržuje načtené dlaždice kolem bodu; za jedno volání provede nejvýš `budget` kroků stavby. */
-  update(x, z, view, budget = 1) {
+  update(x, z, view, budget = 1, y) {
     const w = this.world;
     const ccx = Math.floor((x - w.minX) / CHUNK), ccz = Math.floor((z - w.minZ) / CHUNK);
     const center = ccz * 4096 + ccx;
@@ -1108,10 +1355,11 @@ export class ChunkManager {
           const group = new THREE.Group();
           group.matrixAutoUpdate = false;
           this.scene.add(group);
+          const centerX = w.minX + (cx + 0.5) * CHUNK, centerZ = w.minZ + (cz + 0.5) * CHUNK;
           this.chunks.set(ci, {
-            group, disposables: [], obstacles: [], trees: [], lamps: null, asphalt: null, marks: null,
+            ci, group, district: this.districts.at(centerX, centerZ), disposables: [], obstacles: [], trees: [], lamps: null, asphalt: null, marks: null,
             stage: 0, tex: null, terrainMat: null, texSize: 0, dist: 0,
-            cx: w.minX + (cx + 0.5) * CHUNK, cz: w.minZ + (cz + 0.5) * CHUNK,
+            cx: centerX, cz: centerZ,
           });
         }
       }
@@ -1122,14 +1370,27 @@ export class ChunkManager {
     // vzdálenosti, viditelnost lamp a výběr práce: nejdřív terén všude, pak detaily od nejbližších
     const night = env.night.value > 0.03;
     let pending = 0, pendingStart = 0, rebake = null;
-    const todo = [];
+    const todo = [], cityRequests = [];
     for (const [ci, ch] of this.chunks) {
       const d = Math.hypot(ch.cx - x, ch.cz - z);
       ch.dist = d;
+      if (!ch.cityRequest && d < 1080 && this.heritage.cells.has(ci)) cityRequests.push(ch);
+      if (ch.district && ch.regularBuildings) {
+        ch.regularBuildings.material = d < 420 ? this.paintedBuildings : this.buildingMat;
+      }
+      if (ch.stage >= 2 && ch.cityData) {
+        todo.push([d + 1e6 - 0.01, ci, ch, true]);
+        if (d < 520) pendingStart++;
+      }
+      if (ch.heritage) this.heritage.update(ch.heritage, x, z, y);
       if (ch.lamps) { ch.lamps.poles.visible = d < 560; ch.lamps.pools.visible = night && d < 1100; }
       // v dálce stačí silnice nakreslené v textuře země; přesná síť a čáry jen poblíž
       if (ch.asphalt) ch.asphalt.visible = d < 800;
       if (ch.marks) ch.marks.visible = d < 480;
+      if (ch.traffic) {
+        ch.traffic.group.visible = d < 400;
+        if (ch.traffic.group.visible) ch.traffic.update();
+      }
       if (ch.stage < STAGES) {
         pending++;
         if (ch.stage === 0 || d < 520) pendingStart += ch.stage === 0 && d >= 520 ? 1 : STAGES - ch.stage;
@@ -1141,12 +1402,22 @@ export class ChunkManager {
         else if (ch.texSize === this.texNear && d > 640 && !rebake) rebake = [d, ci, ch, this.texFar];
       }
     }
+    this.heritage.prefetch(cityRequests);
     let done = 0;
     if (todo.length) {
       todo.sort((a, b) => a[0] - b[0]);
       for (let k = 0; k < todo.length && done < budget; k++) {
-        const ch = todo[k][2];
-        this._step(todo[k][1], ch); done++;
+        const [, ci, ch, city] = todo[k];
+        if (city) {
+          ch.heritage = this.heritage.build(ci, ch);
+          this._buildBuildings(ci, ch);
+          this.heritage.update(ch.heritage, x, z, y);
+          if (ch.dist < 520) pendingStart--;
+          done++;
+          continue;
+        }
+        this._step(ci, ch); done++;
+        if (ch.stage === 2 && ch.heritage) this.heritage.update(ch.heritage, x, z, y);
         if (ch.stage >= STAGES) pending--;
         if (ch.stage === 1 || ch.dist < 520) pendingStart--;
       }

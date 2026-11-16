@@ -244,6 +244,50 @@ class Terrain:
             it["by"] = [max(hgt[key(p)], tmap[key(p)] + 0.05) - self.base for p in it["pts"]]
         return len(bridges)
 
+    def refine_wilson(self, road):
+        """Změřený profil břehů a Radbuzy v bezprostředním okolí Wilsonova mostu."""
+        a, b = np.array([road["pts"][0], road["pts"][-1]])
+        length = np.linalg.norm(b - a)
+        dx, dz = (b - a) / length
+        nx, nz = -dz, dx
+        i0 = int((min(a[0], b[0]) - 32 - self.x0) / G)
+        i1 = math.ceil((max(a[0], b[0]) + 32 - self.x0) / G) + 1
+        j0 = int((min(a[1], b[1]) - 43 - self.z0) / G)
+        j1 = math.ceil((max(a[1], b[1]) + 43 - self.z0) / G) + 1
+        X, Z = self.XX[j0:j1, i0:i1] - a[0], self.ZZ[j0:j1, i0:i1] - a[1]
+        along, across = X * dx + Z * dz, np.abs(X * nx + Z * nz)
+        area = self.h[j0:j1, i0:i1]
+
+        # Měření vně půdorysu mostu dává hladinu bez vlivu mostovky a pilíře.
+        center = (a + b) / 2
+        samples = center + np.array([-40, 40])[:, None] * np.array([nx, nz])
+        river = float(np.median(self.fine(*samples.T)))
+        water_weight = np.clip((38 - across) / 18, 0, 1) * (along > 8) * (along < length - 8)
+        area -= water_weight * np.maximum(area - river, 0)
+
+        # Dva nájezdy končí na opěrách. Krátký přesah do půdorysu zabrání
+        # tomu, aby osmimetrová síť srazila vozovku z nábřeží do řeky.
+        for end, direction, s in ((a, -1, along), (b, 1, length - along)):
+            sample = end + direction * 14 * np.array([dx, dz])
+            level = float(self.fine(*sample))
+            lateral = np.clip((14 - across) / 4, 0, 1)
+            longitudinal = np.clip((s + 26) / 12, 0, 1) * (s <= 6)
+            area += lateral * longitudinal * (level - area)
+
+    def tunnel_heights(self, road):
+        """Podepři sklon tunelu měřeným povrchem vozovky před jeho portály."""
+        pts = np.array(road["pts"])
+        length = np.linalg.norm(np.diff(pts, axis=0), axis=1)
+        s = np.concatenate(([0], np.cumsum(length)))
+        depths = np.array([20.0, 30.0, 40.0, 50.0])
+        heights = []
+        for end, inside in ((pts[0], pts[1]), (pts[-1], pts[-2])):
+            direction = (end - inside) / np.linalg.norm(end - inside)
+            samples = end + depths[:, None] * direction
+            _, at_portal = np.polyfit(depths, self.fine(*samples.T), 1)
+            heights.append(at_portal)
+        road["by"] = (np.interp(s, [0, s[-1]], heights) - self.base + 0.05).tolist()
+
     # ------------------------------------------------------------------
     def quantize(self):
         """Převede síť na uložitelný tvar (krok Q, rozdíly po řádcích v int8) a nahradí ji

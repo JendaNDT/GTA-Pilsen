@@ -26,7 +26,7 @@ export class Jobs {
   }
 
   _snap(x, z) {
-    const r = this.world.nearestRoad(x, z, 60, DRIVABLE_MAX, 0, _road);
+    const r = this.world.nearestRoad(x, z, 60, DRIVABLE_MAX, 0, _road, undefined, true);
     return r ? { x: r.x, z: r.z } : { x, z };
   }
 
@@ -78,11 +78,14 @@ export class Jobs {
     g.hud.toast(`Nová zakázka: vyzvedni jídlo – ${f[3]}`, 'big');
   }
 
-  setWaypoint(x, z) {
-    this.waypoint = this._snap(x, z);
+  setWaypoint(x, z, name) {
+    const walk = this.world.meta.walkingApproaches?.[name];
+    this.waypoint = walk ? { x: walk.at(-2), z: walk.at(-1), walk } : this._snap(x, z);
     this.routeTimer = 0;
-    this.game.hud.toast('Cíl nastaven – trasa je na minimapě.');
+    this.game.hud.toast(walk ? 'Cíl nastaven. Modré tečky vedou poslední úsek pěšky.' : 'Cíl nastaven – trasa je na minimapě.');
   }
+
+  get walkRoute() { return this.job ? null : this.waypoint?.walk; }
 
   target() {
     if (this.job) return this.job.phase === 'pickup' ? this.job.pick : this.job.drop;
@@ -132,7 +135,8 @@ export class Jobs {
     if (this.waypoint) {
       this.wpBeacon.visible = !this.job;
       this.wpBeacon.position.set(this.waypoint.x, this.world.groundY(this.waypoint.x, this.waypoint.z), this.waypoint.z);
-      if (Math.hypot(this.waypoint.x - p.x, this.waypoint.z - p.z) < 22) {
+      const walk = this.waypoint.walk;
+      if ((!walk || g.mode === 'foot') && Math.hypot(this.waypoint.x - p.x, this.waypoint.z - p.z) < (walk ? 7 : 22)) {
         this.waypoint = null; this.wpBeacon.visible = false;
         if (!this.job) { this.route = null; hud.toast('Jsi v cíli.'); }
       }
@@ -148,16 +152,30 @@ export class Jobs {
     else if (this.routeTimer <= 0) {
       this.routeTimer = 2.2;
       const w = this.world;
-      const path = w.findPath(w.nearestNode(p.x, p.z, 250), w.nearestNode(tgt.x, tgt.z, 250), 12000);
+      const walk = this.walkRoute;
+      const dx = walk ? walk[0] : tgt.x, dz = walk ? walk[1] : tgt.z;
+      const atApproach = walk && (Math.hypot(p.x - dx, p.z - dz) < 25
+        || (g.mode === 'foot' && Math.hypot(p.x - tgt.x, p.z - tgt.z) < 84));
+      let start = w.nearestNode(p.x, p.z, 250, p.y), incoming = -1;
+      if (g.mode === 'car') {
+        const position = w.nearestRoad(p.x, p.z, 10, DRIVABLE_MAX, 0, _road, p.y, true);
+        if (position) {
+          const forward = position.dx * Math.sin(p.yaw) + position.dz * Math.cos(p.yaw) >= 0;
+          const edge = w.edgeOfPt[position.seg];
+          if (edge >= 0) incoming = forward ? edge : w.reverseEdge(edge);
+          if (incoming >= 0) start = w.eTo[incoming];
+        }
+      }
+      const path = atApproach ? [] : w.findPath(start, w.nearestNode(dx, dz, 250), 18000, incoming);
       if (path && path.length) {
         const pts = [];
         for (const e of path) {
           const A = w.eA[e], B = w.eB[e], step = A < B ? 1 : -1;
           for (let k = A; ; k += step) { pts.push(w.rpx[k], w.rpz[k]); if (k === B) break; }
         }
-        pts.push(tgt.x, tgt.z);
+        pts.push(dx, dz);
         this.route = pts;
-      } else this.route = [tgt.x, tgt.z];
+      } else this.route = [dx, dz];
     }
 
     // památky

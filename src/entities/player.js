@@ -150,8 +150,53 @@ export class PedManager {
   }
 
   remove(i) {
+    this.world.traffic.users.delete(this.peds[i]);
     this.scene.remove(this.peds[i].mesh);
     this.peds.splice(i, 1);
+  }
+
+  _selectCrossing(p) {
+    const list = this.world.traffic.crossingsByEdge.get(p.edge);
+    if (!list) return;
+    if (p.planEdge !== p.edge) {
+      p.planEdge = p.edge;
+      p.plan = this.seq % 3 !== 0 ? list.find((stop) => stop.s > p.s + 3) : null;
+    }
+    if (!p.plan || p.s < p.plan.s - 0.8) return;
+    const { crossing, s } = p.plan;
+    p.plan = null;
+    const a = Math.hypot(crossing.a[0] - p.x, crossing.a[1] - p.z);
+    const b = Math.hypot(crossing.b[0] - p.x, crossing.b[1] - p.z);
+    if (Math.min(a, b) > 4) return;
+    p.crossing = { crossing, s, from: a < b ? crossing.a : crossing.b, to: a < b ? crossing.b : crossing.a };
+    p.state = 'crossApproach';
+  }
+
+  _stepCrossing(p, dt, cars) {
+    const plan = p.crossing, traffic = this.world.traffic;
+    if (p.state === 'crossWait') {
+      if (!traffic.canWalk(plan.crossing, cars)) return 0;
+      p.state = 'crossing';
+      traffic.users.set(p, plan.crossing);
+    }
+    const onRoad = p.state === 'crossing';
+    const target = onRoad ? plan.to : plan.from;
+    const dx = target[0] - p.x, dz = target[1] - p.z, d = Math.hypot(dx, dz);
+    const step = p.speed * dt;
+    if (d <= step) {
+      p.x = target[0]; p.z = target[1];
+      if (onRoad) {
+        traffic.users.delete(p);
+        p.state = 'walk'; p.s = plan.s + 0.2; p.side = -p.side; p.crossing = null;
+      } else {
+        p.yaw = Math.atan2(plan.to[0] - p.x, plan.to[1] - p.z);
+        p.state = 'crossWait';
+      }
+    } else {
+      p.x += dx * step / d; p.z += dz * step / d;
+      p.yaw = Math.atan2(dx, dz);
+    }
+    return p.speed;
   }
 
   update(dt, player, cam, cars) {
@@ -159,7 +204,7 @@ export class PedManager {
     this.timer -= dt;
     if (this.timer <= 0) {
       this.timer = 0.2;
-      if (this.peds.length < QUALITY.peds) this.spawn(player.x, player.z, cam);
+      if (this.peds.length < Math.ceil(QUALITY.peds * this.game.streetActivity)) this.spawn(player.x, player.z, cam);
     }
     for (let i = this.peds.length - 1; i >= 0; i--) {
       const p = this.peds[i];
@@ -190,6 +235,8 @@ export class PedManager {
           const along = dx * fx + dz * fz, across = Math.abs(dx * fz - dz * fx);
           if (Math.abs(along) < c.halfLen + 0.3 && across < hitR) {
             if (sp > 2.5) {
+              w.traffic.users.delete(p);
+              p.crossing = null;
               p.state = 'down'; p.timer = 7;
               p.vx = c.vx * 0.9 + dx * 0.8; p.vz = c.vz * 0.9 + dz * 0.8;
               this.game.onPedHit(p, c, sp);
@@ -210,7 +257,9 @@ export class PedManager {
         }
         if (p.state === 'down') continue;
       }
-      if (p.state === 'flee') {
+      if (p.crossing) {
+        moving = this._stepCrossing(p, dt, cars);
+      } else if (p.state === 'flee') {
         p.timer -= dt;
         const sp = 4.6;
         p.x += p.fx * sp * dt; p.z += p.fz * sp * dt;
@@ -222,6 +271,11 @@ export class PedManager {
           p.state = 'walk';
         }
       } else if (p.edge >= 0) {
+        this._selectCrossing(p);
+        if (p.crossing) {
+          p.mesh.position.set(p.x, p.y, p.z);
+          continue;
+        }
         p.s += p.speed * dt;
         const len = w.eLen[p.edge];
         if (p.s >= len) {

@@ -28,6 +28,7 @@ import numpy as np
 import terrain as terrain_mod
 from area import BBOX, OSM_BBOX
 from coordinates import ORIGIN, to_xz, world_bounds
+from traffic_data import build_traffic
 from map_sources import load_dem
 from terrain import Terrain
 from osm_source import extract_timestamp
@@ -668,10 +669,18 @@ ROAD_CLASS = {
     "bus_guideway": 13, "busway": 13, "road": 10,
 }
 DRIVABLE_MAX = 13
+# Trouby D5 ověřené podle portálů v ortofotu. Příčné podjezdy mají jiný výškový profil.
+VALIK_WAYS = {24525621, 27568574}
+HISTORIC_BRIDGES = {4722526: 2, 37894284: 1}
+WILSON_SIDEWALKS = {875790743, 1102321297}
 DEF_WIDTH = {0: 8.0, 1: 5.0, 2: 7.5, 3: 5.0, 4: 8.5, 5: 5.0, 6: 7.5, 7: 5.0, 8: 7.0, 9: 5.0,
              10: 6.0, 11: 6.0, 12: 5.0, 13: 3.6, 14: 5.0, 15: 2.8, 16: 2.0, 17: 1.4, 18: 2.4, 19: 2.2}
 DEF_SPEED = {0: 110, 1: 70, 2: 80, 3: 60, 4: 50, 5: 45, 6: 50, 7: 45, 8: 50, 9: 40,
              10: 45, 11: 40, 12: 20, 13: 20, 14: 10, 15: 20, 16: 5, 17: 5, 18: 15, 19: 3}
+
+
+def parse_speed(value):
+    return parse_len((value or "").lower().removesuffix("km/h"))
 
 
 def build_roads(ex):
@@ -711,8 +720,8 @@ def build_roads(ex):
         if len(xz) < 2:
             continue
         lanes = parse_len(tags.get("lanes"))
-        oneway = tags.get("oneway") in ("yes", "1", "true") or tags.get("junction") == "roundabout" \
-            or (cls in (0, 1) and tags.get("oneway") != "no")
+        oneway = tags.get("oneway") in ("yes", "1", "true") or (
+            tags.get("oneway") is None and (tags.get("junction") == "roundabout" or cls in (0, 1)))
         reverse = tags.get("oneway") == "-1"
         if reverse:
             xz = xz[::-1]
@@ -733,7 +742,12 @@ def build_roads(ex):
             lanes = 1 if (oneway or cls in (1, 3, 5, 7, 9, 12, 13)) and w < 6.5 else 2
             if oneway and w >= 6.5:
                 lanes = 2
-        sp = parse_len((tags.get("maxspeed") or "").replace("km/h", "")) or DEF_SPEED[cls]
+        limit = parse_speed(tags.get("maxspeed")) or {
+            "CZ:urban": 50, "CZ:rural": 90, "CZ:motorway": 130,
+        }.get(tags.get("maxspeed:type"), 0)
+        sp = limit or DEF_SPEED[cls]
+        forward = parse_speed(tags.get("maxspeed:" + ("backward" if reverse else "forward"))) or limit
+        backward = parse_speed(tags.get("maxspeed:" + ("forward" if reverse else "backward"))) or limit
         flags = 0
         if oneway:
             flags |= 1
@@ -745,10 +759,13 @@ def build_roads(ex):
             flags |= 8
         if tags.get("lit") == "yes":
             flags |= 16
-        if tags.get("access") in ("private", "no") or tags.get("motor_vehicle") in ("no", "private"):
+        access = next((tags[key] for key in ("motorcar", "motor_vehicle", "vehicle", "access") if key in tags), None)
+        if access in ("private", "no"):
             flags |= 32
         if tags.get("service") in ("parking_aisle", "driveway"):
             flags |= 64
+        if wid in WILSON_SIDEWALKS:
+            flags |= 128
         nm = tags.get("name") or ""
         if nm not in names:
             names[nm] = len(name_list)
@@ -759,8 +776,74 @@ def build_roads(ex):
         except ValueError:
             pass
         out.append({"cls": cls, "w": w, "lanes": int(min(lanes, 8)), "speed": int(min(sp, 130)),
-                    "flags": flags, "name": names[nm], "layer": layer, "pts": xz})
+                    "speedForward": int(min(forward or sp, 130)), "speedBackward": int(min(backward or sp, 130)),
+                    "limitForward": int(min(forward, 130)), "limitBackward": int(min(backward, 130)),
+                    "way": wid, "reverse": reverse,
+                    "flags": flags, "name": names[nm], "layer": layer, "pts": xz,
+                    "valik": wid in VALIK_WAYS, "arches": HISTORIC_BRIDGES.get(wid, 0)})
     return out, name_list
+
+
+def clip_segment(a, b, bounds):
+    """Parametry části úsečky uvnitř obdélníku."""
+    lo, hi = 0.0, 1.0
+    for origin, end, lower, upper in zip(a, b, bounds[::2], bounds[1::2]):
+        d = end - origin
+        if not d:
+            if not lower <= origin <= upper:
+                return None
+            continue
+        t0, t1 = sorted(((lower - origin) / d, (upper - origin) / d))
+        lo, hi = max(lo, t0), min(hi, t1)
+        if lo >= hi:
+            return None
+    return lo, hi
+
+
+def clip_roads(roads, bounds):
+    # Závora je uvnitř hratelné plochy. Za ní je rezerva pro pěší pohyb i let.
+    min_x, max_x, min_z, max_z = bounds
+    limits = (min_x + 42, max_x - 42, min_z + 42, max_z - 42)
+    clipped, closures = [], []
+    for road in roads:
+        if road["cls"] > DRIVABLE_MAX:
+            clipped.append(road)
+            continue
+        path, length = [], 0.0
+        ends = []
+        for a, b in zip(road["pts"], road["pts"][1:]):
+            window = clip_segment(a, b, limits)
+            if window is None:
+                if path:
+                    if length > 0.5:
+                        clipped.append({**road, "pts": path})
+                        closures.extend(ends)
+                    path, length, ends = [], 0.0, []
+                continue
+            lo, hi = window
+            dx, dz = b[0] - a[0], b[1] - a[1]
+            span = math.hypot(dx, dz)
+            if span < 0.01:
+                continue
+            if not path:
+                path.append(a if lo == 0 else (a[0] + dx * lo, a[1] + dz * lo))
+            path.append(b if hi == 1 else (a[0] + dx * hi, a[1] + dz * hi))
+            length += span * (hi - lo)
+            if not road["flags"] & (2 | 4 | 32):
+                for t, direction, point in ((lo, -1, path[0]), (hi, 1, path[-1])):
+                    if 0 < t < 1 and (direction > 0 or len(path) == 2):
+                        ends.append([round(point[0], 1), round(point[1], 1),
+                                     round(direction * dx / span, 5), round(direction * dz / span, 5),
+                                     round(road["w"], 1)])
+            if hi < 1:
+                if length > 0.5:
+                    clipped.append({**road, "pts": path})
+                    closures.extend(ends)
+                path, length, ends = [], 0.0, []
+        if length > 0.5 and path:
+            clipped.append({**road, "pts": path})
+            closures.extend(ends)
+    return clipped, closures
 
 
 def pack_lines(path, items, header, extra=()):
@@ -791,7 +874,7 @@ def pack_lines(path, items, header, extra=()):
               "dx": np.array(dx, np.int16), "dz": np.array(dz, np.int16)}
     for key, dtype in extra:
         arrays[key] = np.array([it[key] for it in items], dtype)
-    # výšky mostovek: jen u mostů, po 2 cm nad základní výškou terénu
+    # Výška vozovky u mostů a tunelů, po 2 cm nad základní výškou terénu.
     b_off = np.full(n, 0xFFFFFFFF, np.uint32)
     b_y = []
     for i, it in enumerate(items):
@@ -1305,9 +1388,33 @@ def find_landmarks(ex):
             continue
         x, z = to_xz(*centroid(way[2]))
         out.append([round(x, 1), round(z, 1), title])
+    hamr = ex["nodes"].get(2443978783)
+    if hamr:
+        x, z = to_xz(*hamr[:2])
+        out.append([round(x, 1), round(z, 1), "Vodní hamr Dobřív"])
     if missing:
         print("   nenalezené památky:", ", ".join(missing))
     return out
+
+
+def walking_approaches(ex):
+    # Od konce obytné ulice po mostku přes Klabavu až k jižnímu přístupu k hamru.
+    ids = (37894287, 37894286, 37894312, 37894311)
+    ways = [ex["ways"].get(wid) for wid in ids]
+    if not all(ways):
+        return {}
+    pts = []
+    node = 444695615
+    for _, nodes, coords in ways:
+        if nodes[0] == node:
+            node = nodes[-1]
+        elif nodes[-1] == node:
+            node = nodes[0]
+            coords = coords[::-1]
+        else:
+            raise ValueError("Pěší přístup k hamru: cesty OSM na sebe nenavazují.")
+        pts.extend(coords[1:] if pts else coords)
+    return {"Vodní hamr Dobřív": [round(v, 1) for p in pts for v in to_xz(*p)]}
 
 
 # --------------------------------------------------------------- main ------
@@ -1344,16 +1451,27 @@ def build(output):
     ter.burn_lines([r for r in roads if r["cls"] <= 14 and not (r["flags"] & 6)], lambda r: r["w"] / 2)
     ter.burn_lines([r for r in rails if not (r["flags"] & 2)], lambda r: 1.7 if r["cls"] == 1 else 1.3)
     n_water = ter.flatten_water([p["rings"] for p in polys if p["cls"] == LAND["water"]])
+    wilson = next((r for r in roads if r["arches"] == 2), None)
+    if wilson:
+        ter.refine_wilson(wilson)
     clipped = ter.quantize()
+    roads, closures = clip_roads(roads, bounds)
     nb = ter.bridge_heights(roads, lambda r: bool(r["flags"] & 2))
     nb += ter.bridge_heights(rails, lambda r: bool(r["flags"] & 2))
+    for road in roads:
+        if road["valik"]:
+            ter.tunnel_heights(road)
     ter.write(os.path.join(output, "terrain.bin"), write_pack)
     print(f"  síť {ter.cols} × {ter.rows} po {terrain_mod.G:.0f} m, výšky {raw_min:.0f}–{raw_max:.0f} m n. m., "
           f"základ {ter.base} m, vodních bodů {n_water}, mostů {nb}, strmých řádků {clipped}")
 
-    pack_lines(os.path.join(output, "roads.bin"), roads, {},
+    pack_lines(os.path.join(output, "roads.bin"), roads,
+               {"tunnels": [i for i, road in enumerate(roads) if road["valik"]],
+                "archedBridges": [[i, road["arches"]] for i, road in enumerate(roads) if road["arches"]]},
                extra=(("cls", np.uint8), ("w", np.float32), ("lanes", np.uint8), ("speed", np.uint8),
-                      ("flags", np.uint8), ("name", np.uint16), ("layer", np.int8)))
+                      ("flags", np.uint8), ("name", np.uint16), ("layer", np.int8),
+                      ("speedForward", np.uint8), ("speedBackward", np.uint8),
+                      ("limitForward", np.uint8), ("limitBackward", np.uint8)))
     print(f"  silnic a cest: {len(roads)}, názvů: {len(road_names)}")
     pack_lines(os.path.join(output, "rails.bin"), rails, {}, extra=(("cls", np.uint8), ("flags", np.uint8)))
 
@@ -1376,6 +1494,9 @@ def build(output):
         "roadNames": road_names,
         "transit": transit,
         "landmarks": landmarks,
+        "walkingApproaches": walking_approaches(ex),
+        "roadClosures": closures,
+        "traffic": build_traffic(ex, roads, bounds, RAW),
     }
     meta.update(pois)
     meta_path = os.path.join(output, "meta.json")

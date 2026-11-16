@@ -25,6 +25,7 @@ export class Car {
     this.blocked = 0; this.temper = 0.8 + Math.random() * 0.25;
     this.rest = 0; this.wasAI = false;
     this.route = null; this.wp = 0; this.repath = 0;
+    this.turnContext = 0; this.trafficStop = null;
     this.halfLen = this.type.len / 2;
     this.radius = this.type.wid * 0.56;
     this.roll = 0; this.pitch = 0;       // náklon karoserie v zatáčce
@@ -38,6 +39,7 @@ export class Car {
   place(x, z, yaw, hint = null) {
     const w = Car.world;
     this.x = x; this.z = z; this.yaw = yaw; this.vx = this.vz = 0; this.speed = 0; this.vy = 0; this.air = false;
+    this.turnContext = 0; this.trafficStop = null;
     this.y = w.groundY(x, z, hint === null ? w.heightAt(x, z) + 1 : hint);
     const fx = Math.sin(yaw), fz = Math.cos(yaw), hl = this.type.len * 0.36;
     this.gPitch = Math.atan2(w.groundY(x - fx * hl, z - fz * hl, this.y + 1) - w.groundY(x + fx * hl, z + fz * hl, this.y + 1), 2 * hl);
@@ -244,7 +246,7 @@ export class VehicleManager {
       const f = w.outEdges[q];
       if (f === rev) continue;
       const road = w.eRoad[f], cls = w.r.cls[road];
-      if (cls > RC.LIVING || (w.r.flags[road] & RF.PRIVATE)) continue;
+      if (cls > RC.LIVING || w.turnContext(e, f, car.turnContext) < 0) continue;
       this._edgeTangent(f, false, _pt2);
       const cos = ex * _pt2.tx + ez * _pt2.tz;
       if (cos < -0.8) continue;
@@ -253,7 +255,9 @@ export class VehicleManager {
       total += wt;
     }
     if (!cands.length) {
-      if (rev >= 0) { car.next = rev; car.turnSlow = 2.5; car.nextLane = this._laneFor(rev); return; }
+      if (rev >= 0 && w.turnContext(e, rev, car.turnContext) >= 0) {
+        car.next = rev; car.turnSlow = 2.5; car.nextLane = this._laneFor(rev); return;
+      }
       car.next = -1; return;
     }
     let r = Math.random() * total;
@@ -289,13 +293,19 @@ export class VehicleManager {
     const w = this.world;
     const road = w.eRoad[car.edge];
     const len = w.eLen[car.edge];
-    let vmax = Math.min(w.r.speed[road] / 3.6, 15) * car.temper;
+    const roadLimit = w.roadSpeed(road, w.eA[car.edge] < w.eB[car.edge]) / 3.6;
+    let vmax = Math.min(roadLimit, Math.min(roadLimit, 15) * car.temper);
     const remain = len - car.s;
+    if (car.next >= 0) {
+      const nextLimit = w.roadSpeed(w.eRoad[car.next], w.eA[car.next] < w.eB[car.next]) / 3.6;
+      vmax = Math.min(vmax, Math.sqrt(nextLimit ** 2 + 8 * Math.max(0, remain)));
+    }
     if (remain < 24 && car.turnSlow < vmax) vmax = car.turnSlow + (vmax - car.turnSlow) * Math.max(0, (remain - 6) / 18);
     let limit = this._obstacleLimit(car, vmax, null);
     if (car.blocked > 12) limit = Math.max(limit, 1.2);       // po dlouhém čekání se zkus protlačit
     if (car.speed < limit) car.speed = Math.min(limit, car.speed + 2.6 * dt);
     else car.speed = Math.max(limit, car.speed - 8 * dt);
+    car.speed = w.traffic.drivingLimit(car, dt, car.speed, this.cars, this.obstacles);
     car.blocked = car.speed < 0.3 ? car.blocked + dt : 0;
 
     const look = 3.2 + car.speed * 0.45;
@@ -314,6 +324,8 @@ export class VehicleManager {
     car.s += car.speed * dt;
     if (car.s >= len) {
       if (car.next < 0) { car.dead = true; return; }
+      car.turnContext = Math.max(0, w.turnContext(car.edge, car.next, car.turnContext));
+      if (car.trafficStop?.rule.edge !== car.next) car.trafficStop = null;
       car.s -= len; car.edge = car.next; car.lane = car.nextLane;
       this._pickNext(car);
     }
@@ -345,7 +357,7 @@ export class VehicleManager {
       if (lo === r.seg) { s += step > 0 ? l * r.t : l * (1 - r.t); break; }
       s += l;
     }
-    car.edge = e; car.s = s; car.lane = this._laneFor(e);
+    car.edge = e; car.s = s; car.lane = this._laneFor(e); car.turnContext = 0; car.trafficStop = null;
     car.mode = car.wasAI === 'police' && this.game.wanted > 0 ? 'police' : 'ai';
     car.speed = 0; car.blocked = 0;
     this._pickNext(car);
@@ -598,7 +610,7 @@ export class VehicleManager {
       this.spawnTimer = 0.12;
       let ai = 0, parked = 0, police = 0;
       for (const c of this.cars) { if (c.mode === 'ai') ai++; else if (c.mode === 'parked') parked++; else if (c.mode === 'police') police++; }
-      if (ai < QUALITY.traffic) this.spawnTraffic(px, pz, cam, Math.random() < 0.035 ? 'police' : null);
+      if (ai < Math.ceil(QUALITY.traffic * this.game.streetActivity)) this.spawnTraffic(px, pz, cam, Math.random() < 0.035 ? 'police' : null);
       if (parked < QUALITY.parked) { this.spawnParked(px, pz, cam); this.spawnParked(px, pz, cam); }
       const wantPolice = Math.min(5, this.game.wanted);
       if (police < wantPolice) this.spawnPolice(player, cam);
@@ -633,7 +645,7 @@ export class VehicleManager {
       if (c.mesh.userData.light) c.mesh.userData.light.visible = lightsOn && c.mode !== 'parked' && !c.noLights && d2 < 300 * 300;
       if (c.mesh.userData.beacons) {
         const on = c.mode === 'police';
-        const ph = Math.floor(performance.now() / 160) % 2;
+        const ph = Math.floor(this.game.time / 0.16) % 2;
         c.mesh.userData.beacons[0].visible = on && ph === 0;
         c.mesh.userData.beacons[1].visible = on && ph === 1;
       }

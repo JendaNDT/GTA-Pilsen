@@ -2,3 +2,5 @@ numpy>=1.24,<3
 tifffile>=2023.7.10
 osmium>=3.7,<5
 Pillow>=10.4,<13
+pyproj>=3.6
+pyshp>=2.3

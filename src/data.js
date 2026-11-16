@@ -41,26 +41,45 @@ export function parsePack(buf) {
 
 // přibližné velikosti souborů (bajty) pro ukazatel průběhu
 const FILES = [
-  ['buildings', 'data/buildings.bin', 5_670_000],
-  ['roads', 'data/roads.bin', 1_830_000],
-  ['land', 'data/land.bin', 2_940_000],
-  ['terrain', 'data/terrain.bin', 8_550_000],
-  ['rails', 'data/rails.bin', 87_000],
-  ['trees', 'data/trees.bin', 152_000],
-  ['meta', 'data/meta.json', 503_000],
+  ['buildings', 'data/buildings.bin', 6_104_000],
+  ['roads', 'data/roads.bin', 2_100_000],
+  ['land', 'data/land.bin', 3_215_000],
+  ['terrain', 'data/terrain.bin', 10_475_000],
+  ['rails', 'data/rails.bin', 96_000],
+  ['trees', 'data/trees.bin', 161_000],
+  ['meta', 'data/meta.json', 2_082_000],
+  ['timetable', 'data/timetable.json', 974_368],
+  ['heritage', 'detail/city/index.json', 75_000],
 ];
+
+export function assetFingerprint(buffer) {
+  let hash = 2166136261;
+  const bytes = new Uint8Array(buffer);
+  for (let i = 0; i < bytes.length; i++) hash = Math.imul(hash ^ bytes[i], 16777619);
+  return (hash >>> 0).toString(16).padStart(8, '0');
+}
+
+export async function loadCityTile(file, signal) {
+  const base = import.meta.env?.BASE_URL || '/';
+  const response = await fetch(`${base}detail/city/${file}`, { signal, cache: 'no-cache' });
+  if (!response.ok) throw new Error(`Dlaždice centra ${file} (${response.status})`);
+  return parsePack(await response.arrayBuffer());
+}
 
 export async function loadAll(onProgress) {
   const totalSize = FILES.reduce((s, f) => s + f[2], 0);
   let loaded = 0;
   const bump = (n) => { loaded += n; onProgress(Math.min(1, loaded / totalSize)); };
-  const base = import.meta.env.BASE_URL || '/';
+  const base = import.meta.env?.BASE_URL || '/';
   const results = await Promise.all(FILES.map(([, url]) => fetchBuffer(base + url, bump)));
   const out = {};
-  FILES.forEach(([name], i) => {
-    out[name] = name === 'meta'
+  FILES.forEach(([name, url], i) => {
+    out[name] = url.endsWith('.json')
       ? JSON.parse(new TextDecoder().decode(new Uint8Array(results[i])))
       : parsePack(results[i]);
   });
+  for (const [pack, field] of [['buildings', 'osm'], ['terrain', 'terrain']]) {
+    if (assetFingerprint(results[FILES.findIndex(([name]) => name === pack)]) !== out.heritage[field]) out.heritage.tiles = [];
+  }
   return out;
 }

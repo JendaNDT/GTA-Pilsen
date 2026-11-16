@@ -6,6 +6,7 @@ globalThis.matchMedia = () => ({ matches: false });
 globalThis.window = {};
 globalThis.location = { search: '' };
 const { World, SURF } = await import('../src/world/world.js');
+const { TurnRules } = await import('../src/world/turns.js');
 const { RC, RF } = await import('../src/config.js');
 
 function emptyWorld() {
@@ -77,4 +78,24 @@ test('navigace respektuje jednosměrku a nezařazuje pěšiny do silničního gr
   assert.equal(world.nearestNode(0, -100, 10), -1);
   assert.deepEqual(world.findPath(east, east), []);
   assert.equal(world.findPath(-1, east), null);
+});
+
+test('zákaz přes mezilehlý úsek platí jen po příjezdu z určené silnice', () => {
+  const world = emptyWorld();
+  world._initRoads({
+    header: { count: 4 },
+    x0: [-1000, 0, 1000, 0], z0: [0, 0, 0, -1000],
+    dx: [1000, 1000, 0, 0], dz: [0, 0, 1000, 1000], start: [0, 1, 2, 3, 4],
+    cls: [RC.RESIDENTIAL, RC.RESIDENTIAL, RC.RESIDENTIAL, RC.RESIDENTIAL],
+    flags: [RF.ONEWAY, RF.ONEWAY, RF.ONEWAY, RF.ONEWAY], w: [6, 6, 6, 6],
+  });
+  world._initGraph();
+  world.turns = new TurnRules(world, [{ kind: 'no_right_turn', from: [0], via: [[1]], to: [2] }]);
+  const [from, via, to, side] = [0, 1, 2, 3].map((road) => world.eRoad.indexOf(road));
+  const context = world.turnContext(from, via);
+  assert.ok(context > 0);
+  assert.equal(world.turnContext(via, to, context), -1);
+  assert.equal(world.turnContext(via, to, world.turnContext(side, via)), 0);
+  assert.equal(world.findPath(world.eFrom[from], world.eTo[to]), null);
+  assert.deepEqual(world.findPath(world.eFrom[side], world.eTo[to]), [side, via, to]);
 });

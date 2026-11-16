@@ -37,7 +37,7 @@ const HELP_HTML = IS_TOUCH ? `
 
 const ABOUT_HTML = (meta) => `
   <h3>O hře</h3>
-  <p>Otevřený svět postavený ze skutečných dat od Plzně po Rokycany. Najdeš v něm kopce a údolí řek,
+  <p>Otevřený svět postavený ze skutečných dat od Plzně přes Rokycany až do Dobříva. Najdeš v něm kopce a údolí řek,
   půdorysy a výšky budov, silnice a mosty, tramvajové a trolejbusové linky, parky, restaurace i adresy.</p>
   <p>Co se dá dělat: chodit, půjčovat si auta, vozit se tramvají a trolejbusem, létat vrtulníkem,
   rozvážet jídlo ze skutečných podniků, objevovat památky a ujíždět policii.</p>
@@ -45,10 +45,25 @@ const ABOUT_HTML = (meta) => `
   <p>Mapová data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">přispěvatelé OpenStreetMap</a>
   (licence ODbL). Terén vychází z digitálního modelu reliéfu DMR 5G, výšky budov z rozdílu modelu povrchu
   DMP 1G a DMR 5G © <a href="https://www.cuzk.gov.cz" target="_blank" rel="noopener">ČÚZK</a>.</p>
+  <p>Polohy značek, stop čar a přechodů v Plzni vycházejí také z otevřeného
+  <a href="https://opendata.plzen.eu/public/opendata/detail/6" target="_blank" rel="noopener">pasportu svislého</a> a
+  <a href="https://opendata.plzen.eu/public/opendata/detail/92" target="_blank" rel="noopener">vodorovného značení města Plzně</a>.</p>
+  <p>Čtyři mapové listy centra používají otevřená data
+  <a href="https://opendata.plzen.eu/public/opendata/detail/37" target="_blank" rel="noopener">3D budov centra Plzně, 2024</a>
+  (GEOREAL – Vybíral, město Plzeň). Geometrie je převedená do herních souřadnic. Materiály v dalších
+  čtvrtích využívají hranice <a href="https://opendata.plzen.eu/public/opendata/detail/108" target="_blank" rel="noopener">městských částí</a>.
+  Model hamru
+  vychází z mapy a fotografie obnovy zveřejněné
+  <a href="https://www.npu.cz/cs/generalni-reditelstvi-npu/inspirujte-se/70002-obnova-hamru-horejsi-lub-v-dobrivu"
+  target="_blank" rel="noopener">Národním památkovým ústavem</a>.</p>
+  <p>Odjezdy pro stávající tramvajové a trolejbusové trasy vycházejí z GTFS
+  <a href="https://opendata.plzen.eu/public/opendata/detail/187" target="_blank" rel="noopener">Plzeňských městských dopravních podniků, a.s.</a>
+  (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>).
+  Hra z dat vybírá spoje, páruje jejich zastávky s herní mapou a převádí kalendář k místnímu použití.</p>
   <p>Datum mapových dat OpenStreetMap: ${meta.osmTimestamp
     ? `${new Date(meta.osmTimestamp).toLocaleString('cs-CZ', { timeZone: 'UTC' })} UTC`
     : 'u této starší datové sady není doloženo'}.</p>
-  <p>Vzhled budov (barvy, okna) a provoz jsou vymyšlené, názvy ulic, podniků a zastávek jsou skutečné.
+  <p>Povrchy a okna budov jsou stylizované, názvy ulic, podniků a zastávek jsou skutečné.
   Hra je nezávislý fanouškovský projekt a není oficiálním produktem města ani dopravního podniku.</p>
   <p>Inspirováno projektem HrejBrno.cz.</p>`;
 
@@ -76,8 +91,9 @@ async function boot() {
   await new Promise((r) => setTimeout(r, 30));
   const game = new Game(renderer, data);
   initInput(canvas);
-  if (PARAMS.has('hour')) game.hour = +PARAMS.get('hour');
-  game.env.setHour(game.hour);
+  if (PARAMS.has('hour') || PARAMS.has('date')) {
+    game.setClock(PARAMS.get('date'), PARAMS.has('hour') ? +PARAMS.get('hour') : game.hour);
+  }
 
   // představí okolí startu, ať hra nezačíná v prázdnu
   const f = game.focus;
@@ -122,16 +138,24 @@ async function boot() {
     }
   };
   $('btn-play').addEventListener('click', play);
-  $('btn-help').addEventListener('click', () => { $('panel-help').classList.toggle('hidden'); $('panel-about').classList.add('hidden'); });
-  $('btn-about').addEventListener('click', () => { $('panel-about').classList.toggle('hidden'); $('panel-help').classList.add('hidden'); });
+  const sections = ['help', 'about', 'settings'];
+  for (const name of sections) {
+    $('btn-' + name).addEventListener('click', () => {
+      const open = $('panel-' + name).classList.contains('hidden');
+      for (const other of sections) $('panel-' + other).classList.toggle('hidden', !(open && name === other));
+      $('btn-settings').setAttribute('aria-expanded', open && name === 'settings');
+    });
+  }
+  $('show-clock').checked = game.clockVisible;
+  $('show-clock').addEventListener('change', (event) => game.setClockVisible(event.target.checked));
   $('btn-reset').addEventListener('click', () => {
     if (confirm('Opravdu začít od začátku? Smažou se peníze i objevené památky.')) { Game.clearSave(); location.reload(); }
   });
   $('btn-menu').addEventListener('click', openMenu);
   $('bigmap-close').addEventListener('click', () => game.toggleMap(false));
   $('minimap').addEventListener('click', () => { if (running) game.toggleMap(true); });
-  const setDestination = ({ x, z }) => {
-    game.jobs.setWaypoint(x, z);
+  const setDestination = ({ x, z, name }) => {
+    game.jobs.setWaypoint(x, z, name);
     game.toggleMap(false);
   };
   initMapSearch(game.world, setDestination);
@@ -162,6 +186,7 @@ async function boot() {
     window.__play = play;
     window.__step = (dt, n = 1) => { for (let i = 0; i < n; i++) game.update(dt); game.render(); };
     window.__freeze = (b) => { running = !b; };
+    window.__setClock = (date, hour) => game.setClock(date, hour);
     window.__setInput = (steer, thr) => { input.debugSteer = steer; input.debugThr = thr; };
     window.__view = (x, y, z, tx, ty, tz) => {
       game.camera.position.set(x, y, z); game.camera.lookAt(tx, ty, tz);

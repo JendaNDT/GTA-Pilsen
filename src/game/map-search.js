@@ -16,10 +16,10 @@ export function initMapSearch(world, setDestination) {
         || Number(b.key.startsWith(query)) - Number(a.key.startsWith(query))
         || a.name.localeCompare(b.name, 'cs')).slice(0, 5);
   };
-  const choose = ({ x, z }) => {
+  const choose = ({ x, z, name }) => {
     input.value = '';
     list.replaceChildren();
-    setDestination({ x, z });
+    setDestination({ x, z, name });
   };
 
   document.getElementById('bigmap-controls').addEventListener('keydown', (event) => {

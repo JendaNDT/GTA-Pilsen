@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { QUALITY, RC, DRIVABLE_MAX, IS_TOUCH, DEBUG } from '../config.js';
 import { World } from '../world/world.js';
+import { TUNNEL_HEIGHT } from '../world/tunnels.js';
 import { ChunkManager } from '../world/chunks.js';
 import { Environment } from '../world/scene.js';
 import { env } from '../world/materials.js';
@@ -13,12 +14,14 @@ import { Hud } from './hud.js';
 import { Jobs } from './missions.js';
 import { GameAudio } from './audio.js';
 import { input, pollInput, endFrame } from './input.js';
+import { GameClock, HOUR_SECONDS, formatDay, parseDay } from './clock.js';
 
 const SAVE_KEY = 'plzen-naplno-v1';
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const _road = {};
 const _v = new THREE.Vector3();
 const START = { x: -42, z: 52 };
+const plain = (text) => String(text).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
 
 export class Game {
   constructor(renderer, data) {
@@ -26,13 +29,20 @@ export class Game {
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.4, QUALITY.view * 1.35);
     this.world = new World(data);
+    if (this.world.tunnels.length) {
+      this.tunnelLight = new THREE.PointLight(0xffe0b0, 35, 22);
+      this.tunnelLight.visible = false;
+      this.scene.add(this.tunnelLight);
+    }
     this.env = new Environment(this.scene, this.world);
-    this.chunks = new ChunkManager(this.scene, this.world, renderer);
+    this.chunks = new ChunkManager(this.scene, this.world, renderer, data.heritage);
     this.hud = new Hud(this.world);
     this.audio = new GameAudio();
     this.vehicles = new VehicleManager(this.scene, this.world, this);
     this.peds = new PedManager(this.scene, this.world, this);
-    this.transit = new TransitManager(this.scene, this.world, this);
+    this.transit = new TransitManager(this.scene, this.world, this, data.timetable);
+    this.clock = new GameClock(this.transit.timetable.monday);
+    this.clockVisible = true;
     this.player = new Player(this.scene, this.world);
     // vrtulníky: heliporty z mapy (FN Lochotín, pivovar, Bory) a jeden na náměstí Republiky
     this.helis = [[106, -1596], [984, -396], [-266, 1314], [48, 52]].map(([x, z], i) => {
@@ -41,7 +51,7 @@ export class Game {
     });
     this.mode = 'foot'; this.car = null; this.heli = null; this.ride = null;
     this.focus = this.player;
-    this.money = 500; this.wanted = 0; this.cool = 0; this.bust = 0; this.hour = 9;
+    this.money = 500; this.wanted = 0; this.cool = 0; this.bust = 0;
     this.stats = {};
     this.time = 0; this.envTimer = 0; this.placeTimer = 0; this.promptTimer = 0; this.saveTimer = 20; this.waterTimer = 0;
     this.camYaw = 2.4; this.camPitch = 0.3; this.zoom = 1; this.camDist = 6; this.lookIdle = 9; this.camMode = 0;
@@ -53,7 +63,46 @@ export class Game {
     this.player.yaw = this.camYaw;
     this._spawnStarterCar();
     this.hud.money(this.money);
+    this.syncClock(true);
     if (DEBUG) window.__game = this;
+  }
+
+  get hour() { return this.clock.hour; }
+  get streetActivity() {
+    return 1 - this.env.night * 0.68;
+  }
+
+  setClock(date, hour) {
+    const day = date === null ? this.clock.day : parseDay(date);
+    if (day === null || !Number.isFinite(hour) || hour < 0 || hour >= 24) return false;
+    this.clock.set(day, hour);
+    this.syncClock(true);
+    return true;
+  }
+
+  syncClock(reposition = false) {
+    if (reposition) {
+      if (this.ride) { this.ride.v = 0; this._alight(); }
+      this.transit.reset(this.clock, this.focus);
+      this.placeTimer = 0;
+      this.vehicles.spawnTimer = 0;
+      this.peds.timer = 0;
+    }
+    this.env.setHour(this.hour);
+    this.hud.clock(this.clock, this.clockVisible);
+    this.updateDepartures();
+    this.envTimer = 0.4;
+  }
+
+  setClockVisible(visible) {
+    this.clockVisible = visible;
+    this.hud.clock(this.clock, visible);
+    this.save();
+  }
+
+  updateDepartures() {
+    this.hud.departures(this.mode === 'foot'
+      ? this.transit.timetable.departures(this.player.x, this.player.z, this.clock) : null);
   }
 
   // ----------------------------------------------------------- ukládání ----
@@ -61,9 +110,18 @@ export class Game {
     let s = null;
     try { s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); } catch { s = null; }
     let x = START.x, z = START.z;
-    if (s && s.v === 1) {
-      this.money = s.money ?? 500; this.hour = s.hour ?? 9; this.stats = s.stats || {};
-      if (Number.isFinite(s.x) && this.world.inBounds(s.x, s.z, 60)) { x = s.x; z = s.z; }
+    if (s && (s.v === 1 || s.v === 2)) {
+      this.money = s.money ?? 500; this.stats = s.stats || {};
+      const hour = Number.isFinite(s.hour) && s.hour >= 0 && s.hour < 24 ? s.hour : 9;
+      const day = s.v === 2 ? parseDay(s.date) : null;
+      this.clock.set(day ?? this.transit.timetable.monday, hour);
+      this.clockVisible = s.v === 1 || s.clockVisible !== false;
+      const w = this.world;
+      if (Number.isFinite(s.x) && Number.isFinite(s.z)
+          && s.x >= w.playMinX && s.x <= w.playMaxX && s.z >= w.playMinZ && s.z <= w.playMaxZ) {
+        x = clamp(s.x, w.playMinX + 20, w.playMaxX - 20);
+        z = clamp(s.z, w.playMinZ + 20, w.playMaxZ - 20);
+      }
       const found = new Set(s.found || []);
       for (const lm of this.jobs.landmarks) lm.found = found.has(lm.name);
       this.hasSave = true;
@@ -75,8 +133,12 @@ export class Game {
   save() {
     try {
       const f = this.focus;
+      const tube = this.world.tunnelAt(f.x, f.z, f.y);
+      const safe = tube?.inside ? tube.tunnel.portals.map((p) => p.outside)
+        .reduce((a, b) => Math.hypot(a.x - f.x, a.z - f.z) < Math.hypot(b.x - f.x, b.z - f.z) ? a : b) : f;
       localStorage.setItem(SAVE_KEY, JSON.stringify({
-        v: 1, money: this.money, hour: this.hour, stats: this.stats, x: Math.round(f.x), z: Math.round(f.z),
+        v: 2, money: this.money, date: formatDay(this.clock.day), hour: this.hour, clockVisible: this.clockVisible,
+        stats: this.stats, x: Math.round(safe.x), z: Math.round(safe.z),
         found: this.jobs.landmarks.filter((l) => l.found).map((l) => l.name),
       }));
     } catch { /* úložiště nemusí být dostupné */ }
@@ -233,10 +295,11 @@ export class Game {
   unstuck() {
     const f = this.focus, w = this.world;
     if (this.mode === 'transit' || this.mode === 'heli') return;
-    const r = w.nearestRoad(f.x, f.z, 400, RC.LIVING, 0, _road);
+    const r = w.nearestRoad(f.x, f.z, 400, RC.LIVING, 0, _road, f.y);
     if (!r) return;
-    if (this.mode === 'car') { this.car.place(r.x, r.z, Math.atan2(r.dx, r.dz)); this.car.health = Math.max(this.car.health, 40); }
-    else this.player.place(r.x, r.z);
+    const tube = w.tunnelAt(r.x, r.z, f.y);
+    if (this.mode === 'car') { this.car.place(r.x, r.z, Math.atan2(r.dx, r.dz), tube?.floor); this.car.health = Math.max(this.car.health, 40); }
+    else this.player.place(r.x, r.z, tube?.floor);
     this.hud.toast('Zpět na silnici.');
   }
 
@@ -369,14 +432,32 @@ export class Game {
     this.camDist += (dist - this.camDist) * Math.min(1, dt * (dist < this.camDist ? 18 : 3.5));
     dist = this.camDist;
     const cam = this.camera;
-    const camX = f.x - fx * dist * cp, camZ = f.z - fz * dist * cp;
+    let camX = f.x - fx * dist * cp, camZ = f.z - fz * dist * cp;
     let camY = ty + dist * sp;
-    // terén: kamera zůstane nad zemí a mezi ní a hráčem nesmí být hřeben
-    camY = Math.max(camY, w.heightAt(camX, camZ) + 0.7);
-    for (let q = 1; q <= 3; q++) {
-      const u = q / 4;
-      const over = w.heightAt(f.x + (camX - f.x) * u, f.z + (camZ - f.z) * u) + 0.4 - (ty + (camY - ty) * u);
-      if (over > 0) camY += over / u;
+    const tunnel = w.tunnelAt(f.x, f.z, f.y);
+    if (this.tunnelLight) {
+      this.tunnelLight.visible = Boolean(tunnel?.inside);
+      if (tunnel?.inside) this.tunnelLight.position.set(f.x, tunnel.floor + TUNNEL_HEIGHT - 0.45, f.z);
+    }
+    if (tunnel) {
+      const tube = tunnel.tunnel, sampled = {};
+      let floor = tunnel.floor;
+      camX = f.x; camZ = f.z; camY = ty + 0.5;
+      for (let d = 0.5; d <= dist; d += 0.5) {
+        const x = f.x - fx * d * cp, z = f.z - fz * d * cp;
+        if (!tube.position(x, z, tube.halfWidth - 0.3, sampled)) break;
+        camX = x; camZ = z; floor = sampled.floor; camY = ty + d * sp;
+      }
+      camY = clamp(camY, floor + 0.7, floor + TUNNEL_HEIGHT - 0.35);
+    } else {
+      // Kamera zůstane nad terénem. U portálu respektuj výšku otevřeného zářezu.
+      const ground = (x, z) => w.tunnelAt(x, z, Infinity)?.floor ?? w.heightAt(x, z);
+      camY = Math.max(camY, ground(camX, camZ) + 0.7);
+      for (let q = 1; q <= 3; q++) {
+        const u = q / 4;
+        const over = ground(f.x + (camX - f.x) * u, f.z + (camZ - f.z) * u) + 0.4 - (ty + (camY - ty) * u);
+        if (over > 0) camY += over / u;
+      }
     }
     cam.position.set(camX, camY, camZ);
     if (this.shake > 0.01) {
@@ -395,24 +476,30 @@ export class Game {
 
   // -------------------------------------------------------------- krok ----
   update(dt) {
+    if (this.paused) return;
     pollInput();
+    if (input.pressed.has('map')) this.toggleMap();
+    if (this.mapOpen) { endFrame(); return; }
+
     this.time += dt;
     this.crashCool -= dt; this.wantedCool -= dt;
     const p = this.player;
-
-    if (input.pressed.has('map')) this.toggleMap();
-    if (this.mapOpen) { endFrame(); return; }
     if (input.pressed.has('action')) this.doAction();
     if (input.pressed.has('job')) this.jobs.toggle();
     if (input.pressed.has('camera')) this.camMode = (this.camMode + 1) % 2;
     if (input.pressed.has('reset')) this.unstuck();
     if (input.pressed.has('horn') && this.mode === 'car') this.audio.horn();
-    if (input.pressed.has('time')) { this.hour = (this.hour + 3) % 24; this.envTimer = 0; }
-
-    // denní doba: celý den trvá 32 minut
-    this.hour = (this.hour + dt / 80) % 24;
-    this.envTimer -= dt;
-    if (this.envTimer <= 0) { this.envTimer = 0.5; this.env.setHour(this.hour); this.hud.clock(this.hour); }
+    const previousDay = this.clock.day;
+    this.clock.tick(dt);
+    if (input.pressed.has('time')) {
+      this.clock.add(3 * HOUR_SECONDS);
+      this.syncClock(true);
+    } else {
+      this.envTimer -= dt;
+      if (this.envTimer <= 0 || this.clock.day !== previousDay) this.syncClock();
+      else this.hud.clock(this.clock, this.clockVisible);
+    }
+    this.world.traffic.tick(dt, this.mode === 'foot' ? this.player : null);
     env.time.value = this.time;
 
     // pohyb podle režimu
@@ -458,7 +545,7 @@ export class Game {
 
     // svět
     const onFoot = this.mode === 'foot';
-    this.transit.update(dt, this.focus, this.vehicles.cars, onFoot);
+    this.transit.update(dt, this.focus, this.vehicles.cars, onFoot, this.clock);
     const obs = this.vehicles.obstacles;
     obs.length = 0;
     for (const o of this.transit.obstacles) obs.push(o);
@@ -493,7 +580,7 @@ export class Game {
     this._updateCamera(dt);
     this.env.update(this.camera, this.focus);
     const fast = Math.hypot(this.focus.vx || 0, this.focus.vz || 0) > 18;
-    this.chunks.update(this.focus.x, this.focus.z, QUALITY.view, fast ? 2 : 1);
+    this.chunks.update(this.focus.x, this.focus.z, QUALITY.view, fast ? 2 : 1, this.focus.y);
     this._updateHud(dt);
 
     this.saveTimer -= dt;
@@ -507,7 +594,7 @@ export class Game {
     hud.health(this.player.health);
     if (this.mode === 'car') hud.speed(this.car.speed * 3.6, `${this.car.type.name}${this.car.health < 40 ? ' · poškozené' : ''}`);
     else if (this.mode === 'heli') hud.speed(this.heli.speed * 3.6, `Vrtulník · výška ${Math.round(this.heli.y)} m`);
-    else if (this.mode === 'transit') hud.speed(this.ride.v * 3.6, `${this.ride.isTram ? 'Tramvaj' : 'Trolejbus'} ${this.ride.route.ref} → ${this.ride.route.to}`);
+    else if (this.mode === 'transit') hud.speed(this.ride.v * 3.6, `${this.ride.isTram ? 'Tramvaj' : 'Trolejbus'} ${this.ride.route.ref} → ${this.ride.destination}`);
     else hud.speed(null);
 
     this.placeTimer -= dt;
@@ -518,6 +605,15 @@ export class Game {
       const alt = Math.round(w.baseElevation + (this.mode === 'heli' ? w.heightAt(f.x, f.z) : f.y || 0));
       const dist = w.districtAt(f.x, f.z);
       hud.place(name || '', `${dist ? `${dist} · ` : ''}${alt} m n. m.`);
+      let limit = 0;
+      if (this.mode === 'car') {
+        const road = w.nearestRoad(f.x, f.z, 16, DRIVABLE_MAX, 0, _road, f.y);
+        if (road && road.dist <= w.r.w[road.road] / 2 + 0.7) {
+          const forward = road.dx * Math.sin(f.yaw) + road.dz * Math.cos(f.yaw) >= 0;
+          limit = (forward ? w.r.limitForward : w.r.limitBackward)?.[road.road] ?? 0;
+        }
+      }
+      hud.speedLimit(limit);
     }
     this.promptTimer -= dt;
     if (this.promptTimer <= 0) {
@@ -531,11 +627,11 @@ export class Game {
         const v = !h && !car ? this.transit.boardable(p.x, p.z, p.y) : null;
         if (h) html = `<kbd>${key}</kbd>Nasednout do vrtulníku`;
         else if (car) html = `<kbd>${key}</kbd>${car.mode === 'parked' || car.mode === 'loose' ? 'Nastoupit' : 'Sebrat auto'} · ${car.type.name}`;
-        else if (v) html = `<kbd>${key}</kbd>Nastoupit · ${v.isTram ? 'tramvaj' : 'trolejbus'} ${v.route.ref} → ${v.route.to}`;
+        else if (v) html = `<kbd>${key}</kbd>Nastoupit · ${v.isTram ? 'tramvaj' : 'trolejbus'} ${plain(v.route.ref)} → ${plain(v.destination)}`;
         else if (p.swimming) html = 'Plaveš…';
       } else if (this.mode === 'transit') {
-        const st = this.ride.route.nextStop(this.ride.s - 1);
-        html = this.ride.v < 0.8 ? `<kbd>${key}</kbd>Vystoupit${this.ride.stopTarget ? ` · ${this.ride.stopTarget[1]}` : ''}` : (st ? `Příští zastávka: ${st[1]}` : 'Konečná');
+        const st = this.ride.nextStop(this.ride.s - 1);
+        html = this.ride.v < 0.8 ? `<kbd>${key}</kbd>Vystoupit${this.ride.stopTarget ? ` · ${plain(this.ride.stopTarget[1])}` : ''}` : (st ? `Příští zastávka: ${plain(st[1])}` : 'Konečná');
       } else if (this.mode === 'heli' && this.heli.landed && this.heli.speed < 2) html = `<kbd>${key}</kbd>Vystoupit`;
       hud.prompt(html);
     }
@@ -549,7 +645,7 @@ export class Game {
     if (this.mode === 'foot' && lc && this.vehicles.cars.includes(lc) && Math.hypot(lc.x - f.x, lc.z - f.z) < 500) {
       markers.push({ x: lc.x, z: lc.z, color: '#ffffff', size: 4.5 });
     }
-    hud.minimap(f.x, f.z, this.camYaw, f.yaw || 0, markers, this.jobs.route);
+    hud.minimap(f.x, f.z, this.camYaw, f.yaw || 0, markers, this.jobs.route, this.jobs.walkRoute);
   }
 
   toggleMap(force) {
@@ -565,10 +661,10 @@ export class Game {
     const found = this.jobs.landmarks.filter((l) => l.found).length;
     this.mapToWorld = this.hud.bigMap(document.getElementById('bigmap-canvas'), {
       px: f.x, pz: f.z, heading: f.yaw || 0, landmarks: this.jobs.landmarks, helis: this.helis,
-      markers: this.jobs.markers(), route: this.jobs.route,
+      markers: this.jobs.markers(), route: this.jobs.route, walkRoute: this.jobs.walkRoute,
     });
     document.getElementById('bigmap-legend').innerHTML =
-      `Památky: <b>${found}/${this.jobs.landmarks.length}</b> · žlutě objevené, šedě neobjevené · modře vrtulníky · klepnutím do mapy nastavíš cíl navigace`;
+      `Památky: <b>${found}/${this.jobs.landmarks.length}</b> · modré tečky vedou pěšky · červená příčka označuje uzavírku · klepnutím nastavíš cíl`;
   }
 
   render() {

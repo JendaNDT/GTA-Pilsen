@@ -53,4 +53,5 @@ export const LANDMARK_INFO = {
   'Nákupní centrum Olympia': 'Velké nákupní centrum na jihovýchodním okraji Plzně.',
   'Masarykovo náměstí (Rokycany)': 'Historické centrum Rokycan s klasicistní radnicí a kamennou kašnou.',
   'Nádraží Rokycany': 'Železniční stanice na trati z Plzně do Prahy. Vedle budovy je autobusové nádraží.',
+  'Vodní hamr Dobřív': 'Vodní kola pohánějí stroje historické kovárny, včetně těžkých bucharů.',
 };

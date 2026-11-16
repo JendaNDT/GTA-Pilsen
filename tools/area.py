@@ -5,12 +5,12 @@ pixely ve stupních), proto je rozsah území zadán jako počátek + celý poč
 """
 
 DEM_STEP = 1.8e-5            # ~2,0 m ve směru sever–jih, ~1,3 m ve směru západ–východ
-DEM_COLS, DEM_ROWS = 20832, 9840
-DEM_TILES = (7, 6)           # dlaždice stahování (sloupce, řady); větší kusy server odmítá chybou 500
+DEM_COLS, DEM_ROWS = 25560, 9840
+DEM_TILES = (9, 6)           # dlaždice stahování (sloupce, řady); větší kusy server odmítá chybou 500
 
 SOUTH, WEST = 49.668, 13.255
 NORTH = SOUTH + DEM_ROWS * DEM_STEP      # 49,8451
-EAST = WEST + DEM_COLS * DEM_STEP        # 13,629976, za Rokycany
+EAST = WEST + DEM_COLS * DEM_STEP        # 13,71508, za Dobřívem
 
 # jih, západ, sever, východ
 BBOX = (SOUTH, WEST, NORTH, EAST)

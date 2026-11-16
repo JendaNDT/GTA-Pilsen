@@ -1,10 +1,13 @@
 // Měří běžnou smyčku hry v Chromiu. Jízda a let mají pevné výchozí body.
 import { chromium } from '@playwright/test';
 
-const url = new URL(process.argv[2] || 'http://127.0.0.1:4173/');
+const args = process.argv.slice(2);
+const centerFlight = args.includes('--center-flight');
+const pilot = centerFlight || args.includes('--pilot');
+const url = new URL(args.find((arg) => !arg.startsWith('--')) || 'http://127.0.0.1:4173/');
 url.searchParams.set('debug', '');
 const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH });
-const report = { browser: browser.version(), viewport: '1920 × 1080', coldStartMs: [] };
+const report = { browser: browser.version(), viewport: '1920 × 1080', pilot, centerFlight, coldStartMs: [] };
 
 try {
   for (const mode of ['car', 'heli', null]) {
@@ -31,32 +34,55 @@ try {
     report.gpu = startup.gpu;
     if (mode) {
       await page.getByRole('button', { name: 'Hrát', exact: true }).click();
-      report[mode] = await page.evaluate(async (mode) => {
+      report[mode] = await page.evaluate(async ({ mode, pilot, centerFlight }) => {
         const game = window.__game, world = game.world;
         if (mode === 'car') {
-          const road = world.nearestRoad(90, 530, 70, 13, 0, {});
+          const road = world.nearestRoad(pilot ? 45 : 90, pilot ? -48 : 530, 70, 13, 0, {});
           const car = game.player.lastCar;
           car.place(road.x - road.dz * 1.8, road.z + road.dx * 1.8, Math.atan2(road.dx, road.dz));
           game._enterCar(car);
         } else {
           const heli = game.helis[3];
-          heli.x = world.playMaxX - 900;
-          heli.z = 0;
-          heli.y = world.heightAt(heli.x, heli.z) + 90;
+          heli.x = centerFlight ? -325 : pilot ? 22495 : world.playMaxX - 900;
+          heli.z = centerFlight ? 162 : pilot ? 3101 : 0;
+          heli.y = world.heightAt(heli.x, heli.z) + (centerFlight ? 70 : pilot ? 45 : 90);
           heli.yaw = Math.PI / 2;
           heli.rotor = 30;
           game._enterHeli(heli);
         }
 
         const focus = game.focus;
+        if (pilot) {
+          // Po přesunu v debug režimu nech vykreslit výchozí oblast, stejně jako při vstupu do hry.
+          window.__freeze(true);
+          window.__setInput(0, 0);
+          for (let i = 0; i < 5; i++) game.chunks.update(focus.x, focus.z, game.camera.far / 1.35, 180);
+          window.__step(1 / 60);
+          await new Promise(requestAnimationFrame);
+          await new Promise(requestAnimationFrame);
+          window.__freeze(false);
+        }
         const start = [focus.x, focus.z];
-        window.__setInput(0, mode === 'car' ? 0.55 : 1);
-        const frames = [];
+        window.__setInput(0, mode === 'car' ? (pilot ? 0.27 : 0.55) : 1);
+        const frames = [], chunks = new Set([world.chunkIndex(...start)]);
+        const ahead = {};
+        let maxPending = 0;
         let previous = await new Promise(requestAnimationFrame);
         const until = previous + 10_000;
         while (previous < until) {
           const now = await new Promise(requestAnimationFrame);
           frames.push(now - previous);
+          chunks.add(world.chunkIndex(focus.x, focus.z));
+          maxPending = Math.max(maxPending, game.chunks.pending);
+          if (pilot && mode === 'car') {
+            const x = focus.x + Math.sin(focus.yaw) * 7, z = focus.z + Math.cos(focus.yaw) * 7;
+            const rd = world.nearestRoad(x, z, 8, 13, 0, ahead);
+            if (rd) {
+              const yaw = Math.atan2(rd.x - rd.dz * 1.3 - focus.x, rd.z + rd.dx * 1.3 - focus.z);
+              const angle = Math.atan2(Math.sin(focus.yaw - yaw), Math.cos(focus.yaw - yaw));
+              window.__setInput(Math.max(-0.48, Math.min(0.48, angle * 1.5)), 0.27);
+            }
+          }
           previous = now;
         }
         window.__setInput(0, 0);
@@ -64,15 +90,21 @@ try {
         frames.sort((a, b) => a - b);
         return {
           metres: Math.round(Math.hypot(focus.x - start[0], focus.z - start[1])),
+          start: start.map(Math.round), end: [Math.round(focus.x), Math.round(focus.z)],
+          chunks: chunks.size, maxPending, shadowEnabled: game.env.sun.castShadow,
+          drawingBuffer: [game.renderer.domElement.width, game.renderer.domElement.height],
+          cityTiles: [...game.chunks.chunks.values()].filter((c) => c.heritage?.city).length,
           fps: +(1000 * frames.length / elapsed).toFixed(1),
           p95FrameMs: +frames[Math.ceil(frames.length * 0.95) - 1].toFixed(1),
           maxFrameMs: +frames.at(-1).toFixed(1),
         };
-      }, mode);
+      }, { mode, pilot, centerFlight });
     }
     await context.close();
   }
   console.log(JSON.stringify(report, null, 2));
+  if (pilot && ([report.car, report.heli].some(({ chunks }) => chunks < 2) || !report.car.cityTiles
+      || centerFlight && !report.heli.cityTiles)) process.exitCode = 1;
 } finally {
   await browser.close();
 }

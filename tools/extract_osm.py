@@ -53,7 +53,7 @@ class Handler(osmium.SimpleHandler):
     def relation(self, r):
         tags = {t.k: t.v for t in r.tags}
         typ = tags.get("type")
-        if typ not in ("multipolygon", "route", "boundary", "building", "route_master"):
+        if typ not in ("multipolygon", "route", "boundary", "building", "route_master", "restriction"):
             return
         self.rels[r.id] = (tags, [(m.type, m.ref, m.role) for m in r.members])
 

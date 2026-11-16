@@ -35,13 +35,20 @@
     </div>
     <div id="mapwrap">
       <canvas id="minimap" width="220" height="220"></canvas>
-      <div id="clock">10:00</div>
+      <div id="clock" aria-label="Herní čas">
+        <time id="clock-time" datetime="09:00">09:00</time>
+        <span id="clock-day">pondělí</span>
+      </div>
+      <section id="stop-board" class="hidden" aria-label="Nejbližší zastávka">
+        <h2 id="stop-name"></h2>
+        <ul id="stop-departures"></ul>
+      </section>
     </div>
     <div id="place"><b id="street"></b><span id="district"></span></div>
     <div id="mission" class="hidden"></div>
     <div id="toast"></div>
     <div id="prompt" class="hidden"></div>
-    <div id="speedo" class="hidden"><b id="kmh">0</b><span>km/h</span><em id="vehname"></em></div>
+    <div id="speedo" class="hidden"><small id="speedlimit" class="hidden" aria-label="Rychlostní limit"></small><b id="kmh">0</b><span>km/h</span><em id="vehname"></em></div>
     <div id="touch" class="hidden">
       <div id="stick"><i></i></div>
       <button id="tb-act" class="tb">F</button>
@@ -63,6 +70,7 @@
       </form>
       <button id="bigmap-close">Zavřít mapu</button>
     </div>
+    <div id="bigmap-date"><time></time></div>
     <canvas id="bigmap-canvas"></canvas>
     <div id="bigmap-legend"></div>
   </div>
@@ -79,11 +87,16 @@
         <button id="btn-play" class="primary">Hrát</button>
         <button id="btn-help">Ovládání</button>
         <button id="btn-about">O hře</button>
+        <button id="btn-settings" aria-controls="panel-settings" aria-expanded="false">Nastavení</button>
         <button id="btn-reset" class="ghost">Začít od začátku</button>
       </div>
       <div id="rotate-tip">Tip: otoč telefon na šířku, hraje se to líp.</div>
       <div id="panel-help" class="panel hidden"></div>
       <div id="panel-about" class="panel hidden"></div>
+      <div id="panel-settings" class="panel hidden">
+        <h3>Rozhraní</h3>
+        <label class="setting"><input id="show-clock" type="checkbox" checked /> Zobrazovat herní hodiny</label>
+      </div>
     </div>
     <div id="credits">Mapová data © přispěvatelé OpenStreetMap (ODbL) · Výškopis © ČÚZK</div>
   </div>
