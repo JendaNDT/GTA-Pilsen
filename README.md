@@ -39,6 +39,12 @@ Na dotykové obrazovce se objeví páčka a tlačítka.
 
 ## Jak hru spustit u sebe
 
+Na Macu ve Finderu dvakrát klikni na [Spustit hru.command](Spustit%20hru.command). Terminál
+spustí místní server a hra se otevře na [localhost:5173](http://localhost:5173/). Terminál
+nech při hraní otevřený. Soubor `index.html` otevřený z disku zobrazí pokyny ke spuštění.
+
+### Spuštění z terminálu
+
 Je potřeba [Node.js](https://nodejs.org) 20.19+ nebo 22.12+ (doporučená verze je 24 LTS,
 uložená také v `.nvmrc`). Node.js 18 a 21 už nejsou podporované.
 
