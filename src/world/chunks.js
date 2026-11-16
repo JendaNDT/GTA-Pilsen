@@ -34,7 +34,8 @@ const PAL = {
 function styleFor(world, i) {
   const B = world.b;
   const kind = B.kind[i];
-  const h = world.bTop[i] - world.bBase[i];
+  // výška zdí (bez šikmé střechy) – podle ní se pozná panelák od činžáku
+  const h = world.bWall[i] - world.bBase[i];
   const r = hash(i), r2 = hash(i, 1), r3 = hash(i, 2);
   const cx = (world.bMinX[i] + world.bMaxX[i]) / 2, cz = (world.bMinZ[i] + world.bMaxZ[i]) / 2;
   const footprint = (world.bMaxX[i] - world.bMinX[i]) * (world.bMaxZ[i] - world.bMinZ[i]);

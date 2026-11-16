@@ -293,7 +293,7 @@ export class Environment {
 
     this.sun.color.copy(new THREE.Color(0xfff0d8).lerp(new THREE.Color(0xffa05a), dusk)).lerp(new THREE.Color(0x9fb2e6), 1 - day);
     this.sun.intensity = 0.62 + 1.45 * day;
-    this.hemi.color.copy(new THREE.Color(0xcfe2ff).lerp(new THREE.Color(0x6f83c0), 1 - day));
+    this.hemi.color.copy(new THREE.Color(0xe2ebf7).lerp(new THREE.Color(0x6f83c0), 1 - day));
     this.hemi.groundColor.copy(new THREE.Color(0x9a927c).lerp(new THREE.Color(0x343a52), 1 - day));
     this.hemi.intensity = 0.95 + 0.6 * day;
 
