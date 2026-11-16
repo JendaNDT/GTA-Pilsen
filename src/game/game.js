@@ -4,7 +4,7 @@ import { QUALITY, RC, DRIVABLE_MAX, IS_TOUCH, DEBUG } from '../config.js';
 import { World } from '../world/world.js';
 import { ChunkManager } from '../world/chunks.js';
 import { Environment } from '../world/scene.js';
-import { makeDecalMaterial, makeWaterMaterial, env } from '../world/materials.js';
+import { env } from '../world/materials.js';
 import { VehicleManager, Car, wrapAngle } from '../entities/vehicles.js';
 import { Player, PedManager } from '../entities/player.js';
 import { TransitManager } from '../entities/transit.js';
@@ -26,10 +26,8 @@ export class Game {
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.4, QUALITY.view * 1.35);
     this.world = new World(data);
-    this.decalMat = makeDecalMaterial();
-    this.waterMat = makeWaterMaterial();
-    this.env = new Environment(this.scene, this.world, this.decalMat, this.waterMat);
-    this.chunks = new ChunkManager(this.scene, this.world, this.decalMat);
+    this.env = new Environment(this.scene, this.world);
+    this.chunks = new ChunkManager(this.scene, this.world, renderer);
     this.hud = new Hud(this.world);
     this.audio = new GameAudio();
     this.vehicles = new VehicleManager(this.scene, this.world, this);
@@ -71,7 +69,7 @@ export class Game {
       this.hasSave = true;
     }
     const p = this._clearSpot(x, z, 0.6);
-    this.player.place(p.x, p.z, 0);
+    this.player.place(p.x, p.z);
   }
 
   save() {
@@ -92,7 +90,7 @@ export class Game {
     for (let ring = 0; ring < 14; ring++) {
       for (let a = 0; a < (ring ? 8 : 1); a++) {
         const px = x + Math.cos(a * 0.785) * ring * 4, pz = z + Math.sin(a * 0.785) * ring * 4;
-        if (w.buildingAt(px, pz) < 0 && !w.collideCircle(px, pz, r + 0.4, 0.2, 1.7) && !w.isWater(px, pz)) return { x: px, z: pz };
+        if (w.buildingAt(px, pz) < 0 && !w.blocked(px, pz, r + 0.4) && !w.isWater(px, pz)) return { x: px, z: pz };
       }
     }
     const rd = w.nearestRoad(x, z, 300, DRIVABLE_MAX, 0, _road);
@@ -108,7 +106,7 @@ export class Game {
         const px = x + Math.cos(a * 0.785) * ring * 6, pz = z + Math.sin(a * 0.785) * ring * 6;
         const r = w.nearestRoad(px, pz, 14, DRIVABLE_MAX, 0, _road);
         if (r && r.dist < w.r.w[r.road] / 2 + 5) continue;
-        if (w.buildingAt(px, pz) < 0 && !w.collideCircle(px, pz, 6, 0.2, 3) && !w.isWater(px, pz)) return { x: px, z: pz };
+        if (w.buildingAt(px, pz) < 0 && !w.blocked(px, pz, 6, 0.2, 3) && !w.isWater(px, pz)) return { x: px, z: pz };
       }
     }
     return { x, z };
@@ -120,7 +118,7 @@ export class Game {
     if (!r) return;
     const hw = w.r.w[r.road] / 2;
     const x = r.x - r.dz * (hw + 0.8), z = r.z + r.dx * (hw + 0.8);
-    if (w.collideCircle(x, z, 2.2, 0.3, 1.5)) return;
+    if (w.blocked(x, z, 2.2, 0.3, 1.5)) return;
     const car = this.vehicles.add(new Car('hatch', 0xc8922e));
     car.mode = 'parked';
     car.place(x, z, Math.atan2(r.dx, r.dz));
@@ -162,13 +160,13 @@ export class Game {
     const lx = Math.cos(car.yaw), lz = -Math.sin(car.yaw);
     const off = car.type.wid / 2 + 0.75;
     let x = car.x + lx * off, z = car.z + lz * off;
-    if (w.collideCircle(x, z, 0.4, 0.2, 1.7)) {
+    if (w.collideCircle(x, z, 0.4, car.y + 0.2, car.y + 1.7)) {
       x = car.x - lx * off; z = car.z - lz * off;
-      if (w.collideCircle(x, z, 0.4, 0.2, 1.7)) { x = w.hit.x; z = w.hit.z; }
+      if (w.collideCircle(x, z, 0.4, car.y + 0.2, car.y + 1.7)) { x = w.hit.x; z = w.hit.z; }
     }
     car.mode = 'loose'; car.rest = 0; car.noDriver = true; car.wasAI = false;
     this.car = null; this.mode = 'foot'; this.focus = p;
-    p.place(x, z, 0); p.yaw = car.yaw; p.mesh.visible = true;
+    p.place(x, z, w.groundY(x, z, car.y + 0.5)); p.yaw = car.yaw; p.mesh.visible = true;
     this.audio.door();
     this.audio.engine(false, 0, 0);
     this.save();
@@ -205,7 +203,7 @@ export class Game {
     const o = this.transit.exitPoint(v, {});
     const c = this._clearSpot(o.x, o.z, 0.4);
     this.ride = null; this.mode = 'foot'; this.focus = p;
-    p.place(c.x, c.z, 0); p.mesh.visible = true;
+    p.place(c.x, c.z, this.world.groundY(c.x, c.z, v.y + 0.5)); p.mesh.visible = true;
     this.audio.door();
   }
 
@@ -224,12 +222,10 @@ export class Game {
     const p = this.player;
     const h = this._nearestHeli();
     if (h) return this._enterHeli(h);
-    if (p.y < 1) {
-      const car = this.vehicles.nearestEnterable(p.x, p.z);
-      if (car) return this._enterCar(car);
-      const v = this.transit.boardable(p.x, p.z);
-      if (v) return this._board(v);
-    }
+    const car = this.vehicles.nearestEnterable(p.x, p.z, p.y);
+    if (car) return this._enterCar(car);
+    const v = this.transit.boardable(p.x, p.z, p.y);
+    if (v) return this._board(v);
     return null;
   }
 
@@ -240,7 +236,7 @@ export class Game {
     const r = w.nearestRoad(f.x, f.z, 400, RC.LIVING, 0, _road);
     if (!r) return;
     if (this.mode === 'car') { this.car.place(r.x, r.z, Math.atan2(r.dx, r.dz)); this.car.health = Math.max(this.car.health, 40); }
-    else this.player.place(r.x, r.z, 0);
+    else this.player.place(r.x, r.z);
     this.hud.toast('Zpět na silnici.');
   }
 
@@ -295,7 +291,7 @@ export class Game {
     this.ride = null;
     this.mode = 'foot'; this.focus = this.player;
     const c = this._clearSpot(x, z, 0.5);
-    this.player.place(c.x, c.z, 0);
+    this.player.place(c.x, c.z);
     this.player.mesh.visible = true;
     this.audio.engine(false, 0, 0);
   }
@@ -373,7 +369,16 @@ export class Game {
     this.camDist += (dist - this.camDist) * Math.min(1, dt * (dist < this.camDist ? 18 : 3.5));
     dist = this.camDist;
     const cam = this.camera;
-    cam.position.set(f.x - fx * dist * cp, Math.max(0.35, ty + dist * sp), f.z - fz * dist * cp);
+    const camX = f.x - fx * dist * cp, camZ = f.z - fz * dist * cp;
+    let camY = ty + dist * sp;
+    // terén: kamera zůstane nad zemí a mezi ní a hráčem nesmí být hřeben
+    camY = Math.max(camY, w.heightAt(camX, camZ) + 0.7);
+    for (let q = 1; q <= 3; q++) {
+      const u = q / 4;
+      const over = w.heightAt(f.x + (camX - f.x) * u, f.z + (camZ - f.z) * u) + 0.4 - (ty + (camY - ty) * u);
+      if (over > 0) camY += over / u;
+    }
+    cam.position.set(camX, camY, camZ);
     if (this.shake > 0.01) {
       cam.position.x += (Math.random() - 0.5) * this.shake * 0.5;
       cam.position.y += (Math.random() - 0.5) * this.shake * 0.5;
@@ -428,12 +433,13 @@ export class Game {
       this.waterTimer -= dt;
       if (this.waterTimer <= 0) {
         this.waterTimer = 0.3;
-        if (this.world.isWater(car.x, car.z) && !this.world.onRoad(car.x, car.z, 2.5)) {
+        const w = this.world;
+        if (car.y < w.heightAt(car.x, car.z) + 0.8 && !car.air && w.isWater(car.x, car.z) && !w.onRoad(car.x, car.z, 2.5)) {
           this.audio.splash();
           this.hud.toast('Auto skončilo ve vodě.', 'bad');
           const x = car.x, z = car.z;
           this.car = null; this.vehicles.remove(car);
-          this.mode = 'foot'; this.focus = p; p.place(x, z, 0); p.mesh.visible = true;
+          this.mode = 'foot'; this.focus = p; p.place(x, z); p.mesh.visible = true;
         }
       }
     } else if (this.mode === 'heli') {
@@ -460,10 +466,10 @@ export class Game {
     // stojící vrtulníky jsou pro auta pevná překážka
     const heavy = this.transit.heavy;
     for (const h of this.helis) {
-      if (h.y > 1.5) continue;
+      if (!h.landed) continue;
       obs.push(h);
       const hx = Math.sin(h.yaw), hz = Math.cos(h.yaw);
-      heavy.push({ x: h.x + hx * 0.6, z: h.z + hz * 0.6, r: 1.5, vx: h.vx, vz: h.vz }, { x: h.x - hx * 2.6, z: h.z - hz * 2.6, r: 0.8, vx: h.vx, vz: h.vz });
+      heavy.push({ x: h.x + hx * 0.6, z: h.z + hz * 0.6, y: h.y, r: 1.5, vx: h.vx, vz: h.vz }, { x: h.x - hx * 2.6, z: h.z - hz * 2.6, y: h.y, r: 0.8, vx: h.vx, vz: h.vz });
     }
     this.vehicles.update(dt, this.focus, this.camInfo, heavy);
     this.peds.update(dt, this.focus, this.camInfo, this.vehicles.cars);
@@ -474,7 +480,7 @@ export class Game {
         if (dx * dx + dz * dz > 16) continue;
         const cfx = Math.sin(c.yaw), cfz = Math.cos(c.yaw);
         const along = dx * cfx + dz * cfz, across = dx * cfz - dz * cfx;
-        if (Math.abs(along) < c.halfLen + 0.3 && Math.abs(across) < c.radius + 0.25 && p.y < 1.4) {
+        if (Math.abs(along) < c.halfLen + 0.3 && Math.abs(across) < c.radius + 0.25 && Math.abs(p.y - c.y) < 1.4) {
           const sgn = across >= 0 ? 1 : -1;
           p.x += cfz * sgn * (c.radius + 0.3 - Math.abs(across)); p.z -= cfx * sgn * (c.radius + 0.3 - Math.abs(across));
           const sp = Math.hypot(c.vx, c.vz);
@@ -509,7 +515,9 @@ export class Game {
       this.placeTimer = 0.4;
       const r = w.nearestRoad(f.x, f.z, 45, RC.PEDESTRIAN, 0, _road);
       const name = r ? w.roadNames[w.r.name[r.road]] : '';
-      hud.place(name || '', w.districtAt(f.x, f.z));
+      const alt = Math.round(w.baseElevation + (this.mode === 'heli' ? w.heightAt(f.x, f.z) : f.y || 0));
+      const dist = w.districtAt(f.x, f.z);
+      hud.place(name || '', `${dist ? `${dist} · ` : ''}${alt} m n. m.`);
     }
     this.promptTimer -= dt;
     if (this.promptTimer <= 0) {
@@ -519,8 +527,8 @@ export class Game {
       if (this.mode === 'foot') {
         const p = this.player;
         const h = this._nearestHeli();
-        const car = !h && p.y < 1 ? this.vehicles.nearestEnterable(p.x, p.z) : null;
-        const v = !h && !car && p.y < 1 ? this.transit.boardable(p.x, p.z) : null;
+        const car = !h ? this.vehicles.nearestEnterable(p.x, p.z, p.y) : null;
+        const v = !h && !car ? this.transit.boardable(p.x, p.z, p.y) : null;
         if (h) html = `<kbd>${key}</kbd>Nasednout do vrtulníku`;
         else if (car) html = `<kbd>${key}</kbd>${car.mode === 'parked' || car.mode === 'loose' ? 'Nastoupit' : 'Sebrat auto'} · ${car.type.name}`;
         else if (v) html = `<kbd>${key}</kbd>Nastoupit · ${v.isTram ? 'tramvaj' : 'trolejbus'} ${v.route.ref} → ${v.route.to}`;

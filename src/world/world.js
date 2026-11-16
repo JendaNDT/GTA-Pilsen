@@ -1,6 +1,7 @@
 // Herní svět: dekódování dat, prostorové indexy, kolize, silniční graf.
 import { CHUNK, COLL_CELL, DRIVABLE_MAX, RF, RC, LC, BF } from '../config.js';
 
+export const SURF = 0.05;    // o kolik nad terénem leží povrch, po kterém se jezdí (kvůli vrstvě asfaltu)
 const KEY_OFF = 80000;       // posun, aby byly kvantované souřadnice kladné
 const KEY_MUL = 262144;
 
@@ -18,11 +19,13 @@ export class World {
     this.grows = Math.ceil((this.maxZ - this.minZ) / COLL_CELL) + 1;
     this.roadNames = data.meta.roadNames;
     this.obstacles = new Map();   // kruhové překážky (stromy, sloupy) podle buněk 16 m
+    this._initTerrain(data.terrain);
     this._initBuildings(data.buildings);
     this._initRoads(data.roads);
     this._initGraph();
     this._initLand(data.land);
     this._initRails(data.rails);
+    this._initBridges();
     this.trees = data.trees;
     this._initTrees(data.trees);
   }
@@ -46,6 +49,116 @@ export class World {
     return x > this.minX + margin && x < this.maxX - margin && z > this.minZ + margin && z < this.maxZ - margin;
   }
 
+  // ------------------------------------------------------------- terén ----
+  _initTerrain(T) {
+    const { g, cols, rows, x0, z0, q } = T.header;
+    const h = new Float32Array(cols * rows);
+    const d = T.d, rs = T.rowStart;
+    for (let j = 0; j < rows; j++) {
+      let v = rs[j];
+      const o = j * cols, od = j * (cols - 1);
+      h[o] = v * q;
+      for (let i = 1; i < cols; i++) { v += d[od + i - 1]; h[o + i] = v * q; }
+    }
+    this.th = h; this.tG = g; this.tCols = cols; this.tRows = rows; this.tX0 = x0; this.tZ0 = z0;
+    this.baseElevation = T.header.base;
+  }
+
+  /** Výška terénu v bodě (metry nad úrovní náměstí Republiky). Přesně odpovídá vykreslené síti. */
+  heightAt(x, z) {
+    let gx = (x - this.tX0) / this.tG, gz = (z - this.tZ0) / this.tG;
+    const mc = this.tCols - 1.001, mr = this.tRows - 1.001;
+    if (gx < 0) gx = 0; else if (gx > mc) gx = mc;
+    if (gz < 0) gz = 0; else if (gz > mr) gz = mr;
+    const i = gx | 0, j = gz | 0;
+    const fx = gx - i, fz = gz - j;
+    const h = this.th, o = j * this.tCols + i;
+    const h10 = h[o + 1], h01 = h[o + this.tCols];
+    // čtverec je rozdělen úhlopříčkou mezi body 10 a 01 (stejně jako síť terénu)
+    if (fx + fz <= 1) { const h00 = h[o]; return h00 + (h10 - h00) * fx + (h01 - h00) * fz; }
+    const h11 = h[o + this.tCols + 1];
+    return h11 + (h01 - h11) * (1 - fx) + (h10 - h11) * (1 - fz);
+  }
+
+  // -------------------------------------------------------------- mosty ----
+  _initBridges() {
+    const seg = [];     // x1, z1, y1, x2, z2, y2, poloviční šířka, druh (0 silnice, 1 tramvaj, 2 železnice)
+    const R = this.r, px = this.rpx, pz = this.rpz, py = this.rpy;
+    for (let i = 0; i < this.rCount; i++) {
+      if (!(R.flags[i] & RF.BRIDGE)) continue;
+      const cls = R.cls[i];
+      const hw = this.deckHalfWidth(i);
+      for (let k = this.rOff[i], ke = this.rOff[i + 1] - 1; k < ke; k++) seg.push(px[k], pz[k], py[k], px[k + 1], pz[k + 1], py[k + 1], hw, cls <= DRIVABLE_MAX ? 0 : 3);
+    }
+    for (const rail of this.rails) {
+      if (!rail.y) continue;
+      const hw = rail.cls === 1 ? 2.4 : 1.7;
+      for (let k = 0, n = rail.pts.length / 2 - 1; k < n; k++) {
+        seg.push(rail.pts[k * 2], rail.pts[k * 2 + 1], rail.y[k], rail.pts[k * 2 + 2], rail.pts[k * 2 + 3], rail.y[k + 1], hw, rail.cls === 0 ? 1 : 2);
+      }
+    }
+    this.bridgeSeg = Float32Array.from(seg);
+    const grid = new Map();
+    for (let s = 0; s < seg.length; s += 8) {
+      const hw = seg[s + 6];
+      const cx0 = Math.floor((Math.min(seg[s], seg[s + 3]) - hw) / COLL_CELL), cx1 = Math.floor((Math.max(seg[s], seg[s + 3]) + hw) / COLL_CELL);
+      const cz0 = Math.floor((Math.min(seg[s + 1], seg[s + 4]) - hw) / COLL_CELL), cz1 = Math.floor((Math.max(seg[s + 1], seg[s + 4]) + hw) / COLL_CELL);
+      for (let cz = cz0; cz <= cz1; cz++) for (let cx = cx0; cx <= cx1; cx++) {
+        const key = cx * 8192 + cz;
+        let a = grid.get(key);
+        if (!a) grid.set(key, a = []);
+        a.push(s);
+      }
+    }
+    this.bridgeGrid = grid;
+  }
+
+  /** Poloviční šířka mostovky silnice (včetně chodníků). */
+  deckHalfWidth(road) {
+    const cls = this.r.cls[road], hw = this.r.w[road] / 2;
+    if (cls <= RC.LIVING) return hw + 2.0;
+    if (cls <= DRIVABLE_MAX) return hw + 0.5;
+    return Math.max(1.3, hw + 0.4);
+  }
+
+  /** Nejvyšší mostovka v bodě, která neleží výš než yMax. Vrací -1e9, když tu žádná není. kind = filtr druhu (volitelně). */
+  deckAt(x, z, yMax, kind = -1) {
+    const list = this.bridgeGrid.get(Math.floor(x / COLL_CELL) * 8192 + Math.floor(z / COLL_CELL));
+    if (!list) return -1e9;
+    const sg = this.bridgeSeg;
+    let best = -1e9;
+    for (let q = 0; q < list.length; q++) {
+      const s = list[q];
+      if (kind >= 0 && sg[s + 7] !== kind) continue;
+      const x1 = sg[s], z1 = sg[s + 1], dx = sg[s + 3] - x1, dz = sg[s + 4] - z1;
+      const l2 = dx * dx + dz * dz;
+      let t = l2 > 0 ? ((x - x1) * dx + (z - z1) * dz) / l2 : 0;
+      if (t < 0) t = 0; else if (t > 1) t = 1;
+      const qx = x1 + dx * t - x, qz = z1 + dz * t - z, hw = sg[s + 6];
+      if (qx * qx + qz * qz > hw * hw) continue;
+      const y = sg[s + 2] + (sg[s + 5] - sg[s + 2]) * t;
+      if (y <= yMax && y > best) best = y;
+    }
+    return best;
+  }
+
+  /**
+   * Výška povrchu, po kterém se chodí a jezdí: terén, nebo mostovka, na kterou lze z výšky yHint vstoupit.
+   * Kdo stojí pod mostem, zůstane na terénu; kdo na most najede, drží se mostovky.
+   */
+  groundY(x, z, yHint = 1e9) {
+    const t = this.heightAt(x, z) + SURF;
+    const d = this.deckAt(x, z, yHint + 0.9);
+    return d > t ? d : t;
+  }
+
+  /** Povrch včetně střech (pro pěšího hráče a vrtulník). */
+  surfaceAt(x, z, yMax = 1e9) {
+    const g = this.groundY(x, z, yMax);
+    const r = this.roofAt(x, z, yMax);
+    return r > g ? r : g;
+  }
+
   // ------------------------------------------------------------ budovy ----
   _initBuildings(B) {
     const n = B.header.count;
@@ -55,20 +168,27 @@ export class World {
     const vx = new Float32Array(nv), vz = new Float32Array(nv);
     const minX = new Float32Array(n), maxX = new Float32Array(n), minZ = new Float32Array(n), maxZ = new Float32Array(n);
     const hTop = new Float32Array(n), hWall = new Float32Array(n), hMin = new Float32Array(n);
+    const bGround = new Float32Array(n), bFoot = new Float32Array(n);
     const chunkLists = new Array(this.cols * this.rows);
     const cellCount = new Uint32Array(this.gcols * this.grows + 1);
     for (let i = 0; i < n; i++) {
       const r0 = B.bRing[i], r1 = B.bRing[i + 1];
       const v0 = B.ringStart[r0], v1 = B.ringStart[r1];
       const axm = B.ax[i], azm = B.az[i];
-      let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
+      let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9, gs = 0, gmin = 1e9;
       for (let v = v0; v < v1; v++) {
         const x = (axm + B.vdx[v]) * 0.1, z = (azm + B.vdz[v]) * 0.1;
         vx[v] = x; vz[v] = z;
         if (x < x0) x0 = x; if (x > x1) x1 = x; if (z < z0) z0 = z; if (z > z1) z1 = z;
+        const g = this.heightAt(x, z);
+        gs += g; if (g < gmin) gmin = g;
       }
       minX[i] = x0; maxX[i] = x1; minZ[i] = z0; maxZ[i] = z1;
-      hTop[i] = B.hTop[i] * 0.1; hWall[i] = B.hWall[i] * 0.1; hMin[i] = B.hMin[i] * 0.1;
+      // dům stojí na průměrné výšce terénu pod půdorysem; zdi sahají až k nejnižšímu bodu
+      const ground = gs / (v1 - v0);
+      bGround[i] = ground; bFoot[i] = gmin - 0.4;
+      hTop[i] = ground + B.hTop[i] * 0.1; hWall[i] = ground + B.hWall[i] * 0.1;
+      hMin[i] = B.hMin[i] > 0 ? ground + B.hMin[i] * 0.1 : gmin - 0.4;
       const ci = this.chunkIndex((x0 + x1) / 2, (z0 + z1) / 2);
       if (ci >= 0) (chunkLists[ci] || (chunkLists[ci] = [])).push(i);
       if (B.flags[i] & (BF.NO_COLLIDE | BF.PART)) continue;
@@ -90,7 +210,8 @@ export class World {
     }
     this.bvx = vx; this.bvz = vz;
     this.bMinX = minX; this.bMaxX = maxX; this.bMinZ = minZ; this.bMaxZ = maxZ;
-    this.bTop = hTop; this.bWall = hWall; this.bBase = hMin;
+    // výšky jsou absolutní (ve stejné soustavě jako terén)
+    this.bTop = hTop; this.bWall = hWall; this.bBase = hMin; this.bGround = bGround; this.bFoot = bFoot;
     this.bChunks = chunkLists;
     this.bCellStart = cellCount; this.bCellItems = cellItems;
     this.bNames = new Map(B.header.names);
@@ -151,14 +272,15 @@ export class World {
     // kruhové překážky (stromy)
     const ox0 = Math.floor((hit.x - r - 1) / 16), ox1 = Math.floor((hit.x + r + 1) / 16);
     const oz0 = Math.floor((hit.z - r - 1) / 16), oz1 = Math.floor((hit.z + r + 1) / 16);
-    if (y < 2.5) {
+    {
+      const yLim = y - 2.5;       // překážky (kmeny, sloupy) sahají 2,5 m nad zem
       for (let oz = oz0; oz <= oz1; oz++) for (let ox = ox0; ox <= ox1; ox++) {
         const list = this.obstacles.get(ox * 4096 + oz);
         if (!list) continue;
         for (let k = 0; k < list.length; k += 3) {
           const dx = hit.x - list[k], dz = hit.z - list[k + 1], rr = r + list[k + 2];
           const d2 = dx * dx + dz * dz;
-          if (d2 < rr * rr && d2 > 1e-8) {
+          if (d2 < rr * rr && d2 > 1e-8 && this.heightAt(list[k], list[k + 1]) > yLim) {
             const d = Math.sqrt(d2);
             hit.nx = dx / d; hit.nz = dz / d;
             hit.x += hit.nx * (rr - d); hit.z += hit.nz * (rr - d);
@@ -169,6 +291,12 @@ export class World {
       }
     }
     return any;
+  }
+
+  /** Je kruh u země zablokovaný zdí nebo překážkou? (výšky lo–hi nad terénem) */
+  blocked(x, z, r, lo = 0.2, hi = 1.7) {
+    const g = this.heightAt(x, z);
+    return this.collideCircle(x, z, r, g + lo, g + hi);
   }
 
   addObstacles(list) {
@@ -200,10 +328,10 @@ export class World {
     return inside;
   }
 
-  /** Výška střechy v bodě (0 = země). Bere jen střechy do výšky maxY (aby šlo stát pod převisem). */
+  /** Výška střechy v bodě (-1e9 = žádná). Bere jen střechy do výšky maxY (aby šlo stát pod převisem). */
   roofAt(x, z, maxY = 1e9) {
     const c = this.cellIndex(x, z);
-    let h = 0;
+    let h = -1e9;
     for (let k = this.bCellStart[c], ke = this.bCellStart[c + 1]; k < ke; k++) {
       const i = this.bCellItems[k];
       if (x < this.bMinX[i] || x > this.bMaxX[i] || z < this.bMinZ[i] || z > this.bMaxZ[i]) continue;
@@ -283,6 +411,16 @@ export class World {
     }
     pOff[n] = o;
     this.rpx = px; this.rpz = pz; this.rOff = pOff; this.roadOfPt = roadOfPt;
+    // výška bodů: mostovka u mostů, jinak terén
+    const py = new Float32Array(nPts);
+    for (let i = 0; i < n; i++) {
+      const bo = R.bridgeOff ? R.bridgeOff[i] : 0xFFFFFFFF;
+      for (let k = pOff[i], ke = pOff[i + 1]; k < ke; k++) {
+        py[k] = bo !== 0xFFFFFFFF ? R.bridgeY[bo + k - pOff[i]] * 0.02 : this.heightAt(px[k], pz[k]) + SURF;
+      }
+      if (bo === 0xFFFFFFFF && (R.flags[i] & RF.BRIDGE)) R.flags[i] &= ~RF.BRIDGE;
+    }
+    this.rpy = py;
 
     // kousky silnic po dlaždicích (pro vykreslování)
     const pieces = new Array(this.cols * this.rows);
@@ -663,7 +801,12 @@ export class World {
         x += R.dx[k]; z += R.dz[k];
         pts[o++] = x * 0.1; pts[o++] = z * 0.1;
       }
-      const rail = { cls: R.cls[i], flags: R.flags[i], pts };
+      const rail = { cls: R.cls[i], flags: R.flags[i], pts, y: null };
+      const bo = R.bridgeOff ? R.bridgeOff[i] : 0xFFFFFFFF;
+      if (bo !== 0xFFFFFFFF) {
+        rail.y = new Float32Array(cnt);
+        for (let k = 0; k < cnt; k++) rail.y[k] = R.bridgeY[bo + k] * 0.02;
+      }
       this.rails.push(rail);
       const mid = (cnt >> 1) * 2;
       const ci = this.chunkIndex(pts[mid], pts[mid + 1]);

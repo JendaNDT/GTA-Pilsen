@@ -27,20 +27,27 @@ export class Car {
     this.route = null; this.wp = 0; this.repath = 0;
     this.halfLen = this.type.len / 2;
     this.radius = this.type.wid * 0.56;
-    this.roll = 0; this.pitch = 0;
+    this.roll = 0; this.pitch = 0;       // náklon karoserie v zatáčce
+    this.gPitch = 0; this.gRoll = 0;     // sklon podle terénu
+    this.vy = 0; this.air = false;
     this.offroad = false; this.offroadCheck = 0;
     this.isCar = true;
   }
 
-  place(x, z, yaw) {
-    this.x = x; this.z = z; this.yaw = yaw; this.vx = this.vz = 0; this.speed = 0;
+  /** Postaví auto na místo; bez výšky na zem (hint = výška, ze které se hledá povrch, např. pro most). */
+  place(x, z, yaw, hint = null) {
+    const w = Car.world;
+    this.x = x; this.z = z; this.yaw = yaw; this.vx = this.vz = 0; this.speed = 0; this.vy = 0; this.air = false;
+    this.y = w.groundY(x, z, hint === null ? w.heightAt(x, z) + 1 : hint);
+    const fx = Math.sin(yaw), fz = Math.cos(yaw), hl = this.type.len * 0.36;
+    this.gPitch = Math.atan2(w.groundY(x - fx * hl, z - fz * hl, this.y + 1) - w.groundY(x + fx * hl, z + fz * hl, this.y + 1), 2 * hl);
     this.sync();
   }
 
   sync() {
     const m = this.mesh;
     m.position.set(this.x, this.y, this.z);
-    m.rotation.set(this.pitch, this.yaw, this.roll, 'YXZ');
+    m.rotation.set(this.gPitch + this.pitch, this.yaw, this.gRoll + this.roll, 'YXZ');
   }
 
   get kinematic() { return this.mode === 'ai' || this.mode === 'police' || this.mode === 'parked'; }
@@ -53,8 +60,55 @@ export class VehicleManager {
     this.game = game;
     this.cars = [];
     this.spawnTimer = 0;
-    this.obstacles = [];       // další překážky pro provoz (tramvaje, hráč pěšky): {x, z, vx, vz, halfLen, radius}
+    this.obstacles = [];       // další překážky pro provoz (tramvaje, hráč pěšky): {x, y, z, vx, vz, halfLen, radius}
     this.crashPoints = 0;
+    Car.world = world;
+  }
+
+  /**
+   * Přizpůsobí výšku a sklon auta povrchu (terén nebo mostovka).
+   * dynamic = auto může letět vzduchem (skok přes hranu, pád z mostu) a svah ho zrychluje.
+   */
+  followGround(car, dt, dynamic) {
+    const w = this.world;
+    const fx = Math.sin(car.yaw), fz = Math.cos(car.yaw);
+    const hl = car.type.len * 0.36, hint = car.y;
+    const yf = w.groundY(car.x + fx * hl, car.z + fz * hl, hint), yr = w.groundY(car.x - fx * hl, car.z - fz * hl, hint);
+    const g = (yf + yr) / 2;
+    let impact = 0;
+    if (!dynamic) {
+      car.y = g; car.air = false;
+      car.gPitch = Math.atan2(yr - yf, 2 * hl);
+      return 0;
+    }
+    const hwid = car.type.wid * 0.42, lx = fz, lz = -fx;
+    const yL = w.groundY(car.x + lx * hwid, car.z + lz * hwid, hint), yR = w.groundY(car.x - lx * hwid, car.z - lz * hwid, hint);
+    if (car.y > g + 0.3 || car.vy > 2.5) {
+      // ve vzduchu
+      car.air = true;
+      car.vy -= 21 * dt;
+      car.y += car.vy * dt;
+      if (car.y <= g) { impact = -car.vy; car.y = g; car.vy = 0; car.air = false; }
+    } else {
+      const prev = car.y;
+      car.y += (g - car.y) * Math.min(1, dt * 22);
+      car.vy = dt > 0 ? clamp((car.y - prev) / dt, -30, 30) : 0;     // rychlost stoupání – na hraně kopce z ní vznikne skok
+      if (car.vy < 0) car.vy = 0;
+      car.air = false;
+    }
+    const k = Math.min(1, dt * (car.air ? 2 : 12));
+    car.gPitch += (Math.atan2(yr - yf, 2 * hl) - car.gPitch) * k;
+    car.gRoll += (Math.atan2(yL - yR, 2 * hwid) - car.gRoll) * k;
+    if (!car.air) {
+      // svah: do kopce auto zpomaluje, z kopce se rozjíždí
+      const slope = clamp((yf - yr) / (2 * hl), -0.5, 0.5);
+      car.vx -= fx * 9.0 * slope * dt; car.vz -= fz * 9.0 * slope * dt;
+    }
+    if (impact > 8) {
+      car.health = Math.max(0, car.health - (impact - 8) * 3);
+      this.game.onCrash(car, impact, null);
+    }
+    return impact;
   }
 
   add(car) { this.cars.push(car); this.scene.add(car.mesh); return car; }
@@ -117,13 +171,14 @@ export class VehicleManager {
     vL *= Math.exp(-grip * dt);
     car.skid = slip > 3.5 && sp > 5 ? Math.min(1, slip / 9) : 0;
 
-    car.vx = fx * vF + lx * vL; car.vz = fz * vF + lz * vL;
-    car.speed = vF;
+    if (!car.air) { car.vx = fx * vF + lx * vL; car.vz = fz * vF + lz * vL; }
+    car.speed = car.vx * fx + car.vz * fz;
     car.x += car.vx * dt; car.z += car.vz * dt;
 
     // náklony karoserie
     car.roll += (clamp(-yawRate * vF * 0.012, -0.09, 0.09) - car.roll) * Math.min(1, dt * 6);
     this._collideWorld(car);
+    this.followGround(car, dt, true);
   }
 
   _collideWorld(car) {
@@ -134,7 +189,7 @@ export class VehicleManager {
     for (let k = -1; k <= 1; k++) {
       const ox = fx * off * k, oz = fz * off * k;
       const cx = car.x + ox, cz = car.z + oz;
-      if (!w.collideCircle(cx, cz, r, 0.3, 1.5)) continue;
+      if (!w.collideCircle(cx, cz, r, car.y + 0.3, car.y + 1.5)) continue;
       const h = w.hit;
       const dx = h.x - cx, dz = h.z - cz;
       car.x += dx; car.z += dz;
@@ -217,7 +272,7 @@ export class VehicleManager {
     const lx = fz, lz = -fx;
     const check = (o) => {
       const dx = o.x - car.x, dz = o.z - car.z;
-      if (dx * dx + dz * dz > 900) return;
+      if (dx * dx + dz * dz > 900 || Math.abs((o.y === undefined ? car.y : o.y) - car.y) > 3) return;
       const ahead = dx * fx + dz * fz;
       if (ahead < 0.4 || ahead > 28) return;
       const side = Math.abs(dx * lx + dz * lz);
@@ -257,6 +312,7 @@ export class VehicleManager {
     car.steer = clamp(-diff * 1.5, -0.5, 0.5);
     car.vx = Math.sin(car.yaw) * car.speed; car.vz = Math.cos(car.yaw) * car.speed;
     car.x += car.vx * dt; car.z += car.vz * dt;
+    this.followGround(car, dt, false);
     car.s += car.speed * dt;
     if (car.s >= len) {
       if (car.next < 0) { car.dead = true; return; }
@@ -355,7 +411,8 @@ export class VehicleManager {
     car.steer = clamp(-diff * 1.5, -0.5, 0.5);
     car.vx = Math.sin(car.yaw) * car.speed; car.vz = Math.cos(car.yaw) * car.speed;
     car.x += car.vx * dt; car.z += car.vz * dt;
-    if (w.collideCircle(car.x, car.z, 1.0, 0.3, 1.5)) {
+    this.followGround(car, dt, false);
+    if (w.collideCircle(car.x, car.z, 1.0, car.y + 0.3, car.y + 1.5)) {
       car.x = w.hit.x; car.z = w.hit.z;
       car.speed *= 0.9;
       car.yaw += (Math.random() - 0.5) * 0.1;
@@ -404,7 +461,7 @@ export class VehicleManager {
     const car = this.add(new Car(type, CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)]));
     car.mode = type === 'police' ? 'ai' : 'ai';
     car.edge = e; car.s = s; car.lane = lane;
-    car.place(_pt.x, _pt.z, Math.atan2(_pt.tx, _pt.tz));
+    car.place(_pt.x, _pt.z, Math.atan2(_pt.tx, _pt.tz), (w.r.flags[w.eRoad[e]] & RF.BRIDGE) ? 1e9 : null);
     car.speed = 6;
     this._pickNext(car);
     return car;
@@ -444,7 +501,7 @@ export class VehicleManager {
       if (dot > 0.5) return null;
     }
     if (!this._freeSpot(x, z, 3.4)) return null;
-    if (w.collideCircle(x, z, 2.3, 0.3, 1.5) || w.isWater(x, z)) return null;
+    if (w.blocked(x, z, 2.3, 0.3, 1.5) || w.isWater(x, z)) return null;
     // nesmí stát na jiné vozovce
     const r = w.nearestRoad(x, z, 8, DRIVABLE_MAX, 0, _road);
     if (r && r.dist < R.w[r.road] / 2 + (aisle ? 1.6 : 0.2)) return null;
@@ -471,6 +528,7 @@ export class VehicleManager {
       for (let j = i + 1; j < near.length; j++) {
         const b = near[j];
         if (a.kinematic && b.kinematic && !(a.mode === 'police' || b.mode === 'police')) continue;
+        if (Math.abs(a.y - b.y) > 2.2) continue;
         const R = a.halfLen + b.halfLen + 0.6;
         const ddx = a.x - b.x, ddz = a.z - b.z;
         if (ddx * ddx + ddz * ddz > R * R) continue;
@@ -512,6 +570,7 @@ export class VehicleManager {
       if (c.kinematic) continue;
       const fx = Math.sin(c.yaw), fz = Math.cos(c.yaw), o = c.type.len * 0.27;
       for (const h of heavy) {
+        if (h.y !== undefined && Math.abs(h.y - c.y) > 3) continue;
         const R = c.halfLen + h.r + 0.5;
         if ((c.x - h.x) ** 2 + (c.z - h.z) ** 2 > R * R) continue;
         for (let k = -1; k <= 1; k += 2) {
@@ -587,10 +646,10 @@ export class VehicleManager {
   }
 
   /** Nejbližší auto, do kterého jde nastoupit. */
-  nearestEnterable(x, z, maxD = 3.6) {
+  nearestEnterable(x, z, y, maxD = 3.6) {
     let best = null, bd = maxD * maxD;
     for (const c of this.cars) {
-      if (c.mode === 'player') continue;
+      if (c.mode === 'player' || Math.abs(c.y - y) > 2) continue;
       const d = (c.x - x) ** 2 + (c.z - z) ** 2;
       const lim = (maxD + c.halfLen * 0.5) ** 2;
       if (d < lim && d < bd + 4) { if (!best || d < bd) { best = c; bd = d; } }

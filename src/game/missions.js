@@ -97,7 +97,7 @@ export class Jobs {
       const t = j.phase === 'pickup' ? j.pick : j.drop;
       const d = Math.hypot(t.x - p.x, t.z - p.z);
       this.beacon.visible = true;
-      this.beacon.position.set(t.x, 0, t.z);
+      this.beacon.position.set(t.x, this.world.groundY(t.x, t.z), t.z);
       if (j.phase === 'pickup') {
         hud.mission(`<b>Rozvoz jídla</b><br>Vyzvedni objednávku: <b>${j.name}</b> (${j.kind})<br>${Math.round(d)} m · odměna ${j.reward} Kč`);
         if (d < 11 && speed < 7) {
@@ -131,7 +131,7 @@ export class Jobs {
     }
     if (this.waypoint) {
       this.wpBeacon.visible = !this.job;
-      this.wpBeacon.position.set(this.waypoint.x, 0, this.waypoint.z);
+      this.wpBeacon.position.set(this.waypoint.x, this.world.groundY(this.waypoint.x, this.waypoint.z), this.waypoint.z);
       if (Math.hypot(this.waypoint.x - p.x, this.waypoint.z - p.z) < 22) {
         this.waypoint = null; this.wpBeacon.visible = false;
         if (!this.job) { this.route = null; hud.toast('Jsi v cíli.'); }

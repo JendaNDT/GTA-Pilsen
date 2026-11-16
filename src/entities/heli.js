@@ -9,7 +9,7 @@ export class Heli {
     this.mesh = makeHeliMesh();
     scene.add(this.mesh);
     this.x = x; this.z = z; this.yaw = yaw;
-    this.y = world.roofAt(x, z, 1e9);
+    this.y = world.surfaceAt(x, z, 1e9);
     this.vx = 0; this.vy = 0; this.vz = 0;
     this.rotor = 0; this.spin = 0; this.pitch = 0; this.roll = 0;
     this.occupied = false; this.landed = true;
@@ -25,7 +25,7 @@ export class Heli {
     this.spin += this.rotor * dt;
     const power = clamp((this.rotor - 12) / 14, 0, 1);
     if (!this.occupied) { fwd = 0; turn = 0; lift = this.landed ? 0 : -0.6; }
-    const surface = w.roofAt(this.x, this.z, this.y + 0.7);
+    const surface = w.surfaceAt(this.x, this.z, this.y + 0.7);
     this.landed = this.y <= surface + 0.05;
     this.yaw -= turn * 1.5 * dt * power;
     const fx = Math.sin(this.yaw), fz = Math.cos(this.yaw);
@@ -48,10 +48,11 @@ export class Heli {
     const m = 40;
     this.x = clamp(this.x, w.playMinX + m, w.playMaxX - m);
     this.z = clamp(this.z, w.playMinZ + m, w.playMaxZ - m);
-    const s2 = w.roofAt(this.x, this.z, this.y + 0.7);
+    const s2 = w.surfaceAt(this.x, this.z, this.y + 0.7);
     let impact = 0;
     if (this.y < s2) { if (this.vy < -5) impact = -this.vy; this.y = s2; if (this.vy < 0) this.vy = 0; }
-    if (this.y > 600) { this.y = 600; if (this.vy > 0) this.vy = 0; }
+    const ceil = w.heightAt(this.x, this.z) + 600;
+    if (this.y > ceil) { this.y = ceil; if (this.vy > 0) this.vy = 0; }
     const vF = this.vx * fx + this.vz * fz;
     this.pitch += (clamp(vF * 0.012 + fwd * 0.12, -0.3, 0.35) * (this.landed ? 0 : 1) - this.pitch) * Math.min(1, dt * 3);
     this.roll += (clamp(turn * 0.22 * Math.min(1, sp / 12), -0.3, 0.3) * (this.landed ? 0 : 1) - this.roll) * Math.min(1, dt * 3);

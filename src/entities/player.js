@@ -23,10 +23,12 @@ export class Player {
     this.lastCar = null;
   }
 
+  /** Postaví hráče na místo; bez výšky na zem (ne na most vysoko nad terénem). */
   place(x, z, y = null) {
+    const w = this.world;
     this.x = x; this.z = z;
-    this.y = y === null ? this.world.roofAt(x, z, 1e9) : y;
-    this.vy = 0; this.vx = this.vz = 0;
+    this.y = y === null ? w.groundY(x, z, w.heightAt(x, z) + 1) : y;
+    this.vy = 0; this.vx = this.vz = 0; this.grounded = true;
     this.sync(0);
   }
 
@@ -34,7 +36,7 @@ export class Player {
   update(dt, dirX, dirZ, run, jump) {
     const w = this.world;
     const len = Math.hypot(dirX, dirZ);
-    this.swimming = this.y <= 0.05 && w.isWater(this.x, this.z) && !w.onRoad(this.x, this.z, 0.3);
+    this.swimming = this.y <= w.heightAt(this.x, this.z) + 0.3 && w.isWater(this.x, this.z) && !w.onRoad(this.x, this.z, 0.3);
     let speed = this.swimming ? 1.7 : run ? 6.4 : 2.4;
     if (this.stun > 0) { this.stun -= dt; speed = 0; }
     let tvx = 0, tvz = 0;
@@ -55,11 +57,11 @@ export class Player {
     this.z = clamp(this.z, w.playMinZ + m, w.playMaxZ - m);
 
     // svislý pohyb: stojí se na zemi nebo na střeše, na kterou jde vystoupit
-    const surface = w.roofAt(this.x, this.z, this.y + 0.55);
+    const surface = w.surfaceAt(this.x, this.z, this.y + 0.55);
     if (this.grounded) {
       if (jump && !this.swimming) { this.vy = 5.0; this.grounded = false; this.fallStart = this.y; }
-      else if (this.y > surface + 0.05) { this.grounded = false; this.vy = 0; this.fallStart = this.y; }
-      else this.y = surface;
+      else if (this.y > surface + 0.4) { this.grounded = false; this.vy = 0; this.fallStart = this.y; }   // hrana střechy, mostu
+      else this.y = surface;                                                                             // svah: drž se země
     }
     let fallDamage = 0;
     if (!this.grounded) {
@@ -87,7 +89,7 @@ export class Player {
 class Ped {
   constructor(variant) {
     this.mesh = makePedMesh(variant);
-    this.x = 0; this.z = 0; this.yaw = 0; this.speed = 1.2 + Math.random() * 0.5;
+    this.x = 0; this.y = 0; this.z = 0; this.yaw = 0; this.speed = 1.2 + Math.random() * 0.5;
     this.edge = -1; this.s = 0; this.side = 0;
     this.state = 'walk'; this.timer = 0; this.phase = Math.random() * 6;
     this.vx = 0; this.vz = 0; this.fx = 0; this.fz = 0;
@@ -127,10 +129,11 @@ export class PedManager {
       const dot = ((_pt.x - cam.x) * cam.fx + (_pt.z - cam.z) * cam.fz) / (Math.hypot(_pt.x - cam.x, _pt.z - cam.z) || 1);
       if (dot > 0.5) return;
     }
-    if (w.collideCircle(_pt.x, _pt.z, 0.5, 0.2, 1.7) || w.isWater(_pt.x, _pt.z)) return;
+    if (w.blocked(_pt.x, _pt.z, 0.5) || w.isWater(_pt.x, _pt.z)) return;
     const p = new Ped(this.seq++);
     p.edge = e; p.s = s; p.side = side;
     p.x = _pt.x; p.z = _pt.z; p.yaw = Math.atan2(_pt.tx, _pt.tz);
+    p.y = w.groundY(p.x, p.z, w.heightAt(p.x, p.z) + 1);
     this.peds.push(p);
     this.scene.add(p.mesh);
   }
@@ -139,6 +142,7 @@ export class PedManager {
   spawnAt(x, z, yaw) {
     const p = new Ped(this.seq++);
     p.x = x; p.z = z; p.yaw = yaw; p.state = 'flee'; p.timer = 5;
+    p.y = this.world.groundY(x, z, this.world.heightAt(x, z) + 1);
     p.fx = Math.sin(yaw); p.fz = Math.cos(yaw);
     this.peds.push(p);
     this.scene.add(p.mesh);
@@ -162,13 +166,14 @@ export class PedManager {
       const d2 = (p.x - player.x) ** 2 + (p.z - player.z) ** 2;
       if (d2 > 230 * 230) { this.remove(i); continue; }
       let moving = 0;
+      p.y = w.groundY(p.x, p.z, p.y);
       if (p.state === 'down') {
         p.timer -= dt;
         p.x += p.vx * dt; p.z += p.vz * dt;
         p.vx *= Math.exp(-3 * dt); p.vz *= Math.exp(-3 * dt);
-        if (w.collideCircle(p.x, p.z, 0.35, 0.2, 1.5)) { p.x = w.hit.x; p.z = w.hit.z; }
+        if (w.collideCircle(p.x, p.z, 0.35, p.y + 0.2, p.y + 1.5)) { p.x = w.hit.x; p.z = w.hit.z; }
         p.mesh.rotation.set(-Math.PI / 2 * Math.min(1, (7 - p.timer) * 4), p.yaw, 0, 'YXZ');
-        p.mesh.position.set(p.x, 0.18, p.z);
+        p.mesh.position.set(p.x, p.y + 0.18, p.z);
         if (p.timer <= 0) { p.state = 'flee'; p.timer = 4; p.mesh.rotation.set(0, p.yaw, 0); }
         continue;
       }
@@ -177,7 +182,7 @@ export class PedManager {
         for (const c of cars) {
           const dx = p.x - c.x, dz = p.z - c.z;
           const dd = dx * dx + dz * dz;
-          if (dd > 100) continue;
+          if (dd > 100 || Math.abs(p.y - c.y) > 2) continue;
           const sp = Math.hypot(c.vx, c.vz);
           const hitR = c.radius + 0.3;
           // zásah autem
@@ -210,7 +215,7 @@ export class PedManager {
         const sp = 4.6;
         p.x += p.fx * sp * dt; p.z += p.fz * sp * dt;
         p.yaw = Math.atan2(p.fx, p.fz);
-        if (w.collideCircle(p.x, p.z, 0.35, 0.2, 1.7)) { p.x = w.hit.x; p.z = w.hit.z; }
+        if (w.collideCircle(p.x, p.z, 0.35, p.y + 0.2, p.y + 1.7)) { p.x = w.hit.x; p.z = w.hit.z; }
         moving = sp;
         if (p.timer <= 0) {
           if (p.edge < 0) { this.remove(i); continue; }
@@ -244,7 +249,7 @@ export class PedManager {
         moving = p.speed;
       }
       p.phase += dt * (3 + moving * 2.4);
-      p.mesh.position.set(p.x, 0, p.z);
+      p.mesh.position.set(p.x, p.y, p.z);
       p.mesh.rotation.y = p.yaw;
       if (d2 < 120 * 120) animatePed(p.mesh, p.phase, Math.min(1, moving / 2.5));
     }

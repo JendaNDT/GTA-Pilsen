@@ -23,6 +23,9 @@ from collections import defaultdict
 
 import numpy as np
 
+import terrain as terrain_mod
+from terrain import Terrain
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 RAW = os.path.join(HERE, "..", "data-raw")
 OUT = os.path.join(HERE, "..", "public", "data")
@@ -266,6 +269,8 @@ class Dem:
         dmr = np.load(os.path.join(RAW, "dmr.npy"))
         self.diff = dmp - dmr
         self.diff[(dmp < -1000) | (dmr < -1000)] = 0
+        self.dmr = dmr          # holý terén (pro tvar krajiny)
+        del dmp
         self.H, self.W = self.diff.shape
         s, w, n, e = DEM_BBOX
         self.x0 = (w - LON0) * KX            # západní okraj
@@ -793,6 +798,18 @@ def pack_lines(path, items, header, extra=()):
               "dx": np.array(dx, np.int16), "dz": np.array(dz, np.int16)}
     for key, dtype in extra:
         arrays[key] = np.array([it[key] for it in items], dtype)
+    # výšky mostovek: jen u mostů, po 2 cm nad základní výškou terénu
+    b_off = np.full(n, 0xFFFFFFFF, np.uint32)
+    b_y = []
+    for i, it in enumerate(items):
+        by = it.get("by")
+        if by is None:
+            continue
+        assert len(by) == int(start[i + 1] - start[i]) + 1, "most s rozděleným úsekem"
+        b_off[i] = len(b_y)
+        b_y.extend(max(-32000, min(32000, round(v / 0.02))) for v in by)
+    arrays["bridgeOff"] = b_off
+    arrays["bridgeY"] = np.array(b_y if b_y else [0], np.int16)
     header = dict(header)
     header["count"] = n
     write_pack(path, header, arrays)
@@ -1285,19 +1302,35 @@ def main():
 
     print("silnice…")
     roads, road_names = build_roads(ex)
-    pack_lines(os.path.join(OUT, "roads.bin"), roads, {},
-               extra=(("cls", np.uint8), ("w", np.float32), ("lanes", np.uint8), ("speed", np.uint8),
-                      ("flags", np.uint8), ("name", np.uint16), ("layer", np.int8)))
-    print(f"  silnic a cest: {len(roads)}, názvů: {len(road_names)}")
-
     print("koleje…")
     rails = build_rails(ex)
-    pack_lines(os.path.join(OUT, "rails.bin"), rails, {}, extra=(("cls", np.uint8), ("flags", np.uint8)))
-
     print("plochy…")
     polys, wlines = build_land(ex)
     pack_land(polys, wlines)
     print(f"  ploch: {len(polys)}, linií: {len(wlines)}")
+
+    print("terén…")
+    s_, w_, n_, e_ = ex["bbox"]
+    bx0, bz1 = to_xz(s_, w_)
+    bx1, bz0 = to_xz(n_, e_)
+    ter = Terrain(dem, (bx0, bx1, bz0, bz1))
+    raw_min, raw_max = float(ter.h.min()), float(ter.h.max())
+    # terén se zarovná pod sjízdnými silnicemi, pěšími zónami a kolejemi (mimo mosty a tunely)
+    ter.burn_lines([r for r in roads if r["cls"] <= 14 and not (r["flags"] & 6)], lambda r: r["w"] / 2)
+    ter.burn_lines([r for r in rails if not (r["flags"] & 2)], lambda r: 1.7 if r["cls"] == 1 else 1.3)
+    n_water = ter.flatten_water([p["rings"] for p in polys if p["cls"] == LAND["water"]])
+    clipped = ter.quantize()
+    nb = ter.bridge_heights(roads, lambda r: bool(r["flags"] & 2))
+    nb += ter.bridge_heights(rails, lambda r: bool(r["flags"] & 2))
+    ter.write(os.path.join(OUT, "terrain.bin"), write_pack)
+    print(f"  síť {ter.cols} × {ter.rows} po {terrain_mod.G:.0f} m, výšky {raw_min:.0f}–{raw_max:.0f} m n. m., "
+          f"základ {ter.base} m, vodních bodů {n_water}, mostů {nb}, strmých řádků {clipped}")
+
+    pack_lines(os.path.join(OUT, "roads.bin"), roads, {},
+               extra=(("cls", np.uint8), ("w", np.float32), ("lanes", np.uint8), ("speed", np.uint8),
+                      ("flags", np.uint8), ("name", np.uint16), ("layer", np.int8)))
+    print(f"  silnic a cest: {len(roads)}, názvů: {len(road_names)}")
+    pack_lines(os.path.join(OUT, "rails.bin"), rails, {}, extra=(("cls", np.uint8), ("flags", np.uint8)))
 
     print("MHD…")
     transit = build_transit(ex)
@@ -1321,6 +1354,7 @@ def main():
         "origin": {"lat": LAT0, "lon": LON0, "kx": KX, "ky": KY},
         "bounds": {"minX": round(x_min), "maxX": round(x_max), "minZ": round(z_min), "maxZ": round(z_max)},
         "osmTimestamp": state,
+        "baseElevation": ter.base,
         "roadNames": road_names,
         "transit": transit,
         "landmarks": landmarks,

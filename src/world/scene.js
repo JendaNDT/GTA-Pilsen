@@ -1,147 +1,9 @@
-// Statické části scény: obloha, světla, zem, plochy a voda + denní doba.
+// Obloha, světla, stíny a denní doba. (Terén a povrch země kreslí chunks.js.)
 import * as THREE from 'three';
-import { Earcut } from 'three/src/extras/Earcut.js';
-import { LC, QUALITY } from '../config.js';
-import { env, patchGroundMaterial, getPoolMaterial } from './materials.js';
+import { QUALITY } from '../config.js';
+import { env, getPoolMaterial } from './materials.js';
 
-const _c = new THREE.Color();
-const lin = (hex) => { _c.setHex(hex); return [_c.r, _c.g, _c.b]; };
-
-const LAND_COL = {
-  [LC.FARMLAND]: lin(0xb5b47a), [LC.MEADOW]: lin(0x9bb36a), [LC.GRASS]: lin(0x8fb25e),
-  [LC.RESIDENTIAL]: lin(0xa9a89d), [LC.COMMERCIAL]: lin(0xa9a6a3), [LC.INDUSTRIAL]: lin(0x9b9995),
-  [LC.RAILWAY]: lin(0x857f76), [LC.ALLOTMENTS]: lin(0x8faa6a), [LC.CEMETERY]: lin(0x7f9f6a),
-  [LC.FOREST]: lin(0x4e7a46), [LC.SCRUB]: lin(0x6f9353), [LC.PARK]: lin(0x86b560),
-  [LC.PITCH]: lin(0x6fae62), [LC.PARKING]: lin(0x62656a), [LC.PLAZA]: lin(0xb7b0a2),
-  [LC.WATER]: lin(0x3f7fa6), [LC.SAND]: lin(0xd9c998), [LC.CONSTRUCTION]: lin(0xa59a84),
-  [LC.GARDEN]: lin(0x83ad62), [LC.PLAYGROUND]: lin(0xc9b98a),
-};
-const LAND_GROUP = {
-  [LC.FARMLAND]: 0, [LC.MEADOW]: 0, [LC.RESIDENTIAL]: 0, [LC.COMMERCIAL]: 0, [LC.INDUSTRIAL]: 0,
-  [LC.RAILWAY]: 0, [LC.CONSTRUCTION]: 0,
-  [LC.FOREST]: 1, [LC.SCRUB]: 1, [LC.GRASS]: 1, [LC.PARK]: 1, [LC.ALLOTMENTS]: 1, [LC.CEMETERY]: 1, [LC.GARDEN]: 1,
-  [LC.PITCH]: 2, [LC.PLAYGROUND]: 2, [LC.PARKING]: 2, [LC.PLAZA]: 2, [LC.SAND]: 2,
-  [LC.WATER]: 3,
-};
 export const GROUND_HEX = 0x9aa873;
-
-function pointInRing(x, z, L, v0, v1) {
-  let inside = false;
-  let j = v1 - 1;
-  for (let v = v0; v < v1; j = v++) {
-    const z1 = L.vz[j], z2 = L.vz[v];
-    if ((z1 > z) !== (z2 > z) && x < (L.vx[v] - L.vx[j]) * (z - z1) / (z2 - z1) + L.vx[j]) inside = !inside;
-  }
-  return inside;
-}
-
-/** Trojúhelníky všech ploch, rozdělené do vrstev a čtverců kvůli ořezu pohledem. */
-function buildLand(world, mats) {
-  const L = world.l;
-  const T = 4;
-  const bufs = [];
-  const get = (group, tile) => {
-    const k = group * 100 + tile;
-    return bufs[k] || (bufs[k] = { p: [], c: [], group });
-  };
-  const spanX = world.maxX - world.minX, spanZ = world.maxZ - world.minZ;
-  for (let i = 0; i < world.lCount; i++) {
-    const cls = L.cls[i];
-    const group = LAND_GROUP[cls];
-    if (group === undefined) continue;
-    const r0 = L.pRing[i], r1 = L.pRing[i + 1];
-    const nr = r1 - r0;
-    // úroveň vnoření prstenců: sudá = obrys, lichá = díra
-    const outers = [];
-    if (nr === 1) outers.push({ rg: r0, holes: [] });
-    else {
-      const depth = new Array(nr).fill(0), parent = new Array(nr).fill(-1);
-      for (let a = 0; a < nr; a++) {
-        const va = L.ringStart[r0 + a];
-        for (let b = 0; b < nr; b++) {
-          if (a === b) continue;
-          if (pointInRing(L.vx[va], L.vz[va], L, L.ringStart[r0 + b], L.ringStart[r0 + b + 1])) { depth[a]++; parent[a] = b; }
-        }
-      }
-      const map = new Map();
-      for (let a = 0; a < nr; a++) if (depth[a] % 2 === 0) { const o = { rg: r0 + a, holes: [] }; map.set(a, o); outers.push(o); }
-      for (let a = 0; a < nr; a++) {
-        if (depth[a] % 2 === 1) {
-          // najdi obrys, který díru bezprostředně obsahuje
-          let best = null;
-          const va = L.ringStart[r0 + a];
-          for (const [b, o] of map) {
-            if (depth[b] === depth[a] - 1 && pointInRing(L.vx[va], L.vz[va], L, L.ringStart[r0 + b], L.ringStart[r0 + b + 1])) { best = o; break; }
-          }
-          if (best) best.holes.push(r0 + a);
-        }
-      }
-    }
-    const base = LAND_COL[cls];
-    const s = Math.sin(i * 91.7) * 43758.5453;
-    const k = 0.94 + (s - Math.floor(s)) * 0.12;
-    const col = [base[0] * k * 255, base[1] * k * 255, base[2] * k * 255];
-    for (const o of outers) {
-      const flat = [], holes = [];
-      let sx = 0, sz = 0, cnt = 0;
-      for (const rg of [o.rg, ...o.holes]) {
-        if (rg !== o.rg) holes.push(flat.length / 2);
-        for (let v = L.ringStart[rg], ve = L.ringStart[rg + 1]; v < ve; v++) {
-          const x = L.vx[v] * 0.1, z = L.vz[v] * 0.1;
-          flat.push(x, z);
-          if (rg === o.rg) { sx += x; sz += z; cnt++; }
-        }
-      }
-      if (cnt < 3) continue;
-      const tx = Math.min(T - 1, Math.max(0, Math.floor(((sx / cnt) - world.minX) / spanX * T)));
-      const tz = Math.min(T - 1, Math.max(0, Math.floor(((sz / cnt) - world.minZ) / spanZ * T)));
-      const buf = get(group, tz * T + tx);
-      const tris = Earcut.triangulate(flat, holes, 2);
-      for (let t = 0; t < tris.length; t += 3) {
-        const a = tris[t] * 2;
-        let b = tris[t + 1] * 2, c = tris[t + 2] * 2;
-        // trojúhelník musí být přivrácený nahoru
-        const ny = (flat[b + 1] - flat[a + 1]) * (flat[c] - flat[a]) - (flat[b] - flat[a]) * (flat[c + 1] - flat[a + 1]);
-        if (ny < 0) { const q = b; b = c; c = q; }
-        buf.p.push(flat[a], -0.03, flat[a + 1], flat[b], -0.03, flat[b + 1], flat[c], -0.03, flat[c + 1]);
-        buf.c.push(col[0], col[1], col[2], col[0], col[1], col[2], col[0], col[1], col[2]);
-      }
-    }
-  }
-  // potoky a říčky jako úzké pásy
-  const wbuf = get(3, 99);
-  const wcol = LAND_COL[LC.WATER].map((v) => v * 255);
-  for (let i = 0; i < L.header.lineCount; i++) {
-    const cls = L.lCls[i];
-    if (cls > 3) continue;
-    const hw = cls === 0 ? 4 : cls === 1 ? 2.5 : cls === 2 ? 1.1 : 0.6;
-    for (let v = L.lStart[i], ve = L.lStart[i + 1] - 1; v < ve; v++) {
-      const x1 = L.lx[v] * 0.1, z1 = L.lz[v] * 0.1, x2 = L.lx[v + 1] * 0.1, z2 = L.lz[v + 1] * 0.1;
-      let dx = x2 - x1, dz = z2 - z1;
-      const l = Math.hypot(dx, dz);
-      if (l < 0.01) continue;
-      dx /= l; dz /= l;
-      const nx = -dz * hw, nz = dx * hw;
-      const ex = dx * hw * 0.5, ez = dz * hw * 0.5;
-      wbuf.p.push(x1 - nx - ex, -0.03, z1 - nz - ez, x2 + nx + ex, -0.03, z2 + nz + ez, x1 + nx - ex, -0.03, z1 + nz - ez,
-        x1 - nx - ex, -0.03, z1 - nz - ez, x2 - nx + ex, -0.03, z2 - nz + ez, x2 + nx + ex, -0.03, z2 + nz + ez);
-      for (let q = 0; q < 6; q++) wbuf.c.push(wcol[0], wcol[1], wcol[2]);
-    }
-  }
-  const group = new THREE.Group();
-  for (const buf of bufs) {
-    if (!buf || !buf.p.length) continue;
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(buf.p), 3));
-    g.setAttribute('color', new THREE.BufferAttribute(new Uint8Array(buf.c), 3, true));
-    g.computeBoundingSphere();
-    const m = new THREE.Mesh(g, buf.group === 3 ? mats.water : mats.decal);
-    m.renderOrder = 6 + buf.group;
-    m.matrixAutoUpdate = false;
-    group.add(m);
-  }
-  return group;
-}
 
 function makeSky() {
   const geo = new THREE.SphereGeometry(1, 32, 16);
@@ -192,10 +54,8 @@ function makeSky() {
 const _right = new THREE.Vector3(), _upv = new THREE.Vector3(), _tgt = new THREE.Vector3();
 
 export class Environment {
-  constructor(scene, world, decalMat, waterMat) {
+  constructor(scene, world) {
     this.scene = scene;
-    this.decalMat = decalMat;
-    this.waterMat = waterMat;
     this.sky = makeSky();
     scene.add(this.sky);
     this.hemi = new THREE.HemisphereLight(0xffffff, 0x777766, 1);
@@ -214,53 +74,15 @@ export class Environment {
       this.shadowR = 0;
     }
 
-    // základní zem (jen za hranicí mapy)
-    const half = 14000;
+    // vzdálená zem za hranicí mapy (hluboko pod terénem)
+    const half = 16000;
     const gg = new THREE.PlaneGeometry(half * 2, half * 2);
     gg.rotateX(-Math.PI / 2);
-    gg.translate(0, -1, 0);
-    this.groundMat = new THREE.MeshLambertMaterial({ color: GROUND_HEX, depthWrite: false });
+    gg.translate(0, -34, 0);
+    this.groundMat = new THREE.MeshLambertMaterial({ color: GROUND_HEX });
     const ground = new THREE.Mesh(gg, this.groundMat);
-    ground.renderOrder = 5;
     ground.frustumCulled = false;
     scene.add(ground);
-
-    // podklad města: kde je hustá zástavba, je zem „dlážděná“, jinde zelená
-    const S = 1024;
-    const cv = document.createElement('canvas');
-    cv.width = cv.height = S;
-    const g2 = cv.getContext('2d');
-    g2.fillStyle = '#9aa873';
-    g2.fillRect(0, 0, S, S);
-    g2.fillStyle = '#a9a69c';
-    const kx = S / (world.maxX - world.minX), kz = S / (world.maxZ - world.minZ);
-    for (let i = 0; i < world.bCount; i++) {
-      const w = world.bMaxX[i] - world.bMinX[i], d = world.bMaxZ[i] - world.bMinZ[i];
-      const area = w * d;
-      if (area < 40) continue;
-      g2.globalAlpha = Math.min(0.5, 0.1 + area / 3000);
-      g2.beginPath();
-      g2.arc(((world.bMinX[i] + world.bMaxX[i]) / 2 - world.minX) * kx, ((world.bMinZ[i] + world.bMaxZ[i]) / 2 - world.minZ) * kz,
-        (26 + Math.sqrt(area) * 0.6) * kx, 0, Math.PI * 2);
-      g2.fill();
-    }
-    const tex = new THREE.CanvasTexture(cv);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    tex.anisotropy = 4;
-    // jemné dělení kvůli přesnosti hloubky (obří trojúhelníky by „prosvítaly“ přes boty a kola)
-    const cg = new THREE.PlaneGeometry(world.maxX - world.minX, world.maxZ - world.minZ, 48, 48);
-    cg.rotateX(-Math.PI / 2);
-    cg.translate((world.minX + world.maxX) / 2, -0.05, (world.minZ + world.maxZ) / 2);
-    this.cityMat = patchGroundMaterial(new THREE.MeshLambertMaterial({ map: tex, depthWrite: false }), false);
-    const city = new THREE.Mesh(cg, this.cityMat);
-    city.renderOrder = 5.5;
-    city.frustumCulled = false;
-    city.receiveShadow = true;
-    scene.add(city);
-
-    const land = buildLand(world, { decal: decalMat, water: waterMat });
-    land.traverse((o) => { if (o.isMesh && o.material === decalMat) o.receiveShadow = true; });
-    scene.add(land);
     this.poolMat = getPoolMaterial();
     this.hour = 10;
     this.tint = new THREE.Color();
@@ -297,10 +119,7 @@ export class Environment {
     this.hemi.groundColor.copy(new THREE.Color(0x9a927c).lerp(new THREE.Color(0x343a52), 1 - day));
     this.hemi.intensity = 0.95 + 0.6 * day;
 
-    // voda a světla lamp nejsou osvětlené scénou – řídí se odstínem podle denní doby
-    const k = 0.2 + 0.8 * day;
-    this.tint.setRGB(k * (1 + dusk * 0.12), k, k * (1 - dusk * 0.1 + (1 - day) * 0.25));
-    this.waterMat.color.copy(this.tint);
+    // světla lamp nejsou osvětlená scénou – sílí s nocí
     this.poolMat.opacity = night * 0.75;
     this.poolMat.visible = night > 0.03;
     this.day = day;
@@ -313,7 +132,7 @@ export class Environment {
     this.sky.scale.setScalar(cam.far * 0.9);
     env.cam.value.copy(cam.position);
     const f = focus || cam.position;
-    _tgt.set(f.x, 0, f.z);
+    _tgt.set(f.x, f.y || 0, f.z);
     if (this.shadows && this.sun.castShadow) {
       // oblast stínů roste s výškou kamery; střed se přichytává na rastr, aby stíny neblikaly
       const sc = this.sun.shadow.camera;

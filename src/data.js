@@ -41,9 +41,10 @@ function parsePack(buf) {
 
 // přibližné velikosti souborů (bajty) pro ukazatel průběhu
 const FILES = [
-  ['buildings', 'data/buildings.bin', 2_700_000],
-  ['roads', 'data/roads.bin', 1_100_000],
+  ['buildings', 'data/buildings.bin', 2_900_000],
+  ['roads', 'data/roads.bin', 1_200_000],
   ['land', 'data/land.bin', 1_450_000],
+  ['terrain', 'data/terrain.bin', 1_950_000],
   ['rails', 'data/rails.bin', 60_000],
   ['trees', 'data/trees.bin', 130_000],
   ['meta', 'data/meta.json', 350_000],

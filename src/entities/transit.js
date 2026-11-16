@@ -43,7 +43,7 @@ class TransitVehicle {
   constructor(route, s, isTram) {
     this.route = route; this.s = s; this.v = 0; this.isTram = isTram;
     this.wait = 0; this.meshes = null; this.visible = false;
-    this.x = 0; this.z = 0; this.yaw = 0; this.vx = 0; this.vz = 0;
+    this.x = 0; this.y = 0; this.z = 0; this.yaw = 0; this.vx = 0; this.vz = 0;
     this.len = isTram ? TRAM_SEG * 3 : TROLLEY_LEN;
     this.side = isTram ? 0 : 1.7;
     this.stopTarget = null;
@@ -99,6 +99,11 @@ export class TransitManager {
         this._show(v, false);
         v.s += 6.5 * dt; v.v = 6.5; v.wait = 0; v.stopTarget = null;
       } else {
+        if (!v.visible) {
+          // první zobrazení: tramvaj na tramvajovém mostě (trolejbus na silničním) začíná na mostovce
+          const d = this.world.deckAt(_o.x, _o.z, 1e9, v.isTram ? 1 : 0);
+          v.y = Math.max(d, this.world.heightAt(_o.x, _o.z) + 0.05);
+        }
         this._show(v, true);
         const vmax = v.isTram ? 11.5 : 10.5;
         let limit = vmax;
@@ -118,7 +123,7 @@ export class TransitManager {
         const fx = _o.tx, fz = _o.tz;
         const check = (o) => {
           const dx = o.x - _o.x, dz = o.z - _o.z;
-          if (dx * dx + dz * dz > 30 * 30) return;
+          if (dx * dx + dz * dz > 30 * 30 || Math.abs((o.y === undefined ? v.y : o.y) - v.y) > 3) return;
           const ahead = dx * fx + dz * fz;
           if (ahead < 0.5 || ahead > 22) return;
           if (Math.abs(dx * fz - dz * fx) > 1.5 + (o.radius || 1) * 0.5) return;
@@ -147,12 +152,14 @@ export class TransitManager {
             rr.posAt(sc - 2.6, 0, _o);
             const cx = (ax + _o.x) / 2, cz = (az + _o.z) / 2;
             const yaw = Math.atan2(ax - _o.x, az - _o.z);
+            const ya = this.world.groundY(ax, az, v.y), yb = this.world.groundY(_o.x, _o.z, v.y);
+            const cy = (ya + yb) / 2;
             const m = v.meshes[j];
-            m.position.set(cx, 0, cz); m.rotation.y = yaw;
+            m.position.set(cx, cy, cz); m.rotation.set(Math.atan2(yb - ya, 5.2), yaw, 0, 'YXZ');
             const vx = Math.sin(yaw) * v.v, vz = Math.cos(yaw) * v.v;
-            for (const k of [-2.6, 0, 2.6]) this.heavy.push({ x: cx + Math.sin(yaw) * k, z: cz + Math.cos(yaw) * k, r: 1.3, vx, vz });
-            this.obstacles.push({ x: cx, z: cz, vx, vz, halfLen: TRAM_SEG / 2, radius: 1.4 });
-            if (j === 1) { v.x = cx; v.z = cz; v.yaw = yaw; v.vx = vx; v.vz = vz; }
+            for (const k of [-2.6, 0, 2.6]) this.heavy.push({ x: cx + Math.sin(yaw) * k, y: cy, z: cz + Math.cos(yaw) * k, r: 1.3, vx, vz });
+            this.obstacles.push({ x: cx, y: cy, z: cz, vx, vz, halfLen: TRAM_SEG / 2, radius: 1.4 });
+            if (j === 1) { v.x = cx; v.z = cz; v.yaw = yaw; v.vx = vx; v.vz = vz; v.y = cy; }
           }
         } else {
           const sc = front - TROLLEY_LEN / 2;
@@ -160,10 +167,12 @@ export class TransitManager {
           rr.posAt(sc - 3.5, v.side, _o);
           const cx = (ax + _o.x) / 2, cz = (az + _o.z) / 2;
           const yaw = Math.atan2(ax - _o.x, az - _o.z);
-          v.meshes[0].position.set(cx, 0, cz); v.meshes[0].rotation.y = yaw;
-          v.x = cx; v.z = cz; v.yaw = yaw; v.vx = Math.sin(yaw) * v.v; v.vz = Math.cos(yaw) * v.v;
-          for (const k of [-4.2, 0, 4.2]) this.heavy.push({ x: cx + Math.sin(yaw) * k, z: cz + Math.cos(yaw) * k, r: 1.35, vx: v.vx, vz: v.vz });
-          this.obstacles.push({ x: cx, z: cz, vx: v.vx, vz: v.vz, halfLen: TROLLEY_LEN / 2, radius: 1.4 });
+          const ya = this.world.groundY(ax, az, v.y), yb = this.world.groundY(_o.x, _o.z, v.y);
+          const cy = (ya + yb) / 2;
+          v.meshes[0].position.set(cx, cy, cz); v.meshes[0].rotation.set(Math.atan2(yb - ya, 7), yaw, 0, 'YXZ');
+          v.x = cx; v.z = cz; v.y = cy; v.yaw = yaw; v.vx = Math.sin(yaw) * v.v; v.vz = Math.cos(yaw) * v.v;
+          for (const k of [-4.2, 0, 4.2]) this.heavy.push({ x: cx + Math.sin(yaw) * k, y: cy, z: cz + Math.cos(yaw) * k, r: 1.35, vx: v.vx, vz: v.vz });
+          this.obstacles.push({ x: cx, y: cy, z: cz, vx: v.vx, vz: v.vz, halfLen: TROLLEY_LEN / 2, radius: 1.4 });
         }
         v.halfLen = v.len / 2; v.radius = 1.4;
       } else {
@@ -174,10 +183,10 @@ export class TransitManager {
   }
 
   /** Vůz MHD, do kterého jde právě nastoupit (stojí v zastávce poblíž). */
-  boardable(x, z) {
+  boardable(x, z, y) {
     let best = null, bd = 1e9;
     for (const v of this.vehicles) {
-      if (!v.visible || v.v > 0.6) continue;
+      if (!v.visible || v.v > 0.6 || Math.abs(v.y - y) > 2.5) continue;
       const fx = Math.sin(v.yaw), fz = Math.cos(v.yaw);
       const dx = x - v.x, dz = z - v.z;
       const along = Math.abs(dx * fx + dz * fz), across = Math.abs(dx * fz - dz * fx);

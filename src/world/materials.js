@@ -85,6 +85,7 @@ float litWin = 0.0;
     }
     // sokl a hlavní římsa pod střechou
     wall *= 1.0 - 0.26 * (1.0 - smoothstep(0.14, 0.17 + fw.y, cell.y)) * step(style, 3.5);
+    float above = step(0.0, cell.y);      // pod úrovní terénu (ve svahu) je jen holá zeď
     float topD = floors - cell.y;
     float cornice = (1.0 - smoothstep(0.07, 0.09 + fw.y, topD)) * step(style, 3.5);
     float corniceShade = (1.0 - smoothstep(0.09, 0.15, topD)) * (1.0 - cornice) * step(style, 3.5);
@@ -92,9 +93,9 @@ float litWin = 0.0;
     float yTop = r.w;
     if (style > 5.5) yTop -= abs(f.x - 0.5) * 0.9;  // lomený oblouk
     float wx = aaRect(f.x, r.x, r.y, fw.x), wy = aaRect(f.y, r.z, yTop, fw.y);
-    float win = clamp(wx * wy, 0.0, 1.0);
-    float frame = clamp(aaRect(f.x, r.x - frameW, r.y + frameW, fw.x) * aaRect(f.y, r.z - frameW, yTop + frameW, fw.y) - win, 0.0, 1.0) * step(0.001, frameW);
-    float sillM = aaRect(f.x, r.x - 0.06, r.y + 0.06, fw.x) * aaRect(f.y, r.z - 0.075, r.z - 0.035, fw.y) * sill;
+    float win = clamp(wx * wy, 0.0, 1.0) * above;
+    float frame = above * clamp(aaRect(f.x, r.x - frameW, r.y + frameW, fw.x) * aaRect(f.y, r.z - frameW, yTop + frameW, fw.y) - win, 0.0, 1.0) * step(0.001, frameW);
+    float sillM = aaRect(f.x, r.x - 0.06, r.y + 0.06, fw.x) * aaRect(f.y, r.z - 0.075, r.z - 0.035, fw.y) * sill * above;
 
     // sklo: odraz oblohy nahoře, občas záclony
     float gy = clamp((f.y - r.z) / max(0.05, yTop - r.z), 0.0, 1.0);
@@ -122,12 +123,12 @@ float litWin = 0.0;
     if (door > 0.5) glass = mix(vec3(0.20, 0.13, 0.09), vec3(0.30, 0.20, 0.13), h1) * (0.85 + 0.3 * gy);
 
     // lodžie panelových domů: zapuštěný výklenek se zábradlím
-    float lgM = aaRect(f.x, 0.07, 0.93, fw.x) * aaRect(f.y, 0.05, 0.95, fw.y) * loggia;
+    float lgM = aaRect(f.x, 0.07, 0.93, fw.x) * aaRect(f.y, 0.05, 0.95, fw.y) * loggia * above;
     float rail = aaRect(f.y, 0.05, 0.40, fw.y) * lgM;
     vec3 railCol = mix(wall * 0.80, vec3(0.45, 0.52, 0.58), 0.25 + 0.35 * hash21(vec2(floor(id.x * 0.25), 2.0)));
 
     // výloha s vývěsním štítem
-    float signM = aaRect(f.x, 0.05, 0.95, fw.x) * aaRect(f.y, 0.75, 0.93, fw.y) * shop * step(0.3, h2);
+    float signM = aaRect(f.x, 0.05, 0.95, fw.x) * aaRect(f.y, 0.75, 0.93, fw.y) * shop * step(0.3, h2) * above;
     vec3 signCol = mix(wall * 0.7, 0.34 + 0.30 * cos(6.2831 * (h1 + vec3(0.0, 0.33, 0.67))), 0.62);
 
     vec3 col = wall;
@@ -137,11 +138,12 @@ float litWin = 0.0;
     col = mix(col, trim, sillM * detail);
     col = mix(col, signCol, signM * detail);
     float cover = (r.y - r.x) * (yTop - r.z);
-    col = mix(col, glass, mix(cover, win, detail));
+    col = mix(col, glass, mix(cover * above, win, detail));
+    col = mix(wall * 0.78, col, above);
     col = mix(col, trim, cornice);
     col *= 1.0 - 0.22 * corniceShade * detail;
     diffuseColor.rgb = col;
-    litWin = lit * mix(cover, win * (1.0 - bar * detail), detail) * (0.55 + 0.45 * h1);
+    litWin = lit * above * mix(cover, win * (1.0 - bar * detail), detail) * (0.55 + 0.45 * h1);
   }
 }
 `)
@@ -175,46 +177,66 @@ export function patchGroundMaterial(mat, fixedNormal = true) {
 }
 
 /** Ploché povrchy na zemi (silnice, plochy) – kreslí se v pevném pořadí bez zápisu hloubky. */
-export function makeDecalMaterial() {
-  return patchGroundMaterial(new THREE.MeshLambertMaterial({ vertexColors: true, depthWrite: false }));
+export function makeDecalMaterial(opts = {}) {
+  return patchGroundMaterial(new THREE.MeshLambertMaterial({ vertexColors: true, depthWrite: false, ...opts }));
 }
 
-export function makeWaterMaterial() {
-  const mat = new THREE.MeshBasicMaterial({ vertexColors: true, depthWrite: false });
-  mat.onBeforeCompile = (shader) => {
-    shader.uniforms.uTime = env.time;
-    shader.uniforms.uSky = env.sky;
-    shader.uniforms.uSunDir = env.sunDir;
-    shader.uniforms.uCam = env.cam;
-    shader.uniforms.uNight = env.night;
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec2 vWp;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWp = (modelMatrix * vec4(position, 1.0)).xz;');
-    shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', `#include <common>
-varying vec2 vWp;
+/** Společná úprava shaderu terénu (jedna funkce = jeden sdílený program pro všechny dlaždice). */
+function terrainCompile(shader) {
+  shader.uniforms.uTime = env.time;
+  shader.uniforms.uSky = env.sky;
+  shader.uniforms.uSunDir = env.sunDir;
+  shader.uniforms.uCam = env.cam;
+  shader.uniforms.uNight = env.night;
+  shader.vertexShader = shader.vertexShader
+    .replace('#include <common>', '#include <common>\nvarying vec3 vTp;')
+    .replace('#include <begin_vertex>', '#include <begin_vertex>\nvTp = (modelMatrix * vec4(position, 1.0)).xyz;');
+  shader.fragmentShader = shader.fragmentShader
+    .replace('#include <common>', `#include <common>
+varying vec3 vTp;
 uniform float uTime; uniform vec3 uSky; uniform vec3 uSunDir; uniform vec3 uCam; uniform float uNight;
+float waterSpec = 0.0;
 ${NOISE_GLSL}`)
-      .replace('#include <color_fragment>', `#include <color_fragment>
+    .replace('#include <map_fragment>', `
 {
-  vec3 V = normalize(uCam - vec3(vWp.x, 0.0, vWp.y));
-  float d = length(uCam.xz - vWp);
-  float fade = 1.0 - smoothstep(60.0, 400.0, d);
-  vec2 p = vWp * 0.22;
-  float w1 = vnoise(p + vec2(uTime * 0.22, uTime * 0.13)) - 0.5;
-  float w2 = vnoise(p * 2.7 - vec2(uTime * 0.31, uTime * 0.19)) - 0.5;
-  vec3 N = normalize(vec3((w1 + w2 * 0.6) * 0.55 * fade, 1.0, (w2 - w1 * 0.6) * 0.55 * fade));
-  float fres = pow(1.0 - max(dot(V, N), 0.0), 3.0);
-  vec3 deep = diffuseColor.rgb * 0.62;
-  vec3 col = mix(deep, uSky, 0.12 + 0.72 * fres);
-  vec3 R = reflect(-V, N);
-  float spec = pow(max(dot(R, uSunDir), 0.0), 220.0) * (1.0 - uNight) * fade;
-  col += vec3(1.0, 0.94, 0.80) * spec * 1.6;
-  col += (w1 + w2) * 0.035 * fade;
-  diffuseColor.rgb = col;
+  // textura země: průhledná místa jsou voda
+  vec4 tx = texture2D(map, vMapUv);
+  float land = clamp(tx.a, 0.0, 1.0);
+  vec3 landCol = tx.rgb / max(land, 0.06);
+  vec2 gp = vTp.xz;
+  float px = max(fwidth(gp.x), fwidth(gp.y));
+  float fine = (vnoise(gp * 2.6) - 0.5) * (1.0 - smoothstep(0.15, 0.7, px));
+  float mid = (vnoise(gp * 0.33) - 0.5) * (1.0 - smoothstep(1.2, 5.0, px));
+  float big = vnoise(gp * 0.021) - 0.5;
+  landCol *= 1.0 + 0.13 * fine + 0.10 * mid + 0.07 * big;
+  float wmask = 1.0 - smoothstep(0.35, 0.65, land);
+  vec3 col = landCol;
+  if (wmask > 0.001) {
+    vec3 V = normalize(uCam - vTp);
+    float d = length(uCam.xz - gp);
+    float fade = 1.0 - smoothstep(60.0, 400.0, d);
+    vec2 p = gp * 0.22;
+    float w1 = vnoise(p + vec2(uTime * 0.22, uTime * 0.13)) - 0.5;
+    float w2 = vnoise(p * 2.7 - vec2(uTime * 0.31, uTime * 0.19)) - 0.5;
+    vec3 N = normalize(vec3((w1 + w2 * 0.6) * 0.55 * fade, 1.0, (w2 - w1 * 0.6) * 0.55 * fade));
+    float fres = pow(1.0 - max(dot(V, N), 0.0), 3.0);
+    vec3 water = mix(vec3(0.07, 0.19, 0.27), uSky * 0.9, 0.14 + 0.70 * fres) + (w1 + w2) * 0.03 * fade;
+    vec3 R = reflect(-V, N);
+    waterSpec = pow(max(dot(R, uSunDir), 0.0), 220.0) * (1.0 - uNight) * fade * wmask;
+    col = mix(landCol, water, wmask);
+  }
+  diffuseColor.rgb *= col;
 }
+`)
+    .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+totalEmissiveRadiance += vec3(1.0, 0.94, 0.80) * waterSpec * 1.4;
 `);
-  };
+}
+
+/** Materiál terénu jedné dlaždice (textura země s vodou v průhlednosti). */
+export function makeTerrainMaterial(tex) {
+  const mat = new THREE.MeshLambertMaterial({ map: tex });
+  mat.onBeforeCompile = terrainCompile;
   return mat;
 }
 
@@ -236,7 +258,7 @@ export function getPoolMaterial() {
   tex.colorSpace = THREE.SRGBColorSpace;
   poolMat = new THREE.MeshBasicMaterial({
     map: tex, color: 0xffd6a0, transparent: true, opacity: 0, blending: THREE.AdditiveBlending,
-    depthWrite: false, fog: false,
+    depthWrite: false, fog: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -20,
   });
   poolMat.visible = false;
   return poolMat;

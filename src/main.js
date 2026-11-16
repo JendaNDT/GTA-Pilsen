@@ -77,11 +77,12 @@ async function boot() {
 
   // představí okolí startu, ať hra nezačíná v prázdnu
   const f = game.focus;
-  let built = 0;
-  const total = Math.max(1, (() => { game.chunks.update(f.x, f.z, QUALITY.view, 0); return Math.min(game.chunks.pending, 60); })());
-  while (built < total) {
-    built += game.chunks.update(f.x, f.z, QUALITY.view, 4) || 4;
-    bar.style.width = `${80 + Math.round((built / total) * 20)}%`;
+  // nejdřív terén v celém dohledu a úplně dostavěné okolí startu; zbytek se dostaví za hry
+  game.chunks.update(f.x, f.z, QUALITY.view, 0);
+  const total = Math.max(1, game.chunks.pendingStart);
+  while (game.chunks.pendingStart > 0) {
+    game.chunks.update(f.x, f.z, QUALITY.view, 6);
+    bar.style.width = `${80 + Math.round((1 - game.chunks.pendingStart / total) * 20)}%`;
     await new Promise((r) => setTimeout(r, 0));
   }
   bar.style.width = '100%';

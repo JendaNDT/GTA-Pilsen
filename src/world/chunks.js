@@ -1,9 +1,10 @@
 // Stavba 3D geometrie po dlaždicích: budovy, silnice, koleje, stromy.
 import * as THREE from 'three';
 import { Earcut } from 'three/src/extras/Earcut.js';
-import { CHUNK, QUALITY, BK, BF, RC, RF, DRIVABLE_MAX } from '../config.js';
-import { makeBuildingMaterial, getPoolMaterial, env } from './materials.js';
+import { CHUNK, QUALITY, BK, BF, RC, RF, LC, DRIVABLE_MAX } from '../config.js';
+import { makeBuildingMaterial, makeDecalMaterial, makeTerrainMaterial, getPoolMaterial, env } from './materials.js';
 import { Parts, getDetailMaterial } from '../entities/models.js';
+import { SURF } from './world.js';
 
 const _c = new THREE.Color();
 function lin(hex) { _c.setHex(hex); return [_c.r, _c.g, _c.b]; }
@@ -35,7 +36,7 @@ function styleFor(world, i) {
   const B = world.b;
   const kind = B.kind[i];
   // výška zdí (bez šikmé střechy) – podle ní se pozná panelák od činžáku
-  const h = world.bWall[i] - world.bBase[i];
+  const h = world.bWall[i] - world.bGround[i];
   const r = hash(i), r2 = hash(i, 1), r3 = hash(i, 2);
   const cx = (world.bMinX[i] + world.bMaxX[i]) / 2, cz = (world.bMinZ[i] + world.bMaxZ[i]) / 2;
   const footprint = (world.bMaxX[i] - world.bMinX[i]) * (world.bMaxZ[i] - world.bMinZ[i]);
@@ -120,18 +121,20 @@ class Buf {
 
 class DecalBuf {
   constructor() { this.p = []; this.c = []; this.i = []; this.vc = 0; }
-  v(x, z, col) {
-    this.p.push(x, -0.01, z);
+  v(x, y, z, col) {
+    this.p.push(x, y, z);
     this.c.push(col[0] * 255, col[1] * 255, col[2] * 255);
     return this.vc++;
   }
   quad(a, b, c, d) { this.i.push(a, b, c, a, c, d); }
-  disc(x, z, r, col, seg = 8) {
-    const c0 = this.v(x, z, col);
+  /** Kruhová výplň (spoje a konce pásů); yFn(x, z) vrací výšku bodu. */
+  disc(x, z, r, col, yFn, seg = 8) {
+    const c0 = this.v(x, yFn(x, z), z, col);
     let first = -1, prev = -1;
     for (let s = 0; s < seg; s++) {
       const a = (s / seg) * Math.PI * 2;
-      const v = this.v(x + Math.cos(a) * r, z + Math.sin(a) * r, col);
+      const vx = x + Math.cos(a) * r, vz = z + Math.sin(a) * r;
+      const v = this.v(vx, yFn(vx, vz), vz, col);
       if (s === 0) first = v; else this.i.push(c0, v, prev);
       prev = v;
     }
@@ -143,6 +146,35 @@ class DecalBuf {
     g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(this.p), 3));
     g.setAttribute('color', new THREE.BufferAttribute(new Uint8Array(this.c), 3, true));
     g.setIndex(this.vc > 65535 ? new THREE.BufferAttribute(new Uint32Array(this.i), 1) : new THREE.BufferAttribute(new Uint16Array(this.i), 1));
+    g.computeBoundingSphere();
+    return g;
+  }
+}
+
+/** Jednoduché plné díly s barvou po ploškách (mostovky, pilíře). */
+class SolidBuf {
+  constructor() { this.p = []; this.n = []; this.c = []; }
+  quad(a, b, c, d, col, k = 1) {
+    let nx = (b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]);
+    let ny = (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]);
+    let nz = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+    const l = Math.hypot(nx, ny, nz) || 1;
+    nx /= l; ny /= l; nz /= l;
+    for (const q of [a, b, c, a, c, d]) {
+      this.p.push(q[0], q[1], q[2]); this.n.push(nx, ny, nz); this.c.push(col[0] * k, col[1] * k, col[2] * k);
+    }
+  }
+  box(x, y0, y1, z, hw, col) {
+    const a = [x - hw, y0, z - hw], b = [x + hw, y0, z - hw], c = [x + hw, y0, z + hw], d = [x - hw, y0, z + hw];
+    const e = [x - hw, y1, z - hw], f = [x + hw, y1, z - hw], g = [x + hw, y1, z + hw], h = [x - hw, y1, z + hw];
+    this.quad(a, e, f, b, col, 0.8); this.quad(b, f, g, c, col, 0.9); this.quad(c, g, h, d, col, 0.8); this.quad(d, h, e, a, col, 0.9);
+  }
+  geometry() {
+    if (!this.p.length) return null;
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(this.p, 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(this.n, 3));
+    g.setAttribute('color', new THREE.Float32BufferAttribute(this.c, 3));
     g.computeBoundingSphere();
     return g;
   }
@@ -206,7 +238,10 @@ function buildBuildings(world, list) {
     let base = world.bBase[i];
     if (kind === BK.ROOF) base = Math.max(base, top - 0.35);
     const r0 = B.bRing[i], r1 = B.bRing[i + 1];
-    const floors = Math.max(1, Math.round((wallTop - base) / st.floorH));
+    // patra se počítají od průměrné výšky terénu; zeď pod ní (ve svahu) je sokl bez oken
+    const ground = kind === BK.ROOF || B.hMin[i] > 0 ? base : world.bGround[i];
+    const floors = Math.max(1, Math.round((wallTop - ground) / st.floorH));
+    const vBase = ((base - ground) / Math.max(0.5, wallTop - ground)) * floors;
     // zdi
     for (let rg = r0; rg < r1; rg++) {
       const v0 = B.ringStart[rg], v1 = B.ringStart[rg + 1];
@@ -218,13 +253,13 @@ function buildBuildings(world, list) {
         if (len < 0.05) continue;
         const nx = dz / len, nz = -dx / len;
         let style = st.style, nb = 0, off = 0;
-        if (style && len >= 1.8 && wallTop - base > 2.2) {
+        if (style && len >= 1.8 && wallTop - ground > 2.2) {
           nb = Math.max(1, Math.round(len / st.bay));
           off = Math.floor(hash(v, 3) * 50) * 4;
           style += 8 * Math.min(floors, 60);       // shader potřebuje znát počet pater (římsa pod střechou)
         } else style = 0;
-        const a = buf.v(x1, base, z1, nx, 0, nz, st.wall, 0.78, off, 0, style);
-        const b = buf.v(x2, base, z2, nx, 0, nz, st.wall, 0.78, off + nb, 0, style);
+        const a = buf.v(x1, base, z1, nx, 0, nz, st.wall, 0.78, off, vBase, style);
+        const b = buf.v(x2, base, z2, nx, 0, nz, st.wall, 0.78, off + nb, vBase, style);
         const c = buf.v(x2, wallTop, z2, nx, 0, nz, st.wall, 1, off + nb, floors, style);
         const d = buf.v(x1, wallTop, z1, nx, 0, nz, st.wall, 1, off, floors, style);
         buf.tri(a, c, b); buf.tri(a, d, c);
@@ -344,6 +379,26 @@ const COL = {
   pedestrian: lin(0xb3ab9c), footway: lin(0xa39f95), path: lin(0x8a7a5e), track: lin(0x7f7257),
   cycleway: lin(0x8c5b52), steps: lin(0x8a8a8a), mark: lin(0xdcdcd4), markYellow: lin(0xd8b740),
   ballast: lin(0x6a6259), rail: lin(0xa6acb2), tramBed: lin(0x43464b), bridge: lin(0x62656a),
+  concrete: lin(0x9b9a94), railing: lin(0x8d949b),
+};
+// tytéž barvy pro kreslení do textury země
+const HEX = {
+  asphalt: '#4b4e54', asphaltMinor: '#55585d', service: '#5e6164', sidewalk: '#9a9da1', pedestrian: '#b3ab9c',
+  footway: '#a39f95', path: '#8a7a5e', track: '#7f7257', cycleway: '#8c5b52', steps: '#8a8a8a', ballast: '#6a6259',
+  stream: '#4f86a8',
+};
+const LAND_HEX = {
+  [LC.FARMLAND]: '#b5b47a', [LC.MEADOW]: '#9bb36a', [LC.GRASS]: '#8fb25e', [LC.RESIDENTIAL]: '#a9a89d',
+  [LC.COMMERCIAL]: '#a9a6a3', [LC.INDUSTRIAL]: '#9b9995', [LC.RAILWAY]: '#857f76', [LC.ALLOTMENTS]: '#8faa6a',
+  [LC.CEMETERY]: '#7f9f6a', [LC.FOREST]: '#4e7a46', [LC.SCRUB]: '#6f9353', [LC.PARK]: '#86b560',
+  [LC.PITCH]: '#6fae62', [LC.PARKING]: '#62656a', [LC.PLAZA]: '#b7b0a2', [LC.SAND]: '#d9c998',
+  [LC.CONSTRUCTION]: '#a59a84', [LC.GARDEN]: '#83ad62', [LC.PLAYGROUND]: '#c9b98a',
+};
+const LAND_GROUP = {
+  [LC.FARMLAND]: 0, [LC.MEADOW]: 0, [LC.RESIDENTIAL]: 0, [LC.COMMERCIAL]: 0, [LC.INDUSTRIAL]: 0,
+  [LC.RAILWAY]: 0, [LC.CONSTRUCTION]: 0,
+  [LC.FOREST]: 1, [LC.SCRUB]: 1, [LC.GRASS]: 1, [LC.PARK]: 1, [LC.ALLOTMENTS]: 1, [LC.CEMETERY]: 1, [LC.GARDEN]: 1,
+  [LC.PITCH]: 2, [LC.PLAYGROUND]: 2, [LC.PARKING]: 2, [LC.PLAZA]: 2, [LC.SAND]: 2,
 };
 
 function roadColor(cls) {
@@ -357,50 +412,107 @@ function roadColor(cls) {
   if (cls === RC.CYCLEWAY) return COL.cycleway;
   return COL.steps;
 }
+function roadHex(cls) {
+  if (cls <= RC.TERTIARY_LINK) return HEX.asphalt;
+  if (cls <= RC.LIVING) return HEX.asphaltMinor;
+  if (cls === RC.SERVICE) return HEX.service;
+  if (cls === RC.PEDESTRIAN) return HEX.pedestrian;
+  if (cls === RC.TRACK) return HEX.track;
+  if (cls === RC.FOOTWAY) return HEX.footway;
+  if (cls === RC.PATH) return HEX.path;
+  if (cls === RC.CYCLEWAY) return HEX.cycleway;
+  return HEX.steps;
+}
 
-/** Pás podél lomené čáry (body k0..k1 v polích px, pz); a, b jsou meze celé silnice kvůli navázání. */
-function ribbon(buf, px, pz, k0, k1, a, b, hw, col, lateral = 0, capStart = false, capEnd = false) {
-  let prevL = -1, prevR = -1;
-  for (let k = k0; k <= k1; k++) {
-    let nx = 0, nz = 0, scale = 1;
-    let d0x = 0, d0z = 0, d1x = 0, d1z = 0, has0 = false, has1 = false;
-    if (k > a) { d0x = px[k] - px[k - 1]; d0z = pz[k] - pz[k - 1]; const l = Math.hypot(d0x, d0z) || 1; d0x /= l; d0z /= l; has0 = true; }
-    if (k < b) { d1x = px[k + 1] - px[k]; d1z = pz[k + 1] - pz[k]; const l = Math.hypot(d1x, d1z) || 1; d1x /= l; d1z /= l; has1 = true; }
-    if (has0 && has1) {
-      nx = -(d0z + d1z); nz = d0x + d1x;
-      const l = Math.hypot(nx, nz);
-      if (l < 1e-4) { nx = -d1z; nz = d1x; } else { nx /= l; nz /= l; }
-      const dot = nx * -d1z + nz * d1x;
-      scale = 1 / Math.max(0.55, dot);
-      if (dot < 0.93) buf.disc(px[k] + nx * lateral, pz[k] + nz * lateral, hw, col, 8);
-    } else if (has1) { nx = -d1z; nz = d1x; } else { nx = -d0z; nz = d0x; }
-    const cx = px[k] + nx * lateral * scale, cz = pz[k] + nz * lateral * scale;
-    const L = buf.v(cx - nx * hw * scale, cz - nz * hw * scale, col);
-    const R = buf.v(cx + nx * hw * scale, cz + nz * hw * scale, col);
-    if (prevL >= 0) buf.quad(prevL, prevR, R, L);
-    prevL = L; prevR = R;
-    if ((k === a && capStart) || (k === b && capEnd)) buf.disc(cx, cz, hw, col, 8);
+const LIFT_MARK = 0.02, LIFT_RAIL = 0.035;
+
+/**
+ * Zahuštěná lomená čára: body s až e pole (xs, zs), u mostů i výšky mostovky (ys).
+ * a, b = meze celé linie – sousední body mimo úsek slouží k plynulému navázání.
+ */
+function densePath(xs, zs, ys, s, e, a, b, step) {
+  const X = [xs[s]], Z = [zs[s]], Y = ys ? [ys[s]] : null;
+  for (let k = s; k < e; k++) {
+    const dx = xs[k + 1] - xs[k], dz = zs[k + 1] - zs[k];
+    const n = Math.max(1, Math.ceil(Math.hypot(dx, dz) / step));
+    for (let q = 1; q <= n; q++) {
+      const t = q / n;
+      X.push(xs[k] + dx * t); Z.push(zs[k] + dz * t);
+      if (Y) Y.push(ys[k] + (ys[k + 1] - ys[k]) * t);
+    }
+  }
+  return {
+    x: X, z: Z, y: Y, n: X.length,
+    px: s > a ? xs[s - 1] : NaN, pz: s > a ? zs[s - 1] : NaN,
+    nx: e < b ? xs[e + 1] : NaN, nz: e < b ? zs[e + 1] : NaN,
+  };
+}
+
+/** Směr kolmý na čáru v bodě k (průměr sousedních úseků) + měřítko pro ostré lomy. */
+const _nrm = { x: 0, z: 0, scale: 1, dot: 1 };
+function pathNormal(D, k) {
+  const X = D.x, Z = D.z, n = D.n;
+  const ax = k > 0 ? X[k - 1] : D.px, az = k > 0 ? Z[k - 1] : D.pz;
+  const bx = k < n - 1 ? X[k + 1] : D.nx, bz = k < n - 1 ? Z[k + 1] : D.nz;
+  let d0x = 0, d0z = 0, d1x = 0, d1z = 0;
+  const has0 = ax === ax, has1 = bx === bx;
+  if (has0) { d0x = X[k] - ax; d0z = Z[k] - az; const l = Math.hypot(d0x, d0z) || 1; d0x /= l; d0z /= l; }
+  if (has1) { d1x = bx - X[k]; d1z = bz - Z[k]; const l = Math.hypot(d1x, d1z) || 1; d1x /= l; d1z /= l; }
+  let nx, nz, scale = 1, dot = 1;
+  if (has0 && has1) {
+    nx = -(d0z + d1z); nz = d0x + d1x;
+    const l = Math.hypot(nx, nz);
+    if (l < 1e-4) { nx = -d1z; nz = d1x; } else { nx /= l; nz /= l; }
+    dot = nx * -d1z + nz * d1x;
+    scale = 1 / Math.max(0.55, dot);
+  } else if (has1) { nx = -d1z; nz = d1x; } else { nx = -d0z; nz = d0x; }
+  _nrm.x = nx; _nrm.z = nz; _nrm.scale = scale; _nrm.dot = dot;
+  return _nrm;
+}
+
+/** Pás položený na terén (nebo na mostovku). center = přidat středovou řadu bodů (lépe kopíruje terén). */
+function ribbon(world, buf, D, hw, col, lateral, lift, capStart, capEnd, center) {
+  const n = D.n;
+  let pL = -1, pC = -1, pR = -1;
+  for (let k = 0; k < n; k++) {
+    const yFn = D.y ? ((kk) => () => D.y[kk] + lift)(k) : (x, z) => world.heightAt(x, z) + SURF + lift;
+    const nr = pathNormal(D, k);
+    const nx = nr.x, nz = nr.z, sc = nr.scale;
+    if (nr.dot < 0.93) buf.disc(D.x[k] + nx * lateral, D.z[k] + nz * lateral, hw, col, yFn);
+    const cx = D.x[k] + nx * lateral * sc, cz = D.z[k] + nz * lateral * sc;
+    const lx = cx - nx * hw * sc, lz = cz - nz * hw * sc, rx = cx + nx * hw * sc, rz = cz + nz * hw * sc;
+    const L = buf.v(lx, yFn(lx, lz), lz, col), R = buf.v(rx, yFn(rx, rz), rz, col);
+    let C = -1;
+    if (center) C = buf.v(cx, yFn(cx, cz), cz, col);
+    if (pL >= 0) {
+      if (center) { buf.quad(pL, pC, C, L); buf.quad(pC, pR, R, C); } else buf.quad(pL, pR, R, L);
+    }
+    pL = L; pC = C; pR = R;
+    if ((k === 0 && capStart) || (k === n - 1 && capEnd)) buf.disc(cx, cz, hw, col, yFn);
   }
 }
 
-function dashes(buf, px, pz, k0, k1, hw, col, dash, gap, lateral = 0) {
+/** Přerušovaná čára. */
+function dashes(world, buf, D, hw, col, dash, gap, lateral, lift) {
   let acc = 0;
   const period = dash + gap;
-  for (let k = k0; k < k1; k++) {
-    const x1 = px[k], z1 = pz[k];
-    let dx = px[k + 1] - x1, dz = pz[k + 1] - z1;
+  for (let k = 0; k < D.n - 1; k++) {
+    const x1 = D.x[k], z1 = D.z[k];
+    let dx = D.x[k + 1] - x1, dz = D.z[k + 1] - z1;
     const len = Math.hypot(dx, dz);
     if (len < 1e-4) continue;
     dx /= len; dz /= len;
     const nx = -dz, nz = dx;
+    const yAt = (x, z, t) => (D.y ? D.y[k] + (D.y[k + 1] - D.y[k]) * t : world.heightAt(x, z) + SURF) + lift;
     let s = -acc;
     while (s < len) {
       const s0 = Math.max(0, s), s1 = Math.min(len, s + dash);
       if (s1 - s0 > 0.3) {
         const ax = x1 + dx * s0 + nx * lateral, az = z1 + dz * s0 + nz * lateral;
         const bx = x1 + dx * s1 + nx * lateral, bz = z1 + dz * s1 + nz * lateral;
-        const a = buf.v(ax - nx * hw, az - nz * hw, col), b = buf.v(ax + nx * hw, az + nz * hw, col);
-        const c = buf.v(bx + nx * hw, bz + nz * hw, col), d = buf.v(bx - nx * hw, bz - nz * hw, col);
+        const ya = yAt(ax, az, s0 / len), yb = yAt(bx, bz, s1 / len);
+        const a = buf.v(ax - nx * hw, ya, az - nz * hw, col), b = buf.v(ax + nx * hw, ya, az + nz * hw, col);
+        const c = buf.v(bx + nx * hw, yb, bz + nz * hw, col), d = buf.v(bx - nx * hw, yb, bz - nz * hw, col);
         buf.quad(a, b, c, d);
       }
       s += period;
@@ -409,45 +521,80 @@ function dashes(buf, px, pz, k0, k1, hw, col, dash, gap, lateral = 0) {
   }
 }
 
+/** Těleso mostu: deska pod vozovkou, zábradlí a pilíře až na terén. */
+function bridgeSlab(world, solid, D, hw, railings, topCol) {
+  const n = D.n;
+  if (n < 2 || !D.y) return;
+  const T = 0.9;
+  const L = [], R = [];
+  for (let k = 0; k < n; k++) {
+    const nr = pathNormal(D, k);
+    const sc = Math.min(nr.scale, 1.5);
+    L.push([D.x[k] - nr.x * hw * sc, D.z[k] - nr.z * hw * sc]);
+    R.push([D.x[k] + nr.x * hw * sc, D.z[k] + nr.z * hw * sc]);
+  }
+  let acc = 13;
+  for (let k = 0; k < n - 1; k++) {
+    const y0 = D.y[k] - 0.04, y1 = D.y[k + 1] - 0.04;
+    const l0 = L[k], l1 = L[k + 1], r0 = R[k], r1 = R[k + 1];
+    solid.quad([l0[0], y0, l0[1]], [l1[0], y1, l1[1]], [r1[0], y1, r1[1]], [r0[0], y0, r0[1]], topCol);               // vršek
+    solid.quad([l0[0], y0 - T, l0[1]], [r0[0], y0 - T, r0[1]], [r1[0], y1 - T, r1[1]], [l1[0], y1 - T, l1[1]], COL.concrete, 0.55);  // spodek
+    solid.quad([l0[0], y0 - T, l0[1]], [l1[0], y1 - T, l1[1]], [l1[0], y1, l1[1]], [l0[0], y0, l0[1]], COL.concrete, 0.85);
+    solid.quad([r0[0], y0, r0[1]], [r1[0], y1, r1[1]], [r1[0], y1 - T, r1[1]], [r0[0], y0 - T, r0[1]], COL.concrete, 0.85);
+    if (railings) {
+      const h = 0.95;
+      solid.quad([l0[0], y0, l0[1]], [l1[0], y1, l1[1]], [l1[0], y1 + h, l1[1]], [l0[0], y0 + h, l0[1]], COL.railing);
+      solid.quad([r0[0], y0, r0[1]], [r1[0], y1, r1[1]], [r1[0], y1 + h, r1[1]], [r0[0], y0 + h, r0[1]], COL.railing);
+    }
+    // pilíře po ~26 m, kde je pod mostem dost místa
+    const len = Math.hypot(D.x[k + 1] - D.x[k], D.z[k + 1] - D.z[k]);
+    acc += len;
+    while (acc >= 26 && len > 0) {
+      acc -= 26;
+      const t = Math.min(1, Math.max(0, 1 - acc / len));
+      const x = D.x[k] + (D.x[k + 1] - D.x[k]) * t, z = D.z[k] + (D.z[k + 1] - D.z[k]) * t;
+      const yb = y0 + (y1 - y0) * t - T, g = world.heightAt(x, z);
+      if (yb - g > 2.5) solid.box(x, g - 0.6, yb, z, Math.min(0.9, hw * 0.35), COL.concrete);
+    }
+  }
+}
+
 function buildRoads(world, ci) {
   const pieces = world.rPieces[ci];
-  const R = world.r, px = world.rpx, pz = world.rpz, off = world.rOff;
-  const under = new DecalBuf(), asphalt = new DecalBuf(), marks = new DecalBuf();
+  const R = world.r, px = world.rpx, pz = world.rpz, py = world.rpy, off = world.rOff;
+  const asphalt = new DecalBuf(), marks = new DecalBuf(), solid = new SolidBuf();
   if (pieces) {
     for (let q = 0; q < pieces.length; q += 3) {
       const i = pieces[q], s = pieces[q + 1], e = pieces[q + 2];
       const a = off[i], b = off[i + 1] - 1;
       const cls = R.cls[i], w = R.w[i], flags = R.flags[i];
+      const bridge = (flags & RF.BRIDGE) !== 0;
+      const paved = cls <= DRIVABLE_MAX || cls === RC.PEDESTRIAN;
+      if (!paved && !bridge) continue;            // pěšiny a chodníky jsou nakreslené v textuře země
       const hw = w / 2;
-      const col = (flags & RF.BRIDGE) && cls <= DRIVABLE_MAX ? COL.bridge : roadColor(cls);
-      if (cls <= DRIVABLE_MAX || cls === RC.PEDESTRIAN) {
-        ribbon(asphalt, px, pz, s, e, a, b, hw, col, 0, s === a, e === b);
-        // chodníky u městských ulic
-        if (cls >= RC.PRIMARY && cls <= RC.LIVING && !(flags & (RF.TUNNEL | RF.BRIDGE)) && cls !== RC.PRIMARY_LINK && cls !== RC.SECONDARY_LINK) {
-          ribbon(under, px, pz, s, e, a, b, hw + 2.0, COL.sidewalk, 0, s === a, e === b);
-        }
-        // vodorovné značení
-        if (cls <= RC.UNCLASSIFIED && !(flags & RF.ROUNDABOUT)) {
-          const lanes = R.lanes[i];
-          if (!(flags & RF.ONEWAY)) {
-            if (lanes >= 4) {
-              ribbon(marks, px, pz, s, e, a, b, 0.09, COL.mark, 0.16);
-              ribbon(marks, px, pz, s, e, a, b, 0.09, COL.mark, -0.16);
-              dashes(marks, px, pz, s, e, 0.07, COL.mark, 3, 6, w / 4);
-              dashes(marks, px, pz, s, e, 0.07, COL.mark, 3, 6, -w / 4);
-            } else if (w >= 5.6) {
-              dashes(marks, px, pz, s, e, 0.07, COL.mark, 3, 6, 0);
-            }
-          } else if (lanes >= 2) {
-            for (let l = 1; l < lanes; l++) dashes(marks, px, pz, s, e, 0.07, COL.mark, 3, 6, -hw + (w / lanes) * l);
+      const D = densePath(px, pz, bridge ? py : null, s, e, a, b, bridge ? 1e9 : 4);
+      const col = bridge && cls <= DRIVABLE_MAX ? COL.bridge : roadColor(cls);
+      ribbon(world, asphalt, D, hw, col, 0, 0, s === a, e === b, hw > 2.2 && !bridge);
+      if (bridge) bridgeSlab(world, solid, D, world.deckHalfWidth(i), true, cls <= RC.LIVING ? COL.sidewalk : COL.concrete);
+      // vodorovné značení
+      if (cls <= RC.UNCLASSIFIED && !(flags & RF.ROUNDABOUT)) {
+        const lanes = R.lanes[i];
+        if (!(flags & RF.ONEWAY)) {
+          if (lanes >= 4) {
+            ribbon(world, marks, D, 0.09, COL.mark, 0.16, LIFT_MARK);
+            ribbon(world, marks, D, 0.09, COL.mark, -0.16, LIFT_MARK);
+            dashes(world, marks, D, 0.07, COL.mark, 3, 6, w / 4, LIFT_MARK);
+            dashes(world, marks, D, 0.07, COL.mark, 3, 6, -w / 4, LIFT_MARK);
+          } else if (w >= 5.6) {
+            dashes(world, marks, D, 0.07, COL.mark, 3, 6, 0, LIFT_MARK);
           }
-          if (cls <= RC.TRUNK_LINK) {
-            ribbon(marks, px, pz, s, e, a, b, 0.08, COL.mark, hw - 0.3);
-            ribbon(marks, px, pz, s, e, a, b, 0.08, COL.mark, -hw + 0.3);
-          }
+        } else if (lanes >= 2) {
+          for (let l = 1; l < lanes; l++) dashes(world, marks, D, 0.07, COL.mark, 3, 6, -hw + (w / lanes) * l, LIFT_MARK);
         }
-      } else {
-        ribbon(under, px, pz, s, e, a, b, hw, col, 0, false, false);
+        if (cls <= RC.TRUNK_LINK) {
+          ribbon(world, marks, D, 0.08, COL.mark, hw - 0.3, LIFT_MARK);
+          ribbon(world, marks, D, 0.08, COL.mark, -hw + 0.3, LIFT_MARK);
+        }
       }
     }
   }
@@ -459,18 +606,227 @@ function buildRoads(world, ci) {
       const n = rail.pts.length / 2;
       const rx = new Float32Array(n), rz = new Float32Array(n);
       for (let k = 0; k < n; k++) { rx[k] = rail.pts[k * 2]; rz[k] = rail.pts[k * 2 + 1]; }
-      if (rail.cls === 1) {
-        ribbon(under, rx, rz, 0, n - 1, 0, n - 1, 1.7, COL.ballast);
-        ribbon(marks, rx, rz, 0, n - 1, 0, n - 1, 0.07, COL.rail, 0.7175);
-        ribbon(marks, rx, rz, 0, n - 1, 0, n - 1, 0.07, COL.rail, -0.7175);
-      } else {
-        ribbon(asphalt, rx, rz, 0, n - 1, 0, n - 1, 1.25, COL.tramBed);
-        ribbon(marks, rx, rz, 0, n - 1, 0, n - 1, 0.06, COL.rail, 0.7175);
-        ribbon(marks, rx, rz, 0, n - 1, 0, n - 1, 0.06, COL.rail, -0.7175);
+      const D = densePath(rx, rz, rail.y, 0, n - 1, 0, n - 1, rail.y ? 1e9 : 4);
+      if (rail.cls === 0) ribbon(world, asphalt, D, 1.25, COL.tramBed, 0, 0.004);
+      else if (rail.y) ribbon(world, asphalt, D, 1.7, COL.ballast, 0, 0.004);
+      ribbon(world, marks, D, 0.07, COL.rail, 0.7175, LIFT_RAIL);
+      ribbon(world, marks, D, 0.07, COL.rail, -0.7175, LIFT_RAIL);
+      if (rail.y) bridgeSlab(world, solid, D, rail.cls === 1 ? 2.4 : 1.7, true, COL.concrete);
+    }
+  }
+  return { asphalt: asphalt.geometry(), marks: marks.geometry(), solid: solid.geometry() };
+}
+
+// ---------------------------------------------------------------- terén ----
+let terrainIndex = null;
+
+/** Síť terénu jedné dlaždice (sdílí uzly se sousedy, takže na sebe navazuje beze spár). */
+function buildTerrain(world, cx0, cz0) {
+  const G = world.tG, N = CHUNK / G, n1 = N + 1;
+  const pos = new Float32Array(n1 * n1 * 3), nor = new Float32Array(n1 * n1 * 3), uv = new Float32Array(n1 * n1 * 2);
+  const gi0 = Math.round((cx0 - world.tX0) / G), gj0 = Math.round((cz0 - world.tZ0) / G);
+  const th = world.th, tc = world.tCols, tr = world.tRows;
+  const H = (i, j) => th[Math.min(tr - 1, Math.max(0, j)) * tc + Math.min(tc - 1, Math.max(0, i))];
+  let o = 0, u = 0;
+  for (let j = 0; j <= N; j++) {
+    for (let i = 0; i <= N; i++) {
+      const gi = gi0 + i, gj = gj0 + j;
+      pos[o] = cx0 + i * G; pos[o + 1] = H(gi, gj); pos[o + 2] = cz0 + j * G;
+      const hx = (H(gi + 1, gj) - H(gi - 1, gj)) / (2 * G), hz = (H(gi, gj + 1) - H(gi, gj - 1)) / (2 * G);
+      const l = Math.hypot(hx, 1, hz);
+      nor[o] = -hx / l; nor[o + 1] = 1 / l; nor[o + 2] = -hz / l;
+      uv[u] = i / N; uv[u + 1] = j / N;
+      o += 3; u += 2;
+    }
+  }
+  if (!terrainIndex) {
+    const idx = [];
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+      const v00 = j * n1 + i, v10 = v00 + 1, v01 = v00 + n1, v11 = v01 + 1;
+      idx.push(v00, v01, v10, v10, v01, v11);      // úhlopříčka 10–01, stejně jako world.heightAt
+    }
+    terrainIndex = new THREE.BufferAttribute(new Uint16Array(idx), 1);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+  g.setIndex(terrainIndex);
+  g.computeBoundingSphere();
+  return g;
+}
+
+/** Podklad: hustá zástavba = „dlážděná“ šedá, jinde zelená (hrubá mapa celého města). */
+function buildDensity(world) {
+  const S = 1024;
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = S;
+  const g = cv.getContext('2d');
+  g.fillStyle = '#9aa873';
+  g.fillRect(0, 0, S, S);
+  g.fillStyle = '#a9a69c';
+  const kx = S / (world.maxX - world.minX), kz = S / (world.maxZ - world.minZ);
+  for (let i = 0; i < world.bCount; i++) {
+    const w = world.bMaxX[i] - world.bMinX[i], d = world.bMaxZ[i] - world.bMinZ[i];
+    const area = w * d;
+    if (area < 40) continue;
+    g.globalAlpha = Math.min(0.5, 0.1 + area / 3000);
+    g.beginPath();
+    g.arc(((world.bMinX[i] + world.bMaxX[i]) / 2 - world.minX) * kx, ((world.bMinZ[i] + world.bMaxZ[i]) / 2 - world.minZ) * kz,
+      (26 + Math.sqrt(area) * 0.6) * kx, 0, Math.PI * 2);
+    g.fill();
+  }
+  return cv;
+}
+
+/** Seznam ploch a vodních toků zasahujících do každé dlaždice. */
+function buildLandIndex(world) {
+  const L = world.l;
+  const polys = new Array(world.cols * world.rows), lines = new Array(world.cols * world.rows);
+  const put = (arr, x0, x1, z0, z1, id) => {
+    const a0 = Math.max(0, Math.floor((x0 - world.minX) / CHUNK)), a1 = Math.min(world.cols - 1, Math.floor((x1 - world.minX) / CHUNK));
+    const b0 = Math.max(0, Math.floor((z0 - world.minZ) / CHUNK)), b1 = Math.min(world.rows - 1, Math.floor((z1 - world.minZ) / CHUNK));
+    for (let b = b0; b <= b1; b++) for (let a = a0; a <= a1; a++) (arr[b * world.cols + a] || (arr[b * world.cols + a] = [])).push(id);
+  };
+  for (let i = 0; i < world.lCount; i++) {
+    let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
+    for (let v = L.ringStart[L.pRing[i]], ve = L.ringStart[L.pRing[i + 1]]; v < ve; v++) {
+      const x = L.vx[v] * 0.1, z = L.vz[v] * 0.1;
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (z < z0) z0 = z; if (z > z1) z1 = z;
+    }
+    put(polys, x0, x1, z0, z1, i);
+  }
+  for (let i = 0; i < L.header.lineCount; i++) {
+    if (L.lCls[i] > 3) continue;
+    let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
+    for (let v = L.lStart[i], ve = L.lStart[i + 1]; v < ve; v++) {
+      const x = L.lx[v] * 0.1, z = L.lz[v] * 0.1;
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (z < z0) z0 = z; if (z > z1) z1 = z;
+    }
+    put(lines, x0 - 5, x1 + 5, z0 - 5, z1 + 5, i);
+  }
+  return { polys, lines };
+}
+
+/** Nakreslí povrch země jedné dlaždice (plochy, chodníky, pěšiny, podklad silnic, vodu jako průhlednost). */
+function drawGround(mgr, ci, S) {
+  const world = mgr.world, L = world.l;
+  const cxi = ci % world.cols, czi = Math.floor(ci / world.cols);
+  const cx0 = world.minX + cxi * CHUNK, cz0 = world.minZ + czi * CHUNK;
+  let sc = mgr.scratch.get(S);
+  if (!sc) {
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = S;
+    sc = { cv, g: cv.getContext('2d') };
+    mgr.scratch.set(S, sc);
+  }
+  const g = sc.g;
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.globalCompositeOperation = 'source-over';
+  g.globalAlpha = 1;
+  g.clearRect(0, 0, S, S);
+  const dk = mgr.density.width / (world.maxX - world.minX), dkz = mgr.density.height / (world.maxZ - world.minZ);
+  g.imageSmoothingEnabled = true;
+  g.drawImage(mgr.density, (cx0 - world.minX) * dk, (cz0 - world.minZ) * dkz, CHUNK * dk, CHUNK * dkz, 0, 0, S, S);
+  const k = S / CHUNK;
+  g.setTransform(k, 0, 0, k, -cx0 * k, -cz0 * k);
+  g.lineCap = 'round'; g.lineJoin = 'round';
+
+  const polyPath = (i) => {
+    g.beginPath();
+    for (let rg = L.pRing[i], r1 = L.pRing[i + 1]; rg < r1; rg++) {
+      const v0 = L.ringStart[rg], v1 = L.ringStart[rg + 1];
+      for (let v = v0; v < v1; v++) {
+        if (v === v0) g.moveTo(L.vx[v] * 0.1, L.vz[v] * 0.1); else g.lineTo(L.vx[v] * 0.1, L.vz[v] * 0.1);
+      }
+      g.closePath();
+    }
+  };
+  const polys = mgr.landIndex.polys[ci];
+  if (polys) {
+    for (let group = 0; group < 3; group++) {
+      for (const i of polys) {
+        const cls = L.cls[i];
+        if (LAND_GROUP[cls] !== group) continue;
+        polyPath(i);
+        g.fillStyle = LAND_HEX[cls];
+        g.fill('evenodd');
       }
     }
   }
-  return { under: under.geometry(), asphalt: asphalt.geometry(), marks: marks.geometry() };
+  // potoky
+  const lines = mgr.landIndex.lines[ci];
+  if (lines) {
+    g.strokeStyle = HEX.stream;
+    for (const i of lines) {
+      const cls = L.lCls[i];
+      g.lineWidth = cls === 0 ? 8 : cls === 1 ? 5 : cls === 2 ? 2.2 : 1.2;
+      g.beginPath();
+      for (let v = L.lStart[i], ve = L.lStart[i + 1]; v < ve; v++) {
+        if (v === L.lStart[i]) g.moveTo(L.lx[v] * 0.1, L.lz[v] * 0.1); else g.lineTo(L.lx[v] * 0.1, L.lz[v] * 0.1);
+      }
+      g.stroke();
+    }
+  }
+  // sousední dlaždice (pásy přesahují přes hranu)
+  const near = [];
+  for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+    const a = cxi + dx, b = czi + dz;
+    if (a >= 0 && b >= 0 && a < world.cols && b < world.rows) near.push(b * world.cols + a);
+  }
+  // štěrkové lože železnice
+  g.strokeStyle = HEX.ballast; g.lineWidth = 3.4;
+  for (const c of near) {
+    const rails = world.railChunks[c];
+    if (!rails) continue;
+    for (const ri of rails) {
+      const r = world.rails[ri];
+      if (r.cls !== 1 || r.y) continue;
+      g.beginPath(); g.moveTo(r.pts[0], r.pts[1]);
+      for (let q = 2; q < r.pts.length; q += 2) g.lineTo(r.pts[q], r.pts[q + 1]);
+      g.stroke();
+    }
+  }
+  const R = world.r, px = world.rpx, pz = world.rpz;
+  const stroke = (pass) => {
+    for (const c of near) {
+      const pieces = world.rPieces[c];
+      if (!pieces) continue;
+      for (let q = 0; q < pieces.length; q += 3) {
+        const i = pieces[q], cls = R.cls[i], flags = R.flags[i];
+        if (flags & RF.BRIDGE) continue;
+        let width, style;
+        if (pass === 0) {           // chodníky podél ulic
+          if (cls < RC.PRIMARY || cls > RC.LIVING || cls === RC.PRIMARY_LINK || cls === RC.SECONDARY_LINK || (flags & RF.TUNNEL)) continue;
+          width = R.w[i] + 4; style = HEX.sidewalk;
+        } else if (pass === 1) {    // pěšiny, cyklostezky, polní cesty
+          if (cls <= RC.PEDESTRIAN) continue;
+          width = R.w[i]; style = roadHex(cls);
+        } else {                    // podklad vozovek (přesnou geometrii kreslí síť silnic)
+          if (cls > RC.PEDESTRIAN) continue;
+          width = R.w[i] + 0.3; style = roadHex(cls);
+        }
+        g.strokeStyle = style; g.lineWidth = width;
+        g.beginPath();
+        g.moveTo(px[pieces[q + 1]], pz[pieces[q + 1]]);
+        for (let p = pieces[q + 1] + 1; p <= pieces[q + 2]; p++) g.lineTo(px[p], pz[p]);
+        g.stroke();
+      }
+    }
+  };
+  stroke(0); stroke(1); stroke(2);
+  // voda = průhledná místa (hladinu dokreslí shader terénu)
+  if (polys) {
+    g.globalCompositeOperation = 'destination-out';
+    g.fillStyle = '#000';
+    for (const i of polys) {
+      if (L.cls[i] !== LC.WATER) continue;
+      polyPath(i);
+      g.fill('evenodd');
+    }
+    g.globalCompositeOperation = 'source-over';
+  }
+  return sc.cv;
 }
 
 // --------------------------------------------------------------- stromy ----
@@ -479,8 +835,8 @@ function treeAssets() {
   if (treeGeoA) return;
   // crowns = seznam [geometrie, x, y, z]; koruna je nahoře světlejší
   const mk = (crowns, trunkH, trunkR, trunkCol, crownCol) => {
-    const trunk = new THREE.CylinderGeometry(trunkR * 0.65, trunkR, trunkH, 6, 1, true);
-    trunk.translate(0, trunkH / 2, 0);
+    const trunk = new THREE.CylinderGeometry(trunkR * 0.65, trunkR, trunkH + 0.6, 6, 1, true);
+    trunk.translate(0, trunkH / 2 - 0.3, 0);
     const pos = [], nor = [], col = [];
     let y0 = 1e9, y1 = -1e9;
     for (const c of crowns) { c[0].translate(c[1], c[2], c[3]); c[0].computeBoundingBox(); y0 = Math.min(y0, c[0].boundingBox.min.y); y1 = Math.max(y1, c[0].boundingBox.max.y); }
@@ -533,7 +889,7 @@ function buildTrees(world, ci, cx0, cz0) {
   if (list) {
     for (const t of list) {
       const x = T.x[t] * 0.1, z = T.z[t] * 0.1;
-      if (world.buildingAt(x, z) >= 0) continue;
+      if (world.buildingAt(x, z) >= 0 || world.isWater(x, z)) continue;
       A.push(x, z, 0.8 + hash(t, 5) * 0.6, hash(t, 6));
       obstacles.push(x, z, 0.28);
     }
@@ -562,7 +918,7 @@ function buildTrees(world, ci, cx0, cz0) {
     const mesh = new THREE.InstancedMesh(geo, treeMat, n);
     for (let k = 0; k < n; k++) {
       const s = arr[k * 4 + 2];
-      _p.set(arr[k * 4], 0, arr[k * 4 + 1]);
+      _p.set(arr[k * 4], world.heightAt(arr[k * 4], arr[k * 4 + 1]), arr[k * 4 + 1]);
       _q.setFromAxisAngle(_up, arr[k * 4 + 3] * 6.283);
       _s.set(s, s * (0.9 + arr[k * 4 + 3] * 0.3), s);
       _m.compose(_p, _q, _s);
@@ -595,7 +951,7 @@ function buildLamps(world, ci) {
     const i = pieces[q], s = pieces[q + 1], e = pieces[q + 2];
     const cls = R.cls[i], flags = R.flags[i];
     if (cls < RC.PRIMARY || cls > RC.LIVING || cls === RC.PRIMARY_LINK || cls === RC.SECONDARY_LINK || cls === RC.TERTIARY_LINK) continue;
-    if (flags & (RF.TUNNEL | RF.PRIVATE)) continue;
+    if (flags & (RF.TUNNEL | RF.PRIVATE | RF.BRIDGE)) continue;
     const hw = R.w[i] / 2, tall = cls <= RC.SECONDARY;
     const spacing = tall ? 40 : 34;
     let acc = hash(i, 9) * spacing;
@@ -611,21 +967,28 @@ function buildLamps(world, ci) {
         const x = x1 + dx * acc - dz * side * off, z = z1 + dz * acc + dx * side * off;
         acc += spacing;
         if (!tall) side = -side;
-        if (world.buildingAt(x, z) >= 0 || world.collideCircle(x, z, 0.5, 0.3, 3) || world.isWater(x, z)) continue;
+        const gy = world.heightAt(x, z);
+        if (world.buildingAt(x, z) >= 0 || world.collideCircle(x, z, 0.5, gy + 0.3, gy + 3) || world.isWater(x, z)) continue;
         const rd = world.nearestRoad(x, z, 6, DRIVABLE_MAX, 0, _lr);
         if (rd && rd.road !== i && rd.dist < R.w[rd.road] / 2 + 0.4) continue;
         const h = tall ? 9 : 6.2;
-        parts.box(0.16, h, 0.16, x, h / 2, z, LAMP_POLE);
-        parts.box(tall ? 0.7 : 0.5, 0.14, tall ? 0.7 : 0.5, x, h + 0.07, z, LAMP_HEAD);
+        parts.box(0.16, h + 0.5, 0.16, x, gy + h / 2 - 0.25, z, LAMP_POLE);
+        parts.box(tall ? 0.7 : 0.5, 0.14, tall ? 0.7 : 0.5, x, gy + h + 0.07, z, LAMP_HEAD);
         obstacles.push(x, z, 0.14);
-        // světlo na zemi, posunuté směrem k vozovce
+        // světlo na zemi (síť 3 × 3 kopíruje terén), posunuté směrem k vozovce
         const r = tall ? 14 : 10;
         const shift = tall ? 3 : 1.6;
         const cx = x + dz * side * shift, cz = z - dx * side * shift;
         const b = pp.length / 3;
-        pp.push(cx - r, 0.03, cz - r, cx + r, 0.03, cz - r, cx + r, 0.03, cz + r, cx - r, 0.03, cz + r);
-        pu.push(0, 0, 1, 0, 1, 1, 0, 1);
-        pi.push(b, b + 2, b + 1, b, b + 3, b + 2);
+        for (let v = 0; v <= 3; v++) for (let u = 0; u <= 3; u++) {
+          const vx = cx + (u / 3 * 2 - 1) * r, vz = cz + (v / 3 * 2 - 1) * r;
+          pp.push(vx, world.heightAt(vx, vz) + SURF + 0.07, vz);
+          pu.push(u / 3, v / 3);
+        }
+        for (let v = 0; v < 3; v++) for (let u = 0; u < 3; u++) {
+          const a0 = b + v * 4 + u;
+          pi.push(a0, a0 + 4, a0 + 1, a0 + 1, a0 + 4, a0 + 5);
+        }
         count++;
       }
       acc -= len;
@@ -645,66 +1008,88 @@ function buildLamps(world, ci) {
 }
 
 // ------------------------------------------------------------- správce ----
+const STAGES = 4;       // 0 terén, 1 budovy, 2 silnice a mosty, 3 stromy a lampy
+
 export class ChunkManager {
-  constructor(scene, world, decalMaterial) {
+  constructor(scene, world, renderer) {
     this.scene = scene;
     this.world = world;
+    this.renderer = renderer;
     this.chunks = new Map();
     this.buildingMat = makeBuildingMaterial();
-    this.decalMat = decalMaterial;
-    this.queue = [];
+    this.asphaltMat = makeDecalMaterial({ polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -6 });
+    this.marksMat = makeDecalMaterial({ polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -14 });
+    this.solidMat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
+    this.density = buildDensity(world);
+    this.landIndex = buildLandIndex(world);
+    this.scratch = new Map();
+    this.aniso = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+    this.texNear = QUALITY.groundTex; this.texFar = QUALITY.groundTexFar;
     this.lastCenter = -1;
     this.pending = 0;
   }
 
-  _build(ci) {
+  _texture(ci, S) {
+    const cv = drawGround(this, ci, S);
+    const tex = new THREE.CanvasTexture(cv);
+    tex.flipY = false;
+    tex.premultiplyAlpha = true;
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = this.aniso;
+    this.renderer.initTexture(tex);     // nahraje se hned, sdílené plátno pak slouží další dlaždici
+    return tex;
+  }
+
+  /** Provede další krok stavby dlaždice. */
+  _step(ci, ch) {
     const w = this.world;
     const cx = ci % w.cols, cz = Math.floor(ci / w.cols);
-    const group = new THREE.Group();
-    group.matrixAutoUpdate = false;
-    const disposables = [];
-    const list = w.bChunks[ci];
-    if (list) {
-      const geo = buildBuildings(w, list);
-      if (geo) {
-        const m = new THREE.Mesh(geo, this.buildingMat);
-        m.matrixAutoUpdate = false; m.castShadow = true; m.receiveShadow = true;
-        group.add(m); disposables.push(geo);
+    const x0 = w.minX + cx * CHUNK, z0 = w.minZ + cz * CHUNK;
+    const add = (mesh, geo) => { mesh.matrixAutoUpdate = false; ch.group.add(mesh); if (geo) ch.disposables.push(geo); };
+    if (ch.stage === 0) {
+      const geo = buildTerrain(w, x0, z0);
+      ch.texSize = ch.dist < 420 ? this.texNear : this.texFar;
+      ch.tex = this._texture(ci, ch.texSize);
+      ch.terrainMat = makeTerrainMaterial(ch.tex);
+      const m = new THREE.Mesh(geo, ch.terrainMat);
+      m.receiveShadow = true; m.renderOrder = 5;
+      add(m, geo);
+    } else if (ch.stage === 1) {
+      const list = w.bChunks[ci];
+      const geo = list ? buildBuildings(w, list) : null;
+      if (geo) { const m = new THREE.Mesh(geo, this.buildingMat); m.castShadow = true; m.receiveShadow = true; add(m, geo); }
+    } else if (ch.stage === 2) {
+      const roads = buildRoads(w, ci);
+      if (roads.solid) { const m = new THREE.Mesh(roads.solid, this.solidMat); m.castShadow = true; m.receiveShadow = true; add(m, roads.solid); }
+      if (roads.asphalt) { const m = new THREE.Mesh(roads.asphalt, this.asphaltMat); m.renderOrder = 14; m.receiveShadow = true; add(m, roads.asphalt); ch.asphalt = m; }
+      if (roads.marks) { const m = new THREE.Mesh(roads.marks, this.marksMat); m.renderOrder = 16; m.receiveShadow = true; add(m, roads.marks); ch.marks = m; }
+    } else {
+      const trees = buildTrees(w, ci, x0, z0);
+      for (const m of trees.meshes) { m.matrixAutoUpdate = false; ch.group.add(m); }
+      ch.trees = trees.meshes;
+      ch.obstacles = trees.obstacles;
+      const lamps = buildLamps(w, ci);
+      if (lamps) {
+        ch.group.add(lamps.poles, lamps.pools);
+        ch.disposables.push(lamps.poles.geometry, lamps.pools.geometry);
+        for (const o of lamps.obstacles) ch.obstacles.push(o);
+        ch.lamps = lamps;
       }
+      w.addObstacles(ch.obstacles);
     }
-    const roads = buildRoads(w, ci);
-    const layers = [[roads.under, 12], [roads.asphalt, 14], [roads.marks, 16]];
-    for (const [geo, order] of layers) {
-      if (!geo) continue;
-      const m = new THREE.Mesh(geo, this.decalMat);
-      m.renderOrder = order; m.matrixAutoUpdate = false; m.receiveShadow = true;
-      group.add(m); disposables.push(geo);
-    }
-    const trees = buildTrees(w, ci, w.minX + cx * CHUNK, w.minZ + cz * CHUNK);
-    for (const m of trees.meshes) { m.matrixAutoUpdate = false; group.add(m); }
-    const obstacles = trees.obstacles;
-    const lamps = buildLamps(w, ci);
-    if (lamps) {
-      group.add(lamps.poles, lamps.pools);
-      disposables.push(lamps.poles.geometry, lamps.pools.geometry);
-      for (const o of lamps.obstacles) obstacles.push(o);
-    }
-    w.addObstacles(obstacles);
-    this.scene.add(group);
-    return {
-      group, disposables, obstacles, trees: trees.meshes, lamps,
-      cx: w.minX + (cx + 0.5) * CHUNK, cz: w.minZ + (cz + 0.5) * CHUNK,
-    };
+    ch.stage++;
   }
 
   _dispose(ch) {
     this.scene.remove(ch.group);
     for (const g of ch.disposables) g.dispose();
     for (const m of ch.trees) m.dispose();
+    if (ch.tex) ch.tex.dispose();
+    if (ch.terrainMat) ch.terrainMat.dispose();
     this.world.removeObstacles(ch.obstacles);
   }
 
-  /** Udržuje načtené dlaždice kolem bodu; staví nejvýš `budget` dlaždic za volání. */
+  /** Udržuje načtené dlaždice kolem bodu; za jedno volání provede nejvýš `budget` kroků stavby. */
   update(x, z, view, budget = 1) {
     const w = this.world;
     const ccx = Math.floor((x - w.minX) / CHUNK), ccz = Math.floor((z - w.minZ) / CHUNK);
@@ -713,38 +1098,67 @@ export class ChunkManager {
       this.lastCenter = center; this._view = view;
       const rad = Math.ceil(view / CHUNK) + 1;
       const want = new Set();
-      const queue = [];
       for (let dz = -rad; dz <= rad; dz++) for (let dx = -rad; dx <= rad; dx++) {
         const cx = ccx + dx, cz = ccz + dz;
         if (cx < 0 || cz < 0 || cx >= w.cols || cz >= w.rows) continue;
-        const d = Math.hypot(dx, dz) * CHUNK;
-        if (d > view + CHUNK * 0.8) continue;
+        if (Math.hypot(dx, dz) * CHUNK > view + CHUNK * 0.8) continue;
         const ci = cz * w.cols + cx;
         want.add(ci);
-        if (!this.chunks.has(ci)) queue.push([d, ci]);
+        if (!this.chunks.has(ci)) {
+          const group = new THREE.Group();
+          group.matrixAutoUpdate = false;
+          this.scene.add(group);
+          this.chunks.set(ci, {
+            group, disposables: [], obstacles: [], trees: [], lamps: null, asphalt: null, marks: null,
+            stage: 0, tex: null, terrainMat: null, texSize: 0, dist: 0,
+            cx: w.minX + (cx + 0.5) * CHUNK, cz: w.minZ + (cz + 0.5) * CHUNK,
+          });
+        }
       }
-      queue.sort((a, b) => a[0] - b[0]);
-      this.queue = queue.map((q) => q[1]);
       for (const [ci, ch] of this.chunks) {
         if (!want.has(ci)) { this._dispose(ch); this.chunks.delete(ci); }
       }
     }
-    let built = 0;
-    while (this.queue.length && built < budget) {
-      const ci = this.queue.shift();
-      if (this.chunks.has(ci)) continue;
-      this.chunks.set(ci, this._build(ci));
-      built++;
-    }
-    this.pending = this.queue.length;
-    // lampy jsou z dálky jen pár pixelů – kreslí se jen poblíž, světla jen v noci
+    // vzdálenosti, viditelnost lamp a výběr práce: nejdřív terén všude, pak detaily od nejbližších
     const night = env.night.value > 0.03;
-    for (const ch of this.chunks.values()) {
-      if (!ch.lamps) continue;
+    let pending = 0, pendingStart = 0, rebake = null;
+    const todo = [];
+    for (const [ci, ch] of this.chunks) {
       const d = Math.hypot(ch.cx - x, ch.cz - z);
-      ch.lamps.poles.visible = d < 560;
-      ch.lamps.pools.visible = night && d < 1100;
+      ch.dist = d;
+      if (ch.lamps) { ch.lamps.poles.visible = d < 560; ch.lamps.pools.visible = night && d < 1100; }
+      // v dálce stačí silnice nakreslené v textuře země; přesná síť a čáry jen poblíž
+      if (ch.asphalt) ch.asphalt.visible = d < 800;
+      if (ch.marks) ch.marks.visible = d < 480;
+      if (ch.stage < STAGES) {
+        pending++;
+        if (ch.stage === 0 || d < 520) pendingStart += ch.stage === 0 && d >= 520 ? 1 : STAGES - ch.stage;
+        todo.push([ch.stage === 0 ? d : d + 1e6, ci, ch]);
+      }
+      else if (this.texNear !== this.texFar && ch.tex) {
+        // jemnější textura země poblíž, hrubší v dálce (šetří paměť grafické karty)
+        if (ch.texSize === this.texFar && d < 380 && (!rebake || d < rebake[0])) rebake = [d, ci, ch, this.texNear];
+        else if (ch.texSize === this.texNear && d > 640 && !rebake) rebake = [d, ci, ch, this.texFar];
+      }
     }
-    return built;
+    let done = 0;
+    if (todo.length) {
+      todo.sort((a, b) => a[0] - b[0]);
+      for (let k = 0; k < todo.length && done < budget; k++) {
+        const ch = todo[k][2];
+        this._step(todo[k][1], ch); done++;
+        if (ch.stage >= STAGES) pending--;
+        if (ch.stage === 1 || ch.dist < 520) pendingStart--;
+      }
+    } else if (rebake && budget > 0) {
+      const ch = rebake[2];
+      const tex = this._texture(rebake[1], rebake[3]);
+      ch.tex.dispose();
+      ch.tex = tex; ch.texSize = rebake[3];
+      ch.terrainMat.map = tex;
+    }
+    this.pending = pending;
+    this.pendingStart = Math.max(0, pendingStart);    // kolik kroků zbývá, než jde hrát (terén všude + okolí hotové)
+    return done;
   }
 }

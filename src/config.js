@@ -12,9 +12,9 @@ export const COLL_CELL = 64;         // buňka kolizní mřížky
 
 export const QUALITY = IS_MOBILE
   ? { view: 620, pixelRatio: 1.5, traffic: 12, peds: 8, parked: 26, treesPerForestChunk: 110,
-      shadows: false, shadowSize: 1024, clouds: 3, carLights: false }
+      shadows: false, shadowSize: 1024, clouds: 3, carLights: false, groundTex: 256, groundTexFar: 256 }
   : { view: 1600, pixelRatio: 2, traffic: 42, peds: 26, parked: 70, treesPerForestChunk: 320,
-      shadows: true, shadowSize: 2048, clouds: 5, carLights: true };
+      shadows: true, shadowSize: 2048, clouds: 5, carLights: true, groundTex: 512, groundTexFar: 256 };
 
 if (params.has('view')) QUALITY.view = +params.get('view');
 if (params.has('shadows')) QUALITY.shadows = params.get('shadows') !== '0';
