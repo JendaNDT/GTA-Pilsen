@@ -201,6 +201,27 @@ def obb_fill(ring):
     return abs(signed_area(ring)) / best
 
 
+def obb_width(ring):
+    """Kratší strana nejmenšího opsaného obdélníku."""
+    best = None
+    n = len(ring)
+    for i in range(n):
+        x1, z1 = ring[i]
+        x2, z2 = ring[(i + 1) % n]
+        dx, dz = x2 - x1, z2 - z1
+        ln = math.hypot(dx, dz)
+        if ln < 0.3:
+            continue
+        dx /= ln
+        dz /= ln
+        us = [p[0] * dx + p[1] * dz for p in ring]
+        vs = [-p[0] * dz + p[1] * dx for p in ring]
+        a, b = max(us) - min(us), max(vs) - min(vs)
+        if best is None or a * b < best[0]:
+            best = (a * b, min(a, b))
+    return best[1] if best else 0.0
+
+
 def assemble_rings(way_list):
     """Spojí cesty (seznamy (ids, pts)) do uzavřených prstenců podle id uzlů."""
     rings = []
@@ -511,7 +532,17 @@ def build_buildings(ex, dem):
                      or pitched_tag)):
             ridge = True
             hip = 1
-        if not gable and not ridge:
+        # obecná šikmá střecha: okraj ve výšce okapu, střed ve výšce hřebene (obojí z měření)
+        inset = 0.0
+        if (not gable and not ridge and not it["holes"] and src == "dem" and h_top - h_wall > 1.8
+                and 2.6 < h_wall <= 19 and 50 < area < 2600 and kind in (0, 1, 2, 3, 5, 6, 10)
+                and roof_shape != "flat" and len(it["ring"]) <= 40):
+            inset = min(max((h_top - h_wall) / 0.78, 1.3), 4.8, obb_width(it["ring"]) * 0.42)
+            if inset < 1.0:
+                inset = 0.0
+            else:
+                h_wall = max(h_wall, h_top - inset * 1.5)      # ne strmější než ~56°
+        if not gable and not ridge and not inset:
             h_wall = h_top = h_flat
         h_top = max(2.2, min(h_top, 220.0))
         h_wall = max(2.0, min(h_wall, h_top))
@@ -525,6 +556,8 @@ def build_buildings(ex, dem):
                 flags |= 32     # jehlan (věž)
             elif hip == 0:
                 flags |= 64     # sedlová (bez valby)
+        if inset:
+            flags |= 128    # šikmá střecha odsazením obrysu
         if is_part:
             flags |= 4
         if it.get("has_parts"):
@@ -540,6 +573,7 @@ def build_buildings(ex, dem):
             "ring": it["ring"], "holes": it["holes"], "kind": kind, "flags": flags,
             "h_top": h_top, "h_wall": h_wall, "h_min": min(min_h, h_top - 1.0) if min_h else 0.0,
             "levels": int(levels or 0), "name": name, "colour": colour, "roof_colour": roof_colour, "area": area,
+            "inset": inset,
             "tags": tags,
         })
     print(f"  budovy: {len(out)} ({dict(stats)}), {time.time() - t0:.0f} s")
@@ -558,6 +592,7 @@ def pack_buildings(blds):
     levels = np.zeros(n, np.uint8)
     colour = np.zeros(n, np.uint32)
     roof_colour = np.zeros(n, np.uint32)
+    roof_inset = np.zeros(n, np.uint8)
     b_ring = np.zeros(n + 1, np.uint32)
     ring_start = [0]
     vdx = []
@@ -575,6 +610,7 @@ def pack_buildings(blds):
         levels[i] = min(b["levels"], 255)
         colour[i] = parse_colour(b["colour"])
         roof_colour[i] = parse_colour(b["roof_colour"])
+        roof_inset[i] = min(255, round(b["inset"] * 10))
         b_ring[i] = len(ring_start) - 1
         for rg in [b["ring"]] + b["holes"]:
             for (x, z) in rg:
@@ -587,6 +623,7 @@ def pack_buildings(blds):
     write_pack(os.path.join(OUT, "buildings.bin"), {"count": n, "names": names}, {
         "ax": ax, "az": az, "hTop": h_top, "hWall": h_wall, "hMin": h_min,
         "kind": kind, "flags": flags, "levels": levels, "colour": colour, "roofColour": roof_colour,
+        "roofInset": roof_inset,
         "bRing": b_ring, "ringStart": np.array(ring_start, np.uint32),
         "vdx": np.array(vdx, np.int16), "vdz": np.array(vdz, np.int16),
     })

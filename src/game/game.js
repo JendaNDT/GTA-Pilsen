@@ -485,7 +485,7 @@ export class Game {
     this.jobs.update(dt);
     this._updateWanted(dt);
     this._updateCamera(dt);
-    this.env.update(this.camera);
+    this.env.update(this.camera, this.focus);
     const fast = Math.hypot(this.focus.vx || 0, this.focus.vz || 0) > 18;
     this.chunks.update(this.focus.x, this.focus.z, QUALITY.view, fast ? 2 : 1);
     this._updateHud(dt);
@@ -575,6 +575,11 @@ export class Game {
     this.fpsAcc = 0; this.fpsN = 0;
     const max = Math.min(devicePixelRatio || 1, QUALITY.pixelRatio);
     let pr = this.pixelRatio;
+    // když nepomáhá ani nižší rozlišení, vypni stíny
+    if (fps < 24 && pr <= 0.75 && this.env.shadows && this.env.sun.castShadow) {
+      this.env.setShadows(false);
+      this.hud.toast('Kvůli plynulosti vypínám stíny.');
+    }
     if (fps < 30 && pr > 0.7) pr = Math.max(0.7, pr * 0.85);
     else if (fps > 56 && pr < max) pr = Math.min(max, pr * 1.1);
     if (pr !== this.pixelRatio) { this.pixelRatio = pr; this.renderer.setPixelRatio(pr); }

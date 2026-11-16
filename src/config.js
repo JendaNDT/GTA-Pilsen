@@ -11,10 +11,13 @@ export const CHUNK = 256;            // velikost dlaždice světa v metrech
 export const COLL_CELL = 64;         // buňka kolizní mřížky
 
 export const QUALITY = IS_MOBILE
-  ? { view: 620, pixelRatio: 1.5, traffic: 12, peds: 8, parked: 26, treesPerForestChunk: 110, shadows: false }
-  : { view: 1600, pixelRatio: 2, traffic: 42, peds: 26, parked: 70, treesPerForestChunk: 320, shadows: false };
+  ? { view: 620, pixelRatio: 1.5, traffic: 12, peds: 8, parked: 26, treesPerForestChunk: 110,
+      shadows: false, shadowSize: 1024, clouds: 3, carLights: false }
+  : { view: 1600, pixelRatio: 2, traffic: 42, peds: 26, parked: 70, treesPerForestChunk: 320,
+      shadows: true, shadowSize: 2048, clouds: 5, carLights: true };
 
 if (params.has('view')) QUALITY.view = +params.get('view');
+if (params.has('shadows')) QUALITY.shadows = params.get('shadows') !== '0';
 
 // třídy silnic (stejné číslování jako v tools/build_data.py)
 export const RC = {
@@ -39,4 +42,4 @@ export const BK = {
   GENERIC: 0, HOUSE: 1, APARTMENTS: 2, COMMERCIAL: 3, INDUSTRIAL: 4, CIVIC: 5, RELIGIOUS: 6,
   GARAGE: 7, ROOF: 8, TRANSPORT: 10, FARM: 11, TOWER: 12,
 };
-export const BF = { GABLE: 1, RIDGE: 2, PART: 4, HAS_PARTS: 8, NO_COLLIDE: 16, PYRAMID: 32, NO_HIP: 64 };
+export const BF = { GABLE: 1, RIDGE: 2, PART: 4, HAS_PARTS: 8, NO_COLLIDE: 16, PYRAMID: 32, NO_HIP: 64, INSET: 128 };

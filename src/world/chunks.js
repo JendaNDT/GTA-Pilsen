@@ -2,7 +2,8 @@
 import * as THREE from 'three';
 import { Earcut } from 'three/src/extras/Earcut.js';
 import { CHUNK, QUALITY, BK, BF, RC, RF, DRIVABLE_MAX } from '../config.js';
-import { makeBuildingMaterial } from './materials.js';
+import { makeBuildingMaterial, getPoolMaterial, env } from './materials.js';
+import { Parts, getDetailMaterial } from '../entities/models.js';
 
 const _c = new THREE.Color();
 function lin(hex) { _c.setHex(hex); return [_c.r, _c.g, _c.b]; }
@@ -147,6 +148,45 @@ class DecalBuf {
 }
 
 // --------------------------------------------------------------- budovy ----
+/** Obrys odsazený dovnitř o d metrů (pro šikmé střechy). Vrací pole [x, z, …], nebo null, když to nejde. */
+function insetRing(vx, vz, s, n, d) {
+  for (let attempt = 0; attempt < 3; attempt++, d *= 0.6) {
+    if (d < 0.7) break;
+    const out = new Array(n * 2);
+    for (let i = 0; i < n; i++) {
+      const p = s + (i + n - 1) % n, c = s + i, q = s + (i + 1) % n;
+      let e0x = vx[c] - vx[p], e0z = vz[c] - vz[p];
+      let e1x = vx[q] - vx[c], e1z = vz[q] - vz[c];
+      const l0 = Math.hypot(e0x, e0z) || 1, l1 = Math.hypot(e1x, e1z) || 1;
+      e0x /= l0; e0z /= l0; e1x /= l1; e1z /= l1;
+      // normály dovnitř (obrys má kladnou orientaci, ven míří (ez, -ex))
+      let mx = -e0z - e1z, mz = e0x + e1x;
+      const ml = Math.hypot(mx, mz);
+      if (ml < 1e-3) { mx = -e1z; mz = e1x; } else { mx /= ml; mz /= ml; }
+      const len = d / Math.max(0.42, mx * -e1z + mz * e1x);
+      out[i * 2] = vx[c] + mx * len; out[i * 2 + 1] = vz[c] + mz * len;
+    }
+    let ok = true, area = 0;
+    for (let i = 0; i < n && ok; i++) {
+      const j = (i + 1) % n;
+      const ox = vx[s + j] - vx[s + i], oz = vz[s + j] - vz[s + i];
+      const ix = out[j * 2] - out[i * 2], iz = out[j * 2 + 1] - out[i * 2 + 1];
+      if (ox * ix + oz * iz < -1e-4) ok = false;                  // hrana se převrátila
+      area += out[i * 2] * out[j * 2 + 1] - out[j * 2] * out[i * 2 + 1];
+      // odsazený bod musí zůstat uvnitř půdorysu
+      const x = out[i * 2], z = out[i * 2 + 1];
+      let inside = false;
+      for (let a = 0, b = n - 1; a < n; b = a++) {
+        const z1 = vz[s + b], z2 = vz[s + a];
+        if ((z1 > z) !== (z2 > z) && x < (vx[s + a] - vx[s + b]) * (z - z1) / (z2 - z1) + vx[s + b]) inside = !inside;
+      }
+      if (!inside) ok = false;
+    }
+    if (ok && area > 3) return out;
+  }
+  return null;
+}
+
 function buildBuildings(world, list) {
   const B = world.b, vx = world.bvx, vz = world.bvz;
   const buf = new Buf();
@@ -159,7 +199,9 @@ function buildBuildings(world, list) {
     const gable = (flags & BF.GABLE) !== 0;
     const nOuter0 = B.ringStart[B.bRing[i] + 1] - B.ringStart[B.bRing[i]];
     const ridge = (flags & BF.RIDGE) !== 0 && B.bRing[i + 1] - B.bRing[i] === 1 && nOuter0 >= 3;
-    let wallTop = gable || ridge ? world.bWall[i] : top;
+    const inset = (flags & BF.INSET) && B.roofInset && B.bRing[i + 1] - B.bRing[i] === 1 && nOuter0 >= 3
+      ? insetRing(vx, vz, B.ringStart[B.bRing[i]], nOuter0, B.roofInset[i] * 0.1) : null;
+    let wallTop = gable || ridge || inset ? world.bWall[i] : top;
     let base = world.bBase[i];
     if (kind === BK.ROOF) base = Math.max(base, top - 0.35);
     const r0 = B.bRing[i], r1 = B.bRing[i + 1];
@@ -178,6 +220,7 @@ function buildBuildings(world, list) {
         if (style && len >= 1.8 && wallTop - base > 2.2) {
           nb = Math.max(1, Math.round(len / st.bay));
           off = Math.floor(hash(v, 3) * 50) * 4;
+          style += 8 * Math.min(floors, 60);       // shader potřebuje znát počet pater (římsa pod střechou)
         } else style = 0;
         const a = buf.v(x1, base, z1, nx, 0, nz, st.wall, 0.78, off, 0, style);
         const b = buf.v(x2, base, z2, nx, 0, nz, st.wall, 0.78, off + nb, 0, style);
@@ -252,6 +295,26 @@ function buildBuildings(world, list) {
           buf.face(ax, y, az, rb[0], top, rb[1], ra[0], top, ra[1], ex / el * 0.3, 1, ez / el * 0.3, st.roof, k);
         }
       }
+    } else if (inset) {
+      // šikmá střecha: od okapu na obvodu stoupá k odsazenému obrysu ve výšce hřebene
+      const s = B.ringStart[r0], n = nOuter;
+      const y = wallTop;
+      for (let a = 0; a < n; a++) {
+        const b = (a + 1) % n;
+        const ax = vx[s + a], az = vz[s + a], bx = vx[s + b], bz = vz[s + b];
+        const ex = bz - az, ez = -(bx - ax);
+        const el = Math.hypot(ex, ez) || 1;
+        buf.face(ax, y, az, bx, y, bz, inset[b * 2], top, inset[b * 2 + 1], ex / el * 0.4, 1, ez / el * 0.4, st.roof, 1);
+        buf.face(ax, y, az, inset[b * 2], top, inset[b * 2 + 1], inset[a * 2], top, inset[a * 2 + 1], ex / el * 0.4, 1, ez / el * 0.4, st.roof, 1);
+      }
+      const idx0 = buf.vc;
+      for (let a = 0; a < n; a++) buf.v(inset[a * 2], top, inset[a * 2 + 1], 0, 1, 0, st.roof, 0.9, 0, 0, 0);
+      const tris = Earcut.triangulate(inset, null, 2);
+      for (let t = 0; t < tris.length; t += 3) {
+        const a = tris[t], b = tris[t + 1], c = tris[t + 2];
+        const ny = (inset[b * 2 + 1] - inset[a * 2 + 1]) * (inset[c * 2] - inset[a * 2]) - (inset[b * 2] - inset[a * 2]) * (inset[c * 2 + 1] - inset[a * 2 + 1]);
+        if (ny >= 0) buf.tri(idx0 + a, idx0 + b, idx0 + c); else buf.tri(idx0 + a, idx0 + c, idx0 + b);
+      }
     } else {
       const flat = [];
       const holes = [];
@@ -276,10 +339,10 @@ function buildBuildings(world, list) {
 
 // -------------------------------------------------------------- silnice ----
 const COL = {
-  asphalt: lin(0x3b3e43), asphaltMinor: lin(0x45484c), service: lin(0x4d5053), sidewalk: lin(0x8d9094),
+  asphalt: lin(0x4b4e54), asphaltMinor: lin(0x55585d), service: lin(0x5e6164), sidewalk: lin(0x9a9da1),
   pedestrian: lin(0xb3ab9c), footway: lin(0xa39f95), path: lin(0x8a7a5e), track: lin(0x7f7257),
   cycleway: lin(0x8c5b52), steps: lin(0x8a8a8a), mark: lin(0xdcdcd4), markYellow: lin(0xd8b740),
-  ballast: lin(0x5f5850), rail: lin(0x9aa0a6), tramBed: lin(0x34373b), bridge: lin(0x55585d),
+  ballast: lin(0x6a6259), rail: lin(0xa6acb2), tramBed: lin(0x43464b), bridge: lin(0x62656a),
 };
 
 function roadColor(cls) {
@@ -413,31 +476,47 @@ function buildRoads(world, ci) {
 let treeGeoA = null, treeGeoB = null, treeMat = null;
 function treeAssets() {
   if (treeGeoA) return;
-  const mk = (crown, trunkH, trunkR, crownY, trunkCol, crownCol) => {
-    const trunk = new THREE.CylinderGeometry(trunkR * 0.7, trunkR, trunkH, 5, 1, true);
+  // crowns = seznam [geometrie, x, y, z]; koruna je nahoře světlejší
+  const mk = (crowns, trunkH, trunkR, trunkCol, crownCol) => {
+    const trunk = new THREE.CylinderGeometry(trunkR * 0.65, trunkR, trunkH, 6, 1, true);
     trunk.translate(0, trunkH / 2, 0);
-    crown.translate(0, crownY, 0);
-    const parts = [[trunk, trunkCol], [crown, crownCol]];
     const pos = [], nor = [], col = [];
-    for (const [g, c] of parts) {
+    let y0 = 1e9, y1 = -1e9;
+    for (const c of crowns) { c[0].translate(c[1], c[2], c[3]); c[0].computeBoundingBox(); y0 = Math.min(y0, c[0].boundingBox.min.y); y1 = Math.max(y1, c[0].boundingBox.max.y); }
+    const add = (g, c, crown) => {
       const gi = g.index ? g.toNonIndexed() : g;
+      if (crown) gi.computeVertexNormals();
       const p = gi.attributes.position, n = gi.attributes.normal;
-      for (let k = 0; k < p.count; k++) {
-        pos.push(p.getX(k), p.getY(k), p.getZ(k));
-        nor.push(n.getX(k), n.getY(k), n.getZ(k));
-        // spodek koruny tmavší
-        const shade = c === crownCol ? 0.72 + 0.28 * Math.min(1, Math.max(0, (p.getY(k) - crownY + 1.5) / 3)) : 1;
-        col.push(c[0] * shade, c[1] * shade, c[2] * shade);
+      for (let k = 0; k < p.count; k += 3) {
+        // jedna barva na plošku: podle výšky a natočení
+        const my = (p.getY(k) + p.getY(k + 1) + p.getY(k + 2)) / 3;
+        const shade = crown ? 0.66 + 0.42 * (my - y0) / (y1 - y0) + 0.08 * Math.sin(k * 12.9898) : 1;
+        for (let q = 0; q < 3; q++) {
+          pos.push(p.getX(k + q), p.getY(k + q), p.getZ(k + q));
+          nor.push(n.getX(k + q), n.getY(k + q), n.getZ(k + q));
+          col.push(c[0] * shade, c[1] * shade, c[2] * shade);
+        }
       }
-    }
+    };
+    add(trunk, trunkCol, false);
+    for (const c of crowns) add(c[0], crownCol, true);
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
     geo.setAttribute('normal', new THREE.Float32BufferAttribute(nor, 3));
     geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
     return geo;
   };
-  treeGeoA = mk(new THREE.IcosahedronGeometry(2.3, 0), 3.0, 0.22, 4.4, lin(0x5b4a3a), lin(0x5f8f46));
-  treeGeoB = mk(new THREE.ConeGeometry(1.7, 6.5, 6), 2.2, 0.2, 5.2, lin(0x4f4034), lin(0x3f6f45));
+  treeGeoA = mk([
+    [new THREE.IcosahedronGeometry(2.1, 0), 0, 4.6, 0],
+    [new THREE.IcosahedronGeometry(1.6, 0), 1.1, 5.6, 0.4],
+    [new THREE.IcosahedronGeometry(1.5, 0), -0.9, 5.2, -0.8],
+    [new THREE.IcosahedronGeometry(1.3, 0), -0.2, 6.4, 0.7],
+  ], 3.4, 0.24, lin(0x5b4a3a), lin(0x5f9146));
+  treeGeoB = mk([
+    [new THREE.ConeGeometry(1.9, 3.4, 7), 0, 3.6, 0],
+    [new THREE.ConeGeometry(1.5, 3.0, 7), 0, 5.4, 0],
+    [new THREE.ConeGeometry(1.0, 2.6, 7), 0, 7.1, 0],
+  ], 2.4, 0.2, lin(0x4f4034), lin(0x3d6c44));
   treeMat = new THREE.MeshLambertMaterial({ vertexColors: true });
 }
 
@@ -492,9 +571,76 @@ function buildTrees(world, ci, cx0, cz0) {
     }
     mesh.instanceMatrix.needsUpdate = true;
     mesh.computeBoundingSphere();
+    mesh.castShadow = true;
     meshes.push(mesh);
   }
   return { meshes, obstacles };
+}
+
+// ---------------------------------------------------------------- lampy ----
+const LAMP_POLE = lin(0x3a3f45), LAMP_HEAD = [1.0, 0.93, 0.72];
+const _lr = {};
+
+/** Pouliční lampy podél ulic + světelné kužely na zemi (viditelné v noci). */
+function buildLamps(world, ci) {
+  const pieces = world.rPieces[ci];
+  if (!pieces) return null;
+  const R = world.r, px = world.rpx, pz = world.rpz;
+  const parts = new Parts();
+  const pp = [], pu = [], pi = [];
+  const obstacles = [];
+  let count = 0;
+  for (let q = 0; q < pieces.length && count < 90; q += 3) {
+    const i = pieces[q], s = pieces[q + 1], e = pieces[q + 2];
+    const cls = R.cls[i], flags = R.flags[i];
+    if (cls < RC.PRIMARY || cls > RC.LIVING || cls === RC.PRIMARY_LINK || cls === RC.SECONDARY_LINK || cls === RC.TERTIARY_LINK) continue;
+    if (flags & (RF.TUNNEL | RF.PRIVATE)) continue;
+    const hw = R.w[i] / 2, tall = cls <= RC.SECONDARY;
+    const spacing = tall ? 40 : 34;
+    let acc = hash(i, 9) * spacing;
+    let side = hash(i, 11) < 0.5 ? 1 : -1;
+    for (let k = s; k < e; k++) {
+      const x1 = px[k], z1 = pz[k];
+      let dx = px[k + 1] - x1, dz = pz[k + 1] - z1;
+      const len = Math.hypot(dx, dz);
+      if (len < 1e-3) continue;
+      dx /= len; dz /= len;
+      while (acc < len) {
+        const off = hw + 1.3;
+        const x = x1 + dx * acc - dz * side * off, z = z1 + dz * acc + dx * side * off;
+        acc += spacing;
+        if (!tall) side = -side;
+        if (world.buildingAt(x, z) >= 0 || world.collideCircle(x, z, 0.5, 0.3, 3) || world.isWater(x, z)) continue;
+        const rd = world.nearestRoad(x, z, 6, DRIVABLE_MAX, 0, _lr);
+        if (rd && rd.road !== i && rd.dist < R.w[rd.road] / 2 + 0.4) continue;
+        const h = tall ? 9 : 6.2;
+        parts.box(0.16, h, 0.16, x, h / 2, z, LAMP_POLE);
+        parts.box(tall ? 0.7 : 0.5, 0.14, tall ? 0.7 : 0.5, x, h + 0.07, z, LAMP_HEAD);
+        obstacles.push(x, z, 0.14);
+        // světlo na zemi, posunuté směrem k vozovce
+        const r = tall ? 14 : 10;
+        const shift = tall ? 3 : 1.6;
+        const cx = x + dz * side * shift, cz = z - dx * side * shift;
+        const b = pp.length / 3;
+        pp.push(cx - r, 0.03, cz - r, cx + r, 0.03, cz - r, cx + r, 0.03, cz + r, cx - r, 0.03, cz + r);
+        pu.push(0, 0, 1, 0, 1, 1, 0, 1);
+        pi.push(b, b + 2, b + 1, b, b + 3, b + 2);
+        count++;
+      }
+      acc -= len;
+    }
+  }
+  if (!count) return null;
+  const poles = new THREE.Mesh(parts.geometry(), getDetailMaterial());
+  poles.matrixAutoUpdate = false;
+  const pg = new THREE.BufferGeometry();
+  pg.setAttribute('position', new THREE.Float32BufferAttribute(pp, 3));
+  pg.setAttribute('uv', new THREE.Float32BufferAttribute(pu, 2));
+  pg.setIndex(pi);
+  pg.computeBoundingSphere();
+  const pools = new THREE.Mesh(pg, getPoolMaterial());
+  pools.renderOrder = 18; pools.matrixAutoUpdate = false;
+  return { poles, pools, obstacles };
 }
 
 // ------------------------------------------------------------- správce ----
@@ -519,21 +665,35 @@ export class ChunkManager {
     const list = w.bChunks[ci];
     if (list) {
       const geo = buildBuildings(w, list);
-      if (geo) { const m = new THREE.Mesh(geo, this.buildingMat); m.matrixAutoUpdate = false; group.add(m); disposables.push(geo); }
+      if (geo) {
+        const m = new THREE.Mesh(geo, this.buildingMat);
+        m.matrixAutoUpdate = false; m.castShadow = true; m.receiveShadow = true;
+        group.add(m); disposables.push(geo);
+      }
     }
     const roads = buildRoads(w, ci);
     const layers = [[roads.under, 12], [roads.asphalt, 14], [roads.marks, 16]];
     for (const [geo, order] of layers) {
       if (!geo) continue;
       const m = new THREE.Mesh(geo, this.decalMat);
-      m.renderOrder = order; m.matrixAutoUpdate = false;
+      m.renderOrder = order; m.matrixAutoUpdate = false; m.receiveShadow = true;
       group.add(m); disposables.push(geo);
     }
     const trees = buildTrees(w, ci, w.minX + cx * CHUNK, w.minZ + cz * CHUNK);
     for (const m of trees.meshes) { m.matrixAutoUpdate = false; group.add(m); }
-    w.addObstacles(trees.obstacles);
+    const obstacles = trees.obstacles;
+    const lamps = buildLamps(w, ci);
+    if (lamps) {
+      group.add(lamps.poles, lamps.pools);
+      disposables.push(lamps.poles.geometry, lamps.pools.geometry);
+      for (const o of lamps.obstacles) obstacles.push(o);
+    }
+    w.addObstacles(obstacles);
     this.scene.add(group);
-    return { group, disposables, obstacles: trees.obstacles, trees: trees.meshes };
+    return {
+      group, disposables, obstacles, trees: trees.meshes, lamps,
+      cx: w.minX + (cx + 0.5) * CHUNK, cz: w.minZ + (cz + 0.5) * CHUNK,
+    };
   }
 
   _dispose(ch) {
@@ -576,6 +736,14 @@ export class ChunkManager {
       built++;
     }
     this.pending = this.queue.length;
+    // lampy jsou z dálky jen pár pixelů – kreslí se jen poblíž, světla jen v noci
+    const night = env.night.value > 0.03;
+    for (const ch of this.chunks.values()) {
+      if (!ch.lamps) continue;
+      const d = Math.hypot(ch.cx - x, ch.cz - z);
+      ch.lamps.poles.visible = d < 560;
+      ch.lamps.pools.visible = night && d < 1100;
+    }
     return built;
   }
 }

@@ -62,6 +62,10 @@ async function boot() {
   }
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, QUALITY.pixelRatio));
   renderer.setSize(innerWidth, innerHeight);
+  renderer.shadowMap.enabled = QUALITY.shadows;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.0;
 
   const data = await loadAll((p) => { bar.style.width = `${Math.round(p * 80)}%`; });
   loadText.textContent = 'Stavím město…';
@@ -82,7 +86,7 @@ async function boot() {
   }
   bar.style.width = '100%';
   game._updateCamera(0.016);
-  game.env.update(game.camera);
+  game.env.update(game.camera, game.focus);
   game.render();
 
   $('loading').classList.add('hidden');
@@ -153,7 +157,7 @@ async function boot() {
     window.__setInput = (steer, thr) => { input.debugSteer = steer; input.debugThr = thr; };
     window.__view = (x, y, z, tx, ty, tz) => {
       game.camera.position.set(x, y, z); game.camera.lookAt(tx, ty, tz);
-      game.env.update(game.camera); game.render();
+      game.env.update(game.camera, game.focus); game.render();
     };
   }
   window.__ready = true;
