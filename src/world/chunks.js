@@ -804,7 +804,7 @@ function drawGround(mgr, ci, S) {
           width = R.w[i]; style = roadHex(cls);
         } else {                    // podklad vozovek (přesnou geometrii kreslí síť silnic)
           if (cls > RC.PEDESTRIAN) continue;
-          width = R.w[i] + 0.3; style = roadHex(cls);
+          width = Math.max(1.5, R.w[i] - 1.2); style = roadHex(cls);      // užší než přesná síť, ať zpod ní nevyčuhuje rozmazaný okraj
         }
         g.strokeStyle = style; g.lineWidth = width;
         g.beginPath();
