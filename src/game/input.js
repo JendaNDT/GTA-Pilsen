@@ -128,6 +128,7 @@ export function pollInput() {
   input.handbrake = kb.space || touch.hand;
   input.down = kb.run;
   input.touchDrive = touch.gas || touch.brake;
+  if (input.debugSteer !== undefined) { input.moveX = input.debugSteer; input.moveY = input.debugThr; }
 }
 
 export function endFrame() {

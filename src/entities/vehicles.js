@@ -85,7 +85,9 @@ export class VehicleManager {
 
     // řízení
     const sp = Math.abs(vF);
-    const maxSteer = 0.62 - 0.52 * clamp(sp / 38, 0, 1);
+    // čím rychleji auto jede, tím méně se dají stočit kola (omezení bočního přetížení)
+    const wb = t.len * 0.62;
+    const maxSteer = Math.min(0.62, Math.atan((wb * (handbrake ? 26 : 17)) / Math.max(1, sp * sp)));
     const target = steerIn * maxSteer;
     car.steer += (target - car.steer) * Math.min(1, dt * (Math.abs(target) > Math.abs(car.steer) ? 7 : 11));
     const wheelbase = t.len * 0.62;
@@ -151,7 +153,7 @@ export class VehicleManager {
     if (car.z < w.playMinZ + m) { car.z = w.playMinZ + m; if (car.vz < 0) car.vz *= -0.3; }
     if (car.z > w.playMaxZ - m) { car.z = w.playMaxZ - m; if (car.vz > 0) car.vz *= -0.3; }
     if (impact > 3) {
-      car.health = Math.max(0, car.health - (impact - 3) * 2.2);
+      car.health = Math.max(0, car.health - (impact - 3) * 1.5);
       this.game.onCrash(car, impact, null);
     }
   }
@@ -494,7 +496,7 @@ export class VehicleManager {
             if (!b.kinematic) { b.vx -= (jimp / mb) * nx; b.vz -= (jimp / mb) * nz; b.yaw -= clamp((nx * bfz - nz * bfx) * kb * jimp * 0.012 / mb, -0.12, 0.12); }
             else b.speed *= 0.7;
             if (-vr > 2.5) {
-              const dmg = (-vr - 2.5) * 1.6;
+              const dmg = (-vr - 2.5) * 1.0;
               a.health = Math.max(0, a.health - dmg * fa * 2); b.health = Math.max(0, b.health - dmg * fb * 2);
               this.game.onCrash(a, -vr, b);
             }

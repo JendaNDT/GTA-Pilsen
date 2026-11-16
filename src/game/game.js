@@ -536,6 +536,11 @@ export class Game {
     for (const c of this.vehicles.cars) if (c.mode === 'police') markers.push({ x: c.x, z: c.z, color: Math.floor(this.time * 4) % 2 ? '#3d8bfd' : '#e2483d', size: 4.5, local: true });
     for (const h of this.helis) if (h !== this.heli) markers.push({ x: h.x, z: h.z, color: '#7fd0ff', size: 4, local: true });
     for (const lm of this.jobs.landmarks) if (!lm.found) markers.push({ x: lm.x, z: lm.z, color: '#aab3ba', size: 3.5, local: true });
+    // naposledy použité auto, ať se dá znovu najít
+    const lc = this.player.lastCar;
+    if (this.mode === 'foot' && lc && this.vehicles.cars.includes(lc) && Math.hypot(lc.x - f.x, lc.z - f.z) < 500) {
+      markers.push({ x: lc.x, z: lc.z, color: '#ffffff', size: 4.5 });
+    }
     hud.minimap(f.x, f.z, this.camYaw, f.yaw || 0, markers, this.jobs.route);
   }
 

@@ -42,7 +42,8 @@ const ABOUT_HTML = `
   rozvážet jídlo ze skutečných podniků, objevovat památky a ujíždět policii.</p>
   <h3>Zdroje dat</h3>
   <p>Mapová data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">přispěvatelé OpenStreetMap</a>
-  (licence ODbL). Výšky budov vypočteny z digitálního modelu povrchu DMP 1G a modelu reliéfu DMR 5G © ČÚZK.</p>
+  (licence ODbL). Výšky budov jsou vypočteny z digitálního modelu povrchu DMP 1G a modelu reliéfu DMR 5G
+  © <a href="https://www.cuzk.gov.cz" target="_blank" rel="noopener">ČÚZK</a>.</p>
   <p>Vzhled budov (barvy, okna) a provoz jsou vymyšlené, názvy ulic, podniků a zastávek jsou skutečné.
   Hra je nezávislý fanouškovský projekt a není oficiálním produktem města ani dopravního podniku.</p>
   <p>Inspirováno projektem HrejBrno.cz.</p>`;
@@ -119,6 +120,7 @@ async function boot() {
   });
   $('btn-menu').addEventListener('click', openMenu);
   $('bigmap-close').addEventListener('click', () => game.toggleMap(false));
+  $('minimap').addEventListener('click', () => { if (running) game.toggleMap(true); });
   $('bigmap-canvas').addEventListener('click', (e) => {
     if (!game.mapToWorld) return;
     const p = game.mapToWorld(e.clientX, e.clientY);
@@ -148,6 +150,7 @@ async function boot() {
     window.__play = play;
     window.__step = (dt, n = 1) => { for (let i = 0; i < n; i++) game.update(dt); game.render(); };
     window.__freeze = (b) => { running = !b; };
+    window.__setInput = (steer, thr) => { input.debugSteer = steer; input.debugThr = thr; };
     window.__view = (x, y, z, tx, ty, tz) => {
       game.camera.position.set(x, y, z); game.camera.lookAt(tx, ty, tz);
       game.env.update(game.camera); game.render();
