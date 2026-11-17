@@ -1,6 +1,6 @@
 # Stav etapy E14
 
-**Implementace E14 je dokončená. Odeslání větve čeká na autora.** Autor nejprve odložil uzavření do ručního měření.
+**Implementace E14 je dokončená a předaná ke kontrole v [PR č. 6](https://github.com/JendaNDT/GTA-Pilsen/pull/6).** Autor nejprve odložil uzavření do ručního měření.
 Dne 17. listopadu 2026 dodal oba výsledky a uvedl „Chrome pro testování“ bez
 pozorovaného zadrhávání. Výkonnostní odchylky jsou zachované v protokolu.
 
@@ -87,14 +87,13 @@ Obě verze měly měřítko 2 a zapnuté stíny. Přesná verze prohlížeče a 
 uvedeny; přiřazení vychází z pořadí otevření a navazujících výzev. Nešlo o ověření
 stejné náhodné posloupnosti provozu. Autor uvedl Chrome pro testování bez zadrhávání.
 
-## Překážka při odeslání větve
+## Odeslání a pull request
 
-Finální protokol a kontroly jsou v commitu `8490179`. `git push -u origin etapa/E14`
-selhal: terminál nemá přihlašovací údaje pro GitHub. Vzdálená větev dosud neexistuje
-(ověřeno `git ls-remote --heads origin etapa/E14`). GitHub Desktop ukazuje úložiště
-GTA-Pilsen, větev etapa/E14 a tlačítko Publish branch, ale automatické ovládání okna
-opakovaně selhalo s `noWindowsAvailable`. Commity se nepřeváděly do jiné historie.
+Autor dne 17. listopadu 2026 odeslal větev pomocí Publish branch v GitHub Desktopu.
+Bylo ověřeno, že místní i vzdálená větev obsahují stejný commit `0722a49` a nemají
+žádné rozdílné commity. Původní překážka přihlášení terminálu tak neblokuje předání.
 
-Autor má v GitHub Desktopu ručně kliknout nahoře na **Publish branch**. Pak lze
-přes připojený GitHub vytvořit návrh PR do main. [Připravený název, popis a postup](../E14/pull-request.md).
-Před vytvořením ověřit, že vzdálená větev obsahuje i tento stavový commit.
+[Návrh PR č. 6](https://github.com/JendaNDT/GTA-Pilsen/pull/6) je otevřený z `etapa/E14`
+do `main`, včetně protokolu, snímků a popisu výkonnostních odchylek. Větev není
+sloučená. Před sloučením zbývá nezávislá kontrola modelem 6.1 Sol, Medium a kontrola
+autora na náměstí, Wilsonově mostě, ve Valíku a v noci. Další etapu nezačínat.

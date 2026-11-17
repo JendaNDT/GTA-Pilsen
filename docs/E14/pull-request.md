@@ -2,15 +2,13 @@
 
 Cíl: `main`, zdroj: `etapa/E14`. Název: **Aktualizovat three.js na 0.187 a ověřit zachování vzhledu**.
 
-Místní implementace a závěrečné kontroly jsou dokončené. Odeslání větve terminálem
-selhalo kvůli chybějícím přihlašovacím údajům. GitHub Desktop ukazuje správné úložiště
-a větev s tlačítkem **Publish branch**, ale automatické klikání selhává chybou
-`noWindowsAvailable`. Větev zatím na vzdáleném úložišti není.
+[Návrh PR č. 6](https://github.com/JendaNDT/GTA-Pilsen/pull/6) je otevřený do `main`.
+Autor odeslal celou větev přes Publish branch v GitHub Desktopu. Ověření místní
+a vzdálené historie potvrdilo shodný commit `0722a49` a žádné rozdílné commity.
 
-Autor může v GitHub Desktopu kliknout nahoře na **Publish branch**. Potom lze vytvořit
-návrh pull requestu přes připojený GitHub nebo přes
-[porovnání s main](https://github.com/JendaNDT/GTA-Pilsen/compare/main...etapa/E14?expand=1).
-Sloučení čeká na nezávislou kontrolu a kontrolu autora.
+Sloučení čeká na nezávislou kontrolu modelem 6.1 Sol, Medium a kontrolu autora.
+Výkonnostní odchylky jsou popsané v protokolu i v popisu PR. Místní závěrečné testy
+prošly; výsledky kontrol GitHub Actions je třeba posuzovat samostatně.
 
 ## Popis pro vložení
 
