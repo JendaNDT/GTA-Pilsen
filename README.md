@@ -118,6 +118,9 @@ npm run test:e2e
 Testy si samy spustí lokální server nad `dist/`. GitHub Actions spouští testy JavaScriptu
 a Pythonu, audit závislostí a sestavení na Node.js 20.19, 22.12 a 24; na Node.js 24 také
 testy v prohlížeči. Neúspěšný průchod prohlížečem uloží trasu a snímek obrazovky jako artefakt.
+Kontroly běží jednou pro každý pull request a po sloučení do `main`. Změna jen v dokumentaci
+(`docs/` a soubory `.md`) spustí jen rychlou kontrolu odkazů mezi dokumenty
+(`node --test tests/docs.test.js`).
 
 ## Odkud jsou data a jak je obnovit
 
