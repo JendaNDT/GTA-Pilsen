@@ -1,13 +1,26 @@
 // Měří běžnou smyčku hry v Chromiu. Jízda a let mají pevné výchozí body.
 import { chromium } from '@playwright/test';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { dirname } from 'node:path';
 
 const args = process.argv.slice(2);
 const centerFlight = args.includes('--center-flight');
 const release = args.includes('--release');
+const work = args.includes('--work');
 const pilot = release || centerFlight || args.includes('--pilot');
 const url = new URL(args.find((arg) => !arg.startsWith('--')) || 'http://127.0.0.1:4173/');
 url.searchParams.set('debug', '');
-const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH });
+if (work) {
+  url.searchParams.set('adapt', '0');
+  if (!url.searchParams.has('date')) url.searchParams.set('date', '2026-11-17');
+  if (!url.searchParams.has('hour')) url.searchParams.set('hour', '10');
+}
+const workFlags = ['--disable-gpu-vsync', '--disable-frame-rate-limit'];
+const browser = await chromium.launch({
+  executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
+  // Plná verze Chromia může používat skutečný GPU i bez viditelného okna.
+  ...(work && { channel: 'chromium', args: workFlags }),
+});
 const report = { browser: browser.version(), viewport: '1920 × 1080', pilot, centerFlight, coldStartMs: [] };
 const scenarios = release ? [
   { name: 'car', mode: 'car', site: 'Plzeň' },
@@ -15,7 +28,11 @@ const scenarios = release ? [
   { name: 'carEast', mode: 'car', site: 'Hrádek' },
   { name: 'heliCenter', mode: 'heli', site: 'Plzeň' },
 ] : [{ name: 'car', mode: 'car' }, { name: 'heli', mode: 'heli', site: centerFlight ? 'Plzeň' : undefined }];
-if (release) report.quality = url.searchParams.get('quality') ?? 'high';
+if (release || work) report.quality = url.searchParams.get('quality') ?? 'high';
+if (work) {
+  report.work = { date: url.searchParams.get('date'), hour: +url.searchParams.get('hour'),
+    durationMs: 10_000, chromiumFlags: workFlags };
+}
 
 try {
   for (const { name, mode, site } of [...scenarios, { mode: null }]) {
@@ -42,7 +59,7 @@ try {
     report.gpu = startup.gpu;
     if (mode) {
       await page.getByRole('button', { name: 'Hrát', exact: true }).click();
-      report[name] = await page.evaluate(async ({ mode, pilot, site }) => {
+      report[name] = await page.evaluate(async ({ mode, pilot, site, work }) => {
         const game = window.__game, world = game.world;
         if (mode === 'car') {
           const [x, z] = site === 'Hrádek' ? [19592, 4145] : pilot ? [45, -48] : [90, 530];
@@ -63,7 +80,21 @@ try {
         }
 
         const focus = game.focus;
-        if (pilot) {
+        if (work) {
+          window.__freeze(true);
+          window.__setInput(0, 0);
+          const deadline = performance.now() + 45_000;
+          let built;
+          do {
+            built = game.chunks.update(focus.x, focus.z, game.camera.far / 1.35, 40, focus.y);
+            await new Promise(requestAnimationFrame);
+            if (performance.now() > deadline) throw new Error('Okolí měření se nestihlo dostavět.');
+          } while (built || game.chunks.pending || game.chunks.heritage.fetching);
+          window.__step(1 / 60);
+          await new Promise(requestAnimationFrame);
+          await new Promise(requestAnimationFrame);
+          window.__freeze(false);
+        } else if (pilot) {
           // Po přesunu v debug režimu nech vykreslit výchozí oblast, stejně jako při vstupu do hry.
           window.__freeze(true);
           window.__setInput(0, 0);
@@ -79,6 +110,7 @@ try {
         const ahead = {};
         let maxPending = 0;
         let previous = await new Promise(requestAnimationFrame);
+        if (work) window.__perf.reset();
         const until = previous + 10_000;
         while (previous < until) {
           const now = await new Promise(requestAnimationFrame);
@@ -96,6 +128,8 @@ try {
           }
           previous = now;
         }
+        const measurement = work ? window.__perf.summary() : null;
+        if (work && !measurement.workMs) throw new Error('Měření práce snímku nezískalo žádné vzorky.');
         window.__setInput(0, 0);
         const elapsed = frames.reduce((sum, value) => sum + value, 0);
         frames.sort((a, b) => a - b);
@@ -109,13 +143,21 @@ try {
           p95FrameMs: +frames[Math.ceil(frames.length * 0.95) - 1].toFixed(1),
           maxFrameMs: +frames.at(-1).toFixed(1),
           framesOver50Ms: frames.filter((value) => value > 50).length,
+          ...(work && { measurement }),
         };
-      }, { mode, pilot, site });
+      }, { mode, pilot, site, work });
       if (site) report[name].site = site;
     }
     await context.close();
   }
-  console.log(JSON.stringify(report, null, 2));
+  const json = JSON.stringify(report, null, 2) + '\n';
+  if (work) {
+    const output = args.find((arg) => arg.startsWith('--output='))?.slice('--output='.length)
+      ?? 'data-raw/e13/measure-work.json';
+    await mkdir(dirname(output), { recursive: true });
+    await writeFile(output, json);
+  }
+  process.stdout.write(json);
   if (release && (report.carEast.metres < 25 || report.heliCenter.chunks < 2 || !report.heliCenter.cityTiles)) process.exitCode = 1;
   if (pilot && ([report.car, report.heli].some(({ chunks }) => chunks < 2) || !report.car.cityTiles
       || centerFlight && !report.heli.cityTiles)) process.exitCode = 1;

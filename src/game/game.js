@@ -1,6 +1,6 @@
 // Řízení hry: stav hráče, kamera, pravidla (hledanost, zdraví, peníze), ukládání.
 import * as THREE from 'three';
-import { QUALITY, RC, DRIVABLE_MAX, IS_TOUCH, DEBUG } from '../config.js';
+import { QUALITY, RC, DRIVABLE_MAX, IS_TOUCH, DEBUG, PARAMS } from '../config.js';
 import { World } from '../world/world.js';
 import { TUNNEL_HEIGHT } from '../world/tunnels.js';
 import { ChunkManager } from '../world/chunks.js';
@@ -731,6 +731,7 @@ export class Game {
 
   /** Přizpůsobí rozlišení výkonu zařízení. */
   adapt(dt) {
+    if (PARAMS.get('adapt') === '0') return;
     this.fpsAcc += dt; this.fpsN++;
     if (this.fpsAcc < 2) return;
     const fps = this.fpsN / this.fpsAcc;

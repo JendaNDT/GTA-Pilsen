@@ -11,7 +11,7 @@ a rozhodnutí autora:
 - zábradlí zastaví chodce,
 - zábradlí, lampy a další vybavení se dá zničit.
 
-**Stav:** návrh k realizaci. Žádná etapa zatím není implementovaná.
+**Stav:** Výchozí stav hry a měření jsou zaznamenány v [protokolu E13](E13.md).
 **Zadání pro Codex:** [docs/codex/](codex/README.md), jeden soubor na etapu.
 **Pravidla pro agenty:** [AGENTS.md](../AGENTS.md).
 

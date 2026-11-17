@@ -1,0 +1,22 @@
+{
+  "date": "2026-11-17",
+  "viewport": { "width": 1280, "height": 720 },
+  "views": [
+    { "id": "namesti-den", "name": "Náměstí Republiky v 10:00", "hour": 10,
+      "focus": [0, 40], "camera": [-32, 7, 108], "target": [1, 25, 4] },
+    { "id": "namesti-noc", "name": "Náměstí Republiky ve 22:00", "hour": 22,
+      "focus": [0, 40], "camera": [-32, 7, 108], "target": [1, 25, 4] },
+    { "id": "wilson", "name": "Wilsonův most", "hour": 10,
+      "focus": [202, 458], "camera": [202, 5, 505], "target": [202, -3, 458] },
+    { "id": "valik-zapad", "name": "Západní portály Valíku", "hour": 10,
+      "focus": [1886, 7423], "camera": [1851, 56, 7421], "target": [1886, 52, 7423] },
+    { "id": "lochotin", "name": "Lochotín z výšky 300 metrů", "hour": 10,
+      "focus": [-652, -2151], "camera": [-652, 342.0125, -2151], "target": [-340, 10, -1410] },
+    { "id": "rokycany-pole", "name": "Pole severně od Rokycan", "hour": 10,
+      "focus": [15975, -690], "camera": [15975, 235, -690], "target": [15790, 75, 100] },
+    { "id": "dobriv-hamr", "name": "Vodní hamr v Dobřívě", "hour": 10,
+      "focus": [22660, 3104], "camera": [22634, 122, 3131], "target": [22660, 111, 3104] },
+    { "id": "klabava-udoli", "name": "Údolí Klabavy", "hour": 10,
+      "focus": [11645, -690], "camera": [11495, 178, -500], "target": [11645, 34, -690] }
+  ]
+}

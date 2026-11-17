@@ -6,6 +6,8 @@ import { initInput, input } from './game/input.js';
 import { initMapSearch } from './game/map-search.js';
 import { initWorkUI } from './game/work-ui.js';
 import { resultText } from './game/missions.js';
+import { createFrameProfiler } from './game/frame-profiler.js';
+import { initPerfPanel } from './game/perf-panel.js';
 import { QUALITY, IS_TOUCH, IS_MOBILE, DEBUG, PARAMS } from './config.js';
 
 const $ = (id) => document.getElementById(id);
@@ -47,6 +49,9 @@ const ABOUT_HTML = (meta) => `
   rozvážet jídlo ze skutečných podniků, vozit zákazníky, koupit si vlastní auto, jet směnu řidiče MHD,
   objevovat památky a ujíždět policii.</p>
   <h3>Zdroje dat</h3>
+  <p>Sestavení hry používá picomatch od Jona Schlinkerta (licence
+  <a href="https://github.com/micromatch/picomatch/blob/master/LICENSE" target="_blank" rel="noopener">MIT</a>)
+  s místní opravou 4.0.8-plzen.1.</p>
   <p>Mapová data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">přispěvatelé OpenStreetMap</a>
   (licence ODbL). Terén vychází z digitálního modelu reliéfu DMR 5G, výšky budov z rozdílu modelu povrchu
   DMP 1G a DMR 5G © <a href="https://www.cuzk.gov.cz" target="_blank" rel="noopener">ČÚZK</a>.</p>
@@ -101,6 +106,7 @@ async function boot() {
   loadText.textContent = 'Stavím město…';
   await new Promise((r) => setTimeout(r, 30));
   const game = new Game(renderer, data);
+  const perf = DEBUG ? createFrameProfiler(game) : null;
   initInput(canvas);
   if (PARAMS.has('hour') || PARAMS.has('date')) {
     game.setClock(PARAMS.get('date'), PARAMS.has('hour') ? +PARAMS.get('hour') : game.hour);
@@ -129,9 +135,11 @@ async function boot() {
   if (IS_TOUCH) $('touch').classList.remove('hidden');
 
   let running = false, last = 0, firstPlay = true;
+  const perfPanel = perf && initPerfPanel(perf, () => running && !game.mapOpen);
   const menu = $('menu');
   const openMenu = () => {
     running = false; input.enabled = false; game.paused = true;
+    perfPanel?.close();
     menu.classList.remove('hidden'); game.hud.show(false);
     game.audio.suspend(); game.save();
     $('btn-play').textContent = 'Pokračovat';
@@ -140,6 +148,7 @@ async function boot() {
   const play = () => {
     menu.classList.add('hidden'); game.hud.show(true);
     running = true; input.enabled = true; game.paused = false; last = performance.now();
+    perf?.reset();
     game.audio.start(); game.audio.resume();
     if (firstPlay) {
       firstPlay = false;
@@ -203,13 +212,18 @@ async function boot() {
       input.pressed.delete('menu');
       if (game.mapOpen) game.toggleMap(false); else { openMenu(); return; }
     }
-    game.update(dt);
-    game.render();
+    if (perf) {
+      perf.frame(dt);
+    } else {
+      game.update(dt);
+      game.render();
+    }
     game.adapt(dt);
   };
   requestAnimationFrame(loop);
 
   if (DEBUG) {
+    window.__perf = { summary: perf.summary, reset: perf.reset, renderStats: perf.renderStats };
     window.__play = play;
     window.__step = (dt, n = 1) => { for (let i = 0; i < n; i++) game.update(dt); game.render(); };
     window.__freeze = (b) => { running = !b; };

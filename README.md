@@ -91,6 +91,10 @@ Výsledek je ve složce `dist/` – obyčejné statické soubory, které jde nah
 
 ## Kontroly před odesláním změn
 
+Výchozí pohledy, měření práce snímku a rozpočet vykreslování jsou v
+[protokolu E13](docs/E13.md). Panel výkonu v režimu `?debug&adapt=0` otevřeš klávesou
+F9 nebo tlačítkem **Měření**. [Návod pro počítač a telefon](docs/E13/mereni-na-zarizeni.md).
+
 Regresní testy kolizí, terénu, silničního grafu a distribuovaných dat:
 
 ```bash
@@ -211,6 +215,10 @@ U přiložené historické datové sady není původní datum doloženo. Proto m
 zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 
 ## Zdroje a licence dat
+
+- Sestavení používá [picomatch](https://github.com/micromatch/picomatch), autor Jon
+  Schlinkert, licence MIT. [Místní oprava 4.0.8-plzen.1](vendor/picomatch/README.md)
+  vychází z verze 4.0.7 a odstraňuje zaseknutí při opakovaných vzorech hledání souborů.
 
 - Mapová data © [přispěvatelé OpenStreetMap](https://www.openstreetmap.org/copyright), licence ODbL.
 - Terén vychází z digitálního modelu reliéfu DMR 5G a výšky budov z rozdílu digitálního modelu
