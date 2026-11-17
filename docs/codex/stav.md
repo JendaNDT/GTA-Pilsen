@@ -6,8 +6,8 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
 | Krok | Stav |
 | --- | --- |
 | 1. Sjednotit importy a ověřit je testem | Hotovo · `a68135b` |
-| 2. Zapojit nový vykreslovač na WebGL 2 | Hotovo |
-| 3a. Převést oblohu a pořídit srovnávací snímek | Zbývá |
+| 2. Zapojit nový vykreslovač na WebGL 2 | Hotovo · `27a2d77` |
+| 3a. Převést oblohu a pořídit srovnávací snímek | Hotovo |
 | 3b. Převést terén, vodu, dlažbu a výřezy portálů | Zbývá |
 | 3c. Převést silnice a čáry | Zbývá |
 | 3d. Převést budovy a okna | Zbývá |
@@ -27,8 +27,7 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
   rozpočtu, uložené hry, dotyku a minuty hraní bez varování. Úplná sada je naplánovaná
   na závěr etapy. Logy jsou v `data-raw/e15/`.
 - Krok 2 spouští nový vykreslovač zatím výhradně na WebGL 2. Základní materiály
-  a nastavení stínů fungují. Obloha je dočasně jednobarevná a vlastní detaily povrchů
-  čekají na krok 3. Textury dlaždic se nahrávají ihned před opětovným použitím plátna.
+  a nastavení stínů fungují. Vlastní detaily povrchů se převádějí v kroku 3. Textury dlaždic se nahrávají ihned před opětovným použitím plátna.
 - Srovnatelné počítadlo je v novém vykreslovači `renderer.info.render.drawCalls`.
   Nuluje se jednou před snímkem, aby zahrnovalo stíny i výstupní průchod.
   Při zkušebním měření přibyl jeden výstupní trojúhelník a jedno volání na pohled.
@@ -36,3 +35,7 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
 - Od autora bude potřeba závěrečné ověření vzhledu a plynulosti na počítači a telefonu.
 - Ověření kroku 2: 39 testů Node, produkční sestavení a tři vybrané prohlížečové
   testy (rozpočet, menu s použitým vykreslováním a dotykový panel) prošly.
+- Ověření kroku 3a: 39 testů Node, sestavení a prohlížečový test mraků a tmy prošly.
+  Snímky [ve dne](../E15/kroky/03a-obloha-den.jpg) a [v noci](../E15/kroky/03a-obloha-noc.jpg)
+  zachycují stejný pohled jako E14. Průměry vybraných plošek oblohy se liší nejvýš
+  o 0,30 z 255 v jednotlivých barevných kanálech.

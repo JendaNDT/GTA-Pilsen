@@ -1,17 +1,17 @@
 // Materiály světa. Fasády domů, povrch země i voda se dokreslují přímo v shaderu.
 import * as THREE from 'three/webgpu';
-import { transformNormalToView, vec3 } from 'three/tsl';
+import { renderGroup, transformNormalToView, uniform, vec3 } from 'three/tsl';
 import { DEBUG } from '../config.js';
 import { patchShader } from './shader-patches.js';
 import { TUNNEL_HEIGHT, TUNNEL_PORTAL_CUT } from './tunnels.js';
 
 export const env = {
-  night: { value: 0 },                       // 0 = den, 1 = noc
-  time: { value: 0 },
-  sky: { value: new THREE.Color(0xbdd9ee) }, // barva oblohy u obzoru (odrazy ve vodě)
-  sunDir: { value: new THREE.Vector3(0, 1, 0) },
-  cam: { value: new THREE.Vector3() },
-  wetPaving: { value: 0 },
+  night: uniform(0).setGroup(renderGroup), // 0 = den, 1 = noc
+  time: uniform(0).setGroup(renderGroup),
+  sky: uniform(new THREE.Color(0xbdd9ee)).setGroup(renderGroup), // obzor a odrazy ve vodě
+  sunDir: uniform(new THREE.Vector3(0, 1, 0)).setGroup(renderGroup),
+  cam: uniform(new THREE.Vector3()).setGroup(renderGroup),
+  wetPaving: uniform(0).setGroup(renderGroup),
 };
 
 const NOISE_GLSL = `
