@@ -87,4 +87,7 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
   používají plné Chromium bez okna a na Linuxu dostaly příznaky pro jednotný
   ovladač SwiftShader. [První běh](https://github.com/JendaNDT/GTA-Pilsen/actions/runs/44167454877).
 - Po změně nastavení prošlo místní sestavení, 38 testů Node a všech osm testů
-  WebGPU. Ověření na Linuxu převezme další běh pull requestu č. 7.
+  WebGPU. Druhý linuxový běh prošel v 51 z 54 scénářů včetně rozpočtu, startu
+  a referenčních pohledů ve WebGPU. U tří obrazových testů zachytil snímek pouze
+  pozadí stránky. Testy teď čtou stejné oblasti přímo z plátna po vykreslení.
+  [Druhý běh](https://github.com/JendaNDT/GTA-Pilsen/actions/runs/44171555528).
