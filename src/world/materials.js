@@ -1,7 +1,11 @@
 // Materiály světa. Fasády domů, povrch země i voda se dokreslují přímo v shaderu.
 import * as THREE from 'three/webgpu';
-import { renderGroup, transformNormalToView, uniform, vec3 } from 'three/tsl';
+import {
+  Discard, Fn, If, Loop, float, materialReference, mix, positionWorld, reflect, renderGroup,
+  smoothstep, transformNormalToView, uniform, vec2, vec3, vec4,
+} from 'three/tsl';
 import { DEBUG } from '../config.js';
+import { hash21, valueNoise } from './material-noise.js';
 import { patchShader } from './shader-patches.js';
 import { TUNNEL_HEIGHT, TUNNEL_PORTAL_CUT } from './tunnels.js';
 
@@ -231,98 +235,128 @@ export function makeDecalMaterial(opts = {}) {
   return mat;
 }
 
-/** Společná úprava shaderu terénu (jedna funkce = jeden sdílený program pro všechny dlaždice). */
-function pavingGLSL(profile, detail) {
-  if (!profile) return '';
-  const area = profile === 1 ? `
-  vec2 square = vec2(dot(gp, vec2(0.967, -0.255)), dot(gp, vec2(0.255, 0.967)));
-  float paved = 1.0 - smoothstep(0.0, 1.4, max(abs(square.x + 0.6) - 55.0, abs(square.y - 0.5) - 54.5));
-  vec2 brick = square * vec2(4.8, 7.0);
-  vec3 tint = vec3(0.46, 0.423, 0.365);` : `
-  vec2 offset = gp - vec2(22660.55, 3099.7);
-  vec2 local = vec2(dot(offset, vec2(0.902, 0.432)), dot(offset, vec2(-0.432, 0.902)));
-  float paved = 1.0 - smoothstep(0.0, 0.85, max(abs(local.x + 0.2) - 6.1, abs(local.y - 20.4) - 4.1));
-  vec2 brick = local * vec2(3.6, 5.3);
-  vec3 tint = vec3(0.37, 0.316, 0.233);
-  pavingGlow = (1.0 - smoothstep(0.4, 4.7, length(local - vec2(-2.6, 18.25)))) * uNight;`;
-  return `
-  ${area}
-  if (paved > 0.0) {
-    ${detail ? `
-    brick.x += 0.5 * mod(floor(brick.y), 2.0) + 0.08 * sin(floor(brick.y) * 1.71);
-    vec2 f = fract(brick);
-    float joint = 1.0 - smoothstep(0.028, 0.086, min(min(f.x, 1.0 - f.x), min(f.y, 1.0 - f.y)));
-    float sharp = 1.0 - smoothstep(0.033, 0.20, px);
-    tint *= 1.0 + sharp * (0.25 * (hash21(floor(brick)) - 0.5) - 0.29 * joint);
-    ` : ''}
-    tint *= 1.0 + 0.14 * mid + 0.09 * big;
-    ${detail ? `
-    // Volitelná mokrá dlažba má tlumený odraz oblohy při pohledu po povrchu.
-    float glancing = 1.0 - abs(normalize(uCam - vTp).y);
-    vec3 wet = tint * 0.68 + uSky * glancing * glancing * 0.12;
-    tint = mix(tint, wet, uWetPaving);
-    ` : ''}
-    landCol = mix(landCol, tint, paved);
-  }`;
+// Zrnitost slábne s velikostí promítnutého pixelu.
+function groundNoise(point) {
+  const px = point.x.fwidth().max(point.y.fwidth()).toVar();
+  const fine = valueNoise(point.mul(2.6)).sub(0.5).mul(smoothstep(0.15, 0.7, px).oneMinus());
+  const mid = valueNoise(point.mul(0.33)).sub(0.5).mul(smoothstep(1.2, 5, px).oneMinus()).toVar();
+  const big = valueNoise(point.mul(0.021)).sub(0.5).toVar();
+  return { px, fine, mid, big, gain: fine.mul(0.13).add(mid.mul(0.10), big.mul(0.07), 1) };
 }
 
-function terrainCompile(shader, paving, detail) {
-  shader.uniforms.uTime = env.time;
-  shader.uniforms.uSky = env.sky;
-  shader.uniforms.uSunDir = env.sunDir;
-  shader.uniforms.uWetPaving = env.wetPaving;
-  shader.uniforms.uCam = env.cam;
-  shader.uniforms.uNight = env.night;
-  shader.vertexShader = patchShader(shader.vertexShader, 'terén · vrcholy', [
-    ['#include <common>', '#include <common>\nvarying vec3 vTp;'],
-    ['#include <begin_vertex>', '#include <begin_vertex>\nvTp = (modelMatrix * vec4(position, 1.0)).xyz;'],
-  ], DEBUG);
-  shader.fragmentShader = patchShader(shader.fragmentShader, 'terén · barva', [
-    ['#include <common>', `#include <common>
-varying vec3 vTp;
-uniform float uTime; uniform vec3 uSky; uniform vec3 uSunDir; uniform vec3 uCam; uniform float uNight; uniform float uWetPaving;
-float waterSpec = 0.0;
-float pavingGlow = 0.0;
-${NOISE_GLSL}`],
-    ['#include <map_fragment>', `
-{
-  // textura země: průhledná místa jsou voda
-  vec4 tx = texture2D(map, vMapUv);
-  float land = clamp(tx.a, 0.0, 1.0);
-  vec3 landCol = tx.rgb / max(land, 0.06);
-  vec2 gp = vTp.xz;
-  float px = max(fwidth(gp.x), fwidth(gp.y));
-  float fine = (vnoise(gp * 2.6) - 0.5) * (1.0 - smoothstep(0.15, 0.7, px));
-  float mid = (vnoise(gp * 0.33) - 0.5) * (1.0 - smoothstep(1.2, 5.0, px));
-  float big = vnoise(gp * 0.021) - 0.5;
-  landCol *= 1.0 + 0.13 * fine + 0.10 * mid + 0.07 * big;
-  ${pavingGLSL(paving, detail)}
-  float wmask = 1.0 - smoothstep(0.35, 0.65, land);
-  vec3 col = landCol;
-  if (wmask > 0.001) {
-    vec3 V = normalize(uCam - vTp);
-    float d = length(uCam.xz - gp);
-    float fade = 1.0 - smoothstep(60.0, 400.0, d);
-    vec2 p = gp * 0.22;
-    float w1 = vnoise(p + vec2(uTime * 0.22, uTime * 0.13)) - 0.5;
-    float w2 = ${detail ? 'vnoise(p * 2.7 - vec2(uTime * 0.31, uTime * 0.19)) - 0.5' : '0.0'};
-    vec3 N = normalize(vec3((w1 + w2 * 0.6) * 0.55 * fade, 1.0, (w2 - w1 * 0.6) * 0.55 * fade));
-    float fres = pow(1.0 - max(dot(V, N), 0.0), 3.0);
-    vec3 water = mix(vec3(0.07, 0.19, 0.27), uSky * 0.9, 0.14 + 0.70 * fres) + (w1 + w2) * 0.03 * fade;
-    ${detail ? `
-    vec3 R = reflect(-V, N);
-    waterSpec = pow(max(dot(R, uSunDir), 0.0), 220.0) * (1.0 - uNight) * fade * wmask;
-    ` : ''}
-    col = mix(landCol, water, wmask);
-  }
-  diffuseColor.rgb *= col;
+const PAVING = {
+  1: {
+    origin: [0, 0], axisX: [0.967, -0.255], axisZ: [0.255, 0.967],
+    center: [-0.6, 0.5], half: [55, 54.5], edge: 1.4, scale: [4.8, 7], color: [0.46, 0.423, 0.365],
+  },
+  2: {
+    origin: [22660.55, 3099.7], axisX: [0.902, 0.432], axisZ: [-0.432, 0.902],
+    center: [-0.2, 20.4], half: [6.1, 4.1], edge: 0.85, scale: [3.6, 5.3], color: [0.37, 0.316, 0.233],
+  },
+};
+
+function pavingLocal(point, profile) {
+  const offset = point.sub(vec2(...profile.origin));
+  return vec2(offset.dot(vec2(...profile.axisX)), offset.dot(vec2(...profile.axisZ))).toVar();
 }
-`],
-    ['#include <emissivemap_fragment>', `#include <emissivemap_fragment>
-totalEmissiveRadiance += vec3(1.0, 0.94, 0.80) * waterSpec * 1.4
-  + vec3(0.27, 0.16, 0.080) * pavingGlow;
-`],
-  ], DEBUG);
+
+function addPaving(landColor, profile, local, viewPosition, noise, detail) {
+  const border = local.sub(vec2(...profile.center)).abs().sub(vec2(...profile.half));
+  const coverage = smoothstep(0, profile.edge, border.x.max(border.y)).oneMinus().toVar();
+  If(coverage.greaterThan(0), () => {
+    const tint = vec3(...profile.color).toVar();
+    if (detail) {
+      const brick = local.mul(vec2(...profile.scale)).toVar();
+      const row = brick.y.floor();
+      brick.x.addAssign(row.mod(2).mul(0.5).add(row.mul(1.71).sin().mul(0.08)));
+      const cell = brick.fract().toVar();
+      const edge = cell.x.min(cell.x.oneMinus(), cell.y, cell.y.oneMinus());
+      const joint = smoothstep(0.028, 0.086, edge).oneMinus();
+      const sharp = smoothstep(0.033, 0.20, noise.px).oneMinus();
+      tint.mulAssign(sharp.mul(hash21(brick.floor()).sub(0.5).mul(0.25).sub(joint.mul(0.29))).add(1));
+    }
+    tint.mulAssign(noise.mid.mul(0.14).add(noise.big.mul(0.09), 1));
+    if (detail) {
+      const glancing = env.cam.sub(viewPosition).normalize().y.abs().oneMinus();
+      const wet = tint.mul(0.68).add(env.sky.mul(glancing.pow2(), 0.12));
+      tint.assign(mix(tint, wet, env.wetPaving));
+    }
+    landColor.assign(mix(landColor, tint, coverage));
+  });
+}
+
+// Sdílená síť uzlů pro každou kombinaci dlažby, detailu a počtu portálů.
+// Texturu i souřadnice portálů síť bere z právě vykreslované dlaždice.
+const terrainNodes = new Map();
+function getTerrainNodes(paving, detail, portalCount) {
+  const key = `${paving}/${detail}/${portalCount}`;
+  const cached = terrainNodes.get(key);
+  if (cached) return cached;
+
+  const map = materialReference('map', 'texture');
+  const portalAxes = materialReference('portalAxes', 'vec4');
+  const portalProfiles = materialReference('portalProfiles', 'vec3');
+  const profile = PAVING[paving];
+  const surface = Fn(() => {
+    const point = positionWorld.xz.toVar();
+    const sample = vec4(map).toVar();
+    const land = sample.a.clamp(0, 1).toVar();
+    const noise = groundNoise(point);
+    const landColor = sample.rgb.div(land.max(0.06)).mul(noise.gain).toVar();
+    if (profile) {
+      addPaving(landColor, profile, pavingLocal(point, profile), positionWorld, noise, detail);
+    }
+    const waterMask = smoothstep(0.35, 0.65, land).oneMinus().toVar();
+    const color = landColor.toVar();
+    const sunGlint = float(0).toVar();
+    If(waterMask.greaterThan(0.001), () => {
+      const view = env.cam.sub(positionWorld).normalize().toVar();
+      const fade = smoothstep(60, 400, env.cam.xz.sub(point).length()).oneMinus().toVar();
+      const p = point.mul(0.22);
+      const w1 = valueNoise(p.add(vec2(env.time.mul(0.22), env.time.mul(0.13)))).sub(0.5).toVar();
+      const w2 = detail
+        ? valueNoise(p.mul(2.7).sub(vec2(env.time.mul(0.31), env.time.mul(0.19)))).sub(0.5).toVar()
+        : float(0);
+      const normal = vec3(w1.add(w2.mul(0.6)).mul(0.55, fade), 1, w2.sub(w1.mul(0.6)).mul(0.55, fade))
+        .normalize().toVar();
+      const fresnel = view.dot(normal).max(0).oneMinus().pow(3);
+      const water = mix(vec3(0.07, 0.19, 0.27), env.sky.mul(0.9), fresnel.mul(0.70).add(0.14))
+        .add(w1.add(w2).mul(0.03, fade));
+      if (detail) {
+        const spec = reflect(view.negate(), normal).dot(env.sunDir).max(0).pow(220);
+        sunGlint.assign(spec.mul(env.night.oneMinus(), fade, waterMask));
+      }
+      color.assign(mix(landColor, water, waterMask));
+    });
+    return vec4(color, sunGlint);
+  })().toVar();
+
+  const colorNode = Fn(() => {
+    if (portalCount) {
+      Loop(portalCount, ({ i }) => {
+        const axis = vec4(portalAxes.element(i)).toVar();
+        const portal = vec3(portalProfiles.element(i)).toVar();
+        const offset = positionWorld.xz.sub(axis.xy);
+        const along = offset.dot(axis.zw).toVar();
+        const across = offset.dot(vec2(axis.w.negate(), axis.z)).abs();
+        const below = positionWorld.y.lessThan(portal.x.add(along.mul(portal.y), TUNNEL_HEIGHT + 0.5));
+        Discard(across.lessThan(portal.z)
+          .and(along.greaterThanEqual(-TUNNEL_PORTAL_CUT.approach), along.lessThan(TUNNEL_PORTAL_CUT.depth))
+          .and(along.lessThan(0).or(below)));
+      });
+    }
+    return vec4(surface.rgb, 1);
+  })();
+  const emissiveNode = Fn(() => {
+    const spec = detail ? vec3(1, 0.94, 0.80).mul(surface.a, 1.4) : vec3(0);
+    if (paving !== 2) return spec;
+    const distance = pavingLocal(positionWorld.xz, profile).sub(vec2(-2.6, 18.25)).length();
+    const lampGlow = smoothstep(0.4, 4.7, distance).oneMinus().mul(env.night);
+    return spec.add(vec3(0.27, 0.16, 0.080).mul(lampGlow));
+  })();
+  const nodes = { colorNode, emissiveNode };
+  terrainNodes.set(key, nodes);
+  return nodes;
 }
 
 /** V náhonu proudí voda podél koryta. Vzdálený a dotykový profil používá levnější vlnění. */
@@ -356,35 +390,10 @@ diffuseColor.rgb = mix(diffuseColor.rgb * (0.88 + 0.27 * wave), uSky, 0.12 + gla
 
 /** Materiál terénu jedné dlaždice (textura země s vodou v průhlednosti). */
 export function makeTerrainMaterial(tex, portals = [], paving = 0, detail = false) {
-  const mat = new THREE.MeshLambertMaterial({ map: tex });
-  mat.customProgramCacheKey = () => `terrain-${portals.length}-${paving}-${detail ? 1 : 0}`;
-  mat.onBeforeCompile = (shader) => terrainCompile(shader, paving, detail);
+  const mat = new THREE.MeshLambertNodeMaterial({ map: tex, ...getTerrainNodes(paving, detail, portals.length) });
   if (portals.length) {
-    const axes = portals.map((p) => new THREE.Vector4(p.x, p.z, p.dx, p.dz));
-    const profiles = portals.map((p) => new THREE.Vector3(p.y, p.slope, p.width));
-    const count = portals.length;
-    mat.onBeforeCompile = (shader) => {
-      terrainCompile(shader, paving, detail);
-      shader.uniforms.uPortalAxis = { value: axes };
-      shader.uniforms.uPortalProfile = { value: profiles };
-      shader.fragmentShader = patchShader(shader.fragmentShader, 'portály tunelu · barva', [
-        ['#include <common>', `#include <common>
-uniform vec4 uPortalAxis[${count}];
-uniform vec3 uPortalProfile[${count}];`],
-        ['float land =', `
-  for (int i = 0; i < ${count}; i++) {
-    vec4 axis = uPortalAxis[i];
-    vec3 profile = uPortalProfile[i];
-    vec2 offset = vTp.xz - axis.xy;
-    float along = dot(offset, axis.zw);
-    float across = abs(dot(offset, vec2(-axis.w, axis.z)));
-    if (across < profile.z && along >= -${TUNNEL_PORTAL_CUT.approach}.0
-        && along < ${TUNNEL_PORTAL_CUT.depth}.0
-        && (along < 0.0 || vTp.y < profile.x + along * profile.y + ${TUNNEL_HEIGHT + 0.5})) discard;
-  }
-  float land =`],
-      ], DEBUG);
-    };
+    mat.portalAxes = portals.map((p) => new THREE.Vector4(p.x, p.z, p.dx, p.dz));
+    mat.portalProfiles = portals.map((p) => new THREE.Vector3(p.y, p.slope, p.width));
   }
   return mat;
 }

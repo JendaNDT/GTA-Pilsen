@@ -7,8 +7,8 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
 | --- | --- |
 | 1. Sjednotit importy a ověřit je testem | Hotovo · `a68135b` |
 | 2. Zapojit nový vykreslovač na WebGL 2 | Hotovo · `27a2d77` |
-| 3a. Převést oblohu a pořídit srovnávací snímek | Hotovo |
-| 3b. Převést terén, vodu, dlažbu a výřezy portálů | Zbývá |
+| 3a. Převést oblohu a pořídit srovnávací snímek | Hotovo · `4e42957` |
+| 3b. Převést terén, vodu, dlažbu a výřezy portálů | Hotovo |
 | 3c. Převést silnice a čáry | Zbývá |
 | 3d. Převést budovy a okna | Zbývá |
 | 3e. Převést náhon a skvrny lamp | Zbývá |
@@ -39,3 +39,9 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
   Snímky [ve dne](../E15/kroky/03a-obloha-den.jpg) a [v noci](../E15/kroky/03a-obloha-noc.jpg)
   zachycují stejný pohled jako E14. Průměry vybraných plošek oblohy se liší nejvýš
   o 0,30 z 255 v jednotlivých barevných kanálech.
+- Ověření kroku 3b: 39 testů Node, sestavení, průjezd oběma tubusy Valíku
+  a prohlížečová kontrola vody, dlažby a obou výřezů prošly. Testy práce s původním
+  textem shaderu terénu nahradilo ověření 18 sdílených variant a kontroly obrazu.
+  Snímky [Wilsonova mostu](../E15/kroky/03b-voda.jpg), [Valíku](../E15/kroky/03b-valik.jpg)
+  a [dlažby](../E15/kroky/03b-dlazba.jpg) ukazují převedené povrchy. Fasády jsou v těchto
+  snímcích ještě bez detailů.

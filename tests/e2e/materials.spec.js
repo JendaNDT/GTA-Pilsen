@@ -38,3 +38,26 @@ test('E15 – obloha má ve dne mraky a v noci ztmavne', async ({ page, baseURL 
   expect(nightBlue).toBeLessThan(45);
   expect(blue - nightBlue).toBeGreaterThan(145);
 });
+
+test('E15 – voda pod Wilsonovým mostem, dlažba a výřezy portálů Valíku jsou vidět', async ({ page, baseURL }) => {
+  await openReferenceGame(page, baseURL);
+  await page.addStyleTag({ content: '#menu, #hud { visibility: hidden }' });
+  const view = (id) => reference.views.find((entry) => entry.id === id);
+  const region = (x, y, size = 32) => ({ x, y, width: size, height: size });
+  await renderReferenceView(page, view('wilson'));
+  const [riverRed, , riverBlue] = await averageRegion(page, region(460, 610));
+  expect(riverBlue).toBeGreaterThan(125);
+  expect(riverBlue - riverRed).toBeGreaterThan(25);
+
+  await renderReferenceView(page, view('valik-zapad'));
+  const [, left] = await averageRegion(page, region(534, 315, 16));
+  const [, right] = await averageRegion(page, region(700, 315, 16));
+  const [, exterior] = await averageRegion(page, region(609, 280, 16));
+  expect(exterior - Math.max(left, right)).toBeGreaterThan(25);
+
+  await renderReferenceView(page, view('namesti-den'));
+  const [brickRed, brickGreen, brickBlue] = await averageRegion(page, region(600, 665));
+  expect(brickRed).toBeGreaterThan(170);
+  expect(brickRed - brickBlue).toBeGreaterThan(18);
+  expect(brickGreen - brickBlue).toBeGreaterThan(10);
+});
