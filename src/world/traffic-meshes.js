@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 
 const BOX = new THREE.BoxGeometry(1, 1, 1);
 const FACE = new THREE.PlaneGeometry(1, 1);

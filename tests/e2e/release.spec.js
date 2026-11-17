@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
+import { gameUrl } from './game-url.js';
 
 test('E12 – Krkavec, policejní pokuta a nákup s nízkým zůstatkem přímo u garáže', async ({ page }, info) => {
-  await page.goto('/?debug&quality=low');
+  await page.goto(gameUrl('/?debug&quality=low'));
   await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
   const krkavec = await page.evaluate(() => {
@@ -16,12 +17,14 @@ test('E12 – Krkavec, policejní pokuta a nákup s nízkým zůstatkem přímo 
     window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyJ' }));
     window.__step(0.01);
     window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyJ' }));
-    return { nearest, found: tower.found, active: g.jobs.job?.type ?? null };
+    // Zprávu přečti ve stejném kroku hry, než doběhne časovač pro její skrytí.
+    const toast = document.getElementById('toast').textContent;
+    return { nearest, found: tower.found, active: g.jobs.job?.type ?? null, toast };
   });
   expect(krkavec.found).toBe(true);
   expect(krkavec.nearest).toBeGreaterThan(1400);
   expect(krkavec.active).toBeNull();
-  await expect(page.locator('#toast')).toContainText('V okolí není dostupný rozvoz');
+  expect(krkavec.toast).toContain('V okolí není dostupný rozvoz');
 
   const police = await page.evaluate(() => {
     const g = window.__game;

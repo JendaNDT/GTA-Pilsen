@@ -1,5 +1,16 @@
 import assert from 'node:assert/strict';
+import { readdir, readFile } from 'node:fs/promises';
 import test from 'node:test';
+
+test('herní moduly používají vykreslování bez původních úprav shaderů a hlavního sestavení three.js', async () => {
+  const root = new URL('../src/', import.meta.url);
+  const files = (await readdir(root, { recursive: true })).filter((file) => file.endsWith('.js'));
+  for (const file of files) {
+    const source = await readFile(new URL(file, root), 'utf8');
+    assert.doesNotMatch(source, /(?:\bfrom\s*|\bimport\s*\(?\s*)['"]three['"]/u, file);
+    assert.doesNotMatch(source, /\b(?:onBeforeCompile|ShaderMaterial|RawShaderMaterial|customProgramCacheKey)\b/u, file);
+  }
+});
 
 // World používá konfiguraci prohlížeče, tyto testy nepotřebují renderer ani DOM.
 globalThis.matchMedia = () => ({ matches: false });

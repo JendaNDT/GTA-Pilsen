@@ -1,17 +1,18 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import { openReferenceGame, reference, renderReferenceView } from '../../tools/reference_views.mjs';
+import { gameUrl } from './game-url.js';
 
 const viewIds = ['namesti-den', 'lochotin', 'rokycany-pole'];
 const budgetFile = new URL('../budgets.json', import.meta.url);
 
 test.use({ viewport: reference.viewport, deviceScaleFactor: 1 });
 
-test('E13 – náměstí, Lochotín a Rokycany se vejdou do rozpočtu vykreslování', async ({ page, baseURL }) => {
+test('E13 – náměstí, Lochotín a Rokycany se vejdou do rozpočtu vykreslování', { tag: '@webgpu' }, async ({ page, baseURL }) => {
   const update = process.env.UPDATE_BUDGETS === '1';
   const baseline = update ? null : JSON.parse(await readFile(budgetFile, 'utf8'));
   const measured = {};
-  await openReferenceGame(page, baseURL);
+  await openReferenceGame(page, gameUrl(baseURL));
   for (const id of viewIds) {
     const view = reference.views.find((entry) => entry.id === id);
     await test.step(view.name, async () => {

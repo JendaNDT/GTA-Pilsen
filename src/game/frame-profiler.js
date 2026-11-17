@@ -1,10 +1,9 @@
 const WINDOW_MS = 60_000;
-const MAX_GPU_QUERIES = 8;
 
 export function readRenderStats(renderer) {
   const { render, memory } = renderer.info;
   return {
-    calls: render.calls, triangles: render.triangles,
+    calls: render.drawCalls, triangles: render.triangles,
     geometries: memory.geometries, textures: memory.textures,
   };
 }
@@ -18,50 +17,40 @@ function percentiles(values) {
 
 export function createFrameProfiler(game) {
   const { renderer } = game;
-  const gl = renderer.getContext();
-  const extension = gl.getExtension('EXT_disjoint_timer_query_webgl2');
-  const pending = [];
+  const { backend } = renderer;
+  let trackGpu = backend.trackTimestamp && backend.hasTimestamp;
+  let resolving = false;
   let samples = [], first = 0, startedAt = null;
 
-  function clearQueries() {
-    for (const { query } of pending) gl.deleteQuery(query);
-    pending.length = 0;
-  }
-
-  function pollGpu() {
-    if (!extension || !pending.length) return;
-    if (gl.getParameter(extension.GPU_DISJOINT_EXT)) {
-      clearQueries();
-      return;
-    }
-    while (pending.length && gl.getQueryParameter(pending[0].query, gl.QUERY_RESULT_AVAILABLE)) {
-      const { query, sample } = pending.shift();
-      sample.gpuMs = gl.getQueryParameter(query, gl.QUERY_RESULT) / 1e6;
-      gl.deleteQuery(query);
+  async function measureGpu(sample, frameId) {
+    resolving = true;
+    try {
+      const ms = await renderer.resolveTimestampsAsync('render');
+      // Při chybě vrací knihovna poslední platný čas. Ten nesmí skončit u jiného snímku.
+      if (backend.getTimestampFrames('render').at(-1) === frameId && Number.isFinite(ms) && ms > 0) {
+        sample.gpuMs = ms;
+      }
+    } catch (error) {
+      trackGpu = false;
+      console.warn('Čas GPU se nepodařilo změřit.', error);
+    } finally {
+      resolving = false;
     }
   }
 
   function frame(dt) {
-    pollGpu();
     const at = performance.now();
     startedAt ??= at;
     game.update(dt);
     const updatedAt = performance.now();
-    const query = extension && pending.length < MAX_GPU_QUERIES ? gl.createQuery() : null;
-    if (query) gl.beginQuery(extension.TIME_ELAPSED_EXT, query);
     const renderStart = performance.now();
-    let renderMs;
-    try {
-      game.render();
-      renderMs = performance.now() - renderStart;
-    } finally {
-      if (query) gl.endQuery(extension.TIME_ELAPSED_EXT);
-    }
+    game.render();
+    const renderMs = performance.now() - renderStart;
     const sample = {
       at, updateMs: updatedAt - at, renderMs,
       gpuMs: null, ...readRenderStats(renderer),
     };
-    if (query) pending.push({ query, sample });
+    if (trackGpu && !resolving) void measureGpu(sample, renderer.info.frame);
     samples.push(sample);
     while (samples[first].at < at - WINDOW_MS) first++;
     if (first >= 1024) {
@@ -71,7 +60,6 @@ export function createFrameProfiler(game) {
   }
 
   function summary() {
-    pollGpu();
     const frames = samples.slice(first);
     const last = frames.at(-1);
     const gpu = frames.flatMap((frame) => frame.gpuMs === null ? [] : [frame.gpuMs]);
@@ -92,7 +80,6 @@ export function createFrameProfiler(game) {
   }
 
   function reset() {
-    clearQueries();
     samples = [];
     first = 0;
     startedAt = null;

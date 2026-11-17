@@ -1,5 +1,5 @@
 // Hořejší lub. Lokální x míří k náhonu, z k hlavnímu vstupu.
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { Parts } from '../entities/models.js';
 import { HeritageMesh } from './heritage-geometry.js';
 

@@ -8,7 +8,9 @@ export const reference = JSON.parse(await readFile(new URL('./reference-views.js
 
 export async function openReferenceGame(page, address) {
   const url = new URL(address);
-  url.search = new URLSearchParams({ debug: '', adapt: '0', quality: 'high', date: reference.date, hour: '10' });
+  for (const [key, value] of Object.entries({ debug: '', adapt: '0', quality: 'high', date: reference.date, hour: '10' })) {
+    url.searchParams.set(key, value);
+  }
   await page.addInitScript(() => {
     let seed = 1729;
     Math.random = () => ((seed = (Math.imul(1664525, seed) + 1013904223) >>> 0) / 2 ** 32);
@@ -48,14 +50,16 @@ async function capture(address, output) {
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await openReferenceGame(page, address);
+    const backend = await page.evaluate(() => window.__game.renderer.backend?.isWebGPUBackend ? 'WebGPU' : 'WebGL 2');
+    console.log(`Vykreslování ${backend}`);
     await page.addStyleTag({ content: '#menu, #hud { visibility: hidden }' });
     await mkdir(output, { recursive: true });
     for (const view of reference.views) {
-      await renderReferenceView(page, view);
+      const { calls, triangles } = await renderReferenceView(page, view);
       const path = join(output, `${view.id}.jpg`);
       const jpeg = await page.screenshot({ path, type: 'jpeg', quality: 85 });
       if (jpeg.length > 250_000) throw new Error(`${path} překračuje limit 250 kB.`);
-      console.log(`${path} (${jpeg.length} B)`);
+      console.log(`${path} (${jpeg.length} B) · ${calls} volání · ${triangles} trojúhelníků`);
     }
     if (errors.length) throw new Error(errors.join('\n'));
   } finally {

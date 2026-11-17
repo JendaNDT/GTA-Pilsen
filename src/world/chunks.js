@@ -1,5 +1,5 @@
 // Stavba 3D geometrie po dlaždicích: budovy, silnice, koleje, stromy.
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { Earcut } from 'three/src/extras/Earcut.js';
 import { CHUNK, QUALITY, BK, BF, RC, RF, LC, DRIVABLE_MAX } from '../config.js';
 import { makeBuildingMaterial, makeDecalMaterial, makeTerrainMaterial, getPoolMaterial, env } from './materials.js';
@@ -1456,7 +1456,7 @@ export class ChunkManager {
       this.roadVerge[i] = surfaceContext(world, this.districts, world.rpx[mid], world.rpz[mid]);
     }
     this.scratch = new Map();
-    this.aniso = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+    this.aniso = Math.min(4, renderer.getMaxAnisotropy());
     this.texNear = QUALITY.groundTex; this.texFar = QUALITY.groundTexFar;
     this.lastCenter = -1;
     this.pending = 0;

@@ -1,7 +1,8 @@
 import { devices, expect, test } from '@playwright/test';
+import { gameUrl } from './game-url.js';
 
 test('E13 – měření práce snímku s pevnou kvalitou vykreslování', async ({ page }) => {
-  await page.goto('/?debug&adapt=0&quality=low');
+  await page.goto(gameUrl('/?debug&adapt=0&quality=low'));
   await page.waitForFunction(() => window.__ready);
   expect(await page.evaluate(() => window.__perf.summary().frames)).toBe(0);
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
@@ -37,7 +38,7 @@ test('E13 – panel měření lze otevřít a zavřít na dotykové obrazovce', 
   const context = await browser.newContext({ ...devices['iPhone 13'], viewport: { width: 844, height: 390 }, baseURL });
   try {
     const page = await context.newPage();
-    await page.goto('/?debug&adapt=0');
+    await page.goto(gameUrl('/?debug&adapt=0'));
     await page.waitForFunction(() => window.__ready);
     await page.getByRole('button', { name: 'Hrát', exact: true }).tap();
     await page.getByRole('button', { name: 'Měření', exact: true }).tap();

@@ -1,7 +1,8 @@
 import { expect, test, devices } from '@playwright/test';
+import { gameUrl } from './game-url.js';
 
 async function boot(page) {
-  await page.goto('/?debug&view=620&shadows=0');
+  await page.goto(gameUrl('/?debug&view=620&shadows=0'));
   await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
   await page.evaluate(() => window.__freeze(true));
@@ -139,7 +140,7 @@ test('uložení verze 1 a kontrolní trasy E01', async ({ page }) => {
   await page.addInitScript((save) => {
     localStorage.setItem('plzen-naplno-v1', JSON.stringify({ v: 1, ...save }));
   }, save);
-  await page.goto('/?debug&view=620&shadows=0');
+  await page.goto(gameUrl('/?debug&view=620&shadows=0'));
   await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
   const restored = await page.evaluate(() => {
     const g = window.__game;
@@ -443,7 +444,7 @@ test('jemný terén u Klabavy má v grafice i při chůzi stejný povrch', async
   expect(result.bodyY).toBeCloseTo(result.ground + 0.05, 4);
 });
 
-test('E03 – oba tubusy Valíku mají vlastní vozovku, stěny a kameru pod terénem', async ({ page }, testInfo) => {
+test('E03 – oba tubusy Valíku mají vlastní vozovku, stěny a kameru pod terénem', { tag: '@webgpu' }, async ({ page }, testInfo) => {
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (msg) => { if (msg.type() === 'error') errors.push(msg.text()); });
@@ -513,7 +514,7 @@ test('mobilní ovládání pohybuje hráčem a otevírá mapu', async ({ browser
   await boot(page);
   await expect(page.locator('#stick')).toBeVisible();
   expect(await page.evaluate(() => __game.renderer.shadowMap.enabled)).toBe(false);
-  expect(await page.evaluate(() => __game.chunks.heritage.close.customProgramCacheKey())).toBe('heritage-basic');
+  expect(await page.evaluate(() => __game.chunks.paintedBuildings === __game.chunks.buildingMat)).toBe(true);
   const moved = await page.evaluate(() => {
     const stick = document.querySelector('#stick'), r = stick.getBoundingClientRect();
     const x = __game.player.x, z = __game.player.z;

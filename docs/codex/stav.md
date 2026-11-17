@@ -1,103 +1,96 @@
-# Stav etapy E14
+# Stav etapy E15
 
-**Implementace E14 je dokončená. Autor schválil sloučení [PR č. 6](https://github.com/JendaNDT/GTA-Pilsen/pull/6) bez zbývajícího testování.** Autor nejprve odložil uzavření do ručního měření.
-Dne 17. listopadu 2026 dodal oba výsledky a uvedl „Chrome pro testování“ bez
-pozorovaného zadrhávání. Výkonnostní odchylky jsou zachované v protokolu.
+Větev `etapa/E15` vychází z revize `415855a` na `main`. E14 je sloučená.
+Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
 
-Větev `etapa/E14`, výchozí revize `e6d5768`. Zadání je v [E14](E14.md).
-Předchozí E13 je sloučená do `main`; její výsledky jsou v [protokolu E13](../E13.md).
-
-| Krok | Stav a commit |
+| Krok | Stav |
 | --- | --- |
-| 1. Aktualizace three.js a záznam výsledků testů | Hotovo · `470a94b` |
-| 2. Opravy API a varování | Hotovo · `9292bba` |
-| 3. Kontrola nahrazovaných řetězců shaderů | Hotovo · `146a263` |
-| 4. Referenční pohledy a porovnání s E13 | Hotovo · `1c01685` |
-| 5. Rozpočet, měření a závěrečný protokol | Hotovo · protokol, automatické a ruční měření, všechny závěrečné kontroly |
+| 1. Sjednotit importy a ověřit je testem | Hotovo · `a68135b` |
+| 2. Zapojit nový vykreslovač na WebGL 2 | Hotovo · `27a2d77` |
+| 3a. Převést oblohu a pořídit srovnávací snímek | Hotovo · `4e42957` |
+| 3b. Převést terén, vodu, dlažbu a výřezy portálů | Hotovo · `a700323` |
+| 3c. Převést silnice a čáry | Hotovo · `f755611` |
+| 3d. Převést budovy a okna | Hotovo · `d5d71b8` |
+| 3e. Převést náhon a skvrny lamp | Hotovo · `e8cf715` |
+| 3f. Převést detaily modelů | Hotovo · `0fa6385` |
+| 4. Zapnout WebGPU a ověřit automatický i vynucený návrat na WebGL 2 | Hotovo · `3676b27` |
+| 5. Dokončit měření, sady Playwright a kontroly na GitHubu | Hotovo · `43dbc63` |
+| 6. Porovnat referenční snímky, změřit výkon a uzavřít protokol | Hotovo |
 
-## Hotové změny
+## Ověření a podklady
 
-Three.js je připnuté na přesnou verzi 0.187.0. Stávající WebGLRenderer je zachovaný.
-Bylo nahrazeno odstraněné `PCFSoftShadowMap` za `PCFShadowMap`; verze a licence jsou
-v README a v „O hře“. Byl projit průvodce migrací r171–r187; další používaná API
-nevyžadovala opravu. Barvy, expozice a osvětlení se neupravovaly.
-
-Všechny náhrady v budovách, zemi, terénu, portálech, náhonu a světlech vozidel hlásí
-v režimu `?debug` nenalezený řetězec. Pět nových testů v Node ověřuje všech 27 variant
-a záměrně poškozený shader. Vygenerované shadery před přidáním kontrol a po něm jsou
-řetězcově shodné. Nový prohlížečový test ověřuje skutečnou minutu hraní ve dne i v noci
-bez varování a chyb.
-
-Všech osm konečných pohledů má 1280 × 720 px a méně než 250 kB. Dvojí pořízení dalo
-shodné soubory. [Porovnání s E13](../E14/snimky.md) ukazuje jen drobné rozdíly ve stínech;
-největší průměrná odchylka RGB je 0,469 ze 255 a změna průměrného jasu do 0,0301.
-
-## Schválený přepočet rozpočtu
-
-První běh po aktualizaci prošel 36 z 37 prohlížečových testů. Rozpočet selhal na 295
-voláních proti limitu 288. Příčinou je přesun automatického vynulování `renderer.info`
-před stíny: nová verze nově započítává i stínový průchod. Skutečná geometrie nepřibyla.
-
-Autor schválil výjimku z požadavku E14 neměnit očekávání testů: nové reference byly
-převzaty z **původní E13** včetně stínů, limit +10 % zůstal. [Srovnání počítadel](../E14/pocitadla.json)
-dokládá stejné úplné počty v obou verzích: 295 / 509 603 (náměstí), 322 / 503 726
-(Lochotín), 195 / 283 880 (Rokycany), vždy volání / trojúhelníky. Dočasné přidání 40
-kopií oblohy vyvolalo překročení (335 proti limitu 324), po odebrání znovu 295.
-
-## Výkon a otevřené otázky
-
-Pět běhů každé verze, kontrola bez stínů a oba ruční výsledky jsou v
-[měření](../E14/mereni.md), [automatických výsledcích](../E14/mereni.json)
-a [ručních výsledcích](../E14/rucni-mereni.json). Obě ruční minuty měly přibližně 60 FPS,
-autor zadrhávání nepozoroval. P95 práce vzrostlo z 3,5 na 3,9 ms (+11,4 %), GPU má
-p95 12,22 ms, tedy 0,22 ms nad pracovní mezí. Příčina všech výkyvů není potvrzená.
-Nevydává se to za nulovou regresi ani za splnění všech mezí bez odchylky.
-
-[Protokol E14](../E14.md) uvádí odchylky, zdroje, snímky a kontrolu pro autora.
-README, katalog a přehled etap jsou aktualizované. Větev `etapa/E14` je připravená
-pro pull request do `main`. Zbývající nezávislou kontrolu modelem 6.1 Sol, Medium
-a ruční kontrolu náměstí, Wilsonova mostu, Valíku a noci autor výslovně vynechal
-a schválil sloučení s odchylkami uvedenými v protokolu.
-Další etapu nezačínat.
-
-## Poslední ověření a prostředí
-
-Závěrečné čisté `npm ci`, všech 38 testů Node, 13 testů Pythonu a všech 38
-prohlížečových testů (`--trace off`) prošly. Součástí je rozpočet ve třech pohledech,
-minuta hraní ve dne a v noci bez varování, uložené hry verze 1, nízká kvalita a dotykové
-ovládání v emulaci. Prošla kontrola syntaxe nástrojů Pythonu, audit npm bez nálezů
-a produkční sestavení. Logy: `data-raw/e14/final-*.log`.
-
-Původně chybělo npm. Autor schválil jeho doplnění; npm 12.2.2 bylo instalováno
-z oficiálního registru s ověřením SHA-512. Node.js 24.22.3 je v PATH spolu s npm a npx.
-Python 3.12 se závislostmi je v `.venv`, Chromium 159.0.8154.6 je nainstalované.
-Pythonové npm příkazy spouštět s `.venv/bin` v PATH. Pracovní logy a původní sestavení
-E13 jsou v neversionovaném `data-raw/e14/`. Žádná distribuovaná data se neměnila.
-
-Pro ruční měření jsou připravené servery: původní E13 na portu 4174 obsluhuje
-`data-raw/e14/baseline-dist/`, E14 na portu 4173 obsluhuje aktuální `dist/`.
-Obě adresy před uložením stavu odpověděly HTTP 200. Při opětovném spuštění serverů
-nesmí E13 omylem obsluhovat současné sestavení E14.
-
-## Ruční výsledky autora
-
-E13: 3 601 snímků za 60 s, práce 2,7 / 3,5 / 4,6 ms, GPU 10,68 / 11,35 / 11,83 ms.
-E14: 3 600 snímků za 60 s, práce 2,6 / 3,9 / 5,0 ms, GPU 11,00 / 12,22 / 13,01 ms.
-Obě verze měly měřítko 2 a zapnuté stíny. Přesná verze prohlížeče a pohyb nebyly
-uvedeny; přiřazení vychází z pořadí otevření a navazujících výzev. Nešlo o ověření
-stejné náhodné posloupnosti provozu. Autor uvedl Chrome pro testování bez zadrhávání.
-
-## Odeslání a pull request
-
-Autor dne 17. listopadu 2026 odeslal větev pomocí Publish branch v GitHub Desktopu.
-Bylo ověřeno, že místní i vzdálená větev obsahují stejný commit `0722a49` a nemají
-žádné rozdílné commity. Původní překážka přihlášení terminálu tak neblokuje předání.
-
-[PR č. 6](https://github.com/JendaNDT/GTA-Pilsen/pull/6) vede změny z `etapa/E14`
-do `main`, včetně protokolu, snímků a popisu výkonnostních odchylek. Autor dne
-17. listopadu 2026 napsal: „zbytek testování přeskočíme. můžeš to vše sloučit“.
-Neprovedená ruční a modelová kontrola zůstává označená jako vynechaná, nikoli úspěšná.
-Další místní testy se na tento pokyn neopakují. Při ověření před záznamem souhlasu
-byla kontrola dokumentace na GitHubu úspěšná a projektové kontroly ještě běžely.
-Sloučení proběhne standardně přes GitHub bez obcházení pravidel úložiště.
-Další etapu v tomto úkolu nezačínat.
+- Prohlížeč Playwright umí na tomto Macu WebGL 2 i WebGPU přes SwiftShader.
+  Při použití příznaků pro projekt WebGPU je dostupné i měření časových značek GPU.
+- Výchozí sestavení E14 pro porovnání je v `data-raw/e15/baseline-dist/`.
+  Kamery a referenční snímky jsou v [protokolu E14](../E14.md#snímky-před-a-po).
+- Krok 1 prošel 39 testy Node a produkčním sestavením. Prošlo sedm vybraných prohlížečových kontrol včetně
+  rozpočtu, uložené hry, dotyku a minuty hraní bez varování. Úplná sada je naplánovaná
+  na závěr etapy. Logy jsou v `data-raw/e15/`.
+- Krok 2 spouští nový vykreslovač zatím výhradně na WebGL 2. Základní materiály
+  a nastavení stínů fungují. Vlastní detaily povrchů se převádějí v kroku 3. Textury dlaždic se nahrávají ihned před opětovným použitím plátna.
+- Srovnatelné počítadlo je v novém vykreslovači `renderer.info.render.drawCalls`.
+  Nuluje se jednou před snímkem, aby zahrnovalo stíny i výstupní průchod.
+  Při zkušebním měření přibyl jeden výstupní trojúhelník a jedno volání na pohled.
+  Limity rozpočtu zůstávají stejné.
+- Od autora bude potřeba závěrečné ověření vzhledu a plynulosti na počítači a telefonu.
+- Ověření kroku 2: 39 testů Node, produkční sestavení a tři vybrané prohlížečové
+  testy (rozpočet, menu s použitým vykreslováním a dotykový panel) prošly.
+- Ověření kroku 3a: 39 testů Node, sestavení a prohlížečový test mraků a tmy prošly.
+  Snímky [ve dne](../E15/kroky/03a-obloha-den.jpg) a [v noci](../E15/kroky/03a-obloha-noc.jpg)
+  zachycují stejný pohled jako E14. Průměry vybraných plošek oblohy se liší nejvýš
+  o 0,30 z 255 v jednotlivých barevných kanálech.
+- Ověření kroku 3b: 39 testů Node, sestavení, průjezd oběma tubusy Valíku
+  a prohlížečová kontrola vody, dlažby a obou výřezů prošly. Testy práce s původním
+  textem shaderu terénu nahradilo ověření 18 sdílených variant a kontroly obrazu.
+  Snímky [Wilsonova mostu](../E15/kroky/03b-voda.jpg), [Valíku](../E15/kroky/03b-valik.jpg)
+  a [dlažby](../E15/kroky/03b-dlazba.jpg) ukazují převedené povrchy. Fasády jsou v těchto
+  snímcích ještě bez detailů.
+- Ověření kroku 3c: 40 testů Node, sestavení a prohlížečový test světlé čáry
+  na tmavém asfaltu prošly. Test náhrad textu shaderu země vystřídala kontrola
+  společného materiálu, odsazení vrstev a viditelného značení.
+  Závěrečné porovnání zachycuje přechod v centru
+  [v E14](../E15/kroky/03c-vozovka-e14.jpg) a [v E15](../E15/kroky/03c-vozovka.jpg).
+- Ověření kroku 3d: 41 testů Node, sestavení a prohlížečové testy nočních oken
+  a dotykového ovládání prošly. Čtyři varianty fasád sdílejí uzly. Test starého klíče
+  shaderu vystřídala kontrola, že nízká kvalita nepoužívá detailní fasádní materiál.
+  Na [nočním snímku](../E15/kroky/03d-okna.jpg) mají vybraná okna stejnou barvu jako v E14,
+  na [denním snímku](../E15/kroky/03d-fasady.jpg) jsou místy o něco světlejší stíny.
+- Ověření kroku 3e: 41 testů Node, sestavení, vykreslení památek, změna odlesku
+  v náhonu a přisvícení pod lampou prošly. [Náhon](../E15/kroky/03e-nahon.jpg) odpovídá
+  E14. [Skvrny lamp](../E15/kroky/03e-lampy.jpg) jsou místy tmavší. Nový vykreslovač
+  sčítá světlo před tónováním a převodem do barev displeje.
+- Ověření kroku 3f: 37 testů Node, sestavení a prohlížečová kontrola
+  světlometů prošly. Světlomet má stejnou průměrnou barvu na [snímku E14](../E15/kroky/03f-svetlomety-e14.jpg)
+  a [snímku E15](../E15/kroky/03f-svetlomety.jpg). Místo posledního zásahu do textu shaderu a čtyř
+  testů starých náhrad se ověřuje vykreslený světlomet. Kontrola zdrojů nyní hlídá, že se staré metody nevrátí.
+- Ověření kroku 4: 37 testů Node, sestavení a tři prohlížečové starty prošly.
+  Chromium se skutečným adaptérem WebGPU vykreslilo hru a panel ukazuje WebGPU.
+  Vynucená cesta i automatický přechod v prohlížeči bez WebGPU zobrazily WebGL 2.
+  Měření GPU na nové cestě se doplňuje v kroku 5.
+- Ověření kroku 5: 38 testů Node, 13 testů Pythonu, sestavení, všech osm testů
+  projektu WebGPU a čtyři vybrané testy WebGL 2 prošly. V obou režimech Mac vrátil
+  skutečné časy GPU. Měření zahazuje staré časové výsledky. CI má oba projekty na Node 24.
+- Krok 6 má všech 16 [referenčních snímků](../E15/snimky.md) a dokončené
+  [měření na Macu](../E15/mereni.md). P95 práce na WebGPU kleslo z 6,6 na 4,2 ms
+  při jízdě a z 6,5 na 3,8 ms při letu. Zpomalení záložního WebGL 2 je zdokumentované.
+  Úplný běh ověřil 53 z 54 scénářů v obou prohlížečových projektech.
+- Závěrečný běh u Krkavce odhalil závod mezi kontrolou textu a vypršením krátkého
+  oznámení po přesunu. Test čte stejný text v okamžiku jeho zobrazení a prošel třikrát.
+  Pravidla hry se kvůli tomu neměnila. Logy jsou v `data-raw/e15/final-*.log`
+  a `data-raw/e15/release-fixed.log`.
+- Protokol, README a katalog jsou aktualizované. S opakováním opraveného scénáře
+  prošlo všech 54 kontrol. Etapa je připravená ke kontrole na větvi `etapa/E15`.
+  Autor potvrdil funkčnost při ruční kontrole a samostatnou kontrolu modelem
+  Astra, High vynechal. [Protokol a kontrola pro autora](../E15.md).
+- První běh GitHub Actions ověřil všech 46 scénářů WebGL 2. V sedmi scénářích
+  WebGPU selhalo linuxové Chromium při práci s grafickým zařízením. Testy WebGPU
+  používají plné Chromium bez okna a na Linuxu dostaly příznaky pro jednotný
+  ovladač SwiftShader. [První běh](https://github.com/JendaNDT/GTA-Pilsen/actions/runs/44167454877).
+- Po změně nastavení prošlo místní sestavení, 38 testů Node a všech osm testů
+  WebGPU. Druhý linuxový běh prošel v 51 z 54 scénářů včetně rozpočtu, startu
+  a referenčních pohledů ve WebGPU. U tří obrazových testů zachytil snímek pouze
+  pozadí stránky. Testy teď čtou stejné oblasti přímo z plátna po vykreslení.
+  [Druhý běh](https://github.com/JendaNDT/GTA-Pilsen/actions/runs/44171555528).
+- Přímé čtení na Macu prošlo v osmi dotčených kontrolách. Chromium bez okna
+  na Linuxu vracelo prázdný obraz, proto se tam sada WebGPU zkouší s virtuální
+  obrazovkou Xvfb. [Třetí běh](https://github.com/JendaNDT/GTA-Pilsen/actions/runs/44175107840).

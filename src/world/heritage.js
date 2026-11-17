@@ -1,5 +1,5 @@
 // Měřené městské dlaždice a vlastní model vodního hamru.
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { CHUNK, QUALITY } from '../config.js';
 import { loadCityTile } from '../data.js';
 import { HeritageRoofs } from './heritage-geometry.js';

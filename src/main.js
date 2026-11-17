@@ -1,5 +1,5 @@
 // Start hry: načtení dat, menu a hlavní smyčka.
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { loadAll } from './data.js';
 import { Game } from './game/game.js';
 import { initInput, input } from './game/input.js';
@@ -41,7 +41,7 @@ const HELP_HTML = IS_TOUCH ? `
     <tr><td>N · Esc</td><td>posunout čas o 3 hodiny · menu se zakázkami, garáží a směnami MHD</td></tr>
   </table>`;
 
-const ABOUT_HTML = (meta) => `
+const ABOUT_HTML = (meta, rendering) => `
   <h3>O hře</h3>
   <p>Otevřený svět postavený ze skutečných dat od Plzně přes Rokycany až do Dobříva. Najdeš v něm kopce a údolí řek,
   půdorysy a výšky budov, silnice a mosty, linky MHD, parky, restaurace i adresy.</p>
@@ -50,7 +50,8 @@ const ABOUT_HTML = (meta) => `
   objevovat památky a ujíždět policii.</p>
   <h3>Zdroje dat</h3>
   <p>Grafiku vykresluje <a href="https://threejs.org" target="_blank" rel="noopener">three.js 0.187.0</a>
-  (autoři three.js, licence <a href="https://github.com/mrdoob/three.js/blob/r187/LICENSE" target="_blank" rel="noopener">MIT</a>).</p>
+  (autoři three.js, licence <a href="https://github.com/mrdoob/three.js/blob/r187/LICENSE" target="_blank" rel="noopener">MIT</a>).
+  Aktuální vykreslování: <strong>${rendering}</strong>.</p>
   <p>Sestavení hry používá picomatch od Jona Schlinkerta (licence
   <a href="https://github.com/micromatch/picomatch/blob/master/LICENSE" target="_blank" rel="noopener">MIT</a>)
   s místní opravou 4.0.8-plzen.1.</p>
@@ -91,12 +92,18 @@ function fail(e) {
 }
 
 async function boot() {
-  let renderer;
+  const renderer = new THREE.WebGPURenderer({
+    canvas, antialias: !IS_MOBILE, powerPreference: 'high-performance',
+    forceWebGL: PARAMS.get('renderer') === 'webgl',
+    trackTimestamp: DEBUG,
+  });
   try {
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: !IS_MOBILE, powerPreference: 'high-performance' });
+    await renderer.init();
   } catch (e) {
-    throw new Error('Tento prohlížeč nebo zařízení nepodporuje WebGL.');
+    throw new Error('Vykreslování hry vyžaduje prohlížeč s podporou WebGPU nebo WebGL 2.', { cause: e });
   }
+  const rendering = renderer.backend.isWebGPUBackend ? 'WebGPU' : 'WebGL 2';
+  renderer.info.autoReset = false;
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, QUALITY.pixelRatio));
   renderer.setSize(innerWidth, innerHeight);
   renderer.shadowMap.enabled = QUALITY.shadows;
@@ -127,17 +134,19 @@ async function boot() {
   bar.style.width = '100%';
   game._updateCamera(0.016);
   game.env.update(game.camera, game.focus);
+  loadText.textContent = 'Připravuji vykreslování…';
+  await renderer.compileAsync(game.scene, game.camera);
   game.render();
 
   $('loading').classList.add('hidden');
   $('menu-buttons').classList.remove('hidden');
   $('btn-play').textContent = game.hasSave ? 'Pokračovat' : 'Hrát';
   $('panel-help').innerHTML = HELP_HTML;
-  $('panel-about').innerHTML = ABOUT_HTML(data.meta);
+  $('panel-about').innerHTML = ABOUT_HTML(data.meta, rendering);
   if (IS_TOUCH) $('touch').classList.remove('hidden');
 
   let running = false, last = 0, firstPlay = true;
-  const perfPanel = perf && initPerfPanel(perf, () => running && !game.mapOpen);
+  const perfPanel = perf && initPerfPanel(perf, rendering, () => running && !game.mapOpen);
   const menu = $('menu');
   const openMenu = () => {
     running = false; input.enabled = false; game.paused = true;
