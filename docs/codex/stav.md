@@ -7,7 +7,7 @@ Autor schválil zahájení E14 zprávou „pokračuj“ a následně instalaci p
 | Krok | Stav |
 | --- | --- |
 | 1. Aktualizace three.js a záznam výsledků testů | Hotovo |
-| 2. Opravy API a varování | Čeká |
+| 2. Opravy API a varování | Hotovo |
 | 3. Kontrola nahrazovaných řetězců shaderů | Čeká |
 | 4. Referenční pohledy a porovnání s E13 | Čeká |
 | 5. Rozpočet, měření a závěrečný protokol | Čeká |
@@ -63,3 +63,17 @@ významu API knihovny. Úplné původní počty jsou 295 / 509 603 (náměstí),
 322 / 503 726 (Lochotín) a 195 / 283 880 (Rokycany), vždy volání / trojúhelníky.
 
 Na konci zbývá kontrola vzhledu autorem a samostatná kontrola modelem 6.1 Sol, Medium.
+
+## Krok 2
+
+Bylo nahrazeno odstraněné `PCFSoftShadowMap` za `PCFShadowMap`. Test startu a skutečné
+minuty hraní ve dne i v noci před opravou selhal na zachyceném varování knihovny.
+Rozpočty jsou po souhlasu autora převzaté z úplných původních měření E13 včetně stínů;
+limit +10 % v testu se nemění. Jde o nápravu srovnatelnosti počítadel, nikoli zvětšení
+povolené scény. Verze a licence three.js jsou uvedené i v „O hře“.
+
+Ověření kroku 2: všech 33 testů Node, sestavení a všech 38 prohlížečových testů prošly,
+včetně skutečné minuty hraní ve dne a v noci bez varování a chyb. Rozpočet prošel ve
+všech třech pohledech. Při dočasném přidání 40 kopií oblohy bylo naměřeno 335 volání
+proti limitu 324, po odebrání znovu 295. Zkouška tedy nadále rozpozná skutečný růst
+práce. Srovnávací podklady jsou v `data-raw/e14/budget-negative-control.json`.

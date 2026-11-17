@@ -49,6 +49,8 @@ const ABOUT_HTML = (meta) => `
   rozvážet jídlo ze skutečných podniků, vozit zákazníky, koupit si vlastní auto, jet směnu řidiče MHD,
   objevovat památky a ujíždět policii.</p>
   <h3>Zdroje dat</h3>
+  <p>Grafiku vykresluje <a href="https://threejs.org" target="_blank" rel="noopener">three.js 0.187.0</a>
+  (autoři three.js, licence <a href="https://github.com/mrdoob/three.js/blob/r187/LICENSE" target="_blank" rel="noopener">MIT</a>).</p>
   <p>Sestavení hry používá picomatch od Jona Schlinkerta (licence
   <a href="https://github.com/micromatch/picomatch/blob/master/LICENSE" target="_blank" rel="noopener">MIT</a>)
   s místní opravou 4.0.8-plzen.1.</p>
@@ -98,7 +100,7 @@ async function boot() {
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, QUALITY.pixelRatio));
   renderer.setSize(innerWidth, innerHeight);
   renderer.shadowMap.enabled = QUALITY.shadows;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.0;
 
