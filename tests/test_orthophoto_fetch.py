@@ -5,6 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from urllib.error import HTTPError, URLError
 from xml.etree import ElementTree as ET
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
@@ -14,6 +15,20 @@ from coordinates import to_xz
 
 
 class TestOrthophotoFetch(unittest.TestCase):
+    def test_retries_a_transient_timeout_and_reports_a_missing_file(self):
+        url = "https://atom.cuzk.gov.cz/list.xml"
+        connection = io.BytesIO(b"odpoved")
+        with patch.object(ortho, "urlopen", side_effect=[URLError(TimeoutError()), connection]) as open_url, \
+                patch.object(ortho, "sleep") as delay:
+            self.assertIs(ortho.read_url(url), connection)
+            self.assertEqual(open_url.call_count, 2)
+            delay.assert_called_once_with(1)
+        missing = HTTPError(url, 404, "Nenalezeno", None, None)
+        with patch.object(ortho, "urlopen", side_effect=missing) as open_url:
+            with self.assertRaises(HTTPError):
+                ortho.read_url(url)
+            open_url.assert_called_once()
+
     def test_selects_only_sheets_intersecting_game_bounds(self):
         min_x, max_z = to_xz(49.5, 13)
         max_x, min_z = to_xz(50, 13.5)

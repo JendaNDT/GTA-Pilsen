@@ -7,6 +7,8 @@ import json
 import re
 from pathlib import Path
 from shutil import copyfileobj
+from time import sleep
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 from xml.etree import ElementTree as ET
 
@@ -26,7 +28,16 @@ def source_bounds(bounds):
 
 
 def read_url(url, headers=None):
-    return urlopen(Request(url, headers=headers or {}), timeout=60)
+    request = Request(url, headers=headers or {})
+    for attempt in range(3):
+        try:
+            return urlopen(request, timeout=60)
+        except (URLError, TimeoutError) as error:
+            if attempt == 2 or isinstance(error, HTTPError) and error.code not in (429, 502, 503, 504):
+                raise
+            if isinstance(error, HTTPError):
+                error.close()
+            sleep(2 ** attempt)
 
 
 def select_feeds(catalogue, bounds):

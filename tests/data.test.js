@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
+import { readFile, readdir } from 'node:fs/promises';
 import test from 'node:test';
 import { parsePack, assetFingerprint } from '../src/data.js';
+import { orthophotoBlocks } from '../src/world/orthophoto.js';
 
 const buffer = async (name) => {
   const data = await readFile(new URL(`../public/data/${name}.bin`, import.meta.url));
@@ -46,6 +48,29 @@ test('všechny distribuované balíčky lze dekódovat a mají úplné indexy ge
 
 test('neznámý formát balíčku se odmítne', () => {
   assert.throws(() => parsePack(new ArrayBuffer(8)), /Neznámý formát dat/);
+});
+
+test('balík leteckých snímků odpovídá mapě, katalogu a rozpočtu 30 MiB', async () => {
+  const directory = new URL('../public/detail/orthophoto/', import.meta.url);
+  const index = await readFile(new URL('index.json', directory));
+  const manifest = JSON.parse(index);
+  const terrain = await buffer('terrain');
+  const { x0, z0, g, cols, rows } = parsePack(terrain).header;
+  const fingerprints = { terrain: assetFingerprint(terrain), land: assetFingerprint(await buffer('land')) };
+  const blocks = orthophotoBlocks(manifest, {
+    origin: [x0, z0], chunk: 256, cols: (cols - 1) * g / 256, rows: (rows - 1) * g / 256, fingerprints,
+  });
+  assert.ok(blocks?.size > 0);
+  assert.deepEqual((await readdir(directory)).filter((name) => name.endsWith('.webp')).sort(), [...blocks.values()].sort());
+  let size = index.length;
+  for (const [key, file] of blocks) {
+    const bytes = await readFile(new URL(file, directory));
+    assert.equal(bytes.length, manifest.blocks[key].bytes, file);
+    assert.equal(bytes.toString('ascii', 8, 12), 'WEBP', file);
+    assert.equal(createHash('sha256').update(bytes).digest('hex'), manifest.blocks[key].sha256, file);
+    size += bytes.length;
+  }
+  assert.ok(size <= 30 * 1024 ** 2, `${size} B`);
 });
 
 test('jemný terén odpovídá podkladům a všechny hrany dlaždic navazují', async () => {
