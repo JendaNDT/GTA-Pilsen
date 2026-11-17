@@ -56,5 +56,10 @@ Autor potvrdil zahájení E16 a postupné zpracování podkladů pro celou mapu.
 - Závěrečné ověření zahrnuje 42 testů Node, 23 testů Pythonu, produkční
   sestavení a 59 prohlížečových scénářů. Etapa je připravená ke kontrole ve
   hře. Zbývá autorovo ověření na telefonu. [Protokol E16](../E16.md).
+- Před sloučením probíhá ověření na GitHubu. Osm z devíti scénářů WebGPU
+  prošlo v prvním běhu. Příprava tří pohledů v jednom scénáři přesáhla limit
+  90 sekund. Každý pohled má vlastní scénář s tímto limitem a původními
+  kontrolami barev. Místně prošlo všech 12 dotčených prohlížečových scénářů,
+  42 testů Node a sestavení. [První kontroly na GitHubu](https://github.com/JendaNDT/GTA-Pilsen/actions/runs/44198060724).
 - Po dokončení bude potřeba autorova kontrola při přeletu Rokycan a Klabavy
   a měření na telefonu. Další podklady a rozhodnutí zatím nejsou potřeba.
