@@ -1,5 +1,7 @@
 // Start hry: načtení dat, menu a hlavní smyčka.
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
+// Původní vykreslovač je dočasný, než se v E15 přepne běh hry.
+import { WebGLRenderer } from 'three/src/renderers/WebGLRenderer.js';
 import { loadAll } from './data.js';
 import { Game } from './game/game.js';
 import { initInput, input } from './game/input.js';
@@ -93,7 +95,7 @@ function fail(e) {
 async function boot() {
   let renderer;
   try {
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: !IS_MOBILE, powerPreference: 'high-performance' });
+    renderer = new WebGLRenderer({ canvas, antialias: !IS_MOBILE, powerPreference: 'high-performance' });
   } catch (e) {
     throw new Error('Tento prohlížeč nebo zařízení nepodporuje WebGL.');
   }

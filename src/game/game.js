@@ -1,5 +1,5 @@
 // Řízení hry: stav hráče, kamera, pravidla (hledanost, zdraví, peníze), ukládání.
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { QUALITY, RC, DRIVABLE_MAX, IS_TOUCH, DEBUG, PARAMS } from '../config.js';
 import { World } from '../world/world.js';
 import { TUNNEL_HEIGHT } from '../world/tunnels.js';

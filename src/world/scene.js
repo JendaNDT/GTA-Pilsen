@@ -1,5 +1,5 @@
 // Obloha, světla, stíny a denní doba. (Terén a povrch země kreslí chunks.js.)
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { QUALITY, PARAMS } from '../config.js';
 import { env, getPoolMaterial } from './materials.js';
 

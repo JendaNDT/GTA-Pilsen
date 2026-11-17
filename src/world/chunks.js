@@ -1,5 +1,5 @@
 // Stavba 3D geometrie po dlaždicích: budovy, silnice, koleje, stromy.
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { Earcut } from 'three/src/extras/Earcut.js';
 import { CHUNK, QUALITY, BK, BF, RC, RF, LC, DRIVABLE_MAX } from '../config.js';
 import { makeBuildingMaterial, makeDecalMaterial, makeTerrainMaterial, getPoolMaterial, env } from './materials.js';

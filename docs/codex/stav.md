@@ -1,103 +1,30 @@
-# Stav etapy E14
+# Stav etapy E15
 
-**Implementace E14 je dokončená. Autor schválil sloučení [PR č. 6](https://github.com/JendaNDT/GTA-Pilsen/pull/6) bez zbývajícího testování.** Autor nejprve odložil uzavření do ručního měření.
-Dne 17. listopadu 2026 dodal oba výsledky a uvedl „Chrome pro testování“ bez
-pozorovaného zadrhávání. Výkonnostní odchylky jsou zachované v protokolu.
+Větev `etapa/E15` vychází z revize `415855a` na `main`. E14 je sloučená.
+Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
 
-Větev `etapa/E14`, výchozí revize `e6d5768`. Zadání je v [E14](E14.md).
-Předchozí E13 je sloučená do `main`; její výsledky jsou v [protokolu E13](../E13.md).
-
-| Krok | Stav a commit |
+| Krok | Stav |
 | --- | --- |
-| 1. Aktualizace three.js a záznam výsledků testů | Hotovo · `470a94b` |
-| 2. Opravy API a varování | Hotovo · `9292bba` |
-| 3. Kontrola nahrazovaných řetězců shaderů | Hotovo · `146a263` |
-| 4. Referenční pohledy a porovnání s E13 | Hotovo · `1c01685` |
-| 5. Rozpočet, měření a závěrečný protokol | Hotovo · protokol, automatické a ruční měření, všechny závěrečné kontroly |
+| 1. Sjednotit importy a ověřit je testem | Hotovo |
+| 2. Zapojit nový vykreslovač na WebGL 2 | Zbývá |
+| 3a. Převést oblohu a pořídit srovnávací snímek | Zbývá |
+| 3b. Převést terén, vodu, dlažbu a výřezy portálů | Zbývá |
+| 3c. Převést silnice a čáry | Zbývá |
+| 3d. Převést budovy a okna | Zbývá |
+| 3e. Převést náhon a skvrny lamp | Zbývá |
+| 3f. Převést detaily modelů | Zbývá |
+| 4. Zapnout WebGPU a ověřit automatický i vynucený návrat na WebGL 2 | Zbývá |
+| 5. Dokončit měření, sady Playwright a kontroly na GitHubu | Zbývá |
+| 6. Porovnat referenční snímky, změřit výkon a uzavřít protokol | Zbývá |
 
-## Hotové změny
+## Ověření a podklady
 
-Three.js je připnuté na přesnou verzi 0.187.0. Stávající WebGLRenderer je zachovaný.
-Bylo nahrazeno odstraněné `PCFSoftShadowMap` za `PCFShadowMap`; verze a licence jsou
-v README a v „O hře“. Byl projit průvodce migrací r171–r187; další používaná API
-nevyžadovala opravu. Barvy, expozice a osvětlení se neupravovaly.
-
-Všechny náhrady v budovách, zemi, terénu, portálech, náhonu a světlech vozidel hlásí
-v režimu `?debug` nenalezený řetězec. Pět nových testů v Node ověřuje všech 27 variant
-a záměrně poškozený shader. Vygenerované shadery před přidáním kontrol a po něm jsou
-řetězcově shodné. Nový prohlížečový test ověřuje skutečnou minutu hraní ve dne i v noci
-bez varování a chyb.
-
-Všech osm konečných pohledů má 1280 × 720 px a méně než 250 kB. Dvojí pořízení dalo
-shodné soubory. [Porovnání s E13](../E14/snimky.md) ukazuje jen drobné rozdíly ve stínech;
-největší průměrná odchylka RGB je 0,469 ze 255 a změna průměrného jasu do 0,0301.
-
-## Schválený přepočet rozpočtu
-
-První běh po aktualizaci prošel 36 z 37 prohlížečových testů. Rozpočet selhal na 295
-voláních proti limitu 288. Příčinou je přesun automatického vynulování `renderer.info`
-před stíny: nová verze nově započítává i stínový průchod. Skutečná geometrie nepřibyla.
-
-Autor schválil výjimku z požadavku E14 neměnit očekávání testů: nové reference byly
-převzaty z **původní E13** včetně stínů, limit +10 % zůstal. [Srovnání počítadel](../E14/pocitadla.json)
-dokládá stejné úplné počty v obou verzích: 295 / 509 603 (náměstí), 322 / 503 726
-(Lochotín), 195 / 283 880 (Rokycany), vždy volání / trojúhelníky. Dočasné přidání 40
-kopií oblohy vyvolalo překročení (335 proti limitu 324), po odebrání znovu 295.
-
-## Výkon a otevřené otázky
-
-Pět běhů každé verze, kontrola bez stínů a oba ruční výsledky jsou v
-[měření](../E14/mereni.md), [automatických výsledcích](../E14/mereni.json)
-a [ručních výsledcích](../E14/rucni-mereni.json). Obě ruční minuty měly přibližně 60 FPS,
-autor zadrhávání nepozoroval. P95 práce vzrostlo z 3,5 na 3,9 ms (+11,4 %), GPU má
-p95 12,22 ms, tedy 0,22 ms nad pracovní mezí. Příčina všech výkyvů není potvrzená.
-Nevydává se to za nulovou regresi ani za splnění všech mezí bez odchylky.
-
-[Protokol E14](../E14.md) uvádí odchylky, zdroje, snímky a kontrolu pro autora.
-README, katalog a přehled etap jsou aktualizované. Větev `etapa/E14` je připravená
-pro pull request do `main`. Zbývající nezávislou kontrolu modelem 6.1 Sol, Medium
-a ruční kontrolu náměstí, Wilsonova mostu, Valíku a noci autor výslovně vynechal
-a schválil sloučení s odchylkami uvedenými v protokolu.
-Další etapu nezačínat.
-
-## Poslední ověření a prostředí
-
-Závěrečné čisté `npm ci`, všech 38 testů Node, 13 testů Pythonu a všech 38
-prohlížečových testů (`--trace off`) prošly. Součástí je rozpočet ve třech pohledech,
-minuta hraní ve dne a v noci bez varování, uložené hry verze 1, nízká kvalita a dotykové
-ovládání v emulaci. Prošla kontrola syntaxe nástrojů Pythonu, audit npm bez nálezů
-a produkční sestavení. Logy: `data-raw/e14/final-*.log`.
-
-Původně chybělo npm. Autor schválil jeho doplnění; npm 12.2.2 bylo instalováno
-z oficiálního registru s ověřením SHA-512. Node.js 24.22.3 je v PATH spolu s npm a npx.
-Python 3.12 se závislostmi je v `.venv`, Chromium 159.0.8154.6 je nainstalované.
-Pythonové npm příkazy spouštět s `.venv/bin` v PATH. Pracovní logy a původní sestavení
-E13 jsou v neversionovaném `data-raw/e14/`. Žádná distribuovaná data se neměnila.
-
-Pro ruční měření jsou připravené servery: původní E13 na portu 4174 obsluhuje
-`data-raw/e14/baseline-dist/`, E14 na portu 4173 obsluhuje aktuální `dist/`.
-Obě adresy před uložením stavu odpověděly HTTP 200. Při opětovném spuštění serverů
-nesmí E13 omylem obsluhovat současné sestavení E14.
-
-## Ruční výsledky autora
-
-E13: 3 601 snímků za 60 s, práce 2,7 / 3,5 / 4,6 ms, GPU 10,68 / 11,35 / 11,83 ms.
-E14: 3 600 snímků za 60 s, práce 2,6 / 3,9 / 5,0 ms, GPU 11,00 / 12,22 / 13,01 ms.
-Obě verze měly měřítko 2 a zapnuté stíny. Přesná verze prohlížeče a pohyb nebyly
-uvedeny; přiřazení vychází z pořadí otevření a navazujících výzev. Nešlo o ověření
-stejné náhodné posloupnosti provozu. Autor uvedl Chrome pro testování bez zadrhávání.
-
-## Odeslání a pull request
-
-Autor dne 17. listopadu 2026 odeslal větev pomocí Publish branch v GitHub Desktopu.
-Bylo ověřeno, že místní i vzdálená větev obsahují stejný commit `0722a49` a nemají
-žádné rozdílné commity. Původní překážka přihlášení terminálu tak neblokuje předání.
-
-[PR č. 6](https://github.com/JendaNDT/GTA-Pilsen/pull/6) vede změny z `etapa/E14`
-do `main`, včetně protokolu, snímků a popisu výkonnostních odchylek. Autor dne
-17. listopadu 2026 napsal: „zbytek testování přeskočíme. můžeš to vše sloučit“.
-Neprovedená ruční a modelová kontrola zůstává označená jako vynechaná, nikoli úspěšná.
-Další místní testy se na tento pokyn neopakují. Při ověření před záznamem souhlasu
-byla kontrola dokumentace na GitHubu úspěšná a projektové kontroly ještě běžely.
-Sloučení proběhne standardně přes GitHub bez obcházení pravidel úložiště.
-Další etapu v tomto úkolu nezačínat.
+- Prohlížeč Playwright umí na tomto Macu WebGL 2 i WebGPU přes SwiftShader.
+  Při použití příznaků pro projekt WebGPU je dostupné i měření časových značek GPU.
+- Výchozí sestavení E14 pro porovnání je v `data-raw/e15/baseline-dist/`.
+  Kamery a referenční snímky jsou v [protokolu E14](../E14.md#snímky-před-a-po).
+- Krok 1 prošel 39 testy Node a produkčním sestavením. Prošlo sedm vybraných prohlížečových kontrol včetně
+  rozpočtu, uložené hry, dotyku a minuty hraní bez varování. Úplná sada je naplánovaná
+  na závěr etapy. Logy jsou v `data-raw/e15/`.
+  Dočasný import původního vykreslovače z jeho zdrojového modulu se odstraní v kroku 2.
+- Od autora bude potřeba závěrečné ověření vzhledu a plynulosti na počítači a telefonu.

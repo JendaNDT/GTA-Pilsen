@@ -1,5 +1,5 @@
 // Auta: jízdní fyzika hráče, běžný provoz, zaparkovaná auta a policie.
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { CAR_TYPES, CAR_COLORS, makeCarMesh } from './models.js';
 import { QUALITY, RC, RF, DRIVABLE_MAX, CHUNK } from '../config.js';
 

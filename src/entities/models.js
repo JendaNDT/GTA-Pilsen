@@ -1,5 +1,5 @@
 // Procedurální nízkopolygonové modely aut, MHD, postav a vrtulníku.
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { env, getPoolMaterial } from '../world/materials.js';
 import { DEBUG, QUALITY } from '../config.js';
 import { patchShader } from '../world/shader-patches.js';

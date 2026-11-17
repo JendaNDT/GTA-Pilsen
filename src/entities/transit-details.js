@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 
 const displayGeometry = new THREE.PlaneGeometry(2.1, 0.5);
 const recessGeometry = new THREE.PlaneGeometry(1.16, 2.06);

@@ -1,5 +1,5 @@
 // Materiály světa. Fasády domů, povrch země i voda se dokreslují přímo v shaderu.
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { DEBUG } from '../config.js';
 import { patchShader } from './shader-patches.js';
 import { TUNNEL_HEIGHT, TUNNEL_PORTAL_CUT } from './tunnels.js';

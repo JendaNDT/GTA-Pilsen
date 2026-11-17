@@ -1,5 +1,5 @@
 // Ručně modelované karoserie podle plzeňských vozů. Souřadnice jsou v metrech, +z je vpřed.
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { Parts } from './models.js';
 
 const color = (hex) => new THREE.Color(hex).toArray();

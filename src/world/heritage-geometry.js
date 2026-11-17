@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { Earcut } from 'three/src/extras/Earcut.js';
 
 const _normal = new THREE.Vector3();
