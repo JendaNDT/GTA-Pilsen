@@ -29,4 +29,5 @@ práci snímku 2,4 / 4,3 / 5,7 ms a GPU 11,41 / 12,69 / 13,07 ms (medián / p95 
 Úplné hodnoty jsou v protokolu.
 
 Měření na skutečném telefonu autor výslovně vynechal. Výkon telefonu zůstává neověřený.
-Zbývá autorská prohlídka snímků, kontrola změn a sloučení po kontrole.
+Autor dne 17. listopadu 2026 prohlédl a schválil referenční snímky.
+Zbývá kontrola změn modelem 6.1 Sol, Medium, a sloučení pull requestu č. 5 po kontrole.
