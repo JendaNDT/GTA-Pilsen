@@ -7,6 +7,7 @@ import { initMapSearch } from './game/map-search.js';
 import { initWorkUI } from './game/work-ui.js';
 import { resultText } from './game/missions.js';
 import { createFrameProfiler } from './game/frame-profiler.js';
+import { initPerfPanel } from './game/perf-panel.js';
 import { QUALITY, IS_TOUCH, IS_MOBILE, DEBUG, PARAMS } from './config.js';
 
 const $ = (id) => document.getElementById(id);
@@ -131,9 +132,11 @@ async function boot() {
   if (IS_TOUCH) $('touch').classList.remove('hidden');
 
   let running = false, last = 0, firstPlay = true;
+  const perfPanel = perf && initPerfPanel(perf, () => running && !game.mapOpen);
   const menu = $('menu');
   const openMenu = () => {
     running = false; input.enabled = false; game.paused = true;
+    perfPanel?.close();
     menu.classList.remove('hidden'); game.hud.show(false);
     game.audio.suspend(); game.save();
     $('btn-play').textContent = 'Pokračovat';
