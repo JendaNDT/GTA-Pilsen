@@ -13,7 +13,7 @@ zadání. Když Sol v některé etapě opakovaně selže, přepni ji na Astru.
 
 | Etapa | Obsah | Stavba | Kontrola |
 | --- | --- | --- | --- |
-| [E13](E13.md) | příprava a měření | Sol, Medium | Sol, Medium |
+| [E13](E13.md) | příprava a měření · [protokol](../E13.md) | Sol, Medium | Sol, Medium |
 | [E14](E14.md) | three.js 0.187 | Sol, High | Sol, Medium |
 | [E15](E15.md) | WebGPU a materiály v TSL | Astra, High | Astra, High |
 | [E16](E16.md) | ortofoto | Sol, High | Sol, Medium |

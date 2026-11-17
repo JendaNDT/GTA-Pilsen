@@ -9,7 +9,7 @@ Větev `etapa/E13`, výchozí revize `3e8aa3e`. Zadání je v [E13](E13.md).
 | 3. Režim `--work` | Hotovo |
 | 4. Osm referenčních pohledů | Hotovo |
 | 5. Test rozpočtu vykreslování | Hotovo |
-| 6. Návod, protokol a pull request | Čeká |
+| 6. Návod, protokol a závěrečné testy | Hotovo |
 
 Krok 1 · Prošlo 30 testů Node, sestavení a všech 35 prohlížečových testů včetně nového měření. Výchozí revize prošla 13 testy Pythonu.
 
@@ -21,4 +21,8 @@ Krok 4 · Prošlo 30 testů Node, 13 testů Pythonu a sestavení. Všech osm JPE
 
 Krok 5 · Prošlo 30 testů Node, sestavení a test rozpočtu ve všech třech pohledech. Přidání 40 vykreslovacích volání vyvolalo očekávané selhání (302 proti limitu 288). Po odebrání se test vrátil k úspěchu.
 
-Na kontrolu autora čeká měření na jeho počítači a telefonu.
+Krok 6 · Prošlo 30 testů Node, 13 testů Pythonu, kontrola syntaxe nástrojů, audit npm,
+sestavení a 37 prohlížečových testů. [Protokol etapy](../E13.md).
+
+Větev je připravená k autorské kontrole. Zbývá měření na autorově počítači a skutečném
+telefonu, prohlídka snímků a sloučení po kontrole.

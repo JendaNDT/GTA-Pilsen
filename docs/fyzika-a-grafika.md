@@ -4,8 +4,12 @@ Verze 2 ze 17. listopadu 2026. Každé vylepšení má označení. Na označení
 [plán](plan-presnost-a-vzhled.md) a [zadání etap](codex/README.md). Rozhodnutí autora:
 WebGPU, fyzika Jolt, zábradlí zastaví chodce, vybavení ulic se dá zničit.
 
-Stav všech položek: **navrženo**. Etapa, která položku dokončí, změní stav na „hotovo“,
-nebo uvede důvod odložení.
+Položky fyziky a grafiky jsou **navržené**. Etapa, která položku dokončí, změní stav na
+„hotovo“ nebo uvede důvod odložení.
+
+**Příprava ověření (E13) je hotová.** Výchozí vzhled zachycuje osm pohledů. Test na třech
+z nich hlídá rozpočet vykreslování. Panel F9 a příkaz `--work` umožňují porovnat práci
+snímku v dalších etapách. [Výchozí hodnoty a pohledy](E13.md).
 
 ## Výchozí stav (ověřeno v kódu)
 

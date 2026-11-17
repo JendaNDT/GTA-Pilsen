@@ -91,6 +91,10 @@ Výsledek je ve složce `dist/` – obyčejné statické soubory, které jde nah
 
 ## Kontroly před odesláním změn
 
+Výchozí pohledy, měření práce snímku a rozpočet vykreslování jsou v
+[protokolu E13](docs/E13.md). Panel výkonu v režimu `?debug&adapt=0` otevřeš klávesou
+F9 nebo tlačítkem **Měření**. [Návod pro počítač a telefon](docs/E13/mereni-na-zarizeni.md).
+
 Regresní testy kolizí, terénu, silničního grafu a distribuovaných dat:
 
 ```bash
