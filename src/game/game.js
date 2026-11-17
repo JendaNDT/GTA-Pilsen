@@ -38,7 +38,7 @@ export class Game {
       this.scene.add(this.tunnelLight);
     }
     this.env = new Environment(this.scene, this.world);
-    this.chunks = new ChunkManager(this.scene, this.world, renderer, data.heritage);
+    this.chunks = new ChunkManager(this.scene, this.world, renderer, data.heritage, data.orthophotoSources);
     this.hud = new Hud(this.world);
     this.soundPlaces = data.soundPlaces;
     this.audio = new GameAudio(this);

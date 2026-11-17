@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "source": {
+    "name": "ČÚZK – Ortofoto ČR",
+    "url": "https://atom.cuzk.gov.cz/ORTOFOTO/ORTOFOTO.xml",
+    "license": "CC BY 4.0"
+  },
+  "years": [
+    2025
+  ],
+  "crs": "EPSG:5514",
+  "origin": [
+    -8960,
+    -11008
+  ],
+  "metersPerPixel": 2,
+  "blockMeters": 1024,
+  "sources": {
+    "terrain": "66422d06",
+    "land": "3c02653b"
+  },
+  "color": {
+    "saturation": 0.92,
+    "neutral": [
+      128,
+      128,
+      128
+    ],
+    "webpQuality": 75,
+    "sheetOffsets": {
+      "WRTO24.2025.PLZE25": [
+        0.521,
+        0.0,
+        0.0
+      ],
+      "WRTO24.2025.PLZE26": [
+        0.271,
+        0.0,
+        0.0
+      ],
+      "WRTO24.2025.PLZE34": [
+        -0.203,
+        0.0,
+        0.0
+      ],
+      "WRTO24.2025.PLZE35": [
+        -0.213,
+        0.0,
+        0.0
+      ],
+      "WRTO24.2025.PLZE36": [
+        0.028,
+        0.0,
+        0.0
+      ],
+      "WRTO24.2025.PLZE44": [
+        -0.2,
+        0.0,
+        0.0
+      ],
+      "WRTO24.2025.PLZE45": [
+        -0.203,
+        0.0,
+        0.0
+      ]
+    }
+  },
+  "blocks": {
+    "19_9": {
+      "file": "19_9.webp",
+      "sha256": "2dfd0420bc34aac21dd5acdd055f64810bd2d5390f32a31c8081b809984ee395",
+      "bytes": 5706
+    },
+    "19_10": {
+      "file": "19_10.webp",
+      "sha256": "24b4089974e2fe1b878383e0331cf315941a063035636d7913c320437d3af93a",
+      "bytes": 9296
+    },
+    "20_9": {
+      "file": "20_9.webp",
+      "sha256": "c197290be9340c2fcebf2c74628100b160de6c1e7c755e66e8d84ef32696d56c",
+      "bytes": 5274
+    },
+    "20_10": {
+      "file": "20_10.webp",
+      "sha256": "27f07a9c5664306fe08e817b9370ee79a6187dcf3754cd2062445081222c310a",
+      "bytes": 7944
+    },
+    "23_9": {
+      "file": "23_9.webp",
+      "sha256": "dde5c36f6eb8cae8198110758b67a47c694defca10b8c49688a28d993faddca1",
+      "bytes": 14960
+    },
+    "23_10": {
+      "file": "23_10.webp",
+      "sha256": "43428e636ac13da23dbba0d450aa5bbc16a3062a238b25808748fde5a3b4b95c",
+      "bytes": 9686
+    },
+    "24_9": {
+      "file": "24_9.webp",
+      "sha256": "391d1550757ed302b0498f20dcfc8939a13297cf58f82b6ca4a4ccd9c7359698",
+      "bytes": 17570
+    },
+    "24_10": {
+      "file": "24_10.webp",
+      "sha256": "e11d1174aa452eefbaad67cfa29d454545acd38cc00d9ac65385df5013cc3a73",
+      "bytes": 7204
+    }
+  }
+}

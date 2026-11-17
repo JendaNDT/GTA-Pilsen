@@ -3,10 +3,11 @@
 
 import argparse
 import math
+import re
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from shutil import copyfileobj
+from shutil import copyfile, copyfileobj
 from tempfile import TemporaryDirectory
 from xml.etree import ElementTree as ET
 from zipfile import ZipFile
@@ -294,6 +295,33 @@ def build_blocks(mosaic, blocks, bounds, data, destination, records):
     print(f"{len(output)} bloků, {sum(info['bytes'] for info in output.values()) / 2**20:.2f} MiB.")
 
 
+def publish_candidate(candidate, data, destination):
+    manifest_path = candidate / "index.json"
+    manifest = read_json(manifest_path, {})
+    sources = {name: fingerprint(data / f"{name}.bin") for name in ("terrain", "land")}
+    if manifest.get("version") != 1 or manifest.get("sources") != sources:
+        raise ValueError("Kandidát neodpovídá aktuálním datům hry.")
+    size = manifest_path.stat().st_size
+    files = set()
+    for key, info in manifest["blocks"].items():
+        name = f"{key}.webp"
+        source = candidate / name
+        if (not re.fullmatch(r"\d+_\d+", key) or info["file"] != name or
+                info["bytes"] != source.stat().st_size or info["sha256"] != sha256(source)):
+            raise ValueError(f"Neúplný nebo změněný blok kandidáta: {key}.")
+        size += info["bytes"]
+        files.add(name)
+    if size > 30 * 2**20:
+        raise ValueError("Kandidát překračuje limit 30 MiB.")
+    destination.mkdir(parents=True, exist_ok=True)
+    for name in sorted(files):
+        copyfile(candidate / name, destination / name)
+    write_json(destination / "index.json", manifest)
+    for path in destination.glob("*.webp"):
+        if re.fullmatch(r"\d+_\d+\.webp", path.name) and path.name not in files:
+            path.unlink()
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--data", type=Path, default=ROOT / "public/data")
@@ -302,8 +330,12 @@ def main():
     parser.add_argument("--out", type=Path)
     parser.add_argument("--atom", type=Path, help="Použít stažený katalog ATOM.")
     parser.add_argument("--pilots", action="store_true", help="Sestavit jen dva pilotní úseky.")
+    parser.add_argument("--publish", action="store_true", help="Ověřit a převzít porovnaného kandidáta do public/.")
     args = parser.parse_args()
     out = args.out or ROOT / "data-raw" / "kandidat" / ("ortho-pilot" if args.pilots else "orthophoto")
+    if args.publish:
+        publish_candidate(out, args.data, ROOT / "public/detail/orthophoto")
+        return
     bounds = read_json(args.data / "meta.json", {})["bounds"]
     origin, size = world_grid(bounds)
     blocks, regions = choose_blocks(bounds, origin, size, args.pilots)

@@ -1,4 +1,5 @@
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
@@ -68,6 +69,28 @@ class TestOrthophotoBuild(unittest.TestCase):
         self.assertEqual(mask.getpixel((2, 2)), 255)
         for point in ((10, 10), (25, 12), (32, 32), (45, 45)):
             self.assertEqual(mask.getpixel(point), 0, str(point))
+
+    def test_publishing_checks_assets_and_map_fingerprints_before_writing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            data, candidate, output = (root / name for name in ("data", "candidate", "public"))
+            data.mkdir()
+            candidate.mkdir()
+            for name in ("terrain", "land"):
+                (data / f"{name}.bin").write_bytes(name.encode())
+            image = candidate / "0_0.webp"
+            image.write_bytes(b"bitmapa")
+            manifest = {"version": 1, "sources": {
+                name: ortho.fingerprint(data / f"{name}.bin") for name in ("terrain", "land")
+            }, "blocks": {"0_0": {"file": image.name, "bytes": 7, "sha256": ortho.sha256(image)}}}
+            ortho.write_json(candidate / "index.json", manifest)
+            ortho.publish_candidate(candidate, data, output)
+            self.assertEqual((output / image.name).read_bytes(), b"bitmapa")
+            self.assertEqual(ortho.read_json(output / "index.json", None), manifest)
+            image.write_bytes(b"zmenena")
+            with self.assertRaisesRegex(ValueError, "změněný blok"):
+                ortho.publish_candidate(candidate, data, output)
+            self.assertEqual((output / image.name).read_bytes(), b"bitmapa")
 
 
 if __name__ == "__main__":

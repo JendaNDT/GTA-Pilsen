@@ -6,7 +6,7 @@ import { HeritageRoofs } from './heritage-geometry.js';
 import { env, makeBuildingMaterial, makeMillraceMaterial } from './materials.js';
 import { FORGE, buildForge, forgeRoofHeight } from './mill.js';
 
-const PARALLEL = 4;
+export const DETAIL_REQUEST_LIMIT = QUALITY.groundTex === 256 ? 2 : 4;
 
 function cityMesh(pack, prefix) {
   const src = pack[prefix + 'p'];
@@ -79,11 +79,12 @@ export class Heritage {
     return this.buildingLists.get(ci) ?? this.world.bChunks[ci];
   }
 
-  prefetch(candidates) {
-    if (this.fetching >= PARALLEL) return;
+  prefetch(candidates, otherRequests = 0) {
+    const limit = DETAIL_REQUEST_LIMIT - otherRequests;
+    if (this.fetching >= limit) return;
     candidates.sort((a, b) => a.dist - b.dist);
     for (const ch of candidates) {
-      if (this.fetching >= PARALLEL) break;
+      if (this.fetching >= limit) break;
       const controller = new AbortController();
       ch.cityRequest = controller;
       this.fetching++;

@@ -7,8 +7,8 @@ Autor potvrdil zahájení E16 a postupné zpracování podkladů pro celou mapu.
 | Krok | Stav |
 | --- | --- |
 | 1. Výběr, stahování a evidence listů ČÚZK | Hotovo · `4fb1104` |
-| 2. Převod souřadnic, složení bloků a testy | Hotovo |
-| 3. Načtení a vykreslení dvou pilotů | Zbývá |
+| 2. Převod souřadnic, složení bloků a testy | Hotovo · `1c434fc` |
+| 3. Načtení a vykreslení dvou pilotů | Hotovo |
 | 4. Srovnávací snímky a vyladění barev | Zbývá |
 | 5. Sestavení celého území a ověření velikosti a švů | Zbývá |
 | 6. Přepínač, licence, dokumentace a závěrečné ověření | Zbývá |
@@ -25,5 +25,12 @@ Autor potvrdil zahájení E16 a postupné zpracování podkladů pro celou mapu.
   Skutečných sedm listů tvoří osm pilotních bloků mimo `public/`. Testy ověřují
   převod s tolerancí půl zdrojového pixelu, hranici listů, vyrovnání barev a masku
   otevřené krajiny.
+- GitHub potvrdil sloučení E15 v revizi `7ad3671`. Dokumentace i prohlížečové
+  kontroly po sloučení prošly. [Kontroly projektu](https://github.com/JendaNDT/GTA-Pilsen/actions/runs/44182177519).
+- Krok 3 prošel 22 testy Pythonu, 41 testy Node a produkčním sestavením. První
+  prohlížečový běh našel chybu volání `fetch`, kvůli které se katalog snímků
+  nenačetl. Opravené volání prošlo se stejnými očekáváními ve všech 14
+  dotčených prohlížečových testech, včetně pozdního načtení v obou režimech
+  vykreslování, výpadku bloku, vypnutí vrstvy a rozpočtu vykreslování.
 - Po dokončení bude potřeba autorova kontrola při přeletu Rokycan a Klabavy
   a měření na telefonu. Další podklady a rozhodnutí zatím nejsou potřeba.
