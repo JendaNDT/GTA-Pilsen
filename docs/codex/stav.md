@@ -8,7 +8,7 @@ Autor schválil zahájení E14 zprávou „pokračuj“ a následně instalaci p
 | --- | --- |
 | 1. Aktualizace three.js a záznam výsledků testů | Hotovo |
 | 2. Opravy API a varování | Hotovo |
-| 3. Kontrola nahrazovaných řetězců shaderů | Čeká |
+| 3. Kontrola nahrazovaných řetězců shaderů | Hotovo |
 | 4. Referenční pohledy a porovnání s E13 | Čeká |
 | 5. Rozpočet, měření a závěrečný protokol | Čeká |
 
@@ -77,3 +77,15 @@ včetně skutečné minuty hraní ve dne a v noci bez varování a chyb. Rozpoč
 všech třech pohledech. Při dočasném přidání 40 kopií oblohy bylo naměřeno 335 volání
 proti limitu 324, po odebrání znovu 295. Zkouška tedy nadále rozpozná skutečný růst
 práce. Srovnávací podklady jsou v `data-raw/e14/budget-negative-control.json`.
+
+## Krok 3
+
+Všechny náhrady v budovách, zemi, terénu, portálech, náhonu a světlech vozidel používají
+společnou kontrolovanou funkci. Při chybě v režimu `?debug` uvede materiál a nenalezený
+řetězec; v běžné hře nic nevypisuje. Přibylo pět testů v Node včetně skutečných shaderů
+nainstalované knihovny, všech 27 variant materiálů a záměrně poškozeného terénu.
+
+Vygenerované dvojice shaderů všech 27 variant se před přidáním kontrol a po něm
+řetězcově shodují (`data-raw/e14/materials-before.json` a `materials-after.json`).
+Všech 38 testů Node, sestavení a všech 38 prohlížečových testů prošly. Minuta
+hraní ve dne a v noci zůstala bez varování a chyb i po přidání kontrol.
