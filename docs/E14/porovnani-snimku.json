@@ -1,0 +1,77 @@
+{
+  "popis": "Odchylka dekódovaných JPEG E14 proti E13; RGB i vážený jas jsou v rozsahu 0–255. Jas = 0.2126 R + 0.7152 G + 0.0722 B.",
+  "pohledy": [
+    {
+      "id": "namesti-den",
+      "jmeno": "Náměstí Republiky v 10:00",
+      "velikostB": 102157,
+      "prumernaOdchylkaRgb255": 0.468888,
+      "zmenaPrumernehoJasu255": 0.023803,
+      "podilPixeluSRozdilemNad16Procent": 0.021159,
+      "prumernaOdchylkaOpakovaniRgb255": 0.0
+    },
+    {
+      "id": "namesti-noc",
+      "jmeno": "Náměstí Republiky ve 22:00",
+      "velikostB": 75593,
+      "prumernaOdchylkaRgb255": 0.150136,
+      "zmenaPrumernehoJasu255": -0.014366,
+      "podilPixeluSRozdilemNad16Procent": 0.0,
+      "prumernaOdchylkaOpakovaniRgb255": 0.0
+    },
+    {
+      "id": "wilson",
+      "jmeno": "Wilsonův most",
+      "velikostB": 91701,
+      "prumernaOdchylkaRgb255": 0.334668,
+      "zmenaPrumernehoJasu255": 0.030054,
+      "podilPixeluSRozdilemNad16Procent": 0.006076,
+      "prumernaOdchylkaOpakovaniRgb255": 0.0
+    },
+    {
+      "id": "valik-zapad",
+      "jmeno": "Západní portály Valíku",
+      "velikostB": 84234,
+      "prumernaOdchylkaRgb255": 0.125283,
+      "zmenaPrumernehoJasu255": -0.006545,
+      "podilPixeluSRozdilemNad16Procent": 0.000651,
+      "prumernaOdchylkaOpakovaniRgb255": 0.0
+    },
+    {
+      "id": "lochotin",
+      "jmeno": "Lochotín z výšky 300 metrů",
+      "velikostB": 162223,
+      "prumernaOdchylkaRgb255": 0.37689,
+      "zmenaPrumernehoJasu255": 0.005137,
+      "podilPixeluSRozdilemNad16Procent": 0.017036,
+      "prumernaOdchylkaOpakovaniRgb255": 0.0
+    },
+    {
+      "id": "rokycany-pole",
+      "jmeno": "Pole severně od Rokycan",
+      "velikostB": 104112,
+      "prumernaOdchylkaRgb255": 0.149899,
+      "zmenaPrumernehoJasu255": -0.000447,
+      "podilPixeluSRozdilemNad16Procent": 0.008138,
+      "prumernaOdchylkaOpakovaniRgb255": 0.0
+    },
+    {
+      "id": "dobriv-hamr",
+      "jmeno": "Vodní hamr v Dobřívě",
+      "velikostB": 95424,
+      "prumernaOdchylkaRgb255": 0.112461,
+      "zmenaPrumernehoJasu255": 0.002165,
+      "podilPixeluSRozdilemNad16Procent": 0.001302,
+      "prumernaOdchylkaOpakovaniRgb255": 0.0
+    },
+    {
+      "id": "klabava-udoli",
+      "jmeno": "Údolí Klabavy",
+      "velikostB": 153081,
+      "prumernaOdchylkaRgb255": 0.274096,
+      "zmenaPrumernehoJasu255": -0.010394,
+      "podilPixeluSRozdilemNad16Procent": 0.018446,
+      "prumernaOdchylkaOpakovaniRgb255": 0.0
+    }
+  ]
+}

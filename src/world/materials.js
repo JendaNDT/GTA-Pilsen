@@ -1,5 +1,7 @@
 // Materiály světa. Fasády domů, povrch země i voda se dokreslují přímo v shaderu.
 import * as THREE from 'three';
+import { DEBUG } from '../config.js';
+import { patchShader } from './shader-patches.js';
 import { TUNNEL_HEIGHT, TUNNEL_PORTAL_CUT } from './tunnels.js';
 
 export const env = {
@@ -32,16 +34,17 @@ export function makeBuildingMaterial({ textures = false, heritage = false } = {}
     : (textures ? 'painted-buildings' : 'buildings');
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uNight = env.night;
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute vec3 aWin;\nvarying vec3 vWin;\nvarying vec3 vFacade;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWin = aWin;\nvFacade = (modelMatrix * vec4(position, 1.0)).xyz;');
-    shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', `#include <common>
+    shader.vertexShader = patchShader(shader.vertexShader, 'budovy · vrcholy', [
+      ['#include <common>', '#include <common>\nattribute vec3 aWin;\nvarying vec3 vWin;\nvarying vec3 vFacade;'],
+      ['#include <begin_vertex>', '#include <begin_vertex>\nvWin = aWin;\nvFacade = (modelMatrix * vec4(position, 1.0)).xyz;'],
+    ], DEBUG);
+    shader.fragmentShader = patchShader(shader.fragmentShader, 'budovy · barva', [
+      ['#include <common>', `#include <common>
 varying vec3 vWin;
 varying vec3 vFacade;
 uniform float uNight;
-${NOISE_GLSL}`)
-      .replace('#include <color_fragment>', `#include <color_fragment>
+${NOISE_GLSL}`],
+      ['#include <color_fragment>', `#include <color_fragment>
 float litWin = 0.0;
 {
   float code = floor(vWin.z + 0.5);
@@ -180,8 +183,8 @@ float litWin = 0.0;
   }
   ` : ''}
 }
-`)
-      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+`],
+      ['#include <emissivemap_fragment>', `#include <emissivemap_fragment>
 totalEmissiveRadiance += vec3(1.0, 0.78, 0.42) * litWin * 0.9;
 ${heritage ? `
 if (vWin.z < -4.5) totalEmissiveRadiance += vec3(0.43, 0.23, 0.09) * uNight * 0.36;
@@ -190,7 +193,8 @@ if (vWin.z < -1.5 && vWin.z > -2.5 && length(vFacade.xz) < 39.0) {
   totalEmissiveRadiance += vec3(0.18, 0.115, 0.065) * litStone * uNight;
 }
 ` : ''}
-`);
+`],
+    ], DEBUG);
   };
   return mat;
 }
@@ -198,13 +202,14 @@ if (vWin.z < -1.5 && vWin.z > -2.5 && length(vFacade.xz) < 39.0) {
 /** Doplní do materiálu země jemnou zrnitost a nastaví normálu nahoru (geometrie ji neobsahuje). */
 export function patchGroundMaterial(mat, fixedNormal = true) {
   mat.onBeforeCompile = (shader) => {
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec2 vGp;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGp = (modelMatrix * vec4(position, 1.0)).xz;');
-    if (fixedNormal) shader.vertexShader = shader.vertexShader.replace('#include <beginnormal_vertex>', 'vec3 objectNormal = vec3(0.0, 1.0, 0.0);');
-    shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', `#include <common>\nvarying vec2 vGp;\n${NOISE_GLSL}`)
-      .replace('#include <color_fragment>', `#include <color_fragment>
+    shader.vertexShader = patchShader(shader.vertexShader, 'země · vrcholy', [
+      ['#include <common>', '#include <common>\nvarying vec2 vGp;'],
+      ['#include <begin_vertex>', '#include <begin_vertex>\nvGp = (modelMatrix * vec4(position, 1.0)).xz;'],
+      ...(fixedNormal ? [['#include <beginnormal_vertex>', 'vec3 objectNormal = vec3(0.0, 1.0, 0.0);']] : []),
+    ], DEBUG);
+    shader.fragmentShader = patchShader(shader.fragmentShader, 'země · barva', [
+      ['#include <common>', `#include <common>\nvarying vec2 vGp;\n${NOISE_GLSL}`],
+      ['#include <color_fragment>', `#include <color_fragment>
 {
   float px = max(fwidth(vGp.x), fwidth(vGp.y));
   float fine = (vnoise(vGp * 2.6) - 0.5) * (1.0 - smoothstep(0.15, 0.7, px));
@@ -212,7 +217,8 @@ export function patchGroundMaterial(mat, fixedNormal = true) {
   float big = vnoise(vGp * 0.021) - 0.5;
   diffuseColor.rgb *= 1.0 + 0.13 * fine + 0.10 * mid + 0.07 * big;
 }
-`);
+`],
+    ], DEBUG);
   };
   return mat;
 }
@@ -264,17 +270,18 @@ function terrainCompile(shader, paving, detail) {
   shader.uniforms.uWetPaving = env.wetPaving;
   shader.uniforms.uCam = env.cam;
   shader.uniforms.uNight = env.night;
-  shader.vertexShader = shader.vertexShader
-    .replace('#include <common>', '#include <common>\nvarying vec3 vTp;')
-    .replace('#include <begin_vertex>', '#include <begin_vertex>\nvTp = (modelMatrix * vec4(position, 1.0)).xyz;');
-  shader.fragmentShader = shader.fragmentShader
-    .replace('#include <common>', `#include <common>
+  shader.vertexShader = patchShader(shader.vertexShader, 'terén · vrcholy', [
+    ['#include <common>', '#include <common>\nvarying vec3 vTp;'],
+    ['#include <begin_vertex>', '#include <begin_vertex>\nvTp = (modelMatrix * vec4(position, 1.0)).xyz;'],
+  ], DEBUG);
+  shader.fragmentShader = patchShader(shader.fragmentShader, 'terén · barva', [
+    ['#include <common>', `#include <common>
 varying vec3 vTp;
 uniform float uTime; uniform vec3 uSky; uniform vec3 uSunDir; uniform vec3 uCam; uniform float uNight; uniform float uWetPaving;
 float waterSpec = 0.0;
 float pavingGlow = 0.0;
-${NOISE_GLSL}`)
-    .replace('#include <map_fragment>', `
+${NOISE_GLSL}`],
+    ['#include <map_fragment>', `
 {
   // textura země: průhledná místa jsou voda
   vec4 tx = texture2D(map, vMapUv);
@@ -307,11 +314,12 @@ ${NOISE_GLSL}`)
   }
   diffuseColor.rgb *= col;
 }
-`)
-    .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+`],
+    ['#include <emissivemap_fragment>', `#include <emissivemap_fragment>
 totalEmissiveRadiance += vec3(1.0, 0.94, 0.80) * waterSpec * 1.4
   + vec3(0.27, 0.16, 0.080) * pavingGlow;
-`);
+`],
+  ], DEBUG);
 }
 
 /** V náhonu proudí voda podél koryta. Vzdálený a dotykový profil používá levnější vlnění. */
@@ -322,21 +330,23 @@ export function makeMillraceMaterial(detail) {
     shader.uniforms.uTime = env.time;
     shader.uniforms.uSky = env.sky;
     shader.uniforms.uCam = env.cam;
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vRace;\nvarying vec2 vFlow;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvRace = (modelMatrix * vec4(position, 1.0)).xyz; vFlow = position.xz;');
-    shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', `#include <common>
+    shader.vertexShader = patchShader(shader.vertexShader, 'náhon · vrcholy', [
+      ['#include <common>', '#include <common>\nvarying vec3 vRace;\nvarying vec2 vFlow;'],
+      ['#include <begin_vertex>', '#include <begin_vertex>\nvRace = (modelMatrix * vec4(position, 1.0)).xyz; vFlow = position.xz;'],
+    ], DEBUG);
+    shader.fragmentShader = patchShader(shader.fragmentShader, 'náhon · barva', [
+      ['#include <common>', `#include <common>
 varying vec3 vRace; varying vec2 vFlow;
 uniform float uTime; uniform vec3 uSky; uniform vec3 uCam;
-${NOISE_GLSL}`)
-      .replace('#include <color_fragment>', `#include <color_fragment>
+${NOISE_GLSL}`],
+      ['#include <color_fragment>', `#include <color_fragment>
 vec2 current = vec2(vFlow.x * 1.7, (vFlow.y - uTime * 1.8) * 0.44);
 float wave = ${detail ? 'vnoise(current) * 0.72 + 0.28 * vnoise(current * 2.5)' : '0.5 + 0.23 * sin(current.y * 4.0 + current.x)'};
 float glancing = 1.0 - abs(normalize(uCam - vRace).y);
 float ripple = smoothstep(0.58, 0.83, wave);
 diffuseColor.rgb = mix(diffuseColor.rgb * (0.88 + 0.27 * wave), uSky, 0.12 + glancing * glancing * (0.28 + 0.20 * ripple));
-`);
+`],
+    ], DEBUG);
   };
   return mat;
 }
@@ -354,11 +364,11 @@ export function makeTerrainMaterial(tex, portals = [], paving = 0, detail = fals
       terrainCompile(shader, paving, detail);
       shader.uniforms.uPortalAxis = { value: axes };
       shader.uniforms.uPortalProfile = { value: profiles };
-      shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', `#include <common>
+      shader.fragmentShader = patchShader(shader.fragmentShader, 'portály tunelu · barva', [
+        ['#include <common>', `#include <common>
 uniform vec4 uPortalAxis[${count}];
-uniform vec3 uPortalProfile[${count}];`)
-        .replace('float land =', `
+uniform vec3 uPortalProfile[${count}];`],
+        ['float land =', `
   for (int i = 0; i < ${count}; i++) {
     vec4 axis = uPortalAxis[i];
     vec3 profile = uPortalProfile[i];
@@ -369,7 +379,8 @@ uniform vec3 uPortalProfile[${count}];`)
         && along < ${TUNNEL_PORTAL_CUT.depth}.0
         && (along < 0.0 || vTp.y < profile.x + along * profile.y + ${TUNNEL_HEIGHT + 0.5})) discard;
   }
-  float land =`);
+  float land =`],
+      ], DEBUG);
     };
   }
   return mat;

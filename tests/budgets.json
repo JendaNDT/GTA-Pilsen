@@ -1,14 +1,14 @@
 {
   "namesti-den": {
-    "calls": 262,
-    "triangles": 405706
+    "calls": 295,
+    "triangles": 509603
   },
   "lochotin": {
-    "calls": 228,
-    "triangles": 361699
+    "calls": 322,
+    "triangles": 503726
   },
   "rokycany-pole": {
-    "calls": 166,
-    "triangles": 261536
+    "calls": 195,
+    "triangles": 283880
   }
 }

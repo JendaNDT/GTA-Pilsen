@@ -1,7 +1,8 @@
 // Procedurální nízkopolygonové modely aut, MHD, postav a vrtulníku.
 import * as THREE from 'three';
 import { env, getPoolMaterial } from '../world/materials.js';
-import { QUALITY } from '../config.js';
+import { DEBUG, QUALITY } from '../config.js';
+import { patchShader } from '../world/shader-patches.js';
 
 const _c = new THREE.Color();
 const lin = (hex) => { _c.setHex(hex); return [_c.r, _c.g, _c.b]; };
@@ -81,12 +82,13 @@ export function getDetailMaterial() {
   detailMat = new THREE.MeshLambertMaterial({ vertexColors: true });
   detailMat.onBeforeCompile = (shader) => {
     shader.uniforms.uNight = env.night;
-    shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform float uNight;')
-      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+    shader.fragmentShader = patchShader(shader.fragmentShader, 'světla vozidel · barva', [
+      ['#include <common>', '#include <common>\nuniform float uNight;'],
+      ['#include <emissivemap_fragment>', `#include <emissivemap_fragment>
 #ifdef USE_COLOR
   totalEmissiveRadiance += vColor.rgb * step(0.9, vColor.r) * (0.35 + 0.9 * uNight);
-#endif`);
+#endif`],
+    ], DEBUG);
   };
   return detailMat;
 }
