@@ -35,6 +35,9 @@ if (work) {
 }
 
 try {
+  const session = await browser.newBrowserCDPSession();
+  const { gpu } = await session.send('SystemInfo.getInfo');
+  await session.detach();
   for (const { name, mode, site } of [...scenarios, { mode: null }]) {
     const context = await browser.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
     const page = await context.newPage();
@@ -50,13 +53,16 @@ try {
     });
     await page.goto(url.href);
     await page.waitForFunction(() => window.readyAt, null, { timeout: 60_000 });
-    const startup = await page.evaluate(() => {
-      const gl = window.__game.renderer.getContext();
-      const debug = gl.getExtension('WEBGL_debug_renderer_info');
-      return { ms: Math.round(window.readyAt), gpu: gl.getParameter(debug?.UNMASKED_RENDERER_WEBGL ?? gl.RENDERER) };
+    const startup = await page.evaluate(async () => {
+      const webgpu = window.__game.renderer.backend?.isWebGPUBackend === true;
+      const adapter = webgpu ? await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' }) : null;
+      const info = adapter?.info;
+      const label = info?.description || [info?.vendor, info?.architecture].filter(Boolean).join(' / ');
+      return { ms: Math.round(window.readyAt), renderer: webgpu ? 'WebGPU' : 'WebGL 2', adapter: label || null };
     });
     report.coldStartMs.push(startup.ms);
-    report.gpu = startup.gpu;
+    report.renderer = startup.renderer;
+    report.gpu = startup.adapter || gpu.auxAttributes?.glRenderer || null;
     if (mode) {
       await page.getByRole('button', { name: 'Hrát', exact: true }).click();
       report[name] = await page.evaluate(async ({ mode, pilot, site, work }) => {

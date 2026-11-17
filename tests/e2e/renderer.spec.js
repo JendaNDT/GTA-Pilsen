@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { PCFShadowMap } from 'three/webgpu';
 
-test('E15 – hra ukazuje vynucené vykreslování přes WebGL 2 v menu i v měření', async ({ page }) => {
+test('E15 – hra ukazuje vynucené vykreslování přes WebGL 2 v menu i v měření', { tag: '@webgpu' }, async ({ page }) => {
   await page.goto('/?debug&quality=low&renderer=webgl');
   await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
   await page.getByRole('button', { name: 'O hře', exact: true }).click();

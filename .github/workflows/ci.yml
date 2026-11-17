@@ -48,7 +48,7 @@ jobs:
       - if: matrix.node == 24
         run: npx playwright install --with-deps chromium
       - if: matrix.node == 24
-        run: npm run test:e2e
+        run: npm run test:e2e -- --project=webgl2 --project=webgpu --trace off
       - uses: actions/upload-artifact@v4
         if: failure() && matrix.node == 24
         with:

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { openReferenceGame, reference, renderReferenceView } from '../../tools/reference_views.mjs';
+import { gameUrl } from './game-url.js';
 
 test.use({ viewport: reference.viewport, deviceScaleFactor: 1 });
 
@@ -22,8 +23,8 @@ async function averageRegion(page, clip) {
   }, image.toString('base64'));
 }
 
-test('E15 – obloha má ve dne mraky a v noci ztmavne', async ({ page, baseURL }) => {
-  await openReferenceGame(page, baseURL);
+test('E15 – obloha má ve dne mraky a v noci ztmavne', { tag: '@webgpu' }, async ({ page, baseURL }) => {
+  await openReferenceGame(page, gameUrl(baseURL));
   await page.addStyleTag({ content: '#menu, #hud { visibility: hidden }' });
   const [day, night] = reference.views;
   const sky = { x: 48, y: 24, width: 32, height: 32 };
@@ -39,8 +40,8 @@ test('E15 – obloha má ve dne mraky a v noci ztmavne', async ({ page, baseURL 
   expect(blue - nightBlue).toBeGreaterThan(145);
 });
 
-test('E15 – některá okna na náměstí v noci svítí a sousední zůstávají tmavá', async ({ page, baseURL }) => {
-  await openReferenceGame(page, baseURL);
+test('E15 – některá okna na náměstí v noci svítí a sousední zůstávají tmavá', { tag: '@webgpu' }, async ({ page, baseURL }) => {
+  await openReferenceGame(page, gameUrl(baseURL));
   await page.addStyleTag({ content: '#menu, #hud { visibility: hidden }' });
   await renderReferenceView(page, reference.views.find((view) => view.id === 'namesti-noc'));
   const [litRed, , litBlue] = await averageRegion(page, { x: 40, y: 331, width: 8, height: 8 });
@@ -50,7 +51,7 @@ test('E15 – některá okna na náměstí v noci svítí a sousední zůstávaj
 });
 
 test('E15 – proudění náhonu mění odlesk a lampy osvětlují povrch', async ({ page, baseURL }) => {
-  await openReferenceGame(page, baseURL);
+  await openReferenceGame(page, gameUrl(baseURL));
   await page.addStyleTag({ content: '#menu, #hud { visibility: hidden }' });
   const forge = reference.views.find((view) => view.id === 'dobriv-hamr');
   const canal = { x: 805, y: 430, width: 8, height: 8 };
@@ -81,7 +82,7 @@ test('E15 – proudění náhonu mění odlesk a lampy osvětlují povrch', asyn
 });
 
 test('E15 – světlomety auta zůstávají v noci jasné', async ({ page, baseURL }) => {
-  await openReferenceGame(page, baseURL);
+  await openReferenceGame(page, gameUrl(baseURL));
   await page.addStyleTag({ content: '#menu, #hud { visibility: hidden }' });
   await page.evaluate((date) => {
     const { x, y, z, yaw } = window.__game.player.lastCar;
@@ -95,8 +96,8 @@ test('E15 – světlomety auta zůstávají v noci jasné', async ({ page, baseU
   expect(headlight - bumper).toBeGreaterThan(160);
 });
 
-test('E15 – voda pod Wilsonovým mostem, dlažba, portály a značení u Valíku jsou vidět', async ({ page, baseURL }) => {
-  await openReferenceGame(page, baseURL);
+test('E15 – voda pod Wilsonovým mostem, dlažba, portály a značení u Valíku jsou vidět', { tag: '@webgpu' }, async ({ page, baseURL }) => {
+  await openReferenceGame(page, gameUrl(baseURL));
   await page.addStyleTag({ content: '#menu, #hud { visibility: hidden }' });
   const view = (id) => reference.views.find((entry) => entry.id === id);
   const region = (x, y, size = 32) => ({ x, y, width: size, height: size });

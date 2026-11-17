@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test';
+import { gameUrl } from './game-url.js';
 
 const SAVE_KEY = 'plzen-naplno-v1';
 
 async function boot(page) {
-  await page.goto('/?debug&view=620&shadows=0');
+  await page.goto(gameUrl('/?debug&view=620&shadows=0'));
   await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
 }
 

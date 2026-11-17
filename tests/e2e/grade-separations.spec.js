@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test';
+import { gameUrl } from './game-url.js';
 
 test('v Bolevci i u Wenzigovy drží auto správnou úroveň křížení', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('/?debug&view=620&shadows=0');
+  await page.goto(gameUrl('/?debug&view=620&shadows=0'));
   await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
 
@@ -57,7 +58,7 @@ test('v Bolevci i u Wenzigovy drží auto správnou úroveň křížení', async
 });
 
 test('D5 navazuje u Šlovic a má volný prostor pod mosty v Černicích, Ejpovicích a Liticích', async ({ page }) => {
-  await page.goto('/?debug&view=620&shadows=0');
+  await page.goto(gameUrl('/?debug&view=620&shadows=0'));
   await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
   const result = await page.evaluate(() => {

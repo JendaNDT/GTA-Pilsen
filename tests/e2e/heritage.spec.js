@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test';
+import { gameUrl } from './game-url.js';
 
 test('E05 – pilotní památky se vykreslí, přepnou detail a uvolní dlaždici', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (entry) => { if (entry.type() === 'error') errors.push(entry.text()); });
   const response = page.waitForResponse('**/detail/city/index.json');
-  await page.goto('/?debug&view=620&wet=1');
+  await page.goto(gameUrl('/?debug&view=620&wet=1'));
   const data = await (await response).json();
   expect(data.sha256).toBe("825dc3e395044b1f5a47e27c812cc4189829e9134cc027865ffc8fcb3e7bb9ac");
   expect(data.buildings).toBe(5697);
@@ -77,7 +78,7 @@ test('měřené budovy se stahují podle polohy a po selhání zůstane vidět p
   await page.addInitScript(() => {
     localStorage.setItem('plzen-naplno-v1', JSON.stringify({ v: 1, x: -1100, z: -2650, hour: 10 }));
   });
-  await page.goto('/?debug&view=620&shadows=0');
+  await page.goto(gameUrl('/?debug&view=620&shadows=0'));
   await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
   expect(requests).toBe(0);
   await page.getByRole('button', { name: 'Pokračovat', exact: true }).click();

@@ -1,4 +1,7 @@
 import { defineConfig } from '@playwright/test';
+import { webglFlags, webgpuFlags } from './tests/e2e/browser-flags.js';
+
+const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined;
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -9,11 +12,11 @@ export default defineConfig({
     viewport: { width: 960, height: 600 },
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
-    launchOptions: {
-      executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined,
-      args: ['--enable-unsafe-swiftshader', '--use-gl=angle', '--use-angle=swiftshader'],
-    },
   },
+  projects: [
+    { name: 'webgl2', grepInvert: /@jen-webgpu\b/, use: { launchOptions: { executablePath, args: webglFlags } } },
+    { name: 'webgpu', grep: /@webgpu\b/, use: { launchOptions: { executablePath, args: webgpuFlags } } },
+  ],
   webServer: {
     command: 'npm run preview -- --port 4173 --strictPort',
     url: 'http://127.0.0.1:4173',

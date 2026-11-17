@@ -95,6 +95,7 @@ async function boot() {
   const renderer = new THREE.WebGPURenderer({
     canvas, antialias: !IS_MOBILE, powerPreference: 'high-performance',
     forceWebGL: PARAMS.get('renderer') === 'webgl',
+    trackTimestamp: DEBUG,
   });
   try {
     await renderer.init();

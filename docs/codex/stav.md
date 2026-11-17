@@ -13,8 +13,8 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
 | 3d. Převést budovy a okna | Hotovo · `d5d71b8` |
 | 3e. Převést náhon a skvrny lamp | Hotovo · `e8cf715` |
 | 3f. Převést detaily modelů | Hotovo · `0fa6385` |
-| 4. Zapnout WebGPU a ověřit automatický i vynucený návrat na WebGL 2 | Hotovo |
-| 5. Dokončit měření, sady Playwright a kontroly na GitHubu | Zbývá |
+| 4. Zapnout WebGPU a ověřit automatický i vynucený návrat na WebGL 2 | Hotovo · `3676b27` |
+| 5. Dokončit měření, sady Playwright a kontroly na GitHubu | Hotovo |
 | 6. Porovnat referenční snímky, změřit výkon a uzavřít protokol | Zbývá |
 
 ## Ověření a podklady
@@ -66,3 +66,6 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
   Chromium se skutečným adaptérem WebGPU vykreslilo hru a panel ukazuje WebGPU.
   Vynucená cesta i automatický přechod v prohlížeči bez WebGPU zobrazily WebGL 2.
   Měření GPU na nové cestě se doplňuje v kroku 5.
+- Ověření kroku 5: 38 testů Node, 13 testů Pythonu, sestavení, všech osm testů
+  projektu WebGPU a čtyři vybrané testy WebGL 2 prošly. V obou režimech Mac vrátil
+  skutečné časy GPU. Měření zahazuje staré časové výsledky. CI má oba projekty na Node 24.

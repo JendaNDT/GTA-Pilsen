@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test';
+import { gameUrl } from './game-url.js';
 
 test('Rondel má průjezdný okruh i obě úrovně u mostů', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('/?debug&view=620&shadows=0');
+  await page.goto(gameUrl('/?debug&view=620&shadows=0'));
   await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
   const result = await page.evaluate(() => {
