@@ -146,7 +146,7 @@ export class Hud {
       street: $('street'), district: $('district'), mission: $('mission'), toast: $('toast'),
       prompt: $('prompt'), speedo: $('speedo'), kmh: $('kmh'), speedlimit: $('speedlimit'), vehname: $('vehname'), clock: $('clock'),
       clockTime: $('clock-time'), clockDay: $('clock-day'), mapDate: $('bigmap-date'),
-      stopBoard: $('stop-board'), stopName: $('stop-name'), stopDepartures: $('stop-departures'),
+      stopBoard: $('stop-board'), stopName: $('stop-name'), stopDepartures: $('stop-departures'), stopTransfer: $('stop-transfer'),
       minimap: $('minimap'), touch: $('touch'),
     };
     this.el.wanted.innerHTML = '<i></i><i></i><i></i><i></i><i></i>';
@@ -192,14 +192,22 @@ export class Hud {
     this._set('departures', key, () => {
       this.el.stopBoard.classList.toggle('hidden', !board);
       if (!board) return;
-      this.el.stopName.textContent = board.stop;
-      const nodes = board.rows.map(({ time, ref, destination }) => {
+      const platform = board.code?.split('/')[1];
+      this.el.stopName.textContent = platform ? `${board.stop} · stan. ${platform}` : board.stop;
+      const nodes = board.rows.map(({ time, ref, type, destination, lastStop, boarding, delayed }) => {
         const row = document.createElement('li'), departure = document.createElement('time');
         departure.dateTime = formatTime(time);
-        departure.textContent = departure.dateTime;
-        const label = document.createElement('span');
-        label.textContent = `${ref} → ${destination}`;
-        row.append(departure, label);
+        departure.textContent = boarding ? 'Nyní' : departure.dateTime;
+        departure.classList.toggle('boarding', boarding);
+        const line = document.createElement('b');
+        line.className = `line-${type}`;
+        line.textContent = ref;
+        const label = document.createElement('span'), caption = document.createElement('small');
+        label.textContent = destination;
+        caption.textContent = [!boarding && delayed ? 'Odhad odjezdu' : '', lastStop ? `Na mapě do ${lastStop}` : '']
+          .filter(Boolean).join(' · ');
+        row.append(departure, line, label);
+        if (caption.textContent) row.append(caption);
         return row;
       });
       if (!nodes.length) {
@@ -208,6 +216,9 @@ export class Hud {
         nodes.push(empty);
       }
       this.el.stopDepartures.replaceChildren(...nodes);
+      this.el.stopTransfer.hidden = !board.nearby;
+      const transfer = board.nearby;
+      if (transfer) this.el.stopTransfer.textContent = `Přestup · ${transfer.name}${transfer.platform ? ` (stan. ${transfer.platform})` : ''} · ${transfer.metres} m`;
     });
   }
   speed(kmh, name) {

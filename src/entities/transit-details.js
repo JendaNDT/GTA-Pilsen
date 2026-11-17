@@ -1,0 +1,52 @@
+import * as THREE from 'three';
+
+const displayGeometry = new THREE.PlaneGeometry(2.1, 0.5);
+const recessGeometry = new THREE.PlaneGeometry(1.16, 2.06);
+const panelGeometry = new THREE.PlaneGeometry(0.54, 2.0);
+const recessMaterial = new THREE.MeshBasicMaterial({ color: 0x131b24 });
+const panelMaterial = new THREE.MeshLambertMaterial({ color: 0x566f7e });
+
+export function addTransitDisplay(mesh, length, ref, destination) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 120;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#11191d';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#ffc56d';
+  ctx.font = '700 64px Arial';
+  ctx.fillText(ref, 18, 83, 108);
+  ctx.font = '700 36px Arial';
+  ctx.fillText(destination, 139, 74, 355);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const material = new THREE.MeshBasicMaterial({ map: texture });
+  const display = new THREE.Mesh(displayGeometry, material);
+  display.position.set(0, 2.54, length / 2 + 0.015);
+  mesh.add(display);
+  return material;
+}
+
+export function addTransitDoors(mesh, centers) {
+  return centers.map((z) => {
+    const door = new THREE.Group();
+    door.rotation.y = -Math.PI / 2;
+    door.position.set(-1.265, 1.35, z);
+    const recess = new THREE.Mesh(recessGeometry, recessMaterial);
+    const left = new THREE.Mesh(panelGeometry, panelMaterial);
+    const right = new THREE.Mesh(panelGeometry, panelMaterial);
+    left.position.set(-0.28, 0, 0.012);
+    right.position.set(0.28, 0, 0.012);
+    door.add(recess, left, right);
+    mesh.add(door);
+    return [left, right];
+  });
+}
+
+export function setTransitDoors(doors, fraction) {
+  const gap = 0.28 + fraction * 0.52;
+  for (const [left, right] of doors) {
+    left.position.x = -gap;
+    right.position.x = gap;
+  }
+}

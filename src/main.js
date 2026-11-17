@@ -4,6 +4,8 @@ import { loadAll } from './data.js';
 import { Game } from './game/game.js';
 import { initInput, input } from './game/input.js';
 import { initMapSearch } from './game/map-search.js';
+import { initWorkUI } from './game/work-ui.js';
+import { resultText } from './game/missions.js';
 import { QUALITY, IS_TOUCH, IS_MOBILE, DEBUG, PARAMS } from './config.js';
 
 const $ = (id) => document.getElementById(id);
@@ -17,8 +19,9 @@ const HELP_HTML = IS_TOUCH ? `
     <tr><td>Páčka vlevo</td><td>chůze, zatáčení autem</td></tr>
     <tr><td>▲ / ▼</td><td>plyn / brzda a zpátečka (ve vrtulníku nahoru / dolů)</td></tr>
     <tr><td>⎵</td><td>ruční brzda, pěšky skok</td></tr>
-    <tr><td>F</td><td>nastoupit / vystoupit (auto, tramvaj, vrtulník)</td></tr>
-    <tr><td>✉</td><td>vzít nebo zrušit zakázku na rozvoz jídla</td></tr>
+    <tr><td>F</td><td>nastoupit / vystoupit nebo obsloužit dveře ve směně MHD</td></tr>
+    <tr><td>✉</td><td>vzít rychlý rozvoz jídla nebo zrušit aktivní zakázku</td></tr>
+    <tr><td>☰</td><td>zakázky, garáž a směny MHD</td></tr>
     <tr><td>🗺</td><td>velká mapa (vyhledej místo nebo klepnutím nastav cíl)</td></tr>
     <tr><td>Tah prstem</td><td>otáčení kamery</td></tr>
   </table>` : `
@@ -27,20 +30,22 @@ const HELP_HTML = IS_TOUCH ? `
     <tr><td>W A S D / šipky</td><td>chůze, řízení auta</td></tr>
     <tr><td>Shift</td><td>běh (ve vrtulníku klesání)</td></tr>
     <tr><td>Mezerník</td><td>ruční brzda, pěšky skok, ve vrtulníku stoupání</td></tr>
-    <tr><td>F nebo E</td><td>nastoupit / vystoupit (auto, tramvaj, vrtulník)</td></tr>
-    <tr><td>J</td><td>vzít nebo zrušit zakázku na rozvoz jídla</td></tr>
+    <tr><td>F nebo E</td><td>nastoupit / vystoupit nebo obsloužit dveře ve směně MHD</td></tr>
+    <tr><td>W · S · Mezerník</td><td>ve směně MHD plyn · brzda · nouzová brzda</td></tr>
+    <tr><td>J</td><td>vzít rychlý rozvoz jídla nebo zrušit aktivní zakázku</td></tr>
     <tr><td>M</td><td>velká mapa (vyhledej místo nebo kliknutím nastav cíl)</td></tr>
     <tr><td>Myš</td><td>tažením otáčíš kameru, kolečkem přibližuješ</td></tr>
     <tr><td>C · H · R</td><td>kamera · klakson · vrátit na silnici</td></tr>
-    <tr><td>N · Esc</td><td>posunout čas o 3 hodiny · menu</td></tr>
+    <tr><td>N · Esc</td><td>posunout čas o 3 hodiny · menu se zakázkami, garáží a směnami MHD</td></tr>
   </table>`;
 
 const ABOUT_HTML = (meta) => `
   <h3>O hře</h3>
   <p>Otevřený svět postavený ze skutečných dat od Plzně přes Rokycany až do Dobříva. Najdeš v něm kopce a údolí řek,
-  půdorysy a výšky budov, silnice a mosty, tramvajové a trolejbusové linky, parky, restaurace i adresy.</p>
-  <p>Co se dá dělat: chodit, půjčovat si auta, vozit se tramvají a trolejbusem, létat vrtulníkem,
-  rozvážet jídlo ze skutečných podniků, objevovat památky a ujíždět policii.</p>
+  půdorysy a výšky budov, silnice a mosty, linky MHD, parky, restaurace i adresy.</p>
+  <p>Co se dá dělat: chodit, půjčovat si auta, vozit se tramvají, trolejbusem i autobusem, létat vrtulníkem,
+  rozvážet jídlo ze skutečných podniků, vozit zákazníky, koupit si vlastní auto, jet směnu řidiče MHD,
+  objevovat památky a ujíždět policii.</p>
   <h3>Zdroje dat</h3>
   <p>Mapová data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">přispěvatelé OpenStreetMap</a>
   (licence ODbL). Terén vychází z digitálního modelu reliéfu DMR 5G, výšky budov z rozdílu modelu povrchu
@@ -60,10 +65,12 @@ const ABOUT_HTML = (meta) => `
   vychází z mapy a fotografie obnovy zveřejněné
   <a href="https://www.npu.cz/cs/generalni-reditelstvi-npu/inspirujte-se/70002-obnova-hamru-horejsi-lub-v-dobrivu"
   target="_blank" rel="noopener">Národním památkovým ústavem</a>.</p>
-  <p>Odjezdy pro stávající tramvajové a trolejbusové trasy vycházejí z GTFS
+  <p>Odjezdy tramvají, trolejbusů a autobusů vycházejí z GTFS
   <a href="https://opendata.plzen.eu/public/opendata/detail/187" target="_blank" rel="noopener">Plzeňských městských dopravních podniků, a.s.</a>
   (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>).
-  Hra z dat vybírá spoje, páruje jejich zastávky s herní mapou a převádí kalendář k místnímu použití.</p>
+  Hra spojuje zastávky s trasami z OpenStreetMap, zkracuje trasy na hranici mapy a převádí kalendář k místnímu použití.</p>
+  <p>Česká hlášení jsou syntetizovaná pro hru pomocí Piperu.
+  <a href="${import.meta.env.BASE_URL}audio/zdroje.txt" target="_blank" rel="noopener">Autoři a licence zvukových podkladů</a>.</p>
   <p>Datum mapových dat OpenStreetMap: ${meta.osmTimestamp
     ? `${new Date(meta.osmTimestamp).toLocaleString('cs-CZ', { timeZone: 'UTC' })} UTC`
     : 'u této starší datové sady není doloženo'}.</p>
@@ -128,6 +135,7 @@ async function boot() {
     menu.classList.remove('hidden'); game.hud.show(false);
     game.audio.suspend(); game.save();
     $('btn-play').textContent = 'Pokračovat';
+    updateWork();
   };
   const play = () => {
     menu.classList.add('hidden'); game.hud.show(true);
@@ -135,34 +143,49 @@ async function boot() {
     game.audio.start(); game.audio.resume();
     if (firstPlay) {
       firstPlay = false;
-      if (!game.hasSave) {
+      if (!game.hasSave && !game.shifts.active) {
         game.hud.toast('Vítej v Plzni! Stojíš na náměstí Republiky.', 'big', 5000);
         setTimeout(() => game.hud.toast(IS_TOUCH ? 'Tlačítkem F nastoupíš do auta, ✉ ti dá zakázku.' : 'Klávesou F nastoupíš do auta, J ti dá zakázku, M otevře mapu.', '', 7000), 1500);
+      } else if (game.shifts.last?.state === 'interrupted' && game.shifts.last.note === 'Načtení uložené hry') {
+        game.hud.toast('Rozpracovaná směna byla při načtení přerušena.', 'bad', 5800);
+      } else if (game.jobs.last?.state === 'interrupted' && game.jobs.last.note === 'Načtení uložené hry') {
+        game.hud.toast(resultText(game.jobs.last), 'bad', 5800);
       }
     }
   };
   $('btn-play').addEventListener('click', play);
-  const sections = ['help', 'about', 'settings'];
+  const updateWork = initWorkUI(game, play);
+  updateWork();
+  const sections = ['jobs', 'garage', 'shifts', 'help', 'about', 'settings'];
   for (const name of sections) {
     $('btn-' + name).addEventListener('click', () => {
       const open = $('panel-' + name).classList.contains('hidden');
-      for (const other of sections) $('panel-' + other).classList.toggle('hidden', !(open && name === other));
-      $('btn-settings').setAttribute('aria-expanded', open && name === 'settings');
+      for (const other of sections) {
+        const visible = open && name === other;
+        $('panel-' + other).classList.toggle('hidden', !visible);
+        if ($('btn-' + other).hasAttribute('aria-expanded')) $('btn-' + other).setAttribute('aria-expanded', visible);
+      }
+      if (open && ['jobs', 'garage', 'shifts'].includes(name)) {
+        updateWork();
+        $('panel-' + name).scrollIntoView({ block: 'nearest' });
+      }
     });
   }
   $('show-clock').checked = game.clockVisible;
   $('show-clock').addEventListener('change', (event) => game.setClockVisible(event.target.checked));
+  $('sound-enabled').checked = !game.audio.muted;
+  $('sound-enabled').addEventListener('change', (event) => game.setSoundEnabled(event.target.checked));
   $('btn-reset').addEventListener('click', () => {
-    if (confirm('Opravdu začít od začátku? Smažou se peníze i objevené památky.')) { Game.clearSave(); location.reload(); }
+    if (confirm('Opravdu začít od začátku? Smaže se celý uložený postup včetně peněz, auta, zakázek a objevených památek.')) { Game.clearSave(); location.reload(); }
   });
   $('btn-menu').addEventListener('click', openMenu);
   $('bigmap-close').addEventListener('click', () => game.toggleMap(false));
   $('minimap').addEventListener('click', () => { if (running) game.toggleMap(true); });
-  const setDestination = ({ x, z, name }) => {
-    game.jobs.setWaypoint(x, z, name);
+  const setDestination = ({ x, z, name, stop }) => {
+    game.jobs.setWaypoint(x, z, name, stop);
     game.toggleMap(false);
   };
-  initMapSearch(game.world, setDestination);
+  initMapSearch(game.world, setDestination, game.transit.timetable.stops);
   $('bigmap-canvas').addEventListener('click', (e) => {
     if (!game.mapToWorld) return;
     setDestination(game.mapToWorld(e.clientX, e.clientY));

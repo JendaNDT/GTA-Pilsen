@@ -1,4 +1,4 @@
-// Procedurální nízkopolygonové modely: auta, tramvaj, trolejbus, postavy, vrtulník.
+// Procedurální nízkopolygonové modely aut, MHD, postav a vrtulníku.
 import * as THREE from 'three';
 import { env, getPoolMaterial } from '../world/materials.js';
 import { QUALITY } from '../config.js';
@@ -206,7 +206,8 @@ export function makeCarMesh(typeId, colorHex) {
 
 // ------------------------------------------------------------- tramvaj ----
 const TRAM_YELLOW = lin(0xf0c020), TRAM_GREY = lin(0xdedfdc), TRAM_DARK = lin(0x2b2f35), TRANSIT_GLASS = lin(0x3b4d5f);
-let tramGeo = null, trolleyGeo = null, transitMat = null;
+let tramGeo = null, transitMat = null;
+const busGeo = new Map();
 export const TRAM_SEG = 9.4;
 export function makeTramSegment(kind) {
   // kind: 0 = přední, 1 = střední, 2 = zadní
@@ -233,23 +234,28 @@ export function makeTramSegment(kind) {
 }
 
 export const TROLLEY_LEN = 11.8;
-export function makeTrolleybus() {
-  if (!trolleyGeo) {
+export const BUS_LEN = 12;
+export function makeTransitBus(type) {
+  const trolley = type === 'trolleybus';
+  if (!busGeo.has(type)) {
     const p = new Parts();
-    const L = TROLLEY_LEN, W = 2.5;
-    p.box(W, 1.0, L, 0, 0.35 + 0.5, 0, lin(0x2f9a57), 1, 0.995);
+    const L = trolley ? TROLLEY_LEN : BUS_LEN, W = 2.5;
+    p.box(W, 1.0, L, 0, 0.35 + 0.5, 0, lin(trolley ? 0x2f9a57 : 0x277db5), 1, 0.995);
     p.box(W * 0.985, 1.2, L * 0.985, 0, 1.35 + 0.6, 0, TRANSIT_GLASS, 0.95, 0.99);
     p.box(W * 0.94, 0.42, L * 0.99, 0, 2.55 + 0.21, 0, TRAM_GREY, 0.92, 0.98);
     p.box(0.3, 0.14, 0.06, 0.8, 0.95, L / 2, HEAD); p.box(0.3, 0.14, 0.06, -0.8, 0.95, L / 2, HEAD);
     p.box(0.3, 0.14, 0.06, 0.8, 0.95, -L / 2, TAIL); p.box(0.3, 0.14, 0.06, -0.8, 0.95, -L / 2, TAIL);
     for (const sx of [-1, 1]) for (const sz of [L / 2 - 2.4, -L / 2 + 3]) p.wheel(0.48, 0.3, sx * 1.1, 0.48, sz, TIRE);
-    // sběrače
-    p.box(0.06, 0.06, 6.2, 0.35, 3.75, -L / 2 + 2.2, TRAM_DARK, 1, 1);
-    p.box(0.06, 0.06, 6.2, -0.35, 3.75, -L / 2 + 2.2, TRAM_DARK, 1, 1);
-    p.box(0.9, 0.5, 0.5, 0, 3.2, 1.2, TRAM_DARK);
-    trolleyGeo = p.geometry();
+    if (trolley) {
+      p.box(0.06, 0.06, 6.2, 0.35, 3.75, -L / 2 + 2.2, TRAM_DARK);
+      p.box(0.06, 0.06, 6.2, -0.35, 3.75, -L / 2 + 2.2, TRAM_DARK);
+      p.box(0.9, 0.5, 0.5, 0, 3.2, 1.2, TRAM_DARK);
+    } else {
+      p.box(1.25, 0.14, 2.7, 0, 3.0, -1.5, TRAM_GREY);
+    }
+    busGeo.set(type, p.geometry());
   }
-  const m = new THREE.Mesh(trolleyGeo, getDetailMaterial());
+  const m = new THREE.Mesh(busGeo.get(type), getDetailMaterial());
   m.castShadow = true;
   return m;
 }

@@ -19,7 +19,11 @@ async function action(page, code) {
 test('chůze, navigace, auto, vrtulník a dokončení rozvozu', async ({ page }) => {
   const errors = [], failed = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  page.on('requestfailed', (request) => failed.push(request.url()));
+  page.on('requestfailed', (request) => {
+    // Rychlé přesuny odstraňují dlaždice a záměrně přerušují jejich načítání.
+    if (request.failure()?.errorText === 'net::ERR_ABORTED' && new URL(request.url()).pathname.includes('/detail/city/')) return;
+    failed.push(request.url());
+  });
   await boot(page);
   const start = await page.evaluate(() => ({ x: __game.player.x, z: __game.player.z }));
   await page.keyboard.down('w');
@@ -106,10 +110,9 @@ test('tramvaj lze použít a uložený postup přežije opětovné načtení', a
   await action(page, 'KeyF');
   expect(await page.evaluate(() => __game.mode)).toBe('transit');
   const s = await page.evaluate(() => __game.ride.s);
-  await page.evaluate(() => { __game.ride.wait = 0; __step(1 / 60, 180); });
+  await page.evaluate(() => { __step(1 / 30, 260); });
   expect(await page.evaluate(() => __game.ride.s)).toBeGreaterThan(s);
-  await page.evaluate(() => { __game.ride.v = 0; __game.ride.wait = 7; });
-  await action(page, 'KeyF');
+  await page.evaluate(() => __setClock(null, __game.hour + 0.1));
   expect(await page.evaluate(() => __game.mode)).toBe('foot');
   const saved = await page.evaluate(() => {
     const g = __game; g.money = 1234; g.stats.deliveries = 3; g.jobs.landmarks[0].found = true; g.save();
@@ -177,7 +180,7 @@ test('silniční trasy spojují Plzeň, Rokycany, Hrádek a Dobřív v obou smě
   test.setTimeout(210_000);
   await boot(page);
   await action(page, 'KeyM');
-  const query = page.getByRole('searchbox', { name: 'Najít obec nebo památku' });
+  const query = page.getByRole('searchbox', { name: 'Najít obec, památku nebo zastávku' });
   await query.pressSequentially('rokycany');
   await expect(page.getByRole('button', { name: 'Rokycany', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Nádraží Rokycany', exact: true }).click();
@@ -268,7 +271,6 @@ test('silniční trasy spojují Plzeň, Rokycany, Hrádek a Dobřív v obou smě
             const road = w.nearestRoad(car.x, car.z, 100, 13, 0, {});
             maxOffRoad = Math.max(maxOffRoad, road?.dist ?? 100);
           }
-          if (tick % 160 === 0) g.chunks.update(car.x, car.z, 620, 6);
         }
       } finally {
         g.vehicles._pickNext = pickNext;

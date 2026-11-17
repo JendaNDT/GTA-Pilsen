@@ -63,6 +63,8 @@ export class Heritage {
     }
     const forge = world.buildingAt(FORGE.x, FORGE.z);
     this.forgeIndex = forge;
+    this.forgeWorking = false;
+    this.forgeAngle = 0;
     if (forge >= 0) this.replaced.add(forge);
     this.forgeChunk = world.chunkIndex(FORGE.x, FORGE.z);
     this.close = makeBuildingMaterial({ textures: QUALITY.heritageDetail, heritage: true });
@@ -165,6 +167,11 @@ export class Heritage {
     for (const i of this.cells.get(ch.ci).replacements) this.replaced.delete(i);
   }
 
+  updateForge(hour, dt) {
+    this.forgeWorking = this.forgeIndex >= 0 && hour >= 9 && hour < 17;
+    if (this.forgeWorking) this.forgeAngle = (this.forgeAngle + dt * 0.72) % (Math.PI * 2);
+  }
+
   update(chunk, x, z, y = chunk.y) {
     const distance = Math.hypot(Math.max(0, Math.abs(chunk.x - x) - (chunk.city ? CHUNK * 0.5 : 0)),
       Math.max(0, Math.abs(chunk.z - z) - (chunk.city ? CHUNK * 0.5 : 0)), chunk.y - y);
@@ -177,7 +184,7 @@ export class Heritage {
     for (const mesh of chunk.detail) mesh.visible = near;
     for (const wheel of chunk.wheels) {
       wheel.visible = near;
-      if (near) wheel.rotation.x = env.time.value * 0.72;
+      if (near) wheel.rotation.x = this.forgeAngle;
     }
     for (const mesh of chunk.night) mesh.visible = near && env.night.value > 0.18;
   }

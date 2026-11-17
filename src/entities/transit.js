@@ -1,82 +1,129 @@
-// MHD: tramvaje a trolejbusy jezdí po skutečných trasách linek a staví v zastávkách.
-import { Timetable } from '../game/timetable.js';
-import { DAY_SECONDS } from '../game/clock.js';
-import { makeTramSegment, makeTrolleybus, TRAM_SEG, TROLLEY_LEN } from './models.js';
+import { STOP_DWELL, Timetable } from '../game/timetable.js';
+import { CLOCK_RATE, DAY_SECONDS } from '../game/clock.js';
+import { DRIVABLE_MAX, RF } from '../config.js';
+import { BUS_LEN, makeTransitBus, makeTramSegment, TRAM_SEG, TROLLEY_LEN } from './models.js';
+import { addTransitDisplay, addTransitDoors, setTransitDoors } from './transit-details.js';
 
-const _o = { x: 0, z: 0, tx: 0, tz: 1 };
-const _ahead = { x: 0, z: 0, tx: 0, tz: 1 };
+export const TRANSIT_NAME = { tram: 'tramvaj', trolleybus: 'trolejbus', bus: 'autobus' };
+
+const frontPoint = { x: 0, z: 0, tx: 0, tz: 1 };
+const trailerPoint = { x: 0, z: 0, tx: 0, tz: 1 };
+const aheadPoint = { x: 0, z: 0, tx: 0, tz: 1 };
+const entryPoint = { x: 0, z: 0, tx: 0, tz: 1 };
+const roadPoint = {};
+const VIEW_DISTANCE = 520;
+const DOOR_SPEED = 3;
+const ARRIVE_DISTANCE = 0.55;
 
 class Route {
-  constructor(r) {
-    this.type = r.type; this.ref = r.ref; this.from = r.from; this.to = r.to; this.name = r.name;
-    const n = r.path.length;
+  constructor({ type, ref, from, to, path, stops }) {
+    this.type = type;
+    this.ref = ref;
+    this.from = from;
+    this.to = to;
+    this.stops = stops;
+    const n = path.length;
     this.pts = new Float32Array(n * 2);
-    this.cum = new Float32Array(n);
+    this.cum = new Float64Array(n);
     for (let i = 0; i < n; i++) {
-      this.pts[i * 2] = r.path[i][0]; this.pts[i * 2 + 1] = r.path[i][1];
-      if (i) this.cum[i] = this.cum[i - 1] + Math.hypot(r.path[i][0] - r.path[i - 1][0], r.path[i][1] - r.path[i - 1][1]);
+      this.pts[i * 2] = path[i][0];
+      this.pts[i * 2 + 1] = path[i][1];
+      if (i) this.cum[i] = this.cum[i - 1] + Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]);
     }
     this.length = this.cum[n - 1];
-    this.stops = r.stops;      // [vzdálenost, název]
   }
 
   posAt(s, side, out) {
-    const cum = this.cum, n = cum.length;
-    if (s <= 0) s = 0; else if (s >= this.length) s = this.length;
-    let lo = 0, hi = n - 1;
-    while (hi - lo > 1) { const m = (lo + hi) >> 1; if (cum[m] <= s) lo = m; else hi = m; }
-    const x1 = this.pts[lo * 2], z1 = this.pts[lo * 2 + 1], x2 = this.pts[hi * 2], z2 = this.pts[hi * 2 + 1];
-    const l = cum[hi] - cum[lo] || 1;
-    const t = (s - cum[lo]) / l;
-    const tx = (x2 - x1) / l, tz = (z2 - z1) / l;
-    out.x = x1 + (x2 - x1) * t - tz * side; out.z = z1 + (z2 - z1) * t + tx * side;
-    out.tx = tx; out.tz = tz;
+    const cum = this.cum;
+    s = Math.min(s, this.length);
+    let lo = 0, hi = cum.length - 1;
+    while (hi - lo > 1) {
+      const m = (lo + hi) >> 1;
+      if (cum[m] <= s) lo = m;
+      else hi = m;
+    }
+    const x = this.pts[lo * 2], z = this.pts[lo * 2 + 1];
+    const dx = this.pts[hi * 2] - x, dz = this.pts[hi * 2 + 1] - z;
+    const length = cum[hi] - cum[lo] || 1;
+    const along = (s - cum[lo]) / length;
+    const tx = dx / length, tz = dz / length;
+    out.x = x + dx * along - tz * side;
+    out.z = z + dz * along + tx * side;
+    out.tx = tx;
+    out.tz = tz;
     return out;
   }
-
 }
 
 class TransitVehicle {
-  constructor(event, s) {
-    const { trip } = event, { route } = trip;
-    const isTram = route.type === 'tram';
+  constructor(event, state) {
+    const { trip } = event;
     this.event = event;
-    this.route = route; this.destination = trip.destination;
+    this.route = trip.route;
+    this.destination = trip.destination;
     this.stops = trip.stops.map(({ target }) => target);
-    this.s = s; this.v = 0; this.isTram = isTram;
-    this.terminal = null;
-    this.wait = 0; this.meshes = null; this.visible = false;
-    this.x = 0; this.y = 0; this.z = 0; this.yaw = 0; this.vx = 0; this.vz = 0;
-    this.len = isTram ? TRAM_SEG * 3 : TROLLEY_LEN;
-    this.side = isTram ? 0 : 1.7;
+    this.isTram = this.route.type === 'tram';
+    this.len = this.isTram ? TRAM_SEG * 3 : this.route.type === 'bus' ? BUS_LEN : TROLLEY_LEN;
+    this.halfLen = this.len / 2;
+    this.radius = 1.4;
+    this.side = this.isTram ? 0 : 1.7;
+    this.visible = false;
+    this.meshes = null;
+    this.v = 0;
+    this.vx = 0;
+    this.vz = 0;
+    this.yaw = 0;
+    this.y = 0;
+    this.doorFraction = 0;
+    this.waitingForSpace = false;
     this.stopTarget = null;
-    this.doorsOpen = false;
+    this.followSchedule(state);
   }
 
-  nextStop(s) { return this.stops.find((stop) => stop[0] > s + 0.5) ?? null; }
+  followSchedule({ s, index, wait }) {
+    this.s = s;
+    this.stopIndex = index;
+    this.wait = wait;
+    this.doorsOpen = wait > 0;
+    this.stopTarget = this.doorsOpen ? this.stops[index] : null;
+  }
+
+  get canBoard() {
+    return this.doorsOpen && this.stopIndex < this.stops.length - 1
+      && this.event.trip.times[this.stopIndex * 2 + 1] >= 0;
+  }
+
+  get canAlight() {
+    return this.doorsOpen && (this.stopIndex === this.stops.length - 1
+      || this.event.trip.times[this.stopIndex * 2] >= 0);
+  }
 }
 
 export class TransitManager {
   constructor(scene, world, game, schedule) {
-    this.scene = scene; this.world = world; this.game = game;
-    this.routes = [];
-    this.vehicles = [];
-    this.heavy = [];        // kruhy s „nekonečnou“ hmotností pro kolize aut
-    this.obstacles = [];    // překážky pro provoz
-    const routes = (world.meta.transit ?? []).map((r, i) => {
-      if (r.gaps > 0 || r.path.length < 10 || r.length < 1500
-          || [r.type, r.ref, r.from, r.to, r.length].some((value, k) => value !== schedule.routes[i]?.[k])) return null;
-      return new Route(r);
-    });
+    this.scene = scene;
+    this.world = world;
+    this.game = game;
+    // Starší lokální balík může ještě odkazovat na původní trasy v metadatech.
+    const source = schedule.version === 1 ? world.meta.transit.map((route, i) => {
+      const key = [route.type, route.ref, route.from, route.to, route.length];
+      return !route.gaps && route.path.length >= 2 && key.every((value, k) => value === schedule.routes[i]?.[k]) ? route : null;
+    }) : schedule.routes;
+    const routes = source.map((route) => route && new Route(route));
     this.routes = routes.filter(Boolean);
+    this.vehicles = [];
+    this.active = new Map();
+    this.heavy = [];
+    this.obstacles = [];
     this.timetable = new Timetable(schedule, routes);
     this.seen = new Map();
     this.serviceDay = null;
   }
 
   reset(clock, player) {
-    for (const vehicle of this.vehicles) this._show(vehicle, false);
+    for (const vehicle of this.vehicles) this._dispose(vehicle);
     this.vehicles = [];
+    this.active.clear();
     this.seen.clear();
     this.serviceDay = null;
     this.update(0, player, [], true, clock);
@@ -88,176 +135,278 @@ export class TransitManager {
       this.serviceDay = clock.day;
       this.events = this.timetable.events(clock.day);
       this.eventIndex = 0;
-      for (const [key, end] of this.seen) if (end <= clock.day * DAY_SECONDS) this.seen.delete(key);
+      for (const [key, end] of this.seen) {
+        if (end <= clock.day * DAY_SECONDS && !this.active.has(key)) this.seen.delete(key);
+      }
     }
     while (this.eventIndex < this.events.length && this.events[this.eventIndex].start <= now) {
       const event = this.events[this.eventIndex++];
       if (now >= event.end || this.seen.has(event.key)) continue;
       this.seen.set(event.key, event.end);
-      const s = this.timetable.position(event, now);
-      const v = new TransitVehicle(event, s);
-      v.route.posAt(s, v.side, _o);
-      v.x = _o.x; v.z = _o.z;
+      const v = new TransitVehicle(event, this.timetable.state(event, now));
+      v.justDispatched = now - event.start < CLOCK_RATE * 0.5;
+      v.route.posAt(v.s, v.side, entryPoint);
+      v.x = entryPoint.x;
+      v.z = entryPoint.z;
       this.vehicles.push(v);
+      this.active.set(event.key, v);
     }
+  }
+
+  takeShift(event, index) {
+    let v = this.active.get(event.key);
+    if (!v) {
+      v = new TransitVehicle(event, { s: event.trip.stops[index].target[0], index, wait: STOP_DWELL });
+      this.active.set(event.key, v);
+      this.vehicles.push(v);
+      this.seen.set(event.key, event.end);
+    }
+    v.followSchedule({ s: v.stops[index][0], index, wait: STOP_DWELL });
+    v.stopTarget = v.stops[index];
+    v.v = 0;
+    v.waitingForSpace = false;
+    v.trafficStop = null;
+    v.route.posAt(v.s, v.side, frontPoint);
+    v.y = this.world.groundY(frontPoint.x, frontPoint.z);
+    this._show(v, true);
+    this._pose(v, 1);
+    return v;
   }
 
   _show(v, on) {
     if (on === v.visible) return;
     v.visible = on;
     if (on) {
-      if (!v.meshes) v.meshes = v.isTram ? [makeTramSegment(0), makeTramSegment(1), makeTramSegment(2)] : [makeTrolleybus()];
-      for (const m of v.meshes) this.scene.add(m);
-    } else if (v.meshes) for (const m of v.meshes) this.scene.remove(m);
+      if (!v.meshes) {
+        v.meshes = v.isTram ? [makeTramSegment(0), makeTramSegment(1), makeTramSegment(2)] : [makeTransitBus(v.route.type)];
+        v.display = addTransitDisplay(v.meshes[0], v.isTram ? TRAM_SEG - 0.5 : v.len, v.route.ref, v.destination);
+        v.doors = addTransitDoors(v.meshes[0], v.isTram ? [0.5] : [3.9, -1.5]);
+      }
+      for (const mesh of v.meshes) this.scene.add(mesh);
+    } else {
+      this.game.audio.remove(v);
+      for (const mesh of v.meshes) this.scene.remove(mesh);
+    }
   }
 
-  update(dt, player, cars, playerOnFoot, clock) {
+  _dispose(v) {
+    this._show(v, false);
+    v.display?.map.dispose();
+    v.display?.dispose();
+  }
+
+  _spawnSpace(v, nearby) {
+    const { x, z, tx, tz } = frontPoint;
+    const centerX = x - tx * v.halfLen, centerZ = z - tz * v.halfLen;
+    return !nearby.some((other) => {
+      if (other === v || !other.visible || Math.abs(other.y - v.y) > 3) return false;
+      const dx = other.x - centerX, dz = other.z - centerZ;
+      const across = Math.abs(dx * tz - dz * tx);
+      const along = Math.abs(dx * tx + dz * tz);
+      return across < 2.6 && along < (v.len + other.len) / 2 + 1.5
+        && dx * dx + dz * dz < (v.halfLen + other.halfLen + 2) ** 2;
+    });
+  }
+
+  _arrive(v, index, now) {
+    v.s = v.stops[index][0];
+    v.v = 0;
+    v.stopTarget = v.stops[index];
+    v.doorsOpen = true;
+    const { trip, day } = v.event;
+    const time = trip.times[index * 2 + 1];
+    const planned = day * DAY_SECONDS + (time >= 0 ? time : -time - 1);
+    v.wait = Math.max(STOP_DWELL, now === undefined ? 0 : (planned - now) / CLOCK_RATE);
+  }
+
+  _roadLane(v, dt) {
+    if (v.isTram) return;
+    v.limitTimer = (v.limitTimer ?? 0) - dt;
+    if (v.limitTimer <= 0) {
+      const x = frontPoint.x + frontPoint.tz * v.side, z = frontPoint.z - frontPoint.tx * v.side;
+      const road = this.world.nearestRoad(x, z, 7, DRIVABLE_MAX, 0, roadPoint, v.y);
+      const forward = road && road.dx * frontPoint.tx + road.dz * frontPoint.tz >= 0;
+      v.roadLimit = road ? this.world.roadSpeed(road.road, forward) / 3.6 : 10.5;
+      const { lanes, w, flags } = this.world.r;
+      const oneWay = road && (flags[road.road] & RF.ONEWAY);
+      const count = road && Math.max(oneWay ? 1 : 2, lanes[road.road]);
+      v.lane = road ? Math.min(2.5, w[road.road] * (1 - 1 / count) / 2) : 1.7;
+      v.limitTimer = 0.5;
+    }
+    v.side += (v.lane - v.side) * Math.min(1, dt * 4);
+  }
+
+  _drive(v, dt, now, nearby, cars, playerOnFoot, player) {
+    const { trip } = v.event;
+    this._roadLane(v, dt);
+    if (v.wait > 0) {
+      v.wait = Math.max(0, v.wait - dt);
+      if (v.wait > 0) return;
+      if (v.stopIndex === v.stops.length - 1 && this.game.ride === v) this.game._alight(true);
+      v.stopIndex++;
+      v.stopTarget = null;
+      v.doorsOpen = false;
+      if (v.stopIndex >= v.stops.length && !trip.exit) return;
+    }
+
+    // Zkušební průjezdy podél trasy mohou nastavit polohu bez posunu hodin.
+    if (now === undefined) {
+      const index = v.stops.findIndex((stop) => stop[0] >= v.s - ARRIVE_DISTANCE);
+      v.stopIndex = index < 0 ? v.stops.length : index;
+    }
+    const stop = v.stops[v.stopIndex];
+    const remaining = stop ? stop[0] - v.s : trip.endS - v.s;
+    if (stop && remaining <= ARRIVE_DISTANCE && v.v <= 0.8) {
+      this._arrive(v, v.stopIndex, now);
+      return;
+    }
+
+    let limit = v.isTram ? 11.5 : Math.min(10.5, v.roadLimit);
+    if (stop) limit = Math.min(limit, Math.sqrt(2 * 1.35 * Math.max(0, remaining)) + 0.2);
+    const { tx, tz } = frontPoint;
+    const dx = player.x - frontPoint.x, dz = player.z - frontPoint.z;
+    const inLane = dx * tx + dz * tz;
+    const blocking = playerOnFoot && remaining > 8 && v.v < 1 && Math.abs(player.y - v.y) < 2
+      && inLane > 0.5 && inLane < 9 && Math.abs(dx * tz - dz * tx) < 1.55;
+    v.hornWait = blocking ? (v.hornWait ?? 0) + dt : 0;
+    if (v.hornWait >= 1.2) {
+      if (v.isTram) this.game.audio.bell(v);
+      else this.game.audio.horn(v);
+      v.hornWait = -6;
+    }
+    const check = (other) => {
+      if (other === v || Math.abs((other.y ?? v.y) - v.y) > 3) return;
+      const dx = other.x - frontPoint.x, dz = other.z - frontPoint.z;
+      if (dx * dx + dz * dz > 32 ** 2) return;
+      const along = dx * tx + dz * tz;
+      if (along < 0.2 || Math.abs(dx * tz - dz * tx) > 1.5 + (other.radius || 1) * 0.35) return;
+      const gap = along - (other.halfLen || 1) - 0.5;
+      const speed = (other.vx || 0) * tx + (other.vz || 0) * tz;
+      limit = Math.min(limit, Math.max(0, speed + (gap - 2.5) * 1.2));
+    };
+    for (const other of nearby) if (other.visible) check(other);
+    for (const car of cars) check(car);
+    if (playerOnFoot) check(player);
+
+    const acceleration = v.v < limit ? 1.1 : 2.6;
+    v.v += Math.sign(limit - v.v) * Math.min(Math.abs(limit - v.v), acceleration * dt);
+    v.route.posAt(v.s + 16, v.side, aheadPoint);
+    v.v = this.world.traffic.transitLimit(v, frontPoint, aheadPoint, dt, v.v, cars);
+    const advance = v.v * dt;
+    if (stop && advance >= remaining && v.v < 2.3) this._arrive(v, v.stopIndex, now);
+    else v.s = Math.min(trip.endS, v.s + advance);
+  }
+
+  _pose(v, dt) {
+    const length = v.isTram ? TRAM_SEG : v.len;
+    let referenceY = v.y;
+    for (const [index, mesh] of v.meshes.entries()) {
+      const center = v.s - length * (index + 0.5);
+      const axle = v.isTram ? 2.6 : 3.5;
+      const front = v.route.posAt(center + axle, v.side, frontPoint);
+      const rear = v.route.posAt(center - axle, v.side, trailerPoint);
+      const x = (front.x + rear.x) / 2, z = (front.z + rear.z) / 2;
+      const yaw = Math.atan2(front.x - rear.x, front.z - rear.z);
+      const fy = this.world.groundY(front.x, front.z, referenceY);
+      const ry = this.world.groundY(rear.x, rear.z, referenceY);
+      const y = (fy + ry) / 2;
+      referenceY = y;
+      mesh.position.set(x, y, z);
+      mesh.rotation.set(Math.atan2(ry - fy, axle * 2), yaw, 0, 'YXZ');
+      const fx = Math.sin(yaw), fz = Math.cos(yaw);
+      const vx = fx * v.v, vz = fz * v.v;
+      for (const k of [-axle, 0, axle]) this.heavy.push({ x: x + fx * k, y, z: z + fz * k, r: 1.35, vx, vz });
+      this.obstacles.push({ x, y, z, vx, vz, yaw, halfLen: length / 2, radius: 1.4 });
+      if (index === (v.isTram ? 1 : 0)) Object.assign(v, { x, y, z, yaw, vx, vz });
+    }
+    const target = Number(v.doorsOpen);
+    if (v.doorFraction !== target) {
+      v.doorFraction += Math.sign(target - v.doorFraction) * Math.min(Math.abs(target - v.doorFraction), dt * DOOR_SPEED);
+      setTransitDoors(v.doors, v.doorFraction);
+    }
+  }
+
+  update(dt, player, cars, playerOnFoot, clock, controls) {
     const now = clock?.now;
     if (clock) this._dispatch(clock);
     this.heavy.length = 0;
     this.obstacles.length = 0;
     const px = player.x, pz = player.z;
+    const nearby = this.vehicles.filter((v) => v.visible);
     for (let index = this.vehicles.length - 1; index >= 0; index--) {
-      const v = this.vehicles[index], r = v.route;
-      // Vůz mimo dohled sleduje jízdní řád. U hráče pokračuje plynule a respektuje překážky.
-      if (now !== undefined && !v.visible && now < v.event.end) v.s = this.timetable.position(v.event, now);
-      r.posAt(v.s, v.side, _o);
-      const d2 = (_o.x - px) ** 2 + (_o.z - pz) ** 2;
-      const near = d2 < 520 * 520 || player === v;
-      const endS = v.event.trip.endS;
-      if (v.terminal !== null) v.terminal -= dt;
-      if ((!near && now >= v.event.end) || v.terminal !== null && v.terminal <= 0) {
-        if (this.game.ride === v) this.game._alight();
-        this._show(v, false);
+      const v = this.vehicles[index], { trip } = v.event;
+      const manual = this.game.shifts?.active?.vehicle === v;
+      if (now !== undefined && !v.visible && !v.waitingForSpace && now < v.event.end) {
+        v.followSchedule(this.timetable.state(v.event, now));
+      }
+      v.route.posAt(v.s, v.side, frontPoint);
+      const near = player === v || (frontPoint.x - px) ** 2 + (frontPoint.z - pz) ** 2 < VIEW_DISTANCE ** 2;
+      const finished = v.stopIndex >= v.stops.length && v.s >= trip.endS - 0.02;
+      const grace = near && v.waitingForSpace ? 3600 : 0;
+      if (!manual && (finished || now >= v.event.end + grace && (!near || !v.visible))) {
+        if (this.game.ride === v) this.game._alight(true);
+        this._dispose(v);
         this.vehicles.splice(index, 1);
+        this.active.delete(v.event.key);
         continue;
       }
       if (!near) {
-        if (now === undefined) v.s += 6.5 * dt;
-        else if (v.visible) v.s = this.timetable.position(v.event, now);
         this._show(v, false);
-        v.v = 6.5; v.wait = 0; v.stopTarget = null; v.trafficStop = null; v.doorsOpen = false;
-      } else {
-        if (!v.visible) {
-          // první zobrazení: tramvaj na tramvajovém mostě (trolejbus na silničním) začíná na mostovce
-          const d = this.world.deckAt(_o.x, _o.z, 1e9, v.isTram ? 1 : 0);
-          v.y = Math.max(d, this.world.heightAt(_o.x, _o.z) + 0.05);
-        }
+        v.waitingForSpace = false;
+        v.trafficStop = null;
+        v.x = frontPoint.x;
+        v.z = frontPoint.z;
+        continue;
+      }
+      const wasVisible = v.visible, wasOpen = v.doorsOpen;
+      if (!v.visible) {
+        const deck = this.world.deckAt(frontPoint.x, frontPoint.z, 1e9, v.isTram ? 1 : 0);
+        v.y = Math.max(deck, this.world.heightAt(frontPoint.x, frontPoint.z) + 0.05);
+        if (!this._spawnSpace(v, nearby)) { v.waitingForSpace = true; continue; }
+        v.waitingForSpace = false;
+        if (v.wait > 0) v.wait = Math.max(v.wait, STOP_DWELL * 0.7);
+        v.v = v.wait > 0 ? 0 : 6.5;
         this._show(v, true);
-        let vmax = v.isTram ? 11.5 : 10.5;
-        if (!v.isTram) {
-          v.limitTimer = (v.limitTimer ?? 0) - dt;
-          if (v.limitTimer <= 0) {
-            const road = this.world.nearestRoad(_o.x, _o.z, 10, 13, 0, {}, v.y);
-            v.roadLimit = road ? this.world.roadSpeed(road.road, road.dx * _o.tx + road.dz * _o.tz >= 0) / 3.6 : vmax;
-            v.limitTimer = 0.5;
-          }
-          vmax = Math.min(vmax, v.roadLimit);
-        }
-        let limit = vmax;
-        // zastávky
-        if (v.terminal !== null) {
-          limit = 0; v.doorsOpen = true;
-        } else if (v.wait > 0) {
-          v.wait -= dt; limit = 0; v.doorsOpen = true;
-          if (v.wait <= 0) { v.doorsOpen = false; if (d2 < 60 * 60 && v.isTram) this.game.audio.bell(); }
-        } else {
-          const st = v.nextStop(v.s - 0.6);
-          if (st) {
-            const d = st[0] - v.s;
-            if (d < 0.6 && v.stopTarget !== st) { v.wait = 5 + Math.random() * 3; v.stopTarget = st; limit = 0; v.v = 0; }
-            else if (v.stopTarget !== st) limit = Math.min(limit, Math.sqrt(2 * 1.1 * Math.max(0, d)) + 0.25);
-          }
-        }
-        // překážky před vozem
-        const fx = _o.tx, fz = _o.tz;
-        const check = (o) => {
-          const dx = o.x - _o.x, dz = o.z - _o.z;
-          if (dx * dx + dz * dz > 30 * 30 || Math.abs((o.y === undefined ? v.y : o.y) - v.y) > 3) return;
-          const ahead = dx * fx + dz * fz;
-          if (ahead < 0.5 || ahead > 22) return;
-          if (Math.abs(dx * fz - dz * fx) > 1.5 + (o.radius || 1) * 0.5) return;
-          const gap = ahead - (o.halfLen || 1) - 0.5;
-          const along = (o.vx || 0) * fx + (o.vz || 0) * fz;
-          limit = Math.min(limit, Math.max(0, along + (gap - 2.5) * 1.2));
-        };
-        for (const c of cars) check(c);
-        if (playerOnFoot) check(player);
-        for (const o of this.vehicles) {
-          if (o === v || !o.visible) continue;
-          check(o);
-        }
-        if (v.v < limit) v.v = Math.min(limit, v.v + 1.1 * dt); else v.v = Math.max(limit, v.v - 2.6 * dt);
-        r.posAt(v.s + 16, v.side, _ahead);
-        v.v = this.world.traffic.transitLimit(v, _o, _ahead, dt, v.v, cars);
-        v.s += v.v * dt;
+        nearby.push(v);
       }
-      if (near && v.s >= endS && v.terminal === null) {
-        v.s = endS; v.v = 0; v.terminal = 6;
-        v.stopTarget = v.stops.at(-1);
-        v.doorsOpen = true;
+      if (manual) {
+        this._roadLane(v, dt);
+        v.route.posAt(v.s, v.side, frontPoint);
+        const limit = v.isTram ? 40 / 3.6 : v.roadLimit;
+        v.shiftLimit = Math.round(limit * 3.6);
+        this.game.shifts.drive(v, dt, controls, limit, frontPoint, nearby, cars);
+      } else this._drive(v, dt, now, nearby, cars, playerOnFoot, player);
+      this._pose(v, dt);
+      if (dt > 0 && (v.doorsOpen !== wasOpen || !wasVisible && v.doorsOpen && v.justDispatched)) {
+        this.game.audio.transitDoors(v, v.doorsOpen, v.stopTarget?.[1]);
+        if (!v.doorsOpen && v.isTram && v.stopIndex < v.stops.length) this.game.audio.bell(v);
       }
-      // poloha a články
-      const rr = v.route;
-      if (v.visible) {
-        const front = v.s;
-        if (v.isTram) {
-          for (let j = 0; j < 3; j++) {
-            const sc = front - TRAM_SEG * (j + 0.5);
-            rr.posAt(sc + 2.6, 0, _o); const ax = _o.x, az = _o.z;
-            rr.posAt(sc - 2.6, 0, _o);
-            const cx = (ax + _o.x) / 2, cz = (az + _o.z) / 2;
-            const yaw = Math.atan2(ax - _o.x, az - _o.z);
-            const ya = this.world.groundY(ax, az, v.y), yb = this.world.groundY(_o.x, _o.z, v.y);
-            const cy = (ya + yb) / 2;
-            const m = v.meshes[j];
-            m.position.set(cx, cy, cz); m.rotation.set(Math.atan2(yb - ya, 5.2), yaw, 0, 'YXZ');
-            const vx = Math.sin(yaw) * v.v, vz = Math.cos(yaw) * v.v;
-            for (const k of [-2.6, 0, 2.6]) this.heavy.push({ x: cx + Math.sin(yaw) * k, y: cy, z: cz + Math.cos(yaw) * k, r: 1.3, vx, vz });
-            this.obstacles.push({ x: cx, y: cy, z: cz, vx, vz, yaw, halfLen: TRAM_SEG / 2, radius: 1.4 });
-            if (j === 1) { v.x = cx; v.z = cz; v.yaw = yaw; v.vx = vx; v.vz = vz; v.y = cy; }
-          }
-        } else {
-          const sc = front - TROLLEY_LEN / 2;
-          rr.posAt(sc + 3.5, v.side, _o); const ax = _o.x, az = _o.z;
-          rr.posAt(sc - 3.5, v.side, _o);
-          const cx = (ax + _o.x) / 2, cz = (az + _o.z) / 2;
-          const yaw = Math.atan2(ax - _o.x, az - _o.z);
-          const ya = this.world.groundY(ax, az, v.y), yb = this.world.groundY(_o.x, _o.z, v.y);
-          const cy = (ya + yb) / 2;
-          v.meshes[0].position.set(cx, cy, cz); v.meshes[0].rotation.set(Math.atan2(yb - ya, 7), yaw, 0, 'YXZ');
-          v.x = cx; v.z = cz; v.y = cy; v.yaw = yaw; v.vx = Math.sin(yaw) * v.v; v.vz = Math.cos(yaw) * v.v;
-          for (const k of [-4.2, 0, 4.2]) this.heavy.push({ x: cx + Math.sin(yaw) * k, y: cy, z: cz + Math.cos(yaw) * k, r: 1.35, vx: v.vx, vz: v.vz });
-          this.obstacles.push({ x: cx, y: cy, z: cz, vx: v.vx, vz: v.vz, yaw, halfLen: TROLLEY_LEN / 2, radius: 1.4 });
-        }
-        v.halfLen = v.len / 2; v.radius = 1.4;
-      } else {
-        rr.posAt(v.s, v.side, _o);
-        v.x = _o.x; v.z = _o.z;
-      }
+      v.justDispatched = false;
     }
   }
 
-  /** Vůz MHD, do kterého jde právě nastoupit (stojí v zastávce poblíž). */
   boardable(x, z, y) {
-    let best = null, bd = 1e9;
+    let best = null, distance = Infinity;
     for (const v of this.vehicles) {
-      if (!v.visible || v.terminal !== null || v.v > 0.6 || Math.abs(v.y - y) > 2.5) continue;
-      const fx = Math.sin(v.yaw), fz = Math.cos(v.yaw);
-      const dx = x - v.x, dz = z - v.z;
-      const along = Math.abs(dx * fx + dz * fz), across = Math.abs(dx * fz - dz * fx);
-      if (along < v.len / 2 + 1.5 && across < 4.2) {
-        const d = across + along * 0.1;
-        if (d < bd) { bd = d; best = v; }
-      }
+      if (!v.visible || !v.canBoard || Math.abs(v.y - y) > 2.5) continue;
+      const front = v.meshes[0].position;
+      if ((z - front.z) * Math.sin(v.yaw) - (x - front.x) * Math.cos(v.yaw) < 0.8) continue;
+      const door = this.exitPoint(v, entryPoint);
+      const d = (x - door.x) ** 2 + (z - door.z) ** 2;
+      if (d < 5.5 ** 2 && d < distance) { distance = d; best = v; }
     }
     return best;
   }
 
-  /** Místo pro výstup: vpravo vedle vozu. */
+  /** Pravé přední dveře. Poloha nástupu i výstupu používá stejný vůz a článek. */
   exitPoint(v, out) {
+    const longitudinal = v.isTram ? 0.5 : 3.9;
     const fx = Math.sin(v.yaw), fz = Math.cos(v.yaw);
-    out.x = v.x - fz * 2.6; out.z = v.z + fx * 2.6;
+    const mesh = v.meshes?.[0];
+    const x = mesh?.position.x ?? v.x + (v.isTram ? fx * TRAM_SEG : 0);
+    const z = mesh?.position.z ?? v.z + (v.isTram ? fz * TRAM_SEG : 0);
+    out.x = x + fx * longitudinal - fz * 2.6;
+    out.z = z + fz * longitudinal + fx * 2.6;
     return out;
   }
 }

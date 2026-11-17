@@ -118,6 +118,8 @@ export class VehicleManager {
   remove(car) {
     const i = this.cars.indexOf(car);
     if (i >= 0) this.cars.splice(i, 1);
+    this.game.garage?.onRemove(car);
+    this.game.audio.remove(car);
     this.scene.remove(car.mesh);
     if (car.mesh.userData.beacons) for (const b of car.mesh.userData.beacons) b.material.dispose();
   }
@@ -155,11 +157,12 @@ export class VehicleManager {
     let vL = car.vx * lx + car.vz * lz;
 
     // motor a brzdy
+    const brake = car.upgrades?.brakes ? 21 : 16;
     if (throttle > 0) {
-      if (vF < -0.6) vF = Math.min(0, vF + 16 * dt * throttle);
+      if (vF < -0.6) vF = Math.min(0, vF + brake * dt * throttle);
       else vF += t.accel * throttle * Math.max(0, 1 - Math.pow(Math.max(0, vF) / maxSpeed, 1.6)) * dt;
     } else if (throttle < 0) {
-      if (vF > 0.6) vF = Math.max(0, vF + 16 * dt * throttle);
+      if (vF > 0.6) vF = Math.max(0, vF + brake * dt * throttle);
       else if (vF > -9) vF += t.accel * 0.7 * throttle * dt;
     } else {
       const dec = 1.1 * dt;
@@ -168,7 +171,7 @@ export class VehicleManager {
     vF -= vF * (0.06 + 0.0028 * Math.abs(vF) + (car.offroad ? 0.5 : 0)) * dt;
     if (vF > maxSpeed) vF -= (vF - maxSpeed) * Math.min(1, dt * 2);
     if (handbrake) { const dec = 9 * dt; vF = Math.abs(vF) < dec ? 0 : vF - Math.sign(vF) * dec; }
-    const grip = (handbrake ? 1.6 : t.grip) * (car.offroad ? 0.6 : 1);
+    const grip = (handbrake ? 1.6 : t.grip * (car.upgrades?.tires ? 1.25 : 1)) * (car.offroad ? 0.6 : 1);
     const slip = Math.abs(vL);
     vL *= Math.exp(-grip * dt);
     car.skid = slip > 3.5 && sp > 5 ? Math.min(1, slip / 9) : 0;
@@ -680,9 +683,9 @@ export class VehicleManager {
           if (c.rest > 3 && c.wasAI && c.health > 25 && !c.noDriver) { if (this._resumeAI(c)) c.wasAI = false; else if (c.rest > 8) c.wasAI = false; }
           else if (c.rest > 2.5 && (c.noDriver || !c.wasAI)) { c.mode = 'parked'; c.vx = c.vz = 0; c.speed = 0; }
         } else c.rest = 0;
-        if (d2 > 380 * 380) { this.remove(c); continue; }
+        if (d2 > 380 * 380 && c !== this.game.garage?.active) { this.remove(c); continue; }
       } else if (c.mode === 'parked') {
-        if (d2 > 330 * 330 && c !== player.lastCar) { this.remove(c); continue; }
+        if (d2 > 330 * 330 && c !== player.lastCar && c !== this.game.garage?.active) { this.remove(c); continue; }
       }
       if (c.mesh.userData.light) c.mesh.userData.light.visible = lightsOn && c.mode !== 'parked' && !c.noLights && d2 < 300 * 300;
       if (c.mesh.userData.beacons) {

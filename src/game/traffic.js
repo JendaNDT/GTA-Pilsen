@@ -1,7 +1,10 @@
 import { COLL_CELL, RF } from '../config.js';
 
 const cell = (x, z) => Math.floor(x / COLL_CELL) * 8192 + Math.floor(z / COLL_CELL);
-const stopDistance = (distance, dt) => Math.min(Math.sqrt(11 * Math.max(0, distance)), Math.max(0, distance) / dt);
+const stopDistance = (distance, dt) => {
+  const remaining = Math.max(0, distance);
+  return Math.min(Math.sqrt(11 * remaining), dt > 0 ? remaining / dt : Infinity);
+};
 const clamp = (x, hi) => Math.max(0, Math.min(hi, x));
 const exitStart = {}, exitEnd = {};
 

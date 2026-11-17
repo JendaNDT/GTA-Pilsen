@@ -3,14 +3,22 @@ import { chromium } from '@playwright/test';
 
 const args = process.argv.slice(2);
 const centerFlight = args.includes('--center-flight');
-const pilot = centerFlight || args.includes('--pilot');
+const release = args.includes('--release');
+const pilot = release || centerFlight || args.includes('--pilot');
 const url = new URL(args.find((arg) => !arg.startsWith('--')) || 'http://127.0.0.1:4173/');
 url.searchParams.set('debug', '');
 const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH });
 const report = { browser: browser.version(), viewport: '1920 × 1080', pilot, centerFlight, coldStartMs: [] };
+const scenarios = release ? [
+  { name: 'car', mode: 'car', site: 'Plzeň' },
+  { name: 'heli', mode: 'heli', site: 'Dobřív' },
+  { name: 'carEast', mode: 'car', site: 'Hrádek' },
+  { name: 'heliCenter', mode: 'heli', site: 'Plzeň' },
+] : [{ name: 'car', mode: 'car' }, { name: 'heli', mode: 'heli', site: centerFlight ? 'Plzeň' : undefined }];
+if (release) report.quality = url.searchParams.get('quality') ?? 'high';
 
 try {
-  for (const mode of ['car', 'heli', null]) {
+  for (const { name, mode, site } of [...scenarios, { mode: null }]) {
     const context = await browser.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
     const page = await context.newPage();
     await page.addInitScript(() => {
@@ -34,14 +42,17 @@ try {
     report.gpu = startup.gpu;
     if (mode) {
       await page.getByRole('button', { name: 'Hrát', exact: true }).click();
-      report[mode] = await page.evaluate(async ({ mode, pilot, centerFlight }) => {
+      report[name] = await page.evaluate(async ({ mode, pilot, site }) => {
         const game = window.__game, world = game.world;
         if (mode === 'car') {
-          const road = world.nearestRoad(pilot ? 45 : 90, pilot ? -48 : 530, 70, 13, 0, {});
+          const [x, z] = site === 'Hrádek' ? [19592, 4145] : pilot ? [45, -48] : [90, 530];
+          const road = world.nearestRoad(x, z, 120, 13, 0, {});
+          if (!road) throw new Error(`Chybí výchozí silnice u ${site ?? 'Plzně'}.`);
           const car = game.player.lastCar;
           car.place(road.x - road.dz * 1.8, road.z + road.dx * 1.8, Math.atan2(road.dx, road.dz));
           game._enterCar(car);
         } else {
+          const centerFlight = site === 'Plzeň';
           const heli = game.helis[3];
           heli.x = centerFlight ? -325 : pilot ? 22495 : world.playMaxX - 900;
           heli.z = centerFlight ? 162 : pilot ? 3101 : 0;
@@ -97,12 +108,15 @@ try {
           fps: +(1000 * frames.length / elapsed).toFixed(1),
           p95FrameMs: +frames[Math.ceil(frames.length * 0.95) - 1].toFixed(1),
           maxFrameMs: +frames.at(-1).toFixed(1),
+          framesOver50Ms: frames.filter((value) => value > 50).length,
         };
-      }, { mode, pilot, centerFlight });
+      }, { mode, pilot, site });
+      if (site) report[name].site = site;
     }
     await context.close();
   }
   console.log(JSON.stringify(report, null, 2));
+  if (release && (report.carEast.metres < 25 || report.heliCenter.chunks < 2 || !report.heliCenter.cityTiles)) process.exitCode = 1;
   if (pilot && ([report.car, report.heli].some(({ chunks }) => chunks < 2) || !report.car.cityTiles
       || centerFlight && !report.heli.cityTiles)) process.exitCode = 1;
 } finally {

@@ -5,7 +5,6 @@ import { DAY_SECONDS, GameClock, formatDay, formatTime, parseDay, weekday } from
 import { Timetable } from '../src/game/timetable.js';
 
 const dataset = JSON.parse(await readFile(new URL('../public/data/timetable.json', import.meta.url)));
-const { transit: routes } = JSON.parse(await readFile(new URL('../public/data/meta.json', import.meta.url)));
 
 test('herní hodiny převádějí neděli a poslední den měsíce bez závislosti na časové zóně', () => {
   const clock = new GameClock(parseDay('2027-01-31'));
@@ -22,25 +21,25 @@ test('herní hodiny převádějí neděli a poslední den měsíce bez závislos
 });
 
 test('balík PMDP skutečně používá výjimku a po konci opakuje běžný týden', () => {
-  const t = new Timetable(dataset, routes);
+  const t = new Timetable(dataset);
   const monday = parseDay('2026-11-16'), holiday = parseDay('2026-11-17'), sunday = parseDay('2026-11-15');
   assert.equal(weekday(t.monday), 0);
   assert.equal(t.profile(holiday), t.profile(sunday));
   assert.notEqual(t.profile(holiday), t.profile(monday));
-  assert.equal(t.profile(parseDay('2027-05-10')), t.profile(monday));
-  assert.equal(t.profile(parseDay('2027-05-16')), t.profile(sunday));
+  assert.equal(t.profile(parseDay('2027-05-17')), t.profile(parseDay('2027-05-10')));
+  assert.equal(t.profile(parseDay('2027-05-16')), t.profile(parseDay('2027-05-09')));
   assert.ok(t.events(parseDay('2027-05-10')).length > t.events(parseDay('2027-05-16')).length);
 });
 
 test('pozice, vypravení i odjezdy po půlnoci čtou předchozí dopravní den', () => {
-  const t = new Timetable(dataset, routes);
+  const t = new Timetable(dataset);
   const sunday = parseDay('2026-11-15'), midnight = (sunday + 1) * DAY_SECONDS;
   const after = t.events(sunday + 1).find((e) => e.trip.id === '695549');
   const before = t.events(sunday).find((e) => e.key === after.key);
   assert.equal(after.day, sunday);
   assert.ok(after.start < midnight && after.end > midnight);
   assert.equal(before.end, after.end);
-  assert.ok(t.position(after, midnight + 120) > t.position(before, midnight - 60));
+  assert.ok(t.position(after, midnight + 360) > t.position(before, midnight - 60));
   const departure = after.trip.stops.findIndex((_, i) => after.trip.times[i * 2 + 1] > DAY_SECONDS);
   assert.ok(departure >= 0 && departure < after.trip.stops.length - 1);
   const [name, x, z] = t.stops[after.trip.stops[departure].stop];

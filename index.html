@@ -42,6 +42,7 @@
       <section id="stop-board" class="hidden" aria-label="Nejbližší zastávka">
         <h2 id="stop-name"></h2>
         <ul id="stop-departures"></ul>
+        <p id="stop-transfer" hidden></p>
       </section>
     </div>
     <div id="place"><b id="street"></b><span id="district"></span></div>
@@ -64,8 +65,8 @@
   <div id="bigmap" class="hidden">
     <div id="bigmap-controls">
       <form id="bigmap-search" role="search">
-        <input id="bigmap-query" type="search" aria-label="Najít obec nebo památku"
-          placeholder="Najít obec nebo památku" autocomplete="off" enterkeyhint="go">
+        <input id="bigmap-query" type="search" aria-label="Najít obec, památku nebo zastávku"
+          placeholder="Najít obec, památku nebo zastávku" autocomplete="off" enterkeyhint="go">
         <ul id="bigmap-results" aria-label="Výsledky hledání" aria-live="polite"></ul>
       </form>
       <button id="bigmap-close">Zavřít mapu</button>
@@ -85,6 +86,9 @@
       </div>
       <div id="menu-buttons" class="hidden">
         <button id="btn-play" class="primary">Hrát</button>
+        <button id="btn-jobs" aria-controls="panel-jobs" aria-expanded="false">Zakázky</button>
+        <button id="btn-garage" aria-controls="panel-garage" aria-expanded="false">Garáž</button>
+        <button id="btn-shifts" aria-controls="panel-shifts" aria-expanded="false">Směny MHD</button>
         <button id="btn-help">Ovládání</button>
         <button id="btn-about">O hře</button>
         <button id="btn-settings" aria-controls="panel-settings" aria-expanded="false">Nastavení</button>
@@ -93,9 +97,69 @@
       <div id="rotate-tip">Tip: otoč telefon na šířku, hraje se to líp.</div>
       <div id="panel-help" class="panel hidden"></div>
       <div id="panel-about" class="panel hidden"></div>
+      <section id="panel-jobs" class="panel hidden" aria-labelledby="jobs-heading">
+        <h3 id="jobs-heading">Zakázky</h3>
+        <p id="job-result" aria-live="polite"></p>
+        <div class="work-actions" id="job-offers">
+          <button data-job="taxi">Vzít taxi jízdu</button>
+          <button data-job="food">Vzít rozvoz jídla</button>
+        </div>
+        <div id="job-demo">
+          <h3>Rozvoz k Boleváku</h3>
+          <p>Z Dřevěné přes Lochotín a Bolevec k rybníku. Pěšky předej jídlo na adrese U Velkého rybníka 2315/3.</p>
+          <div class="work-actions">
+            <button data-job="car">Rozvézt autem</button>
+            <button data-job="transit">Rozvézt MHD</button>
+          </div>
+        </div>
+        <div class="work-actions">
+          <button id="job-cancel" hidden>Zrušit zakázku</button>
+          <button id="job-retry" hidden>Znovu uložit odměnu</button>
+        </div>
+        <p id="job-feedback" class="work-feedback" role="status"></p>
+        <button class="work-resume" data-work-resume>Zpět do hry</button>
+      </section>
+      <section id="panel-garage" class="panel hidden" aria-labelledby="garage-heading">
+        <h3 id="garage-heading">Garáž u hlavního nádraží</h3>
+        <p id="garage-balance"></p>
+        <p id="garage-car"></p>
+        <div id="garage-actions" class="work-actions">
+          <button data-garage="navigate">Najít garáž na mapě</button>
+          <button data-garage="buy"></button>
+          <button data-garage="retrieve">Vyjet s autem</button>
+          <button data-garage="store">Uložit auto do garáže</button>
+          <button data-garage="repair"></button>
+          <button data-garage="brakes"></button>
+          <button data-garage="tires"></button>
+        </div>
+        <p id="garage-feedback" class="work-feedback" role="status"></p>
+        <button class="work-resume" data-work-resume>Zpět do hry</button>
+      </section>
+      <section id="panel-shifts" class="panel hidden" aria-labelledby="shift-heading">
+        <h3 id="shift-heading">Směny MHD</h3>
+        <div id="shift-summary" aria-live="polite" hidden>
+          <p id="shift-result"></p>
+          <p id="shift-score"></p>
+          <p id="shift-traffic"></p>
+        </div>
+        <div id="shift-select">
+          <label for="shift-offer">Nejbližší nástupy podle jízdního řádu</label>
+          <select id="shift-offer"></select>
+          <p id="shift-direction"></p>
+          <p>Hra tě přesune do vozu před odjezdem. Řídíš rozjezd, brzdy a dveře, vozidlo sleduje trasu spoje.</p>
+        </div>
+        <div class="work-actions">
+          <button id="shift-start">Nastoupit do směny</button>
+          <button id="shift-cancel" hidden>Zrušit směnu</button>
+          <button id="shift-retry" hidden>Znovu uložit výsledek</button>
+        </div>
+        <p id="shift-feedback" class="work-feedback" role="status"></p>
+        <button class="work-resume" data-work-resume>Zpět do hry</button>
+      </section>
       <div id="panel-settings" class="panel hidden">
         <h3>Rozhraní</h3>
         <label class="setting"><input id="show-clock" type="checkbox" checked /> Zobrazovat herní hodiny</label>
+        <label class="setting"><input id="sound-enabled" type="checkbox" checked /> Zvuk hry</label>
       </div>
     </div>
     <div id="credits">Mapová data © přispěvatelé OpenStreetMap (ODbL) · Výškopis © ČÚZK</div>

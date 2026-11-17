@@ -1,7 +1,7 @@
 # Plzeň naplno
 
-Skutečná Plzeň jako otevřený svět v prohlížeči. Chodíš, jezdíš autem, tramvají a trolejbusem,
-létáš vrtulníkem, rozvážíš jídlo a ujíždíš policii – to vše v ulicích postavených ze skutečných
+Skutečná Plzeň jako otevřený svět v prohlížeči. Chodíš, jezdíš autem, tramvají, trolejbusem i autobusem,
+létáš vrtulníkem, rozvážíš jídlo, vozíš zákazníky a ujíždíš policii – to vše v ulicích postavených ze skutečných
 otevřených dat. Běží na počítači i na mobilu, bez instalace.
 
 ## Co ve hře je
@@ -14,9 +14,11 @@ otevřených dat. Běží na počítači i na mobilu, bez instalace.
   tubusy tunelu Valík. Auta se naklánějí podle svahu, do kopce zpomalují a z mostu se dá spadnout.
 - **Krajina mezi obcemi.** Na vybraných svazích a v údolích má terén hustší výškovou síť.
   Po celé mapě se střídají povrchy polí, luk, lesů, břehů a obcí podle mapových ploch.
-- **MHD podle skutečných linek**: tramvaje 1, 2 a 4 a trolejbusy jezdí po svých trasách a staví
-  v zastávkách se skutečnými názvy. Vybrané spoje se vypravují podle zabaleného jízdního řádu PMDP.
-  U nejbližší zastávky se zobrazí plánované odjezdy a do vozu se dá nastoupit.
+- **Kompletní síť PMDP.** Tramvaje, trolejbusy i denní a noční autobusy obsluhují 51 linek z vybraného
+  jízdního řádu. V mapě najdeš jednotlivá stanoviště a u nich odjezdy s cílem spoje. Do vozu
+  nastoupíš klávesou F u otevřených dveří. Tabule zohledňuje polohu viditelných vozů.
+- **Prostorový zvuk.** Každý motor, klakson a hlášení zastávky zní od svého vozidla.
+  U vody je slyšet tok nebo jez. U hamru zní mechanismus během práce kol. Zvuk lze vypnout v nastavení.
 - **Auta**: zaparkovaná i v provozu, osm typů, jízdní fyzika se smykem a poškozením.
 - **Dopravní značení**: navigace i provoz respektují jednosměrky, zákazy vjezdu a odbočení.
   Auta dávají přednost a zastavují u stopek. Světla pro chodce, auta a MHD na křižovatce mají
@@ -24,7 +26,12 @@ otevřených dat. Běží na počítači i na mobilu, bez instalace.
 - **Denní rytmus ulic.** Na měřených tazích v centru i dalších částech Plzně se provoz mění
   podle hodinových profilů pro pracovní den a víkend. Auta při zaplněném výjezdu čekají před
   křižovatkou i na zelenou.
-- **Rozvoz jídla**: zakázky ze skutečných podniků na skutečné adresy, s časovým limitem a navigací.
+- **Zakázky.** Rozvážej jídlo nebo voz zákazníky po skutečných adresách. Rozvoz k Boleváku můžeš
+  splnit autem přes Lochotín a Bolevec nebo tramvají a autobusem s pěším předáním u rybníka.
+- **Vlastní vůz.** V garáži u hlavního nádraží koupíš malé auto za 1 350 Kč. Ukládá se jeho stav
+  i namontované úpravy. Ke koupi a servisu otevři v menu položku **Garáž**.
+- **Směny MHD.** V nabídce vyber směr tramvaje 1, trolejbusu 16 nebo autobusu 30. Na přidělené
+  trase řídíš plyn, brzdy a dveře. Odměnu určí obsluha zastávek, rozpis, pravidla a plynulost.
 - **Policie**: za krádež auta nebo nebezpečnou jízdu po tobě jde, dá se ujet nebo skončit s pokutou.
 - **Vrtulníky**: stojí na heliportech (FN Lochotín, pivovar, Bory) a na náměstí Republiky,
   přistávat jde i na střechách.
@@ -43,11 +50,11 @@ otevřených dat. Běží na počítači i na mobilu, bez instalace.
 | W A S D / šipky | chůze, řízení |
 | Shift | běh (ve vrtulníku klesání) |
 | Mezerník | ruční brzda, skok, ve vrtulníku stoupání |
-| F nebo E | nastoupit / vystoupit |
-| J | vzít nebo zrušit zakázku |
+| F nebo E | nastoupit / vystoupit, ve směně MHD dveře |
+| J | vzít rychlý rozvoz jídla nebo zrušit rozpracovanou zakázku |
 | M | velká mapa (vyhledej místo nebo kliknutím nastav cíl) |
 | C · H · R | kamera · klakson · vrátit na silnici |
-| N · Esc | posunout čas o 3 hodiny · menu |
+| N · Esc | posunout čas o 3 hodiny · menu se zakázkami, garáží a směnami MHD |
 
 Na dotykové obrazovce se objeví páčka a tlačítka. Telefon automaticky použije nižší grafickou
 kvalitu. Na počítači ji lze zapnout parametrem `?quality=low`. Ve vyšší kvalitě zobrazí `?wet=1`
@@ -96,8 +103,10 @@ Testy přípravy dat (po instalaci Python závislostí uvedených níže):
 npm run test:python
 ```
 
-Testy hry v Chromiu ověřují chůzi, mapu a navigaci, auto, vrtulník, rozvoz,
-tramvaj, uložení postupu a mobilní dotykové ovládání. Používají debug režim pro
+Testy hry v Chromiu ověřují chůzi, mapu a navigaci, auto, vrtulník, rozvoz oběma způsoby,
+taxi, nákup, opravu a uložení vlastního auta, přestup z tramvaje na autobus, trolejbus,
+noční spoj s výstupem na kraji mapy, směny na všech třech typech vozidel, uložení postupu
+a mobilní dotykové ovládání. Používají debug režim pro
 řízený čas a přesun k interakcím; mobil je emulovaný, nejde o měření výkonu telefonu.
 
 ```bash
@@ -112,7 +121,7 @@ testy v prohlížeči. Neúspěšný průchod prohlížečem uloží trasu a sn�
 
 ## Odkud jsou data a jak je obnovit
 
-Hotová herní data jsou v repozitáři ve složce `public/data/` (asi 26,8 MB včetně jízdního řádu PMDP).
+Hotová herní data jsou v repozitáři ve složce `public/data/` (asi 29 MB včetně jízdního řádu PMDP).
 Měřené centrum se načítá po 256metrových dlaždicích z `public/detail/city/` (asi 15,8 MB celkem). Všechny soubory jsou připravené ke spuštění. Skripty ve složce `tools/` je umí vyrobit znovu z aktuálních zdrojů
 (potřebují Python 3.10+ a balíčky z `tools/requirements.txt`):
 
@@ -152,11 +161,13 @@ python3 tools/build_data.py
 | `extract_osm.py` | vybere z výřezu jen oblast hry |
 | `fetch_traffic.py` | stáhne otevřený pasport svislého a vodorovného značení města Plzně |
 | `build_data.py` | spočítá výšky budov a vyrobí kompaktní soubory pro hru |
-| `build_timetable.py` | připraví z GTFS PMDP odjezdy a kalendář stávajících herních tras |
+| `build_transit_network.py` | sestaví kompletní síť z GTFS PMDP a směrového grafu OSM a vykáže pokrytí |
+| `build_timetable.py` | obnoví historický pilot E06 do surových dat a drží společný převod kalendáře |
 | `build_traffic_profiles.py` | sestaví pracovní a víkendové hodinové profily z historických měření plzeňských smyček |
 | `build_landscape.py` | porovná základní terén s výškopisem a sbalí vybrané dlaždice s hustší sítí |
 | `build_heritage.py` | převede městské plochy SHP do herních souřadnic |
 | `build_city.mjs` | sestaví měřené budovy do dlaždic a spáruje je s půdorysy OSM |
+| `archive_release.py` | zabalí ověřené statické vydání a jeho zdrojový strom s kontrolními součty |
 | `terrain.py` | pomocný modul: výšková síť terénu, zarovnání pod silnicemi, hladiny, výšky mostů |
 | `osm_source.py` | ověření a přenos data OSM z hlavičky zdrojového PBF |
 | `coordinates.py` | obousměrný převod mezi WGS 84 a herními metry |
@@ -173,6 +184,11 @@ Zdroje značení a pilot jízdy, MHD a chůze popisuje [protokol E04](docs/E04.m
 zdroje geometrie a měření historických lokalit uvádí [protokol E05](docs/E05.md).
 [Rozšíření E05 na Plzeň](docs/E05-mesto.md) popisuje sestavení všech čtyř listů centra a nové měření.
 [Protokol E06](docs/E06.md) popisuje herní kalendář, rozsah jízdního řádu a jeho obnovu.
+[Protokol E08](docs/E08.md) popisuje pokrytí celé sítě PMDP, výpočet tras, přestupy, okraj mapy a obnovu dat.
+[Protokol E09](docs/E09.md) popisuje zdroje zvuku v herním světě a obnovu českých hlášení.
+[Protokol E10](docs/E10.md) popisuje taxi, garáž, výplaty a trasu rozvozu k Boleváku.
+[Protokol E11](docs/E11.md) popisuje směny řidiče, jízdní rozpis a podmínky výplaty.
+[Protokol E12](docs/E12.md) uvádí obnovu vydání, závěrečné zkoušky, měření výkonu a známé odchylky.
 [Protokol E07](docs/E07.md) uvádí měřené směry, postup sestavení a porovnání provozu ve hře.
 [Protokol krajiny](docs/krajina.md) popisuje výběr jemnějšího terénu a kontrolu celé oblasti.
 
@@ -203,8 +219,8 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
   převedené do herních souřadnic a doplněné vlastními materiály. Hranice městských částí určují
   místní palety. [3D budovy centra Plzně](https://opendata.plzen.eu/public/opendata/detail/37) ·
   [Městské části](https://opendata.plzen.eu/public/opendata/detail/108)
-- Odjezdy tramvají a trolejbusů vycházejí z GTFS Plzeňských městských dopravních podniků, a.s.
-  Hra vybírá spoje na stávajících trasách a přiřazuje jejich zastávky k herní mapě.
+- Odjezdy tramvají, trolejbusů a autobusů vycházejí z GTFS Plzeňských městských dopravních podniků, a.s.
+  Hra přiřazuje zastávky ke kolejím a silnicím OpenStreetMap a ořezává spoje na okraji herního území.
   [Jízdní řády PMDP](https://opendata.plzen.eu/public/opendata/detail/187) ·
   [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
 - Vlastní model vodního hamru vychází z půdorysu OpenStreetMap, terénu ČÚZK a fotografií obnovy.

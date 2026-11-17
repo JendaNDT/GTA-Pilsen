@@ -669,6 +669,7 @@ ROAD_CLASS = {
     "bus_guideway": 13, "busway": 13, "road": 10,
 }
 DRIVABLE_MAX = 13
+ROAD_EDGE_MARGIN = 42
 # Trouby D5 ověřené podle portálů v ortofotu. Příčné podjezdy mají jiný výškový profil.
 VALIK_WAYS = {24525621, 27568574}
 HISTORIC_BRIDGES = {4722526: 2, 37894284: 1}
@@ -803,7 +804,8 @@ def clip_segment(a, b, bounds):
 def clip_roads(roads, bounds):
     # Závora je uvnitř hratelné plochy. Za ní je rezerva pro pěší pohyb i let.
     min_x, max_x, min_z, max_z = bounds
-    limits = (min_x + 42, max_x - 42, min_z + 42, max_z - 42)
+    limits = (min_x + ROAD_EDGE_MARGIN, max_x - ROAD_EDGE_MARGIN,
+              min_z + ROAD_EDGE_MARGIN, max_z - ROAD_EDGE_MARGIN)
     clipped, closures = [], []
     for road in roads:
         if road["cls"] > DRIVABLE_MAX:

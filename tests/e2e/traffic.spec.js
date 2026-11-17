@@ -135,7 +135,7 @@ test('E04 – sdílené fáze pro chodce, auta a MHD', async ({ page }, info) =>
     // Trolejbus linky 10 na Americké a tramvaj linky 4 na Klatovské.
     const transit = [];
     const vehicles = g.transit.vehicles;
-    const samples = [['trolleybus', '10', 'Tylova', 270], ['tram', '4', 'Univerzita', 3583]];
+    const samples = [['trolleybus', '10', 'Tylova', 283.8], ['tram', '4', 'Univerzita', 3532]];
     for (const [type, ref, from, start] of samples) {
       const v = vehicles.find((v) => v.route.type === type && v.route.ref === ref && v.route.from === from);
       v.route.posAt(start, v.side, ahead);
@@ -145,7 +145,7 @@ test('E04 – sdílené fáze pro chodce, auta a MHD', async ({ page }, info) =>
       const redTime = phaseTime(signal.control.group, 'red');
       const greenTime = phaseTime(signal.control.group, 'green' + signal.control.axis);
       g.transit.vehicles = [v];
-      v.s = start; v.v = 5; v.wait = 0; v.stopTarget = v.nextStop(start - 0.6);
+      Object.assign(v, { s: start, v: 5, wait: 0, doorsOpen: false, stopTarget: null });
       const observer = { x: ahead.x, z: ahead.z };
       t.time = redTime;
       for (let i = 0; i < 650; i++) g.transit.update(1 / 60, observer, [], false);
@@ -222,11 +222,11 @@ test('E07 – kolona na Tylově nechá volný přechod a tramvajové koleje', as
     const tram = game.transit.vehicles.find((vehicle) => vehicle.route.type === 'tram' &&
       vehicle.route.ref === '4' && vehicle.route.from === 'Univerzita');
     // Vzdálenost po kolejích v bodě, kde trať protíná spojky Americké a Tylovy.
-    const tramLine = 3514.14, tramStart = tramLine - 14;
+    const tramLine = 3463.13, tramStart = tramLine - 14;
     tram.route.posAt(tramStart, tram.side, position);
     traffic.time = phaseTime(`green${1 - signal.axis}`);
     game.transit.vehicles = [tram];
-    Object.assign(tram, { s: tramStart, v: 5, wait: 0, terminal: null, stopTarget: tram.nextStop(tramStart - 0.6) });
+    Object.assign(tram, { s: tramStart, v: 5, wait: 0, doorsOpen: false, stopTarget: null });
     const observer = { ...position };
     for (let i = 0; i < 480; i++) game.transit.update(dt, observer, vehicles.cars, false);
 

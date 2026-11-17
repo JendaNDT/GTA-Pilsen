@@ -1,0 +1,883 @@
+{
+  "release": "0.1.0-E12",
+  "mapExtent": [
+    49.668,
+    13.255,
+    49.84512,
+    13.71508
+  ],
+  "providers": [
+    {
+      "provider": "OpenStreetMap",
+      "provenance": "E01 a hlavička PBF",
+      "url": "https://download.openstreetmap.fr/extracts/europe/czech_republic/plzensky-latest.osm.pbf",
+      "sha256": "85f915de3252dbd934a56538847d42ddeefdef760e4138f56fd960b7fd05abcc",
+      "extractBbox": [
+        49.664,
+        13.251000000000001,
+        49.84912,
+        13.71908
+      ],
+      "revision": "2026-11-15T01:07:22Z",
+      "termsUrl": "https://www.openstreetmap.org/copyright",
+      "inputs": [
+        {
+          "path": "data-raw/plzensky-latest.osm.pbf",
+          "bytes": 82908965,
+          "sha256": "85f915de3252dbd934a56538847d42ddeefdef760e4138f56fd960b7fd05abcc"
+        },
+        {
+          "path": "data-raw/extract.pkl",
+          "bytes": 94679818,
+          "sha256": "c00b19c0c07fbf7f67f604ea771cad8e974ffa028bc5c5d2d93aeea61065e7d5"
+        }
+      ]
+    },
+    {
+      "provider": "Zeměměřický úřad",
+      "provenance": "E03 a manifesty rastrů",
+      "source": {
+        "dmp": {
+          "service": "dmp1g",
+          "url": "https://ags.cuzk.cz/arcgis2/rest/services/{svc}/ImageServer/exportImage?bbox={w},{s},{e},{n}&bboxSR=4326&imageSR=4326&size={pw},{ph}&format=tiff&pixelType=F32&noData=-9999&interpolation=RSP_BilinearInterpolation&f=image",
+          "retrievedAt": "2026-11-16T20:02:22+00:00",
+          "grid": {
+            "bbox": [
+              49.668,
+              13.255,
+              49.84512,
+              13.71508
+            ],
+            "crs": "EPSG:4326",
+            "verticalDatum": "Bpv",
+            "stepDegrees": 1.8e-05,
+            "shape": [
+              9840,
+              25560
+            ],
+            "tiles": [
+              9,
+              6
+            ]
+          },
+          "sha256": "a8074d562a3d723abd8c41a17537b2de38cbff1076c13a845fa0f1665ea34090"
+        },
+        "dmr": {
+          "service": "dmr5g",
+          "url": "https://ags.cuzk.cz/arcgis2/rest/services/{svc}/ImageServer/exportImage?bbox={w},{s},{e},{n}&bboxSR=4326&imageSR=4326&size={pw},{ph}&format=tiff&pixelType=F32&noData=-9999&interpolation=RSP_BilinearInterpolation&f=image",
+          "retrievedAt": "2026-11-16T20:04:33+00:00",
+          "grid": {
+            "bbox": [
+              49.668,
+              13.255,
+              49.84512,
+              13.71508
+            ],
+            "crs": "EPSG:4326",
+            "verticalDatum": "Bpv",
+            "stepDegrees": 1.8e-05,
+            "shape": [
+              9840,
+              25560
+            ],
+            "tiles": [
+              9,
+              6
+            ]
+          },
+          "sha256": "0c1236df1e7aaf374e11994b92baa35a4de26a3a4e8ff61458af8189839f381b"
+        }
+      },
+      "catalog": "https://ags.cuzk.gov.cz/opendata/",
+      "inputs": [
+        {
+          "path": "data-raw/dmr.npy",
+          "bytes": 1006041728,
+          "sha256": "0c1236df1e7aaf374e11994b92baa35a4de26a3a4e8ff61458af8189839f381b"
+        },
+        {
+          "path": "data-raw/dmr.npy.json",
+          "bytes": 644,
+          "sha256": "0dcb9577fe6390099a53717b0211fb1f55884fb7006dac632a623ea13291b276"
+        },
+        {
+          "path": "data-raw/dmp.npy",
+          "bytes": 1006041728,
+          "sha256": "a8074d562a3d723abd8c41a17537b2de38cbff1076c13a845fa0f1665ea34090"
+        },
+        {
+          "path": "data-raw/dmp.npy.json",
+          "bytes": 644,
+          "sha256": "96d9d171f1c1dbe08cc690a29f6afc17587103f35768df513bdfc4dd49227a2e"
+        }
+      ]
+    },
+    {
+      "provider": "Město Plzeň, dopravní značení",
+      "provenance": "E04 a archivy pasportů",
+      "source": {
+        "svisle": {
+          "url": "https://opendata.plzen.eu/public/opendata/download-file/10",
+          "sha256": "f58e2d0bd7dca17099218c6f96f0bdf92aef57449384375a0f6c9a949e687b47",
+          "archiveDate": "2026-10-06"
+        },
+        "vodor": {
+          "url": "https://opendata.plzen.eu/public/opendata/download-file/258",
+          "sha256": "0e939e70235515b97d1e4065c7d0f58ec296ee38588990039b82e26b46a26b10",
+          "archiveDate": "2026-10-06"
+        }
+      },
+      "catalog": [
+        "https://opendata.plzen.eu/public/opendata/detail/6",
+        "https://opendata.plzen.eu/public/opendata/detail/12"
+      ],
+      "inputs": [
+        {
+          "path": "data-raw/e04/svisle-shp.zip",
+          "bytes": 787230,
+          "sha256": "f58e2d0bd7dca17099218c6f96f0bdf92aef57449384375a0f6c9a949e687b47"
+        },
+        {
+          "path": "data-raw/e04/vodor-shp.zip",
+          "bytes": 2023556,
+          "sha256": "0e939e70235515b97d1e4065c7d0f58ec296ee38588990039b82e26b46a26b10"
+        }
+      ]
+    },
+    {
+      "provider": "Město Plzeň, 3D centrum a městské části",
+      "provenance": "E05 a E05-město",
+      "revision": [
+        "3D budovy centra 2024",
+        "městské části 2026-10-06"
+      ],
+      "downloads": [
+        "https://opendata.plzen.eu/public/opendata/download-file/430",
+        "https://opendata.plzen.eu/public/opendata/download-file/308"
+      ],
+      "catalog": [
+        "https://opendata.plzen.eu/public/opendata/dataset/37",
+        "https://opendata.plzen.eu/public/opendata/dataset/108"
+      ],
+      "inputs": [
+        {
+          "path": "data-raw/e05/plzen-2024-shp.zip",
+          "bytes": 15852799,
+          "sha256": "825dc3e395044b1f5a47e27c812cc4189829e9134cc027865ffc8fcb3e7bb9ac"
+        },
+        {
+          "path": "data-raw/e05-mesto/mestske-casti.zip",
+          "bytes": 88248,
+          "sha256": "973c8892fcded50edde7601ef85ce69df9413d4a0c7cba47bdd6a498063d6c26"
+        },
+        {
+          "path": "data-raw/e05-mesto/mestske-casti.geojson",
+          "bytes": 475782,
+          "sha256": "37bf6669e677bc4993eb00b29e74d1087f543224fc9929c622064a14af621ae4"
+        }
+      ]
+    },
+    {
+      "provider": "Město Plzeň, historická intenzita",
+      "provenance": "E07 a metadata měření",
+      "catalog": "https://opendata.plzen.eu/public/opendata/detail/160",
+      "period": [
+        "2026-11-02",
+        "2026-11-15"
+      ],
+      "excluded": [
+        "2026-10-28"
+      ],
+      "inputs": [
+        {
+          "path": "data-raw/e07/popis.csv",
+          "bytes": 112156,
+          "sha256": "e4960f515574837fc0eda63b8f49fc3a9e5efd59d38d13f7a8861848ba86cafd"
+        },
+        {
+          "path": "data-raw/e07/mereni-vyber.csv",
+          "bytes": 32366285,
+          "sha256": "05fc39a16ec4c79d9aaa7f038f340e6da6d220d688465a18a1d4534c614735b6"
+        },
+        {
+          "path": "data-raw/e07/mereni-k117.csv",
+          "bytes": 13359987,
+          "sha256": "d39868f7fba893675835cd50ae9d384b9eb8e2e7dbba079e2c870e03f78a9e1a"
+        },
+        {
+          "path": "data-raw/e07/plzen/polohy.geojson",
+          "bytes": 217584,
+          "sha256": "5b581ff091255f1c3e4f39174ebe180c24317f8dc7716f230a9aa07555d9a3bf"
+        },
+        {
+          "path": "data-raw/e07/plzen/tyden-2026-10-26.geojson",
+          "bytes": 13496676,
+          "sha256": "5a019db89c4a6b63181d415e82df73cba579891e1b6e8903da670f050eb64b58"
+        },
+        {
+          "path": "data-raw/e07/plzen/tyden-2026-11-02.geojson",
+          "bytes": 13308264,
+          "sha256": "6235773c344349e92fc3f1a6b0ad2df787a2d8d8f130c56ab5c453f0724e8243"
+        },
+        {
+          "path": "data-raw/e07/plzen/tyden-2026-11-09.geojson",
+          "bytes": 13447782,
+          "sha256": "9480009f1b1691aa67761dd76731f6f7262cd71c45ae8a80970561f77b506063"
+        }
+      ]
+    },
+    {
+      "provider": "PMDP",
+      "provenance": "E08 a manifest jízdního řádu",
+      "url": "https://jizdnirady.pmdp.cz/jr/gtfs",
+      "sha256": "5bfb4633e284e2f5e6715b91b7ab700ba0296f9b89f432569ad9aaba5537a4c6",
+      "osm": "2026-11-15T01:07:22Z",
+      "osmSha256": "85f915de3252dbd934a56538847d42ddeefdef760e4138f56fd960b7fd05abcc",
+      "calendar": {
+        "start": "2026-11-09",
+        "end": "2027-05-12"
+      },
+      "catalog": "https://opendata.plzen.eu/public/opendata/detail/187",
+      "license": "CC BY 4.0",
+      "inputs": [
+        {
+          "path": "data-raw/e06/pmdp.zip",
+          "bytes": 869875,
+          "sha256": "5bfb4633e284e2f5e6715b91b7ab700ba0296f9b89f432569ad9aaba5537a4c6"
+        }
+      ]
+    },
+    {
+      "provider": "OHF-Voice / Piper",
+      "provenance": "E09 a public/audio/zdroje.txt",
+      "revision": "2f358b6a560e3a913ebf509b2f3344f20b367f94",
+      "source": "https://huggingface.co/rhasspy/piper-voices/tree/2f358b6a560e3a913ebf509b2f3344f20b367f94/cs/cs_CZ/jirka/medium",
+      "inputs": [
+        {
+          "path": "data-raw/e09/piper/cs_CZ-jirka-medium.onnx",
+          "bytes": 63221984,
+          "sha256": "9bc0b76bb8f26e1d542bf7ed2ce8a6c764605a5f6edcc7663bd637d0b684c5d9"
+        },
+        {
+          "path": "data-raw/e09/piper/cs_CZ-jirka-medium.onnx.json",
+          "bytes": 5465,
+          "sha256": "4486971d79354d2f6d376fdd74f90acc6beb4308ba64083cfb03765e2c25cec1"
+        }
+      ]
+    }
+  ],
+  "generatedFiles": [
+    {
+      "path": "public/audio/hlasky-00.mp3",
+      "bytes": 526071,
+      "sha256": "49a2265928a4987a74acf2418f79c23d0f6803adee9771ee727bc1108aac7776"
+    },
+    {
+      "path": "public/audio/hlasky-01.mp3",
+      "bytes": 439083,
+      "sha256": "4470f4531d46d306d4e4d9b4fc4c223ef8abc3d22bbf5ea3fd19e34e52ccc08d"
+    },
+    {
+      "path": "public/audio/hlasky-02.mp3",
+      "bytes": 461653,
+      "sha256": "10a46736875280474b93cd6eb6354d10e15313802b9d28ad9752292421dd8637"
+    },
+    {
+      "path": "public/audio/hlasky-03.mp3",
+      "bytes": 498799,
+      "sha256": "3dd3caba19e78248673fa14016d23704e9de02e40c035ee682b961470db135ab"
+    },
+    {
+      "path": "public/audio/hlasky-04.mp3",
+      "bytes": 543468,
+      "sha256": "6cb0c5010a5610c5baa2798d1a842ebc743c93424f267a9038cfe597d9f8a385"
+    },
+    {
+      "path": "public/audio/hlasky-05.mp3",
+      "bytes": 461653,
+      "sha256": "bb577912d9461dc1ba092b9c4802d86d484caa63a6e43e38d8123b1730d44ad9"
+    },
+    {
+      "path": "public/audio/hlasky-06.mp3",
+      "bytes": 490962,
+      "sha256": "c2f3545bd27cfe94662367e2f8cdecb44c753b1760ea7fea5b087766e2ed2e42"
+    },
+    {
+      "path": "public/audio/hlasky-07.mp3",
+      "bytes": 122009,
+      "sha256": "c4b2324eae96a868a37f3120416ecbd17d2b75d4aa8530ef1621be38962013dc"
+    },
+    {
+      "path": "public/audio/stops.json",
+      "bytes": 16857,
+      "sha256": "727459756955601a53e721d2942a6522f7403764593adf73830cd5ba53ea8564"
+    },
+    {
+      "path": "public/audio/zdroje.txt",
+      "bytes": 1146,
+      "sha256": "0650f8e0bf8d9b37899658337ff013e8484b340aae8ef59f51312d791e90ad68"
+    },
+    {
+      "path": "public/data/buildings.bin",
+      "bytes": 6103134,
+      "sha256": "eae5977a05758078240c8a413152af5b75b76c7583368543fb0c61fe563cfb69"
+    },
+    {
+      "path": "public/data/land.bin",
+      "bytes": 3214784,
+      "sha256": "df198a5924806a5777689f4a5fd379359b58b49704e75a9fd978acaaf168e44d"
+    },
+    {
+      "path": "public/data/landscape.bin",
+      "bytes": 1353640,
+      "sha256": "58dd966db90cbcb6cf025d1925580d25fb94c929141aaf2448cbecd2c8b4fc20"
+    },
+    {
+      "path": "public/data/meta.json",
+      "bytes": 2080508,
+      "sha256": "3575f4c802e14a9f7ff4470c824533a24b5eb677f35663fd60223600d5159d63"
+    },
+    {
+      "path": "public/data/rails.bin",
+      "bytes": 95146,
+      "sha256": "ab8dfae5a15e5e432e43484480228580192bb7406d76137814d3087a10cd11cb"
+    },
+    {
+      "path": "public/data/roads.bin",
+      "bytes": 2098910,
+      "sha256": "7bbac440434f7714c3047120a947fad800516a50f499b2e1c0fbfb4663cfeac5"
+    },
+    {
+      "path": "public/data/sound-places.json",
+      "bytes": 1221,
+      "sha256": "94c55d32c71e3fb5af8eecd9c5b8418c598b8eaf400648fd6647a08cb84ba855"
+    },
+    {
+      "path": "public/data/terrain.bin",
+      "bytes": 10472620,
+      "sha256": "28db8f892e2b1d979479da30f604599505a815bd8941b138eb6ec2ba571c65f2"
+    },
+    {
+      "path": "public/data/timetable.json",
+      "bytes": 3512631,
+      "sha256": "dea295d253d3834014c5f5e9b1c7a991d2c603aaeeadc6f73665f59af9cbd283"
+    },
+    {
+      "path": "public/data/traffic-profiles.json",
+      "bytes": 212243,
+      "sha256": "3984dc84e0c96a4f2e100f1f125a5b65116434c752a15e956c7981b980d6d4f6"
+    },
+    {
+      "path": "public/data/trees.bin",
+      "bytes": 160240,
+      "sha256": "6b042f50137db1c137dd2ee129078ea3fd009591553e60a825033abbfa3863db"
+    },
+    {
+      "path": "public/detail/city/-1152--128.bin",
+      "bytes": 142858,
+      "sha256": "2c8a67bb1fce5b0de21afca463cb9f293f34e13af03dc43a7ffd6b5175785f05"
+    },
+    {
+      "path": "public/detail/city/-1152--384.bin",
+      "bytes": 2798,
+      "sha256": "96cc623f1454ed0fbce1f1b9b76c0668a7d60221286499fb7be61e0ca6cdc241"
+    },
+    {
+      "path": "public/detail/city/-1152--640.bin",
+      "bytes": 2798,
+      "sha256": "70a1c0fbba6b6f5c303a77bf330b04385279e7aadb633261304d91e26d67413b"
+    },
+    {
+      "path": "public/detail/city/-1152-1152.bin",
+      "bytes": 7332,
+      "sha256": "e82158b46e1a2693000ed32984b201b9e1d2910d909d2780f2296577f4340e64"
+    },
+    {
+      "path": "public/detail/city/-1152-128.bin",
+      "bytes": 219940,
+      "sha256": "2122781033c2a7590c514a3efc8f0bddad5f5b9914d2df5b5f678681a408bc6d"
+    },
+    {
+      "path": "public/detail/city/-1152-1408.bin",
+      "bytes": 40894,
+      "sha256": "267865d26e797c2250eb2308c98afc62953072e8d9f1d6c12ffd6f0dc8e79c42"
+    },
+    {
+      "path": "public/detail/city/-1152-384.bin",
+      "bytes": 20396,
+      "sha256": "1eed845ca5b9c92b05f5bc8516bed930ec94eddd308457e263dfafac5387da3f"
+    },
+    {
+      "path": "public/detail/city/-1152-640.bin",
+      "bytes": 111414,
+      "sha256": "9d36135c059d669c9a0895e78ab3b01316b5536dbdd3f651273423c566cc751a"
+    },
+    {
+      "path": "public/detail/city/-1152-896.bin",
+      "bytes": 58948,
+      "sha256": "3026b18686411b7fd338d466dd0f665793a880d2e1fd63b1df0540ba5b7c42e9"
+    },
+    {
+      "path": "public/detail/city/-128--128.bin",
+      "bytes": 405662,
+      "sha256": "a9cc7c1fed5e52b2acb60a86c8b97ed22f1a9b2f46113fdd5bfcb59e83f562c8"
+    },
+    {
+      "path": "public/detail/city/-128--384.bin",
+      "bytes": 87254,
+      "sha256": "c23f2a5c90686c9f65e0a786b7fca12ec7cc5cacd833db6041648f4efb21e17d"
+    },
+    {
+      "path": "public/detail/city/-128--640.bin",
+      "bytes": 49246,
+      "sha256": "e7e4c14ba4ecdd7eace83fcca21b08ddd5e5b4ac093acedebeebffc4c7d235bb"
+    },
+    {
+      "path": "public/detail/city/-128-1152.bin",
+      "bytes": 125420,
+      "sha256": "a1708e18bca6010c41b4bcdf65ee5012a81dfa9803f28c720a1550b8e8dc3f97"
+    },
+    {
+      "path": "public/detail/city/-128-128.bin",
+      "bytes": 723008,
+      "sha256": "6dfec1eb282b48ebb025311a56e1d5e659faf2d40c192ba83118e2633494d582"
+    },
+    {
+      "path": "public/detail/city/-128-1408.bin",
+      "bytes": 33984,
+      "sha256": "bd05aa14264ed7ee34a10a339167e9cea8dac63b97a1f52246890a38e80e26d9"
+    },
+    {
+      "path": "public/detail/city/-128-384.bin",
+      "bytes": 359002,
+      "sha256": "f0534df3d79fb9281b0939c462f3a7d3cd68a940534e6d2efea82158ff7f0ee7"
+    },
+    {
+      "path": "public/detail/city/-128-640.bin",
+      "bytes": 374404,
+      "sha256": "dc308e40aea3ec6e09ef3fa9b9291fd47d235ca395b53922347f6874c42cf8fe"
+    },
+    {
+      "path": "public/detail/city/-128-896.bin",
+      "bytes": 318372,
+      "sha256": "f1f6992e4270d93de1483e4edc6394e967b98f1bdcb9424cc0b684f42264ded2"
+    },
+    {
+      "path": "public/detail/city/-1408--128.bin",
+      "bytes": 6196,
+      "sha256": "8418ce5d3cb6ccc39aedbe4f5f8c718c81f57a613be374adadf1592601d58da1"
+    },
+    {
+      "path": "public/detail/city/-1408-128.bin",
+      "bytes": 30928,
+      "sha256": "0e5d389e1ed201fa242be9ad3a0dddb38fb13cded9d3d554aa63cb80748bf576"
+    },
+    {
+      "path": "public/detail/city/-1408-384.bin",
+      "bytes": 7392,
+      "sha256": "2a8bc0abc6f71399b98936d5eb2d176882602780d310784ba5d2934ca967e110"
+    },
+    {
+      "path": "public/detail/city/-384--128.bin",
+      "bytes": 156328,
+      "sha256": "e8315c9911e4b5411a54eaf8dbe6e3e7adf82922b167765b9693239d047e0eaa"
+    },
+    {
+      "path": "public/detail/city/-384--384.bin",
+      "bytes": 46134,
+      "sha256": "54663366ced824936657ebd5f1c5e8707a6185b1053d0de951c5d0884c80ddf1"
+    },
+    {
+      "path": "public/detail/city/-384--640.bin",
+      "bytes": 22576,
+      "sha256": "b085681bfffe5c206320536658bd894b8e0453dfa353bf54cd4484994f68bfcb"
+    },
+    {
+      "path": "public/detail/city/-384-1152.bin",
+      "bytes": 216654,
+      "sha256": "2d33e1bdd390c6f7982aae562a3940fd288dd701b593eb5f4407283a5820266b"
+    },
+    {
+      "path": "public/detail/city/-384-128.bin",
+      "bytes": 280450,
+      "sha256": "1dc6d2b37322fb7e9930b4102a82dab3d6d5a2becc0eb03a400ae76a74f2b680"
+    },
+    {
+      "path": "public/detail/city/-384-1408.bin",
+      "bytes": 135408,
+      "sha256": "2a106815d0860e725619be3399da9fddc6c6be6b3f7df4d21f313f65fddcf439"
+    },
+    {
+      "path": "public/detail/city/-384-384.bin",
+      "bytes": 418230,
+      "sha256": "84d42908a5e912828fedc88bc4ee7db7905b5dd88666f6af648c2c69fb55aa76"
+    },
+    {
+      "path": "public/detail/city/-384-640.bin",
+      "bytes": 429450,
+      "sha256": "cab2698e874d3aa8dcb88649821c31cad65df3919558814c96986c0e0c0dc4f0"
+    },
+    {
+      "path": "public/detail/city/-384-896.bin",
+      "bytes": 304872,
+      "sha256": "0cd9d41df9cc84c64fe36e23cd9d114ca3c13586c788999ac25bb4d6b62ee020"
+    },
+    {
+      "path": "public/detail/city/-640--128.bin",
+      "bytes": 219094,
+      "sha256": "8b0ac482402a5c8e8e79b989f1f1609d21f246d26135df0e84dcb18bf48a347b"
+    },
+    {
+      "path": "public/detail/city/-640--384.bin",
+      "bytes": 23000,
+      "sha256": "fbc3849a4e0225485be5e9f810a5c3fdfab0a0bd5ebb1de4782f9981c6cafce7"
+    },
+    {
+      "path": "public/detail/city/-640--640.bin",
+      "bytes": 6900,
+      "sha256": "195e1b5e26f5a6922b674026cf9e0a7470c57ba32ca7683518c18c2230041d2e"
+    },
+    {
+      "path": "public/detail/city/-640-1152.bin",
+      "bytes": 495838,
+      "sha256": "5e4f46abad72bec1d9dde24d88d0f44ce5797a06c137ead394b06bff27f6a8a7"
+    },
+    {
+      "path": "public/detail/city/-640-128.bin",
+      "bytes": 295766,
+      "sha256": "56a6ce021ca4c4e23914f3cfd66f460452106541bc071f29d011ec826b30569c"
+    },
+    {
+      "path": "public/detail/city/-640-1408.bin",
+      "bytes": 226890,
+      "sha256": "3bc10f1f19fd05d5f31c73887db40a828d3702affb9c517ee73ed672dab9c1a3"
+    },
+    {
+      "path": "public/detail/city/-640-384.bin",
+      "bytes": 394872,
+      "sha256": "9fb8dcd831952e883e1f789ce07160c6b00e283f3678b157f8be1d70ec19f26f"
+    },
+    {
+      "path": "public/detail/city/-640-640.bin",
+      "bytes": 546784,
+      "sha256": "c04806a16e40a95c8c7d6262b3f0d8d1fee5348f29f0c1b83dd3a7f8b6a326b8"
+    },
+    {
+      "path": "public/detail/city/-640-896.bin",
+      "bytes": 420412,
+      "sha256": "a8d34b41504d88d8228dc9c32508519f2833c085638bab68fe9cc32b5cd3ca61"
+    },
+    {
+      "path": "public/detail/city/-896--128.bin",
+      "bytes": 150072,
+      "sha256": "64069d47eaa59498ba85eca3cee317740f2f5c6b2a335e611a7557b3612d3809"
+    },
+    {
+      "path": "public/detail/city/-896--384.bin",
+      "bytes": 57346,
+      "sha256": "b458dd732186ff945ec05cce1b13a0f5ea191ab9a8c1ebcee0bf435e2d123e20"
+    },
+    {
+      "path": "public/detail/city/-896--640.bin",
+      "bytes": 18456,
+      "sha256": "1f07cf262ae21d282400975455b004600e7be1a523704e421db258914d4cdf54"
+    },
+    {
+      "path": "public/detail/city/-896-1152.bin",
+      "bytes": 118422,
+      "sha256": "0ef0453af73c033b14b19859fbe61e3e91b40c995f7803380771454053dfb98e"
+    },
+    {
+      "path": "public/detail/city/-896-128.bin",
+      "bytes": 221826,
+      "sha256": "b069b207badbfc59fa955aa42e554e90bd9cd0b89d6b9e70c17b5c2aff2770f1"
+    },
+    {
+      "path": "public/detail/city/-896-1408.bin",
+      "bytes": 117360,
+      "sha256": "c713ee0317a6cfccf81e1bedaa16d14a80e09aa22484b1f84c667c46a3ca35a6"
+    },
+    {
+      "path": "public/detail/city/-896-384.bin",
+      "bytes": 175178,
+      "sha256": "b3b6bd5305ffaeedb7b521f374d8fbbb549b222acb147428f129ee4e05faf001"
+    },
+    {
+      "path": "public/detail/city/-896-640.bin",
+      "bytes": 252772,
+      "sha256": "6abaf31959db1bb49586187578252cfce686c45d91703848e3ea0c950047e782"
+    },
+    {
+      "path": "public/detail/city/-896-896.bin",
+      "bytes": 159256,
+      "sha256": "1762db981b885d3ea503f0adec1ca1e4430df4a15df3eb25ef5d5b02ca61acf4"
+    },
+    {
+      "path": "public/detail/city/1152--128.bin",
+      "bytes": 7096,
+      "sha256": "ebfb7017ed99c214171e6090b91b31650a558f49f94a0eebfc4d500c3772f102"
+    },
+    {
+      "path": "public/detail/city/1152--384.bin",
+      "bytes": 1620,
+      "sha256": "8a83e9d4871dc774616ca04eecafa1a2461383e3fe26dbe8ea3c931ceb74371d"
+    },
+    {
+      "path": "public/detail/city/1152--640.bin",
+      "bytes": 4496,
+      "sha256": "3e6c55e9863d29b8c10e9a0ebff4dbe7b102af8458c34e61d057f0bb7c5cb61f"
+    },
+    {
+      "path": "public/detail/city/1152-1152.bin",
+      "bytes": 139008,
+      "sha256": "56b93d8035280b254497d44289e901c4236b3433b68bba26a9572fb29a05a170"
+    },
+    {
+      "path": "public/detail/city/1152-128.bin",
+      "bytes": 56904,
+      "sha256": "3e31166799e8e1906a8e2bcfe120b2e9fc3c2a81393e7317ffeff629fdcaba5c"
+    },
+    {
+      "path": "public/detail/city/1152-384.bin",
+      "bytes": 43182,
+      "sha256": "61f4362690ee9359512acc55af408452c5ba97713754e11d07169a4bd6856514"
+    },
+    {
+      "path": "public/detail/city/1152-640.bin",
+      "bytes": 282516,
+      "sha256": "ea6af4030d5f5bc1f754f32b637eecf1beca2bcc8a89857144128d265988909f"
+    },
+    {
+      "path": "public/detail/city/1152-896.bin",
+      "bytes": 390038,
+      "sha256": "2a4058ed9a081c19f8ce99124628a1ad164abbfd6259f03fe8f67e9751c89702"
+    },
+    {
+      "path": "public/detail/city/128--128.bin",
+      "bytes": 515536,
+      "sha256": "a62da45fa93c2225e73736f47275d24608ae59bf643bc1e170cf235aa10cc9d4"
+    },
+    {
+      "path": "public/detail/city/128--384.bin",
+      "bytes": 99152,
+      "sha256": "df0c60b9ac4938884f5e90e6315a0668555edd18917afaf8b55595e0faa2fa89"
+    },
+    {
+      "path": "public/detail/city/128--640.bin",
+      "bytes": 259186,
+      "sha256": "08077ecb419e43cc9778feea8ffedb12963df89b382703c6848c1674b3dc1378"
+    },
+    {
+      "path": "public/detail/city/128-1152.bin",
+      "bytes": 255272,
+      "sha256": "f9875e1160edb9d0d5e74c15027532e7159bec57c8ed2033bde73c8b646841cc"
+    },
+    {
+      "path": "public/detail/city/128-128.bin",
+      "bytes": 376814,
+      "sha256": "21527fbf49aea930a5eeca7ff86c4164881f6df0bc9ea0a3c4810c894406e35e"
+    },
+    {
+      "path": "public/detail/city/128-1408.bin",
+      "bytes": 45686,
+      "sha256": "a1d32b88418a7b2bd1ffc82998e547f23f306bcaba661628fb28035d4b06d2e3"
+    },
+    {
+      "path": "public/detail/city/128-384.bin",
+      "bytes": 271206,
+      "sha256": "7dea2501827e2f132713692f7af13c3bfdd0202d142835f5229f959cdee19943"
+    },
+    {
+      "path": "public/detail/city/128-640.bin",
+      "bytes": 210394,
+      "sha256": "42431c7a711650a94d4cde38cad0c92369fd899467ed99d44c4d6f395a749005"
+    },
+    {
+      "path": "public/detail/city/128-896.bin",
+      "bytes": 432780,
+      "sha256": "e104eb651ca4b25c2c00cfb7b6fd2897367152c8322c0e45bd1e2a7748aa544c"
+    },
+    {
+      "path": "public/detail/city/1408-1152.bin",
+      "bytes": 3524,
+      "sha256": "67d941c44631b2207079b35c9435cf2ecc1ce7b4f6e5ad45788c16fd7ade5872"
+    },
+    {
+      "path": "public/detail/city/1408-896.bin",
+      "bytes": 10550,
+      "sha256": "8f6353edbd91582d332dc0d0385ef179c4a626db4ba999c61dff920c22ca878e"
+    },
+    {
+      "path": "public/detail/city/384--128.bin",
+      "bytes": 66382,
+      "sha256": "2a1010cad5acf606afaabae240cec219a584c3f6d6fa7066585851db039e7211"
+    },
+    {
+      "path": "public/detail/city/384--384.bin",
+      "bytes": 49232,
+      "sha256": "5bb0373259e695f5bf519f01bea574661c89a3969b934ef35cc6a2fc7a7b3a99"
+    },
+    {
+      "path": "public/detail/city/384--640.bin",
+      "bytes": 134168,
+      "sha256": "2c99f71053ee7806764adaa1560eefe7ace658a1c5a71e0d1a691299689474bf"
+    },
+    {
+      "path": "public/detail/city/384-1152.bin",
+      "bytes": 119564,
+      "sha256": "f3e2736f234107a5944cce90aa073afc288b7f4d9654fb3718e54e9b56dccee5"
+    },
+    {
+      "path": "public/detail/city/384-128.bin",
+      "bytes": 141808,
+      "sha256": "5a9d9b697bd0755ccb834f5388c9a84df45e260264bb873e3ca7c3a03afddbe6"
+    },
+    {
+      "path": "public/detail/city/384-384.bin",
+      "bytes": 155152,
+      "sha256": "316e1e7031069b2d56aa1ffc4e5affd36bc90523ff720443b670e7919bcf7526"
+    },
+    {
+      "path": "public/detail/city/384-640.bin",
+      "bytes": 52930,
+      "sha256": "96100cac95c36944037ccbd2d3758c44d4330f98bb9eaa73c1d9db993f594706"
+    },
+    {
+      "path": "public/detail/city/384-896.bin",
+      "bytes": 42786,
+      "sha256": "1479c21dbf99b08ec5e92eaef836d3b1693d7d203aecab309bd6a35d0d32afe9"
+    },
+    {
+      "path": "public/detail/city/640--128.bin",
+      "bytes": 49480,
+      "sha256": "0cb96e91d13d80379fa5c92953de43fe381e367777bac996435640fe919115ef"
+    },
+    {
+      "path": "public/detail/city/640--384.bin",
+      "bytes": 40430,
+      "sha256": "880f5b96b4b1beb437311a12b2cf76f1f62335585532f2f356336483665fce7a"
+    },
+    {
+      "path": "public/detail/city/640--640.bin",
+      "bytes": 19314,
+      "sha256": "1066acaa25696d4d605219f8f11f015b9a0a3b78863bd203db8dc6f165a3b5b0"
+    },
+    {
+      "path": "public/detail/city/640--896.bin",
+      "bytes": 3856,
+      "sha256": "7d2f476b0dc82d9c489d44a169f6aba4167b1ddd28689ba63e537c41fda392a8"
+    },
+    {
+      "path": "public/detail/city/640-1152.bin",
+      "bytes": 118060,
+      "sha256": "c86d03f96c7ea59a17ec7caad29daaa2190179961c36bbd3b8d5b36ec11b215a"
+    },
+    {
+      "path": "public/detail/city/640-128.bin",
+      "bytes": 120198,
+      "sha256": "a4453aec116c6fa8c1db88599d8c692e92fc9ba1373156a6094f37d33c138abf"
+    },
+    {
+      "path": "public/detail/city/640-384.bin",
+      "bytes": 91040,
+      "sha256": "a30751c80a7c8ea87e1b9818d665376b148247aef34cb2a9d2df6994c451ebda"
+    },
+    {
+      "path": "public/detail/city/640-640.bin",
+      "bytes": 222352,
+      "sha256": "0cc6ce91bde003342bebabc7a8a5514782d638cbec04801cec2a768c5f9eb693"
+    },
+    {
+      "path": "public/detail/city/640-896.bin",
+      "bytes": 126716,
+      "sha256": "2fd7f512a01cc4eeb81db2d6d075e3bf86c83e0aceea66e1fc7e0c7d6d014ff0"
+    },
+    {
+      "path": "public/detail/city/896--128.bin",
+      "bytes": 141332,
+      "sha256": "bd53067d14cf3d08b46132a5d68f1571bf72de28522966d8dc955554d2d4c00b"
+    },
+    {
+      "path": "public/detail/city/896--384.bin",
+      "bytes": 215888,
+      "sha256": "0184e222c1fdccd2341e042f8b39e6d17205872c9b76a3f369cd59888f9ec947"
+    },
+    {
+      "path": "public/detail/city/896--640.bin",
+      "bytes": 14342,
+      "sha256": "8aba4e7b602fa1621751060ab772a897fd52c0b0c7fa6e630dc1e3f21fb3d6c8"
+    },
+    {
+      "path": "public/detail/city/896--896.bin",
+      "bytes": 2524,
+      "sha256": "ee31a5ad907235587b9f013cbc3d4f8208420f10ec306434ee717d125cebed7f"
+    },
+    {
+      "path": "public/detail/city/896-1152.bin",
+      "bytes": 302274,
+      "sha256": "b10646f0f5008602fe9b303a896fa8fa01216d449b5ca6fae1670cc6c3829921"
+    },
+    {
+      "path": "public/detail/city/896-128.bin",
+      "bytes": 185652,
+      "sha256": "311030a5a64be9d925df1ec7353b36778d0a2fd5dc730a5ae859f21c9abf3026"
+    },
+    {
+      "path": "public/detail/city/896-384.bin",
+      "bytes": 110020,
+      "sha256": "09ea80a1ecb704bb732b2dde37375dfbf1500bbb5716c5b7c8a1c85838e13cc3"
+    },
+    {
+      "path": "public/detail/city/896-640.bin",
+      "bytes": 437044,
+      "sha256": "d09c7080e5b10e38ad78372df8e87bf377e53fd4868c5682b49d0081d608d31d"
+    },
+    {
+      "path": "public/detail/city/896-896.bin",
+      "bytes": 428000,
+      "sha256": "3154d9058cbd28664cdd8be9fc30a3b77d2d9ce3fd0d18aa0c95b781c2d85632"
+    },
+    {
+      "path": "public/detail/city/index.json",
+      "bytes": 75000,
+      "sha256": "24902e11a8470ef6954c93a09464343fcf89de360be52a74d24f3deaf94cf686"
+    }
+  ],
+  "tools": {
+    "node": "24.22.1",
+    "npm": "11.8.0",
+    "nodeLockfile": {
+      "path": "package-lock.json",
+      "bytes": 30305,
+      "sha256": "c97902861755b47b12ff96b159c668a2ac8f67c9d2460dcc1500def2f06776bd"
+    },
+    "python": "3.12.14",
+    "mapPackages": [
+      "certifi==2026.10.23",
+      "charset-normalizer==3.5.2",
+      "idna==3.20",
+      "numpy==2.5.5",
+      "osmium==4.3.2",
+      "pillow==12.3.0",
+      "pyproj==3.8.0",
+      "pyshp==3.1.9",
+      "requests==2.34.2",
+      "tifffile==2026.11.12",
+      "urllib3==2.8.0"
+    ],
+    "audioPackages": [
+      "coloredlogs==15.0.1",
+      "flatbuffers==25.12.19",
+      "humanfriendly==10.0",
+      "imageio-ffmpeg==0.6.0",
+      "mpmath==1.3.0",
+      "numpy==2.0.2",
+      "onnxruntime==1.19.2",
+      "packaging==26.3",
+      "pathvalidate==3.3.1",
+      "piper-tts==1.5.0",
+      "protobuf==6.33.6",
+      "sympy==1.14.0"
+    ]
+  }
+}

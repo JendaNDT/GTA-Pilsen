@@ -1,7 +1,7 @@
 // Občanský kalendář hry. Každý herní den má 24 hodin a trvá 32 minut aktivní hry.
 export const DAY_SECONDS = 86400;
 export const HOUR_SECONDS = 3600;
-const SPEED = 45;
+export const CLOCK_RATE = 45;
 const DAY_MS = DAY_SECONDS * 1000;
 export const WEEKDAYS = ['pondělí', 'úterý', 'středa', 'čtvrtek', 'pátek', 'sobota', 'neděle'];
 
@@ -36,7 +36,7 @@ export class GameClock {
     this.seconds -= days * DAY_SECONDS;
   }
 
-  tick(dt) { this.add(dt * SPEED); }
+  tick(dt) { this.add(dt * CLOCK_RATE); }
   get hour() { return this.seconds / HOUR_SECONDS; }
   get now() { return this.day * DAY_SECONDS + this.seconds; }
 }

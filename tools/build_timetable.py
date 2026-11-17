@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Zabalí kalendář a odjezdy PMDP pro tramvajové a trolejbusové trasy stávající hry."""
+"""Obnoví historický balík E06. Pro aktuální hru slouží build_transit_network.py."""
 import argparse
 from collections import Counter, defaultdict
 import csv
@@ -215,7 +215,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("archive", type=Path)
     parser.add_argument("--map", type=Path, default=Path("public/data/meta.json"))
-    parser.add_argument("--output", type=Path, default=Path("public/data/timetable.json"))
+    parser.add_argument("--output", type=Path, default=Path("data-raw/e06/timetable.json"))
     args = parser.parse_args()
     result = build(args.archive, json.loads(args.map.read_text(encoding="utf-8")))
     args.output.parent.mkdir(parents=True, exist_ok=True)
