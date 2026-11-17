@@ -12,8 +12,8 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
 | 3c. Převést silnice a čáry | Hotovo · `f755611` |
 | 3d. Převést budovy a okna | Hotovo · `d5d71b8` |
 | 3e. Převést náhon a skvrny lamp | Hotovo · `e8cf715` |
-| 3f. Převést detaily modelů | Hotovo |
-| 4. Zapnout WebGPU a ověřit automatický i vynucený návrat na WebGL 2 | Zbývá |
+| 3f. Převést detaily modelů | Hotovo · `0fa6385` |
+| 4. Zapnout WebGPU a ověřit automatický i vynucený návrat na WebGL 2 | Hotovo |
 | 5. Dokončit měření, sady Playwright a kontroly na GitHubu | Zbývá |
 | 6. Porovnat referenční snímky, změřit výkon a uzavřít protokol | Zbývá |
 
@@ -62,3 +62,7 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
   světlometů prošly. Světlomet má stejnou průměrnou barvu na [snímku E14](../E15/kroky/03f-svetlomety-e14.jpg)
   a [snímku E15](../E15/kroky/03f-svetlomety.jpg). Poslední zásah do textu shaderu a čtyři
   testy starých náhrad se odstranily. Kontrola zdrojů nyní hlídá, že se staré metody nevrátí.
+- Ověření kroku 4: 37 testů Node, sestavení a tři prohlížečové starty prošly.
+  Chromium se skutečným adaptérem WebGPU vykreslilo hru a panel ukazuje WebGPU.
+  Vynucená cesta i automatický přechod v prohlížeči bez WebGPU zobrazily WebGL 2.
+  Měření GPU na nové cestě se doplňuje v kroku 5.

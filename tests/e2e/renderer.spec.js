@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { PCFShadowMap } from 'three';
+import { PCFShadowMap } from 'three/webgpu';
 
 test('E15 – hra ukazuje vynucené vykreslování přes WebGL 2 v menu i v měření', async ({ page }) => {
   await page.goto('/?debug&quality=low&renderer=webgl');
@@ -12,6 +12,15 @@ test('E15 – hra ukazuje vynucené vykreslování přes WebGL 2 v menu i v mě�
   await expect(page.getByRole('textbox', { name: 'Výsledky měření výkonu' })).toHaveValue(/Vykreslování WebGL 2/);
 });
 
+test('E15 – hra bez WebGPU automaticky spustí WebGL 2', async ({ page }) => {
+  await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { value: undefined }));
+  await page.goto('/?debug&quality=low');
+  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  expect(await page.evaluate(() => window.__game.renderer.backend.isWebGLBackend)).toBe(true);
+  await page.getByRole('button', { name: 'O hře', exact: true }).click();
+  await expect(page.locator('#panel-about')).toContainText('Aktuální vykreslování: WebGL 2');
+});
+
 test('E14 – start a minuta hraní ve dne i v noci bez varování vykreslovače', async ({ page }) => {
   test.setTimeout(150_000);
   const messages = [];
@@ -19,7 +28,7 @@ test('E14 – start a minuta hraní ve dne i v noci bez varování vykreslovače
     if (['warning', 'error'].includes(message.type())) messages.push(message.text());
   });
   page.on('pageerror', (error) => messages.push(error.message));
-  await page.goto('/?debug&adapt=0&date=2026-11-17&hour=10');
+  await page.goto('/?debug&adapt=0&date=2026-11-17&hour=10&renderer=webgl');
   await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
   expect(messages).toEqual([]);
   expect(await page.evaluate(() => window.__game.renderer.shadowMap.type)).toBe(PCFShadowMap);

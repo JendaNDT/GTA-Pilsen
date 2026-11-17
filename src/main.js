@@ -93,12 +93,13 @@ function fail(e) {
 
 async function boot() {
   const renderer = new THREE.WebGPURenderer({
-    canvas, antialias: !IS_MOBILE, powerPreference: 'high-performance', forceWebGL: true,
+    canvas, antialias: !IS_MOBILE, powerPreference: 'high-performance',
+    forceWebGL: PARAMS.get('renderer') === 'webgl',
   });
   try {
     await renderer.init();
   } catch (e) {
-    throw new Error('Na tomto prohlížeči nebo zařízení se nepodařilo spustit WebGL 2.', { cause: e });
+    throw new Error('Vykreslování hry vyžaduje prohlížeč s podporou WebGPU nebo WebGL 2.', { cause: e });
   }
   const rendering = renderer.backend.isWebGPUBackend ? 'WebGPU' : 'WebGL 2';
   renderer.info.autoReset = false;

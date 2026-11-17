@@ -18,8 +18,8 @@ function percentiles(values) {
 
 export function createFrameProfiler(game) {
   const { renderer } = game;
-  const gl = renderer.getContext();
-  const extension = gl.getExtension('EXT_disjoint_timer_query_webgl2');
+  const gl = renderer.backend.isWebGLBackend ? renderer.getContext() : null;
+  const extension = gl?.getExtension('EXT_disjoint_timer_query_webgl2');
   const pending = [];
   let samples = [], first = 0, startedAt = null;
 
