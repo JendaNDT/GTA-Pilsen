@@ -8,8 +8,8 @@ Autor potvrdil zahájení E16 a postupné zpracování podkladů pro celou mapu.
 | --- | --- |
 | 1. Výběr, stahování a evidence listů ČÚZK | Hotovo · `4fb1104` |
 | 2. Převod souřadnic, složení bloků a testy | Hotovo · `1c434fc` |
-| 3. Načtení a vykreslení dvou pilotů | Hotovo |
-| 4. Srovnávací snímky a vyladění barev | Zbývá |
+| 3. Načtení a vykreslení dvou pilotů | Hotovo · `786d840` |
+| 4. Srovnávací snímky a vyladění barev | Hotovo |
 | 5. Sestavení celého území a ověření velikosti a švů | Zbývá |
 | 6. Přepínač, licence, dokumentace a závěrečné ověření | Zbývá |
 
@@ -32,5 +32,9 @@ Autor potvrdil zahájení E16 a postupné zpracování podkladů pro celou mapu.
   nenačetl. Opravené volání prošlo se stejnými očekáváními ve všech 14
   dotčených prohlížečových testech, včetně pozdního načtení v obou režimech
   vykreslování, výpadku bloku, vypnutí vrstvy a rozpočtu vykreslování.
+- Krok 4 vybral měkké světlo s 80% krytím. Snímky před a po, porovnání tří
+  způsobů prolnutí a odečet deseti kontrolních bodů jsou v [ověření pilotů](../E16/overeni-pilotu.md).
+  Prošlo 41 testů Node, 22 testů Pythonu, sestavení a osm dotčených prohlížečových
+  testů včetně referenčních pohledů v obou režimech.
 - Po dokončení bude potřeba autorova kontrola při přeletu Rokycan a Klabavy
   a měření na telefonu. Další podklady a rozhodnutí zatím nejsou potřeba.

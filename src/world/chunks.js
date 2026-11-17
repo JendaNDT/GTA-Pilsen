@@ -1152,6 +1152,7 @@ function drawGround(mgr, ci, S, tile, bitmap) {
     g.rect(world.playMinX, world.playMinZ, world.playMaxX - world.playMinX, world.playMaxZ - world.playMinZ);
     g.clip();
     g.globalAlpha = 0.8;
+    g.globalCompositeOperation = 'soft-light';
     g.drawImage(overlay.canvas, cx0, cz0, CHUNK, CHUNK);
     g.restore();
   }
