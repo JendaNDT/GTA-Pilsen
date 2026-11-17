@@ -49,6 +49,37 @@ test('E15 – některá okna na náměstí v noci svítí a sousední zůstávaj
   expect(litRed - litBlue).toBeGreaterThan(12);
 });
 
+test('E15 – proudění náhonu mění odlesk a lampy osvětlují povrch', async ({ page, baseURL }) => {
+  await openReferenceGame(page, baseURL);
+  await page.addStyleTag({ content: '#menu, #hud { visibility: hidden }' });
+  const forge = reference.views.find((view) => view.id === 'dobriv-hamr');
+  const canal = { x: 805, y: 430, width: 8, height: 8 };
+  await renderReferenceView(page, forge);
+  const [before, , blue] = await averageRegion(page, canal);
+  expect(blue - before).toBeGreaterThan(20);
+  await page.evaluate(({ camera, target }) => {
+    const game = window.__game;
+    game.paused = false;
+    game.time = 7;
+    window.__step(0);
+    game.paused = true;
+    window.__view(...camera, ...target);
+  }, forge);
+  const [after] = await averageRegion(page, canal);
+  expect(Math.abs(after - before)).toBeGreaterThan(3);
+
+  const square = reference.views.find((view) => view.id === 'namesti-noc');
+  const underLamp = { x: 984, y: 504, width: 12, height: 12 };
+  await renderReferenceView(page, square);
+  const [lit] = await averageRegion(page, underLamp);
+  await page.evaluate(() => {
+    window.__game.env.poolMat.visible = false;
+    window.__game.render();
+  });
+  const [unlit] = await averageRegion(page, underLamp);
+  expect(lit - unlit).toBeGreaterThan(30);
+});
+
 test('E15 – voda pod Wilsonovým mostem, dlažba, portály a značení u Valíku jsou vidět', async ({ page, baseURL }) => {
   await openReferenceGame(page, baseURL);
   await page.addStyleTag({ content: '#menu, #hud { visibility: hidden }' });

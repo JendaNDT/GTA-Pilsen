@@ -1,13 +1,11 @@
 // Materiály světa. Fasády domů, povrch země i voda se dokreslují přímo v shaderu.
 import * as THREE from 'three/webgpu';
 import {
-  Discard, Fn, If, Loop, float, materialColor, materialReference, mix, positionWorld, reflect, renderGroup,
-  smoothstep, transformNormalToView, uniform, vec2, vec3, vec4,
+  Discard, Fn, If, Loop, float, materialColor, materialReference, mix, positionLocal, positionWorld, reflect, renderGroup,
+  smoothstep, transformNormalToView, uniform, vec2, vec3, vec4, vertexColor,
 } from 'three/tsl';
-import { DEBUG } from '../config.js';
 import { buildingNodes } from './building-nodes.js';
 import { hash21, valueNoise } from './material-noise.js';
-import { patchShader } from './shader-patches.js';
 import { TUNNEL_HEIGHT, TUNNEL_PORTAL_CUT } from './tunnels.js';
 
 export const env = {
@@ -18,16 +16,6 @@ export const env = {
   cam: uniform(new THREE.Vector3()).setGroup(renderGroup),
   wetPaving: uniform(0).setGroup(renderGroup),
 };
-
-const NOISE_GLSL = `
-float hash21(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
-float vnoise(vec2 p) {
-  vec2 i = floor(p), f = fract(p);
-  f = f * f * (3.0 - 2.0 * f);
-  return mix(mix(hash21(i), hash21(i + vec2(1.0, 0.0)), f.x), mix(hash21(i + vec2(0.0, 1.0)), hash21(i + vec2(1.0, 1.0)), f.x), f.y);
-}
-float aaRect(float v, float a, float b, float w) { return smoothstep(a - w, a + w, v) - smoothstep(b - w, b + w, v); }
-`;
 
 const facadeNodes = new Map();
 
@@ -181,31 +169,19 @@ function getTerrainNodes(paving, detail, portalCount) {
 
 /** V náhonu proudí voda podél koryta. Vzdálený a dotykový profil používá levnější vlnění. */
 export function makeMillraceMaterial(detail) {
-  const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
-  mat.customProgramCacheKey = () => detail ? 'millrace-detail' : 'millrace-basic';
-  mat.onBeforeCompile = (shader) => {
-    shader.uniforms.uTime = env.time;
-    shader.uniforms.uSky = env.sky;
-    shader.uniforms.uCam = env.cam;
-    shader.vertexShader = patchShader(shader.vertexShader, 'náhon · vrcholy', [
-      ['#include <common>', '#include <common>\nvarying vec3 vRace;\nvarying vec2 vFlow;'],
-      ['#include <begin_vertex>', '#include <begin_vertex>\nvRace = (modelMatrix * vec4(position, 1.0)).xyz; vFlow = position.xz;'],
-    ], DEBUG);
-    shader.fragmentShader = patchShader(shader.fragmentShader, 'náhon · barva', [
-      ['#include <common>', `#include <common>
-varying vec3 vRace; varying vec2 vFlow;
-uniform float uTime; uniform vec3 uSky; uniform vec3 uCam;
-${NOISE_GLSL}`],
-      ['#include <color_fragment>', `#include <color_fragment>
-vec2 current = vec2(vFlow.x * 1.7, (vFlow.y - uTime * 1.8) * 0.44);
-float wave = ${detail ? 'vnoise(current) * 0.72 + 0.28 * vnoise(current * 2.5)' : '0.5 + 0.23 * sin(current.y * 4.0 + current.x)'};
-float glancing = 1.0 - abs(normalize(uCam - vRace).y);
-float ripple = smoothstep(0.58, 0.83, wave);
-diffuseColor.rgb = mix(diffuseColor.rgb * (0.88 + 0.27 * wave), uSky, 0.12 + glancing * glancing * (0.28 + 0.20 * ripple));
-`],
-    ], DEBUG);
-  };
-  return mat;
+  const colorNode = Fn(() => {
+    const local = positionLocal.xz;
+    const current = vec2(local.x.mul(1.7), local.y.sub(env.time.mul(1.8)).mul(0.44)).toVar();
+    const wave = detail
+      ? valueNoise(current).mul(0.72).add(valueNoise(current.mul(2.5)).mul(0.28)).toVar()
+      : current.y.mul(4).add(current.x).sin().mul(0.23).add(0.5).toVar();
+    const glancing = env.cam.sub(positionWorld).normalize().y.abs().oneMinus();
+    const ripple = smoothstep(0.58, 0.83, wave);
+    const water = vertexColor().rgb.mul(wave.mul(0.27).add(0.88));
+    const reflection = glancing.pow2().mul(ripple.mul(0.20).add(0.28)).add(0.12);
+    return vec4(mix(water, env.sky, reflection), 1);
+  })();
+  return new THREE.MeshLambertNodeMaterial({ colorNode });
 }
 
 /** Materiál terénu jedné dlaždice (textura země s vodou v průhlednosti). */
@@ -234,8 +210,8 @@ export function getPoolMaterial() {
   g.fillStyle = gr; g.fillRect(0, 0, S, S);
   const tex = new THREE.CanvasTexture(cv);
   tex.colorSpace = THREE.SRGBColorSpace;
-  poolMat = new THREE.MeshBasicMaterial({
-    map: tex, color: 0xffd6a0, transparent: true, opacity: 0, blending: THREE.AdditiveBlending,
+  poolMat = new THREE.MeshBasicNodeMaterial({
+    map: tex, color: 0xffd6a0, transparent: true, opacityNode: env.night.mul(0.75), blending: THREE.AdditiveBlending,
     depthWrite: false, fog: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -20,
   });
   poolMat.visible = false;

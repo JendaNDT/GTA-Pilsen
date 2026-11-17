@@ -10,8 +10,8 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
 | 3a. Převést oblohu a pořídit srovnávací snímek | Hotovo · `4e42957` |
 | 3b. Převést terén, vodu, dlažbu a výřezy portálů | Hotovo · `a700323` |
 | 3c. Převést silnice a čáry | Hotovo · `f755611` |
-| 3d. Převést budovy a okna | Hotovo |
-| 3e. Převést náhon a skvrny lamp | Zbývá |
+| 3d. Převést budovy a okna | Hotovo · `d5d71b8` |
+| 3e. Převést náhon a skvrny lamp | Hotovo |
 | 3f. Převést detaily modelů | Zbývá |
 | 4. Zapnout WebGPU a ověřit automatický i vynucený návrat na WebGL 2 | Zbývá |
 | 5. Dokončit měření, sady Playwright a kontroly na GitHubu | Zbývá |
@@ -54,3 +54,7 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
   shaderu vystřídala kontrola, že nízká kvalita nepoužívá detailní fasádní materiál.
   Na [nočním snímku](../E15/kroky/03d-okna.jpg) mají vybraná okna stejnou barvu jako v E14,
   na [denním snímku](../E15/kroky/03d-fasady.jpg) jsou místy o něco světlejší stíny.
+- Ověření kroku 3e: 41 testů Node, sestavení, vykreslení památek, změna odlesku
+  v náhonu a přisvícení pod lampou prošly. [Náhon](../E15/kroky/03e-nahon.jpg) odpovídá
+  E14. [Skvrny lamp](../E15/kroky/03e-lampy.jpg) jsou místy tmavší. Nový vykreslovač
+  sčítá světlo před tónováním a převodem do barev displeje.

@@ -6,7 +6,6 @@ import { patchShader } from '../src/world/shader-patches.js';
 globalThis.matchMedia = () => ({ matches: false });
 globalThis.window = {};
 globalThis.location = { search: '?debug' };
-const materials = await import('../src/world/materials.js');
 const { getDetailMaterial } = await import('../src/entities/models.js');
 
 function lambertShader() {
@@ -42,19 +41,12 @@ test('mimo debug režim zůstane chybějící náhrada bez hlášení', (t) => {
   assert.equal(warning.mock.calls.length, 0);
 });
 
-test('všechny varianty materiálů najdou řetězce ve skutečném shaderu nainstalované knihovny', (t) => {
+test('materiál světel vozidel najde řetězce ve skutečném shaderu nainstalované knihovny', (t) => {
   const warning = t.mock.method(console, 'warn', () => {});
-  const cases = [];
-  for (const detail of [false, true]) {
-    cases.push([`náhon ${detail}`, materials.makeMillraceMaterial(detail), 'vFlow']);
-  }
-  cases.push(['vozidla', getDetailMaterial(), 'step(0.9, vColor.r)']);
-  for (const [label, material, marker] of cases) {
-    const shader = lambertShader();
-    material.onBeforeCompile(shader);
-    assert.ok(shader.fragmentShader.includes(marker), label);
-    assert.equal(warning.mock.calls.length, 0, label);
-    material.dispose();
-    material.map?.dispose();
-  }
+  const material = getDetailMaterial();
+  const shader = lambertShader();
+  material.onBeforeCompile(shader);
+  assert.ok(shader.fragmentShader.includes('step(0.9, vColor.r)'));
+  assert.equal(warning.mock.calls.length, 0);
+  material.dispose();
 });

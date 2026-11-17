@@ -123,7 +123,6 @@ export class Environment {
     this.hemi.intensity = 0.95 + 0.6 * day;
 
     // světla lamp nejsou osvětlená scénou – sílí s nocí
-    this.poolMat.opacity = night * 0.75;
     this.poolMat.visible = night > 0.03;
     this.day = day;
     this.night = night;
