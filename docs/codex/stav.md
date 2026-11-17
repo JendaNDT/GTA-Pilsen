@@ -32,3 +32,14 @@ Měření na skutečném telefonu autor výslovně vynechal. Výkon telefonu zů
 Autor dne 17. listopadu 2026 prohlédl a schválil referenční snímky.
 Autor následně schválil sloučení všech změn E13 do `main` přes pull request č. 5.
 Samostatná kontrola modelem zůstává doporučeným postupem.
+
+## Překážka sloučení
+
+Při přípravě sloučení dne 17. listopadu 2026 znovu prošlo 30 testů Node, 13 testů Pythonu,
+sestavení a všech 37 prohlížečových testů. Audit npm nyní selhává kvůli
+[GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf) v knihovně
+`picomatch`, kterou používá Vite. Záznam byl na GitHubu nově prověřen v 15:56 UTC.
+Nainstalovaná i nejnovější verze `picomatch` je 4.0.7, opravená verze není uvedená.
+Audit navrhuje vynucený přechod Vite z 8.3.8 na 6.2.7. Taková změna vyžaduje samostatné
+rozhodnutí a ověření. Sloučení dosud neproběhlo. Čeká se na rozhodnutí autora o opravě
+závislostí. Očekávání testů a pravidla auditu zůstávají zachována.
