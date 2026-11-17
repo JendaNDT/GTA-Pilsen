@@ -1,99 +1,80 @@
 # Stav etapy E14
 
+**Čeká na ruční měření autora. Etapa není uzavřená.** Autor dne 17. listopadu 2026
+výslovně rozhodl: „Uzavření odložit, dokud nedodám ruční měření výkonu.“
+
 Větev `etapa/E14`, výchozí revize `e6d5768`. Zadání je v [E14](E14.md).
 Předchozí E13 je sloučená do `main`; její výsledky jsou v [protokolu E13](../E13.md).
-Autor schválil zahájení E14 zprávou „pokračuj“ a následně instalaci potřebných nástrojů.
 
-| Krok | Stav |
+| Krok | Stav a commit |
 | --- | --- |
-| 1. Aktualizace three.js a záznam výsledků testů | Hotovo |
-| 2. Opravy API a varování | Hotovo |
-| 3. Kontrola nahrazovaných řetězců shaderů | Hotovo |
-| 4. Referenční pohledy a porovnání s E13 | Hotovo |
-| 5. Rozpočet, měření a závěrečný protokol | Čeká |
+| 1. Aktualizace three.js a záznam výsledků testů | Hotovo · `470a94b` |
+| 2. Opravy API a varování | Hotovo · `9292bba` |
+| 3. Kontrola nahrazovaných řetězců shaderů | Hotovo · `146a263` |
+| 4. Referenční pohledy a porovnání s E13 | Hotovo · `1c01685` |
+| 5. Rozpočet, měření a závěrečný protokol | Automatické měření hotovo; čeká na autora, protokol a závěrečné ověření |
 
-## Prostředí a výchozí ověření
+## Hotové změny
 
-Dne 17. listopadu 2026 chybělo npm; původní pokus o testy skončil kódem 127.
-Po souhlasu autora bylo doplněno npm 12.2.2 z oficiálního registru s ověřením SHA-512.
-Node.js 24.22.3 z prostředí Codexu je nyní dostupný v PATH spolu s npm a npx.
-Python 3.12 a jeho závislosti i Chromium 159.0.8154.6 už jsou nainstalované.
-Pythonové příkazy se spouštějí s `.venv/bin` v PATH.
+Three.js je připnuté na přesnou verzi 0.187.0. Stávající WebGLRenderer je zachovaný.
+Bylo nahrazeno odstraněné `PCFSoftShadowMap` za `PCFShadowMap`; verze a licence jsou
+v README a v „O hře“. Byl projit průvodce migrací r171–r187; další používaná API
+nevyžadovala opravu. Barvy, expozice a osvětlení se neupravovaly.
 
-Čistá instalace E13, všech 33 testů Node, 13 testů Pythonu a sestavení prošly.
-Nově pořízené původní pohledy jsou v `data-raw/e14/baseline-reference/`.
-Výchozí prohlížečová sada byla po sedmi úspěšných testech ukončena, aby následovalo
-úplné ověření aktualizované verze. Zbývající testy tohoto výchozího běhu nejsou označené
-jako ověřené. Logy a srovnávací měření jsou v neversionovaném `data-raw/e14/`.
+Všechny náhrady v budovách, zemi, terénu, portálech, náhonu a světlech vozidel hlásí
+v režimu `?debug` nenalezený řetězec. Pět nových testů v Node ověřuje všech 27 variant
+a záměrně poškozený shader. Vygenerované shadery před přidáním kontrol a po něm jsou
+řetězcově shodné. Nový prohlížečový test ověřuje skutečnou minutu hraní ve dne i v noci
+bez varování a chyb.
 
-## Krok 1
+Všech osm konečných pohledů má 1280 × 720 px a méně než 250 kB. Dvojí pořízení dalo
+shodné soubory. [Porovnání s E13](../E14/snimky.md) ukazuje jen drobné rozdíly ve stínech;
+největší průměrná odchylka RGB je 0,469 ze 255 a změna průměrného jasu do 0,0301.
 
-Three.js je připnuté na přesnou verzi 0.187.0, zámek závislostí se změnil jen u three.js.
-Všech 33 testů Node, sestavení a audit npm bez nálezů prošly. Z 37 prohlížečových
-testů prošlo 36. Jediný neúspěšný je test rozpočtu (295 volání na náměstí proti
-původnímu limitu 288); příčina je doložená níže. Očekávané selhání se v kroku 1
-pouze zaznamenává podle zadání, oprava následuje v kroku 2.
-Při skutečném načtení se objevilo varování:
-`THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead.`
-Oprava patří do kroku 2. Další chyby při startu nebyly zachyceny.
+## Schválený přepočet rozpočtu
 
-Byl přečten [průvodce migrací](https://github.com/mrdoob/three.js/wiki/Migration-Guide)
-pro r171–r187. Průvodce upozorňuje zejména na stíny; kontrola kódu knihovny navíc odhalila změnu
-počítadel vykreslování (viz níže). Ostatní změněná API se v projektu nepoužívají. Statické objekty
-s vypnutým automatickým přepočtem matice nemění ručně matici a nevolají
-`updateWorldMatrix()`. Barvy, expozice, materiály a vlastní obloha se zatím nemění.
+První běh po aktualizaci prošel 36 z 37 prohlížečových testů. Rozpočet selhal na 295
+voláních proti limitu 288. Příčinou je přesun automatického vynulování `renderer.info`
+před stíny: nová verze nově započítává i stínový průchod. Skutečná geometrie nepřibyla.
 
-## Změna významu počítadel
+Autor schválil výjimku z požadavku E14 neměnit očekávání testů: nové reference byly
+převzaty z **původní E13** včetně stínů, limit +10 % zůstal. [Srovnání počítadel](../E14/pocitadla.json)
+dokládá stejné úplné počty v obou verzích: 295 / 509 603 (náměstí), 322 / 503 726
+(Lochotín), 195 / 283 880 (Rokycany), vždy volání / trojúhelníky. Dočasné přidání 40
+kopií oblohy vyvolalo překročení (335 proti limitu 324), po odebrání znovu 295.
 
-Test rozpočtu po aktualizaci selhal. V E13 se automatické vynulování `renderer.info`
-provádělo až po vykreslení stínů, nyní probíhá před ním. Nové počty tedy zahrnují
-scénu i stíny. Na náměstí se v obou verzích skutečně kreslí totožných 295 objektů,
-z toho 33 ve stínovém průchodu. Původní počítadlo hlásilo pouze 262 volání.
-Trojúhelníky se ze stejného důvodu změnily z 405 706 na 509 603. Zachycené seznamy
-objektů včetně geometrie a matic jsou shodné (`data-raw/e14/render-old.json`
-a `render-new.json`). Nejde o přidanou geometrii. [Výsledky všech tří pohledů](../E14/pocitadla.json)
-ukazují shodné úplné počty pro původní i aktualizovanou verzi.
+## Výkon a otevřené otázky
 
-## Otevřené otázky
+Pět běhů každé verze a kontrola bez stínů jsou v [pracovním měření](../E14/mereni.md)
+a v [úplných výsledcích](../E14/mereni.json). P95 práce jízdy vzrostlo v souhrnu z 4,7
+na 5,2 ms (+10,6 %), p99 z 5,2 na 6,5 ms (+25 %). Výsledky kolísají i v původní E13
+a bez stínů. Příčina není potvrzená; odchylka není schválená. Autor chce dodat ruční
+měření před uzavřením. Odkazy na obě místní verze a postup jsou v pracovním měření.
 
-Autor dne 17. listopadu 2026 schválil přepočet rozpočtu z **původní E13** včetně
-stínů při zachování limitu +10 %. Rozpočet se nepřevezme z aktualizované verze.
-Jde o schválenou výjimku z požadavku E14 neměnit očekávání testů, vyvolanou změnou
-významu API knihovny. Úplné původní počty jsou 295 / 509 603 (náměstí),
-322 / 503 726 (Lochotín) a 195 / 283 880 (Rokycany), vždy volání / trojúhelníky.
+Po dodání měření:
 
-Na konci zbývá kontrola vzhledu autorem a samostatná kontrola modelem 6.1 Sol, Medium.
+1. Vyhodnotit oba výsledky a dořešit odchylku podle zadání; nic nezamlčet.
+2. Dokončit protokol `docs/E14.md`, README, katalog a přehled etap.
+3. Spustit všechny závěrečné kontroly a commitnout krok 5.
+4. Připravit pull request do `main`, doporučit kontrolu modelem 6.1 Sol, Medium.
+5. Další etapu nezačínat.
 
-## Krok 2
+## Poslední ověření a prostředí
 
-Bylo nahrazeno odstraněné `PCFSoftShadowMap` za `PCFShadowMap`. Test startu a skutečné
-minuty hraní ve dne i v noci před opravou selhal na zachyceném varování knihovny.
-Rozpočty jsou po souhlasu autora převzaté z úplných původních měření E13 včetně stínů;
-limit +10 % v testu se nemění. Jde o nápravu srovnatelnosti počítadel, nikoli zvětšení
-povolené scény. Verze a licence three.js jsou uvedené i v „O hře“.
+Po poslední změně běhu hry (`146a263`) prošlo všech 38 testů Node, sestavení a všech
+38 prohlížečových testů (`--trace off`), včetně minuty hraní bez varování. Krok 4 znovu
+prošel 38 testy Node a sestavením. Poslední testy Pythonu měly 13 úspěšných testů.
+Před uložením stavu znovu prošlo 38 testů Node, 13 testů Pythonu, kontrola syntaxe
+všech nástrojů Pythonu, audit npm bez nálezů a sestavení. Protože od `146a263` nebyl
+běh hry změněn, prohlížečová sada se při uložení dokumentace neopakovala.
 
-Ověření kroku 2: všech 33 testů Node, sestavení a všech 38 prohlížečových testů prošly,
-včetně skutečné minuty hraní ve dne a v noci bez varování a chyb. Rozpočet prošel ve
-všech třech pohledech. Při dočasném přidání 40 kopií oblohy bylo naměřeno 335 volání
-proti limitu 324, po odebrání znovu 295. Zkouška tedy nadále rozpozná skutečný růst
-práce. Srovnávací podklady jsou v `data-raw/e14/budget-negative-control.json`.
+Původně chybělo npm. Autor schválil jeho doplnění; npm 12.2.2 bylo instalováno
+z oficiálního registru s ověřením SHA-512. Node.js 24.22.3 je v PATH spolu s npm a npx.
+Python 3.12 se závislostmi je v `.venv`, Chromium 159.0.8154.6 je nainstalované.
+Pythonové npm příkazy spouštět s `.venv/bin` v PATH. Pracovní logy a původní sestavení
+E13 jsou v neversionovaném `data-raw/e14/`. Žádná distribuovaná data se neměnila.
 
-## Krok 3
-
-Všechny náhrady v budovách, zemi, terénu, portálech, náhonu a světlech vozidel používají
-společnou kontrolovanou funkci. Při chybě v režimu `?debug` uvede materiál a nenalezený
-řetězec; v běžné hře nic nevypisuje. Přibylo pět testů v Node včetně skutečných shaderů
-nainstalované knihovny, všech 27 variant materiálů a záměrně poškozeného terénu.
-
-Vygenerované dvojice shaderů všech 27 variant se před přidáním kontrol a po něm
-řetězcově shodují (`data-raw/e14/materials-before.json` a `materials-after.json`).
-Všech 38 testů Node, sestavení a všech 38 prohlížečových testů prošly. Minuta
-hraní ve dne a v noci zůstala bez varování a chyb i po přidání kontrol.
-
-## Krok 4
-
-Pořízeno všech osm konečných pohledů a vizuálně porovnáno s E13. Každý JPEG má
-1280 × 720 px a méně než 250 kB. Dvojí pořízení dalo shodné soubory. Drobné rozdíly
-ve stínech odpovídají změně filtrování v knihovně; expozice ani barvy se neupravovaly.
-Největší průměrná odchylka RGB je 0,469 ze 255 a změna průměrného jasu do 0,0301.
-[Porovnání snímků](../E14/snimky.md), [výpočty](../E14/porovnani-snimku.json).
+Pro ruční měření jsou připravené servery: původní E13 na portu 4174 obsluhuje
+`data-raw/e14/baseline-dist/`, E14 na portu 4173 obsluhuje aktuální `dist/`.
+Obě adresy před uložením stavu odpověděly HTTP 200. Při opětovném spuštění serverů
+nesmí E13 omylem obsluhovat současné sestavení E14.
