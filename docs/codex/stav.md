@@ -30,4 +30,5 @@ práci snímku 2,4 / 4,3 / 5,7 ms a GPU 11,41 / 12,69 / 13,07 ms (medián / p95 
 
 Měření na skutečném telefonu autor výslovně vynechal. Výkon telefonu zůstává neověřený.
 Autor dne 17. listopadu 2026 prohlédl a schválil referenční snímky.
-Zbývá kontrola změn modelem 6.1 Sol, Medium, a sloučení pull requestu č. 5 po kontrole.
+Autor následně schválil sloučení všech změn E13 do `main` přes pull request č. 5.
+Samostatná kontrola modelem zůstává doporučeným postupem.
