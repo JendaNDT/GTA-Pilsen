@@ -138,6 +138,10 @@ Obecné řešení pro všech 958 herních mostů je jednoduché. Okraje mostovky
 
 Toto rozhodnutí patří autorovi hry, ne plánu.
 
+**Rozhodnuto 17. 11. 2026:** zábradlí zastaví chodce. Chování aut a provedení kolizí řeší
+návrh [fyziky a grafiky](fyzika-a-grafika.md). Pokud se zavede fyzikální knihovna, zdi,
+pilíře a zábradlí z části 1.3 půjdou rovnou do ní, ne do kolizí budov.
+
 ## 2. Ortofoto
 
 ### 2.1 Zdroj
@@ -260,7 +264,7 @@ Práci dělá AI podle zadání, takže počet dnů vývojáře neodpovídá sku
 
 ## Rozhodnutí pro autora
 
-1. Mají zábradlí na mostech zastavit chodce, auta, nebo obojí? (1.5)
+1. ~~Mají zábradlí na mostech zastavit chodce, auta, nebo obojí? (1.5)~~ Zastaví chodce.
 2. Stačí ortofoto ve 2 m/px, nebo chceš jemnější za cenu desítek MiB navíc? (2.2)
 3. Má ortofoto přijít jako první, před mosty? (5)
 4. Můžeš nafotit blok Americké a okolí jako předlohy? (3)

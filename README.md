@@ -194,6 +194,7 @@ zdroje geometrie a měření historických lokalit uvádí [protokol E05](docs/E
 [Aktualizace z 17. listopadu 2026](docs/aktualizace-2026-11-17/README.md) obsahuje rešerši modelů staveb a kontrolní snímky MHD a silnic.
 [Navazující implementační plán](docs/plan-presnost-a-vzhled.md) rozepisuje etapy E13–E22 pro měřené stavební objekty, ortofoto a detaily ulic, včetně pořadí změn, ověření a návratu k předchozímu vydání.
 [Revize plánu](docs/revize-planu-presnost-a-vzhled.md) ověřuje jeho výchozí údaje nad zdrojovými daty a navrhuje jednodušší postup pro mosty, kolize a ortofoto.
+[Návrh fyziky a grafiky](docs/fyzika-a-grafika.md) popisuje fyzikální knihovnu, měření jejího výkonu a možná vylepšení vykreslování.
 
 Datum OSM se čte z položky `osmosis_replication_timestamp` přímo v hlavičce staženého PBF,
 ukládá se do `extract.pkl` a odtud do `meta.json` jako `osmTimestamp` (UTC) se zdrojem
