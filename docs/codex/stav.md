@@ -9,7 +9,7 @@ Autor schválil zahájení E14 zprávou „pokračuj“ a následně instalaci p
 | 1. Aktualizace three.js a záznam výsledků testů | Hotovo |
 | 2. Opravy API a varování | Hotovo |
 | 3. Kontrola nahrazovaných řetězců shaderů | Hotovo |
-| 4. Referenční pohledy a porovnání s E13 | Čeká |
+| 4. Referenční pohledy a porovnání s E13 | Hotovo |
 | 5. Rozpočet, měření a závěrečný protokol | Čeká |
 
 ## Prostředí a výchozí ověření
@@ -89,3 +89,11 @@ Vygenerované dvojice shaderů všech 27 variant se před přidáním kontrol a 
 řetězcově shodují (`data-raw/e14/materials-before.json` a `materials-after.json`).
 Všech 38 testů Node, sestavení a všech 38 prohlížečových testů prošly. Minuta
 hraní ve dne a v noci zůstala bez varování a chyb i po přidání kontrol.
+
+## Krok 4
+
+Pořízeno všech osm konečných pohledů a vizuálně porovnáno s E13. Každý JPEG má
+1280 × 720 px a méně než 250 kB. Dvojí pořízení dalo shodné soubory. Drobné rozdíly
+ve stínech odpovídají změně filtrování v knihovně; expozice ani barvy se neupravovaly.
+Největší průměrná odchylka RGB je 0,469 ze 255 a změna průměrného jasu do 0,0301.
+[Porovnání snímků](../E14/snimky.md), [výpočty](../E14/porovnani-snimku.json).
