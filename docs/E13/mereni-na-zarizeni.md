@@ -1,5 +1,8 @@
 # Jak změřit výkon Plzně naplno
 
+Pro etapu E13 autor dne 17. listopadu 2026 dodal měření z počítače a rozhodl o vynechání
+měření na telefonu. Postup pro telefon je zde k dispozici pro případné pozdější měření.
+
 ## Na počítači
 
 1. Spusť hru. Na Macu můžeš použít `Spustit hru.command`. V Chromu otevři
@@ -31,4 +34,4 @@ posledního vykresleného snímku.
 | Zařízení | Systém a prohlížeč | Trasa a orientace | Výsledek z panelu |
 | --- | --- | --- | --- |
 | Počítač | | | |
-| Telefon | | | |
+| Telefon | Neověřeno | Autor měření pro E13 vynechal | |

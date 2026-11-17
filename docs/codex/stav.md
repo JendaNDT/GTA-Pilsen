@@ -24,5 +24,9 @@ Krok 5 · Prošlo 30 testů Node, sestavení a test rozpočtu ve všech třech p
 Krok 6 · Prošlo 30 testů Node, 13 testů Pythonu, kontrola syntaxe nástrojů, audit npm,
 sestavení a 37 prohlížečových testů. [Protokol etapy](../E13.md).
 
-Větev je připravená k autorské kontrole. Zbývá měření na autorově počítači a skutečném
-telefonu, prohlídka snímků a sloučení po kontrole.
+Autor dodal měření z počítače dne 17. listopadu 2026. Zaznamenalo 3 595 snímků za 60 s,
+práci snímku 2,4 / 4,3 / 5,7 ms a GPU 11,41 / 12,69 / 13,07 ms (medián / p95 / p99).
+Úplné hodnoty jsou v protokolu.
+
+Měření na skutečném telefonu autor výslovně vynechal. Výkon telefonu zůstává neověřený.
+Zbývá autorská prohlídka snímků, kontrola změn a sloučení po kontrole.
