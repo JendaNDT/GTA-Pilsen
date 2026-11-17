@@ -5,7 +5,20 @@ import { Texture } from 'three/webgpu';
 globalThis.matchMedia = () => ({ matches: false });
 globalThis.window = {};
 globalThis.location = { search: '' };
-const { makeTerrainMaterial } = await import('../src/world/materials.js');
+const { makeDecalMaterial, makeTerrainMaterial } = await import('../src/world/materials.js');
+
+test('silnice a čáry sdílejí povrch a mají odlišné odsazení hloubky', () => {
+  const road = makeDecalMaterial({ polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -6 });
+  const lines = makeDecalMaterial({ polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -14 });
+  assert.equal(road.colorNode, lines.colorNode);
+  for (const mat of [road, lines]) {
+    assert.equal(mat.depthWrite, false);
+    assert.equal(mat.vertexColors, true);
+    assert.equal(mat.polygonOffset, true);
+  }
+  assert.ok(lines.polygonOffsetFactor < road.polygonOffsetFactor);
+  assert.ok(lines.polygonOffsetUnits < road.polygonOffsetUnits);
+});
 
 test('dlaždice sdílejí variantu terénních uzlů a mají vlastní texturu i souřadnice portálů', () => {
   const texA = new Texture(), texB = new Texture();

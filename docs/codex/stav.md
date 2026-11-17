@@ -8,8 +8,8 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
 | 1. Sjednotit importy a ověřit je testem | Hotovo · `a68135b` |
 | 2. Zapojit nový vykreslovač na WebGL 2 | Hotovo · `27a2d77` |
 | 3a. Převést oblohu a pořídit srovnávací snímek | Hotovo · `4e42957` |
-| 3b. Převést terén, vodu, dlažbu a výřezy portálů | Hotovo |
-| 3c. Převést silnice a čáry | Zbývá |
+| 3b. Převést terén, vodu, dlažbu a výřezy portálů | Hotovo · `a700323` |
+| 3c. Převést silnice a čáry | Hotovo |
 | 3d. Převést budovy a okna | Zbývá |
 | 3e. Převést náhon a skvrny lamp | Zbývá |
 | 3f. Převést detaily modelů | Zbývá |
@@ -45,3 +45,7 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
   Snímky [Wilsonova mostu](../E15/kroky/03b-voda.jpg), [Valíku](../E15/kroky/03b-valik.jpg)
   a [dlažby](../E15/kroky/03b-dlazba.jpg) ukazují převedené povrchy. Fasády jsou v těchto
   snímcích ještě bez detailů.
+- Ověření kroku 3c: 40 testů Node, sestavení a prohlížečový test světlé čáry
+  na tmavém asfaltu prošly. Test náhrad textu shaderu země vystřídala kontrola
+  společného materiálu, odsazení vrstev a viditelného značení.
+  [Vozovka u Valíku](../E15/kroky/03c-vozovka.jpg).

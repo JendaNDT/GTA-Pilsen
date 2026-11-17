@@ -39,7 +39,7 @@ test('E15 – obloha má ve dne mraky a v noci ztmavne', async ({ page, baseURL 
   expect(blue - nightBlue).toBeGreaterThan(145);
 });
 
-test('E15 – voda pod Wilsonovým mostem, dlažba a výřezy portálů Valíku jsou vidět', async ({ page, baseURL }) => {
+test('E15 – voda pod Wilsonovým mostem, dlažba, portály a značení u Valíku jsou vidět', async ({ page, baseURL }) => {
   await openReferenceGame(page, baseURL);
   await page.addStyleTag({ content: '#menu, #hud { visibility: hidden }' });
   const view = (id) => reference.views.find((entry) => entry.id === id);
@@ -54,6 +54,9 @@ test('E15 – voda pod Wilsonovým mostem, dlažba a výřezy portálů Valíku 
   const [, right] = await averageRegion(page, region(700, 315, 16));
   const [, exterior] = await averageRegion(page, region(609, 280, 16));
   expect(exterior - Math.max(left, right)).toBeGreaterThan(25);
+  const [, marking] = await averageRegion(page, { x: 402, y: 597, width: 9, height: 6 });
+  const [, asphalt] = await averageRegion(page, { x: 420, y: 597, width: 9, height: 6 });
+  expect(marking - asphalt).toBeGreaterThan(60);
 
   await renderReferenceView(page, view('namesti-den'));
   const [brickRed, brickGreen, brickBlue] = await averageRegion(page, region(600, 665));

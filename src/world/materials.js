@@ -1,7 +1,7 @@
 // Materiály světa. Fasády domů, povrch země i voda se dokreslují přímo v shaderu.
 import * as THREE from 'three/webgpu';
 import {
-  Discard, Fn, If, Loop, float, materialReference, mix, positionWorld, reflect, renderGroup,
+  Discard, Fn, If, Loop, float, materialColor, materialReference, mix, positionWorld, reflect, renderGroup,
   smoothstep, transformNormalToView, uniform, vec2, vec3, vec4,
 } from 'three/tsl';
 import { DEBUG } from '../config.js';
@@ -204,35 +204,18 @@ if (vWin.z < -1.5 && vWin.z > -2.5 && length(vFacade.xz) < 39.0) {
   return mat;
 }
 
-/** Doplní do materiálu země jemnou zrnitost a nastaví normálu nahoru (geometrie ji neobsahuje). */
-export function patchGroundMaterial(mat, fixedNormal = true) {
-  mat.onBeforeCompile = (shader) => {
-    shader.vertexShader = patchShader(shader.vertexShader, 'země · vrcholy', [
-      ['#include <common>', '#include <common>\nvarying vec2 vGp;'],
-      ['#include <begin_vertex>', '#include <begin_vertex>\nvGp = (modelMatrix * vec4(position, 1.0)).xz;'],
-      ...(fixedNormal ? [['#include <beginnormal_vertex>', 'vec3 objectNormal = vec3(0.0, 1.0, 0.0);']] : []),
-    ], DEBUG);
-    shader.fragmentShader = patchShader(shader.fragmentShader, 'země · barva', [
-      ['#include <common>', `#include <common>\nvarying vec2 vGp;\n${NOISE_GLSL}`],
-      ['#include <color_fragment>', `#include <color_fragment>
-{
-  float px = max(fwidth(vGp.x), fwidth(vGp.y));
-  float fine = (vnoise(vGp * 2.6) - 0.5) * (1.0 - smoothstep(0.15, 0.7, px));
-  float mid = (vnoise(vGp * 0.33) - 0.5) * (1.0 - smoothstep(1.2, 5.0, px));
-  float big = vnoise(vGp * 0.021) - 0.5;
-  diffuseColor.rgb *= 1.0 + 0.13 * fine + 0.10 * mid + 0.07 * big;
-}
-`],
-    ], DEBUG);
-  };
-  return mat;
-}
+const decalColor = Fn(() => {
+  const { gain } = groundNoise(positionWorld.xz);
+  return materialColor.mul(vec4(vec3(gain), 1));
+})();
 
-/** Ploché povrchy na zemi (silnice, plochy) – kreslí se v pevném pořadí bez zápisu hloubky. */
+/** Ploché povrchy na zemi (silnice, plochy) se kreslí v pevném pořadí bez zápisu hloubky. */
 export function makeDecalMaterial(opts = {}) {
-  const mat = new THREE.MeshLambertNodeMaterial({ vertexColors: true, depthWrite: false, ...opts });
-  mat.normalNode = transformNormalToView(vec3(0, 1, 0));
-  return mat;
+  return new THREE.MeshLambertNodeMaterial({
+    vertexColors: true, depthWrite: false, ...opts,
+    colorNode: decalColor,
+    normalNode: transformNormalToView(vec3(0, 1, 0)),
+  });
 }
 
 // Zrnitost slábne s velikostí promítnutého pixelu.
@@ -241,7 +224,7 @@ function groundNoise(point) {
   const fine = valueNoise(point.mul(2.6)).sub(0.5).mul(smoothstep(0.15, 0.7, px).oneMinus());
   const mid = valueNoise(point.mul(0.33)).sub(0.5).mul(smoothstep(1.2, 5, px).oneMinus()).toVar();
   const big = valueNoise(point.mul(0.021)).sub(0.5).toVar();
-  return { px, fine, mid, big, gain: fine.mul(0.13).add(mid.mul(0.10), big.mul(0.07), 1) };
+  return { px, mid, big, gain: fine.mul(0.13).add(mid.mul(0.10), big.mul(0.07), 1) };
 }
 
 const PAVING = {
@@ -260,7 +243,7 @@ function pavingLocal(point, profile) {
   return vec2(offset.dot(vec2(...profile.axisX)), offset.dot(vec2(...profile.axisZ))).toVar();
 }
 
-function addPaving(landColor, profile, local, viewPosition, noise, detail) {
+function addPaving(landColor, profile, local, worldPosition, noise, detail) {
   const border = local.sub(vec2(...profile.center)).abs().sub(vec2(...profile.half));
   const coverage = smoothstep(0, profile.edge, border.x.max(border.y)).oneMinus().toVar();
   If(coverage.greaterThan(0), () => {
@@ -277,7 +260,7 @@ function addPaving(landColor, profile, local, viewPosition, noise, detail) {
     }
     tint.mulAssign(noise.mid.mul(0.14).add(noise.big.mul(0.09), 1));
     if (detail) {
-      const glancing = env.cam.sub(viewPosition).normalize().y.abs().oneMinus();
+      const glancing = env.cam.sub(worldPosition).normalize().y.abs().oneMinus();
       const wet = tint.mul(0.68).add(env.sky.mul(glancing.pow2(), 0.12));
       tint.assign(mix(tint, wet, env.wetPaving));
     }

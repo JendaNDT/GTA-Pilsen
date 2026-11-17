@@ -48,9 +48,6 @@ test('všechny varianty materiálů najdou řetězce ve skutečném shaderu nain
   for (const textures of [false, true]) for (const heritage of [false, true]) {
     cases.push([`budovy ${textures}/${heritage}`, materials.makeBuildingMaterial({ textures, heritage }), 'litWin']);
   }
-  for (const normal of [false, true]) {
-    cases.push([`země ${normal}`, materials.patchGroundMaterial(new THREE.MeshLambertMaterial(), normal), 'vGp']);
-  }
   for (const detail of [false, true]) {
     cases.push([`náhon ${detail}`, materials.makeMillraceMaterial(detail), 'vFlow']);
   }
