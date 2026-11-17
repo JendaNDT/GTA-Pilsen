@@ -1,0 +1,98 @@
+{
+  "vychoziRevize": "e6d57689ab4665b2f78e58138b6b2ce45a22537f",
+  "popis": "Pevné pohledy E13; automatic = výchozí chování renderer.info, complete = všechny průchody po vypnutí autoReset, vynulování info a jednom vykreslení.",
+  "zdroje": [
+    "https://github.com/mrdoob/three.js/blob/r170/src/renderers/WebGLRenderer.js",
+    "https://github.com/mrdoob/three.js/blob/r187/src/renderers/WebGLRenderer.js"
+  ],
+  "mereni": {
+    "0.170.0": {
+      "namesti-den": {
+        "automatic": {
+          "calls": 262,
+          "triangles": 405706,
+          "geometries": 198,
+          "textures": 157
+        },
+        "complete": {
+          "calls": 295,
+          "triangles": 509603,
+          "geometries": 198,
+          "textures": 157
+        }
+      },
+      "lochotin": {
+        "automatic": {
+          "calls": 228,
+          "triangles": 361699,
+          "geometries": 194,
+          "textures": 158
+        },
+        "complete": {
+          "calls": 322,
+          "triangles": 503726,
+          "geometries": 194,
+          "textures": 158
+        }
+      },
+      "rokycany-pole": {
+        "automatic": {
+          "calls": 166,
+          "triangles": 261536,
+          "geometries": 162,
+          "textures": 157
+        },
+        "complete": {
+          "calls": 195,
+          "triangles": 283880,
+          "geometries": 162,
+          "textures": 157
+        }
+      }
+    },
+    "0.187.0": {
+      "namesti-den": {
+        "automatic": {
+          "calls": 295,
+          "triangles": 509603,
+          "geometries": 198,
+          "textures": 158
+        },
+        "complete": {
+          "calls": 295,
+          "triangles": 509603,
+          "geometries": 198,
+          "textures": 158
+        }
+      },
+      "lochotin": {
+        "automatic": {
+          "calls": 322,
+          "triangles": 503726,
+          "geometries": 194,
+          "textures": 159
+        },
+        "complete": {
+          "calls": 322,
+          "triangles": 503726,
+          "geometries": 194,
+          "textures": 159
+        }
+      },
+      "rokycany-pole": {
+        "automatic": {
+          "calls": 195,
+          "triangles": 283880,
+          "geometries": 162,
+          "textures": 158
+        },
+        "complete": {
+          "calls": 195,
+          "triangles": 283880,
+          "geometries": 162,
+          "textures": 158
+        }
+      }
+    }
+  }
+}

@@ -1,48 +1,65 @@
-# Stav etapy E13
+# Stav etapy E14
 
-Větev `etapa/E13`, výchozí revize `3e8aa3e`. Zadání je v [E13](E13.md).
+Větev `etapa/E14`, výchozí revize `e6d5768`. Zadání je v [E14](E14.md).
+Předchozí E13 je sloučená do `main`; její výsledky jsou v [protokolu E13](../E13.md).
+Autor schválil zahájení E14 zprávou „pokračuj“ a následně instalaci potřebných nástrojů.
 
 | Krok | Stav |
 | --- | --- |
-| 1. Pevná kvalita a měření práce snímku | Hotovo |
-| 2. Panel F9 a ovládání na telefonu | Hotovo |
-| 3. Režim `--work` | Hotovo |
-| 4. Osm referenčních pohledů | Hotovo |
-| 5. Test rozpočtu vykreslování | Hotovo |
-| 6. Návod, protokol a závěrečné testy | Hotovo |
+| 1. Aktualizace three.js a záznam výsledků testů | Hotovo |
+| 2. Opravy API a varování | Čeká |
+| 3. Kontrola nahrazovaných řetězců shaderů | Čeká |
+| 4. Referenční pohledy a porovnání s E13 | Čeká |
+| 5. Rozpočet, měření a závěrečný protokol | Čeká |
 
-Krok 1 · Prošlo 30 testů Node, sestavení a všech 35 prohlížečových testů včetně nového měření. Výchozí revize prošla 13 testy Pythonu.
+## Prostředí a výchozí ověření
 
-Krok 2 · Prošlo 30 testů Node, sestavení a všech 36 prohlížečových testů. Panel byl ověřen klávesou F9 i klepnutím v emulaci telefonu.
+Dne 17. listopadu 2026 chybělo npm; původní pokus o testy skončil kódem 127.
+Po souhlasu autora bylo doplněno npm 12.2.2 z oficiálního registru s ověřením SHA-512.
+Node.js 24.22.3 z prostředí Codexu je nyní dostupný v PATH spolu s npm a npx.
+Python 3.12 a jeho závislosti i Chromium 159.0.8154.6 už jsou nainstalované.
+Pythonové příkazy se spouštějí s `.venv/bin` v PATH.
 
-Krok 3 · Prošlo 30 testů Node, 13 testů Pythonu a sestavení. Tři běhy `--work` zapsaly JSON včetně času GPU na Apple M4. Největší rozdíl mediánu, p95 nebo p99 práce snímku byl 6,5 %.
+Čistá instalace E13, všech 33 testů Node, 13 testů Pythonu a sestavení prošly.
+Nově pořízené původní pohledy jsou v `data-raw/e14/baseline-reference/`.
+Výchozí prohlížečová sada byla po sedmi úspěšných testech ukončena, aby následovalo
+úplné ověření aktualizované verze. Zbývající testy tohoto výchozího běhu nejsou označené
+jako ověřené. Logy a srovnávací měření jsou v neversionovaném `data-raw/e14/`.
 
-Krok 4 · Prošlo 30 testů Node, 13 testů Pythonu a sestavení. Všech osm JPEG má 1280 × 720 px a méně než 250 kB. Místa byla ověřena pohledem a opakované snímky byly na stejném stroji souborově shodné.
+## Krok 1
 
-Krok 5 · Prošlo 30 testů Node, sestavení a test rozpočtu ve všech třech pohledech. Přidání 40 vykreslovacích volání vyvolalo očekávané selhání (302 proti limitu 288). Po odebrání se test vrátil k úspěchu.
+Three.js je připnuté na přesnou verzi 0.187.0, zámek závislostí se změnil jen u three.js.
+Všech 33 testů Node, sestavení a audit npm bez nálezů prošly. Z 37 prohlížečových
+testů prošlo 36. Jediný neúspěšný je test rozpočtu (295 volání na náměstí proti
+původnímu limitu 288); příčina je doložená níže. Očekávané selhání se v kroku 1
+pouze zaznamenává podle zadání, oprava následuje v kroku 2.
+Při skutečném načtení se objevilo varování:
+`THREE.WebGLShadowMap: PCFSoftShadowMap has been removed. Using PCFShadowMap instead.`
+Oprava patří do kroku 2. Další chyby při startu nebyly zachyceny.
 
-Krok 6 · Prošlo 30 testů Node, 13 testů Pythonu, kontrola syntaxe nástrojů, audit npm,
-sestavení a 37 prohlížečových testů. [Protokol etapy](../E13.md).
+Byl přečten [průvodce migrací](https://github.com/mrdoob/three.js/wiki/Migration-Guide)
+pro r171–r187. Průvodce upozorňuje zejména na stíny; kontrola kódu knihovny navíc odhalila změnu
+počítadel vykreslování (viz níže). Ostatní změněná API se v projektu nepoužívají. Statické objekty
+s vypnutým automatickým přepočtem matice nemění ručně matici a nevolají
+`updateWorldMatrix()`. Barvy, expozice, materiály a vlastní obloha se zatím nemění.
 
-Autor dodal měření z počítače dne 17. listopadu 2026. Zaznamenalo 3 595 snímků za 60 s,
-práci snímku 2,4 / 4,3 / 5,7 ms a GPU 11,41 / 12,69 / 13,07 ms (medián / p95 / p99).
-Úplné hodnoty jsou v protokolu.
+## Změna významu počítadel
 
-Měření na skutečném telefonu autor výslovně vynechal. Výkon telefonu zůstává neověřený.
-Autor dne 17. listopadu 2026 prohlédl a schválil referenční snímky.
-Autor následně schválil sloučení všech změn E13 do `main` přes pull request č. 5.
-Samostatná kontrola modelem zůstává doporučeným postupem.
+Test rozpočtu po aktualizaci selhal. V E13 se automatické vynulování `renderer.info`
+provádělo až po vykreslení stínů, nyní probíhá před ním. Nové počty tedy zahrnují
+scénu i stíny. Na náměstí se v obou verzích skutečně kreslí totožných 295 objektů,
+z toho 33 ve stínovém průchodu. Původní počítadlo hlásilo pouze 262 volání.
+Trojúhelníky se ze stejného důvodu změnily z 405 706 na 509 603. Zachycené seznamy
+objektů včetně geometrie a matic jsou shodné (`data-raw/e14/render-old.json`
+a `render-new.json`). Nejde o přidanou geometrii. [Výsledky všech tří pohledů](../E14/pocitadla.json)
+ukazují shodné úplné počty pro původní i aktualizovanou verzi.
 
-## Oprava závislosti před sloučením
+## Otevřené otázky
 
-Při přípravě sloučení dne 17. listopadu 2026 znovu prošlo 30 testů Node, 13 testů Pythonu,
-sestavení a všech 37 prohlížečových testů. Audit npm nyní selhává kvůli
-[GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf) v knihovně
-`picomatch`, kterou používá Vite. Záznam byl na GitHubu nově prověřen v 15:56 UTC.
-Nainstalovaná i nejnovější verze `picomatch` je 4.0.7, opravená verze není uvedená.
-Autor následně schválil opravu. Izolovaný kandidát Vite 6.2.7 měl další známé zranitelnosti.
-Projekt používá místní opravu picomatch `4.0.8-plzen.1` se zachovanou licencí a zdrojem.
-Všech 1 983 testů knihovny a tři cílené testy projektu prošly. Audit hlásí nula
-zranitelností. Čistá instalace, 33 testů Node, 13 testů Pythonu, sestavení a všech
-37 prohlížečových testů prošly. Vývojová verze hry na `localhost:5173` se načetla bez
-chyb. E13 je připravená k dokončení sloučení přes pull request č. 5.
+Autor dne 17. listopadu 2026 schválil přepočet rozpočtu z **původní E13** včetně
+stínů při zachování limitu +10 %. Rozpočet se nepřevezme z aktualizované verze.
+Jde o schválenou výjimku z požadavku E14 neměnit očekávání testů, vyvolanou změnou
+významu API knihovny. Úplné původní počty jsou 295 / 509 603 (náměstí),
+322 / 503 726 (Lochotín) a 195 / 283 880 (Rokycany), vždy volání / trojúhelníky.
+
+Na konci zbývá kontrola vzhledu autorem a samostatná kontrola modelem 6.1 Sol, Medium.

@@ -216,6 +216,8 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 
 ## Zdroje a licence dat
 
+- Grafiku vykresluje [three.js 0.187.0](https://github.com/mrdoob/three.js/tree/r187),
+  autoři three.js, [licence MIT](https://github.com/mrdoob/three.js/blob/r187/LICENSE).
 - Sestavení používá [picomatch](https://github.com/micromatch/picomatch), autor Jon
   Schlinkert, licence MIT. [Místní oprava 4.0.8-plzen.1](vendor/picomatch/README.md)
   vychází z verze 4.0.7 a odstraňuje zaseknutí při opakovaných vzorech hledání souborů.
@@ -252,7 +254,7 @@ Inspirací byl projekt [HrejBrno.cz](https://www.hrejbrno.cz/).
 
 ## Jak je hra postavená
 
-- [Three.js](https://threejs.org) pro 3D grafiku, [Vite](https://vitejs.dev) pro sestavení.
+- [Three.js 0.187.0](https://threejs.org) pro 3D grafiku (licence MIT), [Vite](https://vitejs.dev) pro sestavení.
 - `src/world/` – svět: načtení dat, terén a mosty, kolize, silniční síť, stavba 3D geometrie po dlaždicích.
 - `src/entities/` – auta, chodci, tramvaje, vrtulník a jejich modely.
 - `src/game/` – pravidla hry, kamera, ovládání, mapa, zakázky, zvuky.
