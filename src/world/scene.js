@@ -7,43 +7,8 @@ export const GROUND_HEX = 0x9aa873;
 
 function makeSky() {
   const geo = new THREE.SphereGeometry(1, 32, 16);
-  const mat = new THREE.ShaderMaterial({
+  const mat = new THREE.MeshBasicMaterial({
     side: THREE.BackSide, depthWrite: false, depthTest: false, fog: false,
-    defines: { OCT: QUALITY.clouds },
-    uniforms: {
-      top: { value: new THREE.Color() }, horizon: { value: new THREE.Color() },
-      sunDir: { value: new THREE.Vector3(0, 1, 0) }, sunCol: { value: new THREE.Color() },
-      cloudCol: { value: new THREE.Color() }, cloudShade: { value: new THREE.Color() },
-      night: env.night, time: env.time,
-    },
-    vertexShader: 'varying vec3 vDir; void main() { vDir = position; vec4 p = modelViewMatrix * vec4(position, 0.0); gl_Position = projectionMatrix * vec4(p.xyz, 1.0); gl_Position.z = gl_Position.w; }',
-    fragmentShader: `
-      varying vec3 vDir; uniform vec3 top; uniform vec3 horizon; uniform vec3 sunDir; uniform vec3 sunCol;
-      uniform vec3 cloudCol; uniform vec3 cloudShade; uniform float night; uniform float time;
-      float h21(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
-      float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
-        return mix(mix(h21(i), h21(i + vec2(1.0, 0.0)), f.x), mix(h21(i + vec2(0.0, 1.0)), h21(i + vec2(1.0, 1.0)), f.x), f.y); }
-      float fbm(vec2 p) { float a = 0.5, s = 0.0; for (int i = 0; i < OCT; i++) { s += a * vn(p); p = p * 2.03 + 17.0; a *= 0.5; } return s; }
-      void main() {
-        vec3 d = normalize(vDir);
-        float t = pow(clamp(d.y, 0.0, 1.0), 0.5);
-        vec3 col = mix(horizon, top, t);
-        float s = max(dot(d, sunDir), 0.0);
-        col += sunCol * (pow(s, 700.0) * 5.0 + pow(s, 14.0) * 0.22 + pow(s, 3.0) * 0.06);
-        // hvězdy
-        vec2 sp = floor(d.xz / (abs(d.y) + 0.4) * 180.0);
-        float star = step(0.9987, h21(sp)) * night * smoothstep(0.07, 0.35, d.y) * 0.45;
-        // mraky: vrstva ve výšce, promítnutá podle směru pohledu
-        vec2 cp = d.xz / (d.y + 0.16) * 1.15 + vec2(time * 0.004, time * 0.0015);
-        float c = fbm(cp);
-        float cover = smoothstep(0.50, 0.74, c) * smoothstep(0.02, 0.22, d.y);
-        float thick = smoothstep(0.55, 0.9, c);
-        vec3 cc = mix(cloudCol, cloudShade, thick * 0.75) + sunCol * pow(s, 6.0) * 0.25;
-        col = mix(col + vec3(star), cc, cover * 0.92);
-        gl_FragColor = vec4(col, 1.0);
-        #include <tonemapping_fragment>
-        #include <colorspace_fragment>
-      }`,
   });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.renderOrder = -10;
@@ -104,13 +69,8 @@ export class Environment {
 
     const dir = this.sunDir.set(Math.cos(ang) * 0.75, Math.max(0.16, elev * 0.95), 0.5).normalize();
     dir.lerp(MOON_DIR, 1 - THREE.MathUtils.smoothstep(elev, -0.24, -0.035)).normalize();
-    const top = new THREE.Color(0x3a7fd0).lerp(new THREE.Color(0x050915), 1 - day);
     const hor = new THREE.Color(0xc3dcee).lerp(new THREE.Color(0xf0a060), dusk * 0.85).lerp(new THREE.Color(0x121a2c), 1 - day);
-    const sunCol = new THREE.Color(0xfff4e0).lerp(new THREE.Color(0xff9a4a), dusk).multiplyScalar(elev > -0.05 ? 1 : 0.22);
-    const u = this.sky.material.uniforms;
-    u.top.value.copy(top); u.horizon.value.copy(hor); u.sunDir.value.copy(dir); u.sunCol.value.copy(sunCol);
-    u.cloudCol.value.copy(new THREE.Color(0xffffff).lerp(new THREE.Color(0xffc089), dusk * 0.8).lerp(new THREE.Color(0x1b2338), 1 - day));
-    u.cloudShade.value.copy(new THREE.Color(0xaab6c6).lerp(new THREE.Color(0x8f6f6a), dusk * 0.7).lerp(new THREE.Color(0x0c1120), 1 - day));
+    this.sky.material.color.copy(hor);
     this.scene.fog.color.copy(hor);
     env.sky.value.copy(hor);
     env.sunDir.value.copy(dir);

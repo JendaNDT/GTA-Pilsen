@@ -726,6 +726,7 @@ export class Game {
   }
 
   render() {
+    this.renderer.info.reset();
     this.renderer.render(this.scene, this.camera);
   }
 

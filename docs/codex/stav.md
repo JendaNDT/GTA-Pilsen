@@ -5,8 +5,8 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
 
 | Krok | Stav |
 | --- | --- |
-| 1. Sjednotit importy a ověřit je testem | Hotovo |
-| 2. Zapojit nový vykreslovač na WebGL 2 | Zbývá |
+| 1. Sjednotit importy a ověřit je testem | Hotovo · `a68135b` |
+| 2. Zapojit nový vykreslovač na WebGL 2 | Hotovo |
 | 3a. Převést oblohu a pořídit srovnávací snímek | Zbývá |
 | 3b. Převést terén, vodu, dlažbu a výřezy portálů | Zbývá |
 | 3c. Převést silnice a čáry | Zbývá |
@@ -26,5 +26,13 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
 - Krok 1 prošel 39 testy Node a produkčním sestavením. Prošlo sedm vybraných prohlížečových kontrol včetně
   rozpočtu, uložené hry, dotyku a minuty hraní bez varování. Úplná sada je naplánovaná
   na závěr etapy. Logy jsou v `data-raw/e15/`.
-  Dočasný import původního vykreslovače z jeho zdrojového modulu se odstraní v kroku 2.
+- Krok 2 spouští nový vykreslovač zatím výhradně na WebGL 2. Základní materiály
+  a nastavení stínů fungují. Obloha je dočasně jednobarevná a vlastní detaily povrchů
+  čekají na krok 3. Textury dlaždic se nahrávají ihned před opětovným použitím plátna.
+- Srovnatelné počítadlo je v novém vykreslovači `renderer.info.render.drawCalls`.
+  Nuluje se jednou před snímkem, aby zahrnovalo stíny i výstupní průchod.
+  Při zkušebním měření přibyl jeden výstupní trojúhelník a jedno volání na pohled.
+  Limity rozpočtu zůstávají stejné.
 - Od autora bude potřeba závěrečné ověření vzhledu a plynulosti na počítači a telefonu.
+- Ověření kroku 2: 39 testů Node, produkční sestavení a tři vybrané prohlížečové
+  testy (rozpočet, menu s použitým vykreslováním a dotykový panel) prošly.

@@ -5,7 +5,7 @@ function formatTimes(label, times) {
   return `${label} — ${[times.median, times.p95, times.p99].map((n) => number.format(n)).join(' / ')} ms`;
 }
 
-export function initPerfPanel(perf, canOpen) {
+export function initPerfPanel(perf, rendering, canOpen) {
   const toggle = document.createElement('button');
   toggle.type = 'button';
   toggle.id = 'perf-toggle';
@@ -39,6 +39,7 @@ export function initPerfPanel(perf, canOpen) {
     if (document.activeElement === output) return;
     output.value = [
       `${frames} snímků za ${seconds} s · medián / p95 / p99`,
+      `Vykreslování ${rendering}`,
       formatTimes('Práce snímku', workMs),
       formatTimes('Výpočet hry', updateMs),
       formatTimes('Příprava vykreslení', renderMs),

@@ -4,7 +4,7 @@ const MAX_GPU_QUERIES = 8;
 export function readRenderStats(renderer) {
   const { render, memory } = renderer.info;
   return {
-    calls: render.calls, triangles: render.triangles,
+    calls: render.drawCalls, triangles: render.triangles,
     geometries: memory.geometries, textures: memory.textures,
   };
 }

@@ -1456,7 +1456,7 @@ export class ChunkManager {
       this.roadVerge[i] = surfaceContext(world, this.districts, world.rpx[mid], world.rpz[mid]);
     }
     this.scratch = new Map();
-    this.aniso = Math.min(4, renderer.capabilities.getMaxAnisotropy());
+    this.aniso = Math.min(4, renderer.getMaxAnisotropy());
     this.texNear = QUALITY.groundTex; this.texFar = QUALITY.groundTexFar;
     this.lastCenter = -1;
     this.pending = 0;

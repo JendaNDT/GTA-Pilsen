@@ -1,5 +1,6 @@
 // Materiály světa. Fasády domů, povrch země i voda se dokreslují přímo v shaderu.
 import * as THREE from 'three/webgpu';
+import { transformNormalToView, vec3 } from 'three/tsl';
 import { DEBUG } from '../config.js';
 import { patchShader } from './shader-patches.js';
 import { TUNNEL_HEIGHT, TUNNEL_PORTAL_CUT } from './tunnels.js';
@@ -225,7 +226,9 @@ export function patchGroundMaterial(mat, fixedNormal = true) {
 
 /** Ploché povrchy na zemi (silnice, plochy) – kreslí se v pevném pořadí bez zápisu hloubky. */
 export function makeDecalMaterial(opts = {}) {
-  return patchGroundMaterial(new THREE.MeshLambertMaterial({ vertexColors: true, depthWrite: false, ...opts }));
+  const mat = new THREE.MeshLambertNodeMaterial({ vertexColors: true, depthWrite: false, ...opts });
+  mat.normalNode = transformNormalToView(vec3(0, 1, 0));
+  return mat;
 }
 
 /** Společná úprava shaderu terénu (jedna funkce = jeden sdílený program pro všechny dlaždice). */

@@ -1,6 +1,17 @@
 import { expect, test } from '@playwright/test';
 import { PCFShadowMap } from 'three';
 
+test('E15 – hra ukazuje vynucené vykreslování přes WebGL 2 v menu i v měření', async ({ page }) => {
+  await page.goto('/?debug&quality=low&renderer=webgl');
+  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  await page.getByRole('button', { name: 'O hře', exact: true }).click();
+  await expect(page.locator('#panel-about')).toContainText('Aktuální vykreslování: WebGL 2');
+  expect(await page.evaluate(() => window.__game.renderer.backend.isWebGLBackend)).toBe(true);
+  await page.getByRole('button', { name: 'Hrát', exact: true }).click();
+  await page.keyboard.press('F9');
+  await expect(page.getByRole('textbox', { name: 'Výsledky měření výkonu' })).toHaveValue(/Vykreslování WebGL 2/);
+});
+
 test('E14 – start a minuta hraní ve dne i v noci bez varování vykreslovače', async ({ page }) => {
   test.setTimeout(150_000);
   const messages = [];
