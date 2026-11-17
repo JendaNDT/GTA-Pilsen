@@ -192,6 +192,7 @@ zdroje geometrie a měření historických lokalit uvádí [protokol E05](docs/E
 [Protokol E07](docs/E07.md) uvádí měřené směry, postup sestavení a porovnání provozu ve hře.
 [Protokol krajiny](docs/krajina.md) popisuje výběr jemnějšího terénu a kontrolu celé oblasti.
 [Aktualizace z 17. listopadu 2026](docs/aktualizace-2026-11-17/README.md) obsahuje rešerši modelů staveb a kontrolní snímky MHD a silnic.
+[Navazující implementační plán](docs/plan-presnost-a-vzhled.md) rozepisuje etapy E13–E22 pro měřené stavební objekty, ortofoto a detaily ulic, včetně pořadí změn, ověření a návratu k předchozímu vydání.
 
 Datum OSM se čte z položky `osmosis_replication_timestamp` přímo v hlavičce staženého PBF,
 ukládá se do `extract.pkl` a odtud do `meta.json` jako `osmTimestamp` (UTC) se zdrojem
