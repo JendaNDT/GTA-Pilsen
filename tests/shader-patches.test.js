@@ -45,9 +45,6 @@ test('mimo debug režim zůstane chybějící náhrada bez hlášení', (t) => {
 test('všechny varianty materiálů najdou řetězce ve skutečném shaderu nainstalované knihovny', (t) => {
   const warning = t.mock.method(console, 'warn', () => {});
   const cases = [];
-  for (const textures of [false, true]) for (const heritage of [false, true]) {
-    cases.push([`budovy ${textures}/${heritage}`, materials.makeBuildingMaterial({ textures, heritage }), 'litWin']);
-  }
   for (const detail of [false, true]) {
     cases.push([`náhon ${detail}`, materials.makeMillraceMaterial(detail), 'vFlow']);
   }

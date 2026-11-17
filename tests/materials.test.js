@@ -1,11 +1,26 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { Texture } from 'three/webgpu';
+import { DoubleSide, FrontSide, Texture } from 'three/webgpu';
 
 globalThis.matchMedia = () => ({ matches: false });
 globalThis.window = {};
 globalThis.location = { search: '' };
-const { makeDecalMaterial, makeTerrainMaterial } = await import('../src/world/materials.js');
+const { makeBuildingMaterial, makeDecalMaterial, makeTerrainMaterial } = await import('../src/world/materials.js');
+
+test('fasády sdílejí uzly podle detailu a druhu, ale lze měnit stranu jednotlivých materiálů', () => {
+  const variants = new Set();
+  for (const textures of [false, true]) for (const heritage of [false, true]) {
+    const first = makeBuildingMaterial({ textures, heritage });
+    const second = makeBuildingMaterial({ textures, heritage });
+    assert.notEqual(first, second);
+    assert.equal(first.colorNode, second.colorNode);
+    assert.equal(first.emissiveNode, second.emissiveNode);
+    first.side = DoubleSide;
+    assert.equal(second.side, FrontSide);
+    variants.add(first.colorNode);
+  }
+  assert.equal(variants.size, 4);
+});
 
 test('silnice a čáry sdílejí povrch a mají odlišné odsazení hloubky', () => {
   const road = makeDecalMaterial({ polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -6 });

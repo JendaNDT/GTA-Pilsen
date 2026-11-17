@@ -513,7 +513,7 @@ test('mobilní ovládání pohybuje hráčem a otevírá mapu', async ({ browser
   await boot(page);
   await expect(page.locator('#stick')).toBeVisible();
   expect(await page.evaluate(() => __game.renderer.shadowMap.enabled)).toBe(false);
-  expect(await page.evaluate(() => __game.chunks.heritage.close.customProgramCacheKey())).toBe('heritage-basic');
+  expect(await page.evaluate(() => __game.chunks.paintedBuildings === __game.chunks.buildingMat)).toBe(true);
   const moved = await page.evaluate(() => {
     const stick = document.querySelector('#stick'), r = stick.getBoundingClientRect();
     const x = __game.player.x, z = __game.player.z;

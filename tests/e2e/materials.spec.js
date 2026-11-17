@@ -39,6 +39,16 @@ test('E15 – obloha má ve dne mraky a v noci ztmavne', async ({ page, baseURL 
   expect(blue - nightBlue).toBeGreaterThan(145);
 });
 
+test('E15 – některá okna na náměstí v noci svítí a sousední zůstávají tmavá', async ({ page, baseURL }) => {
+  await openReferenceGame(page, baseURL);
+  await page.addStyleTag({ content: '#menu, #hud { visibility: hidden }' });
+  await renderReferenceView(page, reference.views.find((view) => view.id === 'namesti-noc'));
+  const [litRed, , litBlue] = await averageRegion(page, { x: 40, y: 331, width: 8, height: 8 });
+  const [darkRed] = await averageRegion(page, { x: 52, y: 333, width: 8, height: 8 });
+  expect(litRed - darkRed).toBeGreaterThan(100);
+  expect(litRed - litBlue).toBeGreaterThan(12);
+});
+
 test('E15 – voda pod Wilsonovým mostem, dlažba, portály a značení u Valíku jsou vidět', async ({ page, baseURL }) => {
   await openReferenceGame(page, baseURL);
   await page.addStyleTag({ content: '#menu, #hud { visibility: hidden }' });

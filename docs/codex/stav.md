@@ -9,8 +9,8 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
 | 2. Zapojit nový vykreslovač na WebGL 2 | Hotovo · `27a2d77` |
 | 3a. Převést oblohu a pořídit srovnávací snímek | Hotovo · `4e42957` |
 | 3b. Převést terén, vodu, dlažbu a výřezy portálů | Hotovo · `a700323` |
-| 3c. Převést silnice a čáry | Hotovo |
-| 3d. Převést budovy a okna | Zbývá |
+| 3c. Převést silnice a čáry | Hotovo · `f755611` |
+| 3d. Převést budovy a okna | Hotovo |
 | 3e. Převést náhon a skvrny lamp | Zbývá |
 | 3f. Převést detaily modelů | Zbývá |
 | 4. Zapnout WebGPU a ověřit automatický i vynucený návrat na WebGL 2 | Zbývá |
@@ -49,3 +49,8 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
   na tmavém asfaltu prošly. Test náhrad textu shaderu země vystřídala kontrola
   společného materiálu, odsazení vrstev a viditelného značení.
   [Vozovka u Valíku](../E15/kroky/03c-vozovka.jpg).
+- Ověření kroku 3d: 41 testů Node, sestavení a prohlížečové testy nočních oken
+  a dotykového ovládání prošly. Čtyři varianty fasád sdílejí uzly. Test starého klíče
+  shaderu vystřídala kontrola, že nízká kvalita nepoužívá detailní fasádní materiál.
+  Na [nočním snímku](../E15/kroky/03d-okna.jpg) mají vybraná okna stejnou barvu jako v E14,
+  na [denním snímku](../E15/kroky/03d-fasady.jpg) jsou místy o něco světlejší stíny.
