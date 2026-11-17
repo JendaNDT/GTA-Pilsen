@@ -1,8 +1,8 @@
 // Procedurální nízkopolygonové modely aut, MHD, postav a vrtulníku.
 import * as THREE from 'three/webgpu';
+import { step, vertexColor } from 'three/tsl';
 import { env, getPoolMaterial } from '../world/materials.js';
-import { DEBUG, QUALITY } from '../config.js';
-import { patchShader } from '../world/shader-patches.js';
+import { QUALITY } from '../config.js';
 
 const _c = new THREE.Color();
 const lin = (hex) => { _c.setHex(hex); return [_c.r, _c.g, _c.b]; };
@@ -79,17 +79,9 @@ const DARK = lin(0x24272b), CHROME = lin(0x8d949b), WHITE = [1, 1, 1], PLATE = l
 let detailMat = null;
 export function getDetailMaterial() {
   if (detailMat) return detailMat;
-  detailMat = new THREE.MeshLambertMaterial({ vertexColors: true });
-  detailMat.onBeforeCompile = (shader) => {
-    shader.uniforms.uNight = env.night;
-    shader.fragmentShader = patchShader(shader.fragmentShader, 'světla vozidel · barva', [
-      ['#include <common>', '#include <common>\nuniform float uNight;'],
-      ['#include <emissivemap_fragment>', `#include <emissivemap_fragment>
-#ifdef USE_COLOR
-  totalEmissiveRadiance += vColor.rgb * step(0.9, vColor.r) * (0.35 + 0.9 * uNight);
-#endif`],
-    ], DEBUG);
-  };
+  const color = vertexColor().rgb;
+  const brightness = step(0.9, color.r).mul(env.night.mul(0.9).add(0.35));
+  detailMat = new THREE.MeshLambertNodeMaterial({ vertexColors: true, emissiveNode: color.mul(brightness) });
   return detailMat;
 }
 

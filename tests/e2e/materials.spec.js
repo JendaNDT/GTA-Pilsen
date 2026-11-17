@@ -80,6 +80,21 @@ test('E15 – proudění náhonu mění odlesk a lampy osvětlují povrch', asyn
   expect(lit - unlit).toBeGreaterThan(30);
 });
 
+test('E15 – světlomety auta zůstávají v noci jasné', async ({ page, baseURL }) => {
+  await openReferenceGame(page, baseURL);
+  await page.addStyleTag({ content: '#menu, #hud { visibility: hidden }' });
+  await page.evaluate((date) => {
+    const { x, y, z, yaw } = window.__game.player.lastCar;
+    const dx = Math.sin(yaw), dz = Math.cos(yaw);
+    window.__setClock(date, 22);
+    window.__view(x + dx * 4, y + 1.15, z + dz * 4, x + dx * 1.5, y + 0.75, z + dz * 1.5);
+  }, reference.date);
+  const [headlight] = await averageRegion(page, { x: 470, y: 380, width: 16, height: 16 });
+  const [bumper] = await averageRegion(page, { x: 632, y: 426, width: 16, height: 16 });
+  expect(headlight).toBeGreaterThan(190);
+  expect(headlight - bumper).toBeGreaterThan(160);
+});
+
 test('E15 – voda pod Wilsonovým mostem, dlažba, portály a značení u Valíku jsou vidět', async ({ page, baseURL }) => {
   await openReferenceGame(page, baseURL);
   await page.addStyleTag({ content: '#menu, #hud { visibility: hidden }' });

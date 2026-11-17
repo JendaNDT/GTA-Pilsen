@@ -11,8 +11,8 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
 | 3b. Převést terén, vodu, dlažbu a výřezy portálů | Hotovo · `a700323` |
 | 3c. Převést silnice a čáry | Hotovo · `f755611` |
 | 3d. Převést budovy a okna | Hotovo · `d5d71b8` |
-| 3e. Převést náhon a skvrny lamp | Hotovo |
-| 3f. Převést detaily modelů | Zbývá |
+| 3e. Převést náhon a skvrny lamp | Hotovo · `e8cf715` |
+| 3f. Převést detaily modelů | Hotovo |
 | 4. Zapnout WebGPU a ověřit automatický i vynucený návrat na WebGL 2 | Zbývá |
 | 5. Dokončit měření, sady Playwright a kontroly na GitHubu | Zbývá |
 | 6. Porovnat referenční snímky, změřit výkon a uzavřít protokol | Zbývá |
@@ -58,3 +58,7 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
   v náhonu a přisvícení pod lampou prošly. [Náhon](../E15/kroky/03e-nahon.jpg) odpovídá
   E14. [Skvrny lamp](../E15/kroky/03e-lampy.jpg) jsou místy tmavší. Nový vykreslovač
   sčítá světlo před tónováním a převodem do barev displeje.
+- Ověření kroku 3f: 37 testů Node, sestavení a prohlížečová kontrola
+  světlometů prošly. Světlomet má stejnou průměrnou barvu na [snímku E14](../E15/kroky/03f-svetlomety-e14.jpg)
+  a [snímku E15](../E15/kroky/03f-svetlomety.jpg). Poslední zásah do textu shaderu a čtyři
+  testy starých náhrad se odstranily. Kontrola zdrojů nyní hlídá, že se staré metody nevrátí.
