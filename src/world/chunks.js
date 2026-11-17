@@ -1468,7 +1468,6 @@ export class ChunkManager {
       }, QUALITY.groundTex === 256 ? 12 : 24, {
         availableRequests: () => DETAIL_REQUEST_LIMIT - this.heritage.fetching,
       });
-      void this.orthophoto.load();
     }
     this.buildingMat = makeBuildingMaterial();
     this.paintedBuildings = QUALITY.heritageDetail ? makeBuildingMaterial({ textures: true }) : this.buildingMat;
@@ -1501,6 +1500,21 @@ export class ChunkManager {
     this.texNear = QUALITY.groundTex; this.texFar = QUALITY.groundTexFar;
     this.lastCenter = -1;
     this.pending = 0;
+    this.orthophotoPrepared = false;
+    this.orthophotoDrawnRevision = 0;
+  }
+
+  setOrthophotoEnabled(enabled) {
+    if (!this.orthophoto) return;
+    this.orthophotoEnabled = enabled;
+    this.orthophotoPrepared = false;
+    if (enabled) void this.orthophoto.load();
+    else this.orthophoto.prefetch([]);
+  }
+
+  get orthophotoPending() {
+    const orthophoto = this.orthophoto;
+    return Boolean(orthophoto && (orthophoto.requests || orthophoto.revision !== this.orthophotoDrawnRevision));
   }
 
   _texture(ci, ch, S) {
@@ -1593,7 +1607,8 @@ export class ChunkManager {
     const w = this.world;
     const ccx = Math.floor((x - w.minX) / CHUNK), ccz = Math.floor((z - w.minZ) / CHUNK);
     const center = ccz * 4096 + ccx;
-    if (center !== this.lastCenter || this._view !== view) {
+    const newCenter = center !== this.lastCenter || this._view !== view;
+    if (newCenter) {
       this.lastCenter = center; this._view = view;
       const rad = Math.ceil(view / CHUNK) + 1;
       const want = new Set();
@@ -1626,7 +1641,9 @@ export class ChunkManager {
     const night = env.night.value > 0.03;
     let pending = 0, pendingStart = 0, rebake = null;
     const todo = [], cityRequests = [];
-    const orthoRequests = this.orthophoto?.blocks ? new Map() : null;
+    const orthophoto = this.orthophoto;
+    const orthoRequests = this.orthophotoEnabled && orthophoto?.blocks &&
+      (newCenter || !this.orthophotoPrepared) ? new Map() : null;
     for (const [ci, ch] of this.chunks) {
       const d = Math.hypot(ch.cx - x, ch.cz - z);
       ch.dist = d;
@@ -1662,23 +1679,28 @@ export class ChunkManager {
         else if (ch.texSize === this.texNear && d > 640 && !rebake) rebake = [d, ci, ch, this.texFar];
       }
     }
-    this.heritage.prefetch(cityRequests, this.orthophoto?.requests);
+    this.heritage.prefetch(cityRequests, orthophoto?.requests);
     let orthoRebake;
     if (orthoRequests) {
-      this.orthophoto.prefetch([...orthoRequests].sort((a, b) => a[1] - b[1]).map(([key]) => key));
-      if (budget > 0) {
-        for (const ch of this.chunks.values()) {
-          if (!ch.tex || !ch.orthoTile || (orthoRebake && ch.dist >= orthoRebake.dist)) continue;
-          const bitmap = this.orthophoto.cache.get(ch.orthoTile.key) ?? null;
-          if (bitmap !== ch.orthoBitmap) orthoRebake = ch;
-        }
-        if (orthoRebake) {
-          const ch = orthoRebake;
-          ch.orthoBitmap = this.orthophoto.get(ch.orthoTile.key);
-          drawGround(this, ch.ci, ch.texSize, ch.orthoTile, ch.orthoBitmap);
-          ch.tex.needsUpdate = true;
-          this.renderer.initTexture(ch.tex);
-        }
+      orthophoto.prefetch([...orthoRequests].sort((a, b) => a[1] - b[1]).map(([key]) => key));
+      this.orthophotoPrepared = true;
+    } else if (this.orthophotoEnabled) {
+      orthophoto.pump();
+    }
+    if (orthophoto && orthophoto.revision !== this.orthophotoDrawnRevision && budget > 0) {
+      for (const ch of this.chunks.values()) {
+        if (!ch.tex || !ch.orthoTile || (orthoRebake && ch.dist >= orthoRebake.dist)) continue;
+        const bitmap = orthophoto.cache.get(ch.orthoTile.key) ?? null;
+        if (bitmap !== ch.orthoBitmap) orthoRebake = ch;
+      }
+      if (orthoRebake) {
+        const ch = orthoRebake;
+        ch.orthoBitmap = orthophoto.get(ch.orthoTile.key);
+        drawGround(this, ch.ci, ch.texSize, ch.orthoTile, ch.orthoBitmap);
+        ch.tex.needsUpdate = true;
+        this.renderer.initTexture(ch.tex);
+      } else {
+        this.orthophotoDrawnRevision = orthophoto.revision;
       }
     }
     let done = 0;

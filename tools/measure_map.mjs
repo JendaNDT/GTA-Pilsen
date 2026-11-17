@@ -95,7 +95,7 @@ try {
             built = game.chunks.update(focus.x, focus.z, game.camera.far / 1.35, 40, focus.y);
             await new Promise(requestAnimationFrame);
             if (performance.now() > deadline) throw new Error('Okolí měření se nestihlo dostavět.');
-          } while (built || game.chunks.pending || game.chunks.heritage.fetching);
+          } while (built || game.chunks.pending || game.chunks.heritage.fetching || game.chunks.orthophotoPending);
           window.__step(1 / 60);
           await new Promise(requestAnimationFrame);
           await new Promise(requestAnimationFrame);

@@ -29,11 +29,7 @@ export async function renderReferenceView(page, view) {
     const deadline = performance.now() + 45_000;
     for (;;) {
       const built = chunks.update(x, z, game.camera.far / 1.35, 40, view.camera[1]);
-      const orthophoto = chunks.orthophoto;
-      const waitingForImages = orthophoto?.requests || orthophoto?.cache.size &&
-        [...chunks.chunks.values()].some((tile) => tile.tex && tile.orthoTile &&
-          (orthophoto.cache.get(tile.orthoTile.key) ?? null) !== tile.orthoBitmap);
-      if (!built && !chunks.pending && !chunks.heritage.fetching && !waitingForImages) break;
+      if (!built && !chunks.pending && !chunks.heritage.fetching && !chunks.orthophotoPending) break;
       if (performance.now() > deadline) throw new Error(`${view.name}: okolí se nestihlo dostavět.`);
       await new Promise(requestAnimationFrame);
     }

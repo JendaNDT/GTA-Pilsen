@@ -149,18 +149,23 @@ test('E10 – přerušení, pokuta a opakování výplaty po chybě zápisu', as
   await freeze(page);
   const failed = await page.evaluate(() => {
     const g = window.__game, j = g.jobs.job, money = g.money, setItem = Storage.prototype.setItem;
-    Storage.prototype.setItem = () => { throw new Error('test'); };
+    const checkTimer = g.jobs.checkTimer;
+    let writes = 0;
+    // Dva kroky testují výplatu zakázky bez souběžné odměny za objevenou památku.
+    g.jobs.checkTimer = 0.5;
+    Storage.prototype.setItem = () => { writes++; throw new Error('test'); };
     try {
       for (const target of [j.pick, j.drop]) {
         g.player.place(target.x, target.z);
         g.jobs.update(0.05);
       }
-      return { pending: j.pending.amount, money, unchanged: g.money === money && !g.stats.deliveries };
+      return { pending: j.pending.amount, money, writes, unchanged: g.money === money && !g.stats.deliveries };
     } finally {
+      g.jobs.checkTimer = checkTimer;
       Storage.prototype.setItem = setItem;
     }
   });
-  expect(failed.unchanged).toBe(true);
+  expect(failed).toMatchObject({ unchanged: true, writes: 1 });
   await panel(page, 'Zakázky');
   await page.getByRole('button', { name: 'Znovu uložit odměnu' }).click();
   await expect(page.locator('#job-result')).toContainText('Dokončeno');

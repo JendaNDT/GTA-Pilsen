@@ -10,8 +10,8 @@ Autor potvrdil zahájení E16 a postupné zpracování podkladů pro celou mapu.
 | 2. Převod souřadnic, složení bloků a testy | Hotovo · `1c434fc` |
 | 3. Načtení a vykreslení dvou pilotů | Hotovo · `786d840` |
 | 4. Srovnávací snímky a vyladění barev | Hotovo · `2f1eede` |
-| 5. Sestavení celého území a ověření velikosti a švů | Hotovo |
-| 6. Přepínač, licence, dokumentace a závěrečné ověření | Zbývá |
+| 5. Sestavení celého území a ověření velikosti a švů | Hotovo · `2207b05` |
+| 6. Přepínač, licence, dokumentace a závěrečné ověření | Hotovo |
 
 ## Ověření a otevřené otázky
 
@@ -45,5 +45,16 @@ Autor potvrdil zahájení E16 a postupné zpracování podkladů pro celou mapu.
   a [ze vzduchu](../E16/hranice-ze-vzduchu.jpg) převzal kandidáta sestavovací skript.
   Prošlo 42 testů Node, 23 testů Pythonu, sestavení a osm dotčených
   prohlížečových testů.
+- Krok 6 doplnil nastavení a uložení volby, licenci ve hře, README, katalog
+  a protokol. Pět cílených prohlížečových testů po úpravě plánování snímků prošlo.
+  [Měření na Macu](../E16/mereni.md) a osm referenčních snímků jsou hotové.
+  První úplný běh ztratil dříve spuštěný server Vite a zbytek scénářů se k němu
+  nepřipojil. S vlastním serverem Playwright prošlo 58 z 59 scénářů. Zkušební
+  přesun v testu výplaty E10 mohl objevit památku a připsat samostatnou odměnu.
+  Test výplaty se ověřuje odděleně od objevování památek. Celá sada zakázek
+  prošla a původně neúspěšný scénář prošel ve třech opakováních.
+- Závěrečné ověření zahrnuje 42 testů Node, 23 testů Pythonu, produkční
+  sestavení a 59 prohlížečových scénářů. Etapa je připravená ke kontrole ve
+  hře. Zbývá autorovo ověření na telefonu. [Protokol E16](../E16.md).
 - Po dokončení bude potřeba autorova kontrola při přeletu Rokycan a Klabavy
   a měření na telefonu. Další podklady a rozhodnutí zatím nejsou potřeba.

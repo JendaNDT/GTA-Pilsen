@@ -23,7 +23,11 @@ Navržené grafické položky tím nejsou označené za dokončené; čekají na
 používají TSL. Hra při chybějící podpoře WebGPU přechází na WebGL 2.
 Rozpočet vykreslování hlídají oba prohlížečové projekty. [Protokol E15](E15.md).
 
-## Stav po E15 (ověřeno v kódu)
+**Ortofoto otevřené krajiny (E16) je hotové.** Pole, louky, travnaté plochy a křoviny
+využívají snímky ČÚZK ve 2 m na pixel. Měkké prolnutí zachovává malované barvy hry.
+Vrstva se načítá za běhu a je samostatně vypínatelná. [Protokol E16](E16.md).
+
+## Stav po E16 (ověřeno v kódu)
 
 - **Fyzika:** auto se otáčí podle natočení kol a boční skluz se tlumí. Nemá hmotnost,
   zavěšení ani pneumatiky (`stepDynamic()` ve `vehicles.js`). Náklony jsou vizuální,

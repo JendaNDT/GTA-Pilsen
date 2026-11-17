@@ -48,6 +48,7 @@ export class Game {
     this.clock = new GameClock(this.transit.timetable.monday);
     this.trafficRhythm = new TrafficRhythm(this.world, data.trafficProfiles, this.transit.timetable);
     this.clockVisible = true;
+    this.orthophotoEnabled = true;
     this.player = new Player(this.scene, this.world);
     // vrtulníky: heliporty z mapy (FN Lochotín, pivovar, Bory) a jeden na náměstí Republiky
     this.helis = [[106, -1596], [984, -396], [-266, 1314], [48, 52]].map(([x, z], i) => {
@@ -67,6 +68,7 @@ export class Game {
     this.jobs = new Jobs(this);
     this.shifts = new Shifts(this);
     this._load();
+    this.chunks.setOrthophotoEnabled(this.orthophotoEnabled);
     this.player.yaw = this.camYaw;
     this._spawnStarterCar();
     this.hud.money(this.money);
@@ -112,6 +114,12 @@ export class Game {
     this.save();
   }
 
+  setOrthophotoEnabled(enabled) {
+    this.orthophotoEnabled = enabled;
+    this.chunks.setOrthophotoEnabled(enabled);
+    this.save();
+  }
+
   updateDepartures() {
     this.hud.departures(this.mode === 'foot'
       ? this.transit.timetable.departures(this.player.x, this.player.z, this.clock, undefined, this.transit.active) : null);
@@ -128,6 +136,7 @@ export class Game {
       const day = s.v === 2 ? parseDay(s.date) : null;
       this.clock.set(day ?? this.transit.timetable.monday, hour);
       this.clockVisible = s.v === 1 || s.clockVisible !== false;
+      this.orthophotoEnabled = s.orthophotoEnabled !== false;
       this.audio.setMuted(s.soundEnabled === false);
       const w = this.world;
       if (Number.isFinite(s.x) && Number.isFinite(s.z)
@@ -154,7 +163,7 @@ export class Game {
         .reduce((a, b) => Math.hypot(a.x - f.x, a.z - f.z) < Math.hypot(b.x - f.x, b.z - f.z) ? a : b) : f;
       localStorage.setItem(SAVE_KEY, JSON.stringify({
         v: 2, money: this.money, date: formatDay(this.clock.day), hour: this.hour, clockVisible: this.clockVisible,
-        soundEnabled: !this.audio.muted,
+        soundEnabled: !this.audio.muted, orthophotoEnabled: this.orthophotoEnabled,
         stats: this.stats, x: Math.round(safe.x), z: Math.round(safe.z),
         found: this.jobs.landmarks.filter((l) => l.found).map((l) => l.name),
         garage: this.garage.snapshot(), job: this.jobs.snapshot(), shift: this.shifts.snapshot(),

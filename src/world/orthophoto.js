@@ -48,12 +48,13 @@ export class Orthophoto {
     this.decode = decode;
     this.availableRequests = availableRequests;
     this.dimension = grid.chunk * CHUNKS_PER_BLOCK / METERS_PER_PIXEL;
-    this.blocks = null;
+    this.blocks = undefined;
     this.cache = new Map();
     this.pending = new Set();
     this.failed = new Set();
     this.wanted = new Set();
     this.loading = false;
+    this.revision = 0;
   }
 
   get requests() {
@@ -61,6 +62,8 @@ export class Orthophoto {
   }
 
   async load() {
+    if (this.blocks !== undefined) return;
+    this.blocks = null;
     this.loading = true;
     try {
       const response = await this.fetchFile(`${this.base}index.json`, {
@@ -94,6 +97,7 @@ export class Orthophoto {
       if (wanted.has(key)) continue;
       bitmap.close();
       this.cache.delete(key);
+      this.revision++;
     }
     for (const key of this.failed) {
       if (!wanted.has(key)) this.failed.delete(key);
@@ -102,8 +106,9 @@ export class Orthophoto {
   }
 
   pump() {
+    const limit = Math.min(REQUEST_LIMIT, this.availableRequests());
     for (const key of this.wanted) {
-      if (this.requests >= Math.min(REQUEST_LIMIT, this.availableRequests())) break;
+      if (this.requests >= limit) break;
       if (this.cache.has(key) || this.pending.has(key) || this.failed.has(key)) continue;
       this.pending.add(key);
       void this.fetchBitmap(key);
@@ -126,6 +131,7 @@ export class Orthophoto {
         return;
       }
       this.cache.set(key, bitmap);
+      this.revision++;
       if (this.cache.size > this.capacity) {
         const [oldest, unused] = this.cache.entries().next().value;
         unused.close();

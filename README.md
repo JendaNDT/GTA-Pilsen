@@ -107,6 +107,11 @@ hra automaticky použije WebGL 2. Otevřením adresy s `?renderer=webgl` může�
 WebGL 2 vynutit. Použitou cestu uvidíš v **O hře** i v panelu **Měření**.
 [Porovnání osmi pohledů na obou cestách](docs/E15/snimky.md).
 
+[E16 přidává letecké snímky otevřené krajiny](docs/E16.md). Snímky ČÚZK z roku 2025
+se načítají po malých blocích podle polohy a jsou sladěné s malovaným vzhledem hry.
+V nastavení je vypneš volbou **Letecké snímky krajiny** nebo adresou s `?orthophoto=0`.
+[Srovnání pole u Rokycan a údolí Klabavy](docs/E16/overeni-pilotu.md).
+
 Regresní testy kolizí, terénu, silničního grafu a distribuovaných dat:
 
 ```bash
@@ -179,6 +184,8 @@ python3 tools/build_data.py
 | `area.py` | jediné místo, kde je zadaný rozsah herního území (stačí změnit a spustit ostatní skripty) |
 | `fetch_osm.py` | stáhne výřez OpenStreetMap pro Plzeňský kraj |
 | `fetch_dem.py` | stáhne výškopis ČÚZK (povrch DMP 1G a terén DMR 5G) pro oblast Plzně |
+| `fetch_orthophoto.py` | vybere mapové listy ČÚZK a při převodu eviduje jejich stažení a kontrolní součty |
+| `build_orthophoto.py` | převede letecké snímky otevřené krajiny do herních bloků ve 2 m na pixel |
 | `extract_osm.py` | vybere z výřezu jen oblast hry |
 | `fetch_traffic.py` | stáhne otevřený pasport svislého a vodorovného značení města Plzně |
 | `build_data.py` | spočítá výšky budov a vyrobí kompaktní soubory pro hru |
@@ -240,6 +247,9 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 - Terén vychází z digitálního modelu reliéfu DMR 5G a výšky budov z rozdílu digitálního modelu
   povrchu DMP 1G a DMR 5G © [ČÚZK](https://www.cuzk.cz). Terén je pro hru zjednodušený na síť
   po 8 metrech, na vybraných dlaždicích po 4 metrech. Pod silnicemi je zarovnaný.
+- Letecké snímky otevřené krajiny vycházejí z [Ortofota ČR © ČÚZK](https://atom.cuzk.gov.cz/ORTOFOTO/ORTOFOTO.xml),
+  [licence CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Snímkování z roku 2025
+  je převzorkované do herní mapy, oříznuté na otevřenou krajinu a barevně sjednocené.
 - Poloha vybraných dopravních značek, čar a přechodů vychází v Plzni také z otevřeného
   pasportu města. [Svislé značení](https://opendata.plzen.eu/public/opendata/detail/6) ·
   [Vodorovné značení](https://opendata.plzen.eu/public/opendata/detail/92)

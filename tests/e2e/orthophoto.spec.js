@@ -54,7 +54,34 @@ test('parametr orthophoto vypne katalog i požadavky na snímky', async ({ page 
     if (request.url().includes('/orthophoto/')) requests.push(request.url());
   });
   await openPilot(page, '&orthophoto=0');
+  await page.getByRole('button', { name: 'Nastavení', exact: true }).click();
+  await expect(page.getByRole('checkbox', { name: 'Letecké snímky krajiny' })).toBeDisabled();
   expect((await bakePilot(page)).ready).toBeGreaterThan(0);
   expect((await bakePilot(page)).applied).toBe(0);
   expect(requests).toEqual([]);
+});
+
+test('nastavení leteckých snímků funguje a uloží se i se starším postupem', async ({ page }) => {
+  await page.addInitScript(() => {
+    const key = 'plzen-naplno-v1';
+    if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ v: 2, x: 15975, z: -915, money: 1234 }));
+  });
+  await openPilot(page);
+  const settings = page.getByRole('button', { name: 'Nastavení', exact: true });
+  const checkbox = page.getByRole('checkbox', { name: 'Letecké snímky krajiny' });
+  await settings.click();
+  await expect(checkbox).toBeChecked();
+  await expect.poll(async () => (await bakePilot(page)).applied).toBeGreaterThan(0);
+  await checkbox.uncheck();
+  await expect.poll(async () => (await bakePilot(page)).applied).toBe(0);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('plzen-naplno-v1'))))
+    .toMatchObject({ money: 1234, orthophotoEnabled: false });
+
+  await page.reload();
+  await page.waitForFunction(() => window.__ready);
+  await settings.click();
+  await expect(checkbox).not.toBeChecked();
+  expect((await bakePilot(page)).applied).toBe(0);
+  await checkbox.check();
+  await expect.poll(async () => (await bakePilot(page)).applied).toBeGreaterThan(0);
 });
