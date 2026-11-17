@@ -91,3 +91,6 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
   a referenčních pohledů ve WebGPU. U tří obrazových testů zachytil snímek pouze
   pozadí stránky. Testy teď čtou stejné oblasti přímo z plátna po vykreslení.
   [Druhý běh](https://github.com/JendaNDT/GTA-Pilsen/actions/runs/44171555528).
+- Přímé čtení na Macu prošlo v osmi dotčených kontrolách. Chromium bez okna
+  na Linuxu vracelo prázdný obraz, proto se tam sada WebGPU zkouší s virtuální
+  obrazovkou Xvfb. [Třetí běh](https://github.com/JendaNDT/GTA-Pilsen/actions/runs/44175107840).
