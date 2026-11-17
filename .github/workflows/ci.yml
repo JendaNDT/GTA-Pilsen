@@ -1,11 +1,25 @@
 name: Kontroly projektu
 
+# Úplné kontroly běží jednou pro každý pull request a po sloučení do main.
+# Změny jen v dokumentaci je přeskočí; ty ověřuje docs.yml.
 on:
   push:
+    branches: [main]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
   pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
 
 permissions:
   contents: read
+
+# Novější nahrání do stejného pull requestu zruší starší rozběhnutou kontrolu.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
