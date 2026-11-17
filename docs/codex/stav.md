@@ -33,13 +33,16 @@ Autor dne 17. listopadu 2026 prohlédl a schválil referenční snímky.
 Autor následně schválil sloučení všech změn E13 do `main` přes pull request č. 5.
 Samostatná kontrola modelem zůstává doporučeným postupem.
 
-## Překážka sloučení
+## Oprava závislosti před sloučením
 
 Při přípravě sloučení dne 17. listopadu 2026 znovu prošlo 30 testů Node, 13 testů Pythonu,
 sestavení a všech 37 prohlížečových testů. Audit npm nyní selhává kvůli
 [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf) v knihovně
 `picomatch`, kterou používá Vite. Záznam byl na GitHubu nově prověřen v 15:56 UTC.
 Nainstalovaná i nejnovější verze `picomatch` je 4.0.7, opravená verze není uvedená.
-Audit navrhuje vynucený přechod Vite z 8.3.8 na 6.2.7. Taková změna vyžaduje samostatné
-rozhodnutí a ověření. Sloučení dosud neproběhlo. Čeká se na rozhodnutí autora o opravě
-závislostí. Očekávání testů a pravidla auditu zůstávají zachována.
+Autor následně schválil opravu. Izolovaný kandidát Vite 6.2.7 měl další známé zranitelnosti.
+Projekt používá místní opravu picomatch `4.0.8-plzen.1` se zachovanou licencí a zdrojem.
+Všech 1 983 testů knihovny a tři cílené testy projektu prošly. Audit hlásí nula
+zranitelností. Čistá instalace, 33 testů Node, 13 testů Pythonu, sestavení a všech
+37 prohlížečových testů prošly. Vývojová verze hry na `localhost:5173` se načetla bez
+chyb. E13 je připravená k dokončení sloučení přes pull request č. 5.

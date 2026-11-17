@@ -216,6 +216,10 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 
 ## Zdroje a licence dat
 
+- Sestavení používá [picomatch](https://github.com/micromatch/picomatch), autor Jon
+  Schlinkert, licence MIT. [Místní oprava 4.0.8-plzen.1](vendor/picomatch/README.md)
+  vychází z verze 4.0.7 a odstraňuje zaseknutí při opakovaných vzorech hledání souborů.
+
 - Mapová data © [přispěvatelé OpenStreetMap](https://www.openstreetmap.org/copyright), licence ODbL.
 - Terén vychází z digitálního modelu reliéfu DMR 5G a výšky budov z rozdílu digitálního modelu
   povrchu DMP 1G a DMR 5G © [ČÚZK](https://www.cuzk.cz). Terén je pro hru zjednodušený na síť

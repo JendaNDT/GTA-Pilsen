@@ -49,6 +49,9 @@ const ABOUT_HTML = (meta) => `
   rozvážet jídlo ze skutečných podniků, vozit zákazníky, koupit si vlastní auto, jet směnu řidiče MHD,
   objevovat památky a ujíždět policii.</p>
   <h3>Zdroje dat</h3>
+  <p>Sestavení hry používá picomatch od Jona Schlinkerta (licence
+  <a href="https://github.com/micromatch/picomatch/blob/master/LICENSE" target="_blank" rel="noopener">MIT</a>)
+  s místní opravou 4.0.8-plzen.1.</p>
   <p>Mapová data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">přispěvatelé OpenStreetMap</a>
   (licence ODbL). Terén vychází z digitálního modelu reliéfu DMR 5G, výšky budov z rozdílu modelu povrchu
   DMP 1G a DMR 5G © <a href="https://www.cuzk.gov.cz" target="_blank" rel="noopener">ČÚZK</a>.</p>
