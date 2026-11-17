@@ -1,6 +1,8 @@
 # Revize plánu „Přesnější stavby a hezčí město“
 
-Posuzovaný dokument: [plan-presnost-a-vzhled.md](plan-presnost-a-vzhled.md), revize `baa7595`.
+Posuzovaný dokument: [plan-presnost-a-vzhled.md](plan-presnost-a-vzhled.md), verze 1 v revizi `baa7595`.
+Návrhy revize jsou zapracované do verze 2 plánu. Kde se odkazuje na části plánu, jde o verzi 1.
+Návrh využít kolize budov (1.3) nahradila po rozhodnutí autora fyzika Jolt.
 Revize vznikla 17. listopadu 2026. Fakta v ní jsou ověřená nad kódem, distribuovanými daty,
 staženým archivem města a stahovací službou ČÚZK. Návrhy jsou označené jako návrhy; ty, které
 mění chování hry, je potřeba nejdřív vyzkoušet na pilotu.

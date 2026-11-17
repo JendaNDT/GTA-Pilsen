@@ -192,9 +192,10 @@ zdroje geometrie a měření historických lokalit uvádí [protokol E05](docs/E
 [Protokol E07](docs/E07.md) uvádí měřené směry, postup sestavení a porovnání provozu ve hře.
 [Protokol krajiny](docs/krajina.md) popisuje výběr jemnějšího terénu a kontrolu celé oblasti.
 [Aktualizace z 17. listopadu 2026](docs/aktualizace-2026-11-17/README.md) obsahuje rešerši modelů staveb a kontrolní snímky MHD a silnic.
-[Navazující implementační plán](docs/plan-presnost-a-vzhled.md) rozepisuje etapy E13–E22 pro měřené stavební objekty, ortofoto a detaily ulic, včetně pořadí změn, ověření a návratu k předchozímu vydání.
-[Revize plánu](docs/revize-planu-presnost-a-vzhled.md) ověřuje jeho výchozí údaje nad zdrojovými daty a navrhuje jednodušší postup pro mosty, kolize a ortofoto.
-[Návrh fyziky a grafiky](docs/fyzika-a-grafika.md) popisuje fyzikální knihovnu, měření jejího výkonu a možná vylepšení vykreslování.
+[Navazující implementační plán](docs/plan-presnost-a-vzhled.md) rozepisuje etapy E13–E26: vykreslování WebGPU, fyziku Jolt, ničitelné vybavení ulic, ortofoto, měřené stavby a mosty, nová grafika a tři podrobné úseky ulic.
+[Zadání pro Codex](docs/codex/README.md) obsahuje úplné zadání každé etapy, šablony zpráv a doporučené modely. Stálá pravidla pro AI agenty jsou v [AGENTS.md](AGENTS.md).
+[Katalog vylepšení fyziky a grafiky](docs/fyzika-a-grafika.md) popisuje jednotlivá vylepšení a měření fyzikálních knihoven.
+[Revize první verze plánu](docs/revize-planu-presnost-a-vzhled.md) ověřuje výchozí údaje nad zdrojovými daty; její návrhy jsou zapracované do plánu.
 
 Datum OSM se čte z položky `osmosis_replication_timestamp` přímo v hlavičce staženého PBF,
 ukládá se do `extract.pkl` a odtud do `meta.json` jako `osmTimestamp` (UTC) se zdrojem
