@@ -174,7 +174,7 @@ test('uložení verze 1 a kontrolní trasy E01', async ({ page }) => {
 });
 
 test('silniční trasy spojují Plzeň, Rokycany, Hrádek a Dobřív v obou směrech', async ({ page }, testInfo) => {
-  test.setTimeout(150_000);
+  test.setTimeout(210_000);
   await boot(page);
   await action(page, 'KeyM');
   const query = page.getByRole('searchbox', { name: 'Najít obec nebo památku' });
@@ -210,6 +210,7 @@ test('silniční trasy spojují Plzeň, Rokycany, Hrádek a Dobřív v obou smě
     g.vehicles.obstacles.length = 0;
     car.temper = 1;
     const plzen = w.nearestNode(g.player.x, g.player.z, 250);
+    const klabava = w.nearestNode(...w.meta.places.find((p) => p[2] === 'Klabava').slice(0, 2), 250);
     const square = w.nearestNode(...w.meta.landmarks.find((p) => p[2] === 'Masarykovo náměstí (Rokycany)').slice(0, 2), 250);
     const hradek = w.nearestNode(...w.meta.places.find((p) => p[2] === 'Hrádek').slice(0, 2), 250);
     const hamr = w.nearestNode(g.jobs.walkRoute[0], g.jobs.walkRoute[1], 250);
@@ -235,8 +236,10 @@ test('silniční trasy spojují Plzeň, Rokycany, Hrádek a Dobřív v obou smě
       ['Po místních do Plzně', path(square, plzen)],
       ['Po D5 do Rokycan', viaD5(plzen, square, [12298, 311], 1)],
       ['Po D5 do Plzně', viaD5(square, plzen, [12291, 299], -1)],
-      ['Z Plzně přes Rokycany a Hrádek k hamru', [...path(plzen, square), ...path(square, hradek), ...path(hradek, hamr)], 18188],
-      ['Od hamru přes Hrádek a Rokycany do Plzně', [...path(hamr, hradek), ...path(hradek, square), ...path(square, plzen)], 18188],
+      ['Z Plzně přes Klabavu, Rokycany a Hrádek k hamru',
+        [...path(plzen, klabava), ...path(klabava, square), ...path(square, hradek), ...path(hradek, hamr)], 18188],
+      ['Od hamru přes Hrádek, Rokycany a Klabavu do Plzně',
+        [...path(hamr, hradek), ...path(hradek, square), ...path(square, klabava), ...path(klabava, plzen)], 18188],
     ];
     const drive = (edges, seam) => {
       const first = edges[0], destination = w.eTo[edges.at(-1)];
@@ -398,6 +401,44 @@ test('E03 – pěší přístup k hamru, mosty a hranice pro chůzi, jízdu a le
   expect(result.footMargin).toBeCloseTo(20);
   expect(result.heliCrossed).toBe(true);
   expect(result.heliMargin).toBeCloseTo(40);
+});
+
+test('jemný terén u Klabavy má v grafice i při chůzi stejný povrch', async ({ page }) => {
+  await boot(page);
+  const result = await page.evaluate(() => {
+    const game = window.__game, w = game.world;
+    const [targetX, targetZ] = w.meta.places.find((place) => place[2] === 'Klabava');
+    let chosen, distance = Infinity;
+    for (const id of w.terrainDetail.keys()) {
+      const x0 = w.minX + (id % w.cols) * 256, z0 = w.minZ + Math.floor(id / w.cols) * 256;
+      const d = Math.hypot(x0 + 128 - targetX, z0 + 128 - targetZ);
+      if (d < distance) { chosen = { id, x0, z0 }; distance = d; }
+    }
+    const { id, x0, z0 } = chosen;
+    const offsets = w.terrainDetail.get(id), width = w.tDetailWidth;
+    let peak = width + 1;
+    for (let j = 1; j < width - 1; j++) for (let i = 1; i < width - 1; i++) {
+      const point = j * width + i;
+      if (Math.abs(offsets[point]) > Math.abs(offsets[peak])) peak = point;
+    }
+    const fx = 0.26, fz = 0.34;
+    const x = x0 + ((peak % width) + fx) * w.tDetailG, z = z0 + (Math.floor(peak / width) + fz) * w.tDetailG;
+    game.chunks.update(x, z, 620, 160);
+    const geometry = game.chunks.chunks.get(id).group.children[0].geometry;
+    const positions = geometry.getAttribute('position');
+    const y = positions.getY(peak);
+    const surface = y + (positions.getY(peak + 1) - y) * fx + (positions.getY(peak + width) - y) * fz;
+    const ground = w.heightAt(x, z);
+    game.player.place(x, z, ground + 0.05);
+    for (let i = 0; i < 20; i++) game.player.update(1 / 60, 0, 0, false, false);
+    return { distance, vertices: positions.count, surface, ground, bodyY: game.player.y,
+      change: Math.abs(y - w.baseHeightAt(positions.getX(peak), positions.getZ(peak))) };
+  });
+  expect(result.distance).toBeLessThan(850);
+  expect(result.vertices).toBe(65 ** 2);
+  expect(result.change).toBeGreaterThan(0.4);
+  expect(result.surface).toBeCloseTo(result.ground, 4);
+  expect(result.bodyY).toBeCloseTo(result.ground + 0.05, 4);
 });
 
 test('E03 – oba tubusy Valíku mají vlastní vozovku, stěny a kameru pod terénem', async ({ page }, testInfo) => {

@@ -214,7 +214,7 @@ export class TransitManager {
             m.position.set(cx, cy, cz); m.rotation.set(Math.atan2(yb - ya, 5.2), yaw, 0, 'YXZ');
             const vx = Math.sin(yaw) * v.v, vz = Math.cos(yaw) * v.v;
             for (const k of [-2.6, 0, 2.6]) this.heavy.push({ x: cx + Math.sin(yaw) * k, y: cy, z: cz + Math.cos(yaw) * k, r: 1.3, vx, vz });
-            this.obstacles.push({ x: cx, y: cy, z: cz, vx, vz, halfLen: TRAM_SEG / 2, radius: 1.4 });
+            this.obstacles.push({ x: cx, y: cy, z: cz, vx, vz, yaw, halfLen: TRAM_SEG / 2, radius: 1.4 });
             if (j === 1) { v.x = cx; v.z = cz; v.yaw = yaw; v.vx = vx; v.vz = vz; v.y = cy; }
           }
         } else {
@@ -228,7 +228,7 @@ export class TransitManager {
           v.meshes[0].position.set(cx, cy, cz); v.meshes[0].rotation.set(Math.atan2(yb - ya, 7), yaw, 0, 'YXZ');
           v.x = cx; v.z = cz; v.y = cy; v.yaw = yaw; v.vx = Math.sin(yaw) * v.v; v.vz = Math.cos(yaw) * v.v;
           for (const k of [-4.2, 0, 4.2]) this.heavy.push({ x: cx + Math.sin(yaw) * k, y: cy, z: cz + Math.cos(yaw) * k, r: 1.35, vx: v.vx, vz: v.vz });
-          this.obstacles.push({ x: cx, y: cy, z: cz, vx: v.vx, vz: v.vz, halfLen: TROLLEY_LEN / 2, radius: 1.4 });
+          this.obstacles.push({ x: cx, y: cy, z: cz, vx: v.vx, vz: v.vz, yaw, halfLen: TROLLEY_LEN / 2, radius: 1.4 });
         }
         v.halfLen = v.len / 2; v.radius = 1.4;
       } else {

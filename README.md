@@ -12,6 +12,8 @@ otevřených dat. Běží na počítači i na mobilu, bez instalace.
 - **Skutečný terén**: kopce a údolí řek podle výškopisu ČÚZK (Lochotín je o 60 m výš než náměstí
   Republiky, Chlum o 100 m, Radyně o 250 m), 1179 silničních a kolejových mostů a dva průjezdné
   tubusy tunelu Valík. Auta se naklánějí podle svahu, do kopce zpomalují a z mostu se dá spadnout.
+- **Krajina mezi obcemi.** Na vybraných svazích a v údolích má terén hustší výškovou síť.
+  Po celé mapě se střídají povrchy polí, luk, lesů, břehů a obcí podle mapových ploch.
 - **MHD podle skutečných linek**: tramvaje 1, 2 a 4 a trolejbusy jezdí po svých trasách a staví
   v zastávkách se skutečnými názvy. Vybrané spoje se vypravují podle zabaleného jízdního řádu PMDP.
   U nejbližší zastávky se zobrazí plánované odjezdy a do vozu se dá nastoupit.
@@ -19,6 +21,9 @@ otevřených dat. Běží na počítači i na mobilu, bez instalace.
 - **Dopravní značení**: navigace i provoz respektují jednosměrky, zákazy vjezdu a odbočení.
   Auta dávají přednost a zastavují u stopek. Světla pro chodce, auta a MHD na křižovatce mají
   společný herní cyklus. U rychloměru se zobrazuje doložený limit pro směr jízdy.
+- **Denní rytmus ulic.** Na měřených tazích v centru i dalších částech Plzně se provoz mění
+  podle hodinových profilů pro pracovní den a víkend. Auta při zaplněném výjezdu čekají před
+  křižovatkou i na zelenou.
 - **Rozvoz jídla**: zakázky ze skutečných podniků na skutečné adresy, s časovým limitem a navigací.
 - **Policie**: za krádež auta nebo nebezpečnou jízdu po tobě jde, dá se ujet nebo skončit s pokutou.
 - **Vrtulníky**: stojí na heliportech (FN Lochotín, pivovar, Bory) a na náměstí Republiky,
@@ -107,7 +112,7 @@ testy v prohlížeči. Neúspěšný průchod prohlížečem uloží trasu a sn�
 
 ## Odkud jsou data a jak je obnovit
 
-Hotová herní data jsou v repozitáři ve složce `public/data/` (asi 25,2 MB včetně jízdního řádu PMDP).
+Hotová herní data jsou v repozitáři ve složce `public/data/` (asi 26,8 MB včetně jízdního řádu PMDP).
 Měřené centrum se načítá po 256metrových dlaždicích z `public/detail/city/` (asi 15,8 MB celkem). Všechny soubory jsou připravené ke spuštění. Skripty ve složce `tools/` je umí vyrobit znovu z aktuálních zdrojů
 (potřebují Python 3.10+ a balíčky z `tools/requirements.txt`):
 
@@ -148,6 +153,8 @@ python3 tools/build_data.py
 | `fetch_traffic.py` | stáhne otevřený pasport svislého a vodorovného značení města Plzně |
 | `build_data.py` | spočítá výšky budov a vyrobí kompaktní soubory pro hru |
 | `build_timetable.py` | připraví z GTFS PMDP odjezdy a kalendář stávajících herních tras |
+| `build_traffic_profiles.py` | sestaví pracovní a víkendové hodinové profily z historických měření plzeňských smyček |
+| `build_landscape.py` | porovná základní terén s výškopisem a sbalí vybrané dlaždice s hustší sítí |
 | `build_heritage.py` | převede městské plochy SHP do herních souřadnic |
 | `build_city.mjs` | sestaví měřené budovy do dlaždic a spáruje je s půdorysy OSM |
 | `terrain.py` | pomocný modul: výšková síť terénu, zarovnání pod silnicemi, hladiny, výšky mostů |
@@ -166,6 +173,8 @@ Zdroje značení a pilot jízdy, MHD a chůze popisuje [protokol E04](docs/E04.m
 zdroje geometrie a měření historických lokalit uvádí [protokol E05](docs/E05.md).
 [Rozšíření E05 na Plzeň](docs/E05-mesto.md) popisuje sestavení všech čtyř listů centra a nové měření.
 [Protokol E06](docs/E06.md) popisuje herní kalendář, rozsah jízdního řádu a jeho obnovu.
+[Protokol E07](docs/E07.md) uvádí měřené směry, postup sestavení a porovnání provozu ve hře.
+[Protokol krajiny](docs/krajina.md) popisuje výběr jemnějšího terénu a kontrolu celé oblasti.
 
 Datum OSM se čte z položky `osmosis_replication_timestamp` přímo v hlavičce staženého PBF,
 ukládá se do `extract.pkl` a odtud do `meta.json` jako `osmTimestamp` (UTC) se zdrojem
@@ -182,10 +191,13 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 - Mapová data © [přispěvatelé OpenStreetMap](https://www.openstreetmap.org/copyright), licence ODbL.
 - Terén vychází z digitálního modelu reliéfu DMR 5G a výšky budov z rozdílu digitálního modelu
   povrchu DMP 1G a DMR 5G © [ČÚZK](https://www.cuzk.cz). Terén je pro hru zjednodušený na síť
-  po 8 metrech a pod silnicemi zarovnaný.
+  po 8 metrech, na vybraných dlaždicích po 4 metrech. Pod silnicemi je zarovnaný.
 - Poloha vybraných dopravních značek, čar a přechodů vychází v Plzni také z otevřeného
   pasportu města. [Svislé značení](https://opendata.plzen.eu/public/opendata/detail/6) ·
   [Vodorovné značení](https://opendata.plzen.eu/public/opendata/detail/92)
+- Denní rytmus aut na měřených úsecích vychází z odvozených hodinových profilů města Plzně.
+  Pro další ulice a pro chodce hra používá odhad. [Dopravní detektory](https://opendata.plzen.eu/public/opendata/detail/160) ·
+  [Hodinové profily PoliVisu](https://polivisuapi.plzen.eu/api/)
 
 - Měřené budovy centra vycházejí z dat města Plzně z roku 2024 od GEOREAL – Vybíral. Plochy jsou
   převedené do herních souřadnic a doplněné vlastními materiály. Hranice městských částí určují

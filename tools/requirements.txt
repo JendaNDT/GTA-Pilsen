@@ -4,3 +4,4 @@ osmium>=3.7,<5
 Pillow>=10.4,<13
 pyproj>=3.6
 pyshp>=2.3
+tzdata; sys_platform == "win32"

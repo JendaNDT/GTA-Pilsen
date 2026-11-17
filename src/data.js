@@ -49,6 +49,8 @@ const FILES = [
   ['trees', 'data/trees.bin', 161_000],
   ['meta', 'data/meta.json', 2_082_000],
   ['timetable', 'data/timetable.json', 974_368],
+  ['trafficProfiles', 'data/traffic-profiles.json', 212_000],
+  ['landscape', 'data/landscape.bin', 1_354_000],
   ['heritage', 'detail/city/index.json', 75_000],
 ];
 
@@ -71,15 +73,29 @@ export async function loadAll(onProgress) {
   let loaded = 0;
   const bump = (n) => { loaded += n; onProgress(Math.min(1, loaded / totalSize)); };
   const base = import.meta.env?.BASE_URL || '/';
-  const results = await Promise.all(FILES.map(([, url]) => fetchBuffer(base + url, bump)));
+  const results = await Promise.all(FILES.map(([name, url]) => {
+    const request = fetchBuffer(base + url, bump);
+    return name === 'landscape' ? request.catch(() => null) : request;
+  }));
   const out = {};
   FILES.forEach(([name, url], i) => {
+    if (name === 'landscape') {
+      if (results[i]?.byteLength > 8) {
+        try { out.landscape = parsePack(results[i]); } catch { /* základní síť stačí k hraní */ }
+      }
+      return;
+    }
     out[name] = url.endsWith('.json')
       ? JSON.parse(new TextDecoder().decode(new Uint8Array(results[i])))
       : parsePack(results[i]);
   });
-  for (const [pack, field] of [['buildings', 'osm'], ['terrain', 'terrain']]) {
-    if (assetFingerprint(results[FILES.findIndex(([name]) => name === pack)]) !== out.heritage[field]) out.heritage.tiles = [];
-  }
+  const fingerprints = new Map();
+  const fingerprint = (name) => {
+    if (!fingerprints.has(name)) fingerprints.set(name, assetFingerprint(results[FILES.findIndex(([key]) => key === name)]));
+    return fingerprints.get(name);
+  };
+  if (fingerprint('buildings') !== out.heritage.osm || fingerprint('terrain') !== out.heritage.terrain) out.heritage.tiles = [];
+  if (out.landscape && !['terrain', 'roads', 'rails', 'buildings', 'land'].every((name) =>
+    out.landscape.header.sources?.[name] === fingerprint(name))) delete out.landscape;
   return out;
 }

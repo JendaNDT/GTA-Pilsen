@@ -130,6 +130,7 @@ export class PedManager {
       if (dot > 0.5) return;
     }
     if (w.blocked(_pt.x, _pt.z, 0.5) || w.isWater(_pt.x, _pt.z)) return;
+    if (Math.random() >= this.game.trafficRhythm.pedestrianWeight(_pt.x, _pt.z, this.game.clock)) return;
     const p = new Ped(this.seq++);
     p.edge = e; p.s = s; p.side = side;
     p.x = _pt.x; p.z = _pt.z; p.yaw = Math.atan2(_pt.tx, _pt.tz);
@@ -204,7 +205,15 @@ export class PedManager {
     this.timer -= dt;
     if (this.timer <= 0) {
       this.timer = 0.2;
-      if (this.peds.length < Math.ceil(QUALITY.peds * this.game.streetActivity)) this.spawn(player.x, player.z, cam);
+      const density = this.game.trafficRhythm.pedestrianWeight(player.x, player.z, this.game.clock);
+      const target = Math.ceil(QUALITY.peds * (0.1 + 0.9 * density));
+      if (this.peds.length < target) this.spawn(player.x, player.z, cam);
+      if (this.peds.length > target && cam) {
+        const offscreen = this.peds.findIndex((p) => p.state === 'walk' &&
+          (p.x - player.x) ** 2 + (p.z - player.z) ** 2 > 85 ** 2 &&
+          (p.x - cam.x) * cam.fx + (p.z - cam.z) * cam.fz < 0);
+        if (offscreen >= 0) this.remove(offscreen);
+      }
     }
     for (let i = this.peds.length - 1; i >= 0; i--) {
       const p = this.peds[i];

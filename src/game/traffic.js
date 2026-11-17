@@ -3,6 +3,7 @@ import { COLL_CELL, RF } from '../config.js';
 const cell = (x, z) => Math.floor(x / COLL_CELL) * 8192 + Math.floor(z / COLL_CELL);
 const stopDistance = (distance, dt) => Math.min(Math.sqrt(11 * Math.max(0, distance)), Math.max(0, distance) / dt);
 const clamp = (x, hi) => Math.max(0, Math.min(hi, x));
+const exitStart = {}, exitEnd = {};
 
 function addTo(map, key, entry) {
   if (!map.has(key)) map.set(key, []);
@@ -336,6 +337,74 @@ export class Traffic {
     return others.some(priority) || extra.some(priority);
   }
 
+  exitBlocked(car, control, others, extra) {
+    const w = this.world;
+    const junction = w.eLen[car.edge] - control.s <= 27 && car.next >= 0;
+    const carLength = car.halfLen * 2 + 1.4;
+    const requiredEnd = (edge, start, base) => {
+      let clearance = start + base;
+      for (const { crossing, s } of this.crossingsByEdge.get(edge) ?? []) {
+        const sameSignal = crossing.group && crossing.group === control.group;
+        if (s >= start - 1 && (sameSignal ? s <= start + 30 : junction && s <= start + 12)) {
+          clearance = Math.max(clearance, s + 2);
+        }
+      }
+      return clearance + carLength;
+    };
+    if (!junction) {
+      return this.laneOccupied(car, car.edge, car.lane, control.s, requiredEnd(car.edge, control.s, 7), others, extra);
+    }
+    if (this.laneOccupied(car, car.edge, car.lane, control.s, w.eLen[car.edge], others, extra)) return true;
+
+    let edge = car.next, lane = car.nextLane, end = requiredEnd(edge, 0, 5);
+    // Silniční graf někdy dělí výjezd na několik krátkých spojek.
+    for (let links = 0; links < 4; links++) {
+      const move = car.exitPlan[links];
+      const continues = move?.from === edge && move.to >= 0;
+      const length = w.eLen[edge];
+      const connector = continues && length < 12;
+      if (this.laneOccupied(car, edge, lane, 0, connector ? length : end, others, extra)) return true;
+      if (!continues || !connector && end <= length) break;
+      end = Math.max(end - length, requiredEnd(move.to, 0, connector ? 5 : 0));
+      edge = move.to;
+      lane = move.lane;
+    }
+    return false;
+  }
+
+  laneOccupied(car, edge, lane, start, end, others, extra) {
+    const w = this.world;
+    end = Math.min(w.eLen[edge], end);
+    w.edgePoint(edge, start, lane, exitStart);
+    // Krátké kroky kopírují i zakřivený výjezd při odbočení.
+    for (let s = start; s < end; s += 4) {
+      w.edgePoint(edge, Math.min(s + 4, end), lane, exitEnd);
+      const dx = exitEnd.x - exitStart.x, dz = exitEnd.z - exitStart.z;
+      const length = Math.hypot(dx, dz);
+      if (length > 0.01) {
+        const tx = dx / length, tz = dz / length;
+        const inLane = (other) => {
+          if (other === car || Math.abs((other.y ?? car.y) - car.y) > 3) return false;
+          const ox = other.x - exitStart.x, oz = other.z - exitStart.z;
+          const width = other.radius ?? 1;
+          const half = other.halfLen ?? width;
+          const reachBound = length + Math.max(width, half) + car.radius + 0.15;
+          if (Math.abs(ox) > reachBound || Math.abs(oz) > reachBound) return false;
+          const alignment = Number.isFinite(other.yaw) ? Math.abs(Math.sin(other.yaw) * tx + Math.cos(other.yaw) * tz) : 1;
+          const across = Math.sqrt(Math.max(0, 1 - alignment ** 2));
+          const along = ox * tx + oz * tz;
+          // Konec stojícího vozu může přesahovat do výjezdu i s jeho středem za ním.
+          const reach = Math.max(half * alignment, width * across);
+          return along + reach > 0 && along - reach < length &&
+            Math.abs(ox * tz - oz * tx) < car.radius + Math.max(width * alignment, half * across) + 0.15;
+        };
+        if (others.some(inLane) || extra.some(inLane)) return true;
+      }
+      Object.assign(exitStart, exitEnd);
+    }
+    return false;
+  }
+
   drivingLimit(car, dt, limit, others, extra) {
     const w = this.world;
     const lead = car.s + car.halfLen + 0.45;
@@ -344,7 +413,11 @@ export class Traffic {
     const control = first ?? second;
     if (control) {
       const distance = (second ? w.eLen[car.edge] : 0) + control.s - lead;
-      if (distance <= 50) limit = this.drivingRule(car, control, distance, dt, limit, others, extra);
+      if (distance <= 50) {
+        limit = this.drivingRule(car, control, distance, dt, limit, others, extra);
+        const hold = stopDistance(distance, dt);
+        if (!second && limit > hold && this.exitBlocked(car, control, others, extra)) limit = hold;
+      }
     }
     if (!this.users.size) return limit;
     const direction = { x: car.x + Math.sin(car.yaw) * 20, z: car.z + Math.cos(car.yaw) * 20 };

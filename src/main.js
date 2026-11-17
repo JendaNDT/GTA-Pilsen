@@ -48,6 +48,10 @@ const ABOUT_HTML = (meta) => `
   <p>Polohy značek, stop čar a přechodů v Plzni vycházejí také z otevřeného
   <a href="https://opendata.plzen.eu/public/opendata/detail/6" target="_blank" rel="noopener">pasportu svislého</a> a
   <a href="https://opendata.plzen.eu/public/opendata/detail/92" target="_blank" rel="noopener">vodorovného značení města Plzně</a>.</p>
+  <p>Denní rytmus aut na měřených tazích vychází z historických
+  <a href="https://opendata.plzen.eu/public/opendata/detail/160" target="_blank" rel="noopener">měření dopravních smyček města Plzně</a>
+  a z <a href="https://polivisuapi.plzen.eu/api/" target="_blank" rel="noopener">hodinových profilů PoliVisu</a>.
+  Pro ostatní ulice a pro chodce hra používá odhad.</p>
   <p>Čtyři mapové listy centra používají otevřená data
   <a href="https://opendata.plzen.eu/public/opendata/detail/37" target="_blank" rel="noopener">3D budov centra Plzně, 2024</a>
   (GEOREAL – Vybíral, město Plzeň). Geometrie je převedená do herních souřadnic. Materiály v dalších

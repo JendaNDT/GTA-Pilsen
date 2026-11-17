@@ -8,6 +8,9 @@ globalThis.location = { search: '' };
 const { World, SURF } = await import('../src/world/world.js');
 const { TurnRules } = await import('../src/world/turns.js');
 const { RC, RF } = await import('../src/config.js');
+const { hourlyActivity } = await import('../src/game/traffic-rhythm.js');
+const { matchCityProfile } = await import('../src/game/traffic-profile-map.js');
+const { GameClock, parseDay } = await import('../src/game/clock.js');
 
 function emptyWorld() {
   return Object.assign(Object.create(World.prototype), {
@@ -17,6 +20,39 @@ function emptyWorld() {
     bridgeSeg: new Float32Array(), bridgeGrid: new Map(),
   });
 }
+
+test('hodinový profil plynule přechází z pracovní doby na víkend i přes půlnoc', () => {
+  const friday = parseDay('2026-11-13');
+  const clock = new GameClock(friday);
+  const profile = { weekday: Array(24).fill(1), weekend: Array(24).fill(0.2) };
+  clock.set(friday, 23.5);
+  assert.equal(hourlyActivity(profile, clock), 1);
+  clock.add(30 * 60 - 1);
+  const beforeMidnight = hourlyActivity(profile, clock);
+  clock.add(1);
+  const midnight = hourlyActivity(profile, clock);
+  assert.equal(clock.day, friday + 1);
+  assert.ok(Math.abs(midnight - 0.6) < 1e-8);
+  assert.ok(Math.abs(beforeMidnight - midnight) < 0.001);
+  clock.add(30 * 60);
+  assert.equal(hourlyActivity(profile, clock), 0.2);
+});
+
+test('městský profil používá azimut detektoru i při opačně zapsané čáře', () => {
+  const world = emptyWorld();
+  world.meta = { origin: { lat: 0, lon: 0, kx: 1, ky: 1 } };
+  world._initRoads({
+    header: { count: 2 },
+    x0: [0, 1000], z0: [0, 40], dx: [1000, -1000], dz: [0, 0], start: [0, 1, 2],
+    cls: [RC.PRIMARY, RC.PRIMARY], flags: [RF.ONEWAY, RF.ONEWAY], w: [6, 6],
+  });
+  world._initGraph();
+  const geometry = { line: [[0, 0], [100, 0]], point: [50, 0] };
+  const roads = (heading) => [...matchCityProfile(world, { ...geometry, heading }).keys()].map((edge) => world.eRoad[edge]);
+  assert.deepEqual(roads(270), [1]);
+  assert.deepEqual(roads(90), [0]);
+  assert.deepEqual(roads(0), []);
+});
 
 test('odebrání dlaždice zachová kolize ostatních překážek ve sdílené buňce', () => {
   const world = emptyWorld();
@@ -49,6 +85,20 @@ test('výška terénu odpovídá oběma trojúhelníkům vykreslené sítě', ()
   assert.equal(world.heightAt(6, 6), 4);
   assert.equal(world.heightAt(4, 4), 0);
   assert.equal(world.heightAt(-20, -20), 0);
+});
+
+test('jemný terén interpoluje odchylku stejnou úhlopříčkou jako vykreslená síť', () => {
+  const world = emptyWorld();
+  world.minX = 0; world.minZ = 0;
+  const offsets = new Int8Array(65 ** 2);
+  offsets[1] = 30;
+  offsets[65] = 50;
+  offsets[66] = -20;
+  world._initTerrainDetail({ header: { g: 4, q: 0.05, x0: 0, z0: 0, cols: 2 },
+    tiles: Uint32Array.of(0), offsets });
+  assert.equal(world.heightAt(1, 1), 1);
+  assert.equal(world.heightAt(3, 3), 0.5);
+  assert.equal(world.heightAt(257, 1), 0);
 });
 
 test('pod mostem zůstává hráč na terénu, na mostě se drží mostovky', () => {

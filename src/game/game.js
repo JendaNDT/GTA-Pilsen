@@ -15,6 +15,7 @@ import { Jobs } from './missions.js';
 import { GameAudio } from './audio.js';
 import { input, pollInput, endFrame } from './input.js';
 import { GameClock, HOUR_SECONDS, formatDay, parseDay } from './clock.js';
+import { TrafficRhythm } from './traffic-rhythm.js';
 
 const SAVE_KEY = 'plzen-naplno-v1';
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -42,6 +43,7 @@ export class Game {
     this.peds = new PedManager(this.scene, this.world, this);
     this.transit = new TransitManager(this.scene, this.world, this, data.timetable);
     this.clock = new GameClock(this.transit.timetable.monday);
+    this.trafficRhythm = new TrafficRhythm(this.world, data.trafficProfiles, this.transit.timetable);
     this.clockVisible = true;
     this.player = new Player(this.scene, this.world);
     // vrtulníky: heliporty z mapy (FN Lochotín, pivovar, Bory) a jeden na náměstí Republiky
@@ -68,9 +70,6 @@ export class Game {
   }
 
   get hour() { return this.clock.hour; }
-  get streetActivity() {
-    return 1 - this.env.night * 0.68;
-  }
 
   setClock(date, hour) {
     const day = date === null ? this.clock.day : parseDay(date);

@@ -73,7 +73,7 @@ export class Timetable {
     return trip.endS;
   }
 
-  departures(x, z, clock) {
+  departures(x, z, clock, horizon = 90 * 60) {
     let station = -1, dist = 55 ** 2;
     for (let i = 0; i < this.stops.length; i++) {
       const [, sx, sz] = this.stops[i];
@@ -81,7 +81,7 @@ export class Timetable {
       if (d < dist && this.stopEntries[i].length) { dist = d; station = i; }
     }
     if (station < 0) return null;
-    const now = clock.now, edge = now + 90 * 60, rows = [];
+    const now = clock.now, edge = now + horizon, rows = [];
     for (let day = clock.day - this.maxOffset; day <= Math.floor(edge / DAY_SECONDS); day++) {
       const active = new Set(this.profile(day));
       for (const [service, trip, seconds] of this.stopEntries[station]) {

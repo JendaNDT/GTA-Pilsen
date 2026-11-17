@@ -169,3 +169,165 @@ test('E04 – sdílené fáze pro chodce, auta a MHD', async ({ page }, info) =>
   }
   expect(errors).toEqual([]);
 });
+
+test('E07 – kolona na Tylově nechá volný přechod a tramvajové koleje', async ({ page }, info) => {
+  await boot(page);
+  const result = await page.evaluate(() => {
+    const game = __game, world = game.world, traffic = world.traffic, vehicles = game.vehicles;
+    const signal = traffic.controls.find((head) => head.kind === 'signal' && head.id === 10274015039);
+    const group = signal.group;
+    const phaseTime = (phase) => {
+      for (let time = 0; time < 200; time += 0.25) if (traffic.phase(group, time) === phase) return time;
+      throw new Error(`Chybí fáze ${phase}.`);
+    };
+    const roadName = (edge) => world.roadNames[world.r.name[world.eRoad[edge]]];
+    const exits = (edge) => {
+      const node = world.eTo[edge];
+      return Array.from(world.outEdges.slice(world.outStart[node], world.outStart[node + 1]));
+    };
+    const connector = exits(signal.edge).find((edge) => edge !== world.reverseEdge(signal.edge) && roadName(edge) === 'Americká');
+    const secondConnector = exits(connector).find((edge) => edge !== world.reverseEdge(connector) && roadName(edge) === 'Americká');
+    const exit = exits(secondConnector).find((edge) => roadName(edge) === 'Tylova');
+    const car = game.player.lastCar;
+    for (const other of [...vehicles.cars]) if (other !== car) vehicles.remove(other);
+    vehicles.obstacles.length = 0;
+    const lane = world.r.w[signal.road] / 4, start = signal.s - 18;
+    const position = {};
+    world.edgePoint(signal.edge, start, lane, position);
+    car.place(position.x, position.z, Math.atan2(position.tx, position.tz));
+    Object.assign(car, { edge: signal.edge, s: start, lane, speed: 8, next: connector,
+      nextLane: world.r.w[world.eRoad[connector]] / 4, turnSlow: 6, temper: 1 });
+    const green = phaseTime(`green${signal.axis}`), dt = 1 / 60;
+    const random = Math.random;
+    traffic.time = green;
+    try {
+      Math.random = () => 0;
+      vehicles.stepAI(car, dt);
+    } finally {
+      Math.random = random;
+    }
+    const exitMove = car.exitPlan.find((move) => move.to === exit);
+    if (!exitMove) throw new Error('Autu chybí plán průjezdu do Tylovy.');
+    const blocker = vehicles.add(new car.constructor(car.typeId, 0x6e4640));
+    world.edgePoint(exit, 12, exitMove.lane, position);
+    blocker.place(position.x, position.z, Math.atan2(position.tx, position.tz));
+
+    const stepCar = (ticks) => {
+      for (let i = 0; i < ticks; i++) vehicles.stepAI(car, dt);
+    };
+    stepCar(850);
+    const stop = { s: car.s, speed: car.speed, edge: car.edge, beforeLine: signal.s - car.s - car.halfLen };
+
+    // Na příčnou zelenou projede existující tramvaj linky 4 po Klatovské.
+    const tram = game.transit.vehicles.find((vehicle) => vehicle.route.type === 'tram' &&
+      vehicle.route.ref === '4' && vehicle.route.from === 'Univerzita');
+    // Vzdálenost po kolejích v bodě, kde trať protíná spojky Americké a Tylovy.
+    const tramLine = 3514.14, tramStart = tramLine - 14;
+    tram.route.posAt(tramStart, tram.side, position);
+    traffic.time = phaseTime(`green${1 - signal.axis}`);
+    game.transit.vehicles = [tram];
+    Object.assign(tram, { s: tramStart, v: 5, wait: 0, terminal: null, stopTarget: tram.nextStop(tramStart - 0.6) });
+    const observer = { ...position };
+    for (let i = 0; i < 480; i++) game.transit.update(dt, observer, vehicles.cars, false);
+
+    vehicles.remove(blocker);
+    stepCar(90);
+    const heldOnRed = car.edge === signal.edge && Math.abs(car.s - stop.s) < 0.05;
+    traffic.time = green;
+    stepCar(480);
+    return { stop, approach: signal.edge, connectorLength: world.eLen[connector], heldOnRed,
+      tramCrosses: tram.s - tram.len > tramLine,
+      clearsAfterGreen: car.edge !== signal.edge || car.s > signal.s + 3 };
+  });
+  await info.attach('kolona, tramvaj a rozjezd', { body: JSON.stringify(result, null, 2), contentType: 'application/json' });
+  expect(result.connectorLength).toBeLessThan(8);
+  expect(result.stop.edge).toBe(result.approach);
+  expect(result.stop.speed).toBeLessThan(0.01);
+  expect(result.stop.beforeLine).toBeGreaterThan(0.35);
+  expect(result.stop.beforeLine).toBeLessThan(1);
+  expect(result.heldOnRed).toBe(true);
+  expect(result.tramCrosses).toBe(true);
+  expect(result.clearsAfterGreen).toBe(true);
+});
+
+test('E07 – stejný směr Klatovské má jiný provoz ve špičce a o víkendu', async ({ page, baseURL }, info) => {
+  const remote = [];
+  const local = new URL(baseURL).origin;
+  await page.route('**/*', (route) => {
+    const url = route.request().url();
+    if (new URL(url).origin === local) return route.continue();
+    remote.push(url);
+    return route.abort();
+  });
+  await boot(page);
+  const result = await page.evaluate(() => {
+    const game = __game, w = game.world, t = w.traffic, vm = game.vehicles;
+    const measured = [...game.trafficRhythm.measured];
+    const city = measured.filter(([, { curve }]) => curve.id.startsWith('plzen-'));
+    const cityProfiles = new Set(city.map(([, { curve }]) => curve.id));
+    const cityStreets = new Set(city.map(([edge]) => w.roadNames[w.r.name[w.eRoad[edge]]]));
+    const [edge] = measured.find(([, { curve, distance }]) => curve.id === 'klatovska-jih' && distance === 0);
+    const point = w.edgePoint(edge, 58, 0, {});
+    const focus = { x: point.x - point.tz * 8, z: point.z + point.tx * 8, y: w.groundY(point.x, point.z) };
+    const camera = { ...focus, fx: point.tx, fz: point.tz };
+    const dt = 1 / 30;
+    const samples = [];
+    const random = Math.random;
+    try {
+      for (const [day, hour] of [['2026-11-09', 7.5], ['2026-11-09', 12.5], ['2026-11-09', 16.5],
+        ['2026-11-09', 21.5], ['2026-11-14', 7.5]]) {
+        game.setClock(day, hour);
+        const runs = [];
+        const weight = game.trafficRhythm.carWeight(edge, game.clock);
+        for (let seed of [2026, 2049, 57, 1290]) {
+          for (const car of [...vm.cars]) vm.remove(car);
+          vm.obstacles.length = 0;
+          vm.spawnTimer = 0;
+          t.time = 0;
+          t.users.clear();
+          Math.random = () => ((seed = (Math.imul(1664525, seed) + 1013904223) >>> 0) / (2 ** 32));
+          const crossed = new Set(), positions = new Map();
+          let population = 0;
+          for (let tick = 0; tick < 10_800; tick++) {
+            t.tick(dt);
+            vm.update(dt, focus, camera, []);
+            if (tick < 900) continue;
+            for (const car of vm.cars) {
+              if (car.mode !== 'ai') continue;
+              const dx = car.x - point.x, dz = car.z - point.z;
+              const along = dx * point.tx + dz * point.tz;
+              if (positions.get(car) < 0 && along >= 0 && Math.abs(dx * point.tz - dz * point.tx) < 6) crossed.add(car);
+              positions.set(car, along);
+              population++;
+            }
+          }
+          runs.push({ passed: crossed.size, population: +(population / 9900).toFixed(1) });
+        }
+        samples.push({ day, hour, weight, runs });
+      }
+    } finally {
+      Math.random = random;
+    }
+    game.setClock('2026-11-09', 4.5);
+    const before = game.trafficRhythm.carWeight(edge, game.clock);
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyN' }));
+    window.__step(1 / 60);
+    window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyN' }));
+    return { cityProfiles: cityProfiles.size, cityStreets: [...cityStreets], samples,
+      timeJump: { hour: game.hour, before, after: game.trafficRhythm.carWeight(edge, game.clock) } };
+  });
+  await info.attach('porovnání intenzity na Klatovské', { body: JSON.stringify(result, null, 2), contentType: 'application/json' });
+  const [morning, noon, afternoon, evening, saturday] = result.samples;
+  const passed = (sample) => sample.runs.reduce((sum, run) => sum + run.passed, 0);
+  expect(remote).toEqual([]);
+  expect(result.cityProfiles).toBeGreaterThanOrEqual(250);
+  expect(result.cityStreets).toEqual(expect.arrayContaining(['Karlovarská', 'Nepomucká', 'Domažlická', 'Rokycanská']));
+  expect(noon.weight).toBeLessThan(afternoon.weight);
+  expect(morning.weight).toBeGreaterThan(afternoon.weight);
+  expect(evening.weight).toBeLessThan(noon.weight);
+  expect(saturday.weight).toBeLessThan(morning.weight / 2);
+  expect(passed(morning)).toBeGreaterThan(Math.max(passed(evening), passed(saturday)));
+  expect(morning.runs.every((run, i) => run.population > saturday.runs[i].population * 2)).toBe(true);
+  expect(result.timeJump.hour).toBeCloseTo(7.5, 2);
+  expect(result.timeJump.after).toBeGreaterThan(result.timeJump.before * 2);
+});

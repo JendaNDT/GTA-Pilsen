@@ -48,6 +48,37 @@ test('neznámý formát balíčku se odmítne', () => {
   assert.throws(() => parsePack(new ArrayBuffer(8)), /Neznámý formát dat/);
 });
 
+test('jemný terén odpovídá podkladům a všechny hrany dlaždic navazují', async () => {
+  const pack = parsePack(await buffer('landscape'));
+  const terrain = parsePack(await buffer('terrain')).header;
+  const { g, cols, sources } = pack.header;
+  const steps = 256 / g, width = steps + 1, size = width ** 2;
+  const rows = (terrain.rows - 1) * terrain.g / 256;
+  assert.equal(g, terrain.g / 2);
+  assert.equal(cols, (terrain.cols - 1) * terrain.g / 256);
+  assert.equal(pack.offsets.length, pack.tiles.length * size);
+  assert.ok(pack.tiles.length > 150);
+  for (const name of ['terrain', 'roads', 'rails', 'buildings', 'land']) {
+    assert.equal(sources[name], assetFingerprint(await buffer(name)), name);
+  }
+  const tiles = new Map(Array.from(pack.tiles, (id, i) => [id, pack.offsets.subarray(i * size, (i + 1) * size)]));
+  assert.equal(tiles.size, pack.tiles.length);
+  for (const [id, data] of tiles) {
+    const col = id % cols, row = Math.floor(id / cols);
+    assert.ok(row < rows);
+    const west = col > 0 ? tiles.get(id - 1) : null;
+    const east = col + 1 < cols ? tiles.get(id + 1) : null;
+    const north = row > 0 ? tiles.get(id - cols) : null;
+    const south = row + 1 < rows ? tiles.get(id + cols) : null;
+    for (let i = 0; i < width; i++) {
+      assert.equal(data[i * width], west?.[i * width + steps] ?? 0);
+      assert.equal(data[i * width + steps], east?.[i * width] ?? 0);
+      assert.equal(data[i], north?.[steps * width + i] ?? 0);
+      assert.equal(data[steps * width + i], south?.[i] ?? 0);
+    }
+  }
+});
+
 test('metadata obsahují datum OSM s doloženým zdrojem nebo výslovně neznámé historické datum', async () => {
   const meta = JSON.parse(await readFile(new URL('../public/data/meta.json', import.meta.url)));
   if (meta.osmTimestampSource === 'unknown-legacy') {

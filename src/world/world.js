@@ -8,6 +8,16 @@ export const SURF = 0.05;    // o kolik nad terénem leží povrch, po kterém s
 const KEY_OFF = 250000;      // posun, aby byly kvantované souřadnice (decimetry) kladné – stačí na ±25 km
 const KEY_MUL = 524288;
 
+function triangleHeight(h, i, stride, x, z) {
+  const east = h[i + 1], south = h[i + stride];
+  if (x + z <= 1) {
+    const corner = h[i];
+    return corner + (east - corner) * x + (south - corner) * z;
+  }
+  const corner = h[i + stride + 1];
+  return corner + (south - corner) * (1 - x) + (east - corner) * (1 - z);
+}
+
 export class World {
   constructor(data) {
     this.meta = data.meta;
@@ -23,6 +33,7 @@ export class World {
     this.roadNames = data.meta.roadNames;
     this.obstacles = new Map();   // kruhové překážky (stromy, sloupy) podle buněk 16 m
     this._initTerrain(data.terrain);
+    this._initTerrainDetail(data.landscape);
     this._initBuildings(data.buildings);
     this._initRoads(data.roads);
     this.archedBridges = new Map(data.roads.header.archedBridges ?? []);
@@ -110,20 +121,43 @@ export class World {
     this.baseElevation = T.header.base;
   }
 
-  /** Výška terénu v bodě (metry nad úrovní náměstí Republiky). Přesně odpovídá vykreslené síti. */
-  heightAt(x, z) {
+  _initTerrainDetail(data) {
+    this.terrainDetail = new Map();
+    if (!data) return;
+    const { g, q, x0, z0, cols } = data.header;
+    if (g !== this.tG / 2 || !Number.isFinite(q) || q <= 0 || cols !== this.cols || x0 !== this.minX || z0 !== this.minZ) return;
+    const width = CHUNK / g + 1, size = width ** 2;
+    if (!data.tiles || data.offsets?.length !== data.tiles.length * size) return;
+    this.tDetailG = g; this.tDetailQ = q; this.tDetailWidth = width;
+    for (let i = 0; i < data.tiles.length; i++) {
+      const tile = data.tiles[i];
+      if (tile < this.cols * this.rows) this.terrainDetail.set(tile, data.offsets.subarray(i * size, (i + 1) * size));
+    }
+  }
+
+  baseHeightAt(x, z) {
     let gx = (x - this.tX0) / this.tG, gz = (z - this.tZ0) / this.tG;
     const mc = this.tCols - 1.001, mr = this.tRows - 1.001;
     if (gx < 0) gx = 0; else if (gx > mc) gx = mc;
     if (gz < 0) gz = 0; else if (gz > mr) gz = mr;
     const i = gx | 0, j = gz | 0;
     const fx = gx - i, fz = gz - j;
-    const h = this.th, o = j * this.tCols + i;
-    const h10 = h[o + 1], h01 = h[o + this.tCols];
     // čtverec je rozdělen úhlopříčkou mezi body 10 a 01 (stejně jako síť terénu)
-    if (fx + fz <= 1) { const h00 = h[o]; return h00 + (h10 - h00) * fx + (h01 - h00) * fz; }
-    const h11 = h[o + this.tCols + 1];
-    return h11 + (h01 - h11) * (1 - fx) + (h10 - h11) * (1 - fz);
+    return triangleHeight(this.th, j * this.tCols + i, this.tCols, fx, fz);
+  }
+
+  /** Výška v metrech nad počátkem hry, shodná s viditelnými trojúhelníky. */
+  heightAt(x, z) {
+    const base = this.baseHeightAt(x, z);
+    if (!this.terrainDetail?.size) return base;
+    const tileX = Math.floor((x - this.minX) / CHUNK), tileZ = Math.floor((z - this.minZ) / CHUNK);
+    if (tileX < 0 || tileX >= this.cols || tileZ < 0 || tileZ >= this.rows) return base;
+    const detail = this.terrainDetail.get(tileZ * this.cols + tileX);
+    if (!detail) return base;
+    const dx = (x - this.minX - tileX * CHUNK) / this.tDetailG;
+    const dz = (z - this.minZ - tileZ * CHUNK) / this.tDetailG;
+    const width = this.tDetailWidth, i = dx | 0, j = dz | 0;
+    return base + this.tDetailQ * triangleHeight(detail, j * width + i, width, dx - i, dz - j);
   }
 
   // -------------------------------------------------------------- mosty ----
@@ -549,10 +583,10 @@ export class World {
   }
 
   /**
-   * Nejbližší úsek silnice. maxClass omezuje třídu (např. DRIVABLE_MAX).
+   * Nejbližší úsek silnice. maxClass omezuje třídu, heading vyžaduje slučitelný směr.
    * Vrací objekt {road, seg, t, dist, x, z, dx, dz} nebo null.
    */
-  nearestRoad(x, z, maxDist = 60, maxClass = 99, minClass = 0, out, y, publicOnly = false) {
+  nearestRoad(x, z, maxDist = 60, maxClass = 99, minClass = 0, out, y, publicOnly = false, heading) {
     const res = out || {};
     let best = maxDist * maxDist, found = false;
     const R = this.r, px = this.rpx, pz = this.rpz;
@@ -577,9 +611,13 @@ export class World {
         const qx = x1 + dx * t, qz = z1 + dz * t;
         const d = (x - qx) * (x - qx) + (z - qz) * (z - qz);
         if (d < best) {
+          const l = Math.sqrt(l2) || 1;
+          if (heading) {
+            const alignment = (dx * heading.tx + dz * heading.tz) / l;
+            if (Math.abs(alignment) < 0.8 || (alignment < 0 && (R.flags[road] & RF.ONEWAY))) continue;
+          }
           best = d; found = true;
           res.road = road; res.seg = k; res.t = t; res.x = qx; res.z = qz;
-          const l = Math.sqrt(l2) || 1;
           res.dx = dx / l; res.dz = dz / l;
         }
       }
@@ -863,26 +901,30 @@ export class World {
   isForest(x, z) { return (this.maskAt(x, z) & 1) !== 0; }
   isSoft(x, z) { return (this.maskAt(x, z) & 2) !== 0; }
 
+  landContains(i, x, z) {
+    const L = this.l;
+    let inside = false;
+    for (let rg = L.pRing[i], r1 = L.pRing[i + 1]; rg < r1; rg++) {
+      const v0 = L.ringStart[rg], v1 = L.ringStart[rg + 1];
+      let j = v1 - 1;
+      for (let v = v0; v < v1; j = v++) {
+        const z1 = L.vz[j] * 0.1, z2 = L.vz[v] * 0.1;
+        if ((z1 > z) !== (z2 > z)) {
+          const x1 = L.vx[j] * 0.1, x2 = L.vx[v] * 0.1;
+          if (x < (x2 - x1) * (z - z1) / (z2 - z1) + x1) inside = !inside;
+        }
+      }
+    }
+    return inside;
+  }
+
   isWater(x, z) {
     // rychlé vyloučení přes hrubou masku (včetně sousedních pixelů)
     const px = 1 / this.maskSX;
     if (!((this.maskAt(x, z) | this.maskAt(x + px, z) | this.maskAt(x - px, z) | this.maskAt(x, z + px) | this.maskAt(x, z - px)) & 4)) return false;
-    const L = this.l;
     for (const w of this.water) {
       if (x < w.x0 || x > w.x1 || z < w.z0 || z > w.z1) continue;
-      let inside = false;
-      for (let rg = L.pRing[w.i], r1 = L.pRing[w.i + 1]; rg < r1; rg++) {
-        const v0 = L.ringStart[rg], v1 = L.ringStart[rg + 1];
-        let j = v1 - 1;
-        for (let v = v0; v < v1; j = v++) {
-          const z1 = L.vz[j] * 0.1, z2 = L.vz[v] * 0.1;
-          if ((z1 > z) !== (z2 > z)) {
-            const x1 = L.vx[j] * 0.1, x2 = L.vx[v] * 0.1;
-            if (x < (x2 - x1) * (z - z1) / (z2 - z1) + x1) inside = !inside;
-          }
-        }
-      }
-      if (inside) return true;
+      if (this.landContains(w.i, x, z)) return true;
     }
     return false;
   }

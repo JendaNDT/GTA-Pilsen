@@ -424,7 +424,7 @@ const COL = {
 const HEX = {
   asphalt: '#4b4e54', asphaltMinor: '#55585d', service: '#5e6164', sidewalk: '#9a9da1', pedestrian: '#b3ab9c',
   footway: '#a39f95', path: '#8a7a5e', track: '#7f7257', cycleway: '#8c5b52', steps: '#8a8a8a', ballast: '#6a6259',
-  stream: '#4f86a8',
+  stream: '#577982',
 };
 const LAND_HEX = {
   [LC.FARMLAND]: '#b5b47a', [LC.MEADOW]: '#9bb36a', [LC.GRASS]: '#8fb25e', [LC.RESIDENTIAL]: '#a9a89d',
@@ -439,6 +439,9 @@ const LAND_GROUP = {
   [LC.FOREST]: 1, [LC.SCRUB]: 1, [LC.GRASS]: 1, [LC.PARK]: 1, [LC.ALLOTMENTS]: 1, [LC.CEMETERY]: 1, [LC.GARDEN]: 1,
   [LC.PITCH]: 2, [LC.PLAYGROUND]: 2, [LC.PARKING]: 2, [LC.PLAZA]: 2, [LC.SAND]: 2,
 };
+const FIELD_COLORS = ['#b7ae78', '#aba774', '#b8aa81', '#9fa975', '#bdb47e', '#a69d79', '#adb383', '#aeb078'];
+const MEADOW_COLORS = ['#9bad74', '#8da16c', '#9dab77', '#9ca465', '#a5b581'];
+const FOREST_COLORS = ['#56744e', '#507050', '#5a784d', '#4a684b', '#55764e'];
 
 function roadColor(cls) {
   if (cls <= RC.TERTIARY_LINK) return COL.asphalt;
@@ -807,11 +810,12 @@ function drawTrafficMarkings(world, buf, traffic) {
 }
 
 // ---------------------------------------------------------------- terén ----
-let terrainIndex = null;
+const terrainIndices = new Map();
 
 /** Síť terénu jedné dlaždice (sdílí uzly se sousedy, takže na sebe navazuje beze spár). */
-function buildTerrain(world, cx0, cz0) {
-  const G = world.tG, N = CHUNK / G, n1 = N + 1;
+function buildTerrain(world, ci, cx0, cz0) {
+  const detail = world.terrainDetail.has(ci);
+  const G = detail ? world.tDetailG : world.tG, N = CHUNK / G, n1 = N + 1;
   const pos = new Float32Array(n1 * n1 * 3), nor = new Float32Array(n1 * n1 * 3), uv = new Float32Array(n1 * n1 * 2);
   const gi0 = Math.round((cx0 - world.tX0) / G), gj0 = Math.round((cz0 - world.tZ0) / G);
   const th = world.th, tc = world.tCols, tr = world.tRows;
@@ -820,27 +824,36 @@ function buildTerrain(world, cx0, cz0) {
   for (let j = 0; j <= N; j++) {
     for (let i = 0; i <= N; i++) {
       const gi = gi0 + i, gj = gj0 + j;
-      pos[o] = cx0 + i * G; pos[o + 1] = H(gi, gj); pos[o + 2] = cz0 + j * G;
-      const hx = (H(gi + 1, gj) - H(gi - 1, gj)) / (2 * G), hz = (H(gi, gj + 1) - H(gi, gj - 1)) / (2 * G);
+      const x = cx0 + i * G, z = cz0 + j * G;
+      pos[o] = x; pos[o + 1] = detail ? world.heightAt(x, z) : H(gi, gj); pos[o + 2] = z;
+      let hx, hz;
+      if (detail || world.terrainDetail.size && (i === 0 || i === N || j === 0 || j === N)) {
+        const step = world.tDetailG;
+        hx = (world.heightAt(x + step, z) - world.heightAt(x - step, z)) / (2 * step);
+        hz = (world.heightAt(x, z + step) - world.heightAt(x, z - step)) / (2 * step);
+      } else {
+        hx = (H(gi + 1, gj) - H(gi - 1, gj)) / (2 * G);
+        hz = (H(gi, gj + 1) - H(gi, gj - 1)) / (2 * G);
+      }
       const l = Math.hypot(hx, 1, hz);
       nor[o] = -hx / l; nor[o + 1] = 1 / l; nor[o + 2] = -hz / l;
       uv[u] = i / N; uv[u + 1] = j / N;
       o += 3; u += 2;
     }
   }
-  if (!terrainIndex) {
+  if (!terrainIndices.has(N)) {
     const idx = [];
     for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
       const v00 = j * n1 + i, v10 = v00 + 1, v01 = v00 + n1, v11 = v01 + 1;
       idx.push(v00, v01, v10, v10, v01, v11);      // úhlopříčka 10–01, stejně jako world.heightAt
     }
-    terrainIndex = new THREE.BufferAttribute(new Uint16Array(idx), 1);
+    terrainIndices.set(N, new THREE.BufferAttribute(new Uint16Array(idx), 1));
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
   g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
-  g.setIndex(terrainIndex);
+  g.setIndex(terrainIndices.get(N));
   g.computeBoundingSphere();
   return g;
 }
@@ -853,13 +866,14 @@ function buildDensity(world) {
   const g = cv.getContext('2d');
   g.fillStyle = '#9aa873';
   g.fillRect(0, 0, S, S);
-  g.fillStyle = '#a9a69c';
   const kx = S / (world.maxX - world.minX), kz = S / (world.maxZ - world.minZ);
   for (let i = 0; i < world.bCount; i++) {
     const w = world.bMaxX[i] - world.bMinX[i], d = world.bMaxZ[i] - world.bMinZ[i];
     const area = w * d;
     if (area < 40) continue;
-    g.globalAlpha = Math.min(0.5, 0.1 + area / 3000);
+    const work = world.b.kind[i] === BK.INDUSTRIAL || world.b.kind[i] === BK.COMMERCIAL;
+    g.fillStyle = work ? '#a5a096' : '#aca78d';
+    g.globalAlpha = Math.min(work ? 0.46 : 0.23, 0.08 + area / 3200);
     g.beginPath();
     g.arc(((world.bMinX[i] + world.bMaxX[i]) / 2 - world.minX) * kx, ((world.bMinZ[i] + world.bMaxZ[i]) / 2 - world.minZ) * kz,
       (26 + Math.sqrt(area) * 0.6) * kx, 0, Math.PI * 2);
@@ -869,9 +883,15 @@ function buildDensity(world) {
 }
 
 /** Seznam ploch a vodních toků zasahujících do každé dlaždice. */
-function buildLandIndex(world) {
+function surfaceContext(world, districts, x, z) {
+  if (districts.at(x, z)) return 2;
+  return Number((world.bChunks[world.chunkIndex(x, z)]?.length ?? 0) >= 44);
+}
+
+function buildLandIndex(world, districts) {
   const L = world.l;
-  const polys = new Array(world.cols * world.rows), lines = new Array(world.cols * world.rows);
+  const polys = new Array(world.cols * world.rows), lines = new Array(world.cols * world.rows), fields = new Map();
+  const polyContext = new Uint8Array(world.lCount), lineContext = new Uint8Array(L.header.lineCount);
   const put = (arr, x0, x1, z0, z1, id) => {
     const a0 = Math.max(0, Math.floor((x0 - world.minX) / CHUNK)), a1 = Math.min(world.cols - 1, Math.floor((x1 - world.minX) / CHUNK));
     const b0 = Math.max(0, Math.floor((z0 - world.minZ) / CHUNK)), b1 = Math.min(world.rows - 1, Math.floor((z1 - world.minZ) / CHUNK));
@@ -883,7 +903,19 @@ function buildLandIndex(world) {
       const x = L.vx[v] * 0.1, z = L.vz[v] * 0.1;
       if (x < x0) x0 = x; if (x > x1) x1 = x; if (z < z0) z0 = z; if (z > z1) z1 = z;
     }
-    put(polys, x0, x1, z0, z1, i);
+    const shore = L.cls[i] === LC.WATER ? 6 : 0;
+    put(polys, x0 - shore, x1 + shore, z0 - shore, z1 + shore, i);
+    polyContext[i] = surfaceContext(world, districts, (x0 + x1) * 0.5, (z0 + z1) * 0.5);
+    if (L.cls[i] === LC.FARMLAND) {
+      const first = L.ringStart[L.pRing[i]], last = L.ringStart[L.pRing[i] + 1];
+      let longest = 0, angle = 0;
+      for (let v = first, prev = last - 1; v < last; prev = v++) {
+        const dx = L.vx[v] - L.vx[prev], dz = L.vz[v] - L.vz[prev];
+        const length = dx * dx + dz * dz;
+        if (length > longest) { longest = length; angle = Math.atan2(dz, dx); }
+      }
+      fields.set(i, { angle, pitch: 5.5 + hash(i, 25) * 4, color: pick(FIELD_COLORS, hash(i, 22)) });
+    }
   }
   for (let i = 0; i < L.header.lineCount; i++) {
     if (L.lCls[i] > 3) continue;
@@ -892,9 +924,27 @@ function buildLandIndex(world) {
       const x = L.lx[v] * 0.1, z = L.lz[v] * 0.1;
       if (x < x0) x0 = x; if (x > x1) x1 = x; if (z < z0) z0 = z; if (z > z1) z1 = z;
     }
-    put(lines, x0 - 5, x1 + 5, z0 - 5, z1 + 5, i);
+    put(lines, x0 - 8, x1 + 8, z0 - 8, z1 + 8, i);
+    const mid = (L.lStart[i] + L.lStart[i + 1]) >> 1;
+    lineContext[i] = surfaceContext(world, districts, L.lx[mid] * 0.1, L.lz[mid] * 0.1);
   }
-  return { polys, lines };
+  return { polys, lines, fields, polyContext, lineContext };
+}
+
+function drawFieldRows(g, field, x0, z0) {
+  const { angle, pitch } = field;
+  const x = x0 + CHUNK / 2, z = z0 + CHUNK / 2;
+  const cos = Math.cos(angle), sin = Math.sin(angle);
+  const u = x * cos + z * sin, v = z * cos - x * sin;
+  const reach = CHUNK * Math.SQRT1_2 + 2;
+  g.save();
+  g.clip('evenodd');
+  g.rotate(angle);
+  for (let row = Math.floor((v - reach) / pitch); row * pitch < v + reach; row++) {
+    g.fillStyle = row % 4 === 0 ? '#72694e24' : '#6d654619';
+    g.fillRect(u - reach, row * pitch, reach * 2, row % 4 === 0 ? 1.2 : 0.72);
+  }
+  g.restore();
 }
 
 /** Nakreslí povrch země jedné dlaždice (plochy, chodníky, pěšiny, podklad silnic, vodu jako průhlednost). */
@@ -938,8 +988,17 @@ function drawGround(mgr, ci, S) {
         const cls = L.cls[i];
         if (LAND_GROUP[cls] !== group) continue;
         polyPath(i);
-        g.fillStyle = cls === LC.PLAZA && mgr.chunks.get(ci)?.district ? '#b9ae9c' : LAND_HEX[cls];
+        const context = mgr.landIndex.polyContext[i];
+        const field = mgr.landIndex.fields.get(i);
+        let color = LAND_HEX[cls];
+        if (field) color = field.color;
+        else if (cls === LC.MEADOW) color = pick(MEADOW_COLORS, hash(i, 20));
+        else if (cls === LC.FOREST) color = pick(FOREST_COLORS, hash(i, 20));
+        else if (cls === LC.PLAZA && context === 2) color = '#b9ae9c';
+        else if (cls === LC.RESIDENTIAL && context < 2) color = context ? '#a6aa92' : '#a2ae85';
+        g.fillStyle = color;
         g.fill('evenodd');
+        if (field && hash(i, 24) > 0.15) drawFieldRows(g, field, cx0, cz0);
       }
     }
   }
@@ -954,13 +1013,25 @@ function drawGround(mgr, ci, S) {
     g.fillStyle = lawn;
     g.fillRect(cx0, cz0, CHUNK, CHUNK);
   }
+  if (polys) {
+    for (const i of polys) {
+      if (L.cls[i] !== LC.WATER) continue;
+      polyPath(i);
+      const urban = mgr.landIndex.polyContext[i] === 2;
+      g.strokeStyle = urban ? '#8e877650' : '#657c4350';
+      g.lineWidth = 10;
+      g.stroke();
+      g.strokeStyle = urban ? '#766d6260' : '#69725065';
+      g.lineWidth = 3;
+      g.stroke();
+    }
+  }
   // potoky
   const lines = mgr.landIndex.lines[ci];
   if (lines) {
-    g.strokeStyle = HEX.stream;
     for (const i of lines) {
       const cls = L.lCls[i];
-      g.lineWidth = cls === 0 ? 8 : cls === 1 ? 5 : cls === 2 ? 2.2 : 1.2;
+      const width = cls === 0 ? 8 : cls === 1 ? 5 : cls === 2 ? 2.2 : 1.2;
       if (forgeBasin) {
         g.save();
         g.beginPath();
@@ -974,6 +1045,11 @@ function drawGround(mgr, ci, S) {
       for (let v = L.lStart[i], ve = L.lStart[i + 1]; v < ve; v++) {
         if (v === L.lStart[i]) g.moveTo(L.lx[v] * 0.1, L.lz[v] * 0.1); else g.lineTo(L.lx[v] * 0.1, L.lz[v] * 0.1);
       }
+      g.strokeStyle = mgr.landIndex.lineContext[i] === 2 ? '#81807158' : '#60734472';
+      g.lineWidth = width + 4;
+      g.stroke();
+      g.strokeStyle = HEX.stream;
+      g.lineWidth = width;
       g.stroke();
       if (forgeBasin) g.restore();
     }
@@ -1008,8 +1084,9 @@ function drawGround(mgr, ci, S) {
         let width, style;
         if (pass === 0) {           // chodníky podél ulic
           if (cls < RC.PRIMARY || cls > RC.LIVING || cls === RC.PRIMARY_LINK || cls === RC.SECONDARY_LINK || (flags & RF.TUNNEL)) continue;
-          width = R.w[i] + 4;
-          style = mgr.districts.at(px[world.rOff[i]], pz[world.rOff[i]]) ? '#a8a399' : HEX.sidewalk;
+          const verge = mgr.roadVerge[i];
+          width = R.w[i] + (verge ? 4 : 3);
+          style = verge === 2 ? '#a8a399' : verge ? HEX.sidewalk : '#92947b';
         } else if (pass === 1) {    // pěšiny, cyklostezky, polní cesty
           if (cls <= RC.PEDESTRIAN) continue;
           width = R.w[i]; style = roadHex(cls);
@@ -1091,32 +1168,35 @@ function treeAssets() {
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(), _p = new THREE.Vector3();
 const _up = new THREE.Vector3(0, 1, 0);
 
-function buildTrees(world, ci, cx0, cz0) {
+function buildTrees(world, ci, cx0, cz0, forest) {
   treeAssets();
   const A = [], Bc = [];
   const obstacles = [];
   const list = world.treeChunks[ci];
   const T = world.trees;
+  const nearby = {};
   if (list) {
     for (const t of list) {
       const x = T.x[t] * 0.1, z = T.z[t] * 0.1;
       if (world.buildingAt(x, z) >= 0 || world.isWater(x, z)) continue;
+      const road = world.nearestRoad(x, z, 12, DRIVABLE_MAX, 0, nearby);
+      if (road && road.dist < world.r.w[road.road] / 2 - 0.2) continue;
       A.push(x, z, 0.8 + hash(t, 5) * 0.6, hash(t, 6));
       obstacles.push(x, z, 0.28);
     }
   }
-  // lesy: náhodný rozptyl podle masky
+  // Rozptyl ve skutečných půdorysech lesa včetně děr a úzkých pásů.
   let seed = ci * 7919 + 13;
   const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
   const N = QUALITY.treesPerForestChunk;
-  if (world.isForest(cx0 + CHUNK / 2, cz0 + CHUNK / 2) || world.isForest(cx0 + 20, cz0 + 20) || world.isForest(cx0 + CHUNK - 20, cz0 + CHUNK - 20)
-    || world.isForest(cx0 + 20, cz0 + CHUNK - 20) || world.isForest(cx0 + CHUNK - 20, cz0 + 20)) {
-    const tmp = {};
+  if (forest.length) {
+    const coniferShare = 0.33 + hash(ci, 61) * 0.47;
     for (let k = 0; k < N; k++) {
       const x = cx0 + rnd() * CHUNK, z = cz0 + rnd() * CHUNK;
-      const s = 0.9 + rnd() * 0.9, r = rnd(), conifer = rnd() < 0.6;
-      if (!world.isForest(x, z)) continue;
-      const road = world.nearestRoad(x, z, 6, 99, 0, tmp);
+      const s = 0.82 + rnd() * 1.15, r = rnd(), conifer = rnd() < coniferShare;
+      if (!forest.some((poly) => world.landContains(poly, x, z))) continue;
+      if (world.buildingAt(x, z) >= 0 || world.isWater(x, z)) continue;
+      const road = world.nearestRoad(x, z, 12, 99, 0, nearby);
       if (road && road.dist < world.r.w[road.road] / 2 + 1.5) continue;
       (conifer ? Bc : A).push(x, z, s, r);
       if (k % 2 === 0) obstacles.push(x, z, 0.3);
@@ -1245,7 +1325,13 @@ export class ChunkManager {
       }
     }
     this.density = buildDensity(world);
-    this.landIndex = buildLandIndex(world);
+    this.landIndex = buildLandIndex(world, this.districts);
+    this.roadVerge = new Uint8Array(world.rCount);
+    for (let i = 0; i < world.rCount; i++) {
+      if (world.r.cls[i] < RC.PRIMARY || world.r.cls[i] > RC.LIVING) continue;
+      const mid = (world.rOff[i] + world.rOff[i + 1]) >> 1;
+      this.roadVerge[i] = surfaceContext(world, this.districts, world.rpx[mid], world.rpz[mid]);
+    }
     this.scratch = new Map();
     this.aniso = Math.min(4, renderer.capabilities.getMaxAnisotropy());
     this.texNear = QUALITY.groundTex; this.texFar = QUALITY.groundTexFar;
@@ -1271,7 +1357,7 @@ export class ChunkManager {
       ch.group.remove(ch.regularBuildings);
       ch.regularBuildings.geometry.dispose();
     }
-    ch.regularBuildings = geo ? new THREE.Mesh(geo, ch.district && ch.dist < 420 ? this.paintedBuildings : this.buildingMat) : null;
+    ch.regularBuildings = geo ? new THREE.Mesh(geo, ch.dist < 420 ? this.paintedBuildings : this.buildingMat) : null;
     if (ch.regularBuildings) {
       ch.regularBuildings.castShadow = true;
       ch.regularBuildings.receiveShadow = true;
@@ -1286,7 +1372,7 @@ export class ChunkManager {
     const x0 = w.minX + cx * CHUNK, z0 = w.minZ + cz * CHUNK;
     const add = (mesh, geo) => { mesh.matrixAutoUpdate = false; ch.group.add(mesh); if (geo) ch.disposables.push(geo); };
     if (ch.stage === 0) {
-      const geo = buildTerrain(w, x0, z0);
+      const geo = buildTerrain(w, ci, x0, z0);
       ch.texSize = ch.dist < 420 ? this.texNear : this.texFar;
       ch.tex = this._texture(ci, ch.texSize);
       const portals = w.tunnels.flatMap((tunnel) => tunnel.portalCuts(x0, z0, CHUNK));
@@ -1308,7 +1394,8 @@ export class ChunkManager {
         add(ch.traffic.group);
       }
     } else {
-      const trees = buildTrees(w, ci, x0, z0);
+      const forest = this.landIndex.polys[ci]?.filter((i) => w.l.cls[i] === LC.FOREST) ?? [];
+      const trees = buildTrees(w, ci, x0, z0, forest);
       for (const m of trees.meshes) { m.matrixAutoUpdate = false; ch.group.add(m); }
       ch.trees = trees.meshes;
       ch.obstacles = trees.obstacles;
@@ -1375,7 +1462,7 @@ export class ChunkManager {
       const d = Math.hypot(ch.cx - x, ch.cz - z);
       ch.dist = d;
       if (!ch.cityRequest && d < 1080 && this.heritage.cells.has(ci)) cityRequests.push(ch);
-      if (ch.district && ch.regularBuildings) {
+      if (ch.regularBuildings) {
         ch.regularBuildings.material = d < 420 ? this.paintedBuildings : this.buildingMat;
       }
       if (ch.stage >= 2 && ch.cityData) {
