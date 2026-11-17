@@ -1,7 +1,9 @@
-# Pracovní měření výkonu E14
+# Měření výkonu E14
 
-**Etapa není uzavřená.** Autor 17. listopadu 2026 rozhodl počkat na ruční měření.
-Příčina kolísání a části výsledků nad +10 % není potvrzená. Odchylka není schválená.
+Automatické měření vykázalo kolísání a část výsledků nad +10 %. Autor proto požádal
+o odložení uzavření do ručního porovnání. Oba ruční výsledky dodal 17. listopadu 2026
+a uvedl, že v Chrome pro testování zadrhávání nepozoroval. Odchylky zůstávají níže
+výslovně uvedené; samotné udržení 60 FPS nepotvrzuje splnění všech pracovních mezí.
 
 Revize hry E14 `146a263`, původní E13 `e6d5768`. Apple M4, arm64, macOS 27.2.1,
 Chromium 159.0.8154.6, ANGLE Metal, 1920 × 1080 px, měřítko 1, vysoká kvalita,
@@ -70,13 +72,34 @@ Následující adresy fungují, dokud běží připravené místní servery:
 4. První verzi zavři a stejný postup proveď ve druhé, aby neběžely souběžně.
 5. Pošli oba texty označené E13 a E14, název prohlížeče a případné viditelné zadrhávání.
 
-Po dodání výsledků zbývá vyhodnotit odchylku, dokončit protokol `docs/E14.md`,
-aktualizovat katalog a přehledy, provést závěrečné testy a připravit pull request.
+## Ruční porovnání dodané autorem
 
-## První ruční výsledek
+Autor měřil v „Chrome pro testování“ (přesná verze neuvedena) a zadrhávání nepozoroval.
+Obě měření trvala 60 s, měla měřítko obrazu 2 a zapnuté stíny. E13 zaznamenala 3 601
+snímků a E14 3 600, tedy přibližně 60 FPS. [Úplné přepisy a výpočty](rucni-mereni.json).
+Přiřazení verzí vychází z pořadí otevření a navazujících výzev. Autor přesný pohyb
+ani totožnost náhodného provozu nepotvrdil; nejde o deterministické opakování stejné scény.
 
-Autor dodal první výsledek 17. listopadu 2026. Podle pořadí otevření je přiřazen k E13;
-verzi výslovně neoznačil. Za 60 s bylo zaznamenáno 3 601 snímků při měřítku 2
-se zapnutými stíny. Práce snímku je 2,7 / 3,5 / 4,6 ms a GPU 10,68 / 11,35 / 11,83 ms
-(medián / p95 / p99). [Úplný přepis](rucni-mereni.json). Chybí odpovídající výsledek E14
-a název prohlížeče; srovnání ani odchylka zatím nejsou uzavřené.
+| Ukazatel | E13: medián / p95 / p99 | E14: medián / p95 / p99 | Změna p95 |
+| --- | ---: | ---: | ---: |
+| Práce snímku | 2,7 / 3,5 / 4,6 ms | 2,6 / 3,9 / 5,0 ms | +11,4 % |
+| Výpočet hry | 0,5 / 1,0 / 1,7 ms | 0,5 / 1,2 / 2,0 ms | +20,0 % |
+| Příprava vykreslení | 2,2 / 2,7 / 3,1 ms | 2,1 / 2,7 / 3,8 ms | 0,0 % |
+| GPU | 10,68 / 11,35 / 11,83 ms | 11,00 / 12,22 / 13,01 ms | +7,7 % |
+
+Medián práce snímku klesl o 3,7 %, p95 vzrostlo o 11,4 % (0,4 ms) a p99 o 8,7 %.
+Medián GPU vzrostl o 3,0 %, p95 o 7,7 % a p99 o 10,0 % po zaokrouhlení (přesně 9,975 %).
+P95 GPU 12,22 ms překračuje pracovní mez 12 ms o 0,22 ms (1,8 %). Vyšší p99 přípravy
+vykreslení (+22,6 %) zůstává v absolutní hodnotě 3,8 ms pod mezí 6 ms. Výpočet hry
+má p99 2,0 ms, tedy na pracovní mezi 2 ms.
+
+Čas GPU a práci procesoru nelze sčítat, protože se mohou překrývat. P95 celkové práce
+nelze nahradit součtem p95 jednotlivých částí. Vyšší poslední počty volání a trojúhelníků
+neprokazují přidanou geometrii: E14 nově započítává stíny a provoz v těchto dvou ručních
+bězích není totožný. Kontrolované pevné pohledy zůstávají shodné.
+
+Ruční porovnání potvrzuje udržení přibližně 60 FPS v dodaných dvou minutách a autor
+nepozoroval zadrhávání. Nedokazuje nulovou regresi: zvýšení p95 nad +10 %, vyšší některé
+p99 i mírné překročení meze GPU zůstávají známými odchylkami pro kontrolu pull requestu.
+Část kolísání se objevuje i v původní verzi a bez stínů; jediná příčina nebyla potvrzena.
+V E14 nebyla snižována kvalita ani měněna logika hry, aby tyto výsledky vyšly lépe.

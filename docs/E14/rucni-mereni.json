@@ -1,7 +1,7 @@
 {
   "datum": "2026-11-17",
   "zdroj": "Text panelu vložený autorem do konverzace.",
-  "poznamka": "První výsledek je přiřazen k E13 podle pořadí otevření. Autor verzi výslovně neoznačil. Prohlížeč ani přesný pohyb nebyly uvedeny.",
+  "poznamka": "Výsledky jsou přiřazeny k E13 a E14 podle pořadí otevření a navazujících výzev. Autor je v samotných přepisech neoznačil. Byl požádán o měření na výchozím místě, přesný pohyb ani totožnost provozu nebyly potvrzeny.",
   "E13": {
     "prirazeni": "Předpoklad podle pořadí otevření, nikoli výslovné označení autora.",
     "frames": 3601,
@@ -36,6 +36,62 @@
       "textures": 173
     }
   },
-  "E14": null,
-  "prohlizec": null
+  "E14": {
+    "prirazeni": "Podle navazující výzvy k měření E14; autor verzi v samotném přepisu neoznačil.",
+    "frames": 3600,
+    "durationSeconds": 60,
+    "workMs": {
+      "median": 2.6,
+      "p95": 3.9,
+      "p99": 5
+    },
+    "updateMs": {
+      "median": 0.5,
+      "p95": 1.2,
+      "p99": 2
+    },
+    "renderMs": {
+      "median": 2.1,
+      "p95": 2.7,
+      "p99": 3.8
+    },
+    "gpuMs": {
+      "median": 11,
+      "p95": 12.22,
+      "p99": 13.01
+    },
+    "gpuSamples": 3599,
+    "pixelRatio": 2,
+    "shadows": true,
+    "renderStats": {
+      "calls": 352,
+      "triangles": 520776,
+      "geometries": 876,
+      "textures": 175
+    }
+  },
+  "prohlizec": "Chrome pro testování podle označení autora; přesná verze nebyla uvedena.",
+  "pozorovaniAutora": "Autor uvedl, že zadrhávání nepozoroval. Výslovná kontrola vzhledu náměstí, Wilsonova mostu, Valíku a noci ještě nebyla potvrzena.",
+  "zmenyProcent": {
+    "workMs": {
+      "median": -3.704,
+      "p95": 11.429,
+      "p99": 8.696
+    },
+    "updateMs": {
+      "median": 0.0,
+      "p95": 20.0,
+      "p99": 17.647
+    },
+    "renderMs": {
+      "median": -4.545,
+      "p95": 0.0,
+      "p99": 22.581
+    },
+    "gpuMs": {
+      "median": 2.996,
+      "p95": 7.665,
+      "p99": 9.975
+    }
+  }
 }

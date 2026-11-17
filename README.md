@@ -95,6 +95,13 @@ Výchozí pohledy, měření práce snímku a rozpočet vykreslování jsou v
 [protokolu E13](docs/E13.md). Panel výkonu v režimu `?debug&adapt=0` otevřeš klávesou
 F9 nebo tlačítkem **Měření**. [Návod pro počítač a telefon](docs/E13/mereni-na-zarizeni.md).
 
+[E14 aktualizuje three.js na 0.187.0](docs/E14.md), zachovává stávající vykreslování
+a doplňuje hlídání vlastních materiálů. [Osm porovnání před a po](docs/E14/snimky.md)
+ukazuje jen drobné rozdíly ve stínech. Rozpočet nově započítává i stínový průchod,
+limit +10 % zůstává. Autor v obou ručních měřeních dosáhl přibližně 60 FPS bez
+pozorovaného zadrhávání; vyšší některé časy a mírné překročení meze GPU jsou
+popsané v [měření E14](docs/E14/mereni.md).
+
 Regresní testy kolizí, terénu, silničního grafu a distribuovaných dat:
 
 ```bash

@@ -2242,5 +2242,5 @@
       ]
     }
   },
-  "rozhodnutiAutora": "Autor dne 17. listopadu 2026 rozhodl odložit uzavření E14 do dodání ručního měření výkonu. Odchylka není schválená."
+  "rozhodnutiAutora": "Autor odložil uzavření do ručního měření. Dne 17. listopadu 2026 dodal oba výsledky a uvedl Chrome pro testování bez pozorovaného zadrhávání. Ruční výsledky jsou v rucni-mereni.json. Výkonnostní odchylky se zachovávají pro kontrolu pull requestu."
 }
