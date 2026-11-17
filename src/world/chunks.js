@@ -583,7 +583,7 @@ function dashes(world, buf, D, hw, col, dash, gap, lateral, lift) {
 }
 
 /** Těleso mostu: deska pod vozovkou, zábradlí a pilíře až na terén. */
-function bridgeSlab(world, solid, D, hw, railings, topCol) {
+function bridgeSlab(world, solid, D, hw, railings, topCol, supports = true) {
   const n = D.n;
   if (n < 2 || !D.y) return;
   const T = 0.9;
@@ -603,11 +603,25 @@ function bridgeSlab(world, solid, D, hw, railings, topCol) {
     solid.quad([l0[0], y0 - T, l0[1]], [l1[0], y1 - T, l1[1]], [l1[0], y1, l1[1]], [l0[0], y0, l0[1]], COL.concrete, 0.85);
     solid.quad([r0[0], y0, r0[1]], [r1[0], y1, r1[1]], [r1[0], y1 - T, r1[1]], [r0[0], y0 - T, r0[1]], COL.concrete, 0.85);
     if (railings) {
-      const h = 0.95;
-      solid.quad([l0[0], y0, l0[1]], [l1[0], y1, l1[1]], [l1[0], y1 + h, l1[1]], [l0[0], y0 + h, l0[1]], COL.railing);
-      solid.quad([r0[0], y0, r0[1]], [r1[0], y1, r1[1]], [r1[0], y1 + h, r1[1]], [r0[0], y0 + h, r0[1]], COL.railing);
+      for (const [a, b] of [[l0, l1], [r0, r1]]) {
+        const rail = (lo, hi, color) => solid.quad([a[0], y0 + lo, a[1]], [b[0], y1 + lo, b[1]],
+          [b[0], y1 + hi, b[1]], [a[0], y0 + hi, a[1]], color);
+        if (railings === 'open') {
+          rail(0, 0.16, COL.concrete);
+          rail(0.48, 0.54, COL.railing);
+          rail(0.89, 0.96, COL.railing);
+          const posts = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 3.4));
+          for (let j = 0; j < posts; j++) {
+            const t = j / posts;
+            const y = y0 + (y1 - y0) * t;
+            solid.box(a[0] + (b[0] - a[0]) * t, y + 0.12, y + 0.96,
+              a[1] + (b[1] - a[1]) * t, 0.045, COL.railing);
+          }
+        } else rail(0, 0.95, COL.railing);
+      }
     }
     // pilíře po ~26 m, kde je pod mostem dost místa
+    if (!supports) continue;
     const len = Math.hypot(D.x[k + 1] - D.x[k], D.z[k + 1] - D.z[k]);
     acc += len;
     while (acc >= 26 && len > 0) {
@@ -615,7 +629,99 @@ function bridgeSlab(world, solid, D, hw, railings, topCol) {
       const t = Math.min(1, Math.max(0, 1 - acc / len));
       const x = D.x[k] + (D.x[k + 1] - D.x[k]) * t, z = D.z[k] + (D.z[k + 1] - D.z[k]) * t;
       const yb = y0 + (y1 - y0) * t - T, g = world.heightAt(x, z);
-      if (yb - g > 2.5) solid.box(x, g - 0.6, yb, z, Math.min(0.9, hw * 0.35), COL.concrete);
+      if (yb - g > 2.5 && world.bridgeSupportAllowed(x, z)) {
+        solid.box(x, g - 0.6, yb, z, Math.min(0.9, hw * 0.35), COL.concrete);
+      }
+    }
+  }
+}
+
+function railAbutments(world, solid, path, halfWidth) {
+  for (const [end, next] of [[0, 1], [path.n - 1, path.n - 2]]) {
+    const x = path.x[end], z = path.z[end], y = path.y[end] - 0.09;
+    const dx = x - path.x[next], dz = z - path.z[next], length = Math.hypot(dx, dz);
+    if (length < 0.01) continue;
+    // Ve směru ven z mostu sahá opěra pod navazující násep.
+    const corner = (along, across) => [x + (dx * along - dz * across) / length, y,
+      z + (dz * along + dx * across) / length];
+    const a = corner(-0.28, -halfWidth), b = corner(-0.28, halfWidth);
+    const c = corner(2.8, halfWidth + 0.65), d = corner(2.8, -halfWidth - 0.65);
+    const foot = ([u, , v]) => [u, Math.min(y - 0.2, world.heightAt(u, v) - 0.35), v];
+    solid.quad(a, d, c, b, COL.concrete);
+    for (const [p, q] of [[a, b], [b, c], [c, d], [d, a]]) {
+      solid.quad(q, p, foot(p), foot(q), COL.concrete, 0.86);
+    }
+  }
+}
+
+function buildTrackUnderpass(world, solid, [x, z, endX, endZ, halfWidth, clearance]) {
+  const length = Math.hypot(endX - x, endZ - z);
+  if (length < 0.01) return;
+  const dx = (endX - x) / length, dz = (endZ - z) / length;
+  const floor = [world.heightAt(x, z), world.heightAt(endX, endZ)];
+  const outer = halfWidth + 0.42, roof = clearance + 0.52;
+  const point = (end, side, h) => [x + end * dx * length - dz * side,
+    floor[end] + h, z + end * dz * length + dx * side];
+  solid.quad(point(0, -outer, roof), point(1, -outer, roof), point(1, outer, roof), point(0, outer, roof), COL.concrete);
+  solid.quad(point(0, -halfWidth, clearance), point(0, halfWidth, clearance),
+    point(1, halfWidth, clearance), point(1, -halfWidth, clearance), COL.concrete, 0.62);
+  for (const direction of [-1, 1]) {
+    const side = direction * halfWidth;
+    solid.quad(point(0, side, -0.6), point(1, side, -0.6),
+      point(1, side, clearance), point(0, side, clearance), COL.concrete, 0.86);
+    solid.quad(point(0, direction * outer, -0.6), point(0, direction * outer, roof),
+      point(1, direction * outer, roof), point(1, direction * outer, -0.6), COL.concrete);
+    for (const end of [0, 1]) {
+      solid.quad(point(end, side, -0.6), point(end, direction * outer, -0.6),
+        point(end, direction * outer, roof), point(end, side, roof), COL.concrete);
+    }
+  }
+  for (const end of [0, 1]) {
+    solid.quad(point(end, -outer, clearance), point(end, outer, clearance),
+      point(end, outer, roof), point(end, -outer, roof), COL.concrete);
+  }
+}
+
+function rondelMarkings(world, marks, path, laneWidth, surfaceWidth, lanes) {
+  if (lanes === 2) {
+    dashes(world, marks, path, 0.06, COL.mark, 2.6, 3.4, 0, LIFT_MARK);
+    return;
+  }
+  const outerLine = laneWidth - 0.12;
+  const innerLine = -surfaceWidth + 0.24;
+  ribbon(world, marks, path, 0.064, COL.mark, outerLine, LIFT_MARK);
+  ribbon(world, marks, path, 0.064, COL.mark, -outerLine, LIFT_MARK);
+  ribbon(world, marks, path, 0.064, COL.mark, innerLine, LIFT_MARK);
+  let spacing = 1.5;
+  for (let k = 1; k < path.n; k++) {
+    const x = path.x[k - 1], z = path.z[k - 1];
+    const dx = path.x[k] - x, dz = path.z[k] - z, length = Math.hypot(dx, dz);
+    if (length < 0.001) continue;
+    const tx = dx / length, tz = dz / length;
+    const y = path.y[k - 1] + LIFT_MARK, slope = (path.y[k] - path.y[k - 1]) / length;
+    const vertex = (along, across) => marks.v(x + tx * along - tz * across,
+      y + slope * along, z + tz * along + tx * across, COL.mark);
+    while (spacing + 0.85 < length) {
+      marks.quad(vertex(spacing, innerLine), vertex(spacing + 0.63, -outerLine),
+        vertex(spacing + 0.85, -outerLine), vertex(spacing + 0.22, innerLine));
+      spacing += 2.1;
+    }
+    spacing = Math.max(0.35, spacing - length);
+  }
+}
+
+function rondelAbutments(world, solid, ci) {
+  for (const [a, b, top] of world.rondel?.walls.get(ci) ?? []) {
+    const steps = Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 3);
+    const vertex = (t) => {
+      const x = a[0] + (b[0] - a[0]) * t, z = a[1] + (b[1] - a[1]) * t;
+      return { x, z, floor: world.heightAt(x, z) - 0.22 };
+    };
+    for (let i = 1; i <= steps; i++) {
+      const p = vertex((i - 1) / steps), q = vertex(i / steps);
+      if (Math.min(p.floor, q.floor) > top - 0.20) continue;
+      solid.quad([p.x, Math.min(p.floor, top), p.z], [q.x, Math.min(q.floor, top), q.z],
+        [q.x, top, q.z], [p.x, top, p.z], COL.concrete);
     }
   }
 }
@@ -722,29 +828,38 @@ function buildRoads(world, ci) {
   const pieces = world.rPieces[ci];
   const R = world.r, px = world.rpx, pz = world.rpz, py = world.rpy, off = world.rOff;
   const asphalt = new DecalBuf(), marks = new DecalBuf(), solid = new SolidBuf();
+  const surfaceStep = world.gradeTerrain.has(ci) ? world.gradeStep : 4;
   if (pieces) {
     for (let q = 0; q < pieces.length; q += 3) {
       const i = pieces[q], s = pieces[q + 1], e = pieces[q + 2];
       const a = off[i], b = off[i + 1] - 1;
       const cls = R.cls[i], w = R.w[i], flags = R.flags[i];
-      if (world.tunnelRoads.has(i) || (flags & RF.SHARED_DECK)) continue;
+      if (world.tunnelRoads.has(i) || (flags & RF.SHARED_DECK) || world.rondel?.trackAccess.has(i)) continue;
       const bridge = (flags & RF.BRIDGE) !== 0;
       const paved = cls <= DRIVABLE_MAX || cls === RC.PEDESTRIAN;
-      if (!paved && !bridge) continue;            // pěšiny a chodníky jsou nakreslené v textuře země
+      const measured = world.rondel?.elevated.get(i);
+      const ring = world.rondel?.ring.has(i);
+      if (!paved && !bridge && measured === undefined) continue; // běžné chodníky jsou v textuře země
       const hw = w / 2;
-      const D = densePath(px, pz, bridge ? py : null, s, e, a, b, bridge ? 1e9 : 4);
+      const raised = bridge || measured !== undefined;
+      const D = densePath(px, pz, raised ? py : null, s, e, a, b, bridge ? 1e9 : surfaceStep);
       const approach = world.tunnelApproaches.get(i);
       const start = s === a && approach?.start, end = e === b && approach?.end;
       if ((start || end) && !trimApproach(D, start, end)) continue;
-      const col = bridge && cls <= DRIVABLE_MAX ? COL.bridge : roadColor(cls);
-      ribbon(world, asphalt, D, hw, col, 0, 0, s === a && !start, e === b && !end, hw > 2.2 && !bridge);
+      const col = ring ? COL.asphalt : bridge && cls <= DRIVABLE_MAX ? COL.bridge : roadColor(cls);
+      const surfaceWidth = measured === undefined ? hw : measured - (ring ? 0.16 : 0.12);
+      ribbon(world, asphalt, D, surfaceWidth, col, 0, 0, s === a && !start, e === b && !end, hw > 2.2 && !raised);
       if (bridge) {
         const arches = world.archedBridges.get(i);
         if (arches) stoneBridge(world, solid, D, world.deckHalfWidth(i), arches);
-        else bridgeSlab(world, solid, D, world.deckHalfWidth(i), true, cls <= RC.LIVING ? COL.sidewalk : COL.concrete);
+        else bridgeSlab(world, solid, D, world.deckHalfWidth(i), measured === undefined && !world.gradeRoads.has(i) ? true : 'open',
+          cls <= RC.LIVING ? COL.sidewalk : COL.concrete, measured === undefined);
+      } else if (measured !== undefined && D.y.some((y, k) => y - world.heightAt(D.x[k], D.z[k]) > 0.75)) {
+        bridgeSlab(world, solid, D, measured, false, COL.concrete, false);
       }
       // vodorovné značení
-      if (cls <= RC.UNCLASSIFIED && !(flags & RF.ROUNDABOUT)) {
+      if (ring) rondelMarkings(world, marks, D, hw, surfaceWidth, R.lanes[i]);
+      else if (cls <= RC.UNCLASSIFIED && !(flags & RF.ROUNDABOUT)) {
         const lanes = R.lanes[i];
         if (!(flags & RF.ONEWAY)) {
           if (lanes >= 4) {
@@ -765,6 +880,8 @@ function buildRoads(world, ci) {
       }
     }
   }
+  rondelAbutments(world, solid, ci);
+  for (const underpass of world.trackUnderpasses.get(ci) ?? []) buildTrackUnderpass(world, solid, underpass);
   // koleje
   const rails = world.railChunks[ci];
   if (rails) {
@@ -773,12 +890,16 @@ function buildRoads(world, ci) {
       const n = rail.pts.length / 2;
       const rx = new Float32Array(n), rz = new Float32Array(n);
       for (let k = 0; k < n; k++) { rx[k] = rail.pts[k * 2]; rz[k] = rail.pts[k * 2 + 1]; }
-      const D = densePath(rx, rz, rail.y, 0, n - 1, 0, n - 1, rail.y ? 1e9 : 4);
+      const D = densePath(rx, rz, rail.y, 0, n - 1, 0, n - 1, rail.y ? 1e9 : surfaceStep);
       if (rail.cls === 0) ribbon(world, asphalt, D, 1.25, COL.tramBed, 0, 0.004);
       else if (rail.y) ribbon(world, asphalt, D, 1.7, COL.ballast, 0, 0.004);
       ribbon(world, marks, D, 0.07, COL.rail, 0.7175, LIFT_RAIL);
       ribbon(world, marks, D, 0.07, COL.rail, -0.7175, LIFT_RAIL);
-      if (rail.y) bridgeSlab(world, solid, D, rail.cls === 1 ? 2.4 : 1.7, true, COL.concrete);
+      if (rail.y) {
+        const halfWidth = rail.cls === 1 ? 2.4 : 1.7;
+        bridgeSlab(world, solid, D, halfWidth, world.gradeRails.has(ri) ? 'open' : true, COL.concrete);
+        if (world.gradeRailAbutments.has(ri)) railAbutments(world, solid, D, halfWidth);
+      }
     }
   }
   for (const closure of world.closureChunks.get(ci) ?? []) drawClosure(world, solid, closure);
@@ -814,8 +935,10 @@ const terrainIndices = new Map();
 
 /** Síť terénu jedné dlaždice (sdílí uzly se sousedy, takže na sebe navazuje beze spár). */
 function buildTerrain(world, ci, cx0, cz0) {
-  const detail = world.terrainDetail.has(ci);
-  const G = detail ? world.tDetailG : world.tG, N = CHUNK / G, n1 = N + 1;
+  const grade = world.gradeTerrain.has(ci);
+  const detail = world.terrainDetail.has(ci) || grade;
+  const G = grade ? world.gradeStep : detail ? world.tDetailG : world.tG;
+  const N = CHUNK / G, n1 = N + 1;
   const pos = new Float32Array(n1 * n1 * 3), nor = new Float32Array(n1 * n1 * 3), uv = new Float32Array(n1 * n1 * 2);
   const gi0 = Math.round((cx0 - world.tX0) / G), gj0 = Math.round((cz0 - world.tZ0) / G);
   const th = world.th, tc = world.tCols, tr = world.tRows;
@@ -828,7 +951,7 @@ function buildTerrain(world, ci, cx0, cz0) {
       pos[o] = x; pos[o + 1] = detail ? world.heightAt(x, z) : H(gi, gj); pos[o + 2] = z;
       let hx, hz;
       if (detail || world.terrainDetail.size && (i === 0 || i === N || j === 0 || j === N)) {
-        const step = world.tDetailG;
+        const step = grade ? world.gradeStep : world.tDetailG;
         hx = (world.heightAt(x + step, z) - world.heightAt(x - step, z)) / (2 * step);
         hz = (world.heightAt(x, z + step) - world.heightAt(x, z - step)) / (2 * step);
       } else {

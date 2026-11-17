@@ -370,7 +370,7 @@ export class VehicleManager {
 
   _resumeAI(car) {
     const w = this.world;
-    const r = w.nearestRoad(car.x, car.z, 9, RC.LIVING, 0, _road);
+    const r = w.nearestRoad(car.x, car.z, 9, RC.LIVING, 0, _road, car.y);
     if (!r) return false;
     let e = w.edgeOfPt[r.seg];
     if (e < 0) return false;
@@ -509,7 +509,8 @@ export class VehicleManager {
     const car = this.add(new Car(type, CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)]));
     car.mode = 'ai';
     car.edge = e; car.s = s; car.lane = lane;
-    car.place(_pt.x, _pt.z, Math.atan2(_pt.tx, _pt.tz), (w.r.flags[w.eRoad[e]] & RF.BRIDGE) ? 1e9 : null);
+    const y = w.roadSurfaceY(w.eRoad[e], _pt.seg, _pt.t, _pt.x, _pt.z);
+    car.place(_pt.x, _pt.z, Math.atan2(_pt.tx, _pt.tz), y);
     car.speed = 6;
     this._pickNext(car);
     return car;

@@ -7,13 +7,14 @@ const recessMaterial = new THREE.MeshBasicMaterial({ color: 0x131b24 });
 const panelMaterial = new THREE.MeshLambertMaterial({ color: 0x566f7e });
 
 export function addTransitDisplay(mesh, length, ref, destination) {
+  const sign = mesh.userData.sign;
   const canvas = document.createElement('canvas');
   canvas.width = 512;
   canvas.height = 120;
   const ctx = canvas.getContext('2d');
   ctx.fillStyle = '#11191d';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.fillStyle = '#ffc56d';
+  ctx.fillStyle = sign?.color ?? '#ffc56d';
   ctx.font = '700 64px Arial';
   ctx.fillText(ref, 18, 83, 108);
   ctx.font = '700 36px Arial';
@@ -22,7 +23,20 @@ export function addTransitDisplay(mesh, length, ref, destination) {
   texture.colorSpace = THREE.SRGBColorSpace;
   const material = new THREE.MeshBasicMaterial({ map: texture });
   const display = new THREE.Mesh(displayGeometry, material);
-  display.position.set(0, 2.54, length / 2 + 0.015);
+  if (sign) {
+    display.position.set(0, sign.y, sign.z);
+    display.rotation.x = sign.tilt;
+    display.scale.setScalar(sign.width / 2.1);
+    if (sign.sideX) {
+      for (const side of [-1, 1]) {
+        const board = new THREE.Mesh(displayGeometry, material);
+        board.position.set(side * sign.sideX, sign.sideY, sign.sideZ);
+        board.rotation.y = side * Math.PI / 2;
+        board.scale.set(0.52, 0.38, 1);
+        mesh.add(board);
+      }
+    }
+  } else display.position.set(0, 2.54, length / 2 + 0.015);
   mesh.add(display);
   return material;
 }

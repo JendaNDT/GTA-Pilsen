@@ -1,8 +1,13 @@
+import { Vector3 } from 'three';
 import { STOP_DWELL, Timetable } from '../game/timetable.js';
 import { CLOCK_RATE, DAY_SECONDS } from '../game/clock.js';
 import { DRIVABLE_MAX, RF } from '../config.js';
-import { BUS_LEN, makeTransitBus, makeTramSegment, TRAM_SEG, TROLLEY_LEN } from './models.js';
+import { makeTrolleybus, TROLLEY_LEN } from './models.js';
 import { addTransitDisplay, addTransitDoors, setTransitDoors } from './transit-details.js';
+import {
+  BUS_SECTION, makeSorBus, makeTatraCar, makeTatraCoupler, makeTramJoint, makeTramSection,
+  setModelDoors, TATRA_SECTIONS, TRAM_SECTIONS,
+} from './transit-models.js';
 
 export const TRANSIT_NAME = { tram: 'tramvaj', trolleybus: 'trolejbus', bus: 'autobus' };
 
@@ -11,6 +16,11 @@ const trailerPoint = { x: 0, z: 0, tx: 0, tz: 1 };
 const aheadPoint = { x: 0, z: 0, tx: 0, tz: 1 };
 const entryPoint = { x: 0, z: 0, tx: 0, tz: 1 };
 const roadPoint = {};
+const jointFront = new Vector3();
+const jointRear = new Vector3();
+const jointAxis = new Vector3();
+const TROLLEY_SECTION = { length: TROLLEY_LEN, doors: [3.9, -1.5] };
+const SECTIONS = { tram: TRAM_SECTIONS, bus: [BUS_SECTION], trolleybus: [TROLLEY_SECTION] };
 const VIEW_DISTANCE = 520;
 const DOOR_SPEED = 3;
 const ARRIVE_DISTANCE = 0.55;
@@ -63,7 +73,10 @@ class TransitVehicle {
     this.destination = trip.destination;
     this.stops = trip.stops.map(({ target }) => target);
     this.isTram = this.route.type === 'tram';
-    this.len = this.isTram ? TRAM_SEG * 3 : this.route.type === 'bus' ? BUS_LEN : TROLLEY_LEN;
+    // Herní střídání na spojích linek 1 a 2, stálé pro konkrétní spoj.
+    this.isTatra = this.isTram && ['1', '2'].includes(this.route.ref) && Number(trip.id) % 2 === 0;
+    this.sections = this.isTatra ? TATRA_SECTIONS : SECTIONS[this.route.type];
+    this.len = this.sections.reduce((sum, { length }) => sum + length, 0);
     this.halfLen = this.len / 2;
     this.radius = 1.4;
     this.side = this.isTram ? 0 : 1.7;
@@ -167,7 +180,7 @@ export class TransitManager {
     v.waitingForSpace = false;
     v.trafficStop = null;
     v.route.posAt(v.s, v.side, frontPoint);
-    v.y = this.world.groundY(frontPoint.x, frontPoint.z);
+    v.y = this._routeSurface(v, frontPoint);
     this._show(v, true);
     this._pose(v, 1);
     return v;
@@ -178,14 +191,23 @@ export class TransitManager {
     v.visible = on;
     if (on) {
       if (!v.meshes) {
-        v.meshes = v.isTram ? [makeTramSegment(0), makeTramSegment(1), makeTramSegment(2)] : [makeTransitBus(v.route.type)];
-        v.display = addTransitDisplay(v.meshes[0], v.isTram ? TRAM_SEG - 0.5 : v.len, v.route.ref, v.destination);
-        v.doors = addTransitDoors(v.meshes[0], v.isTram ? [0.5] : [3.9, -1.5]);
+        if (v.isTatra) {
+          v.meshes = v.sections.map(makeTatraCar);
+          v.joints = [makeTatraCoupler()];
+        } else {
+          v.meshes = v.isTram ? v.sections.map(makeTramSection)
+            : [v.route.type === 'bus' ? makeSorBus() : makeTrolleybus()];
+          v.joints = v.meshes.slice(1).map(makeTramJoint);
+        }
+        v.display = addTransitDisplay(v.meshes[0], v.sections[0].length, v.route.ref, v.destination);
+        if (v.route.type === 'trolleybus') v.doors = addTransitDoors(v.meshes[0], TROLLEY_SECTION.doors);
       }
       for (const mesh of v.meshes) this.scene.add(mesh);
+      for (const joint of v.joints) this.scene.add(joint);
     } else {
       this.game.audio.remove(v);
       for (const mesh of v.meshes) this.scene.remove(mesh);
+      for (const joint of v.joints) this.scene.remove(joint);
     }
   }
 
@@ -193,6 +215,7 @@ export class TransitManager {
     this._show(v, false);
     v.display?.map.dispose();
     v.display?.dispose();
+    for (const mesh of v.meshes ?? []) mesh.userData.doors?.mesh.dispose();
   }
 
   _spawnSpace(v, nearby) {
@@ -206,6 +229,15 @@ export class TransitManager {
       return across < 2.6 && along < (v.len + other.len) / 2 + 1.5
         && dx * dx + dz * dz < (v.halfLen + other.halfLen + 2) ** 2;
     });
+  }
+
+  _routeSurface(v, point) {
+    const { x, z } = point;
+    const ground = this.world.heightAt(x, z) + 0.05;
+    const deck = this.world.deckAt(x, z, Infinity, v.isTram ? 1 : 0);
+    if (v.isTram || deck < ground + 2.5) return Math.max(ground, deck);
+    const road = this.world.nearestRoad(x, z, 9, DRIVABLE_MAX, 0, roadPoint, undefined, false, point);
+    return road ? this.world.roadSurfaceY(road.road, road.seg, road.t, road.x, road.z) : Math.max(ground, deck);
   }
 
   _arrive(v, index, now) {
@@ -298,11 +330,13 @@ export class TransitManager {
   }
 
   _pose(v, dt) {
-    const length = v.isTram ? TRAM_SEG : v.len;
-    let referenceY = v.y;
+    let referenceY = v.y, end = v.s;
     for (const [index, mesh] of v.meshes.entries()) {
-      const center = v.s - length * (index + 0.5);
-      const axle = v.isTram ? 2.6 : 3.5;
+      const section = v.sections[index];
+      const { length } = section;
+      const center = end - length / 2;
+      end -= length;
+      const axle = section.axle ?? (v.isTram ? 2.6 : 3.5);
       const front = v.route.posAt(center + axle, v.side, frontPoint);
       const rear = v.route.posAt(center - axle, v.side, trailerPoint);
       const x = (front.x + rear.x) / 2, z = (front.z + rear.z) / 2;
@@ -315,14 +349,39 @@ export class TransitManager {
       mesh.rotation.set(Math.atan2(ry - fy, axle * 2), yaw, 0, 'YXZ');
       const fx = Math.sin(yaw), fz = Math.cos(yaw);
       const vx = fx * v.v, vz = fz * v.v;
-      for (const k of [-axle, 0, axle]) this.heavy.push({ x: x + fx * k, y, z: z + fz * k, r: 1.35, vx, vz });
+      const collisionSpan = v.isTatra ? length / 2 - 1.35 : axle;
+      const collisionPoints = v.isTatra ? [-collisionSpan, -axle, 0, axle, collisionSpan] : [-axle, 0, axle];
+      for (const k of collisionPoints) this.heavy.push({ x: x + fx * k, y, z: z + fz * k, r: 1.35, vx, vz });
       this.obstacles.push({ x, y, z, vx, vz, yaw, halfLen: length / 2, radius: 1.4 });
       if (index === (v.isTram ? 1 : 0)) Object.assign(v, { x, y, z, yaw, vx, vz });
+    }
+    // Spřáhlo nebo měch překrývá konce sousedních skříní i v oblouku.
+    for (const [index, joint] of v.joints.entries()) {
+      const a = v.meshes[index], b = v.meshes[index + 1];
+      const height = v.isTatra ? 0.62 : 1.75;
+      jointFront.set(0, height, -v.sections[index].length / 2).applyQuaternion(a.quaternion).add(a.position);
+      jointRear.set(0, height, v.sections[index + 1].length / 2).applyQuaternion(b.quaternion).add(b.position);
+      joint.position.copy(jointFront).lerp(jointRear, 0.5);
+      if (v.isTatra) {
+        jointAxis.copy(jointFront).sub(jointRear);
+        joint.scale.z = jointAxis.length() + 0.23;
+        joint.rotation.set(-Math.atan2(jointAxis.y, Math.hypot(jointAxis.x, jointAxis.z)),
+          Math.atan2(jointAxis.x, jointAxis.z), 0, 'YXZ');
+        const yaw = Math.atan2(Math.sin(a.rotation.y) + Math.sin(b.rotation.y),
+          Math.cos(a.rotation.y) + Math.cos(b.rotation.y));
+        Object.assign(v, { x: joint.position.x, y: (a.position.y + b.position.y) / 2, z: joint.position.z,
+          yaw, vx: Math.sin(yaw) * v.v, vz: Math.cos(yaw) * v.v });
+        continue;
+      }
+      joint.quaternion.copy(a.quaternion).slerp(b.quaternion, 0.5);
+      jointAxis.set(0, 0, 1).applyQuaternion(joint.quaternion);
+      joint.scale.z = Math.abs(jointFront.sub(jointRear).dot(jointAxis)) + 0.63;
     }
     const target = Number(v.doorsOpen);
     if (v.doorFraction !== target) {
       v.doorFraction += Math.sign(target - v.doorFraction) * Math.min(Math.abs(target - v.doorFraction), dt * DOOR_SPEED);
-      setTransitDoors(v.doors, v.doorFraction);
+      if (v.doors) setTransitDoors(v.doors, v.doorFraction);
+      else for (const mesh of v.meshes) setModelDoors(mesh, v.doorFraction);
     }
   }
 
@@ -360,8 +419,7 @@ export class TransitManager {
       }
       const wasVisible = v.visible, wasOpen = v.doorsOpen;
       if (!v.visible) {
-        const deck = this.world.deckAt(frontPoint.x, frontPoint.z, 1e9, v.isTram ? 1 : 0);
-        v.y = Math.max(deck, this.world.heightAt(frontPoint.x, frontPoint.z) + 0.05);
+        v.y = this._routeSurface(v, frontPoint);
         if (!this._spawnSpace(v, nearby)) { v.waitingForSpace = true; continue; }
         v.waitingForSpace = false;
         if (v.wait > 0) v.wait = Math.max(v.wait, STOP_DWELL * 0.7);
@@ -389,22 +447,33 @@ export class TransitManager {
     let best = null, distance = Infinity;
     for (const v of this.vehicles) {
       if (!v.visible || !v.canBoard || Math.abs(v.y - y) > 2.5) continue;
-      const front = v.meshes[0].position;
-      if ((z - front.z) * Math.sin(v.yaw) - (x - front.x) * Math.cos(v.yaw) < 0.8) continue;
-      const door = this.exitPoint(v, entryPoint);
-      const d = (x - door.x) ** 2 + (z - door.z) ** 2;
-      if (d < 5.5 ** 2 && d < distance) { distance = d; best = v; }
+      for (const [index, mesh] of v.meshes.entries()) {
+        const dx = x - mesh.position.x, dz = z - mesh.position.z;
+        const fx = Math.sin(mesh.rotation.y), fz = Math.cos(mesh.rotation.y);
+        const across = dz * fx - dx * fz, along = dx * fx + dz * fz;
+        if (across < 0.8) continue;
+        const doors = v.sections[index].doors;
+        for (let i = 0; i < (v.doors ? 1 : doors.length); i++) {
+          const door = doors[i];
+          const d = (across - 2.6) ** 2 + (along - door) ** 2;
+          if (d < 5.5 ** 2 && d < distance) { distance = d; best = v; }
+        }
+      }
     }
     return best;
   }
 
-  /** Pravé přední dveře. Poloha nástupu i výstupu používá stejný vůz a článek. */
+  /** Výstup u pravých předních dveří, podle natočení předního článku. */
   exitPoint(v, out) {
-    const longitudinal = v.isTram ? 0.5 : 3.9;
-    const fx = Math.sin(v.yaw), fz = Math.cos(v.yaw);
     const mesh = v.meshes?.[0];
-    const x = mesh?.position.x ?? v.x + (v.isTram ? fx * TRAM_SEG : 0);
-    const z = mesh?.position.z ?? v.z + (v.isTram ? fz * TRAM_SEG : 0);
+    const longitudinal = v.sections[0].doors[0];
+    const yaw = mesh?.rotation.y ?? v.yaw;
+    const fx = Math.sin(yaw), fz = Math.cos(yaw);
+    let offset = 0;
+    if (v.isTatra) offset = v.sections[0].length / 2;
+    else if (v.isTram) offset = (v.sections[0].length + v.sections[1].length) / 2;
+    const x = mesh?.position.x ?? v.x + fx * offset;
+    const z = mesh?.position.z ?? v.z + fz * offset;
     out.x = x + fx * longitudinal - fz * 2.6;
     out.z = z + fz * longitudinal + fx * 2.6;
     return out;

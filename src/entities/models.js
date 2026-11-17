@@ -204,60 +204,29 @@ export function makeCarMesh(typeId, colorHex) {
   return group;
 }
 
-// ------------------------------------------------------------- tramvaj ----
-const TRAM_YELLOW = lin(0xf0c020), TRAM_GREY = lin(0xdedfdc), TRAM_DARK = lin(0x2b2f35), TRANSIT_GLASS = lin(0x3b4d5f);
-let tramGeo = null, transitMat = null;
-const busGeo = new Map();
-export const TRAM_SEG = 9.4;
-export function makeTramSegment(kind) {
-  // kind: 0 = přední, 1 = střední, 2 = zadní
-  if (!tramGeo) {
-    tramGeo = [0, 1, 2].map((k) => {
-      const p = new Parts();
-      const L = TRAM_SEG - 0.5, W = 2.46;
-      p.box(W, 0.95, L, 0, 0.35 + 0.475, 0, TRAM_YELLOW, 1, 1);
-      p.box(W * 0.985, 1.25, L * 0.985, 0, 1.3 + 0.625, 0, TRANSIT_GLASS, 0.94, 0.99);
-      p.box(W * 0.93, 0.5, L * 0.99, 0, 2.55 + 0.25, 0, TRAM_GREY, 0.9, 0.98);
-      p.box(W * 0.8, 0.3, L * 0.5, 0, 0.2, 0, TRAM_DARK);
-      if (k === 0) { p.box(0.3, 0.14, 0.06, 0.75, 0.9, L / 2, HEAD); p.box(0.3, 0.14, 0.06, -0.75, 0.9, L / 2, HEAD); }
-      if (k === 2) { p.box(0.3, 0.14, 0.06, 0.75, 0.9, -L / 2, TAIL); p.box(0.3, 0.14, 0.06, -0.75, 0.9, -L / 2, TAIL); }
-      if (k === 1) { p.box(0.08, 0.9, 0.08, 0, 3.5, 0.4, TRAM_DARK); p.box(1.3, 0.06, 0.08, 0, 3.95, 0.4, TRAM_DARK); }
-      // mechy mezi články
-      if (k !== 0) p.box(W * 0.8, 2.2, 0.5, 0, 1.6, L / 2 + 0.25, TRAM_DARK);
-      return p.geometry();
-    });
-  }
-  transitMat = transitMat || getDetailMaterial();
-  const m = new THREE.Mesh(tramGeo[kind], transitMat);
-  m.castShadow = true;
-  return m;
-}
-
+// ------------------------------------------------------------ trolejbus ----
+const TRANSIT_GLASS = lin(0x3b4d5f), TROLLEY_GREEN = lin(0x2f9a57), TROLLEY_GREY = lin(0xdedfdc);
+let trolleyGeo;
 export const TROLLEY_LEN = 11.8;
-export const BUS_LEN = 12;
-export function makeTransitBus(type) {
-  const trolley = type === 'trolleybus';
-  if (!busGeo.has(type)) {
+export function makeTrolleybus() {
+  if (!trolleyGeo) {
     const p = new Parts();
-    const L = trolley ? TROLLEY_LEN : BUS_LEN, W = 2.5;
-    p.box(W, 1.0, L, 0, 0.35 + 0.5, 0, lin(trolley ? 0x2f9a57 : 0x277db5), 1, 0.995);
-    p.box(W * 0.985, 1.2, L * 0.985, 0, 1.35 + 0.6, 0, TRANSIT_GLASS, 0.95, 0.99);
-    p.box(W * 0.94, 0.42, L * 0.99, 0, 2.55 + 0.21, 0, TRAM_GREY, 0.92, 0.98);
-    p.box(0.3, 0.14, 0.06, 0.8, 0.95, L / 2, HEAD); p.box(0.3, 0.14, 0.06, -0.8, 0.95, L / 2, HEAD);
-    p.box(0.3, 0.14, 0.06, 0.8, 0.95, -L / 2, TAIL); p.box(0.3, 0.14, 0.06, -0.8, 0.95, -L / 2, TAIL);
-    for (const sx of [-1, 1]) for (const sz of [L / 2 - 2.4, -L / 2 + 3]) p.wheel(0.48, 0.3, sx * 1.1, 0.48, sz, TIRE);
-    if (trolley) {
-      p.box(0.06, 0.06, 6.2, 0.35, 3.75, -L / 2 + 2.2, TRAM_DARK);
-      p.box(0.06, 0.06, 6.2, -0.35, 3.75, -L / 2 + 2.2, TRAM_DARK);
-      p.box(0.9, 0.5, 0.5, 0, 3.2, 1.2, TRAM_DARK);
-    } else {
-      p.box(1.25, 0.14, 2.7, 0, 3.0, -1.5, TRAM_GREY);
+    const L = TROLLEY_LEN, W = 2.5;
+    p.box(W, 1.0, L, 0, 0.85, 0, TROLLEY_GREEN, 1, 0.995);
+    p.box(W * 0.985, 1.2, L * 0.985, 0, 1.95, 0, TRANSIT_GLASS, 0.95, 0.99);
+    p.box(W * 0.94, 0.42, L * 0.99, 0, 2.76, 0, TROLLEY_GREY, 0.92, 0.98);
+    for (const sx of [-1, 1]) {
+      p.box(0.3, 0.14, 0.06, sx * 0.8, 0.95, L / 2, HEAD);
+      p.box(0.3, 0.14, 0.06, sx * 0.8, 0.95, -L / 2, TAIL);
+      for (const z of [L / 2 - 2.4, -L / 2 + 3]) p.wheel(0.48, 0.3, sx * 1.1, 0.48, z, TIRE);
+      p.box(0.06, 0.06, 6.2, sx * 0.35, 3.75, -L / 2 + 2.2, DARK);
     }
-    busGeo.set(type, p.geometry());
+    p.box(0.9, 0.5, 0.5, 0, 3.2, 1.2, DARK);
+    trolleyGeo = p.geometry();
   }
-  const m = new THREE.Mesh(busGeo.get(type), getDetailMaterial());
-  m.castShadow = true;
-  return m;
+  const mesh = new THREE.Mesh(trolleyGeo, getDetailMaterial());
+  mesh.castShadow = true;
+  return mesh;
 }
 
 // -------------------------------------------------------------- postavy ----

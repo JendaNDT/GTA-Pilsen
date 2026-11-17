@@ -51,6 +51,7 @@ const FILES = [
   ['timetable', 'data/timetable.json', 3_513_000],
   ['trafficProfiles', 'data/traffic-profiles.json', 212_000],
   ['landscape', 'data/landscape.bin', 1_354_000],
+  ['gradeSeparations', 'data/grade-separations.json', 460_000],
   ['soundPlaces', 'data/sound-places.json', 2_000],
   ['heritage', 'detail/city/index.json', 75_000],
 ];
@@ -76,11 +77,11 @@ export async function loadAll(onProgress) {
   const base = import.meta.env?.BASE_URL || '/';
   const results = await Promise.all(FILES.map(([name, url]) => {
     const request = fetchBuffer(base + url, bump);
-    return name === 'landscape' || name === 'soundPlaces' ? request.catch(() => null) : request;
+    return ['landscape', 'soundPlaces', 'gradeSeparations'].includes(name) ? request.catch(() => null) : request;
   }));
   const out = {};
   FILES.forEach(([name, url], i) => {
-    if (name === 'soundPlaces' && !results[i]) return;
+    if ((name === 'soundPlaces' || name === 'gradeSeparations') && !results[i]) return;
     if (name === 'landscape') {
       if (results[i]?.byteLength > 8) {
         try { out.landscape = parsePack(results[i]); } catch { /* základní síť stačí k hraní */ }
@@ -99,6 +100,8 @@ export async function loadAll(onProgress) {
   if (fingerprint('buildings') !== out.heritage.osm || fingerprint('terrain') !== out.heritage.terrain) out.heritage.tiles = [];
   if (out.landscape && !['terrain', 'roads', 'rails', 'buildings', 'land'].every((name) =>
     out.landscape.header.sources?.[name] === fingerprint(name))) delete out.landscape;
+  if (out.gradeSeparations && (!out.landscape || !['terrain', 'roads', 'rails', 'landscape'].every((name) =>
+    out.gradeSeparations.sources?.[name] === fingerprint(name)))) delete out.gradeSeparations;
   out.soundPlaces = out.soundPlaces && out.soundPlaces.osm === out.meta.osmTimestamp ? out.soundPlaces.weirs : [];
   return out;
 }

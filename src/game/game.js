@@ -336,11 +336,12 @@ export class Game {
     const r = w.nearestRoad(f.x, f.z, 400, RC.LIVING, 0, _road, f.y);
     if (!r) return;
     const tube = w.tunnelAt(r.x, r.z, f.y);
+    const y = tube?.floor ?? w.roadSurfaceY(r.road, r.seg, r.t, r.x, r.z);
     if (this.mode === 'car') {
-      this.car.place(r.x, r.z, Math.atan2(r.dx, r.dz), tube?.floor);
+      this.car.place(r.x, r.z, Math.atan2(r.dx, r.dz), y);
       if (this.car !== this.garage.active) this.car.health = Math.max(this.car.health, 40);
     }
-    else this.player.place(r.x, r.z, tube?.floor);
+    else this.player.place(r.x, r.z, y);
     this.hud.toast('Zpět na silnici.');
   }
 
