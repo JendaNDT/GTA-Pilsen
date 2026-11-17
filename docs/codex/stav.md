@@ -1,6 +1,6 @@
 # Stav etapy E14
 
-**Implementace E14 je dokončená a připravená k nezávislé kontrole.** Autor nejprve odložil uzavření do ručního měření.
+**Implementace E14 je dokončená. Odeslání větve čeká na autora.** Autor nejprve odložil uzavření do ručního měření.
 Dne 17. listopadu 2026 dodal oba výsledky a uvedl „Chrome pro testování“ bez
 pozorovaného zadrhávání. Výkonnostní odchylky jsou zachované v protokolu.
 
@@ -86,3 +86,15 @@ E14: 3 600 snímků za 60 s, práce 2,6 / 3,9 / 5,0 ms, GPU 11,00 / 12,22 / 13,0
 Obě verze měly měřítko 2 a zapnuté stíny. Přesná verze prohlížeče a pohyb nebyly
 uvedeny; přiřazení vychází z pořadí otevření a navazujících výzev. Nešlo o ověření
 stejné náhodné posloupnosti provozu. Autor uvedl Chrome pro testování bez zadrhávání.
+
+## Překážka při odeslání větve
+
+Finální protokol a kontroly jsou v commitu `8490179`. `git push -u origin etapa/E14`
+selhal: terminál nemá přihlašovací údaje pro GitHub. Vzdálená větev dosud neexistuje
+(ověřeno `git ls-remote --heads origin etapa/E14`). GitHub Desktop ukazuje úložiště
+GTA-Pilsen, větev etapa/E14 a tlačítko Publish branch, ale automatické ovládání okna
+opakovaně selhalo s `noWindowsAvailable`. Commity se nepřeváděly do jiné historie.
+
+Autor má v GitHub Desktopu ručně kliknout nahoře na **Publish branch**. Pak lze
+přes připojený GitHub vytvořit návrh PR do main. [Připravený název, popis a postup](../E14/pull-request.md).
+Před vytvořením ověřit, že vzdálená větev obsahuje i tento stavový commit.
