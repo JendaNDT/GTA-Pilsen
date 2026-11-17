@@ -56,7 +56,9 @@ npm run test:e2e     # testy v Chromiu nad dist/ (nejdřív npm run build)
 1. Pracuj jen na zadané etapě podle `docs/codex/Exx.md`. Co do ní nepatří, zapiš do protokolu
    jako návrh a nedělej to.
 2. Postupuj po krocích ze zadání. Po každém kroku spusť dotčené testy a udělej commit.
-   Pracuj na větvi etapy (například `etapa/E15-webgpu`), ne přímo na `main`.
+   Pracuj na větvi etapy (například `etapa/E15`), ne přímo na `main`. Stav rozpracované
+   etapy (hotové a zbývající kroky, otevřené otázky, poslední testy) veď v
+   `docs/codex/stav.md`.
 3. **Nesnižuj očekávání testů jen proto, aby prošly.** Když nové chování oprávněně mění
    výsledek, uprav test a důvod zapiš do protokolu. Ke každé nové funkci přidej test.
 4. Před commitem spusť `npm test` a `npm run build`. Po změně v `tools/` spusť i

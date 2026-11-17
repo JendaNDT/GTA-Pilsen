@@ -30,9 +30,76 @@ zadání. Když Sol v některé etapě opakovaně selže, přepni ji na Astru.
 
 E16 může přijít kdykoli po E13. Ostatní etapy jdou v uvedeném pořadí.
 
-## Šablony zpráv
+## Univerzální zpráva (doporučeno)
 
-**Zahájení etapy** (vlož do nové konverzace v Codexu):
+Tuhle zprávu vkládej do Codexu pořád dokola. Codex si sám zjistí, která etapa je na řadě,
+řekne ti, jaký model k ní patří, a po etapě se zastaví.
+
+```text
+Pokračuj v implementaci plánu Plzeň naplno.
+
+1. Přečti si AGENTS.md, docs/plan-presnost-a-vzhled.md a docs/codex/README.md.
+
+2. Zjisti, kde jsme:
+   - Když jsi na větvi etapa/Exx, pokračuj v této etapě. Hotové kroky zjisti z historie
+     commitů a z docs/codex/stav.md a ověř je testy.
+   - Když jsi na main, vezmi první etapu z tabulky v docs/codex/README.md, která v main
+     ještě nemá protokol docs/Exx.md, a založ pro ni větev etapa/Exx.
+   - Když je předchozí etapa hotová, ale není sloučená do main, novou nezačínej a řekni mi to.
+
+3. Než začneš pracovat, napiš mi v pár větách:
+   - kterou etapu budeš dělat a co v ní vznikne,
+   - jaký model a úroveň uvažování pro ni doporučuje tabulka,
+   - co ode mě budeš potřebovat (rozhodnutí, fotky, měření).
+   Potom počkej, až napíšu „pokračuj“.
+
+4. Proveď etapu podle docs/codex/Exx.md: krok za krokem, po každém kroku dotčené testy
+   a commit. Pracuj jen na této jedné etapě.
+
+5. Když chybí nástroj nebo internet, nebo narazíš na rozhodnutí, které zadání neřeší,
+   zastav se a zeptej se mě. Nic neobcházej a nesnižuj očekávání testů.
+
+6. Průběžně veď docs/codex/stav.md: etapa, hotové a zbývající kroky, otevřené otázky,
+   poslední výsledky testů. Když ti dojde kontext nebo čas, zapiš stav, commitni a napiš
+   mi, ať můžu pokračovat stejnou zprávou.
+
+7. Na konci etapy:
+   - napiš protokol docs/Exx.md, aktualizuj README a katalog a spusť všechny testy,
+   - připrav pull request do main (když ho nemůžeš otevřít sám, napiš mi jak),
+   - česky a bez žargonu mi napiš, co se změnilo, co mám ve hře vyzkoušet (podle části
+     „Kontrola pro autora“) a kterým modelem mám udělat kontrolu.
+   Další etapu nezačínej.
+```
+
+**Postup s univerzální zprávou:**
+
+1. **Zahájení:** založ v Codexu nový úkol nad `main` (nebo nad větví `etapa/Exx`, když
+   pokračuješ v rozdělané etapě) a vlož zprávu.
+2. **Volba modelu:** Codex napíše, která etapa je na řadě a jaký model k ní patří. Když máš
+   zvolený jiný, přepni ho. Pokud to v běžícím úkolu nejde, spusť úkol znovu se správným
+   modelem. Pak napiš „pokračuj“.
+3. **Kontrola:** po dokončení vyzkoušej hru podle seznamu, který ti Codex napíše, a nech
+   udělat kontrolu šablonou „Kontrola etapy“ níže.
+4. **Sloučení:** když je všechno v pořádku, slouč pull request do `main` a začni znovu od
+   kroku 1.
+
+Soubor `docs/codex/stav.md` si Codex vytvoří při první etapě. Kdykoli v něm uvidíš, kde se
+zrovna nachází.
+
+**Cloud Codexu:** agent tam ve výchozím nastavení nemá internet. Do instalačního skriptu
+prostředí (ten internet má) proto vlož:
+
+```bash
+npm ci
+python3 -m pip install -r tools/requirements.txt
+npx playwright install --with-deps chromium
+```
+
+## Další šablony zpráv
+
+Tyto šablony se hodí, když chceš konkrétní etapu, kontrolu nebo opravu chyby.
+
+**Zahájení konkrétní etapy** (vlož do nové konverzace v Codexu):
 
 ```text
 Proveď etapu E15 podle docs/codex/E15.md. Nejdřív si přečti AGENTS.md, plán a zadání.
