@@ -1,6 +1,6 @@
 # Stav etapy E14
 
-**Implementace E14 je dokončená a předaná ke kontrole v [PR č. 6](https://github.com/JendaNDT/GTA-Pilsen/pull/6).** Autor nejprve odložil uzavření do ručního měření.
+**Implementace E14 je dokončená. Autor schválil sloučení [PR č. 6](https://github.com/JendaNDT/GTA-Pilsen/pull/6) bez zbývajícího testování.** Autor nejprve odložil uzavření do ručního měření.
 Dne 17. listopadu 2026 dodal oba výsledky a uvedl „Chrome pro testování“ bez
 pozorovaného zadrhávání. Výkonnostní odchylky jsou zachované v protokolu.
 
@@ -55,9 +55,9 @@ Nevydává se to za nulovou regresi ani za splnění všech mezí bez odchylky.
 
 [Protokol E14](../E14.md) uvádí odchylky, zdroje, snímky a kontrolu pro autora.
 README, katalog a přehled etap jsou aktualizované. Větev `etapa/E14` je připravená
-pro pull request do `main`. Před sloučením zbývá kontrola modelem 6.1 Sol, Medium
-a autorova kontrola náměstí, Wilsonova mostu, Valíku a noci, včetně posouzení popsaných
-výkonnostních odchylek.
+pro pull request do `main`. Zbývající nezávislou kontrolu modelem 6.1 Sol, Medium
+a ruční kontrolu náměstí, Wilsonova mostu, Valíku a noci autor výslovně vynechal
+a schválil sloučení s odchylkami uvedenými v protokolu.
 Další etapu nezačínat.
 
 ## Poslední ověření a prostředí
@@ -93,7 +93,11 @@ Autor dne 17. listopadu 2026 odeslal větev pomocí Publish branch v GitHub Desk
 Bylo ověřeno, že místní i vzdálená větev obsahují stejný commit `0722a49` a nemají
 žádné rozdílné commity. Původní překážka přihlášení terminálu tak neblokuje předání.
 
-[Návrh PR č. 6](https://github.com/JendaNDT/GTA-Pilsen/pull/6) je otevřený z `etapa/E14`
-do `main`, včetně protokolu, snímků a popisu výkonnostních odchylek. Větev není
-sloučená. Před sloučením zbývá nezávislá kontrola modelem 6.1 Sol, Medium a kontrola
-autora na náměstí, Wilsonově mostě, ve Valíku a v noci. Další etapu nezačínat.
+[PR č. 6](https://github.com/JendaNDT/GTA-Pilsen/pull/6) vede změny z `etapa/E14`
+do `main`, včetně protokolu, snímků a popisu výkonnostních odchylek. Autor dne
+17. listopadu 2026 napsal: „zbytek testování přeskočíme. můžeš to vše sloučit“.
+Neprovedená ruční a modelová kontrola zůstává označená jako vynechaná, nikoli úspěšná.
+Další místní testy se na tento pokyn neopakují. Při ověření před záznamem souhlasu
+byla kontrola dokumentace na GitHubu úspěšná a projektové kontroly ještě běžely.
+Sloučení proběhne standardně přes GitHub bez obcházení pravidel úložiště.
+Další etapu v tomto úkolu nezačínat.

@@ -6,7 +6,8 @@ Cíl: `main`, zdroj: `etapa/E14`. Název: **Aktualizovat three.js na 0.187 a ov�
 Autor odeslal celou větev přes Publish branch v GitHub Desktopu. Ověření místní
 a vzdálené historie potvrdilo shodný commit `0722a49` a žádné rozdílné commity.
 
-Sloučení čeká na nezávislou kontrolu modelem 6.1 Sol, Medium a kontrolu autora.
+Autor dne 17. listopadu 2026 výslovně vynechal zbývající ruční a modelovou kontrolu
+a schválil sloučení celého PR včetně uvedených odchylek.
 Výkonnostní odchylky jsou popsané v protokolu i v popisu PR. Místní závěrečné testy
 prošly; výsledky kontrol GitHub Actions je třeba posuzovat samostatně.
 
@@ -20,5 +21,5 @@ Ověření: čistá instalace, 38 testů Node, 13 testů Pythonu, kontrola synta
 
 Autor v Chrome pro testování naměřil v obou verzích přibližně 60 FPS a zadrhávání nepozoroval. Výkonnostní odchylky zůstávají uvedené: ruční p95 práce snímku 3,5 → 3,9 ms (+11,4 %), p95 GPU 12,22 ms proti pracovní mezi 12 ms. Automatické běhy kolísaly i bez stínů; nulová regrese se netvrdí.
 
-Protokol: `docs/E14.md`. Před sloučením zbývá nezávislá kontrola modelem 6.1 Sol, Medium a autorova kontrola náměstí, Wilsonova mostu, Valíku a noci.
+Protokol: `docs/E14.md`. Autor 17. listopadu 2026 výslovně vynechal zbývající ruční a modelovou kontrolu a schválil sloučení celého PR včetně popsaných odchylek. Vynechané kontroly nejsou označené jako úspěšné.
 
