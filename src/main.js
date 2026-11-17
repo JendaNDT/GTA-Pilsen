@@ -6,6 +6,7 @@ import { initInput, input } from './game/input.js';
 import { initMapSearch } from './game/map-search.js';
 import { initWorkUI } from './game/work-ui.js';
 import { resultText } from './game/missions.js';
+import { createFrameProfiler } from './game/frame-profiler.js';
 import { QUALITY, IS_TOUCH, IS_MOBILE, DEBUG, PARAMS } from './config.js';
 
 const $ = (id) => document.getElementById(id);
@@ -101,6 +102,7 @@ async function boot() {
   loadText.textContent = 'Stavím město…';
   await new Promise((r) => setTimeout(r, 30));
   const game = new Game(renderer, data);
+  const perf = DEBUG ? createFrameProfiler(game) : null;
   initInput(canvas);
   if (PARAMS.has('hour') || PARAMS.has('date')) {
     game.setClock(PARAMS.get('date'), PARAMS.has('hour') ? +PARAMS.get('hour') : game.hour);
@@ -140,6 +142,7 @@ async function boot() {
   const play = () => {
     menu.classList.add('hidden'); game.hud.show(true);
     running = true; input.enabled = true; game.paused = false; last = performance.now();
+    perf?.reset();
     game.audio.start(); game.audio.resume();
     if (firstPlay) {
       firstPlay = false;
@@ -203,13 +206,18 @@ async function boot() {
       input.pressed.delete('menu');
       if (game.mapOpen) game.toggleMap(false); else { openMenu(); return; }
     }
-    game.update(dt);
-    game.render();
+    if (perf) {
+      perf.frame(dt);
+    } else {
+      game.update(dt);
+      game.render();
+    }
     game.adapt(dt);
   };
   requestAnimationFrame(loop);
 
   if (DEBUG) {
+    window.__perf = { summary: perf.summary, reset: perf.reset, renderStats: perf.renderStats };
     window.__play = play;
     window.__step = (dt, n = 1) => { for (let i = 0; i < n; i++) game.update(dt); game.render(); };
     window.__freeze = (b) => { running = !b; };
