@@ -72,3 +72,11 @@ Následující adresy fungují, dokud běží připravené místní servery:
 
 Po dodání výsledků zbývá vyhodnotit odchylku, dokončit protokol `docs/E14.md`,
 aktualizovat katalog a přehledy, provést závěrečné testy a připravit pull request.
+
+## První ruční výsledek
+
+Autor dodal první výsledek 17. listopadu 2026. Podle pořadí otevření je přiřazen k E13;
+verzi výslovně neoznačil. Za 60 s bylo zaznamenáno 3 601 snímků při měřítku 2
+se zapnutými stíny. Práce snímku je 2,7 / 3,5 / 4,6 ms a GPU 10,68 / 11,35 / 11,83 ms
+(medián / p95 / p99). [Úplný přepis](rucni-mereni.json). Chybí odpovídající výsledek E14
+a název prohlížeče; srovnání ani odchylka zatím nejsou uzavřené.

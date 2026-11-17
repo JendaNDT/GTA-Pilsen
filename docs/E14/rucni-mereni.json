@@ -1,0 +1,41 @@
+{
+  "datum": "2026-11-17",
+  "zdroj": "Text panelu vložený autorem do konverzace.",
+  "poznamka": "První výsledek je přiřazen k E13 podle pořadí otevření. Autor verzi výslovně neoznačil. Prohlížeč ani přesný pohyb nebyly uvedeny.",
+  "E13": {
+    "prirazeni": "Předpoklad podle pořadí otevření, nikoli výslovné označení autora.",
+    "frames": 3601,
+    "durationSeconds": 60,
+    "workMs": {
+      "median": 2.7,
+      "p95": 3.5,
+      "p99": 4.6
+    },
+    "updateMs": {
+      "median": 0.5,
+      "p95": 1,
+      "p99": 1.7
+    },
+    "renderMs": {
+      "median": 2.2,
+      "p95": 2.7,
+      "p99": 3.1
+    },
+    "gpuMs": {
+      "median": 10.68,
+      "p95": 11.35,
+      "p99": 11.83
+    },
+    "gpuSamples": 3600,
+    "pixelRatio": 2,
+    "shadows": true,
+    "renderStats": {
+      "calls": 234,
+      "triangles": 426226,
+      "geometries": 875,
+      "textures": 173
+    }
+  },
+  "E14": null,
+  "prohlizec": null
+}

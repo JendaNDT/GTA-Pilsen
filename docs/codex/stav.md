@@ -1,6 +1,6 @@
 # Stav etapy E14
 
-**Čeká na ruční měření autora. Etapa není uzavřená.** Autor dne 17. listopadu 2026
+**Čeká na ruční měření E14. Etapa není uzavřená.** Autor dne 17. listopadu 2026
 výslovně rozhodl: „Uzavření odložit, dokud nedodám ruční měření výkonu.“
 
 Větev `etapa/E14`, výchozí revize `e6d5768`. Zadání je v [E14](E14.md).
@@ -78,3 +78,11 @@ Pro ruční měření jsou připravené servery: původní E13 na portu 4174 obs
 `data-raw/e14/baseline-dist/`, E14 na portu 4173 obsluhuje aktuální `dist/`.
 Obě adresy před uložením stavu odpověděly HTTP 200. Při opětovném spuštění serverů
 nesmí E13 omylem obsluhovat současné sestavení E14.
+
+## První ruční výsledek autora
+
+Autor dodal 17. listopadu 2026 první 60sekundové měření: 3 601 snímků, práce snímku
+2,7 / 3,5 / 4,6 ms a GPU 10,68 / 11,35 / 11,83 ms (medián / p95 / p99), měřítko 2,
+stíny zapnuté. [Úplný přepis](../E14/rucni-mereni.json). Podle pořadí otevření je
+přiřazen k E13; autor jej výslovně neoznačil. Prohlížeč ani přesný pohyb nebyly uvedeny.
+Zbývá odpovídající výsledek E14; tento jediný výsledek zatím nedovoluje uzavřít srovnání.
