@@ -43,5 +43,5 @@ ve WebGL 2. Percentily GPU při letu proto slouží jen k orientaci. Čas proces
 zaznamenán v každém snímku. Rozptyl všech běhů i počty vzorků jsou v datech.
 [Podklad k výstupnímu průchodu](https://github.com/mrdoob/three.js/blob/r187/src/renderers/common/Renderer.js).
 
-Výsledky pokrývají uvedený Mac. Ověření na skutečném telefonu zbývá podle
+Výsledky pokrývají uvedený Mac. Samostatné měření na telefonu lze doplnit podle
 [návodu E13](../E13/mereni-na-zarizeni.md).

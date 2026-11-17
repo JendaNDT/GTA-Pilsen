@@ -80,5 +80,11 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
   a `data-raw/e15/release-fixed.log`.
 - Protokol, README a katalog jsou aktualizované. S opakováním opraveného scénáře
   prošlo všech 54 kontrol. Etapa je připravená ke kontrole na větvi `etapa/E15`.
-  Zbývá autorova kontrola vzhledu, startu a plynulosti na telefonu a kontrola
-  modelem Astra, High. [Protokol a kontrola pro autora](../E15.md).
+  Autor potvrdil funkčnost při ruční kontrole a samostatnou kontrolu modelem
+  Astra, High vynechal. [Protokol a kontrola pro autora](../E15.md).
+- První běh GitHub Actions ověřil všech 46 scénářů WebGL 2. V sedmi scénářích
+  WebGPU selhalo linuxové Chromium při práci s grafickým zařízením. Testy WebGPU
+  používají plné Chromium bez okna a na Linuxu dostaly příznaky pro jednotný
+  ovladač SwiftShader. [První běh](https://github.com/JendaNDT/GTA-Pilsen/actions/runs/44167454877).
+- Po změně nastavení prošlo místní sestavení, 38 testů Node a všech osm testů
+  WebGPU. Ověření na Linuxu převezme další běh pull requestu č. 7.
