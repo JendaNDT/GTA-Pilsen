@@ -14,8 +14,8 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
 | 3e. Převést náhon a skvrny lamp | Hotovo · `e8cf715` |
 | 3f. Převést detaily modelů | Hotovo · `0fa6385` |
 | 4. Zapnout WebGPU a ověřit automatický i vynucený návrat na WebGL 2 | Hotovo · `3676b27` |
-| 5. Dokončit měření, sady Playwright a kontroly na GitHubu | Hotovo |
-| 6. Porovnat referenční snímky, změřit výkon a uzavřít protokol | Zbývá |
+| 5. Dokončit měření, sady Playwright a kontroly na GitHubu | Hotovo · `43dbc63` |
+| 6. Porovnat referenční snímky, změřit výkon a uzavřít protokol | Hotovo |
 
 ## Ověření a podklady
 
@@ -48,7 +48,8 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
 - Ověření kroku 3c: 40 testů Node, sestavení a prohlížečový test světlé čáry
   na tmavém asfaltu prošly. Test náhrad textu shaderu země vystřídala kontrola
   společného materiálu, odsazení vrstev a viditelného značení.
-  [Vozovka u Valíku](../E15/kroky/03c-vozovka.jpg).
+  Závěrečné porovnání zachycuje přechod v centru
+  [v E14](../E15/kroky/03c-vozovka-e14.jpg) a [v E15](../E15/kroky/03c-vozovka.jpg).
 - Ověření kroku 3d: 41 testů Node, sestavení a prohlížečové testy nočních oken
   a dotykového ovládání prošly. Čtyři varianty fasád sdílejí uzly. Test starého klíče
   shaderu vystřídala kontrola, že nízká kvalita nepoužívá detailní fasádní materiál.
@@ -60,8 +61,8 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
   sčítá světlo před tónováním a převodem do barev displeje.
 - Ověření kroku 3f: 37 testů Node, sestavení a prohlížečová kontrola
   světlometů prošly. Světlomet má stejnou průměrnou barvu na [snímku E14](../E15/kroky/03f-svetlomety-e14.jpg)
-  a [snímku E15](../E15/kroky/03f-svetlomety.jpg). Poslední zásah do textu shaderu a čtyři
-  testy starých náhrad se odstranily. Kontrola zdrojů nyní hlídá, že se staré metody nevrátí.
+  a [snímku E15](../E15/kroky/03f-svetlomety.jpg). Místo posledního zásahu do textu shaderu a čtyř
+  testů starých náhrad se ověřuje vykreslený světlomet. Kontrola zdrojů nyní hlídá, že se staré metody nevrátí.
 - Ověření kroku 4: 37 testů Node, sestavení a tři prohlížečové starty prošly.
   Chromium se skutečným adaptérem WebGPU vykreslilo hru a panel ukazuje WebGPU.
   Vynucená cesta i automatický přechod v prohlížeči bez WebGPU zobrazily WebGL 2.
@@ -69,3 +70,15 @@ Autor potvrdil zahájení E15. [Zadání](E15.md) · [Protokol E14](../E14.md).
 - Ověření kroku 5: 38 testů Node, 13 testů Pythonu, sestavení, všech osm testů
   projektu WebGPU a čtyři vybrané testy WebGL 2 prošly. V obou režimech Mac vrátil
   skutečné časy GPU. Měření zahazuje staré časové výsledky. CI má oba projekty na Node 24.
+- Krok 6 má všech 16 [referenčních snímků](../E15/snimky.md) a dokončené
+  [měření na Macu](../E15/mereni.md). P95 práce na WebGPU kleslo z 6,6 na 4,2 ms
+  při jízdě a z 6,5 na 3,8 ms při letu. Zpomalení záložního WebGL 2 je zdokumentované.
+  Úplný běh ověřil 53 z 54 scénářů v obou prohlížečových projektech.
+- Závěrečný běh u Krkavce odhalil závod mezi kontrolou textu a vypršením krátkého
+  oznámení po přesunu. Test čte stejný text v okamžiku jeho zobrazení a prošel třikrát.
+  Pravidla hry se kvůli tomu neměnila. Logy jsou v `data-raw/e15/final-*.log`
+  a `data-raw/e15/release-fixed.log`.
+- Protokol, README a katalog jsou aktualizované. S opakováním opraveného scénáře
+  prošlo všech 54 kontrol. Etapa je připravená ke kontrole na větvi `etapa/E15`.
+  Zbývá autorova kontrola vzhledu, startu a plynulosti na telefonu a kontrola
+  modelem Astra, High. [Protokol a kontrola pro autora](../E15.md).

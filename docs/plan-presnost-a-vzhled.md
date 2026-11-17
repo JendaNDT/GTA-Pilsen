@@ -14,6 +14,7 @@ a rozhodnutí autora:
 **Stav:** Výchozí stav hry a měření jsou zaznamenány v [protokolu E13](E13.md).
 Aktualizace three.js na 0.187.0 je implementovaná v [E14](E14.md), včetně porovnání
 vzhledu, ručního měření a popisu zbývajících výkonnostních odchylek pro kontrolu.
+Přechod na WebGPU a uzlové materiály shrnuje [protokol E15](E15.md).
 **Zadání pro Codex:** [docs/codex/](codex/README.md), jeden soubor na etapu.
 **Pravidla pro agenty:** [AGENTS.md](../AGENTS.md).
 

@@ -1,0 +1,1440 @@
+{
+  "datum": "2026-11-17",
+  "pocitac": "Apple M4, arm64, macOS 27.2.1",
+  "revize": {
+    "e14": "415855a",
+    "webgpu": "43dbc63",
+    "webgl2": "43dbc63"
+  },
+  "poradi": [
+    "1-e14",
+    "1-webgpu",
+    "1-webgl2",
+    "2-webgl2",
+    "2-e14",
+    "2-webgpu",
+    "3-webgpu",
+    "3-webgl2",
+    "3-e14"
+  ],
+  "souhrn": {
+    "e14": {
+      "medianStartuMs": 1100,
+      "car": {
+        "vzorkyGpu": [
+          448,
+          387,
+          372
+        ],
+        "vsechnySnimky": [
+          2294,
+          1927,
+          1921
+        ],
+        "workMs": {
+          "median": 4.8,
+          "p95": 6.6,
+          "p99": 7.8
+        },
+        "updateMs": {
+          "median": 0.6,
+          "p95": 1.1,
+          "p99": 1.3
+        },
+        "renderMs": {
+          "median": 4.1,
+          "p95": 6,
+          "p99": 7.2
+        },
+        "gpuMs": {
+          "median": 6.04,
+          "p95": 9.23,
+          "p99": 10.8
+        }
+      },
+      "heli": {
+        "vzorkyGpu": [
+          190,
+          168,
+          165
+        ],
+        "vsechnySnimky": [
+          2372,
+          2077,
+          2064
+        ],
+        "workMs": {
+          "median": 4.3,
+          "p95": 6.5,
+          "p99": 7.1
+        },
+        "updateMs": {
+          "median": 0.1,
+          "p95": 0.3,
+          "p99": 0.4
+        },
+        "renderMs": {
+          "median": 4.2,
+          "p95": 6.4,
+          "p99": 7
+        },
+        "gpuMs": {
+          "median": 7.31,
+          "p95": 9.28,
+          "p99": 10.38
+        }
+      }
+    },
+    "webgpu": {
+      "medianStartuMs": 1164,
+      "car": {
+        "vzorkyGpu": [
+          782,
+          839,
+          764
+        ],
+        "vsechnySnimky": [
+          3307,
+          2878,
+          2820
+        ],
+        "workMs": {
+          "median": 3.2,
+          "p95": 4.2,
+          "p99": 5.5
+        },
+        "updateMs": {
+          "median": 0.4,
+          "p95": 0.6,
+          "p99": 0.8
+        },
+        "renderMs": {
+          "median": 2.8,
+          "p95": 3.7,
+          "p99": 4.8
+        },
+        "gpuMs": {
+          "median": 4.33,
+          "p95": 6.09,
+          "p99": 6.88
+        }
+      },
+      "heli": {
+        "vzorkyGpu": [
+          11,
+          11,
+          10
+        ],
+        "vsechnySnimky": [
+          3598,
+          3245,
+          3209
+        ],
+        "workMs": {
+          "median": 2.7,
+          "p95": 3.8,
+          "p99": 4.4
+        },
+        "updateMs": {
+          "median": 0.2,
+          "p95": 0.4,
+          "p99": 0.5
+        },
+        "renderMs": {
+          "median": 2.5,
+          "p95": 3.6,
+          "p99": 4.1
+        },
+        "gpuMs": {
+          "median": 4.85,
+          "p95": 6.82,
+          "p99": 6.82
+        }
+      }
+    },
+    "webgl2": {
+      "medianStartuMs": 1370,
+      "car": {
+        "vzorkyGpu": [
+          154,
+          197,
+          246
+        ],
+        "vsechnySnimky": [
+          1721,
+          1591,
+          1544
+        ],
+        "workMs": {
+          "median": 5.3,
+          "p95": 9.9,
+          "p99": 11.2
+        },
+        "updateMs": {
+          "median": 0.6,
+          "p95": 1.1,
+          "p99": 1.4
+        },
+        "renderMs": {
+          "median": 4.7,
+          "p95": 8.9,
+          "p99": 9.9
+        },
+        "gpuMs": {
+          "median": 10.65,
+          "p95": 13.31,
+          "p99": 15.55
+        }
+      },
+      "heli": {
+        "vzorkyGpu": [
+          17,
+          17,
+          16
+        ],
+        "vsechnySnimky": [
+          1849,
+          1777,
+          1729
+        ],
+        "workMs": {
+          "median": 5.2,
+          "p95": 7.3,
+          "p99": 8.4
+        },
+        "updateMs": {
+          "median": 0.3,
+          "p95": 0.6,
+          "p99": 0.8
+        },
+        "renderMs": {
+          "median": 4.8,
+          "p95": 7,
+          "p99": 8.2
+        },
+        "gpuMs": {
+          "median": 11.41,
+          "p95": 14.37,
+          "p99": 14.37
+        }
+      }
+    }
+  },
+  "behy": {
+    "1-e14": {
+      "browser": "159.0.8154.6",
+      "viewport": "1920 × 1080",
+      "pilot": false,
+      "centerFlight": false,
+      "coldStartMs": [
+        882,
+        1100,
+        1062
+      ],
+      "quality": "high",
+      "work": {
+        "date": "2026-11-17",
+        "hour": 10,
+        "durationMs": 10000,
+        "chromiumFlags": [
+          "--disable-gpu-vsync",
+          "--disable-frame-rate-limit"
+        ]
+      },
+      "renderer": "WebGL 2",
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Version 27.2.1 (Build 26B131))",
+      "car": {
+        "metres": 111,
+        "start": [
+          100,
+          528
+        ],
+        "end": [
+          125,
+          636
+        ],
+        "chunks": 1,
+        "maxPending": 0,
+        "shadowEnabled": true,
+        "drawingBuffer": [
+          1920,
+          1080
+        ],
+        "cityTiles": 67,
+        "fps": 229.3,
+        "p95FrameMs": 5.8,
+        "maxFrameMs": 10.1,
+        "framesOver50Ms": 0,
+        "measurement": {
+          "durationMs": 10001,
+          "frames": 2294,
+          "updateMs": {
+            "median": 0.30000000074505806,
+            "p95": 0.5,
+            "p99": 0.8000000007450581
+          },
+          "renderMs": {
+            "median": 3.600000001490116,
+            "p95": 5,
+            "p99": 6
+          },
+          "workMs": {
+            "median": 4,
+            "p95": 5.300000000745058,
+            "p99": 6.300000000745058
+          },
+          "gpuMs": {
+            "median": 5.94875,
+            "p95": 7.367583,
+            "p99": 8.268625
+          },
+          "gpuSamples": 448,
+          "renderStats": {
+            "calls": 371,
+            "triangles": 727750,
+            "geometries": 435,
+            "textures": 163
+          },
+          "pixelRatio": 1,
+          "shadows": true
+        }
+      },
+      "heli": {
+        "metres": 192,
+        "start": [
+          23421,
+          0
+        ],
+        "end": [
+          23613,
+          0
+        ],
+        "chunks": 2,
+        "maxPending": 4,
+        "shadowEnabled": true,
+        "drawingBuffer": [
+          1920,
+          1080
+        ],
+        "cityTiles": 0,
+        "fps": 237.1,
+        "p95FrameMs": 5.8,
+        "maxFrameMs": 8.5,
+        "framesOver50Ms": 0,
+        "measurement": {
+          "durationMs": 10002.20000000298,
+          "frames": 2372,
+          "updateMs": {
+            "median": 0.10000000149011612,
+            "p95": 0.20000000298023224,
+            "p99": 0.30000000074505806
+          },
+          "renderMs": {
+            "median": 4.099999997764826,
+            "p95": 5.5,
+            "p99": 5.800000000745058
+          },
+          "workMs": {
+            "median": 4.199999999254942,
+            "p95": 5.599999997764826,
+            "p99": 5.900000002235174
+          },
+          "gpuMs": {
+            "median": 6.402125,
+            "p95": 7.875916,
+            "p99": 8.847249
+          },
+          "gpuSamples": 190,
+          "renderStats": {
+            "calls": 164,
+            "triangles": 1464072,
+            "geometries": 71,
+            "textures": 130
+          },
+          "pixelRatio": 1,
+          "shadows": true
+        }
+      }
+    },
+    "1-webgpu": {
+      "browser": "159.0.8154.6",
+      "viewport": "1920 × 1080",
+      "pilot": false,
+      "centerFlight": false,
+      "coldStartMs": [
+        909,
+        1081,
+        1164
+      ],
+      "quality": "high",
+      "work": {
+        "date": "2026-11-17",
+        "hour": 10,
+        "durationMs": 10000,
+        "chromiumFlags": [
+          "--disable-gpu-vsync",
+          "--disable-frame-rate-limit"
+        ]
+      },
+      "renderer": "WebGPU",
+      "gpu": "apple / metal-3",
+      "car": {
+        "metres": 111,
+        "start": [
+          100,
+          528
+        ],
+        "end": [
+          125,
+          636
+        ],
+        "chunks": 1,
+        "maxPending": 0,
+        "shadowEnabled": true,
+        "drawingBuffer": [
+          1920,
+          1080
+        ],
+        "cityTiles": 67,
+        "fps": 330.7,
+        "p95FrameMs": 4.1,
+        "maxFrameMs": 6.9,
+        "framesOver50Ms": 0,
+        "measurement": {
+          "durationMs": 9996,
+          "frames": 3307,
+          "updateMs": {
+            "median": 0.30000000074505806,
+            "p95": 0.5,
+            "p99": 0.6000000014901161
+          },
+          "renderMs": {
+            "median": 2.5,
+            "p95": 3.2999999970197678,
+            "p99": 3.600000001490116
+          },
+          "workMs": {
+            "median": 2.800000000745058,
+            "p95": 3.699999999254942,
+            "p99": 4.100000001490116
+          },
+          "gpuMs": {
+            "median": 3.93216,
+            "p95": 5.505024000000001,
+            "p99": 6.1603840000000005
+          },
+          "gpuSamples": 782,
+          "renderStats": {
+            "calls": 378,
+            "triangles": 729131,
+            "geometries": 438,
+            "textures": 165
+          },
+          "pixelRatio": 1,
+          "shadows": true
+        }
+      },
+      "heli": {
+        "metres": 192,
+        "start": [
+          23421,
+          0
+        ],
+        "end": [
+          23613,
+          0
+        ],
+        "chunks": 2,
+        "maxPending": 4,
+        "shadowEnabled": true,
+        "drawingBuffer": [
+          1920,
+          1080
+        ],
+        "cityTiles": 0,
+        "fps": 359.8,
+        "p95FrameMs": 4,
+        "maxFrameMs": 59.1,
+        "framesOver50Ms": 1,
+        "measurement": {
+          "durationMs": 10001.10000000149,
+          "frames": 3598,
+          "updateMs": {
+            "median": 0.09999999776482582,
+            "p95": 0.19999999925494194,
+            "p99": 0.29999999701976776
+          },
+          "renderMs": {
+            "median": 2.5,
+            "p95": 3.600000001490116,
+            "p99": 3.900000002235174
+          },
+          "workMs": {
+            "median": 2.600000001490116,
+            "p95": 3.699999999254942,
+            "p99": 4.099999997764826
+          },
+          "gpuMs": {
+            "median": 4.390912,
+            "p95": 5.963776000000001,
+            "p99": 5.963776000000001
+          },
+          "gpuSamples": 11,
+          "renderStats": {
+            "calls": 165,
+            "triangles": 1464073,
+            "geometries": 72,
+            "textures": 132
+          },
+          "pixelRatio": 1,
+          "shadows": true
+        }
+      }
+    },
+    "1-webgl2": {
+      "browser": "159.0.8154.6",
+      "viewport": "1920 × 1080",
+      "pilot": false,
+      "centerFlight": false,
+      "coldStartMs": [
+        948,
+        1317,
+        1370
+      ],
+      "quality": "high",
+      "work": {
+        "date": "2026-11-17",
+        "hour": 10,
+        "durationMs": 10000,
+        "chromiumFlags": [
+          "--disable-gpu-vsync",
+          "--disable-frame-rate-limit"
+        ]
+      },
+      "renderer": "WebGL 2",
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Version 27.2.1 (Build 26B131))",
+      "car": {
+        "metres": 111,
+        "start": [
+          100,
+          528
+        ],
+        "end": [
+          125,
+          636
+        ],
+        "chunks": 1,
+        "maxPending": 0,
+        "shadowEnabled": true,
+        "drawingBuffer": [
+          1920,
+          1080
+        ],
+        "cityTiles": 67,
+        "fps": 172,
+        "p95FrameMs": 9.3,
+        "maxFrameMs": 12.4,
+        "framesOver50Ms": 0,
+        "measurement": {
+          "durationMs": 10000,
+          "frames": 1721,
+          "updateMs": {
+            "median": 0.6000000014901161,
+            "p95": 1.0999999977648258,
+            "p99": 1.300000000745058
+          },
+          "renderMs": {
+            "median": 4.299999997019768,
+            "p95": 7.800000000745058,
+            "p99": 8.800000000745058
+          },
+          "workMs": {
+            "median": 4.900000002235174,
+            "p95": 8.699999999254942,
+            "p99": 9.599999997764826
+          },
+          "gpuMs": {
+            "median": 10.649832,
+            "p95": 12.888374,
+            "p99": 14.112541
+          },
+          "gpuSamples": 154,
+          "renderStats": {
+            "calls": 379,
+            "triangles": 730331,
+            "geometries": 431,
+            "textures": 165
+          },
+          "pixelRatio": 1,
+          "shadows": true
+        }
+      },
+      "heli": {
+        "metres": 192,
+        "start": [
+          23421,
+          0
+        ],
+        "end": [
+          23613,
+          0
+        ],
+        "chunks": 2,
+        "maxPending": 4,
+        "shadowEnabled": true,
+        "drawingBuffer": [
+          1920,
+          1080
+        ],
+        "cityTiles": 0,
+        "fps": 184.8,
+        "p95FrameMs": 7.7,
+        "maxFrameMs": 11.3,
+        "framesOver50Ms": 0,
+        "measurement": {
+          "durationMs": 10001.099999997765,
+          "frames": 1849,
+          "updateMs": {
+            "median": 0.20000000298023224,
+            "p95": 0.5999999977648258,
+            "p99": 0.6999999992549419
+          },
+          "renderMs": {
+            "median": 4.799999997019768,
+            "p95": 6.800000000745058,
+            "p99": 7.600000001490116
+          },
+          "workMs": {
+            "median": 5.099999997764826,
+            "p95": 7,
+            "p99": 7.800000000745058
+          },
+          "gpuMs": {
+            "median": 11.832373,
+            "p95": 13.565373999999998,
+            "p99": 13.565373999999998
+          },
+          "gpuSamples": 17,
+          "renderStats": {
+            "calls": 165,
+            "triangles": 1464073,
+            "geometries": 72,
+            "textures": 132
+          },
+          "pixelRatio": 1,
+          "shadows": true
+        }
+      }
+    },
+    "2-webgl2": {
+      "browser": "159.0.8154.6",
+      "viewport": "1920 × 1080",
+      "pilot": false,
+      "centerFlight": false,
+      "coldStartMs": [
+        962,
+        1401,
+        1418
+      ],
+      "quality": "high",
+      "work": {
+        "date": "2026-11-17",
+        "hour": 10,
+        "durationMs": 10000,
+        "chromiumFlags": [
+          "--disable-gpu-vsync",
+          "--disable-frame-rate-limit"
+        ]
+      },
+      "renderer": "WebGL 2",
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Version 27.2.1 (Build 26B131))",
+      "car": {
+        "metres": 112,
+        "start": [
+          100,
+          528
+        ],
+        "end": [
+          125,
+          636
+        ],
+        "chunks": 1,
+        "maxPending": 0,
+        "shadowEnabled": true,
+        "drawingBuffer": [
+          1920,
+          1080
+        ],
+        "cityTiles": 67,
+        "fps": 159,
+        "p95FrameMs": 10.7,
+        "maxFrameMs": 16.9,
+        "framesOver50Ms": 0,
+        "measurement": {
+          "durationMs": 10011.39999999851,
+          "frames": 1591,
+          "updateMs": {
+            "median": 0.5,
+            "p95": 1.1000000014901161,
+            "p99": 1.3999999985098839
+          },
+          "renderMs": {
+            "median": 4.699999999254942,
+            "p95": 9.199999999254942,
+            "p99": 10.100000001490116
+          },
+          "workMs": {
+            "median": 5.299999997019768,
+            "p95": 10.100000001490116,
+            "p99": 11.199999999254942
+          },
+          "gpuMs": {
+            "median": 10.012124,
+            "p95": 13.31025,
+            "p99": 15.552083
+          },
+          "gpuSamples": 197,
+          "renderStats": {
+            "calls": 423,
+            "triangles": 730898,
+            "geometries": 443,
+            "textures": 165
+          },
+          "pixelRatio": 1,
+          "shadows": true
+        }
+      },
+      "heli": {
+        "metres": 192,
+        "start": [
+          23421,
+          0
+        ],
+        "end": [
+          23613,
+          0
+        ],
+        "chunks": 2,
+        "maxPending": 4,
+        "shadowEnabled": true,
+        "drawingBuffer": [
+          1920,
+          1080
+        ],
+        "cityTiles": 0,
+        "fps": 177.7,
+        "p95FrameMs": 8,
+        "maxFrameMs": 13.2,
+        "framesOver50Ms": 0,
+        "measurement": {
+          "durationMs": 9997.300000000745,
+          "frames": 1777,
+          "updateMs": {
+            "median": 0.30000000074505806,
+            "p95": 0.6000000014901161,
+            "p99": 0.8000000007450581
+          },
+          "renderMs": {
+            "median": 4.800000000745058,
+            "p95": 7,
+            "p99": 8.199999999254942
+          },
+          "workMs": {
+            "median": 5.199999999254942,
+            "p95": 7.300000000745058,
+            "p99": 8.400000002235174
+          },
+          "gpuMs": {
+            "median": 11.413624,
+            "p95": 16.220332,
+            "p99": 16.220332
+          },
+          "gpuSamples": 17,
+          "renderStats": {
+            "calls": 165,
+            "triangles": 1464073,
+            "geometries": 72,
+            "textures": 132
+          },
+          "pixelRatio": 1,
+          "shadows": true
+        }
+      }
+    },
+    "2-e14": {
+      "browser": "159.0.8154.6",
+      "viewport": "1920 × 1080",
+      "pilot": false,
+      "centerFlight": false,
+      "coldStartMs": [
+        907,
+        1209,
+        1234
+      ],
+      "quality": "high",
+      "work": {
+        "date": "2026-11-17",
+        "hour": 10,
+        "durationMs": 10000,
+        "chromiumFlags": [
+          "--disable-gpu-vsync",
+          "--disable-frame-rate-limit"
+        ]
+      },
+      "renderer": "WebGL 2",
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Version 27.2.1 (Build 26B131))",
+      "car": {
+        "metres": 111,
+        "start": [
+          100,
+          528
+        ],
+        "end": [
+          125,
+          636
+        ],
+        "chunks": 1,
+        "maxPending": 0,
+        "shadowEnabled": true,
+        "drawingBuffer": [
+          1920,
+          1080
+        ],
+        "cityTiles": 67,
+        "fps": 192.7,
+        "p95FrameMs": 7.2,
+        "maxFrameMs": 11.2,
+        "framesOver50Ms": 0,
+        "measurement": {
+          "durationMs": 9998.39999999851,
+          "frames": 1927,
+          "updateMs": {
+            "median": 0.6000000014901161,
+            "p95": 1.1000000014901161,
+            "p99": 1.3999999985098839
+          },
+          "renderMs": {
+            "median": 4.100000001490116,
+            "p95": 6,
+            "p99": 7.200000002980232
+          },
+          "workMs": {
+            "median": 4.800000000745058,
+            "p95": 6.600000001490116,
+            "p99": 7.800000000745058
+          },
+          "gpuMs": {
+            "median": 6.035375,
+            "p95": 9.233583,
+            "p99": 10.800916
+          },
+          "gpuSamples": 387,
+          "renderStats": {
+            "calls": 377,
+            "triangles": 727126,
+            "geometries": 440,
+            "textures": 163
+          },
+          "pixelRatio": 1,
+          "shadows": true
+        }
+      },
+      "heli": {
+        "metres": 192,
+        "start": [
+          23421,
+          0
+        ],
+        "end": [
+          23613,
+          0
+        ],
+        "chunks": 2,
+        "maxPending": 4,
+        "shadowEnabled": true,
+        "drawingBuffer": [
+          1920,
+          1080
+        ],
+        "cityTiles": 0,
+        "fps": 207.6,
+        "p95FrameMs": 7,
+        "maxFrameMs": 11.5,
+        "framesOver50Ms": 0,
+        "measurement": {
+          "durationMs": 10001.39999999851,
+          "frames": 2077,
+          "updateMs": {
+            "median": 0.19999999925494194,
+            "p95": 0.3999999985098839,
+            "p99": 0.5
+          },
+          "renderMs": {
+            "median": 4.199999999254942,
+            "p95": 6.399999998509884,
+            "p99": 7
+          },
+          "workMs": {
+            "median": 4.300000000745058,
+            "p95": 6.5,
+            "p99": 7.100000001490116
+          },
+          "gpuMs": {
+            "median": 7.3075,
+            "p95": 9.276,
+            "p99": 10.384541
+          },
+          "gpuSamples": 168,
+          "renderStats": {
+            "calls": 164,
+            "triangles": 1464072,
+            "geometries": 71,
+            "textures": 130
+          },
+          "pixelRatio": 1,
+          "shadows": true
+        }
+      }
+    },
+    "2-webgpu": {
+      "browser": "159.0.8154.6",
+      "viewport": "1920 × 1080",
+      "pilot": false,
+      "centerFlight": false,
+      "coldStartMs": [
+        967,
+        1229,
+        1317
+      ],
+      "quality": "high",
+      "work": {
+        "date": "2026-11-17",
+        "hour": 10,
+        "durationMs": 10000,
+        "chromiumFlags": [
+          "--disable-gpu-vsync",
+          "--disable-frame-rate-limit"
+        ]
+      },
+      "renderer": "WebGPU",
+      "gpu": "apple / metal-3",
+      "car": {
+        "metres": 111,
+        "start": [
+          100,
+          528
+        ],
+        "end": [
+          125,
+          636
+        ],
+        "chunks": 1,
+        "maxPending": 0,
+        "shadowEnabled": true,
+        "drawingBuffer": [
+          1920,
+          1080
+        ],
+        "cityTiles": 67,
+        "fps": 287.8,
+        "p95FrameMs": 4.7,
+        "maxFrameMs": 9.4,
+        "framesOver50Ms": 0,
+        "measurement": {
+          "durationMs": 9996.599999997765,
+          "frames": 2878,
+          "updateMs": {
+            "median": 0.3999999985098839,
+            "p95": 0.6000000014901161,
+            "p99": 0.8000000007450581
+          },
+          "renderMs": {
+            "median": 2.800000000745058,
+            "p95": 3.699999999254942,
+            "p99": 5.100000001490116
+          },
+          "workMs": {
+            "median": 3.199999999254942,
+            "p95": 4.200000002980232,
+            "p99": 5.600000001490116
+          },
+          "gpuMs": {
+            "median": 4.325375999999999,
+            "p95": 6.094848000000001,
+            "p99": 6.88128
+          },
+          "gpuSamples": 839,
+          "renderStats": {
+            "calls": 412,
+            "triangles": 730811,
+            "geometries": 439,
+            "textures": 165
+          },
+          "pixelRatio": 1,
+          "shadows": true
+        }
+      },
+      "heli": {
+        "metres": 192,
+        "start": [
+          23421,
+          0
+        ],
+        "end": [
+          23613,
+          0
+        ],
+        "chunks": 2,
+        "maxPending": 4,
+        "shadowEnabled": true,
+        "drawingBuffer": [
+          1920,
+          1080
+        ],
+        "cityTiles": 0,
+        "fps": 324.4,
+        "p95FrameMs": 4.5,
+        "maxFrameMs": 40.4,
+        "framesOver50Ms": 0,
+        "measurement": {
+          "durationMs": 10002.20000000298,
+          "frames": 3245,
+          "updateMs": {
+            "median": 0.19999999925494194,
+            "p95": 0.4000000022351742,
+            "p99": 0.5
+          },
+          "renderMs": {
+            "median": 2.5,
+            "p95": 3.599999997764826,
+            "p99": 4.099999997764826
+          },
+          "workMs": {
+            "median": 2.699999999254942,
+            "p95": 3.800000000745058,
+            "p99": 4.399999998509884
+          },
+          "gpuMs": {
+            "median": 4.849664,
+            "p95": 6.8157440000000005,
+            "p99": 6.8157440000000005
+          },
+          "gpuSamples": 11,
+          "renderStats": {
+            "calls": 165,
+            "triangles": 1464073,
+            "geometries": 72,
+            "textures": 132
+          },
+          "pixelRatio": 1,
+          "shadows": true
+        }
+      }
+    },
+    "3-webgpu": {
+      "browser": "159.0.8154.6",
+      "viewport": "1920 × 1080",
+      "pilot": false,
+      "centerFlight": false,
+      "coldStartMs": [
+        964,
+        1237,
+        1295
+      ],
+      "quality": "high",
+      "work": {
+        "date": "2026-11-17",
+        "hour": 10,
+        "durationMs": 10000,
+        "chromiumFlags": [
+          "--disable-gpu-vsync",
+          "--disable-frame-rate-limit"
+        ]
+      },
+      "renderer": "WebGPU",
+      "gpu": "apple / metal-3",
+      "car": {
+        "metres": 111,
+        "start": [
+          100,
+          528
+        ],
+        "end": [
+          125,
+          636
+        ],
+        "chunks": 1,
+        "maxPending": 0,
+        "shadowEnabled": true,
+        "drawingBuffer": [
+          1920,
+          1080
+        ],
+        "cityTiles": 67,
+        "fps": 281.9,
+        "p95FrameMs": 4.8,
+        "maxFrameMs": 9.8,
+        "framesOver50Ms": 0,
+        "measurement": {
+          "durationMs": 9997.900000002235,
+          "frames": 2820,
+          "updateMs": {
+            "median": 0.3999999985098839,
+            "p95": 0.6000000014901161,
+            "p99": 0.8000000007450581
+          },
+          "renderMs": {
+            "median": 2.899999998509884,
+            "p95": 3.800000000745058,
+            "p99": 4.800000000745058
+          },
+          "workMs": {
+            "median": 3.2999999970197678,
+            "p95": 4.399999998509884,
+            "p99": 5.5
+          },
+          "gpuMs": {
+            "median": 4.325376,
+            "p95": 6.22592,
+            "p99": 7.20896
+          },
+          "gpuSamples": 764,
+          "renderStats": {
+            "calls": 428,
+            "triangles": 730415,
+            "geometries": 443,
+            "textures": 165
+          },
+          "pixelRatio": 1,
+          "shadows": true
+        }
+      },
+      "heli": {
+        "metres": 192,
+        "start": [
+          23421,
+          0
+        ],
+        "end": [
+          23613,
+          0
+        ],
+        "chunks": 2,
+        "maxPending": 4,
+        "shadowEnabled": true,
+        "drawingBuffer": [
+          1920,
+          1080
+        ],
+        "cityTiles": 0,
+        "fps": 320.9,
+        "p95FrameMs": 4.5,
+        "maxFrameMs": 59.6,
+        "framesOver50Ms": 1,
+        "measurement": {
+          "durationMs": 10000.699999999255,
+          "frames": 3209,
+          "updateMs": {
+            "median": 0.19999999925494194,
+            "p95": 0.4000000022351742,
+            "p99": 0.5
+          },
+          "renderMs": {
+            "median": 2.5,
+            "p95": 3.5,
+            "p99": 4.300000000745058
+          },
+          "workMs": {
+            "median": 2.7999999970197678,
+            "p95": 3.800000000745058,
+            "p99": 4.5
+          },
+          "gpuMs": {
+            "median": 4.9152,
+            "p95": 7.208959999999999,
+            "p99": 7.208959999999999
+          },
+          "gpuSamples": 10,
+          "renderStats": {
+            "calls": 165,
+            "triangles": 1464073,
+            "geometries": 72,
+            "textures": 132
+          },
+          "pixelRatio": 1,
+          "shadows": true
+        }
+      }
+    },
+    "3-webgl2": {
+      "browser": "159.0.8154.6",
+      "viewport": "1920 × 1080",
+      "pilot": false,
+      "centerFlight": false,
+      "coldStartMs": [
+        991,
+        1519,
+        1417
+      ],
+      "quality": "high",
+      "work": {
+        "date": "2026-11-17",
+        "hour": 10,
+        "durationMs": 10000,
+        "chromiumFlags": [
+          "--disable-gpu-vsync",
+          "--disable-frame-rate-limit"
+        ]
+      },
+      "renderer": "WebGL 2",
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Version 27.2.1 (Build 26B131))",
+      "car": {
+        "metres": 112,
+        "start": [
+          100,
+          528
+        ],
+        "end": [
+          125,
+          636
+        ],
+        "chunks": 1,
+        "maxPending": 0,
+        "shadowEnabled": true,
+        "drawingBuffer": [
+          1920,
+          1080
+        ],
+        "cityTiles": 67,
+        "fps": 154.3,
+        "p95FrameMs": 10.8,
+        "maxFrameMs": 14.2,
+        "framesOver50Ms": 0,
+        "measurement": {
+          "durationMs": 10000.5,
+          "frames": 1544,
+          "updateMs": {
+            "median": 0.6999999992549419,
+            "p95": 1.199999999254942,
+            "p99": 1.5999999977648258
+          },
+          "renderMs": {
+            "median": 4.799999997019768,
+            "p95": 8.900000002235174,
+            "p99": 9.899999998509884
+          },
+          "workMs": {
+            "median": 5.400000002235174,
+            "p95": 9.899999998509884,
+            "p99": 11.199999999254942
+          },
+          "gpuMs": {
+            "median": 11.517499,
+            "p95": 14.456541000000001,
+            "p99": 17.478374
+          },
+          "gpuSamples": 246,
+          "renderStats": {
+            "calls": 393,
+            "triangles": 730130,
+            "geometries": 429,
+            "textures": 165
+          },
+          "pixelRatio": 1,
+          "shadows": true
+        }
+      },
+      "heli": {
+        "metres": 192,
+        "start": [
+          23421,
+          0
+        ],
+        "end": [
+          23613,
+          0
+        ],
+        "chunks": 2,
+        "maxPending": 4,
+        "shadowEnabled": true,
+        "drawingBuffer": [
+          1920,
+          1080
+        ],
+        "cityTiles": 0,
+        "fps": 172.8,
+        "p95FrameMs": 8.5,
+        "maxFrameMs": 13.2,
+        "framesOver50Ms": 0,
+        "measurement": {
+          "durationMs": 9998.800000000745,
+          "frames": 1729,
+          "updateMs": {
+            "median": 0.30000000074505806,
+            "p95": 0.6000000014901161,
+            "p99": 0.8000000007450581
+          },
+          "renderMs": {
+            "median": 5,
+            "p95": 7.300000000745058,
+            "p99": 8.400000002235174
+          },
+          "workMs": {
+            "median": 5.300000000745058,
+            "p95": 7.699999999254942,
+            "p99": 8.800000000745058
+          },
+          "gpuMs": {
+            "median": 11.062249,
+            "p95": 14.368332,
+            "p99": 14.368332
+          },
+          "gpuSamples": 16,
+          "renderStats": {
+            "calls": 165,
+            "triangles": 1464073,
+            "geometries": 72,
+            "textures": 132
+          },
+          "pixelRatio": 1,
+          "shadows": true
+        }
+      }
+    },
+    "3-e14": {
+      "browser": "159.0.8154.6",
+      "viewport": "1920 × 1080",
+      "pilot": false,
+      "centerFlight": false,
+      "coldStartMs": [
+        926,
+        1215,
+        1257
+      ],
+      "quality": "high",
+      "work": {
+        "date": "2026-11-17",
+        "hour": 10,
+        "durationMs": 10000,
+        "chromiumFlags": [
+          "--disable-gpu-vsync",
+          "--disable-frame-rate-limit"
+        ]
+      },
+      "renderer": "WebGL 2",
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Version 27.2.1 (Build 26B131))",
+      "car": {
+        "metres": 111,
+        "start": [
+          100,
+          528
+        ],
+        "end": [
+          125,
+          636
+        ],
+        "chunks": 1,
+        "maxPending": 0,
+        "shadowEnabled": true,
+        "drawingBuffer": [
+          1920,
+          1080
+        ],
+        "cityTiles": 67,
+        "fps": 192.1,
+        "p95FrameMs": 7.4,
+        "maxFrameMs": 12.6,
+        "framesOver50Ms": 0,
+        "measurement": {
+          "durationMs": 9998.60000000149,
+          "frames": 1921,
+          "updateMs": {
+            "median": 0.5999999977648258,
+            "p95": 1.1000000014901161,
+            "p99": 1.300000000745058
+          },
+          "renderMs": {
+            "median": 4.199999999254942,
+            "p95": 6.300000000745058,
+            "p99": 7.5
+          },
+          "workMs": {
+            "median": 4.800000000745058,
+            "p95": 6.900000002235174,
+            "p99": 8.100000001490116
+          },
+          "gpuMs": {
+            "median": 6.393458,
+            "p95": 9.788624,
+            "p99": 11.351
+          },
+          "gpuSamples": 372,
+          "renderStats": {
+            "calls": 366,
+            "triangles": 727618,
+            "geometries": 429,
+            "textures": 163
+          },
+          "pixelRatio": 1,
+          "shadows": true
+        }
+      },
+      "heli": {
+        "metres": 192,
+        "start": [
+          23421,
+          0
+        ],
+        "end": [
+          23613,
+          0
+        ],
+        "chunks": 2,
+        "maxPending": 4,
+        "shadowEnabled": true,
+        "drawingBuffer": [
+          1920,
+          1080
+        ],
+        "cityTiles": 0,
+        "fps": 206.3,
+        "p95FrameMs": 7.2,
+        "maxFrameMs": 10.4,
+        "framesOver50Ms": 0,
+        "measurement": {
+          "durationMs": 10001.60000000149,
+          "frames": 2064,
+          "updateMs": {
+            "median": 0.10000000149011612,
+            "p95": 0.30000000074505806,
+            "p99": 0.4000000022351742
+          },
+          "renderMs": {
+            "median": 4.199999999254942,
+            "p95": 6.600000001490116,
+            "p99": 7.200000002980232
+          },
+          "workMs": {
+            "median": 4.399999998509884,
+            "p95": 6.799999997019768,
+            "p99": 7.399999998509884
+          },
+          "gpuMs": {
+            "median": 7.524291,
+            "p95": 9.630374,
+            "p99": 10.828416
+          },
+          "gpuSamples": 165,
+          "renderStats": {
+            "calls": 164,
+            "triangles": 1464072,
+            "geometries": 71,
+            "textures": 130
+          },
+          "pixelRatio": 1,
+          "shadows": true
+        }
+      }
+    }
+  }
+}

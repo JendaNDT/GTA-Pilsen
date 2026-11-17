@@ -1,0 +1,162 @@
+{
+  "namesti-den": {
+    "e14Webgpu": {
+      "prumerAbsolutniOdchylkyRgb": 2.2176,
+      "p95AbsolutniOdchylkyRgb": 16,
+      "p99AbsolutniOdchylkyRgb": 25,
+      "zmenaPrumernehoJasu": 1.7633
+    },
+    "e14Webgl2": {
+      "prumerAbsolutniOdchylkyRgb": 2.1382,
+      "p95AbsolutniOdchylkyRgb": 16,
+      "p99AbsolutniOdchylkyRgb": 25,
+      "zmenaPrumernehoJasu": 1.7629
+    },
+    "webgpuWebgl2": {
+      "prumerAbsolutniOdchylkyRgb": 0.4327,
+      "p95AbsolutniOdchylkyRgb": 3,
+      "p99AbsolutniOdchylkyRgb": 8,
+      "zmenaPrumernehoJasu": -0.0004
+    }
+  },
+  "namesti-noc": {
+    "e14Webgpu": {
+      "prumerAbsolutniOdchylkyRgb": 0.6946,
+      "p95AbsolutniOdchylkyRgb": 5,
+      "p99AbsolutniOdchylkyRgb": 9,
+      "zmenaPrumernehoJasu": 0.3557
+    },
+    "e14Webgl2": {
+      "prumerAbsolutniOdchylkyRgb": 0.6352,
+      "p95AbsolutniOdchylkyRgb": 4,
+      "p99AbsolutniOdchylkyRgb": 8,
+      "zmenaPrumernehoJasu": 0.3543
+    },
+    "webgpuWebgl2": {
+      "prumerAbsolutniOdchylkyRgb": 0.2438,
+      "p95AbsolutniOdchylkyRgb": 2,
+      "p99AbsolutniOdchylkyRgb": 5,
+      "zmenaPrumernehoJasu": -0.0014
+    }
+  },
+  "wilson": {
+    "e14Webgpu": {
+      "prumerAbsolutniOdchylkyRgb": 1.6747,
+      "p95AbsolutniOdchylkyRgb": 12,
+      "p99AbsolutniOdchylkyRgb": 23,
+      "zmenaPrumernehoJasu": 1.0115
+    },
+    "e14Webgl2": {
+      "prumerAbsolutniOdchylkyRgb": 1.5695,
+      "p95AbsolutniOdchylkyRgb": 11,
+      "p99AbsolutniOdchylkyRgb": 23,
+      "zmenaPrumernehoJasu": 1.0123
+    },
+    "webgpuWebgl2": {
+      "prumerAbsolutniOdchylkyRgb": 0.5313,
+      "p95AbsolutniOdchylkyRgb": 3,
+      "p99AbsolutniOdchylkyRgb": 10,
+      "zmenaPrumernehoJasu": 0.0009
+    }
+  },
+  "valik-zapad": {
+    "e14Webgpu": {
+      "prumerAbsolutniOdchylkyRgb": 1.191,
+      "p95AbsolutniOdchylkyRgb": 6,
+      "p99AbsolutniOdchylkyRgb": 17,
+      "zmenaPrumernehoJasu": 0.2272
+    },
+    "e14Webgl2": {
+      "prumerAbsolutniOdchylkyRgb": 1.0862,
+      "p95AbsolutniOdchylkyRgb": 5,
+      "p99AbsolutniOdchylkyRgb": 17,
+      "zmenaPrumernehoJasu": 0.2264
+    },
+    "webgpuWebgl2": {
+      "prumerAbsolutniOdchylkyRgb": 0.7494,
+      "p95AbsolutniOdchylkyRgb": 4,
+      "p99AbsolutniOdchylkyRgb": 13,
+      "zmenaPrumernehoJasu": -0.0008
+    }
+  },
+  "lochotin": {
+    "e14Webgpu": {
+      "prumerAbsolutniOdchylkyRgb": 4.71,
+      "p95AbsolutniOdchylkyRgb": 22,
+      "p99AbsolutniOdchylkyRgb": 42,
+      "zmenaPrumernehoJasu": 2.1179
+    },
+    "e14Webgl2": {
+      "prumerAbsolutniOdchylkyRgb": 4.3009,
+      "p95AbsolutniOdchylkyRgb": 21,
+      "p99AbsolutniOdchylkyRgb": 40,
+      "zmenaPrumernehoJasu": 2.1077
+    },
+    "webgpuWebgl2": {
+      "prumerAbsolutniOdchylkyRgb": 1.6053,
+      "p95AbsolutniOdchylkyRgb": 8,
+      "p99AbsolutniOdchylkyRgb": 18,
+      "zmenaPrumernehoJasu": -0.0102
+    }
+  },
+  "rokycany-pole": {
+    "e14Webgpu": {
+      "prumerAbsolutniOdchylkyRgb": 2.4122,
+      "p95AbsolutniOdchylkyRgb": 16,
+      "p99AbsolutniOdchylkyRgb": 34,
+      "zmenaPrumernehoJasu": 1.4305
+    },
+    "e14Webgl2": {
+      "prumerAbsolutniOdchylkyRgb": 2.2484,
+      "p95AbsolutniOdchylkyRgb": 15,
+      "p99AbsolutniOdchylkyRgb": 33,
+      "zmenaPrumernehoJasu": 1.4313
+    },
+    "webgpuWebgl2": {
+      "prumerAbsolutniOdchylkyRgb": 0.7937,
+      "p95AbsolutniOdchylkyRgb": 5,
+      "p99AbsolutniOdchylkyRgb": 13,
+      "zmenaPrumernehoJasu": 0.0008
+    }
+  },
+  "dobriv-hamr": {
+    "e14Webgpu": {
+      "prumerAbsolutniOdchylkyRgb": 1.4158,
+      "p95AbsolutniOdchylkyRgb": 6,
+      "p99AbsolutniOdchylkyRgb": 31,
+      "zmenaPrumernehoJasu": 0.5655
+    },
+    "e14Webgl2": {
+      "prumerAbsolutniOdchylkyRgb": 1.2701,
+      "p95AbsolutniOdchylkyRgb": 5,
+      "p99AbsolutniOdchylkyRgb": 29,
+      "zmenaPrumernehoJasu": 0.5681
+    },
+    "webgpuWebgl2": {
+      "prumerAbsolutniOdchylkyRgb": 0.7311,
+      "p95AbsolutniOdchylkyRgb": 4,
+      "p99AbsolutniOdchylkyRgb": 12,
+      "zmenaPrumernehoJasu": 0.0026
+    }
+  },
+  "klabava-udoli": {
+    "e14Webgpu": {
+      "prumerAbsolutniOdchylkyRgb": 3.9053,
+      "p95AbsolutniOdchylkyRgb": 24,
+      "p99AbsolutniOdchylkyRgb": 51,
+      "zmenaPrumernehoJasu": 2.175
+    },
+    "e14Webgl2": {
+      "prumerAbsolutniOdchylkyRgb": 3.6498,
+      "p95AbsolutniOdchylkyRgb": 23,
+      "p99AbsolutniOdchylkyRgb": 51,
+      "zmenaPrumernehoJasu": 2.17
+    },
+    "webgpuWebgl2": {
+      "prumerAbsolutniOdchylkyRgb": 1.4015,
+      "p95AbsolutniOdchylkyRgb": 8,
+      "p99AbsolutniOdchylkyRgb": 15,
+      "zmenaPrumernehoJasu": -0.0051
+    }
+  }
+}

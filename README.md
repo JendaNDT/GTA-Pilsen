@@ -102,6 +102,11 @@ limit +10 % zůstává. Autor v obou ručních měřeních dosáhl přibližně 
 pozorovaného zadrhávání; vyšší některé časy a mírné překročení meze GPU jsou
 popsané v [měření E14](docs/E14/mereni.md).
 
+[E15 převádí hru na WebGPU](docs/E15.md). Když prohlížeč WebGPU nepodporuje,
+hra automaticky použije WebGL 2. Otevřením adresy s `?renderer=webgl` můžeš
+WebGL 2 vynutit. Použitou cestu uvidíš v **O hře** i v panelu **Měření**.
+[Porovnání osmi pohledů na obou cestách](docs/E15/snimky.md).
+
 Regresní testy kolizí, terénu, silničního grafu a distribuovaných dat:
 
 ```bash
@@ -123,12 +128,14 @@ a mobilní dotykové ovládání. Používají debug režim pro
 ```bash
 npx playwright install chromium
 npm run build
-npm run test:e2e
+npm run test:e2e -- --trace off
 ```
 
-Testy si samy spustí lokální server nad `dist/`. GitHub Actions spouští testy JavaScriptu
-a Pythonu, audit závislostí a sestavení na Node.js 20.19, 22.12 a 24; na Node.js 24 také
-testy v prohlížeči. Neúspěšný průchod prohlížečem uloží trasu a snímek obrazovky jako artefakt.
+Testy si samy spustí lokální server nad `dist/`. Projekt `webgl2` spouští úplnou sadu.
+Projekt `webgpu` ověřuje start, rozpočet, noc, Wilsonův most, Valík a referenční pohledy.
+GitHub Actions spouští testy JavaScriptu a Pythonu, audit závislostí a sestavení na
+Node.js 20.19, 22.12 a 24. Oba prohlížečové projekty běží na Node.js 24. Při selhání
+prohlížečového testu GitHub uloží snímek obrazovky jako artefakt.
 Kontroly běží jednou pro každý pull request a po sloučení do `main`. Změna jen v dokumentaci
 (`docs/` a soubory `.md`) spustí jen rychlou kontrolu odkazů mezi dokumenty
 (`node --test tests/docs.test.js`).

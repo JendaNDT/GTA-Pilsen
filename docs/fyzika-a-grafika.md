@@ -11,22 +11,26 @@ Položky fyziky a grafiky jsou **navržené**. Etapa, která položku dokončí,
 z nich hlídá rozpočet vykreslování. Panel F9 a příkaz `--work` umožňují porovnat práci
 snímku v dalších etapách. [Výchozí hodnoty a pohledy](E13.md).
 
-**Aktualizace knihovny (E14) je implementovaná.** Hra používá three.js 0.187.0 se
-stávajícím WebGLRendererem. Kontroly hlídají všechny náhrady shaderů, osm snímků
+**Aktualizace knihovny (E14) je implementovaná.** Hra přešla na three.js 0.187.0 se
+stávajícím WebGLRendererem. Kontroly hlídaly všechny náhrady shaderů, osm snímků
 dokládá zachování vzhledu s drobnými rozdíly ve stínech. Rozpočty jsou po souhlasu
 autora přepočtené z E13 včetně stínů, stále s limitem +10 %. Ruční měření obou verzí
 udrželo přibližně 60 FPS bez pozorovaného zadrhávání, část časů však zůstává vyšší
 a p95 GPU je mírně nad pracovní mezí. [Protokol a známé odchylky](E14.md).
 Navržené grafické položky tím nejsou označené za dokončené; čekají na své etapy.
 
-## Stav po E14 (ověřeno v kódu)
+**Přechod na WebGPU (E15) je hotový.** Vlastní materiály oblohy, světa a modelů
+používají TSL. Hra při chybějící podpoře WebGPU přechází na WebGL 2.
+Rozpočet vykreslování hlídají oba prohlížečové projekty. [Protokol E15](E15.md).
+
+## Stav po E15 (ověřeno v kódu)
 
 - **Fyzika:** auto se otáčí podle natočení kol a boční skluz se tlumí. Nemá hmotnost,
   zavěšení ani pneumatiky (`stepDynamic()` ve `vehicles.js`). Náklony jsou vizuální,
   kolize řeší tři kruhy. Vrtulník a chodci mají zjednodušený pohyb. Krok se mění se snímkem.
-- **Grafika:** three.js 0.187.0 s WebGL a matnými materiály Lambert. Šest úprav shaderů
-  (`onBeforeCompile`), vlastní obloha, jedna stínová mapa 2 048 px, bez postprocesů.
-  Při poklesu FPS hra snižuje rozlišení (`Game.adapt()`).
+- **Grafika:** three.js 0.187.0 s WebGPU a záložním WebGL 2. Matné materiály Lambert,
+  vlastní obloha a povrchy v TSL, jedna stínová mapa 2 048 px. Při poklesu FPS
+  hra snižuje rozlišení (`Game.adapt()`). Nové efekty zůstávají v plánu příslušných etap.
 
 ## Měření fyzikálních knihoven
 
