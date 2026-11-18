@@ -1,5 +1,58 @@
 {
-  "namesti-den": { "calls": 554, "triangles": 1055779 },
-  "lochotin": { "calls": 431, "triangles": 673580 },
-  "rokycany-pole": { "calls": 280, "triangles": 377034 }
+  "high": {
+    "namesti-den": {
+      "calls": 554,
+      "triangles": 1055779
+    },
+    "lochotin": {
+      "calls": 431,
+      "triangles": 673580
+    },
+    "rokycany-pole": {
+      "calls": 280,
+      "triangles": 377034
+    }
+  },
+  "ultra": {
+    "namesti-den": {
+      "calls": 720,
+      "triangles": 1360138
+    },
+    "lochotin": {
+      "calls": 571,
+      "triangles": 881889
+    },
+    "rokycany-pole": {
+      "calls": 331,
+      "triangles": 409604
+    }
+  },
+  "medium": {
+    "namesti-den": {
+      "calls": 385,
+      "triangles": 666815
+    },
+    "lochotin": {
+      "calls": 286,
+      "triangles": 358109
+    },
+    "rokycany-pole": {
+      "calls": 197,
+      "triangles": 205627
+    }
+  },
+  "low": {
+    "namesti-den": {
+      "calls": 139,
+      "triangles": 186286
+    },
+    "lochotin": {
+      "calls": 100,
+      "triangles": 107252
+    },
+    "rokycany-pole": {
+      "calls": 65,
+      "triangles": 59781
+    }
+  }
 }

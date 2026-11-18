@@ -15,24 +15,59 @@ function percentiles(values) {
   return { median: at(0.5), p95: at(0.95), p99: at(0.99) };
 }
 
+function gpuFrameTimer(device) {
+  if (!device?.features.has('timestamp-query')) return null;
+  const queries = device.createQuerySet({ type: 'timestamp', count: 2 });
+  const timestamps = device.createBuffer({ size: 16, usage: GPUBufferUsage.QUERY_RESOLVE | GPUBufferUsage.COPY_SRC });
+  const result = device.createBuffer({ size: 16, usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ });
+  const view = device.createTexture({ size: [1, 1], format: 'rgba8unorm', usage: GPUTextureUsage.RENDER_ATTACHMENT }).createView();
+
+  // Změř interval ve frontě od prvního do posledního průchodu. Časy
+  // vnořených průchodů ze three.js se přes sebe mohou překrývat.
+  const marker = (index) => {
+    const encoder = device.createCommandEncoder();
+    encoder.beginRenderPass({
+      colorAttachments: [{ view, loadOp: 'clear', storeOp: 'store', clearValue: [index, 0, 0, 1] }],
+      timestampWrites: { querySet: queries, endOfPassWriteIndex: index },
+    }).end();
+    if (index === 1) {
+      encoder.resolveQuerySet(queries, 0, 2, timestamps, 0);
+      encoder.copyBufferToBuffer(timestamps, 0, result, 0, 16);
+    }
+    device.queue.submit([encoder.finish()]);
+  };
+
+  return {
+    start: () => marker(0),
+    async finish() {
+      marker(1);
+      await result.mapAsync(GPUMapMode.READ);
+      try {
+        const [first, last] = new BigUint64Array(result.getMappedRange());
+        return Number(last - first) / 1e6;
+      } finally {
+        result.unmap();
+      }
+    },
+  };
+}
+
 export function createFrameProfiler(game, { sampleEvery = 1 } = {}) {
   const { renderer } = game;
   const { backend } = renderer;
-  let trackGpu = backend.trackTimestamp && backend.hasTimestamp;
+  let timer = gpuFrameTimer(backend.isWebGPUBackend ? backend.device : null);
+  backend.trackTimestamp = false;
   let resolving = false;
   let frameNumber = 0;
   let samples = [], first = 0, startedAt = null;
 
-  async function measureGpu(sample, frameId) {
+  async function measureGpu(sample) {
     resolving = true;
     try {
-      const ms = await renderer.resolveTimestampsAsync('render');
-      // Při chybě vrací knihovna poslední platný čas. Ten nesmí skončit u jiného snímku.
-      if (backend.getTimestampFrames('render').at(-1) === frameId && Number.isFinite(ms) && ms > 0) {
-        sample.gpuMs = ms;
-      }
+      const ms = await timer.finish();
+      if (Number.isFinite(ms) && ms > 0) sample.gpuMs = ms;
     } catch (error) {
-      trackGpu = false;
+      timer = null;
       console.warn('Čas GPU se nepodařilo změřit.', error);
     } finally {
       resolving = false;
@@ -44,6 +79,8 @@ export function createFrameProfiler(game, { sampleEvery = 1 } = {}) {
     startedAt ??= at;
     game.update(dt);
     const updatedAt = performance.now();
+    const timed = timer && !resolving && frameNumber++ % sampleEvery === 0;
+    if (timed) timer.start();
     const renderStart = performance.now();
     game.render();
     const renderMs = performance.now() - renderStart;
@@ -51,7 +88,7 @@ export function createFrameProfiler(game, { sampleEvery = 1 } = {}) {
       at, updateMs: updatedAt - at, renderMs,
       gpuMs: null, ...readRenderStats(renderer),
     };
-    if (trackGpu && !resolving && frameNumber++ % sampleEvery === 0) void measureGpu(sample, renderer.info.frame);
+    if (timed) void measureGpu(sample);
     samples.push(sample);
     while (samples[first].at < at - WINDOW_MS) first++;
     if (first >= 1024) {

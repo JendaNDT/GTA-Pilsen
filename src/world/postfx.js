@@ -8,7 +8,7 @@ import { smaa } from 'three/addons/tsl/display/SMAANode.js';
 import { traa } from 'three/addons/tsl/display/TRAANode.js';
 import { PARAMS, QUALITY } from '../config.js';
 import { env } from './materials.js';
-import { loadColorLuts } from './color-luts.js';
+import { blendLutData, loadColorLuts, lutTexture } from './color-luts.js';
 import { makeAirPerspective } from './air-perspective.js';
 import { EyeAdaptation } from './exposure.js';
 
@@ -41,6 +41,8 @@ export class PostFX {
     this.ambientOcclusion = null;
     this.glow = null;
     this.luts = [];
+    this.grade = null;
+    this.lastGrade = new THREE.Vector3(-1, -1, -1);
     this.air = PARAMS.get('fog') !== '0' ? makeAirPerspective(camera, world, QUALITY.view) : null;
     if (this.air) scene.fog = null;
     this.lastPosition = new THREE.Vector3();
@@ -124,9 +126,10 @@ export class PostFX {
     if (PARAMS.get('lut') !== '0') {
       try {
         this.luts = await loadColorLuts(import.meta.env.BASE_URL);
-        const [day, dusk, night] = this.luts.map((table) => lut3D(this.toned, texture3D(table), table.image.width, 1));
-        const weights = env.colorGrade;
-        color = day.mul(weights.x).add(dusk.mul(weights.y), night.mul(weights.z));
+        const { size, data } = this.luts[0];
+        this.grade = lutTexture(new Uint8Array(data.length), size);
+        this.updateGrade();
+        color = lut3D(this.toned, texture3D(this.grade), size, 1);
       } catch (error) {
         console.warn('Barevné ladění se nepodařilo načíst.', error);
       }
@@ -140,7 +143,16 @@ export class PostFX {
     this.hasPreviousCamera = false;
   }
 
+  updateGrade() {
+    const weights = env.colorGrade.value;
+    if (!this.grade || this.lastGrade.equals(weights)) return;
+    this.lastGrade.copy(weights);
+    blendLutData(this.grade.image.data, this.luts.map(({ data }) => data), weights.toArray());
+    this.grade.needsUpdate = true;
+  }
+
   render() {
+    this.updateGrade();
     const { position, quaternion } = this.camera;
     if (this.temporal) {
       if (this.hasPreviousCamera && (position.distanceToSquared(this.lastPosition) > 25 ** 2
@@ -158,7 +170,7 @@ export class PostFX {
     this.pipeline.dispose();
     this.exposure?.dispose();
     for (const effect of this.effects) effect.dispose();
-    for (const table of this.luts) table.dispose();
+    this.grade?.dispose();
     this.air?.field.dispose();
     this.scenePass.dispose();
   }

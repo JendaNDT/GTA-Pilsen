@@ -33,17 +33,26 @@ export function parseColorLut(text) {
   return { data, size };
 }
 
+export function lutTexture(data, size) {
+  const texture = new Data3DTexture(data, size, size, size);
+  texture.magFilter = LinearFilter;
+  texture.minFilter = LinearFilter;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+export function blendLutData(target, tables, weights) {
+  const [day, dusk, night] = tables;
+  const [a, b, c] = weights;
+  for (let i = 0; i < target.length; i++) target[i] = Math.round(day[i] * a + dusk[i] * b + night[i] * c);
+}
+
 export async function loadColorLuts(base) {
   const luts = await Promise.all(LUT_NAMES.map(async (name) => {
     const reply = await fetch(`${base}luts/${name}.cube`);
     if (!reply.ok) throw new Error(`Barevná tabulka ${name} je nedostupná.`);
     return parseColorLut(await reply.text());
   }));
-  return luts.map(({ data, size }) => {
-    const texture = new Data3DTexture(data, size, size, size);
-    texture.magFilter = LinearFilter;
-    texture.minFilter = LinearFilter;
-    texture.needsUpdate = true;
-    return texture;
-  });
+  if (luts.some(({ size }) => size !== luts[0].size)) throw new Error('Barevné tabulky mají různé rozměry.');
+  return luts;
 }

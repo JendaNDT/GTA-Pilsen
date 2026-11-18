@@ -8,7 +8,8 @@ export const reference = JSON.parse(await readFile(new URL('./reference-views.js
 
 export async function openReferenceGame(page, address) {
   const url = new URL(address);
-  for (const [key, value] of Object.entries({ debug: '', adapt: '0', quality: 'high', date: reference.date, hour: '10' })) {
+  const quality = url.searchParams.get('quality') ?? 'high';
+  for (const [key, value] of Object.entries({ debug: '', adapt: '0', quality, date: reference.date, hour: '10' })) {
     url.searchParams.set(key, value);
   }
   await page.addInitScript(() => {

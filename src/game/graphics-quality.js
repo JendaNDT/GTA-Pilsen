@@ -10,7 +10,7 @@ export const PROFILES = {
   medium: { view: 1100, pixelRatio: 1.5, traffic: 26, peds: 16, parked: 46, treesPerForestChunk: 210,
     shadowCascades: 2, shadowSize: 1024, shadowFar: 600, clouds: 4,
     carLights: true, groundTex: 512, groundTexFar: 256, heritageDetail: true },
-  low: { view: 620, pixelRatio: 1, traffic: 12, peds: 8, parked: 26, treesPerForestChunk: 110,
+  low: { view: 620, pixelRatio: 0.75, traffic: 12, peds: 8, parked: 26, treesPerForestChunk: 110,
     shadowCascades: 0, shadowSize: 0, shadowFar: 0, clouds: 3,
     carLights: false, groundTex: 256, groundTexFar: 256, heritageDetail: false },
 };

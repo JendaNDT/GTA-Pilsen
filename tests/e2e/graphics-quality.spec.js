@@ -19,8 +19,9 @@ test('E17 – volba v nastavení přepne grafiku ve stejné hře a uloží ji', 
   expect(await page.evaluate(() => {
     const { __game: game } = window;
     const saved = JSON.parse(localStorage.getItem('plzen-naplno-v1'));
-    return [game === window.originalGame, game.money, game.postfx.antialias, Boolean(game.env.csm), saved.graphics.choice];
-  })).toEqual([true, 771, 'fxaa', false, 'low']);
+    return [game === window.originalGame, game.money, game.postfx.antialias, Boolean(game.env.csm),
+      saved.graphics.choice, game.renderer.getPixelRatio()];
+  })).toEqual([true, 771, 'fxaa', false, 'low', 0.75]);
   await page.goto(gameUrl('/?debug&adapt=0&view=620'));
   await page.waitForFunction(() => window.__ready);
   expect(await page.evaluate(() => [window.__game.money, window.__game.postfx.antialias])).toEqual([771, 'fxaa']);

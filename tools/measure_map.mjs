@@ -15,7 +15,7 @@ if (work) {
   if (!url.searchParams.has('date')) url.searchParams.set('date', '2026-11-17');
   if (!url.searchParams.has('hour')) url.searchParams.set('hour', '10');
 }
-const workFlags = ['--disable-gpu-vsync', '--disable-frame-rate-limit'];
+const workFlags = args.includes('--paced') ? [] : ['--disable-gpu-vsync', '--disable-frame-rate-limit'];
 const browser = await chromium.launch({
   executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
   // Plná verze Chromia může používat skutečný GPU i bez viditelného okna.

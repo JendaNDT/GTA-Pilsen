@@ -29,8 +29,9 @@ test('E17 – hra rozloží světlo z oblohy a po západu svítí měsíc', { ta
     }
     setClock('2026-10-19', 18 + 9 / 60);
     const dusk = env.day;
-    setClock('2026-10-19', 22);
-    return { ready, states, minute, firstMinute, resting, dusk,
+    const duskDate = env.date;
+    env.setHour(22);
+    return { ready, states, minute, firstMinute, resting, dusk, duskDate, nightDate: env.date,
       sky: env.sky.isSkyMesh, sun: env.sun.intensity, moon: env.moon.intensity };
   });
 
@@ -41,6 +42,7 @@ test('E17 – hra rozloží světlo z oblohy a po západu svítí měsíc', { ta
   expect(result.resting).toBe(-1);
   expect(result.dusk).toBeGreaterThan(0.12);
   expect(result.dusk).toBeLessThan(0.75);
+  expect(result.nightDate).toBe(result.duskDate);
   expect(result.sun).toBe(0);
   expect(result.moon).toBeGreaterThan(0.5);
   expect(errors).toEqual([]);

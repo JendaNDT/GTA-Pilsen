@@ -4,31 +4,35 @@ import { openReferenceGame, reference, renderReferenceView } from '../../tools/r
 import { gameUrl } from './game-url.js';
 
 const viewIds = ['namesti-den', 'lochotin', 'rokycany-pole'];
-// E17 kreslí tři mapy stínů včetně vzdálených budov. Srovnání s jedinou mapou je v protokolu.
 const budgetFile = new URL('../budgets-e17.json', import.meta.url);
 
 test.use({ viewport: reference.viewport, deviceScaleFactor: 1 });
 
-test('E13 – náměstí, Lochotín a Rokycany se vejdou do rozpočtu vykreslování', { tag: '@webgpu' }, async ({ page, baseURL }) => {
-  const update = process.env.UPDATE_BUDGETS === '1';
-  const baseline = update ? null : JSON.parse(await readFile(budgetFile, 'utf8'));
-  const measured = {};
-  await openReferenceGame(page, gameUrl(baseURL));
-  for (const id of viewIds) {
-    const view = reference.views.find((entry) => entry.id === id);
-    await test.step(view.name, async () => {
-      const { calls, triangles } = await renderReferenceView(page, view);
-      measured[id] = { calls, triangles };
-      for (const [field, label] of [['calls', 'volání'], ['triangles', 'trojúhelníky']]) {
-        const count = measured[id][field];
-        expect(count, `${view.name}: ${label}`).toBeGreaterThan(0);
-        if (update) continue;
-        const budget = baseline[id]?.[field];
-        expect(budget, `${view.name}: chybí rozpočet pro ${label}`).toBeGreaterThan(0);
-        expect(count, `${view.name}: ${label} proti rozpočtu ${budget} (+10 %)`)
-          .toBeLessThanOrEqual(Math.floor(budget * 1.1));
-      }
-    });
-  }
-  if (update) await writeFile(budgetFile, JSON.stringify(measured, null, 2) + '\n');
-});
+for (const quality of ['ultra', 'high', 'medium', 'low']) {
+  test(`E17 – předvolba ${quality} se vejde do rozpočtu vykreslování`, { tag: '@webgpu' }, async ({ page, baseURL }) => {
+    const update = process.env.UPDATE_BUDGETS === '1';
+    const all = JSON.parse(await readFile(budgetFile, 'utf8'));
+    const baseline = all[quality];
+    const measured = {};
+    const url = new URL(gameUrl(baseURL));
+    url.searchParams.set('quality', quality);
+    await openReferenceGame(page, url.href);
+    for (const id of viewIds) {
+      const view = reference.views.find((entry) => entry.id === id);
+      await test.step(view.name, async () => {
+        const { calls, triangles } = await renderReferenceView(page, view);
+        measured[id] = { calls, triangles };
+        for (const [field, label] of [['calls', 'volání'], ['triangles', 'trojúhelníky']]) {
+          const count = measured[id][field];
+          expect(count, `${view.name}: ${label}`).toBeGreaterThan(0);
+          if (update) continue;
+          const budget = baseline?.[id]?.[field];
+          expect(budget, `${view.name}: chybí rozpočet pro ${label}`).toBeGreaterThan(0);
+          expect(count, `${view.name}: ${label} proti rozpočtu ${budget} (+10 %)`)
+            .toBeLessThanOrEqual(Math.floor(budget * 1.1));
+        }
+      });
+    }
+    if (update) await writeFile(budgetFile, JSON.stringify({ ...all, [quality]: measured }, null, 2) + '\n');
+  });
+}

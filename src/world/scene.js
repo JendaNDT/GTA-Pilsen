@@ -107,11 +107,11 @@ export class Environment {
     this.tint = new THREE.Color();
     this.sunDir = new THREE.Vector3(0, 1, 0);
     env.wetPaving.value = QUALITY.heritageDetail && PARAMS.get("wet") === "1" ? 1 : 0;
-    this.setHour(this.hour, DEFAULT_DAY);
+    this.setHour(this.hour);
   }
 
-  /** Nastaví osvětlení podle hodiny (0–24). */
-  setHour(h, date) {
+  /** Nastaví osvětlení podle hodiny (0–24) a případně změní datum. */
+  setHour(h, date = this.date ?? DEFAULT_DAY) {
     this.hour = h;
     if (this.date !== date) this.utcOffset = pragueOffset(date);
     this.date = date;

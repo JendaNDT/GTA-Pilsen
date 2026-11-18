@@ -13,7 +13,7 @@ test('E15 – hra ve výchozím nastavení spustí WebGPU', { tag: ['@webgpu', '
   await expect(page.locator('#panel-about')).toContainText('Aktuální vykreslování: WebGPU');
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
   await page.waitForFunction(() => window.__perf.summary().frames >= 4);
-  if (await page.evaluate(() => window.__game.renderer.backend.trackTimestamp)) {
+  if (await page.evaluate(() => window.__game.renderer.backend.device.features.has('timestamp-query'))) {
     await page.waitForFunction(() => window.__perf.summary().gpuSamples > 0);
   }
   expect(errors).toEqual([]);

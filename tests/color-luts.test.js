@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import { makeColorLut } from '../tools/build_luts.mjs';
-import { lutWeights, LUT_NAMES, parseColorLut } from '../src/world/color-luts.js';
+import { blendLutData, lutWeights, LUT_NAMES, parseColorLut } from '../src/world/color-luts.js';
 import { parseDay } from '../src/game/clock.js';
 import { solarDirection } from '../src/world/solar.js';
 
@@ -36,4 +36,10 @@ test('barevné ladění plynule přechází přes den, soumrak a noc', () => {
     assert.ok(weights.every((weight, i) => Math.abs(weight - previous[i]) < 0.07));
     previous = weights;
   }
+});
+
+test('předem smíchaná texturka zachová váhy a neprůhlednost', () => {
+  const result = new Uint8Array(4);
+  blendLutData(result, [[10, 40, 0, 255], [70, 10, 90, 255], [10, 0, 30, 255]], [0.25, 0.5, 0.25]);
+  assert.deepEqual([...result], [40, 15, 53, 255]);
 });
