@@ -7,8 +7,8 @@ Autor potvrdil zahájení E17. [Zadání E17](E17.md) · [Protokol E16](../E16.m
 | --- | --- |
 | 1. Fyzikálně založené materiály | Hotovo · `0e84e90` |
 | 2. Obloha, poloha slunce a světlo z oblohy | Hotovo · `9c27cd9` |
-| 3. Kaskádové stíny | Hotovo |
-| 4. Průchod scény, vyhlazování, AO, záře, tónování, barevné ladění a mlha | Další krok, návrh nejprve zkontroluje Astra |
+| 3. Kaskádové stíny | Hotovo · `bf5ba60` |
+| 4. Průchod scény, vyhlazování, AO, záře, tónování, barevné ladění a mlha | Průchod a vyhlazování hotové, další je AO |
 | 5. Čtyři předvolby, automatika a dynamické rozlišení | Čeká |
 | 6. Přizpůsobení jasu | Čeká |
 | 7. Měření všech předvoleb, snímky, protokol a pull request | Čeká |
@@ -40,4 +40,9 @@ Autor potvrdil zahájení E17. [Zadání E17](E17.md) · [Protokol E16](../E16.m
   mapy ve vysoké předvolbě mají vlastní naměřený rozpočet se stejnou
   tolerancí jako E13. Při místním měření byla GPU p95 6,68 ms při jízdě
   a 7,80 ms při letu nad Plzní. [Měření a snímky](../E17/stiny.md).
+- Astra zkontrolovala návrh obrazových efektů proti three.js 0.187. První
+  část kroku 4 doplnila samostatný průchod obrazu a vyhlazování. Překrytí
+  světel a pruhů ponechává podkladové normály a vektory pohybu. Prošlo 46
+  testů Node, sestavení, deset prohlížečových kontrol předvoleb a rozpočtu
+  a zkouška pohybu dveří tramvaje na WebGPU. [Snímky](../E17/efekty.md).
 - Po dokončení čeká měření v autorově běžném prohlížeči a kontrola na telefonu.

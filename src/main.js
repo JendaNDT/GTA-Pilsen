@@ -139,7 +139,8 @@ async function boot() {
   game.env.update(game.camera);
   loadText.textContent = 'Připravuji vykreslování…';
   await game.env.prepareSkyLight();
-  await renderer.compileAsync(game.scene, game.camera);
+  if (game.postfx) await game.postfx.prepare();
+  else await renderer.compileAsync(game.scene, game.camera);
   game.render();
 
   $('loading').classList.add('hidden');
@@ -222,7 +223,6 @@ async function boot() {
   addEventListener('pagehide', () => game.save());
 
   const loop = (now) => {
-    requestAnimationFrame(loop);
     if (!running) { input.pressed.clear(); return; }
     const dt = Math.min(0.05, (now - last) / 1000);
     last = now;
@@ -238,7 +238,7 @@ async function boot() {
     }
     game.adapt(dt);
   };
-  requestAnimationFrame(loop);
+  await renderer.setAnimationLoop(loop);
 
   if (DEBUG) {
     window.__perf = { summary: perf.summary, reset: perf.reset, renderStats: perf.renderStats };
@@ -249,6 +249,7 @@ async function boot() {
     window.__setInput = (steer, thr) => { input.debugSteer = steer; input.debugThr = thr; };
     window.__view = (x, y, z, tx, ty, tz) => {
       game.camera.position.set(x, y, z); game.camera.lookAt(tx, ty, tz);
+      game.postfx?.resetHistory();
       game.env.update(game.camera); game.render();
     };
   }

@@ -5,6 +5,7 @@ import { World } from '../world/world.js';
 import { TUNNEL_HEIGHT } from '../world/tunnels.js';
 import { ChunkManager } from '../world/chunks.js';
 import { Environment } from '../world/scene.js';
+import { createPostFX } from '../world/postfx.js';
 import { env } from '../world/materials.js';
 import { VehicleManager, Car, wrapAngle } from '../entities/vehicles.js';
 import { Player, PedManager } from '../entities/player.js';
@@ -38,6 +39,7 @@ export class Game {
       this.scene.add(this.tunnelLight);
     }
     this.env = new Environment(this.scene, renderer);
+    this.postfx = createPostFX(renderer, this.scene, this.camera);
     this.chunks = new ChunkManager(this.scene, this.world, renderer, data.heritage, data.orthophotoSources);
     this.hud = new Hud(this.world);
     this.soundPlaces = data.soundPlaces;
@@ -89,6 +91,7 @@ export class Game {
 
   syncClock(reposition = false) {
     if (reposition) {
+      this.postfx?.resetHistory();
       if (this.ride) this._alight(true);
       this.audio.resetWorld();
       this.transit.reset(this.clock, this.focus);
@@ -737,7 +740,8 @@ export class Game {
   render() {
     this.renderer.info.reset();
     this.env.updateSkyLight();
-    this.renderer.render(this.scene, this.camera);
+    if (this.postfx) this.postfx.render();
+    else this.renderer.render(this.scene, this.camera);
   }
 
   /** Přizpůsobí rozlišení výkonu zařízení. */
