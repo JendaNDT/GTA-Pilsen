@@ -38,3 +38,20 @@ Průměrný jas náměstí ve 22:00 stoupl z 27,7 na 31,7 z 255. Průměrný jas
 denního pohledu zůstal 166,1. Záře běží od střední předvolby a dá se vypnout
 parametrem `?bloom=0`. [Náměstí před přidáním záře](efekty/zare-pred.jpg) ·
 [Náměstí se září](efekty/zare-namesti.jpg).
+
+## Tónování
+
+ACES a AgX byly porovnány ve stejných pohledech s expozicí 1.
+Výchozí zůstává ACES. Uchovává teplejší odstín dlažby a silnější rozdíl
+mezi rozsvíceným a zhasnutým oknem. AgX v porovnání zvedá tmavé plochy
+a ve dne tlumí barvy. Lze ho zobrazit parametrem `?tone=agx`.
+
+| Pohled | ACES | AgX |
+| --- | --- | --- |
+| Náměstí ve dne | [Snímek](efekty/tonovani-aces-den.jpg) | [Snímek](efekty/tonovani-agx-den.jpg) |
+| Náměstí v noci | [Snímek](efekty/tonovani-aces-noc.jpg) | [Snímek](efekty/tonovani-agx-noc.jpg) |
+
+V nočním vzorku dvou sousedních oken byl rozdíl v červeném kanálu 144
+bodů z 255 u ACES a 104 u AgX. Denní vzorek dlažby měl v červeném kanálu
+175 bodů u ACES a 159 u AgX. Převod obrazu pro monitor probíhá samostatně
+po tónování, aby mezi ně v dalším kroku šlo přidat barevné ladění.

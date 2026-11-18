@@ -69,7 +69,9 @@ export class PostFX {
       image = vec4(image.rgb.add(this.glow.rgb), image.a);
     }
 
-    const display = renderOutput(image);
+    const toneMapping = PARAMS.get('tone') === 'agx' ? THREE.AgXToneMapping : THREE.ACESFilmicToneMapping;
+    const toned = renderOutput(image, toneMapping, THREE.LinearSRGBColorSpace);
+    const display = renderOutput(toned, THREE.NoToneMapping, THREE.SRGBColorSpace);
     if (this.temporal) {
       this.pipeline.outputNode = display;
       this.antialias = 'traa';
