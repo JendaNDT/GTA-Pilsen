@@ -63,6 +63,7 @@ export class World {
       }
     }
     this._initGraph();
+    this.busContraflow = new Set(data.meta.traffic?.busContraflow);
     this.turns = new TurnRules(this, data.meta.traffic?.restrictions);
     this.traffic = new Traffic(this, data.meta.traffic);
     this._initLand(data.land);
@@ -1072,6 +1073,7 @@ export class World {
   _initRails(R) {
     const n = R.header.count;
     this.rails = [];
+    this.tramTracks = [];
     const lists = new Array(this.cols * this.rows);
     for (let i = 0; i < n; i++) {
       const cnt = R.start[i + 1] - R.start[i] + 1;
@@ -1096,11 +1098,47 @@ export class World {
         for (let k = 0; k < cnt; k++) rail.y[k] = R.bridgeY[bo + k] * 0.02;
       }
       this.rails.push(rail);
+      if (rail.cls === 0) {
+        let minX = pts[0], maxX = minX, minZ = pts[1], maxZ = minZ;
+        for (let k = 2; k < pts.length; k += 2) {
+          minX = Math.min(minX, pts[k]); maxX = Math.max(maxX, pts[k]);
+          minZ = Math.min(minZ, pts[k + 1]); maxZ = Math.max(maxZ, pts[k + 1]);
+        }
+        this.tramTracks.push({ rail, minX, maxX, minZ, maxZ });
+      }
       const mid = (cnt >> 1) * 2;
       const ci = this.chunkIndex(pts[mid], pts[mid + 1]);
       if (ci >= 0) (lists[ci] || (lists[ci] = [])).push(i);
     }
     this.railChunks = lists;
+  }
+
+  /** Zda by zaparkovaná karoserie zasahovala do průjezdného prostoru tramvaje. */
+  blocksTramTrack(x, z, y, yaw, length, width) {
+    const fx = Math.sin(yaw), fz = Math.cos(yaw);
+    const reach = Math.hypot(length, width) / 2 + 1.7;
+    for (const { rail, minX, maxX, minZ, maxZ } of this.tramTracks) {
+      if (x < minX - reach || x > maxX + reach || z < minZ - reach || z > maxZ + reach) continue;
+      const p = rail.pts;
+      for (let i = 2; i < p.length; i += 2) {
+        const ax = p[i - 2] - x, az = p[i - 1] - z, dx = p[i] - p[i - 2], dz = p[i + 1] - p[i - 1];
+        const length2 = dx * dx + dz * dz;
+        if (!length2) continue;
+        const t = Math.max(0, Math.min(1, -(ax * dx + az * dz) / length2));
+        const ox = ax + t * dx, oz = az + t * dz;
+        if (ox * ox + oz * oz > reach * reach) continue;
+        const k = i / 2 - 1;
+        const railY = rail.y ? rail.y[k] + t * (rail.y[k + 1] - rail.y[k]) : this.heightAt(x + ox, z + oz);
+        if (Math.abs(railY - y) >= 2.5) continue;
+        // Průměty na osy karoserie a na kolmici ke koleji. Započtena je i šířka tramvaje.
+        const along = dx * fx + dz * fz, across = dx * fz - dz * fx;
+        if (Math.abs(ax * fx + az * fz + along / 2) > length / 2 + Math.abs(along) / 2 + 1.7 ||
+            Math.abs(ax * fz - az * fx + across / 2) > width / 2 + Math.abs(across) / 2 + 1.7) continue;
+        if (Math.abs(ax * dz - az * dx) <=
+            (length * Math.abs(across) + width * Math.abs(along)) / 2 + 1.7 * Math.sqrt(length2)) return true;
+      }
+    }
+    return false;
   }
 
   _initTrees(T) {

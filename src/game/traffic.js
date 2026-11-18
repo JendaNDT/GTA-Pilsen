@@ -394,6 +394,11 @@ export class Traffic {
           const half = other.halfLen ?? width;
           const reachBound = length + Math.max(width, half) + car.radius + 0.15;
           if (Math.abs(ox) > reachBound || Math.abs(oz) > reachBound) return false;
+          // Plynule odjíždějící vůz ve stejném pruhu řidič sleduje s odstupem.
+          // Čekání až na jeho úplné vyjetí by na zelenou pouštělo auta po jednom.
+          const vx = other.vx || 0, vz = other.vz || 0;
+          if (vx * tx + vz * tz > 2 && Math.abs(vx * tz - vz * tx) < 0.5 &&
+              (other.physical?.input?.targetSpeed ?? Infinity) > 2) return false;
           const alignment = Number.isFinite(other.yaw) ? Math.abs(Math.sin(other.yaw) * tx + Math.cos(other.yaw) * tz) : 1;
           const across = Math.sqrt(Math.max(0, 1 - alignment ** 2));
           const along = ox * tx + oz * tz;
@@ -450,13 +455,16 @@ export class Traffic {
     return best;
   }
 
-  controlAhead(x, z, tx, tz, reach) {
+  controlAhead(x, z, tx, tz, reach, tram = false) {
     let best = reach, result = null;
     for (const c of nearby(this.controlGrid, x, z, reach + 5)) {
       if (!this.byEdge.get(c.edge)?.includes(c)) continue;
       const dx = c.x - x, dz = c.z - z, distance = dx * tx + dz * tz;
       if (distance < -0.35 || distance >= best || c.tx * tx + c.tz * tz < 0.77) continue;
-      if (Math.abs(dx * tz - dz * tx) > Math.max(2.7, c.width / 2 + 0.6)) continue;
+      // Z prostředního pásu je dál ke směrovému návěstidlu. Sousední pěší přechod
+      // může končit na ostrůvku ještě před kolejí a řídit jen souběžnou vozovku.
+      const besideTrack = tram && c.directedHead && c.tx * tx + c.tz * tz > 0.95;
+      if (Math.abs(dx * tz - dz * tx) > Math.max(2.7, c.width / 2 + (besideTrack ? 4.2 : 0.6))) continue;
       best = distance;
       result = { control: c, distance };
     }
@@ -464,7 +472,7 @@ export class Traffic {
   }
 
   transitLimit(vehicle, point, ahead, dt, limit, others) {
-    const next = this.controlAhead(point.x, point.z, point.tx, point.tz, 42);
+    const next = this.controlAhead(point.x, point.z, point.tx, point.tz, 42, vehicle.isTram);
     if (next) {
       // V trase MHD je s poloha čela vozu, nikoli jeho středu.
       limit = this.drivingRule(vehicle, next.control, next.distance - 0.55, dt, limit, others);

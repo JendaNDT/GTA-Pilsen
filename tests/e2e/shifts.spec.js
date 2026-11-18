@@ -18,9 +18,11 @@ async function start(page, id) {
   await panel(page);
   await page.locator('#shift-offer').selectOption(id);
   await expect(page.locator('#shift-direction')).toContainText('odjezd');
-  await page.getByRole('button', { name: 'Nastoupit do směny' }).click();
+  const button = page.getByRole('button', { name: 'Nastoupit do směny' });
+  // Po nastoupení odměřuje čas test. První volný snímek nesmí zkrátit pobyt v zastávce.
+  await button.evaluate(el => el.addEventListener('click', () => window.__freeze(true), { once: true }));
+  await button.click();
   await expect(page.locator('#menu')).toBeHidden();
-  await page.evaluate(() => window.__freeze(true));
 }
 
 test('změna herního času přeruší směnu až po potvrzení', async ({ page }) => {
@@ -81,7 +83,7 @@ async function drive(page, failWrite) {
         const distance = stop.s - v.s;
         const p = v.route.posAt(v.s, v.side, {});
         let wanted = Math.min((v.isTram ? 40 / 3.6 : v.roadLimit || 10) - 0.35, Math.sqrt(3.4 * Math.max(0, distance - 0.85)));
-        const next = traffic.controlAhead(p.x, p.z, p.tx, p.tz, 42);
+        const next = traffic.controlAhead(p.x, p.z, p.tx, p.tz, 42, v.isTram);
         if (next && !run.passed.has(next.control)) {
           const { control, distance: approach } = next;
           const stopSign = control.kind === 'stop' && (run.rule !== control || run.held < 0.7);

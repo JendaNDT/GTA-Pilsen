@@ -246,6 +246,7 @@ export class VehicleManager {
   _laneFor(e, side) {
     const w = this.world, road = w.eRoad[e];
     const width = w.r.w[road];
+    if (w.busContraflow.has(road)) return width / 4;
     if (w.r.flags[road] & RF.ONEWAY) {
       const lanes = w.r.lanes[road];
       if (lanes < 2) return 0;
@@ -745,6 +746,7 @@ export class VehicleManager {
     if (w.blocked(x, z, 2.3, 0.3, 1.5) || w.isWater(x, z)) return null;
     // Za rohem může být jiná ulice blíž nárazníku než středu zaparkovaného auta.
     const fx = Math.sin(yaw), fz = Math.cos(yaw), y = w.heightAt(x, z);
+    if (w.blocksTramTrack(x, z, y, yaw, type.len, type.wid)) return null;
     for (const along of [-type.len / 2, 0, type.len / 2]) for (const side of [-type.wid / 2, type.wid / 2]) {
       if (w.onCarriageway(x + fx * along + fz * side, z + fz * along - fx * side, y)) return null;
     }

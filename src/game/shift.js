@@ -162,7 +162,7 @@ export class Shifts {
   }
 
   checkTraffic(run, traffic, v, front, advance, dt, cars, nearby) {
-    const next = traffic.controlAhead(front.x, front.z, front.tx, front.tz, 42);
+    const next = traffic.controlAhead(front.x, front.z, front.tx, front.tz, 42, v.isTram);
     run.signal = null;
     if (!next || run.passed.has(next.control)) return;
     const { control, distance } = next;

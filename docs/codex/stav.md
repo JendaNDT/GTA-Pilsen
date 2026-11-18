@@ -10,7 +10,7 @@ Větev `etapa/E20` vychází ze sloučené etapy E19 na revizi `10832b4`. [Zadá
 | 4. MHD a směny | Hotovo. Články vozidel, odstrčení auta, rozjezdy a brzdění ve směnách. |
 | 5. Vrtulník | Hotovo. Let s asistencí, přistání na střeše a na heliportu. |
 | 6. Voda | Hotovo. Vztlak a odpor vody, pozvolné potopení auta a plavání ke břehu. |
-| 7. Závěrečné scénáře, výkon a protokol | Obě ostrá odbočení, střet, odklizení vraku a deset minut u hlavního nádraží ověřeny. Zbývá vyřešit stání na Klatovské a bodování při srovnávacím průjezdu linky 16. Poté zopakovat všechna měření a testy a připravit protokol a žádost o sloučení. |
+| 7. Závěrečné scénáře, výkon a protokol | Obě ostrá odbočení, střet, odklizení vraku, míjení trolejbusů a hodnocení směn ověřeny. Poslední desetiminutová zkouška u nádraží prošla. Na Klatovské trvalo nejdelší čekání 197 s při mezi 120 s. Zbývá opravit příčinu, zopakovat obě pozorování, dokončit závěrečné kontroly a připravit protokol a žádost o sloučení. |
 
 ## Otevřené otázky
 
@@ -109,4 +109,25 @@ Druhá neúspěšná zkouška byla směna trolejbusu 16. Při opakování má zk
 
 Při dvou samostatných měřeních na Macu trvalo 95 % z 604 kroků fyziky nejvýše 4,50 ms a 2,40 ms. První běh dosáhl jen 39 fyzikálních aut a překročil rozpočet 4 ms. Ve druhém bylo 40 fyzikálních aut, z nich až 21 s aktivním řidičem, a měření prošlo. Oba výsledky jsou v `data-raw/e20/vykon-oblouky*.json`. Výkon po dalších změnách znovu změřit.
 
-Pokračovat na větvi `etapa/E20` krokem 7. Pro opakování dopravy spustit po sestavení `npm run test:e2e -- traffic-observation.spec.js --trace off --output=data-raw/e20/dalsi-pozorovani`. Směny prověří `npm run test:e2e -- shifts.spec.js -g 'celá směna' --trace off`. Po vyřešení obou případů zbývá celá sada testů, závěrečné měření, protokol `docs/E20.md`, README, katalog a žádost o sloučení do `main`. Od autora nejsou potřeba další podklady.
+#### Pokračování po revizi `b78d684`
+
+Na Klatovské už hra při parkování kontroluje celou délku a šířku auta vůči tramvajové koleji. U křižovatky s Tylovou tak odmítne i původní místo, kde střed auta byl mimo silnici, ale roh karoserie překážel tramvaji. Samostatná zkouška ověřuje také parkování pod vyvýšenou tratí.
+
+V Tylově se trolejbusy 12 z Nové Hospody a 16 z Doubravky na prázdné ulici zastavily proti sobě. Oba původně sledovaly její střed. Generátor nyní z původních dat OpenStreetMap přebírá výslovně povolený protisměr pro MHD. Ve hře se vozy drží vpravo a při zkoušce oba dojely přes dvacet metrů za místo setkání. Při porovnání nově sestavených dat se změnil pouze seznam 16 silničních úseků v `meta.json`. Všech šest binárních souborů se shodovalo po bajtech.
+
+Tramvaj 4 z Košutky na středovém pásu Klatovské rozpozná směrový semafor před Americkou. Při jízdě výjezdem přes křižovatku řidič auta může následovat plynule odjíždějící vůz. Před stojícím, brzdícím nebo napříč projíždějícím autem dál čeká.
+
+Při srovnání směn začíná zkouška odměřovat čas přímo při kliknutí na „Nastoupit do směny“. Dříve mohl mezi nástupem a prvním měřením proběhnout další snímek hry a zkrátit pobyt v zastávce. Při stejném jízdním řádu a ovládání získaly linky 1, 16 a 30 opět 93, 99 a 100 bodů, stejně jako v E12. Výsledky jednotlivých směn jsou v `data-raw/e20/nastup-body.json`.
+
+| Poslední desetiminutové pozorování | Počet různých aut s fyzikou | Nejdelší stání | Vyjetí z vozovky pod plynem |
+| --- | ---: | ---: | ---: |
+| Hlavní nádraží | 51 | 61 s | 0 |
+| Klatovská | 102 | 197 s | 0 |
+
+Mez zůstává 120 s. Před křižovatkou Husovy s Klatovskou stálo auto na úseku 34501 před úsekem 1423. V souběžném záznamu této situace mělo po 130 s čekání zelenou. Výjezd mu blokovala tramvaj 4 stojící u jiného návěstidla téže skupiny. Při pokračování prověřit polohu čela a zadního článku tramvaje vůči stopčarám a dráze odbočujícího auta. U nádraží při dřívějším běhu vůz vyjel na Železniční, proto po opravě zopakovat obě pozorování. Výsledky jsou v `data-raw/e20/odjezd-pozorovani/*/pozorovani.json`, polohy a semafory v `data-raw/e20/vazby-Klatovská.json`.
+
+Při uložení prošlo 96 z 96 testů JavaScriptu, 23 z 23 testů Pythonu a produkční sestavení. Ve společném běhu dopravy, MHD a směn prošlo 23 z 24 zkoušek. Prošla i starší zkouška, v níž kolona na Tylově nechává volný přechod a koleje. Při jediném neúspěchu dodávka z Klatovské do Americké nedojela do sledovaného místa za zatáčkou do 90 s. Obě samostatná opakování se stejnou mezí prošla, stejně jako všech šest dalších průjezdů oběma zatáčkami při záznamu polohy. Příčina nedojetí zůstává otevřená. Příští neúspěch vypíše také polohu, rychlost a číslo semaforu nebo značky. Záznamy jsou v `data-raw/e20/protismery-{node,python,build,zaver}.log`, `protismer-oblouky.log` a `prujezd-americka.json`.
+
+Na autorově Macu při 40 autech trvalo 95 % fyzikálních kroků nejvýše 4,20 ms, při opakování s 38 auty to bylo 3,50 ms. Každý běh změřil 605 kroků na Klatovské. Podmínku 4 ms při plném počtu 40 aut zatím tato verze nesplnila. Výsledky jsou v `data-raw/e20/vykon-protismer.json` a `vykon-protismer-opakovani.json`.
+
+Pokračovat na větvi `etapa/E20` krokem 7. Po sestavení zopakovat `npm run test:e2e -- traffic-observation.spec.js --trace off --output=data-raw/e20/dalsi-pozorovani`. Při kontrole Americké použít i `npm run test:e2e -- physical-traffic.spec.js -g 'dodávka udrží' --repeat-each=3 --trace off`. Po vyřešení fronty a ověření odbočení zbývá celá sada testů, kontrola výkonu při 40 autech, protokol `docs/E20.md`, README, katalog a žádost o sloučení do `main`. Od autora nejsou potřeba další podklady.

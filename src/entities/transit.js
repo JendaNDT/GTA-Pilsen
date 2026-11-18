@@ -272,9 +272,11 @@ export class TransitManager {
       const forward = road && road.dx * frontPoint.tx + road.dz * frontPoint.tz >= 0;
       v.roadLimit = road ? this.world.roadSpeed(road.road, forward) / 3.6 : 10.5;
       const { lanes, w, flags } = this.world.r;
-      const oneWay = road && (flags[road.road] & RF.ONEWAY);
+      const contraflow = road && this.world.busContraflow.has(road.road);
+      const oneWay = road && (flags[road.road] & RF.ONEWAY) && !contraflow;
       const count = road && Math.max(oneWay ? 1 : 2, lanes[road.road]);
       v.lane = road ? Math.min(2.5, w[road.road] * (1 - 1 / count) / 2) : 1.7;
+      if (contraflow) v.lane = Math.min(2.5, Math.max(v.lane, w[road.road] / 2 - 1.3));
       v.limitTimer = 0.5;
     }
     v.side += (v.lane - v.side) * Math.min(1, dt * 4);

@@ -394,7 +394,15 @@ def build_traffic(ex, roads, bounds, raw):
     suppressed = {c["sign"]["id"] for c in conflicts}
     signs = [s for s in signs if s["source"] != "plzen" or s["id"] not in suppressed]
     signs.extend(osm_signs(ex, index, signs))
+    # I po rozdělení silnice na hranici mapy má každý díl stejnou výjimku pro MHD.
+    bus_contraflow = []
+    for i, road in enumerate(roads):
+        if road["flags"] & 1:
+            tags = ex["ways"][road["way"]][0]
+            if tags.get("oneway:bus", tags.get("oneway:psv")) in ("no", "false", "0"):
+                bus_contraflow.append(i)
     result = {"sources": sources, "restrictions": restrictions(ex, index), "controls": controls, "signs": signs,
+              "busContraflow": bus_contraflow,
               "lines": [m for m in markings if m["kind"] == "line"],
               "crossings": city_crossings + [c for c in crossings if c["id"] not in replaced],
               "conflicts": conflicts}

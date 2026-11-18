@@ -207,14 +207,16 @@ test('E20 – dodávka udrží vozovku při ostrém odbočení na Americkou i na
         departed ||= !w.onCarriageway(car.x, car.z, car.y);
         arrived = car.edge === next && car.s >= 16;
       }
-      results.push({ edge, arrived, departed });
+      results.push({ edge, arrived, departed, lastEdge: car.edge, distance: car.s,
+        x: car.x, z: car.z, speed: car.speed, targetSpeed: car.physical.input?.targetSpeed,
+        rule: car.trafficStop?.rule.id, next: car.next });
       vm.remove(car);
     }
     return results;
   });
   for (const run of runs) {
-    expect(run.arrived, String(run.edge)).toBe(true);
-    expect(run.departed, String(run.edge)).toBe(false);
+    expect(run.arrived, JSON.stringify(run)).toBe(true);
+    expect(run.departed, JSON.stringify(run)).toBe(false);
   }
 });
 
@@ -301,18 +303,20 @@ test('E20 – provoz vybírá průjezdnou ulici a při parkování nechá vozovk
       const car = vm.spawnParked(through.x, through.z, null);
       if (!car) continue;
       const fx = Math.sin(car.yaw), fz = Math.cos(car.yaw);
-      let overlaps = false;
+      let overlaps = w.blocksTramTrack(car.x, car.z, car.y, car.yaw, car.type.len, car.type.wid);
       for (const along of [-car.halfLen, 0, car.halfLen]) for (const side of [-1, 1]) {
         const offset = side * car.type.wid / 2;
         overlaps ||= w.onCarriageway(car.x + along * fx + offset * fz, car.z + along * fz - offset * fx, car.y);
       }
       samples.push(overlaps);
     }
-    return { through: vm._throughRoad(34497, 0), blind: vm._throughRoad(990, 0), samples,
+    const besideTram = w.blocksTramTrack(-377.7, 361.7, w.heightAt(-377.7, 361.7), 1.3, 4.4, 1.8);
+    return { through: vm._throughRoad(34497, 0), blind: vm._throughRoad(990, 0), samples, besideTram,
       endpoints: [end, through].every(p => w.onCarriageway(p.x, p.z, w.heightAt(p.x, p.z))) };
   });
   expect(result.through && result.endpoints).toBe(true);
   expect(result.blind).toBe(false);
+  expect(result.besideTram).toBe(true);
   expect(result.samples).toHaveLength(15);
   expect(result.samples.every(overlap => !overlap)).toBe(true);
 });
@@ -333,4 +337,66 @@ test('E20 – tramvaj počká se zařazením na trasu, dokud její místo zabír
     return { held, released: tram.visible && !tram.waitingForSpace };
   });
   expect(result).toEqual({ held: true, released: true });
+});
+
+test('E20 – protijedoucí trolejbusy 12 a 16 se v Tylově minou ve svých pruzích', async ({ page }) => {
+  await start(page, '&date=2026-11-09&hour=7.5');
+  const result = await page.evaluate(() => {
+    const { transit, world } = __game;
+    const observer = { x: -382, z: 365 };
+    const approaches = [['16', 'Doubravka', 4840.4], ['12', 'Nová Hospoda', 4980.9]];
+    const vehicles = approaches.map(([ref, from, crossing]) => {
+      const v = transit.vehicles.find(v => {
+        if (v.route.ref !== ref || v.route.from !== from) return false;
+        const p = v.route.posAt(crossing, 0, {});
+        return Math.hypot(p.x + 382, p.z - 356) < 4;
+      });
+      Object.assign(v, { s: crossing - 23, v: 5, wait: 0, doorsOpen: false, stopTarget: null });
+      return v;
+    });
+    transit.vehicles = vehicles;
+    let closest = Infinity;
+    for (let i = 0; i < 110 * 60; i++) {
+      world.traffic.tick(1 / 60);
+      transit.update(1 / 60, observer, [], false);
+      const [a, b] = vehicles;
+      closest = Math.min(closest, Math.hypot(a.x - b.x, a.z - b.z));
+      if (vehicles.every((v, i) => v.s > approaches[i][2] + 20)) break;
+    }
+    return { beyond: vehicles.map((v, i) => v.s - approaches[i][2]), closest };
+  });
+  expect(Math.min(...result.beyond), JSON.stringify(result)).toBeGreaterThan(20);
+  expect(result.closest).toBeGreaterThan(2.5);
+});
+
+test('E20 – tramvaj 4 na středovém pásu Klatovské zastaví před Americkou', async ({ page }) => {
+  await start(page, '&date=2026-11-09&hour=7.5');
+  const result = await page.evaluate(() => {
+    const { world, transit } = __game, traffic = world.traffic;
+    const signal = traffic.controls.find(c => c.id === 10274015040 && c.kind === 'signal');
+    const entry = 4697, approach = entry - 18;
+    const tram = transit.vehicles.find(v => {
+      const p = v.route.posAt(entry, 0, {});
+      return v.route.ref === '4' && v.route.from === 'Košutka' && Math.hypot(p.x - signal.x, p.z - signal.z) < 7;
+    });
+    transit.vehicles = [tram];
+    const p = tram.route.posAt(approach, 0, {});
+    Object.assign(tram, { s: approach, v: 7, wait: 0, doorsOpen: false, stopTarget: null });
+    const run = (phase, ticks) => {
+      traffic.time = 0;
+      while (traffic.time < 180 && traffic.phase(signal.group) !== phase) traffic.time += 0.25;
+      if (traffic.phase(signal.group) !== phase) throw new Error('Semafor před Americkou neukázal ' + phase);
+      for (let i = 0; i < ticks; i++) transit.update(1 / 60, p, [], false);
+    };
+    run('green' + (1 - signal.axis), 600);
+    const front = tram.route.posAt(tram.s, 0, {});
+    const gap = (signal.x - front.x) * front.tx + (signal.z - front.z) * front.tz;
+    const stopped = tram.v < 0.05;
+    run('green' + signal.axis, 600);
+    return { gap, stopped, advance: tram.s - entry };
+  });
+  expect(result.stopped).toBe(true);
+  expect(result.gap).toBeGreaterThan(0);
+  expect(result.gap).toBeLessThan(1);
+  expect(result.advance).toBeGreaterThan(12);
 });
