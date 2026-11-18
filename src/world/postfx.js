@@ -2,9 +2,11 @@ import * as THREE from 'three/webgpu';
 import { convertToTexture, materialReference, mix, mrt, normalView, output, pass, renderOutput, vec4, velocity } from 'three/tsl';
 import { fxaa } from 'three/addons/tsl/display/FXAANode.js';
 import { ao } from 'three/addons/tsl/display/GTAONode.js';
+import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import { smaa } from 'three/addons/tsl/display/SMAANode.js';
 import { traa } from 'three/addons/tsl/display/TRAANode.js';
 import { PARAMS, QUALITY } from '../config.js';
+import { env } from './materials.js';
 
 function buffers() {
   // Průhledné lampy a značky se přimíchají pouze do barvy. Normála a pohyb
@@ -32,10 +34,12 @@ export class PostFX {
     this.effects = [];
     this.temporal = null;
     this.ambientOcclusion = null;
+    this.glow = null;
     this.lastPosition = new THREE.Vector3();
     this.lastRotation = new THREE.Quaternion();
     this.hasPreviousCamera = false;
 
+    let image = this.color;
     if (QUALITY.shadowCascades >= 3 && independentBlending) {
       this.scenePass.setMRT(buffers());
       this.normal = this.scenePass.getTextureNode('normal');
@@ -55,12 +59,24 @@ export class PostFX {
       }
       this.temporal = traa(lit, this.depth, this.velocity, camera);
       this.effects.push(this.temporal);
-      this.pipeline.outputNode = renderOutput(this.temporal);
+      image = this.temporal.getTextureNode();
+    }
+
+    if (QUALITY.shadowCascades > 0 && PARAMS.get('bloom') !== '0') {
+      this.glow = bloom(image, mix(0.10, 0.48, env.night), 0.32, mix(1.60, 0.30, env.night));
+      this.glow.smoothWidth.value = 0.14;
+      this.effects.push(this.glow);
+      image = vec4(image.rgb.add(this.glow.rgb), image.a);
+    }
+
+    const display = renderOutput(image);
+    if (this.temporal) {
+      this.pipeline.outputNode = display;
       this.antialias = 'traa';
     } else {
-      const display = convertToTexture(renderOutput(this.color));
-      this.effects.push(display);
-      const smoothing = QUALITY.shadowCascades === 0 ? fxaa(display) : smaa(display);
+      const displayTexture = convertToTexture(display);
+      this.effects.push(displayTexture);
+      const smoothing = QUALITY.shadowCascades === 0 ? fxaa(displayTexture) : smaa(displayTexture);
       this.effects.push(smoothing);
       this.pipeline.outputNode = smoothing;
       this.antialias = QUALITY.shadowCascades === 0 ? 'fxaa' : 'smaa';

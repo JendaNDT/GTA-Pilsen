@@ -29,3 +29,12 @@ GTAO jemné zastínění v rozích, u zdí a pod předměty. Mapa zastínění m
 poloviční šířku a výšku a vyhlazování potlačuje její šum v čase.
 Zastínění se přidává před vyhlazením obrazu. Parametr `?ao=0` ho vypne.
 [Hamr před zastíněním](efekty/zastineni-pred.jpg) · [Hamr po úpravě](efekty/zastineni-hamr.jpg).
+
+## Záře světel
+
+Záře se rozlévá pouze z částí obrazu, které překročí hranici jasu. V noci
+je hranice nižší a záře silnější, aby vynikla okna, lampy a světlomety.
+Průměrný jas náměstí ve 22:00 stoupl z 27,7 na 31,7 z 255. Průměrný jas
+denního pohledu zůstal 166,1. Záře běží od střední předvolby a dá se vypnout
+parametrem `?bloom=0`. [Náměstí před přidáním záře](efekty/zare-pred.jpg) ·
+[Náměstí se září](efekty/zare-namesti.jpg).
