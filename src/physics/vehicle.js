@@ -187,8 +187,14 @@ export class PlayerVehicle {
       this.friction = surface(this.car.x, this.car.z) * this.spec.grip;
     }
     this.car.steer = input.steer;
-    this.controller.SetDriverInput(input.throttle, input.steer, input.brake, 0);
+    const c = this.car;
+    const holding = input.brake === 1 && !input.throttle && Math.hypot(c.vx, c.vz) < 0.45 && Math.abs(c.vy) < 0.35;
+    this.controller.SetDriverInput(input.throttle, input.steer, input.brake, holding ? 1 : 0);
     if (input.throttle) this.physics.bodies.ActivateBody(this.body.GetID());
+    // Na příčném svahu zabrzděné pneumatiky v klidu drží. Náraz nebo rozjezd
+    // spící dynamické auto opět probudí stejně jako zaparkovaný vůz.
+    if (holding && this.body.IsActive() && !this.touchedVehicle && Math.abs(c.roll) < 0.45 &&
+        this.wheels.filter(wheel => wheel.HasContact()).length >= 3) this.physics.bodies.DeactivateBody(this.body.GetID());
   }
 
   read() {

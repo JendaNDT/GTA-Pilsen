@@ -311,12 +311,14 @@ test('E20 – provoz vybírá průjezdnou ulici a při parkování nechá vozovk
       samples.push(overlaps);
     }
     const besideTram = w.blocksTramTrack(-377.7, 361.7, w.heightAt(-377.7, 361.7), 1.3, 4.4, 1.8);
-    return { through: vm._throughRoad(34497, 0), blind: vm._throughRoad(990, 0), samples, besideTram,
+    const onCorner = w.blocksStreetCorner(56968, -153.5, 451, 1.333, 4, 1.8);
+    return { through: vm._throughRoad(34497, 0), blind: vm._throughRoad(990, 0), samples, besideTram, onCorner,
       endpoints: [end, through].every(p => w.onCarriageway(p.x, p.z, w.heightAt(p.x, p.z))) };
   });
   expect(result.through && result.endpoints).toBe(true);
   expect(result.blind).toBe(false);
   expect(result.besideTram).toBe(true);
+  expect(result.onCorner).toBe(true);
   expect(result.samples).toHaveLength(15);
   expect(result.samples.every(overlap => !overlap)).toBe(true);
 });
@@ -399,4 +401,141 @@ test('E20 – tramvaj 4 na středovém pásu Klatovské zastaví před Americkou
   expect(result.gap).toBeGreaterThan(0);
   expect(result.gap).toBeLessThan(1);
   expect(result.advance).toBeGreaterThan(12);
+});
+
+test('E20 – tramvaj po vjezdu na zelenou uvolní Husovu i při změně světel', async ({ page }) => {
+  await start(page, '&date=2026-11-09&hour=7.5');
+  const result = await page.evaluate(() => {
+    const { transit, world } = __game, traffic = world.traffic;
+    const entry = traffic.controls.find(c => c.id === 3073913700 && c.directedHead);
+    const tram = transit.vehicles.find(v => v.route.ref === '4' && v.route.from === 'Košutka' &&
+      Math.abs(v.route.posAt(4630, 0, {}).z - 275) < 3);
+    const approach = 4576;
+    const p = tram.route.posAt(approach, 0, {});
+    Object.assign(tram, { s: approach, v: 7, wait: 0, doorsOpen: false, stopTarget: null });
+    transit.vehicles = [tram];
+    const setLight = (axis) => {
+      for (let t = 0; t < 180; t += 0.25) {
+        if (traffic.phase(entry.group, t) === 'green' + axis) { traffic.time = t; return; }
+      }
+      throw new Error('Na křižovatce Husovy chybí zelená.');
+    };
+    const run = (ticks) => {
+      for (let i = 0; i < ticks; i++) transit.update(1 / 60, p, [], false);
+    };
+    setLight(1 - entry.axis);
+    run(600);
+    const front = tram.route.posAt(tram.s, 0, {});
+    const gap = (entry.x - front.x) * front.tx + (entry.z - front.z) * front.tz;
+    const stopSpeed = tram.v;
+    setLight(entry.axis);
+    for (let i = 0; i < 900 && tram.s < 4601; i++) run(1);
+    const entered = tram.s >= 4601;
+    setLight(1 - entry.axis);
+    const crossing = entry.group.crossings.find(c => c.id === 10274015043);
+    const pedestrian = {};
+    traffic.users.set(pedestrian, crossing);
+    run(720);
+    const nose = tram.route.posAt(tram.s, 0, {});
+    const pedestrianGap = (crossing.x - nose.x) * nose.tx + (crossing.z - nose.z) * nose.tz;
+    const pedestrianStop = tram.v;
+    traffic.users.delete(pedestrian);
+    run(720);
+    const rear = tram.route.posAt(tram.s - tram.len, 0, {});
+    return { stopSpeed, gap, entered, pedestrianGap, pedestrianStop, rearZ: rear.z };
+  });
+  expect(result.stopSpeed, JSON.stringify(result)).toBeLessThan(0.01);
+  expect(result.gap).toBeGreaterThan(0);
+  expect(result.gap).toBeLessThan(1);
+  expect(result.entered).toBe(true);
+  expect(result.pedestrianStop).toBeLessThan(0.01);
+  expect(result.pedestrianGap).toBeGreaterThan(0);
+  expect(result.pedestrianGap).toBeLessThan(2);
+  // Husova protíná koleje kolem z = 261; i zadní článek musí opustit šířku vozovky.
+  expect(result.rearZ).toBeGreaterThan(265);
+});
+
+test('E20 – levé odbočení přes protisměr na Klatovské nechá projet auto z Husovy', async ({ page }) => {
+  await start(page, '&date=2026-11-09&hour=7.5');
+  const result = await page.evaluate(() => {
+    const g = __game, w = g.world, manager = g.vehicles, Car = g.player.lastCar.constructor;
+    for (const other of [...manager.cars]) manager.remove(other);
+    const place = (edge, s, exits) => {
+      const c = manager.add(new Car('sedan', 0x666666)), lane = w.r.w[w.eRoad[edge]] / 4;
+      const p = w.edgePoint(edge, s, lane, {});
+      c.place(p.x, p.z, Math.atan2(p.tx, p.tz));
+      Object.assign(c, { edge, s, lane, mode: 'ai', temper: 1 });
+      let from = edge;
+      for (const to of exits) {
+        c.exitPlan.push({ from, to, lane: w.r.w[w.eRoad[to]] / 4, slow: from === 1422 ? 4 : 8 });
+        from = to;
+      }
+      manager._pickNext(c);
+      return c;
+    };
+    const through = place(34501, 21, [1423, 1421, 12147]);
+    const turning = place(1422, 3.5, [19355, 19410]);
+    g.player.place(-395, 249);
+    for (let i = 0; i < 25; i++) g.colliders.update(through.x, through.z);
+    g.trafficBodies.selectCars(g);
+    let passed = false, completed = false, waited = false, impact = 0;
+    for (let i = 0; i < 18 * 60; i++) {
+      w.traffic.tick(1 / 60);
+      for (const c of [through, turning]) manager.stepAI(c, 1 / 60, c.physical);
+      g.physics.engine.Step(1 / 60, 1);
+      for (const c of [through, turning]) {
+        c.physical.read();
+        impact = Math.max(impact, c.physical.impactSpeed);
+      }
+      waited ||= through.speed > 1 && turning.edge === 1422 && turning.speed < 0.3;
+      passed ||= through.edge === 12147 && through.s > 2;
+      completed ||= turning.edge === 19355 && turning.s > 10;
+      if (passed && completed) break;
+    }
+    return { waited, passed, completed, impact };
+  });
+  expect(result).toEqual({ waited: true, passed: true, completed: true, impact: 0 });
+});
+
+test('E20 – dodávka na příčném svahu Železniční udrží pruh při stání i rozjezdu', async ({ page }) => {
+  await start(page, '&date=2026-11-09&hour=7.5');
+  const runs = await page.evaluate(() => {
+    const g = __game, w = g.world, manager = g.vehicles, Car = g.player.lastCar.constructor;
+    for (const other of [...manager.cars]) manager.remove(other);
+    const edge = 1181, next = 33897, lane = manager._laneFor(edge, 1);
+    const signal = w.traffic.byEdge.get(edge).find(c => c.id === 10132233548);
+    const phase = (axis) => {
+      for (let t = 0; t < 180; t += 0.25) if (w.traffic.phase(signal.group, t) === 'green' + axis) return t;
+      throw new Error('Na Železniční chybí zelená.');
+    };
+    const red = phase(1 - signal.axis), green = phase(signal.axis), results = [];
+    for (const startLane of [lane, lane + 0.825]) {
+      const p = w.edgePoint(edge, 0, startLane, {});
+      const c = manager.add(new Car('van', 0x727272));
+      c.place(p.x, p.z, Math.atan2(p.tx, p.tz));
+      Object.assign(c, { edge, lane, s: 0, mode: 'ai', speed: 4, vx: 4 * p.tx, vz: 4 * p.tz, temper: 1 });
+      c.exitPlan.push({ from: edge, to: next, lane: manager._laneFor(next, 1), slow: 99 });
+      manager._pickNext(c);
+      g.player.place(p.x + 15, p.z + 15);
+      for (let i = 0; i < 25; i++) g.colliders.update(p.x, p.z);
+      g.trafficBodies.selectCars(g);
+      let outside = false, held = false, arrived = false;
+      for (let tick = 0; tick < 75 * 60 && !arrived; tick++) {
+        w.traffic.time = tick < 50 * 60 ? red : green;
+        manager.stepAI(c, 1 / 60, c.physical);
+        g.physics.engine.Step(1 / 60, 1);
+        c.physical.read();
+        outside ||= !w.onCarriageway(c.x, c.z, c.y);
+        if (tick === 50 * 60 - 1) {
+          const gap = signal.s - c.s - c.halfLen;
+          held = c.edge === edge && gap > 0 && gap <= 1 && Math.hypot(c.vx, c.vz) < 0.15;
+        }
+        arrived = c.edge === next && c.s >= 8;
+      }
+      results.push({ startLane, held, outside, arrived });
+      manager.remove(c);
+    }
+    return results;
+  });
+  for (const run of runs) expect(run, JSON.stringify(run)).toMatchObject({ held: true, outside: false, arrived: true });
 });

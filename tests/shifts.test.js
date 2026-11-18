@@ -50,15 +50,18 @@ test('E11 hodnotí obsluhu, rozpis, dopravní pravidla a plynulost a podmiňuje 
 test('E11 zaznamená průjezd na červenou právě jednou a uzná zastavení u STOP', () => {
   const shifts = new Shifts({ hud: { toast() {} } });
   const run = { passed: new Set(), red: 0, ignoredStop: 0, yield: 0 };
-  const signal = { kind: 'signal' }, sign = { kind: 'stop' };
+  const signal = { kind: 'signal', directedHead: true }, sign = { kind: 'stop' };
   const v = { v: 5 }, front = { x: 0, z: 0, tx: 0, tz: 1 };
   let next = { control: signal, distance: 0.4 };
-  const traffic = { controlAhead: () => next, light: () => 'red', conflict: () => false };
+  const crossed = [];
+  const traffic = { transitControl: () => next, light: () => 'red', conflict: () => false,
+    enterJunction: (_vehicle, control) => crossed.push(control) };
   shifts.checkTraffic(run, traffic, v, front, 0.25, 0.05, [], []);
   assert.equal(run.red, 0);
   shifts.checkTraffic(run, traffic, v, front, 0.45, 0.05, [], []);
   shifts.checkTraffic(run, traffic, v, front, 0.45, 0.05, [], []);
   assert.equal(run.red, 1);
+  assert.deepEqual(crossed, [signal]);
   next = { control: sign, distance: 1.2 };
   v.v = 0;
   for (let i = 0; i < 15; i++) shifts.checkTraffic(run, traffic, v, front, 0, 0.05, [], []);

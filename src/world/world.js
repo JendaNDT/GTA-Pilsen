@@ -822,6 +822,16 @@ export class World {
     this.eFrom = Uint32Array.from(eFrom); this.eTo = Uint32Array.from(eTo);
     this.eA = Uint32Array.from(eA); this.eB = Uint32Array.from(eB);
     this.eLen = Float32Array.from(eLen); this.eRoad = Uint32Array.from(eRoad);
+    this.junctionArms = new Uint16Array(nN);
+    this.junctionHalfWidth = new Float32Array(nN);
+    for (let e = 0; e < nE; e++) {
+      if (eA[e] >= eB[e]) continue;
+      const half = R.w[eRoad[e]] / 2;
+      for (const node of [eFrom[e], eTo[e]]) {
+        this.junctionArms[node]++;
+        this.junctionHalfWidth[node] = Math.max(this.junctionHalfWidth[node], half);
+      }
+    }
     const outStart = new Uint32Array(nN + 1);
     for (let e = 0; e < nE; e++) outStart[this.eFrom[e] + 1]++;
     for (let i = 1; i <= nN; i++) outStart[i] += outStart[i - 1];
@@ -864,6 +874,20 @@ export class World {
       if (this.eTo[f] === a && this.eA[f] === B && this.eB[f] === A) return f;
     }
     return -1;
+  }
+
+  /** Zda by parkování u kraje této silnice zabralo místo potřebné pro odbočení. */
+  blocksStreetCorner(edge, x, z, yaw, length, width) {
+    if (edge < 0) return false;
+    const fx = Math.sin(yaw), fz = Math.cos(yaw);
+    for (const node of [this.eFrom[edge], this.eTo[edge]]) {
+      if (this.junctionArms[node] < 3) continue;
+      const dx = this.nodeX[node] - x, dz = this.nodeZ[node] - z;
+      const along = Math.max(0, Math.abs(dx * fx + dz * fz) - length / 2);
+      const across = Math.max(0, Math.abs(dx * fz - dz * fx) - width / 2);
+      if (Math.hypot(along, across) < this.junctionHalfWidth[node] + 5) return true;
+    }
+    return false;
   }
 
   roadSpeed(road, forward) {

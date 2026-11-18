@@ -97,6 +97,7 @@ class TransitVehicle {
   }
 
   followSchedule({ s, index, wait }) {
+    this.enteredSignal = null;
     this.s = s;
     this.stopIndex = index;
     this.wait = wait;

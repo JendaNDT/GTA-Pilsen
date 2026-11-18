@@ -178,6 +178,7 @@ test('E07 – kolona na Tylově nechá volný přechod a tramvajové koleje', as
     const game = __game, world = game.world, traffic = world.traffic, vehicles = game.vehicles;
     const signal = traffic.controls.find((head) => head.kind === 'signal' && head.id === 10274015039);
     const group = signal.group;
+    const splitCrossing = [3073913687, 3073913690].map(id => traffic.crossings.find(c => c.id === id));
     const phaseTime = (phase) => {
       for (let time = 0; time < 200; time += 0.25) if (traffic.phase(group, time) === phase) return time;
       throw new Error(`Chybí fáze ${phase}.`);
@@ -238,6 +239,7 @@ test('E07 – kolona na Tylově nechá volný přechod a tramvajové koleje', as
     traffic.time = green;
     stepCar(480);
     return { stop, approach: signal.edge, connectorLength: world.eLen[connector], heldOnRed,
+      sharedCrossingPhase: splitCrossing.every(c => c?.group === group),
       tramCrosses: tram.s - tram.len > tramLine,
       clearsAfterGreen: car.edge !== signal.edge || car.s > signal.s + 3 };
   });
@@ -248,6 +250,7 @@ test('E07 – kolona na Tylově nechá volný přechod a tramvajové koleje', as
   expect(result.stop.beforeLine).toBeGreaterThan(0.35);
   expect(result.stop.beforeLine).toBeLessThan(1);
   expect(result.heldOnRed).toBe(true);
+  expect(result.sharedCrossingPhase).toBe(true);
   expect(result.tramCrosses).toBe(true);
   expect(result.clearsAfterGreen).toBe(true);
 });

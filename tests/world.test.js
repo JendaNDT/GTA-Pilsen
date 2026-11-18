@@ -63,6 +63,16 @@ test('výjezd z křižovatky je volný za odjíždějícím autem, před brzdíc
   assert.equal(occupied(), true);
 });
 
+test('řidič, který zastaví nárazníkem 90 cm před stopčárou, po zastavení pokračuje', () => {
+  const traffic = Object.assign(Object.create(Traffic.prototype), { time: 10, conflict: () => false });
+  const car = { speed: 0 };
+  const stop = { kind: 'stop' };
+  let speed;
+  for (let i = 0; i < 42; i++) speed = traffic.drivingRule(car, stop, 0.45, 1 / 60, 9, []);
+  assert.equal(speed, 9);
+  assert.ok(car.trafficStop.held >= 0.65);
+});
+
 test('hodinový profil plynule přechází z pracovní doby na víkend i přes půlnoc', () => {
   const friday = parseDay('2026-11-13');
   const clock = new GameClock(friday);

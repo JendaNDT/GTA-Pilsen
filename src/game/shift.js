@@ -162,7 +162,7 @@ export class Shifts {
   }
 
   checkTraffic(run, traffic, v, front, advance, dt, cars, nearby) {
-    const next = traffic.controlAhead(front.x, front.z, front.tx, front.tz, 42, v.isTram);
+    const next = traffic.transitControl(v, front);
     run.signal = null;
     if (!next || run.passed.has(next.control)) return;
     const { control, distance } = next;
@@ -176,6 +176,7 @@ export class Shifts {
     if (color === 'stop' && distance <= 5 && v.v <= STOP_SPEED) run.held += dt;
     if (advance <= 0 || distance > advance) return;
     run.passed.add(control);
+    traffic.enterJunction(v, control);
     if (color === 'red') { run.red++; this.game.hud.toast('Průjezd na červenou.', 'bad'); }
     if (color === 'stop' && run.held < 0.65) { run.ignoredStop++; this.game.hud.toast('Nezastavil jsi u značky STOP.', 'bad'); }
     if ((color === 'yield' || color === 'stop') && traffic.conflict(v, control, cars, nearby)) {

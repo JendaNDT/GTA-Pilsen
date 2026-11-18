@@ -55,6 +55,18 @@ export function turnPoint(turn, distance, out) {
   return out;
 }
 
+// Vzdálenost po ose protijedoucího auta do místa, kde ji protne levé odbočení.
+export function oncomingDistance(turn, halfLength, other, tx, tz) {
+  const a = turn.start, b = turn.end;
+  if (a.tx * tx + a.tz * tz > -0.8) return Infinity;
+  const dx = b.x + b.tx * halfLength - a.x, dz = b.z + b.tz * halfLength - a.z;
+  const cross = dx * tz - dz * tx;
+  if (Math.abs(cross) < 0.1) return Infinity;
+  const x = a.x - other.x, z = a.z - other.z;
+  const t = (z * tx - x * tz) / cross;
+  return t < 0 || t > 1 ? Infinity : (x + dx * t) * tx + (z + dz * t) * tz;
+}
+
 // Volná vzdálenost pro nárazník podél plánované trasy, včetně zatáčky.
 export function pathClearance(x, z, yaw, halfLength, halfWidth, other, path) {
   const ux = Math.sin(other.yaw ?? yaw), uz = Math.cos(other.yaw ?? yaw);
@@ -64,12 +76,29 @@ export function pathClearance(x, z, yaw, halfLength, halfWidth, other, path) {
     const dx = p.x - x, dz = p.z - z, length = Math.hypot(dx, dz);
     if (length < 0.01) continue;
     const tx = dx / length, tz = dz / length, ox = other.x - x, oz = other.z - z;
-    const cosine = Math.abs(ux * tx + uz * tz), sine = Math.abs(ux * tz - uz * tx);
+    const forward = ux * tx + uz * tz, side = uz * tx - ux * tz;
+    const cosine = Math.abs(forward), sine = Math.abs(side);
     const along = ox * tx + oz * tz, across = ox * tz - oz * tx;
     const reach = half * cosine + width * sine;
+    const clearance = halfWidth + 0.1;
     if (along + reach > 0 && along - reach < length &&
-        Math.abs(across) < halfWidth + width * cosine + half * sine + 0.1) {
-      return travelled + along - reach - halfLength;
+        Math.abs(across) < clearance + width * cosine + half * sine) {
+      // Na šikmém úseku může roh průmětu ležet v pruhu, zatímco karoserie je venku.
+      // Omezíme místo dotyku nárazníku také oběma skutečnými boky překážky.
+      let enter = Math.max(0, along - reach), leave = Math.min(length, along + reach);
+      for (let axis = 0; axis < 2; axis++) {
+        const direction = axis === 0 ? forward : side;
+        const offset = axis === 0 ? ox * ux + oz * uz : ox * uz - oz * ux;
+        const extent = axis === 0 ? half + clearance * sine : width + clearance * cosine;
+        if (Math.abs(direction) < 1e-8) {
+          if (Math.abs(offset) > extent) { leave = -1; break; }
+        } else {
+          const first = (offset - extent) / direction, second = (offset + extent) / direction;
+          enter = Math.max(enter, Math.min(first, second));
+          leave = Math.min(leave, Math.max(first, second));
+        }
+      }
+      if (enter <= leave) return travelled + enter - halfLength;
     }
     travelled += length; x = p.x; z = p.z;
   }

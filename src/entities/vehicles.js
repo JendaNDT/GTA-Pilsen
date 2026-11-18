@@ -1,6 +1,6 @@
 // Auta: jízdní fyzika hráče, běžný provoz, zaparkovaná auta a policie.
 import { driveRoute } from '../game/ai-driver.js';
-import { laneTurn, pathClearance, turnDistance, turnPoint } from '../game/ai-turn.js';
+import { laneTurn, oncomingDistance, pathClearance, turnDistance, turnPoint } from '../game/ai-turn.js';
 import * as THREE from 'three/webgpu';
 import { CAR_TYPES, CAR_COLORS, makeCarMesh } from './models.js';
 import { QUALITY, RC, RF, DRIVABLE_MAX, CHUNK } from '../config.js';
@@ -42,6 +42,7 @@ export class Car {
 
   /** Postaví auto na místo; bez výšky na zem (hint = výška, ze které se hledá povrch, např. pro most). */
   place(x, z, yaw, hint = null) {
+    this.enteredSignal = null;
     this.floodTime = 0;
     this.physicsTeleport = true;
     this.skid = 0;
@@ -54,6 +55,9 @@ export class Car {
     this.y = w.groundY(x, z, hint === null ? w.heightAt(x, z) + 1 : hint);
     const fx = Math.sin(yaw), fz = Math.cos(yaw), hl = this.type.len * 0.36;
     this.gPitch = Math.atan2(w.groundY(x - fx * hl, z - fz * hl, this.y + 1) - w.groundY(x + fx * hl, z + fz * hl, this.y + 1), 2 * hl);
+    const halfTrack = this.type.wid * 0.42;
+    this.gRoll = Math.atan2(w.groundY(x + fz * halfTrack, z - fx * halfTrack, this.y + 1) -
+      w.groundY(x - fz * halfTrack, z + fx * halfTrack, this.y + 1), 2 * halfTrack);
     this.sync();
   }
 
@@ -92,14 +96,16 @@ export class VehicleManager {
     const hl = car.type.len * 0.36, hint = car.y;
     const yf = w.groundY(car.x + fx * hl, car.z + fz * hl, hint), yr = w.groundY(car.x - fx * hl, car.z - fz * hl, hint);
     const g = (yf + yr) / 2;
+    const hwid = car.type.wid * 0.42, lx = fz, lz = -fx;
+    const yL = w.groundY(car.x + lx * hwid, car.z + lz * hwid, hint), yR = w.groundY(car.x - lx * hwid, car.z - lz * hwid, hint);
     let impact = 0;
     if (!dynamic) {
       car.y = g; car.air = false;
       car.gPitch = Math.atan2(yr - yf, 2 * hl);
+      car.gRoll = Math.atan2(yL - yR, 2 * hwid);
+      car.pitch = car.roll = 0;
       return 0;
     }
-    const hwid = car.type.wid * 0.42, lx = fz, lz = -fx;
-    const yL = w.groundY(car.x + lx * hwid, car.z + lz * hwid, hint), yR = w.groundY(car.x - lx * hwid, car.z - lz * hwid, hint);
     // svislá rychlost, jakou auto stoupá nebo klesá, když kopíruje povrch
     const slopeV = (car.vx * fx + car.vz * fz) * (yf - yr) / (2 * hl);
     // setrvačnost: kam by auto doletělo volným pádem; když je to nad povrchem, je ve vzduchu
@@ -329,7 +335,8 @@ export class VehicleManager {
     car.next = move.to;
     car.nextLane = move.lane;
     car.turnSlow = move.slow;
-    car.plannedTurn = car.next >= 0 ? laneTurn(this.world, car) : null;
+    if (move.turn === undefined) move.turn = car.next >= 0 ? laneTurn(this.world, car) : null;
+    car.plannedTurn = move.turn;
   }
 
   _planJunctionExit(car) {
@@ -401,6 +408,27 @@ export class VehicleManager {
     return limit;
   }
 
+  _oncomingBeforeTurn(car, turn) {
+    // Protijedoucí vůz může být ještě před obloukem. Přednost posuzujeme v místě,
+    // kde plánované odbočení vlevo protne jeho pruh, dokud v něm sami nestojíme.
+    const a = turn.start;
+    return this.cars.some(other => {
+      if (other === car || other.mode === 'parked' || other.mode === 'loose' || Math.abs(other.y - car.y) > 3) return false;
+      const x = a.x - other.x, z = a.z - other.z;
+      if (x * x + z * z > 50 ** 2) return false;
+      const tx = Math.sin(other.yaw), tz = Math.cos(other.yaw);
+      const distance = oncomingDistance(turn, car.halfLen, other, tx, tz);
+      const speed = Math.max(0, other.vx * tx + other.vz * tz);
+      // Protijedoucí po uvolnění řady také zrychluje. Počítejme tři sekundy
+      // jízdy i s rozjezdem, než zadní nárazník odbočujícího opustí jeho pruh.
+      if (distance < -other.halfLen || distance - other.halfLen > 3 * speed + 9) return false;
+      const rule = other.trafficStop?.rule;
+      if (speed < 0.5 && rule?.kind === 'signal' && this.world.traffic.light(rule) === 'red' &&
+          (rule.x - other.x) * tx + (rule.z - other.z) * tz > 0) return false;
+      return true;
+    });
+  }
+
   stepAI(car, dt, physical = null) {
     const w = this.world;
     if (car.finishingTurn && car.finishingTurn.to !== car.edge) car.finishingTurn = null;
@@ -445,15 +473,27 @@ export class VehicleManager {
     const roadLimit = w.roadSpeed(road, w.eA[car.edge] < w.eB[car.edge]) / 3.6;
     let vmax = Math.min(roadLimit, Math.min(roadLimit, 15) * car.temper);
     const remain = len - car.s;
+    let leftTurn = turn?.sign < 0 && arcDistance < turn.radius * 0.3 ? turn : null;
+    let leftDistance = -arcDistance;
     if (car.next >= 0) {
       const nextLimit = w.roadSpeed(w.eRoad[car.next], w.eA[car.next] < w.eB[car.next]) / 3.6;
       vmax = Math.min(vmax, Math.sqrt(nextLimit ** 2 + 8 * Math.max(0, remain)));
       if (remain < 50 && w.eLen[car.next] < 42 && !car.exitPlan.length) {
         this._planJunctionExit(car);
       }
-      let distance = remain;
+      let distance = remain, lane = car.nextLane;
       for (const move of car.exitPlan) {
+        // Na krátké spojce už nemusí zbývat dost místa k zastavení před protisměrem.
+        if (!leftTurn && distance < 18 && move.to >= 0) {
+          if (move.turn === undefined) move.turn = laneTurn(w, { type: car.type, edge: move.from,
+            next: move.to, lane, nextLane: move.lane });
+          if (move.turn?.sign < 0) {
+            leftTurn = move.turn;
+            leftDistance = distance + leftTurn.entry;
+          }
+        }
         distance += w.eLen[move.from];
+        lane = move.lane;
         vmax = Math.min(vmax, Math.sqrt(move.slow ** 2 + 5 * Math.max(0, distance - 8)));
       }
     }
@@ -477,6 +517,10 @@ export class VehicleManager {
         : w.edgePoint(car.next, car.s + look - len, car.nextLane, _pt);
     };
     let limit = this._obstacleLimit(car, vmax, null, pointAt);
+    if (leftTurn && this._oncomingBeforeTurn(car, leftTurn)) {
+      const room = Math.max(0, leftDistance - 1);
+      limit = Math.min(limit, Math.sqrt(6 * room), 1.8 * room);
+    }
     if (physical) {
       let gap = Infinity;
       limit = w.traffic.drivingLimit(car, dt, limit, this.cars, this.obstacles,
@@ -746,6 +790,7 @@ export class VehicleManager {
     if (w.blocked(x, z, 2.3, 0.3, 1.5) || w.isWater(x, z)) return null;
     // Za rohem může být jiná ulice blíž nárazníku než středu zaparkovaného auta.
     const fx = Math.sin(yaw), fz = Math.cos(yaw), y = w.heightAt(x, z);
+    if (w.blocksStreetCorner(w.edgeOfPt[k], x, z, yaw, type.len, type.wid)) return null;
     if (w.blocksTramTrack(x, z, y, yaw, type.len, type.wid)) return null;
     for (const along of [-type.len / 2, 0, type.len / 2]) for (const side of [-type.wid / 2, type.wid / 2]) {
       if (w.onCarriageway(x + fx * along + fz * side, z + fz * along - fx * side, y)) return null;

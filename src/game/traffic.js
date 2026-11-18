@@ -94,6 +94,7 @@ export class Traffic {
       }
     }
     for (const c of data.crossings ?? []) this.addCrossing(c);
+    this.joinSplitCrossings();
     for (const [edge, controls] of this.byEdge) {
       const signals = controls.filter((c) => c.kind === 'signal');
       const active = controls.filter((c) => c.kind === 'signal' || !signals.some((light) =>
@@ -209,6 +210,7 @@ export class Traffic {
       this.groups.push(group);
     }
     control.group = group;
+    group.radius = Math.max(group.radius ?? 0, Math.hypot(control.x - group.x, control.z - group.z));
     control.axis = Math.abs(group.tx * control.tx + group.tz * control.tz) > 0.7 ? 0 : 1;
     if (control.axis === 1) group.hasSecond = true;
   }
@@ -236,6 +238,42 @@ export class Traffic {
       const edge = this.locate(entry.road, x, z, direction);
       if (edge) addTo(this.crossingsByEdge, edge.edge, { crossing, s: edge.s });
     }
+  }
+
+  joinSplitCrossings() {
+    // Na dělené třídě tvoří dvě navazující části téhož přechodu jednu pěší trasu.
+    // Osamocené světlo za ostrůvkem proto patří k návěstidlům stejné křižovatky.
+    const junctions = new Set(this.controls.filter(c => c.directedHead).map(c => c.group));
+    const joined = new Map();
+    for (const c of this.crossings) {
+      if (!c.signal || !c.group || c.group.crossings.length !== 1 || junctions.has(c.group) || c.group.hasSecond) continue;
+      let closest = 7, selected = null;
+      for (const other of nearby(this.crossingGrid, c.x, c.z, 30)) {
+        if (!other.signal || !junctions.has(other.group) || other.road === c.road ||
+            Math.abs(c.dx * other.dx + c.dz * other.dz) < 0.98) continue;
+        const dx = other.x - c.x, dz = other.z - c.z;
+        if (Math.abs(dx * c.dz - dz * c.dx) > 1 ||
+            Math.abs(dx * c.dx + dz * c.dz) < (c.length + other.length) / 2 - 1) continue;
+        for (const a of [c.a, c.b]) for (const b of [other.a, other.b]) {
+          const gap = Math.hypot(a[0] - b[0], a[1] - b[1]);
+          if (gap < closest) { closest = gap; selected = other.group; }
+        }
+      }
+      if (selected) joined.set(c.group, selected);
+    }
+    for (const [old, group] of joined) {
+      for (const crossing of old.crossings) { crossing.group = group; group.crossings.push(crossing); }
+      group.clearance = Math.max(group.clearance, old.clearance);
+    }
+    for (const c of this.controls) {
+      const group = joined.get(c.group);
+      if (!group) continue;
+      c.group = group;
+      c.axis = Math.abs(group.tx * c.tx + group.tz * c.tz) > 0.7 ? 0 : 1;
+      if (c.axis === 1) group.hasSecond = true;
+      group.radius = Math.max(group.radius, Math.hypot(c.x - group.x, c.z - group.z));
+    }
+    this.groups = this.groups.filter(g => !joined.has(g));
   }
 
   phase(group, time = this.time) {
@@ -297,7 +335,7 @@ export class Traffic {
     });
   }
 
-  drivingRule(car, control, distance, dt, limit, others, extra = [], stopping) {
+  drivingRule(car, control, distance, dt, limit, others, extra = [], stopping, checkExit = false) {
     const signal = control.kind === 'signal';
     const speed = car.speed ?? car.v;
     const state = car.trafficStop?.rule === control ? car.trafficStop
@@ -307,12 +345,18 @@ export class Traffic {
       const color = this.light(control);
       stop = color === 'red' || (color === 'amber' && speed ** 2 < 11 * Math.max(0, distance));
     } else {
-      if (distance < 0.3 && speed < 0.18) state.held += dt;
+      // U auta je distance měřena od bodu 45 cm před nárazníkem.
+      if (distance <= 0.5 && Math.abs(speed) < 0.18) state.held += dt;
       const ready = control.kind === 'yield' || state.held >= 0.65;
       if (ready && state.ready === Infinity && distance < 4) state.ready = this.time;
       stop = !ready || (distance < 22 && this.conflict(car, control, others, extra));
     }
+    // Při povinném zastavení před stejnou čárou stačí zkoumat výjezd až při rozjezdu.
+    if (!stop && checkExit) stop = this.exitBlocked(car, control, others, extra);
     if (stop) stopping?.(distance + 0.45);
+    else if (checkExit && control.directedHead && limit > 0 && speed > 0 && distance <= speed * dt) {
+      this.enterJunction(car, control);
+    }
     return stop ? Math.min(limit, stopDistance(distance, dt)) : limit;
   }
 
@@ -416,19 +460,15 @@ export class Traffic {
 
   drivingLimit(car, dt, limit, others, extra, stopping) {
     const w = this.world;
+    this.updateJunction(car, car.x, car.z);
     const lead = car.s + car.halfLen + 0.45;
-    const first = this.byEdge.get(car.edge)?.find((c) => c.s >= lead - 0.42);
-    const second = !first && car.next >= 0 ? this.byEdge.get(car.next)?.[0] : null;
+    const first = this.byEdge.get(car.edge)?.find((c) => c.s >= lead - 0.42 && !this.passedEntry(car, c));
+    const second = !first && car.next >= 0 ? this.byEdge.get(car.next)?.find(c => !this.passedEntry(car, c)) : null;
     const control = first ?? second;
     if (control) {
       const distance = (second ? w.eLen[car.edge] : 0) + control.s - lead;
       if (distance <= 50) {
-        limit = this.drivingRule(car, control, distance, dt, limit, others, extra, stopping);
-        const hold = stopDistance(distance, dt);
-        if (!second && this.exitBlocked(car, control, others, extra)) {
-          stopping?.(distance + 0.45);
-          limit = Math.min(limit, hold);
-        }
+        limit = this.drivingRule(car, control, distance, dt, limit, others, extra, stopping, !!first);
       }
     }
     if (!this.users.size) return limit;
@@ -455,10 +495,11 @@ export class Traffic {
     return best;
   }
 
-  controlAhead(x, z, tx, tz, reach, tram = false) {
+  controlAhead(x, z, tx, tz, reach, tram = false, vehicle = null) {
     let best = reach, result = null;
     for (const c of nearby(this.controlGrid, x, z, reach + 5)) {
       if (!this.byEdge.get(c.edge)?.includes(c)) continue;
+      if (vehicle && this.passedEntry(vehicle, c)) continue;
       const dx = c.x - x, dz = c.z - z, distance = dx * tx + dz * tz;
       if (distance < -0.35 || distance >= best || c.tx * tx + c.tz * tz < 0.77) continue;
       // Z prostředního pásu je dál ke směrovému návěstidlu. Sousední pěší přechod
@@ -472,12 +513,35 @@ export class Traffic {
   }
 
   transitLimit(vehicle, point, ahead, dt, limit, others) {
-    const next = this.controlAhead(point.x, point.z, point.tx, point.tz, 42, vehicle.isTram);
+    const next = this.transitControl(vehicle, point);
     if (next) {
       // V trase MHD je s poloha čela vozu, nikoli jeho středu.
       limit = this.drivingRule(vehicle, next.control, next.distance - 0.55, dt, limit, others);
     } else vehicle.trafficStop = null;
     const distance = this.pedestrianDistance(point.x, point.z, ahead);
-    return Math.min(limit, stopDistance(distance - 1.4, dt));
+    limit = Math.min(limit, stopDistance(distance - 1.4, dt));
+    if (next && limit > 0 && next.distance <= limit * dt) this.enterJunction(vehicle, next.control);
+    return limit;
+  }
+
+  transitControl(vehicle, point) {
+    this.updateJunction(vehicle, point.x, point.z);
+    return this.controlAhead(point.x, point.z, point.tx, point.tz, 42, vehicle.isTram, vehicle);
+  }
+
+  updateJunction(vehicle, x, z) {
+    const group = vehicle.enteredSignal?.group;
+    if (group && Math.hypot(x - group.x, z - group.z) > group.radius + vehicle.halfLen + 2) vehicle.enteredSignal = null;
+  }
+
+  passedEntry(vehicle, control) {
+    // Body přechodů kolem téže křižovatky nejsou dalšími vjezdy. Skuteční chodci
+    // a obsazený výjezd se kontrolují nezávisle na barvě semaforu.
+    const entry = vehicle.enteredSignal;
+    return entry && control.group === entry.group && (!control.directedHead || entry === control);
+  }
+
+  enterJunction(vehicle, control) {
+    if (control.directedHead) vehicle.enteredSignal = control;
   }
 }
