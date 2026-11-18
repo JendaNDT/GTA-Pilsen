@@ -131,7 +131,28 @@ export class PlayerVehicle {
     this.body.SetLinearVelocity(this.velocity);
     this.velocity.Set(0, 0, 0);
     this.body.SetAngularVelocity(this.velocity);
+    for (const wheel of this.wheels) wheel.SetAngularVelocity(0);
+    this.impactSpeed = 0;
+    this.impactBody = null;
     this.pose.reset(this.body);
+  }
+
+  recordImpact(first, second, impulse) {
+    const bodyID = this.body.GetID().GetIndexAndSequenceNumber();
+    const a = first.GetID().GetIndexAndSequenceNumber(), b = second.GetID().GetIndexAndSequenceNumber();
+    if (a !== bodyID && b !== bodyID) return;
+    const speed = impulse / this.spec.mass;
+    if (speed <= 3 || speed <= this.impactSpeed) return;
+    this.impactSpeed = speed;
+    this.impactBody = a === bodyID ? b : a;
+  }
+
+  applyImpact() {
+    const speed = this.impactSpeed;
+    this.car.health = Math.max(0, this.car.health - (speed - 3) * 1.5);
+    this.impactSpeed = 0;
+    this.impactBody = null;
+    return speed;
   }
 
   drive(dt, throttle, steer, handbrake, arcade, surface) {

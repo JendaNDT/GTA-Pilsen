@@ -39,6 +39,7 @@ export class Car {
   /** Postaví auto na místo; bez výšky na zem (hint = výška, ze které se hledá povrch, např. pro most). */
   place(x, z, yaw, hint = null) {
     this.physicsTeleport = true;
+    this.pitch = this.roll = this.gRoll = this.steer = 0;
     const w = Car.world;
     this.x = x; this.z = z; this.yaw = yaw; this.vx = this.vz = 0; this.speed = 0; this.vy = 0; this.air = false;
     this.turnContext = 0; this.trafficStop = null;

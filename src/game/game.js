@@ -13,7 +13,7 @@ import { Environment } from '../world/scene.js';
 import { createPostFX } from '../world/postfx.js';
 import { env } from '../world/materials.js';
 import { VehicleManager, Car, wrapAngle } from '../entities/vehicles.js';
-import { addCarLight } from '../entities/models.js';
+import { addCarLight, CAR_TYPES } from '../entities/models.js';
 import { Player, PedManager } from '../entities/player.js';
 import { TRANSIT_NAME, TransitManager } from '../entities/transit.js';
 import { Heli } from '../entities/heli.js';
@@ -46,6 +46,7 @@ export class Game {
       if (w.onRoad(x, z)) return w.r.cls[w._tmpRoad.road] >= RC.TRACK ? 0.6 : 1;
       return w.isSoft(x, z) ? 0.5 : 0.6;
     };
+    physics.onImpact = (first, second, impulse) => this.driver?.recordImpact(first, second, impulse);
     physics.step = (dt) => {
       this.driver?.drive(dt, input.moveY, input.moveX, input.handbrake, this.steering === 'arcade', this.tireSurface);
       physics.engine.Step(dt, 1);
@@ -101,7 +102,7 @@ export class Game {
     this._load();
     this.chunks.setOrthophotoEnabled(this.orthophotoEnabled);
     this.player.yaw = this.camYaw;
-    this._spawnStarterCar();
+    if (!this.car) this._spawnStarterCar();
     this.hud.money(this.money);
     this.syncClock(true);
     if (DEBUG) window.__game = this;
@@ -191,6 +192,24 @@ export class Game {
     }
     const p = this._clearSpot(x, z, 0.6);
     this.player.place(p.x, p.z);
+    if (this.hasSave) this._restoreCar(s.car);
+  }
+
+  _restoreCar(saved) {
+    const w = this.world;
+    if (!saved || !Object.hasOwn(CAR_TYPES, saved.model)
+        || ![saved.x, saved.z, saved.y, saved.yaw].every(Number.isFinite)
+        || saved.x < w.playMinX || saved.x > w.playMaxX || saved.z < w.playMinZ || saved.z > w.playMaxZ) return;
+    const owned = saved.owned === true ? this.garage.owned : null;
+    if (saved.owned === true && owned?.model !== saved.model) return;
+    const car = new Car(saved.model, Number.isInteger(saved.color) ? saved.color : 0xc8922e);
+    car.place(saved.x, saved.z, saved.yaw, saved.y);
+    car.health = owned?.health ?? (Number.isFinite(saved.health) ? clamp(saved.health, 0, 100) : 100);
+    if (owned) {
+      car.upgrades = owned.upgrades;
+      this.garage.active = car;
+    }
+    this._enterCar(this.vehicles.add(car));
   }
 
   _writeSave(changes = {}) {
@@ -204,6 +223,10 @@ export class Game {
         clockMode: this.clock.followsPrague ? 'prague' : 'manual',
         soundEnabled: !this.audio.muted, orthophotoEnabled: this.orthophotoEnabled,
         graphics: this.graphics, steering: this.steering,
+        car: this.mode === 'car' ? {
+          model: f.typeId, color: f.color, x: f.x, z: f.z, y: f.y, yaw: f.yaw,
+          health: f.health, owned: f === this.garage.active,
+        } : null,
         stats: this.stats, x: Math.round(safe.x), z: Math.round(safe.z),
         found: this.jobs.landmarks.filter((l) => l.found).map((l) => l.name),
         garage: this.garage.snapshot(), job: this.jobs.snapshot(), shift: this.shifts.snapshot(),
@@ -623,6 +646,11 @@ export class Game {
       this.trafficBodies.update(this, dt);
     }
     this.physics.update(elapsed);
+    if (this.driver?.impactSpeed > 0) {
+      const other = this.trafficBodies.carForBody(this.driver.impactBody);
+      const impact = this.driver.applyImpact();
+      this.onCrash(this.driver.car, impact, other);
+    }
 
     // pohyb podle režimu
     if (this.mode === 'foot') {

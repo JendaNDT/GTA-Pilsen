@@ -32,6 +32,13 @@ export class TrafficBodies {
     }
   }
 
+  carForBody(id) {
+    for (const [key, entry] of this.active) {
+      if (key.isCar && entry.body.GetID().GetIndexAndSequenceNumber() === id) return key;
+    }
+    return null;
+  }
+
   move(focus, key, x, y, z, yaw, width, height, length, dt, layer) {
     if ((x - focus.x) ** 2 + (z - focus.z) ** 2 > 150 ** 2) return;
     const { Jolt, bodies } = this.physics;

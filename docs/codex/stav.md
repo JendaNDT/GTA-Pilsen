@@ -10,7 +10,7 @@ Autor potvrdil zahájení. [Zadání E18](E18.md) · [Protokol E17](../E17.md)
 | 3. Terén, budovy a zobrazení kolizí | Hotovo |
 | 4. Mostovky, Rondel, tunely a uzavírky | Hotovo |
 | 5. Auto hráče, ovládání a zvuk | Hotovo. Hra ukládá volbu řízení a zvuk sleduje otáčky motoru. |
-| 6. Poškození, garáž, návrat na silnici a uložení | Čeká |
+| 6. Poškození, garáž, návrat na silnici a uložení | Hotovo |
 | 7. Měření, ladění a protokol | Čeká |
 
 ## Ověření
@@ -59,10 +59,22 @@ Při opakovaném místním studeném startu přenesly hra, základní data a kat
 o 2 107 829 bajtů (2,01 MiB) více než E12. Celkem se do zobrazení nabídky
 přeneslo 32 660 801 bajtů proti 33 641 355 bajtům v E12 včetně okolí.
 
-Pokračovat krokem 6 podle zadání. Je třeba propojit nárazy s poškozením a
+Při předání po kroku 5 bylo třeba pokračovat krokem 6. Je třeba propojit nárazy s poškozením a
 ověřit nastupování, vystupování, návrat na silnici, garáž a obnovení uložené hry.
 V kroku 7 zbývá diagnostika, měření v zatáčce a na hraně dlaždic, zkoušky
 mostu, tunelů a dopadu, půlhodinová jízda, výkon a úplné testy obou způsobů
 simulace. Následuje protokol, README, katalog, kontrola komprese na adrese
 pro telefon při zveřejnění a návrh na sloučení do hlavní větve. Žádné otázky
 pro autora teď nejsou otevřené.
+
+## Šestý krok
+
+Po fyzikálním kroku hra zpracuje nejsilnější kontakt hráčova auta. Lehký dotyk
+při 2 m/s nezpůsobil škodu, náraz do stěny při 15 m/s snížil stav karoserie.
+Po návratu na silnici se zastaví i otáčení kol. Hra uložená za volantem se
+obnoví ve stojícím autě, u vlastního vozu také se stavem a úpravami z garáže.
+Starší pozice se otevře pěšky jako dosud.
+
+Prošlo 69 testů JavaScriptu, produkční sestavení a čtyři dotčené prohlížečové
+scénáře včetně garáže, staré pozice a obnovení auta po návratu na silnici.
+Zbývá sedmý krok a jeho úplné přejímací zkoušky.

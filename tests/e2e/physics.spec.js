@@ -77,3 +77,41 @@ test('E18 – volba řízení se uloží a skutečný motor rozjede hráčovo au
   expect(result.speed).toBeGreaterThan(1);
   expect(result.gear).toBeGreaterThan(0);
 });
+
+test('E18 – vlastní auto po návratu na silnici a načtení zachová místo, stav a úpravy', async ({ page }) => {
+  await page.goto(gameUrl('/?debug&adapt=0&quality=low'));
+  await page.waitForFunction(() => window.__ready);
+  const saved = await page.evaluate(() => {
+    const g = window.__game;
+    g.player.place(841, 254);
+    g.money = 5000;
+    for (const action of ['buy', 'brakes', 'tires', 'retrieve']) g.garage.perform(action);
+    const car = g.garage.active;
+    g._enterCar(car);
+    g.paused = false;
+    g.update(1 / 60);
+    car.health = 73;
+    g.unstuck();
+    g.update(1 / 60);
+    if (!g.save()) throw new Error('Uložení auta selhalo');
+    return { x: car.x, z: car.z, yaw: car.yaw, speed: car.speed };
+  });
+  expect(Math.abs(saved.speed)).toBeLessThan(0.5);
+  await page.reload();
+  await page.waitForFunction(() => window.__ready);
+  const loaded = await page.evaluate(() => {
+    const g = window.__game;
+    g.paused = false;
+    g.update(1 / 60);
+    const car = g.car;
+    const result = { x: car.x, z: car.z, yaw: car.yaw, health: car.health, owned: car === g.garage.active,
+      upgrades: car.upgrades, speed: car.speed, driving: g.oldPhysics || g.driver?.car === car };
+    g._exitCar();
+    g.update(1 / 60);
+    return { ...result, exited: g.mode === 'foot' && !g.driver };
+  });
+  expect(loaded).toMatchObject({ health: 73, owned: true, upgrades: { brakes: true, tires: true }, driving: true, exited: true });
+  expect(Math.hypot(loaded.x - saved.x, loaded.z - saved.z)).toBeLessThan(0.1);
+  expect(loaded.yaw).toBeCloseTo(saved.yaw, 2);
+  expect(Math.abs(loaded.speed)).toBeLessThan(0.5);
+});

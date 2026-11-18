@@ -78,3 +78,21 @@ test('při 250 km/h zůstane vůz na nájezdové straně stěny tlusté 20 cm', 
     for (let i = 0; i < 60; i++) { tick(); assert.ok(car.z < 5); }
   } finally { close(); }
 });
+
+test('fyzický náraz poškodí karoserii, lehký dotyk stěny ji nepoškodí', () => {
+  for (const speed of [2, 15]) {
+    const { car, vehicle, tick, addBox, close } = track('hatch');
+    try {
+      vehicle.physics.onImpact = (...args) => vehicle.recordImpact(...args);
+      addBox(0, 2, 3, [3, 2, 0.1]);
+      car.speed = car.vz = speed;
+      vehicle.teleport();
+      for (let i = 0; i < 120; i++) {
+        tick();
+        if (vehicle.impactSpeed) vehicle.applyImpact();
+      }
+      if (speed === 2) assert.equal(car.health, 100);
+      else assert.ok(car.health < 90 && car.health > 65, 'Stav karoserie ' + car.health);
+    } finally { close(); }
+  }
+});
