@@ -21,3 +21,11 @@ Výsledný obraz vykresluje scénu jednou i při vyžádání několika obrazů
 v témže kroku prohlížeče. Na WebGPU má stabilní obraz na náměstí po přidání
 TRAA 555 volání a 1 055 780 trojúhelníků proti 554 a 1 055 779 před efektem.
 [Náměstí](efekty/vyhlazovani-namesti.jpg) · [Valík](efekty/vyhlazovani-valik.jpg).
+
+## Kontaktní zastínění
+
+Na vysoké a ultra předvolbě s odděleným výstupem hloubky a normál počítá
+GTAO jemné zastínění v rozích, u zdí a pod předměty. Mapa zastínění má
+poloviční šířku a výšku a vyhlazování potlačuje její šum v čase.
+Zastínění se přidává před vyhlazením obrazu. Parametr `?ao=0` ho vypne.
+[Hamr před zastíněním](efekty/zastineni-pred.jpg) · [Hamr po úpravě](efekty/zastineni-hamr.jpg).

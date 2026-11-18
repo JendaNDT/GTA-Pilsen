@@ -20,12 +20,15 @@ for (const quality of ['ultra', 'high', 'medium', 'low']) {
         return window.__perf.renderStats().calls;
       });
       const target = postfx.scenePass.renderTarget;
-      return { method: postfx.antialias, calls, supportsTargets,
+      const aoTexture = postfx.ambientOcclusion?.getTextureNode().value;
+      const ambient = aoTexture ? [aoTexture.image.width, aoTexture.image.height] : null;
+      return { method: postfx.antialias, calls, supportsTargets, ambient, size: [target.width, target.height],
         textures: target.textures.map(({ name }) => name), depth: Boolean(target.depthTexture) };
     });
     const temporal = ['ultra', 'high'].includes(quality) && frame.supportsTargets;
     expect(frame.method).toBe(temporal ? 'traa' : quality === 'low' ? 'fxaa' : 'smaa');
     expect(frame.textures).toEqual(temporal ? ['output', 'normal', 'velocity'] : ['output']);
+    expect(frame.ambient).toEqual(temporal ? frame.size.map((size) => Math.round(size * 0.5)) : null);
     expect(frame.depth).toBe(true);
     expect(frame.calls[0]).toBeGreaterThan(10);
     expect(frame.calls[1]).toBeGreaterThan(10);

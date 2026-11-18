@@ -8,7 +8,7 @@ Autor potvrdil zahájení E17. [Zadání E17](E17.md) · [Protokol E16](../E16.m
 | 1. Fyzikálně založené materiály | Hotovo · `0e84e90` |
 | 2. Obloha, poloha slunce a světlo z oblohy | Hotovo · `9c27cd9` |
 | 3. Kaskádové stíny | Hotovo · `bf5ba60` |
-| 4. Průchod scény, vyhlazování, AO, záře, tónování, barevné ladění a mlha | Průchod a vyhlazování hotové, další je AO |
+| 4. Průchod scény, vyhlazování, AO, záře, tónování, barevné ladění a mlha | Průchod, vyhlazování a AO hotové, další je záře |
 | 5. Čtyři předvolby, automatika a dynamické rozlišení | Čeká |
 | 6. Přizpůsobení jasu | Čeká |
 | 7. Měření všech předvoleb, snímky, protokol a pull request | Čeká |
@@ -44,5 +44,9 @@ Autor potvrdil zahájení E17. [Zadání E17](E17.md) · [Protokol E16](../E16.m
   část kroku 4 doplnila samostatný průchod obrazu a vyhlazování. Překrytí
   světel a pruhů ponechává podkladové normály a vektory pohybu. Prošlo 46
   testů Node, sestavení, deset prohlížečových kontrol předvoleb a rozpočtu
-  a zkouška pohybu dveří tramvaje na WebGPU. [Snímky](../E17/efekty.md).
+  a zkouška pohybu dveří tramvaje na WebGPU. Commit `da0c231`.
+- Kontaktní zastínění běží v poloviční šířce a výšce. Prošly 46 testů Node,
+  sestavení a čtyři prohlížečové kontroly vysoké a nízké předvolby na obou
+  vykreslovačích. V Dobřívě je tmavší hlavně okolí stěn a dřevěných částí
+  hamru. [Snímky](../E17/efekty.md).
 - Po dokončení čeká měření v autorově běžném prohlížeči a kontrola na telefonu.

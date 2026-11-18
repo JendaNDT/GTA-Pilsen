@@ -1,6 +1,7 @@
 import * as THREE from 'three/webgpu';
-import { convertToTexture, materialReference, mrt, normalView, output, pass, renderOutput, vec4, velocity } from 'three/tsl';
+import { convertToTexture, materialReference, mix, mrt, normalView, output, pass, renderOutput, vec4, velocity } from 'three/tsl';
 import { fxaa } from 'three/addons/tsl/display/FXAANode.js';
+import { ao } from 'three/addons/tsl/display/GTAONode.js';
 import { smaa } from 'three/addons/tsl/display/SMAANode.js';
 import { traa } from 'three/addons/tsl/display/TRAANode.js';
 import { PARAMS, QUALITY } from '../config.js';
@@ -30,6 +31,7 @@ export class PostFX {
     this.pipeline.outputColorTransform = false;
     this.effects = [];
     this.temporal = null;
+    this.ambientOcclusion = null;
     this.lastPosition = new THREE.Vector3();
     this.lastRotation = new THREE.Quaternion();
     this.hasPreviousCamera = false;
@@ -38,7 +40,20 @@ export class PostFX {
       this.scenePass.setMRT(buffers());
       this.normal = this.scenePass.getTextureNode('normal');
       this.velocity = this.scenePass.getTextureNode('velocity');
-      this.temporal = traa(this.color, this.depth, this.velocity, camera);
+      let lit = this.color;
+      if (PARAMS.get('ao') !== '0') {
+        const occlusion = ao(this.depth, this.normal, camera);
+        occlusion.resolutionScale = 0.5;
+        occlusion.radius.value = 1.8;
+        occlusion.thickness.value = 1.4;
+        occlusion.samples.value = QUALITY.shadowCascades === 4 ? 16 : 12;
+        occlusion.useTemporalFiltering = true;
+        this.ambientOcclusion = occlusion;
+        const indirect = mix(1, occlusion.getTextureNode().r, 0.55);
+        lit = convertToTexture(vec4(this.color.rgb.mul(indirect), this.color.a));
+        this.effects.push(occlusion, lit);
+      }
+      this.temporal = traa(lit, this.depth, this.velocity, camera);
       this.effects.push(this.temporal);
       this.pipeline.outputNode = renderOutput(this.temporal);
       this.antialias = 'traa';
