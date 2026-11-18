@@ -11,7 +11,7 @@ Autor potvrdil zahájení. [Zadání E18](E18.md) · [Protokol E17](../E17.md)
 | 4. Mostovky, Rondel, tunely a uzavírky | Hotovo |
 | 5. Auto hráče, ovládání a zvuk | Hotovo. Hra ukládá volbu řízení a zvuk sleduje otáčky motoru. |
 | 6. Poškození, garáž, návrat na silnici a uložení | Hotovo |
-| 7. Měření, ladění a protokol | Jízdní zkoušky dokončené, čeká se na úplné ověření a PR. |
+| 7. Měření, ladění a protokol | Hotovo. Jízdní zkoušky i úplné místní ověření jsou v [protokolu](../E18.md). |
 
 ## Ověření
 
@@ -126,8 +126,14 @@ obsazenou silnici s výběrem volného místa. Prošlo 71 testů JavaScriptu,
 Na telefonu je ke zkoušce dostupná oprava lávky, veřejný přenos Jolt i střech
 má potvrzenou kompresi gzip.
 
-Obě kompletní sady po poslední opravě běží nad sestavením na portu 4194.
-Každá obsahuje 110 prohlížečových zkoušek. Výsledky sledovat v místních
-`data-raw/e18/krok7/final-new.log` a `data-raw/e18/krok7/final-old.log`.
-Na GitHubu je větev s ověřovanou revizí `1d58c88` a [rozpracovaný návrh na sloučení E18](https://github.com/JendaNDT/GTA-Pilsen/pull/11).
-Po dokončení obou sad zapsat výsledky, uzavřít protokol a předat návrh ke kontrole.
+Obě úplné sady nad sestavením hry z revize `1d58c88` doběhly za 50,2 minuty.
+S původní fyzikou prošlo 110/110. S novou fyzikou prošlo 109/110 v prvním
+běhu. V testu přestupu na náměstí Republiky se při čekání posouvají nově
+také chodci. Se stejným limitem pak prošly všechny tři scénáře MHD v obou
+režimech i samostatné zopakování jediného neúspěšného testu. Záznamy jsou v
+`data-raw/e18/krok7/` pod názvy `final-new.log`, `final-old.log`,
+`prestup-oprava-new.log`, `prestup-oprava-old.log` a `posledni-prestup.log`.
+
+Zbývá kontrola autora podle [protokolu](../E18.md#kontrola-pro-autora), včetně
+vyzkoušení na skutečném telefonu. Doporučený model pro kontrolu je Astra, High.
+[Návrh na sloučení E18 do mainu](https://github.com/JendaNDT/GTA-Pilsen/pull/11)

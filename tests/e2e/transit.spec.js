@@ -17,6 +17,8 @@ async function boot(page) {
       game.clock.tick(dt);
       game.world.traffic.tick(dt, onFoot ? game.player : null);
       game.transit.update(dt, game.focus, game.vehicles.cars, onFoot, game.clock);
+      // Chodci musí i při zrychleném čekání dokončit přechod a uvolnit jízdní pruh.
+      game.peds.update(dt, game.focus, game.camInfo, game.vehicles.cars);
     };
   });
 }
