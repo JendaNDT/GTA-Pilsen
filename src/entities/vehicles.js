@@ -1,4 +1,5 @@
 // Auta: jízdní fyzika hráče, běžný provoz, zaparkovaná auta a policie.
+import { driveRoute } from '../game/ai-driver.js';
 import * as THREE from 'three/webgpu';
 import { CAR_TYPES, CAR_COLORS, makeCarMesh } from './models.js';
 import { QUALITY, RC, RF, DRIVABLE_MAX, CHUNK } from '../config.js';
@@ -122,6 +123,7 @@ export class VehicleManager {
   remove(car) {
     const i = this.cars.indexOf(car);
     if (i >= 0) this.cars.splice(i, 1);
+    this.game.trafficBodies?.removeCar(car);
     this.game.garage?.onRemove(car);
     this.game.audio.remove(car);
     this.scene.remove(car.mesh);
@@ -320,8 +322,15 @@ export class VehicleManager {
     return limit;
   }
 
-  stepAI(car, dt) {
+  stepAI(car, dt, physical = null) {
     const w = this.world;
+    if (physical) {
+      w.edgePoint(car.edge, car.s, car.lane, _pt);
+      const along = (car.x - _pt.x) * _pt.tx + (car.z - _pt.z) * _pt.tz;
+      car.s = Math.max(0, car.s + along);
+      this._advanceEdge(car);
+      if (car.dead) return;
+    }
     const road = w.eRoad[car.edge];
     const len = w.eLen[car.edge];
     const roadLimit = w.roadSpeed(road, w.eA[car.edge] < w.eB[car.edge]) / 3.6;
@@ -337,6 +346,18 @@ export class VehicleManager {
     if (remain < 24 && car.turnSlow < vmax) vmax = car.turnSlow + (vmax - car.turnSlow) * Math.max(0, (remain - 6) / 18);
     let limit = this._obstacleLimit(car, vmax, null);
     if (car.blocked > 12) limit = Math.max(limit, 1.2);       // po dlouhém čekání se zkus protlačit
+    if (physical) {
+      let gap = Infinity;
+      limit = w.traffic.drivingLimit(car, dt, limit, this.cars, this.obstacles,
+        (distance) => { gap = Math.min(gap, distance); });
+      car.blocked = car.speed < 0.3 ? car.blocked + dt : 0;
+      const pointAt = (look) => car.s + look <= len || car.next < 0
+        ? w.edgePoint(car.edge, Math.min(len, car.s + look), car.lane, _pt)
+        : w.edgePoint(car.next, car.s + look - len, car.nextLane, _pt);
+      physical.input = driveRoute(car, pointAt, limit, gap, physical.input, dt);
+      physical.driveAI(physical.input, dt, this.game.tireSurface);
+      return;
+    }
     if (car.speed < limit) car.speed = Math.min(limit, car.speed + 2.6 * dt);
     else car.speed = Math.max(limit, car.speed - 8 * dt);
     car.speed = w.traffic.drivingLimit(car, dt, car.speed, this.cars, this.obstacles);
@@ -356,6 +377,11 @@ export class VehicleManager {
     car.x += car.vx * dt; car.z += car.vz * dt;
     this.followGround(car, dt, false);
     car.s += car.speed * dt;
+    this._advanceEdge(car);
+  }
+
+  _advanceEdge(car) {
+    const w = this.world, len = w.eLen[car.edge];
     if (car.s >= len) {
       if (car.next < 0) { car.dead = true; return; }
       car.turnContext = Math.max(0, w.turnContext(car.edge, car.next, car.turnContext));
@@ -516,6 +542,7 @@ export class VehicleManager {
     const y = w.roadSurfaceY(w.eRoad[e], _pt.seg, _pt.t, _pt.x, _pt.z);
     car.place(_pt.x, _pt.z, Math.atan2(_pt.tx, _pt.tz), y);
     car.speed = 6;
+    car.vx = Math.sin(car.yaw) * car.speed; car.vz = Math.cos(car.yaw) * car.speed;
     this._pickNext(car);
     return car;
   }
@@ -575,7 +602,7 @@ export class VehicleManager {
     const cars = this.cars;
     const px = player.x, pz = player.z;
     const near = [];
-    for (const c of cars) if (c !== this.game.driver?.car && (c.x - px) ** 2 + (c.z - pz) ** 2 < 90 * 90) near.push(c);
+    for (const c of cars) if (!c.physical && c !== this.game.driver?.car && (c.x - px) ** 2 + (c.z - pz) ** 2 < 90 * 90) near.push(c);
     for (let i = 0; i < near.length; i++) {
       const a = near[i];
       for (let j = i + 1; j < near.length; j++) {
@@ -620,7 +647,7 @@ export class VehicleManager {
   /** Kolize aut s kruhovými překážkami s nekonečnou hmotností (tramvaje). */
   _resolveHeavy(heavy) {
     for (const c of this.cars) {
-      if (c.kinematic || c === this.game.driver?.car) continue;
+      if (c.physical || c.kinematic || c === this.game.driver?.car) continue;
       const fx = Math.sin(c.yaw), fz = Math.cos(c.yaw), o = c.type.len * 0.27;
       for (const h of heavy) {
         if (h.y !== undefined && Math.abs(h.y - c.y) > 3) continue;
@@ -674,15 +701,17 @@ export class VehicleManager {
       if (c.mode === 'ai') {
         // policejní hlídka se při hledanosti přidá k pronásledování
         if (c.typeId === 'police' && wanted > 0 && d2 < 160 * 160) { c.mode = 'police'; c.repath = 0; }
-        else this.stepAI(c, dt);
+        else if (!c.physical) this.stepAI(c, dt);
         if (c.dead || d2 > 420 * 420) { this.remove(c); continue; }
       } else if (c.mode === 'police') {
         if (wanted <= 0) { c.wasAI = 'ai'; if (!this._resumeAI(c)) { c.mode = 'loose'; c.wasAI = 'ai'; } }
         else this.stepPolice(c, dt, player);
         if (d2 > 520 * 520) { this.remove(c); continue; }
       } else if (c.mode === 'loose') {
-        this.stepDynamic(c, dt, 0, 0, Math.abs(c.speed) < 4);
-        c.vx *= Math.exp(-1.2 * dt); c.vz *= Math.exp(-1.2 * dt);
+        if (!c.physical) {
+          this.stepDynamic(c, dt, 0, 0, Math.abs(c.speed) < 4);
+          c.vx *= Math.exp(-1.2 * dt); c.vz *= Math.exp(-1.2 * dt);
+        }
         if (Math.hypot(c.vx, c.vz) < 0.4) {
           c.rest += dt;
           if (c.rest > 3 && c.wasAI && c.health > 25 && !c.noDriver) { if (this._resumeAI(c)) c.wasAI = false; else if (c.rest > 8) c.wasAI = false; }
@@ -702,7 +731,12 @@ export class VehicleManager {
     }
     this._resolveCars(player);
     if (heavy && heavy.length) this._resolveHeavy(heavy);
-    for (const c of this.cars) c.sync();
+    for (const c of this.cars) {
+      if (c.mesh.userData.hazards) c.mesh.userData.hazards.visible =
+        c.mode === 'loose' && c.crashed && Math.floor(this.game.time * 2.5) % 2 === 0;
+      if (c.physical) c.physical.render(this.game.physics.clock.alpha);
+      else c.sync();
+    }
   }
 
   /** Nejbližší auto, do kterého jde nastoupit. */

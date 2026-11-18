@@ -180,6 +180,17 @@ export class PlayerVehicle {
     }
   }
 
+  driveAI(input, dt, surface) {
+    this.surfaceTimer -= dt;
+    if (this.surfaceTimer <= 0) {
+      this.surfaceTimer = 0.25;
+      this.friction = surface(this.car.x, this.car.z) * this.spec.grip;
+    }
+    this.car.steer = input.steer;
+    this.controller.SetDriverInput(input.throttle, input.steer, input.brake, 0);
+    if (input.throttle) this.physics.bodies.ActivateBody(this.body.GetID());
+  }
+
   read() {
     const { car } = this;
     this.pose.read(this.body);

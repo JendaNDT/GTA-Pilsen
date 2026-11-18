@@ -164,3 +164,37 @@ for (const route of ['rovina', 'zatáčka', 'stop čára']) {
     } finally { close(); }
   });
 }
+
+test('okruh provozu drží rozpočet, rychlost a pořadí i mezi oběma hranicemi', async () => {
+  const { TrafficBodies } = await import('../src/physics/traffic-bodies.js');
+  const { applyQualityProfile, QUALITY } = await import('../src/config.js');
+  const physics = new PhysicsWorld(Jolt);
+  const traffic = new TrafficBodies(physics, QUALITY);
+  const cars = Array.from({ length: 42 }, (_, n) => ({ ...{ x: 0, y: 0, z: n * 2, yaw: 0.3,
+    vx: 2, vy: 0.1, vz: 6, speed: 6.32, health: 100 }, mode: 'ai', edge: 1, s: n * 2, type: CAR_TYPES.sedan }));
+  const game = { focus: { x: 0, z: 0 }, world: { chunkIndex: () => 1 }, colliders: { tiles: new Set([1]) }, vehicles: { cars } };
+  try {
+    for (const [preset, limit] of [['ultra', 40], ['high', 40], ['medium', 20], ['low', 10]]) {
+      applyQualityProfile(preset);
+      traffic.selectCars(game);
+      assert.equal(traffic.dynamic.size, limit);
+    }
+    const car = cars[0], vehicle = car.physical;
+    vehicle.read();
+    assert.ok(Math.abs(car.yaw - 0.3) < 0.0001 && Math.abs(car.vz - 6) < 0.001 && Math.abs(car.vx - 2) < 0.001);
+    for (const x of [150, 219, 220]) {
+      game.focus.x = x;
+      traffic.selectCars(game);
+      assert.equal(car.physical, vehicle);
+    }
+    game.focus.x = 221;
+    traffic.selectCars(game);
+    assert.equal(traffic.dynamic.size, 0);
+    assert.equal(car.s, 0);
+    assert.ok(Math.abs(car.x) < 0.001 && Math.abs(car.z) < 0.001 && Math.abs(car.vy - 0.1) < 0.001);
+  } finally {
+    for (const car of cars) traffic.removeCar(car);
+    applyQualityProfile('high');
+    physics.dispose();
+  }
+});

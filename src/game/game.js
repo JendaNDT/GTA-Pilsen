@@ -41,7 +41,7 @@ export class Game {
     this.steering = 'arcade';
     this.driver = null;
     this.falls = new Falls(this);
-    this.trafficBodies = new TrafficBodies(physics);
+    this.trafficBodies = new TrafficBodies(physics, QUALITY);
     this.tireSurface = (x, z) => {
       if (x > -66 && x < 75 && z > -60 && z < 68) return 0.9;
       const w = this.world;
@@ -58,9 +58,13 @@ export class Game {
         ? this.car : this.trafficBodies.carForBody(carID);
       if (ped && car) this.queuePedHit(ped, car, vehicle.GetLinearVelocity());
     };
-    physics.onImpact = (first, second, impulse) => this.driver?.recordImpact(first, second, impulse);
+    physics.onImpact = (first, second, impulse) => {
+      this.driver?.recordImpact(first, second, impulse);
+      this.trafficBodies.recordImpact(first, second, impulse);
+    };
     physics.step = (dt) => {
       const start = DEBUG ? performance.now() : 0;
+      this.trafficBodies.drive(this, dt);
       this.driver?.drive(dt, input.moveY, input.moveX, input.handbrake, this.steering === 'arcade', this.tireSurface);
       if (this.mode === 'foot' && !this.falls.active.has(this.player)) {
         const fx = Math.sin(this.camYaw), fz = Math.cos(this.camYaw);
@@ -77,6 +81,7 @@ export class Game {
       }
       physics.engine.Step(dt, 1);
       this.driver?.read();
+      this.trafficBodies.read(this);
       this.falls.step(dt);
       if (DEBUG) physics.lastStepMs = performance.now() - start;
     };
@@ -720,7 +725,7 @@ export class Game {
     if (!this.oldPhysics || this.mode === 'foot') this.colliders.update(this.focus.x, this.focus.z);
     this.player.setWalking(this.mode === 'foot' && !this.falls.active.has(this.player));
     if (!this.oldPhysics) {
-      if (this.mode === 'car' && !this.driver) this.driver = new PlayerVehicle(this.physics, this.car);
+      if (this.mode === 'car' && !this.driver) this.driver = this.trafficBodies.takeCar(this.car) ?? new PlayerVehicle(this.physics, this.car);
       if (this.car?.physicsTeleport && this.driver) {
         this.driver.teleport();
         this.car.physicsTeleport = false;

@@ -297,7 +297,7 @@ export class Traffic {
     });
   }
 
-  drivingRule(car, control, distance, dt, limit, others, extra = []) {
+  drivingRule(car, control, distance, dt, limit, others, extra = [], stopping) {
     const signal = control.kind === 'signal';
     const speed = car.speed ?? car.v;
     const state = car.trafficStop?.rule === control ? car.trafficStop
@@ -312,6 +312,7 @@ export class Traffic {
       if (ready && state.ready === Infinity && distance < 4) state.ready = this.time;
       stop = !ready || (distance < 22 && this.conflict(car, control, others, extra));
     }
+    if (stop) stopping?.(distance + 0.45);
     return stop ? Math.min(limit, stopDistance(distance, dt)) : limit;
   }
 
@@ -408,7 +409,7 @@ export class Traffic {
     return false;
   }
 
-  drivingLimit(car, dt, limit, others, extra) {
+  drivingLimit(car, dt, limit, others, extra, stopping) {
     const w = this.world;
     const lead = car.s + car.halfLen + 0.45;
     const first = this.byEdge.get(car.edge)?.find((c) => c.s >= lead - 0.42);
@@ -417,9 +418,12 @@ export class Traffic {
     if (control) {
       const distance = (second ? w.eLen[car.edge] : 0) + control.s - lead;
       if (distance <= 50) {
-        limit = this.drivingRule(car, control, distance, dt, limit, others, extra);
+        limit = this.drivingRule(car, control, distance, dt, limit, others, extra, stopping);
         const hold = stopDistance(distance, dt);
-        if (!second && limit > hold && this.exitBlocked(car, control, others, extra)) limit = hold;
+        if (!second && this.exitBlocked(car, control, others, extra)) {
+          stopping?.(distance + 0.45);
+          limit = Math.min(limit, hold);
+        }
       }
     }
     if (!this.users.size) return limit;
@@ -431,6 +435,7 @@ export class Traffic {
       w.edgePoint(car.edge, w.eLen[car.edge], car.lane, direction);
     }
     const distance = this.pedestrianDistance(car.x, car.z, direction, turn);
+    stopping?.(distance - car.halfLen - 0.75);
     return Math.min(limit, stopDistance(distance - car.halfLen - 1.2, dt));
   }
 
