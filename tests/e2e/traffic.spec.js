@@ -337,3 +337,80 @@ test('E07 – stejný směr Klatovské má jiný provoz ve špičce a o víkendu
   expect(result.timeJump.hour).toBeCloseTo(7.5, 2);
   expect(result.timeJump.after).toBeGreaterThan(result.timeJump.before * 2);
 });
+
+test('E20 – po vjezdu na zelenou auto uvolní Klatovskou přes značku uvnitř křižovatky', async ({ page }) => {
+  await boot(page);
+  const result = await page.evaluate(() => {
+    const g = __game, w = g.world, t = w.traffic, vm = g.vehicles;
+    const car = g.player.lastCar;
+    for (const other of [...vm.cars]) if (other !== car) vm.remove(other);
+    vm.obstacles.length = 0;
+    const signal = t.controls.find(c => c.id === 10274015040 && c.directedHead);
+    const sign = t.controls.find(c => c.id === 23586 && c.kind === 'stop');
+    const lane = vm._laneFor(signal.edge, 1), s = signal.s - 15;
+    const p = w.edgePoint(signal.edge, s, lane, {});
+    car.place(p.x, p.z, Math.atan2(p.tx, p.tz));
+    Object.assign(car, { mode: 'ai', edge: signal.edge, s, lane, speed: 4, temper: 1 });
+    car.exitPlan.push({ from: signal.edge, to: sign.edge, lane: vm._laneFor(sign.edge, 1), slow: 99 });
+    vm._pickNext(car);
+    let green = 0;
+    while (t.phase(signal.group, green) !== 'green' + signal.axis) green += 0.25;
+    t.time = green;
+    let slowest = Infinity, cleared = false;
+    for (let tick = 0; tick < 900; tick++) {
+      vm.stepAI(car, 1 / 60);
+      if (car.edge !== sign.edge) continue;
+      if (car.s < sign.s + 2) slowest = Math.min(slowest, car.speed);
+      if (car.s > sign.s + 10) { cleared = true; break; }
+    }
+    return { cleared, slowest, entry: car.enteredSignal?.id,
+      separateStop: t.passedEntry(car, t.controls.find(c => c.id === 11969048194)) === true };
+  });
+  expect(result.entry).toBe(10274015040);
+  expect(result.separateStop).toBe(false);
+  expect(result.cleared).toBe(true);
+  expect(result.slowest).toBeGreaterThan(1);
+});
+
+test('E20 – protější fronty v Husově dokončí dvě levá odbočení a pustí i auta za sebou', async ({ page }) => {
+  await boot(page);
+  const results = await page.evaluate(() => {
+    const g = __game, w = g.world, vm = g.vehicles, Car = g.player.lastCar.constructor;
+    for (const car of [...vm.cars]) vm.remove(car);
+    vm.obstacles.length = 0;
+    const place = (edge, s, exits) => {
+      const car = vm.add(new Car('sedan', 0x838383)), lane = vm._laneFor(edge, 1);
+      const p = w.edgePoint(edge, s, lane, {});
+      car.place(p.x, p.z, Math.atan2(p.tx, p.tz));
+      Object.assign(car, { mode: 'ai', edge, s, lane, temper: 1 });
+      for (const to of exits) {
+        car.exitPlan.push({ from: edge, to, lane: vm._laneFor(to, 1), slow: to === 19355 || to === 12147 ? 4 : 8 });
+        edge = to;
+      }
+      vm._pickNext(car);
+      return car;
+    };
+    const entries = [
+      [1423, 6, [1421, 12147]], [1420, 5.8, [1422, 19355]],
+      [34501, w.eLen[34501] - 1, [1423, 1421, 12147]],
+      [11884, w.eLen[11884] - 1, [1420, 1422, 34502]],
+    ];
+    const cars = entries.map(([edge, s, exits]) => place(edge, s, exits));
+    // V pozorované frontě už oba páry přejely svou vstupní čáru na zelenou.
+    for (const [i, car] of cars.entries()) {
+      const id = i % 2 === 0 ? 10274015046 : 10274015045;
+      w.traffic.enterJunction(car, w.traffic.controls.find(c => c.id === id && c.directedHead));
+    }
+    const passed = cars.map(() => false);
+    for (let tick = 0; tick < 30 * 60; tick++) {
+      w.traffic.tick(1 / 60);
+      for (const [i, car] of cars.entries()) {
+        vm.stepAI(car, 1 / 60);
+        passed[i] ||= car.edge === entries[i][2].at(-1) && car.s > 10;
+      }
+      if (passed.every(Boolean)) break;
+    }
+    return passed;
+  });
+  expect(results).toEqual([true, true, true, true]);
+});

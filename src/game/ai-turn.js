@@ -9,10 +9,27 @@ export function laneTurn(world, car) {
   if (dot > 0.95 || Math.abs(cross) < 0.05) return null;
   const angle = Math.atan2(Math.abs(cross), dot), sign = Math.sign(cross);
   const turnRadius = car.type.len * 0.64 / Math.tan(0.62) + 1;
-  // U ostrého pravého rohu potřebují zadní kola místo na vnitřní straně oblouku.
-  const room = (edge, lane) => cross > 0 ? Math.min(Math.max(0, lane - car.type.wid / 2),
-    Math.max(0, lane + turnRadius * (1 - Math.cos(angle / 2)) + car.type.wid / 2 - world.r.w[world.eRoad[edge]] / 2)) : 0;
-  const entryLane = car.lane - room(car.edge, car.lane), exitLane = car.nextLane - room(car.next, car.nextLane);
+  let entryLane = car.lane, exitLane = car.nextLane;
+  if (cross > 0) {
+    // Vnitřní bok potřebuje zůstat na asfaltu alespoň jedné z obou ulic.
+    // Vzdálenost oblouku od jeho tečny je R·(1 − cos úhlu). Potřebné místo
+    // získáme nejdřív na příjezdu, aby vůz zatáčku dokončil ve svém pruhu.
+    const half = car.type.wid / 2;
+    // Tečna dráhy středu vozu a směr zadní nápravy se v oblouku liší.
+    // Započítáme proto i průmět převisu karoserie směrem k protisměru.
+    const sine = car.type.len * 0.32 / turnRadius;
+    const centerClearance = half * Math.sqrt(1 - sine * sine) + car.type.len / 2 * sine;
+    const stopBeforeTurn = world.traffic?.byEdge.get(car.edge)?.some(c => c.kind !== 'signal' &&
+      length - c.s < turnRadius * Math.tan(angle / 2) + car.type.len * 2);
+    const entryRoom = world.r.w[world.eRoad[car.edge]] / 2 - entryLane - half;
+    const exitRoom = world.r.w[world.eRoad[car.next]] / 2 - exitLane - half;
+    const covered = room => Math.acos(1 - Math.min(2, Math.max(0, room) / turnRadius));
+    const needed = room => turnRadius * (1 - Math.cos(Math.max(0, angle - covered(room))));
+    const entryShift = Math.min(Math.max(0, entryLane - (stopBeforeTurn ? centerClearance : half + 0.25)),
+      Math.max(0, needed(exitRoom) - entryRoom));
+    entryLane -= entryShift;
+    exitLane -= Math.min(Math.max(0, exitLane - half - 0.25), Math.max(0, needed(entryRoom + entryShift) - exitRoom));
+  }
   world.edgePoint(car.edge, length, entryLane, a);
   world.edgePoint(car.next, 0, exitLane, b);
   const dx = b.x - a.x, dz = b.z - a.z;
@@ -30,8 +47,12 @@ export function laneTurn(world, car) {
   // Oblouk platí pro rovné příjezdy. Krátké zalomené spojky mají vlastní osu.
   const endX = cx + b.tz * radius * sign, endZ = cz - b.tx * radius * sign;
   if (Math.hypot(endX - end.x, endZ - end.z) > 1) return null;
+  // Před stopčárou stojí vůz uprostřed svého pruhu, aby jej protijedoucí minul.
+  // Do širšího nájezdu se posune až mezi čárou a začátkem oblouku.
+  const line = world.traffic?.byEdge.get(car.edge)?.findLast(c => c.s <= entry);
+  const approachLength = line ? Math.max(1, Math.min(12, entry - line.s)) : 12;
   return { from: car.edge, to: car.next, length, entry, exit, entryLane, exitLane,
-    lane: car.lane, nextLane: car.nextLane, start, end, cx, cz, radius, angle, sign };
+    lane: car.lane, nextLane: car.nextLane, start, end, cx, cz, radius, angle, sign, approachLength };
 }
 
 export function turnDistance(turn, x, z) {
@@ -53,6 +74,17 @@ export function turnPoint(turn, distance, out) {
   out.x = cx + sign * radius * out.tz;
   out.z = cz - sign * radius * out.tx;
   return out;
+}
+
+export function divergingLeftTurns(first, second) {
+  if (!second || first.sign >= 0 || second.sign >= 0) return false;
+  const a = first.start, b = second.start;
+  if (a.tx * b.tx + a.tz * b.tz > -0.9) return false;
+  const dx = a.x - b.x, dz = a.z - b.z;
+  // Protější pruhy téže křižovatky. Když se začátky oblouků již minuly,
+  // oba řidiči zatáčejí od sebe a nepotřebují čekat na průjezd rovně.
+  return Math.hypot(dx, dz) < first.radius + second.radius &&
+    dx * a.tx + dz * a.tz >= 0 && dx * b.tx + dz * b.tz <= 0;
 }
 
 // Vzdálenost po ose protijedoucího auta do místa, kde ji protne levé odbočení.

@@ -1,6 +1,6 @@
 // Auta: jízdní fyzika hráče, běžný provoz, zaparkovaná auta a policie.
 import { driveRoute } from '../game/ai-driver.js';
-import { laneTurn, oncomingDistance, pathClearance, turnDistance, turnPoint } from '../game/ai-turn.js';
+import { divergingLeftTurns, laneTurn, oncomingDistance, pathClearance, turnDistance, turnPoint } from '../game/ai-turn.js';
 import * as THREE from 'three/webgpu';
 import { CAR_TYPES, CAR_COLORS, makeCarMesh } from './models.js';
 import { QUALITY, RC, RF, DRIVABLE_MAX, CHUNK } from '../config.js';
@@ -43,6 +43,9 @@ export class Car {
   /** Postaví auto na místo; bez výšky na zem (hint = výška, ze které se hledá povrch, např. pro most). */
   place(x, z, yaw, hint = null) {
     this.enteredSignal = null;
+    this.upcomingLeft = null;
+    this.queued = false;
+    this.pathBlocked = false;
     this.floodTime = 0;
     this.physicsTeleport = true;
     this.skid = 0;
@@ -359,6 +362,7 @@ export class VehicleManager {
     const fx = Math.sin(car.yaw), fz = Math.cos(car.yaw);
     const lx = fz, lz = -fx;
     let sampled = false;
+    if (pointAt) car.queued = false;
     const check = (o) => {
       const dx = o.x - car.x, dz = o.z - car.z;
       if (dx * dx + dz * dz > 900 || Math.abs((o.y === undefined ? car.y : o.y) - car.y) > 3) return;
@@ -401,6 +405,7 @@ export class VehicleManager {
       const along = (o.vx || 0) * fx + (o.vz || 0) * fz;
       const allowed = Math.min(Math.max(0, along + (gap - 2.2 - Math.max(0, car.speed)) * 1.1),
         Math.sqrt(Math.max(0, along) ** 2 + 6 * Math.max(0, gap - 2.2)));
+      if (pointAt && allowed < 0.4 && o.mode === 'ai' && Math.cos(car.yaw - o.yaw) > 0.85) car.queued = true;
       if (allowed < limit) limit = allowed;
     };
     for (const o of this.cars) if (o !== car && o !== ignore) check(o);
@@ -408,25 +413,41 @@ export class VehicleManager {
     return limit;
   }
 
-  _oncomingBeforeTurn(car, turn) {
-    // Protijedoucí vůz může být ještě před obloukem. Přednost posuzujeme v místě,
-    // kde plánované odbočení vlevo protne jeho pruh, dokud v něm sami nestojíme.
-    const a = turn.start;
-    return this.cars.some(other => {
-      if (other === car || other.mode === 'parked' || other.mode === 'loose' || Math.abs(other.y - car.y) > 3) return false;
+  _leftTurnRoom(car, turn, leftDistance) {
+    const a = turn.start, buffer = car.halfLen + 0.75;
+    let room = Infinity;
+    for (const other of this.cars) {
+      if (other === car || other.mode === 'parked' || other.mode === 'loose' || Math.abs(other.y - car.y) > 3) continue;
       const x = a.x - other.x, z = a.z - other.z;
-      if (x * x + z * z > 50 ** 2) return false;
+      if (x * x + z * z > 50 ** 2) continue;
       const tx = Math.sin(other.yaw), tz = Math.cos(other.yaw);
-      const distance = oncomingDistance(turn, car.halfLen, other, tx, tz);
       const speed = Math.max(0, other.vx * tx + other.vz * tz);
-      // Protijedoucí po uvolnění řady také zrychluje. Počítejme tři sekundy
-      // jízdy i s rozjezdem, než zadní nárazník odbočujícího opustí jeho pruh.
-      if (distance < -other.halfLen || distance - other.halfLen > 3 * speed + 9) return false;
+      if (other.queued && speed < 0.5 && other.blocked > 0.5) continue;
+      const opposing = other.upcomingLeft;
+      if (divergingLeftTurns(turn, opposing)) {
+        const b = opposing.start, otherDistance = (b.x - other.x) * b.tx + (b.z - other.z) * b.tz;
+        // Obě auta odbočují vlevo. Druhé počká před místem, kde první vůz
+        // protne jeho pruh, jinak mohou obě čela ve společném prostoru uváznout.
+        if (otherDistance <= Math.max(12, Math.abs(other.speed) * 3)) {
+          // Když dříve přijetý řidič nemá za odbočením místo, projede ten,
+          // kdo má volno. Tím se může uvolnit i vůz, který prvnímu překáží.
+          const otherHeld = other.pathBlocked && other.blocked > 0.5;
+          const held = car.pathBlocked && car.blocked > 0.5;
+          const first = car.leftArrival < other.leftArrival || car.leftArrival === other.leftArrival && turn.from < opposing.from;
+          if (held === otherHeld ? first : otherHeld) continue;
+          const crossing = oncomingDistance(opposing, other.halfLen, car, a.tx, a.tz);
+          room = Math.min(room, Math.min(leftDistance, crossing) - buffer);
+          continue;
+        }
+      }
+      const distance = oncomingDistance(turn, car.halfLen, other, tx, tz);
+      if (distance < -other.halfLen || distance - other.halfLen > 3 * speed + 9) continue;
       const rule = other.trafficStop?.rule;
       if (speed < 0.5 && rule?.kind === 'signal' && this.world.traffic.light(rule) === 'red' &&
-          (rule.x - other.x) * tx + (rule.z - other.z) * tz > 0) return false;
-      return true;
-    });
+          (rule.x - other.x) * tx + (rule.z - other.z) * tz > 0) continue;
+      room = Math.min(room, leftDistance - buffer);
+    }
+    return Math.max(0, room);
   }
 
   stepAI(car, dt, physical = null) {
@@ -503,7 +524,7 @@ export class VehicleManager {
       if (turn) {
         const distance = arcDistance + look, arc = turn.radius * turn.angle;
         if (distance < 0) return w.edgePoint(turn.from, turn.entry + distance,
-          turn.entryLane + (turn.lane - turn.entryLane) * Math.min(1, -distance / 12), _pt);
+          turn.entryLane + (turn.lane - turn.entryLane) * Math.min(1, -distance / turn.approachLength), _pt);
         if (distance <= arc) return turnPoint(turn, distance, _pt);
         const outgoing = turn.exit + distance - arc;
         if (car.edge === turn.to && outgoing > len && car.next >= 0) {
@@ -517,8 +538,12 @@ export class VehicleManager {
         : w.edgePoint(car.next, car.s + look - len, car.nextLane, _pt);
     };
     let limit = this._obstacleLimit(car, vmax, null, pointAt);
-    if (leftTurn && this._oncomingBeforeTurn(car, leftTurn)) {
-      const room = Math.max(0, leftDistance - 1);
+    car.pathBlocked = limit < 0.4;
+    const upcomingLeft = leftTurn ?? (turn?.sign < 0 ? turn : null);
+    if (car.upcomingLeft !== upcomingLeft) car.leftArrival = w.traffic.time;
+    car.upcomingLeft = upcomingLeft;
+    if (leftTurn) {
+      const room = this._leftTurnRoom(car, leftTurn, leftDistance);
       limit = Math.min(limit, Math.sqrt(6 * room), 1.8 * room);
     }
     if (physical) {
@@ -532,14 +557,18 @@ export class VehicleManager {
     }
     if (car.speed < limit) car.speed = Math.min(limit, car.speed + 2.6 * dt);
     else car.speed = Math.max(limit, car.speed - 8 * dt);
-    car.speed = w.traffic.drivingLimit(car, dt, car.speed, this.cars, this.obstacles);
+    let stopGap = Infinity;
+    car.speed = w.traffic.drivingLimit(car, dt, car.speed, this.cars, this.obstacles,
+      distance => { stopGap = Math.min(stopGap, distance); });
     car.blocked = car.speed < 0.3 ? car.blocked + dt : 0;
 
-    const look = 3.2 + car.speed * 0.45;
+    // Při dojíždění k čáře míří řidič nejdál k ní. Vůz čekající na přednost
+    // tak nezačne opisovat následující zatáčku před protijedoucím autem.
+    const look = Math.min(3.2 + car.speed * 0.45, Math.max(1, stopGap + car.halfLen));
     pointAt(look);
     const want = Math.atan2(_pt.x - car.x, _pt.z - car.z);
     const diff = wrapAngle(want - car.yaw);
-    const maxTurn = 2.6 * dt * Math.min(1, car.speed / 2.5 + 0.1);
+    const maxTurn = 2.6 * dt * Math.min(1, car.speed / 2.5);
     car.yaw += clamp(diff, -maxTurn, maxTurn);
     car.steer = clamp(-diff * 1.5, -0.5, 0.5);
     car.vx = Math.sin(car.yaw) * car.speed; car.vz = Math.cos(car.yaw) * car.speed;

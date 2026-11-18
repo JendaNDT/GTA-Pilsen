@@ -39,6 +39,7 @@ export class Traffic {
     this.world = world;
     this.time = 0;
     this.byEdge = new Map();
+    this.byTransitEdge = new Map();
     this.crossingsByEdge = new Map();
     this.crossingGrid = new Map();
     this.controlGrid = new Map();
@@ -63,6 +64,7 @@ export class Traffic {
     const linesByRoad = new Map();
     for (const line of data.lines ?? []) addTo(linesByRoad, line.road, line);
     const visualControls = [];
+    const transitSignals = [];
     const explicitSignals = new Map();
     for (const entry of data.controls ?? []) {
       if (entry.kind === 'signal' && entry.directedHead) addTo(explicitSignals, entry.road, entry);
@@ -70,7 +72,8 @@ export class Traffic {
     for (const entry of data.controls ?? []) {
       const directions = entry.direction ? [entry.direction] : [1, -1];
       for (const direction of directions) {
-        const mapped = this.locate(entry.road, entry.x, entry.z, direction);
+        const transitSignal = entry.directedHead && world.busContraflow?.has(entry.road);
+        const mapped = this.locate(entry.road, entry.x, entry.z, direction, transitSignal);
         if (!mapped) continue;
         if (entry.kind === 'signal' && mapped.s < 0.18 && !entry.direction) continue;
         if (entry.kind === 'signal' && !entry.directedHead && explicitSignals.get(entry.road)?.some((head) =>
@@ -88,10 +91,17 @@ export class Traffic {
             control.s = Math.max(0.1, control.s - 5);
             this.moveToEdge(control);
           }
+          if (control.transitOnly) { transitSignals.push(control); continue; }
           this.addToGroup(control);
         }
         if (this.addControl(control)) visualControls.push(control);
       }
+    }
+    // Připojíme skutečná směrová světla v protisměrných pruzích MHD. Křižovatka
+    // přitom zachová společné hodiny svých ostatních návěstidel.
+    for (const control of transitSignals) {
+      this.addToGroup(control);
+      if (this.addControl(control)) visualControls.push(control);
     }
     for (const c of data.crossings ?? []) this.addCrossing(c);
     this.joinSplitCrossings();
@@ -100,6 +110,13 @@ export class Traffic {
       const active = controls.filter((c) => c.kind === 'signal' || !signals.some((light) =>
         (light.mark && light.mark === c.mark) || Math.abs(light.s - c.s) < 2.5));
       active.sort((a, b) => a.s - b.s);
+      // Značka před výstupním přechodem platí pro neřízený příjezd. Řidič,
+      // který už do téže křižovatky vjel přes směrový semafor, má výjezd uvolnit.
+      for (const sign of active) {
+        if (sign.kind === 'signal') continue;
+        const next = active.find(c => c.kind === 'signal' && c.s >= sign.s);
+        if (next && !next.directedHead && next.s - sign.s <= 27) sign.exitSignal = next;
+      }
       this.byEdge.set(edge, active);
     }
     for (const crossings of this.crossingsByEdge.values()) crossings.sort((a, b) => a.s - b.s);
@@ -116,7 +133,8 @@ export class Traffic {
         this.addVisual(x, z, 'signs', { x: x - tz * hw, z: z + tx * hw, tx, tz, kind });
       }
       if (!control.mark && kind !== 'yield') {
-        const offset = world.r.flags[control.road] & RF.ONEWAY ? -hw + 1 : 0.15;
+        const fullWidth = world.r.flags[control.road] & RF.ONEWAY && !world.busContraflow?.has(control.road);
+        const offset = fullWidth ? -hw + 1 : 0.15;
         this.addVisual(x, z, 'lines', { a: [x - tz * offset, z + tx * offset],
           b: [x - tz * (hw - 1), z + tx * (hw - 1)] });
       }
@@ -132,7 +150,7 @@ export class Traffic {
     }
   }
 
-  locate(road, x, z, direction) {
+  locate(road, x, z, direction, allowTransit = false) {
     const w = this.world;
     let result = null, best = 100;
     for (let p = w.rOff[road]; p < w.rOff[road + 1] - 1; p++) {
@@ -145,14 +163,17 @@ export class Traffic {
       const t = clamp(((x - ax) * dx + (z - az) * dz) / (length * length), 1);
       const cx = ax + dx * t, cz = az + dz * t;
       let s = this.progress[p] + length * t;
+      let transitOnly = false;
       if (direction < 0) {
         s = w.eLen[edge] - s;
-        edge = w.reverseEdge(edge);
-        if (edge < 0) continue;
+        const reverse = w.reverseEdge(edge);
+        if (reverse >= 0) edge = reverse;
+        else if (allowTransit) transitOnly = true;
+        else continue;
       }
       const score = Math.hypot(x - cx, z - cz) + (s < 0.15 ? 0.025 : 0);
       if (score < best) {
-        result = { edge, s: clamp(s, w.eLen[edge]), x: cx, z: cz, tx: direction * dx / length, tz: direction * dz / length };
+        result = { edge, s: clamp(s, w.eLen[edge]), x: cx, z: cz, tx: direction * dx / length, tz: direction * dz / length, transitOnly };
         best = score;
       }
     }
@@ -161,7 +182,9 @@ export class Traffic {
 
   moveToEdge(control) {
     const pos = {};
-    this.world.edgePoint(control.edge, control.s, 0, pos);
+    const s = control.transitOnly ? this.world.eLen[control.edge] - control.s : control.s;
+    this.world.edgePoint(control.edge, s, 0, pos);
+    if (control.transitOnly) { pos.tx *= -1; pos.tz *= -1; }
     Object.assign(control, pos);
   }
 
@@ -172,7 +195,7 @@ export class Traffic {
       const dx = x - control.x, dz = z - control.z;
       const distance = Math.hypot(dx, dz);
       if (distance >= best || dz * control.tx - dx * control.tz < -0.5) continue;
-      const at = this.locate(control.road, x, z, control.direction);
+      const at = this.locate(control.road, x, z, control.direction, control.transitOnly);
       if (!at || at.edge !== control.edge || at.s < 0.18) continue;
       best = distance;
       result = { s: at.s, id: line.id };
@@ -188,17 +211,18 @@ export class Traffic {
   }
 
   addControl(control) {
-    const list = this.byEdge.get(control.edge);
+    const edges = control.transitOnly ? this.byTransitEdge : this.byEdge;
+    const list = edges.get(control.edge);
     if (list?.some((c) => c.kind === control.kind && Math.abs(c.s - control.s) < 2.0)) return false;
     control.width = this.world.r.w[control.road];
     this.controls.push(control);
-    addTo(this.byEdge, control.edge, control);
+    addTo(edges, control.edge, control);
     addTo(this.controlGrid, cell(control.x, control.z), control);
     return true;
   }
 
   addToGroup(control) {
-    const w = this.world, n = w.eTo[control.edge];
+    const w = this.world, n = control.transitOnly ? w.eFrom[control.edge] : w.eTo[control.edge];
     const x = w.nodeX[n], z = w.nodeZ[n];
     const nearJunction = w.eLen[control.edge] - control.s < 27 && w.outStart[n + 1] - w.outStart[n] >= 2;
     const gx = nearJunction ? x : control.x, gz = nearJunction ? z : control.z;
@@ -392,6 +416,9 @@ export class Traffic {
     const requiredEnd = (edge, start, base) => {
       let clearance = start + base;
       for (const { crossing, s } of this.crossingsByEdge.get(edge) ?? []) {
+        // Za křižovatkou může být ještě další přechod. Když se před něj
+        // vejde celé auto, může opustit křižovatku a nechat oba přechody volné.
+        if (s - 2 > clearance + carLength) break;
         const sameSignal = crossing.group && crossing.group === control.group;
         if (s >= start - 1 && (sameSignal ? s <= start + 30 : junction && s <= start + 12)) {
           clearance = Math.max(clearance, s + 2);
@@ -441,7 +468,7 @@ export class Traffic {
           // Plynule odjíždějící vůz ve stejném pruhu řidič sleduje s odstupem.
           // Čekání až na jeho úplné vyjetí by na zelenou pouštělo auta po jednom.
           const vx = other.vx || 0, vz = other.vz || 0;
-          if (vx * tx + vz * tz > 2 && Math.abs(vx * tz - vz * tx) < 0.5 &&
+          if (!other.upcomingLeft && vx * tx + vz * tz > 2 && Math.abs(vx * tz - vz * tx) < 0.5 &&
               (other.physical?.input?.targetSpeed ?? Infinity) > 2) return false;
           const alignment = Number.isFinite(other.yaw) ? Math.abs(Math.sin(other.yaw) * tx + Math.cos(other.yaw) * tz) : 1;
           const across = Math.sqrt(Math.max(0, 1 - alignment ** 2));
@@ -498,7 +525,7 @@ export class Traffic {
   controlAhead(x, z, tx, tz, reach, tram = false, vehicle = null) {
     let best = reach, result = null;
     for (const c of nearby(this.controlGrid, x, z, reach + 5)) {
-      if (!this.byEdge.get(c.edge)?.includes(c)) continue;
+      if (c.transitOnly ? !vehicle || tram : !this.byEdge.get(c.edge)?.includes(c)) continue;
       if (vehicle && this.passedEntry(vehicle, c)) continue;
       const dx = c.x - x, dz = c.z - z, distance = dx * tx + dz * tz;
       if (distance < -0.35 || distance >= best || c.tx * tx + c.tz * tz < 0.77) continue;
@@ -538,6 +565,7 @@ export class Traffic {
     // Body přechodů kolem téže křižovatky nejsou dalšími vjezdy. Skuteční chodci
     // a obsazený výjezd se kontrolují nezávisle na barvě semaforu.
     const entry = vehicle.enteredSignal;
+    if (entry && control.exitSignal?.group === entry.group) return true;
     return entry && control.group === entry.group && (!control.directedHead || entry === control);
   }
 

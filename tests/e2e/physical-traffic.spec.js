@@ -539,3 +539,99 @@ test('E20 – dodávka na příčném svahu Železniční udrží pruh při stá
   });
   for (const run of runs) expect(run, JSON.stringify(run)).toMatchObject({ held: true, outside: false, arrived: true });
 });
+
+test('E20 – v Barrandově se při odbočení do úzké ulice minou sedan, kombi a linka 12', async ({ page }) => {
+  await start(page, '&date=2026-11-09&hour=7.5');
+  const result = await page.evaluate(() => {
+    const g = __game, w = g.world, vm = g.vehicles, t = g.transit, Car = g.player.lastCar.constructor;
+    const bus = t.vehicles.find(v => v.route.ref === '12' && v.route.from === 'Božkov' &&
+      Math.hypot(v.route.posAt(3098, 1.5, {}).x - 818.5, v.route.posAt(3098, 1.5, {}).z - 694.6) < 2);
+    for (const car of [...vm.cars]) vm.remove(car);
+    const place = (type, edge, s, speed, exits) => {
+      const car = vm.add(new Car(type, 0x777777)), lane = vm._laneFor(edge, 1);
+      const p = w.edgePoint(edge, s, lane, {});
+      car.place(p.x, p.z, Math.atan2(p.tx, p.tz));
+      Object.assign(car, { mode: 'ai', edge, s, lane, speed, vx: speed * p.tx, vz: speed * p.tz, temper: 1 });
+      for (const to of exits) {
+        car.exitPlan.push({ from: edge, to, lane: vm._laneFor(to, 1), slow: to === 1178 ? 99 : 4 });
+        edge = to;
+      }
+      vm._pickNext(car);
+      return car;
+    };
+    const sedan = place('sedan', 19166, w.eLen[19166] - 14, 6, [1176, 1178]);
+    g.player.place(800, 690);
+    for (let i = 0; i < 25; i++) g.colliders.update(815, 700);
+    g.trafficBodies.selectCars(g);
+    // Na hranici fyzikálního okruhu používají auta obě provedení řidiče.
+    const kombi = place('kombi', 1177, 13, 2, [1245]);
+    t.vehicles = [bus];
+    t._show(bus, true);
+    bus.followSchedule({ s: 3078, index: 0, wait: 0 });
+    bus.side = bus.lane = 1.5;
+    bus.v = 3;
+    let sedanPassed = false, kombiPassed = false, busPassed = false, closest = Infinity;
+    for (let tick = 0; tick < 40 * 60; tick++) {
+      w.traffic.tick(1 / 60);
+      t.update(1 / 60, g.player, vm.cars, false);
+      vm.obstacles = t.obstacles;
+      vm.stepAI(sedan, 1 / 60, sedan.physical);
+      vm.stepAI(kombi, 1 / 60);
+      g.physics.engine.Step(1 / 60, 1);
+      sedan.physical.read();
+      // Kladná mezera alespoň na jedné z os obou karoserií vylučuje průnik.
+      const gap = (angle) => {
+        const tx = Math.sin(angle), tz = Math.cos(angle);
+        const extent = c => c.halfLen * Math.abs(Math.cos(c.yaw - angle)) +
+          c.type.wid / 2 * Math.abs(Math.sin(c.yaw - angle));
+        return Math.abs((kombi.x - sedan.x) * tx + (kombi.z - sedan.z) * tz) - extent(sedan) - extent(kombi);
+      };
+      closest = Math.min(closest, Math.max(gap(sedan.yaw), gap(sedan.yaw + Math.PI / 2),
+        gap(kombi.yaw), gap(kombi.yaw + Math.PI / 2)));
+      sedanPassed ||= sedan.edge === 1178;
+      kombiPassed ||= kombi.edge === 1245 && kombi.s > 10;
+      busPassed ||= bus.s > 3120;
+      if (sedanPassed && kombiPassed && busPassed) break;
+    }
+    return { sedanPassed, kombiPassed, busPassed, closest };
+  });
+  expect(result).toMatchObject({ sedanPassed: true, kombiPassed: true, busPassed: true });
+  expect(result.closest).toBeGreaterThan(0);
+});
+
+test('E20 – trolejbus 12 respektuje vlastní semafor v Tylově a uvolní výjezd do Americké', async ({ page }) => {
+  await start(page, '&date=2026-11-09&hour=7.5');
+  const result = await page.evaluate(() => {
+    const { transit, world } = __game, t = world.traffic;
+    const signal = t.controls.find(c => c.id === 10274015037 && c.transitOnly);
+    const bus = transit.vehicles.find(v => {
+      const p = v.route.posAt(5008, 2, {});
+      return v.route.ref === '12' && v.route.from === 'Nová Hospoda' && Math.hypot(p.x + 358, p.z - 366) < 5;
+    });
+    const p = bus.route.posAt(4955, 1.5, {});
+    const light = axis => {
+      for (let time = 0; time < 180; time += 0.25) {
+        if (t.phase(signal.group, time) === 'green' + axis) { t.time = time; return; }
+      }
+      throw new Error('V Tylově chybí zelená.');
+    };
+    transit.vehicles = [bus];
+    transit._show(bus, true);
+    bus.followSchedule({ s: 4955, index: 0, wait: 0 });
+    bus.v = 4;
+    const tick = () => transit.update(1 / 60, p, [], false);
+    light(1 - signal.axis);
+    for (let i = 0; i < 900; i++) tick();
+    const nose = bus.route.posAt(bus.s, bus.side, {});
+    const gap = (signal.x - nose.x) * nose.tx + (signal.z - nose.z) * nose.tz;
+    const stopped = bus.v < 0.01 && gap > 0 && gap < 1;
+    light(signal.axis);
+    for (let i = 0; i < 600 && bus.enteredSignal !== signal; i++) tick();
+    const entered = bus.enteredSignal === signal;
+    light(1 - signal.axis);
+    for (let i = 0; i < 960; i++) tick();
+    return { stopped, entered, rear: bus.s - bus.len, mark: signal.mark, carRule: t.byEdge.get(signal.edge)?.includes(signal) ?? false };
+  });
+  expect(result).toMatchObject({ stopped: true, entered: true, mark: 3843, carRule: false });
+  expect(result.rear).toBeGreaterThan(5009);
+});

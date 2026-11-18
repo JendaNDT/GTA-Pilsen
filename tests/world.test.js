@@ -73,6 +73,25 @@ test('řidič, který zastaví nárazníkem 90 cm před stopčárou, po zastaven
   assert.ok(car.trafficStop.held >= 0.65);
 });
 
+test('auto smí využít volné místo mezi křižovatkou a dalším přechodem', () => {
+  const traffic = Object.create(Traffic.prototype), group = {};
+  traffic.world = {
+    eLen: [20, 80],
+    edgePoint(edge, s, lane, p) { Object.assign(p, { x: lane, z: 20 * edge + s }); },
+  };
+  traffic.crossingsByEdge = new Map([[1, [{ s: 25, crossing: { group } }]]]);
+  const car = { edge: 0, lane: 0, next: 1, nextLane: 0, y: 0, radius: 1, halfLen: 2.3, exitPlan: [] };
+  const ahead = { x: 0, y: 0, z: 42, radius: 1, halfLen: 2, yaw: 0 };
+  const blocked = () => traffic.exitBlocked(car, { edge: 0, s: 12, group }, [ahead], []);
+  assert.equal(blocked(), false);
+  ahead.z = 31;
+  assert.equal(blocked(), true);
+  // Přechod těsně za křižovatkou naopak musí zůstat celý volný.
+  traffic.crossingsByEdge.get(1)[0].s = 11;
+  ahead.z = 36;
+  assert.equal(blocked(), true);
+});
+
 test('hodinový profil plynule přechází z pracovní doby na víkend i přes půlnoc', () => {
   const friday = parseDay('2026-11-13');
   const clock = new GameClock(friday);

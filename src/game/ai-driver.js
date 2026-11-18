@@ -7,7 +7,10 @@ export function driveRoute(car, pointAt, speedLimit, stopGap, previous, dt) {
   const point = pointAt(look);
   const dx = point.x - car.x, dz = point.z - car.z;
   const sin = Math.sin(car.yaw), cos = Math.cos(car.yaw);
-  const sideSpeed = (car.vx || 0) * cos - (car.vz || 0) * sin;
+  // V oblouku se střed vozu pohybuje šikmo vůči karoserii i bez smyku.
+  // Řízení koriguje jen rychlost napříč trasou, například při sklouznutí na svahu.
+  const here = pointAt(0);
+  const sideSpeed = (car.vx || 0) * (here.tz ?? cos) - (car.vz || 0) * (here.tx ?? sin);
   const across = dx * cos - dz * sin - 0.45 * sideSpeed;
   const wheelbase = car.type.len * 0.64;
   const along = dx * sin + dz * cos + wheelbase / 2;
