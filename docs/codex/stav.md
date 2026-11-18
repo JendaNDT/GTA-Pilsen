@@ -145,9 +145,12 @@ Po opravě čekání prošlo s novou fyzikou 110/110 v jednom místním běhu za
 37,9 minuty. Na GitHubu nad revizí `7480ece` prošel rozvoz i přestup.
 U taxi se po přemístění stojícímu autu odečetlo 0,35 bodu za předchozí smyk.
 Zkouška umí tento stav zopakovat. Přemístění nyní příznak smyku vynuluje.
-Úplné místní běhy nad touto opravou zapisují do `taxi-sada-new.log` a
-`taxi-sada-old.log` v témže adresáři. Výsledek ověření na Linuxu je u návrhu
-na sloučení. Aktualizovaný náhled na telefon otevírá dotykové ovládání.
+Nad opravenou revizí `d858a53` na Macu prošlo 110/110 s novou fyzikou
+za 46,0 minuty a 110/110 s původní za 45,9 minuty. Ani jeden běh nevyžadoval
+opakování scénáře. Záznamy jsou v `taxi-sada-new.log` a `taxi-sada-old.log`
+v témže adresáři. Prošlo také 71 testů JavaScriptu, 23 testů Pythonu
+a produkční sestavení. Aktualizovaný náhled na telefon otevírá dotykové ovládání.
+Výsledky linuxových kontrol jednotlivých revizí jsou u návrhu na sloučení.
 
 Zbývá kontrola autora podle [protokolu](../E18.md#kontrola-pro-autora), včetně
 vyzkoušení na skutečném telefonu. Doporučený model pro kontrolu je Astra, High.
