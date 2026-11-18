@@ -1,3 +1,4 @@
+import { prazdrojThickness } from './prazdroj-bridge.js';
 import { densePath, pathNormal } from './road-profile.js';
 // Stavba 3D geometrie po dlaždicích: budovy, silnice, koleje, stromy.
 import * as THREE from 'three/webgpu';
@@ -561,10 +562,10 @@ function dashes(world, buf, D, hw, col, dash, gap, lateral, lift) {
 }
 
 /** Těleso mostu: deska pod vozovkou, zábradlí a pilíře až na terén. */
-function bridgeSlab(world, solid, D, hw, railings, topCol, supports = true) {
+function bridgeSlab(world, solid, D, hw, railings, topCol, supports = true, depth = 0.94) {
   const n = D.n;
   if (n < 2 || !D.y) return;
-  const T = 0.9;
+  const T = depth - 0.04;
   const L = [], R = [];
   for (let k = 0; k < n; k++) {
     const nr = pathNormal(D, k);
@@ -833,7 +834,8 @@ function buildRoads(world, ci) {
         const arches = world.archedBridges.get(i);
         if (arches) stoneBridge(world, solid, D, world.deckHalfWidth(i), arches);
         else bridgeSlab(world, solid, D, world.deckHalfWidth(i), measured === undefined && !world.gradeRoads.has(i) ? true : 'open',
-          cls <= RC.LIVING ? COL.sidewalk : COL.concrete, measured === undefined);
+          cls <= RC.LIVING ? COL.sidewalk : COL.concrete, measured === undefined && i !== world.prazdrojRoad,
+          i === world.prazdrojRoad ? prazdrojThickness : undefined);
       } else if (measured !== undefined && D.y.some((y, k) => y - world.heightAt(D.x[k], D.z[k]) > 0.75)) {
         bridgeSlab(world, solid, D, measured, false, COL.concrete, false);
       }

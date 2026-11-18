@@ -96,3 +96,21 @@ a odečty jsou v `data-raw/e18/krok7/route.mjs`, `route.log` a `steny.log`.
 V pracovní kopii je rozpracovaný panel fyziky, test jízdy na kruhu a volba
 simulace pro prohlížečové testy. První úplný prohlížečový běh nové fyziky
 zapisuje do `data-raw/e18/krok7/new.log`. Před dalším během ověřit jeho výsledek.
+
+## Oprava povolená autorem v E18
+
+Městský archiv 430 má SHA-256 `825dc3e395044b1f5a47e27c812cc4189829e9134cc027865ffc8fcb3e7bb9ac`.
+Lávce U Prazdroje odpovídá objekt `00000002023003269`. Středy protilehlých hran horní
+plochy dávají profil přes obě vozovky a po zakřivené rampě. V bodě (657, 162)
+má vršek 316,615 m Bpv a spodní plocha 315,96 m Bpv. Herní vozovka pod
+lávkou má 309,91 m Bpv. Opravená lávka používá stejný profil pro vykreslení,
+dotazy na výšku i fyziku. Místní zkouška v obou směrech zachovala 100 % stavu
+auta. Kontrola horní i spodní plochy ve fyzice prošla s tolerancí 5 cm.
+[Podklady města](https://opendata.plzen.eu/public/opendata/detail/37) ·
+[Snímek před opravou](../E18/lavka-pred.jpg) · [Snímek po opravě](../E18/lavka-po.jpg)
+
+Na trase E12 s novou fyzikou dojelo auto v první souvislé půlhodině z Plzně přes
+Klabavu do Rokycan (19,02 km). Největší zanoření spodního referenčního bodu
+auta vůči jízdní ploše bylo 0,162 m. Zkouška používá fyzikální kroky po 1/60 s,
+bez přemístění auta. Všechny dotčené testy JavaScriptu a sestavení prošly.
+Sedmý krok pokračuje zbývajícími jízdními zkouškami, měřením a úplnými sadami.

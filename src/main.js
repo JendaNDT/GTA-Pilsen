@@ -75,7 +75,7 @@ const ABOUT_HTML = (meta, rendering) => `
   Pro ostatní ulice a pro chodce hra používá odhad.</p>
   <p>Čtyři mapové listy centra používají otevřená data
   <a href="https://opendata.plzen.eu/public/opendata/detail/37" target="_blank" rel="noopener">3D budov centra Plzně, 2024</a>
-  (GEOREAL – Vybíral, město Plzeň). Geometrie je převedená do herních souřadnic. Materiály v dalších
+  (GEOREAL – Vybíral, město Plzeň). Stejná data určují výšku lávky U Prazdroje. Geometrie je převedená do herních souřadnic. Materiály v dalších
   čtvrtích využívají hranice <a href="https://opendata.plzen.eu/public/opendata/detail/108" target="_blank" rel="noopener">městských částí</a>.
   Model hamru
   vychází z mapy a fotografie obnovy zveřejněné

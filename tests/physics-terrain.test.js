@@ -105,6 +105,15 @@ test('Jolt protne Wilsonův most, Rondel i vozovky a stropy Valíku ve výšce p
       const k = Math.floor((w.rOff[road] + w.rOff[road + 1] - 2) / 2);
       check((w.rpx[k] + w.rpx[k + 1]) / 2, (w.rpz[k] + w.rpz[k + 1]) / 2, (w.rpy[k] + w.rpy[k + 1]) / 2);
     }
+    // Město Plzeň, objekt 00000002023003269. Měření protíná osu jízdního pruhu U Prazdroje.
+    label = 'U Prazdroje, horní plocha a podhled';
+    const deck = 316.615 - w.baseElevation;
+    check(657, 162, deck);
+    check(657, 162, 315.96 - w.baseElevation, false);
+    assert.ok(Math.abs(deck - w.deckAt(657, 162, Infinity, 3)) < 0.05);
+    const road = w.nearestRoad(657, 162, 5, 13, 0, {});
+    const carriageway = w.roadSurfaceY(road.road, road.seg, road.t, road.x, road.z);
+    assert.ok(Math.abs((315.96 - w.baseElevation - carriageway) - 6.05) < 0.05);
     assert.equal(w.tunnels.length, 2);
     for (const tunnel of w.tunnels) {
       label = [tunnel.road, 'Valík'];

@@ -1,4 +1,5 @@
 import { CHUNK, COLL_CELL, RF } from '../config.js';
+import { prazdrojThickness } from '../world/prazdroj-bridge.js';
 import { densePath, pathNormal } from '../world/road-profile.js';
 import { TUNNEL_HEIGHT } from '../world/tunnels.js';
 
@@ -10,7 +11,8 @@ export class RoadStructures {
       const flags = world.r.flags[i];
       if (flags & RF.SHARED_DECK || (!(flags & RF.BRIDGE) && !world.rondel?.elevated.has(i))) continue;
       const a = world.rOff[i], b = world.rOff[i + 1] - 1;
-      this.strip(densePath(world.rpx, world.rpz, world.rpy, a, b, a, b, 4), world.deckHalfWidth(i));
+      this.strip(densePath(world.rpx, world.rpz, world.rpy, a, b, a, b, 4), world.deckHalfWidth(i),
+        null, i === world.prazdrojRoad ? prazdrojThickness : undefined);
     }
     for (const rail of world.rails) if (rail.y) {
       const xs = [], zs = [];
@@ -80,12 +82,12 @@ export class RoadStructures {
     }
   }
 
-  strip(path, width, tunnel = null) {
+  strip(path, width, tunnel = null, thickness = 0.94) {
     let previous;
     for (let k = 0; k < path.n; k++) {
       const { x, z, scale } = pathNormal(path, k);
       const point = (side, lift) => [path.x[k] + x * side * scale, path.y[k] + lift, path.z[k] + z * side * scale];
-      const h = tunnel ? TUNNEL_HEIGHT : -0.94;
+      const h = tunnel ? TUNNEL_HEIGHT : -thickness;
       const section = [point(-width, 0), point(width, 0), point(-width, h), point(width, h)];
       if (previous) {
         const [a, b, c, d] = previous, [e, f, g, j] = section;
