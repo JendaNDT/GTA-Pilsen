@@ -551,6 +551,7 @@ export class Game {
     if (this.mapOpen) { endFrame(); return; }
 
     this.time += dt;
+    this.postfx?.exposure?.update(dt);
     this.crashCool -= dt; this.wantedCool -= dt;
     const p = this.player;
     if (input.pressed.has('action')) this.doAction();

@@ -9,9 +9,9 @@ Autor potvrdil zahájení E17. [Zadání E17](E17.md) · [Protokol E16](../E16.m
 | 2. Obloha, poloha slunce a světlo z oblohy | Hotovo · `9c27cd9` |
 | 3. Kaskádové stíny | Hotovo · `bf5ba60` |
 | 4. Průchod scény, vyhlazování, AO, záře, tónování, barevné ladění a mlha | Hotovo |
-| 5. Čtyři předvolby, automatika a dynamické rozlišení | Hotovo |
-| 6. Přizpůsobení jasu | Další krok |
-| 7. Měření všech předvoleb, snímky, protokol a pull request | Čeká |
+| 5. Čtyři předvolby, automatika a dynamické rozlišení | Hotovo · `56108ea` |
+| 6. Přizpůsobení jasu | Hotovo |
+| 7. Měření všech předvoleb, snímky, protokol a pull request | Další krok |
 
 ## Ověření a otevřené otázky
 
@@ -71,4 +71,8 @@ Autor potvrdil zahájení E17. [Zadání E17](E17.md) · [Protokol E16](../E16.m
   Přepnutí vysoké předvolby na nízkou v záběru s dosahem 620 m trvalo na
   Apple M4 1,2 s na WebGPU a 1,5 s na WebGL 2. Test na softwarovém ovladači
   čeká na dokončení až 30 s, protože příprava obrazu tam trvala více než 5 s.
+- Adaptace jasu u Valíku prošla na WebGL 2 i WebGPU spolu s 54 testy Node
+  a sestavením. V záběru uvnitř byl naměřen zobrazovací jas 0,049 před
+  tónováním a za 2,5 s vzrostla expozice z 1,00 na 1,62. Test ověřil
+  postupné zesvětlení i ztlumení po výjezdu. [Snímky](../E17/efekty.md).
 - Po dokončení čeká měření v autorově běžném prohlížeči a kontrola na telefonu.

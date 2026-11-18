@@ -74,3 +74,12 @@ OpenStreetMap včetně Radbuzy, Mže a Berounky. Hra ji odvozuje v paměti
 ze stávajících dat. Hustotu u vody snižuje výška nad hladinou. Parametr
 `?fog=0` zapne původní způsob vykreslení mlhy. [Ráno u Radbuzy před úpravou](efekty/mlha-pred.jpg) ·
 [Ráno s výškovou mlhou](efekty/mlha-reka.jpg).
+
+## Přizpůsobení jasu
+
+Střední, vysoká a ultra předvolba měří průměrný jas střední části obrazu.
+Každých zhruba 0,19 s se na grafice zprůměruje 25 vzorků a hra načte
+jediný pixel. Při vjezdu do tmy se expozice zvyšuje pomalu, po výjezdu
+do světla klesá rychleji. Parametr `?exposure=0` úpravu vypne.
+[Valík těsně po vjezdu](efekty/expozice-pred.jpg) ·
+[Valík po přizpůsobení](efekty/expozice-valik.jpg).

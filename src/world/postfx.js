@@ -10,6 +10,7 @@ import { PARAMS, QUALITY } from '../config.js';
 import { env } from './materials.js';
 import { loadColorLuts } from './color-luts.js';
 import { makeAirPerspective } from './air-perspective.js';
+import { EyeAdaptation } from './exposure.js';
 
 function buffers() {
   // Průhledné lampy a značky se přimíchají pouze do barvy. Normála a pohyb
@@ -31,6 +32,7 @@ export class PostFX {
     this.scenePass.name = 'Obraz hry';
     this.oncePerDraw(this.scenePass);
     this.color = this.scenePass.getTextureNode();
+    this.exposure = QUALITY.shadowCascades > 0 && PARAMS.get('exposure') !== '0' ? new EyeAdaptation(renderer, this.color) : null;
     this.depth = this.scenePass.getTextureNode('depth');
     this.pipeline = new THREE.RenderPipeline(renderer);
     this.pipeline.outputColorTransform = false;
@@ -149,10 +151,12 @@ export class PostFX {
     }
     this.renderNumber++;
     this.pipeline.render();
+    this.exposure?.sample();
   }
 
   dispose() {
     this.pipeline.dispose();
+    this.exposure?.dispose();
     for (const effect of this.effects) effect.dispose();
     for (const table of this.luts) table.dispose();
     this.air?.field.dispose();
