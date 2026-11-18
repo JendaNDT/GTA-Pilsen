@@ -25,3 +25,7 @@ test('dynamické rozlišení po krocích sníží náročnost a nepřekročí me
   assert.equal(resolutionScale(0.99, 2, 6), 1);
   assert.equal(resolutionScale(0.8, 6, 11), 0.8);
 });
+
+test('předvolby omezují počet současně padajících postav', () => {
+  assert.deepEqual(['ultra', 'high', 'medium', 'low'].map(name => PROFILES[name].ragdolls), [4, 4, 2, 1]);
+});

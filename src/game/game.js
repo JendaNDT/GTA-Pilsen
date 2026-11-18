@@ -1,3 +1,4 @@
+import { Falls } from './falls.js';
 import { TrafficBodies } from '../physics/traffic-bodies.js';
 import { PlayerVehicle } from '../physics/vehicle.js';
 import { TileColliders } from '../physics/colliders.js';
@@ -39,6 +40,7 @@ export class Game {
     this.oldPhysics = PARAMS.get('physics') === 'old';
     this.steering = 'arcade';
     this.driver = null;
+    this.falls = new Falls(this);
     this.trafficBodies = new TrafficBodies(physics);
     this.tireSurface = (x, z) => {
       if (x > -66 && x < 75 && z > -60 && z < 68) return 0.9;
@@ -60,7 +62,7 @@ export class Game {
     physics.step = (dt) => {
       const start = DEBUG ? performance.now() : 0;
       this.driver?.drive(dt, input.moveY, input.moveX, input.handbrake, this.steering === 'arcade', this.tireSurface);
-      if (this.mode === 'foot') {
+      if (this.mode === 'foot' && !this.falls.active.has(this.player)) {
         const fx = Math.sin(this.camYaw), fz = Math.cos(this.camYaw);
         const dx = fx * input.moveY - fz * input.moveX, dz = fz * input.moveY + fx * input.moveX;
         this.fallDamage += this.player.update(dt, dx, dz, input.run, input.handbrake);
@@ -75,6 +77,7 @@ export class Game {
       }
       physics.engine.Step(dt, 1);
       this.driver?.read();
+      this.falls.step(dt);
       if (DEBUG) physics.lastStepMs = performance.now() - start;
     };
     this.renderer = renderer;
@@ -199,6 +202,7 @@ export class Game {
       const day = s.clockMode === 'manual' ? parseDay(s.date) : null;
       if (day !== null && Number.isFinite(s.hour) && s.hour >= 0 && s.hour < 24) this.clock.set(day, s.hour);
       this.clockVisible = s.v === 1 || s.clockVisible !== false;
+      this.falls.enabled = s.fallsEnabled !== false;
       this.orthophotoEnabled = s.orthophotoEnabled !== false;
       this.audio.setMuted(s.soundEnabled === false);
       const w = this.world;
@@ -247,7 +251,7 @@ export class Game {
         v: 2, money: this.money, date: formatDay(this.clock.day), hour: this.hour, clockVisible: this.clockVisible,
         clockMode: this.clock.followsPrague ? 'prague' : 'manual',
         soundEnabled: !this.audio.muted, orthophotoEnabled: this.orthophotoEnabled,
-        graphics: this.graphics, steering: this.steering,
+        fallsEnabled: this.falls.enabled, graphics: this.graphics, steering: this.steering,
         car: this.mode === 'car' ? {
           model: f.typeId, color: f.color, x: f.x, z: f.z, y: f.y, yaw: f.yaw,
           health: f.health, owned: f === this.garage.active,
@@ -414,6 +418,7 @@ export class Game {
   }
 
   doAction() {
+    if (this.falls.active.has(this.player) || this.player.stun > 0) return;
     if (this.shifts.active) return this.shifts.doors();
     if (this.mode === 'car') return this._exitCar();
     if (this.mode === 'heli') return this._exitHeli();
@@ -430,6 +435,7 @@ export class Game {
 
   /** Klávesa R: vrátí hráče (i s autem) na nejbližší silnici. */
   unstuck() {
+    if (this.falls.active.has(this.player) || this.player.stun > 0) return;
     const f = this.focus, w = this.world;
     if (this.mode === 'transit' || this.mode === 'heli') return;
     let r = w.nearestRoad(f.x, f.z, 400, RC.LIVING, 0, _road, f.y);
@@ -493,9 +499,10 @@ export class Game {
   applyPedHit(ped, { car, vx, vz, speed }) {
     if (ped === this.player) {
       if (this.mode !== 'foot' || speed <= 4) return;
-      ped.stun = 0.7;
+      ped.stun = 2;
       ped.vx = vx * 0.5; ped.vz = vz * 0.5;
       this.audio.crash(speed, car); this.shake = 0.6;
+      this.falls.start(ped, vx * 0.9, Math.min(3, speed * 0.16), vz * 0.9);
       this._hurt(speed * 2.4);
       return;
     }
@@ -509,6 +516,7 @@ export class Game {
     ped.crossing = null;
     ped.state = 'down'; ped.timer = 7;
     ped.vx = vx * 0.9; ped.vz = vz * 0.9;
+    this.falls.start(ped, ped.vx, Math.min(3, speed * 0.16), ped.vz);
     this.onPedHit(ped, car, speed);
   }
 
@@ -538,6 +546,8 @@ export class Game {
   }
 
   _toFoot(x, z) {
+    this.falls.finish(this.player);
+    this.player.stun = 0;
     if (this.car) { this.car.mode = 'loose'; this.car.noDriver = true; this.car.wasAI = false; this.car = null; }
     if (this.heli) { this.heli.occupied = false; this.heli = null; }
     this.ride = null;
@@ -708,7 +718,7 @@ export class Game {
       this.driver = null;
     }
     if (!this.oldPhysics || this.mode === 'foot') this.colliders.update(this.focus.x, this.focus.z);
-    this.player.setWalking(this.mode === 'foot');
+    this.player.setWalking(this.mode === 'foot' && !this.falls.active.has(this.player));
     if (!this.oldPhysics) {
       if (this.mode === 'car' && !this.driver) this.driver = new PlayerVehicle(this.physics, this.car);
       if (this.car?.physicsTeleport && this.driver) {
@@ -729,7 +739,10 @@ export class Game {
 
     // pohyb podle režimu
     if (this.mode === 'foot') {
-      if (this.fallDamage > 0) { this.audio.crash(8, p); this._hurt(this.fallDamage); }
+      if (this.fallDamage > 0) {
+        this.falls.start(p, p.vx, -3, p.vz);
+        this.audio.crash(8, p); this._hurt(this.fallDamage);
+      }
       if (p.health < 100) p.health = Math.min(100, p.health + dt * 0.8);
     } else if (this.mode === 'car') {
       const car = this.car;
@@ -951,6 +964,7 @@ export class Game {
     this.postfx = null;
     this.env.dispose();
     applyQualityProfile(profile);
+    this.falls.limit(QUALITY.ragdolls);
     this.renderer.shadowMap.enabled = QUALITY.shadows;
     this.camera.far = QUALITY.view * 1.35;
     this.camera.updateProjectionMatrix();

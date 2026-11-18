@@ -59,7 +59,7 @@ export class Player {
     const len = Math.hypot(dirX, dirZ);
     this.swimming = this.y <= w.heightAt(this.x, this.z) + 0.3 && w.isWater(this.x, this.z) && !w.onRoad(this.x, this.z, 0.3);
     let speed = this.swimming ? 1.7 : run ? 6.4 : 2.4;
-    if (this.stun > 0) { this.stun -= dt; speed = 0; }
+    if (this.stun > 0) { this.stun -= dt; speed = 0; jump = false; }
     let tvx = 0, tvz = 0;
     if (len > 0.05) {
       tvx = (dirX / Math.max(1, len)) * speed; tvz = (dirZ / Math.max(1, len)) * speed;
@@ -159,6 +159,7 @@ export class PedManager {
   }
 
   remove(i) {
+    this.game.falls.finish(this.peds[i]);
     this.world.traffic.users.delete(this.peds[i]);
     this.scene.remove(this.peds[i].mesh);
     this.peds.splice(i, 1);
@@ -228,7 +229,15 @@ export class PedManager {
       const d2 = (p.x - player.x) ** 2 + (p.z - player.z) ** 2;
       if (d2 > 230 * 230) { this.remove(i); continue; }
       let moving = 0;
-      p.y = w.groundY(p.x, p.z, p.y);
+      if (this.game.falls.active.has(p)) continue;
+      const surface = w.groundY(p.x, p.z, p.y);
+      if (p.y - surface > 5 && this.game.falls.enabled && d2 <= 80 ** 2) {
+        w.traffic.users.delete(p); p.crossing = null;
+        p.state = 'down';
+        this.game.falls.start(p, 0, -1, 0);
+        continue;
+      }
+      p.y = surface;
       if (p.state === 'down') {
         p.timer -= dt;
         p.x += p.vx * dt; p.z += p.vz * dt;

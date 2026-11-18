@@ -9,8 +9,8 @@ Větev `etapa/E19` vychází z revize `fb29b92`. Autor potvrdil zahájení.
 | 2. Střechy, mostovky, tunely a přestupy | Hotovo |
 | 3. Zábradlí a zobrazení kolizí | Hotovo. Společný vnější obvod a obě strany všech 20 mostů prošly kontrolou. |
 | 4. Kapsle okolních chodců a srážky | Hotovo |
-| 5. Pády postav a vstávání | Čeká |
-| 6. Závěrečné zkoušky a protokol | Čeká |
+| 5. Pády postav a vstávání | Hotovo |
+| 6. Závěrečné zkoušky a protokol | Zbývají úplné testy, měření, dokumentace a návrh na sloučení. |
 
 ## Ověření prvního kroku
 
@@ -142,3 +142,20 @@ Prošlo všech 80 testů JavaScriptu a produkční sestavení. V prohlížeči p
 17 kontrol dopravy a fyziky a závěrečné čtyři zkoušky zasažení chodce i hráče
 na WebGL 2 a WebGPU. Zápisy jsou v `data-raw/e19/krok4-{node,build,e2e,final}.log`.
 Následují pády, vstávání a závěrečné ověření.
+
+### Pátý krok
+
+Postava má při pádu 11 samostatných částí a deset kloubů. Při nárazu rychlostí
+10 m/s dolehla v obou směrech na podložku a uklidnila se do pěti sekund.
+Hráče během pádu sleduje kamera a po dvou až čtyřech sekundách se vrátí k chůzi.
+Ostatní chodci začnou vstávat po třech sekundách klidu. Přechod do stoje trvá
+0,35 sekundy. Při zaplnění limitu se uvolní nejstarší postava.
+Volba „Fyzikální pády postav“ v nastavení se ukládá. Ve starších uložených
+hrách je zapnutá. Prostředky Jolt se po pádu uvolní.
+
+Prošlo všech 82 testů JavaScriptu, produkční sestavení, sedm prohlížečových
+kontrol pádů s výchozí jízdou i sedm s původní jízdou. Oba vykreslovače
+ověřily zásah auta, jediný úbytek zdraví při pádu z devíti metrů, návrat
+ovládání i výměnu nejstarší postavy v nízké kvalitě. Opakovaný náraz na
+stejném úseku u Prazdroje také prošel. Zápisy jsou v
+`data-raw/e19/{vstani,krok5-old,krok5-silnice,krok5-node,krok5-build}.log`.

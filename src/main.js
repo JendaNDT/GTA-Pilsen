@@ -248,6 +248,12 @@ async function boot() {
     if (!applied) qualityStatus.textContent = 'Předvolbu grafiky se nepodařilo použít.';
     qualitySelect.disabled = false;
   });
+  $('falls-enabled').checked = game.falls.enabled;
+  $('falls-enabled').addEventListener('change', event => {
+    game.falls.enabled = event.target.checked;
+    if (!game.falls.enabled) game.falls.limit(0);
+    game.save();
+  });
   $('orthophoto-enabled').disabled = !game.chunks.orthophoto;
   $('orthophoto-enabled').checked = Boolean(game.chunks.orthophoto) && game.orthophotoEnabled;
   $('orthophoto-enabled').addEventListener('change', (event) => game.setOrthophotoEnabled(event.target.checked));
