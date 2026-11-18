@@ -815,16 +815,18 @@ function buildTunnel(world, tunnel) {
   for (let k = 0; k < D.n - 1; k++) {
     const a = sections[k], b = sections[k + 1];
     const inside = beyond(start, k) >= -0.01 && beyond(end, k + 1) >= -0.01;
-    solid.quad(a(-hw, 0), b(-hw, 0), b(hw, 0), a(hw, 0), road);
+    // Nad stropem Valíku leží terén, který do mapy stínů nekreslíme.
+    const daylight = inside ? 0.11 + 0.89 * Math.exp(-Math.min(beyond(start, k + 1), beyond(end, k)) / 2.8) : 1;
+    solid.quad(a(-hw, 0), b(-hw, 0), b(hw, 0), a(hw, 0), road, daylight);
     for (const side of [-hw, hw]) {
       const h0 = inside ? H : wallTop(a, side), h1 = inside ? H : wallTop(b, side);
-      solid.quad(a(side, -0.2), b(side, -0.2), b(side, h1), a(side, h0), concrete);
+      solid.quad(a(side, -0.2), b(side, -0.2), b(side, h1), a(side, h0), concrete, daylight);
       const line = side - Math.sign(side) * 0.85;
       lights.quad(a(line - 0.06, 0.014), b(line - 0.06, 0.014), b(line + 0.06, 0.014), a(line + 0.06, 0.014), white);
     }
     if (k % 3 !== 0) lights.quad(a(-0.07, 0.014), b(-0.07, 0.014), b(0.07, 0.014), a(0.07, 0.014), white);
     if (!inside) continue;
-    solid.quad(a(-hw, H), a(hw, H), b(hw, H), b(-hw, H), ceiling);
+    solid.quad(a(-hw, H), a(hw, H), b(hw, H), b(-hw, H), ceiling, daylight);
     if (k % 5 === 0) {
       for (const side of [-hw + 0.32, hw - 0.32]) {
         lights.quad(a(side - 0.12, H - 0.05), a(side + 0.12, H - 0.05), b(side + 0.12, H - 0.05), b(side - 0.12, H - 0.05), amber);

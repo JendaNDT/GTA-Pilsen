@@ -37,7 +37,7 @@ export class Game {
       this.tunnelLight.visible = false;
       this.scene.add(this.tunnelLight);
     }
-    this.env = new Environment(this.scene, this.world);
+    this.env = new Environment(this.scene, renderer);
     this.chunks = new ChunkManager(this.scene, this.world, renderer, data.heritage, data.orthophotoSources);
     this.hud = new Hud(this.world);
     this.soundPlaces = data.soundPlaces;
@@ -97,7 +97,7 @@ export class Game {
       this.peds.timer = 0;
     }
     this.chunks.heritage.updateForge(this.hour, 0);
-    this.env.setHour(this.hour);
+    this.env.setHour(this.hour, this.clock.day);
     this.hud.clock(this.clock, this.clockVisible);
     this.updateDepartures();
     this.envTimer = 0.4;
@@ -736,6 +736,7 @@ export class Game {
 
   render() {
     this.renderer.info.reset();
+    this.env.updateSkyLight();
     this.renderer.render(this.scene, this.camera);
   }
 

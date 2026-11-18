@@ -36,6 +36,15 @@ export async function renderReferenceView(page, view) {
     const missing = [...chunks.chunks.values()].find((tile) => tile.cityRequest && !tile.heritage?.city);
     if (missing) throw new Error(`${view.name}: chybí dlaždice měřených budov ${missing.ci}.`);
     window.__view(...view.camera, ...view.target);
+    // V režimu zastaveného času musí snímek dokončit rozpracované světlo z oblohy.
+    if (game.env.skyLight?.face >= 0) {
+      for (let i = 0; i < 6 && game.env.skyLight.face >= 0; i++) {
+        await new Promise(requestAnimationFrame);
+        game.render();
+      }
+      // Odečti ustálený pohled po dokončení aktualizace světla.
+      game.render();
+    }
     return window.__perf.renderStats();
   }, { view, date: reference.date });
 }

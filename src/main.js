@@ -138,6 +138,7 @@ async function boot() {
   game._updateCamera(0.016);
   game.env.update(game.camera, game.focus);
   loadText.textContent = 'Připravuji vykreslování…';
+  await game.env.prepareSkyLight();
   await renderer.compileAsync(game.scene, game.camera);
   game.render();
 
