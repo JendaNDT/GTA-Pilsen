@@ -13,6 +13,24 @@ const C = Math.cos(FORGE.yaw), S = Math.sin(FORGE.yaw);
 const HALF_WIDTH = 5.06, SOUTH = 16.5, NORTH = -16.25, EAVE = 4.55, RIDGE = 9.05;
 const LOFT_LENGTH = 25.6, LOFT_WIDTH = 1.9, LOFT_EAVE = 9.03, LOFT_RIDGE = 10.92;
 
+export function forgeRoofFaces(world, index, emit) {
+  if (index < 0) return;
+  const base = world.bGround[index] - 1.25;
+  const vertex = (x, z, h) => {
+    const [wx, wz] = forgeXZ(x, z);
+    return [wx, base + h, wz];
+  };
+  for (const [width, north, south, eave, ridge] of [
+    [HALF_WIDTH * 1.055, NORTH - 0.42, SOUTH + 0.42, EAVE - 0.26, RIDGE],
+    [LOFT_WIDTH * 1.12, -LOFT_LENGTH / 2 - 0.26, LOFT_LENGTH / 2 + 0.26, LOFT_EAVE, LOFT_RIDGE],
+  ]) for (const sign of [-1, 1]) {
+    const a = vertex(0, north, ridge), b = vertex(sign * width, north, eave);
+    const c = vertex(sign * width, south, eave), d = vertex(0, south, ridge);
+    emit(a, b, c);
+    emit(a, c, d);
+  }
+}
+
 export function forgeRoofHeight(world, index, x, z) {
   if (index < 0) return -Infinity;
   const dx = x - FORGE.x, dz = z - FORGE.z;

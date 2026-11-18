@@ -7,7 +7,7 @@ Autor potvrdil zahájení. [Zadání E18](E18.md) · [Protokol E17](../E17.md)
 | --- | --- |
 | 1. Načtení Jolt, svět a vrstvy | Hotovo. Pád tělesa, načtení hry i chyba při stažení ověřeny. |
 | 2. Pevný krok a interpolace | Hotovo. Ověřeno při 30 i 144 snímcích/s, po delším snímku, v pauze a při přesunutí tělesa. |
-| 3. Terén, budovy a zobrazení kolizí | Čeká |
+| 3. Terén, budovy a zobrazení kolizí | Hotovo |
 | 4. Mostovky, Rondel, tunely a uzavírky | Čeká |
 | 5. Auto hráče, ovládání a zvuk | Čeká |
 | 6. Poškození, garáž, návrat na silnici a uložení | Čeká |
@@ -24,10 +24,18 @@ prohlížečových kontrol. Pro tento krok běžel samostatný server nad jeho s
 Výsledky obou běhů jsou v místním adresáři `data-raw/e18/`.
 První krok je v revizi `efa2cf2`.
 
-## Otevřená otázka
+## Rozhodnutí autora
 
-Plán omezuje nárůst povinných dat při startu na 3 MiB proti E12. Neurčuje,
-zda se velikost počítá před přenosovou kompresí, nebo po ní. Při HTTP GET
-produkčního souboru Jolt v místním náhledu se přeneslo 944 375 bajtů s gzipem
-a 3 572 852 bajtů bez komprese. Jde pouze o knihovnu. Celkový rozdíl proti E12
-se má změřit stejným způsobem. Autor dostal otázku před zahájením stavby kolizí.
+Limit 3 MiB navíc proti E12 se počítá ze skutečně přenesených dat při studeném
+startu se zapnutou přenosovou kompresí. Samotný Jolt při místní zkoušce
+přenesl 944 375 bajtů. Při zveřejnění ověříme kompresi také na adrese pro telefon.
+
+Ve třetím kroku prošlo 62 testů JavaScriptu, 23 testů Pythonu, sestavení a sedm
+cílených prohlížečových kontrol. Paprsky v Jolt ověřily základní, jemný i upravený
+terén do 5 cm. Všech 76 740 trojúhelníků střech v 93 dlaždicích se shoduje s daty
+města. F8 ukazuje stejnou síť, jakou používá fyzika.
+Při studeném startu v nízké kvalitě přenesly hra, základní data a katalogy
+o 2 103 364 bajtů (2,01 MiB) více než archiv E12. S dokončenými požadavky na okolí
+do zobrazení nabídky to bylo 32 656 336 proti 33 641 355 bajtům v E12. Výběr
+detailů závisí na vydání a rychlosti načítání. Odečet lze zopakovat nástrojem
+`node tools/measure_startup.mjs adresář-E12 adresář-nového-sestavení`.

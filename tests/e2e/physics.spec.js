@@ -37,3 +37,20 @@ test('E18 – hra rozděluje čas jízdy na pevné kroky a v pauze fyziku neposo
   expect(steps.paused).toBe(0);
   expect(steps.values).toEqual([1 / 60, 1 / 60]);
 });
+
+test('E18 – dlaždice pod hráčem má přednost a F8 ukáže její skutečné kolize', { tag: '@webgpu' }, async ({ page }) => {
+  await page.goto(gameUrl('/?debug&adapt=0&quality=low'));
+  await page.waitForFunction(() => window.__ready);
+  const observed = await page.evaluate(() => {
+    const { colliders, focus, world } = window.__game;
+    colliders.update(focus.x, focus.z);
+    const first = world.chunkIndex(focus.x, focus.z);
+    const firstCount = colliders.tiles.size;
+    const coversPlayer = colliders.tiles.has(first);
+    colliders.update(focus.x + 1800, focus.z);
+    return { firstCount, coversPlayer, retained: colliders.tiles.has(first), visible: colliders.debug.group.visible };
+  });
+  expect(observed).toEqual({ firstCount: 1, coversPlayer: true, retained: false, visible: false });
+  await page.keyboard.press('F8');
+  expect(await page.evaluate(() => window.__game.colliders.debug.group.visible)).toBe(true);
+});

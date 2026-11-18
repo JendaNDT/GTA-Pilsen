@@ -1,3 +1,5 @@
+import { TileColliders } from '../physics/colliders.js';
+import { CollisionView } from '../physics/debug.js';
 // Řízení hry: stav hráče, kamera, pravidla (hledanost, zdraví, peníze), ukládání.
 import * as THREE from 'three/webgpu';
 import { QUALITY, RC, DRIVABLE_MAX, IS_TOUCH, IS_MOBILE, DEBUG, PARAMS, DEFAULT_QUALITY, QUALITY_OVERRIDE,
@@ -44,6 +46,7 @@ export class Game {
     this.env = new Environment(this.scene, renderer);
     this.postfx = createPostFX(renderer, this.scene, this.camera, this.world);
     this.chunks = new ChunkManager(this.scene, this.world, renderer, data.heritage, data.orthophotoSources);
+    this.colliders = new TileColliders(physics, this.world, data, DEBUG ? new CollisionView(this.scene) : null);
     this.hud = new Hud(this.world);
     this.soundPlaces = data.soundPlaces;
     this.audio = new GameAudio(this);
@@ -588,6 +591,7 @@ export class Game {
     this.world.traffic.tick(dt, this.mode === 'foot' ? this.player : null);
     env.time.value = this.time;
 
+    this.colliders.update(this.focus.x, this.focus.z);
     this.physics.update(elapsed);
 
     // pohyb podle režimu
