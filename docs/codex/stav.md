@@ -8,7 +8,7 @@ Autor potvrdil zahájení E17. [Zadání E17](E17.md) · [Protokol E16](../E16.m
 | 1. Fyzikálně založené materiály | Hotovo · `0e84e90` |
 | 2. Obloha, poloha slunce a světlo z oblohy | Hotovo · `9c27cd9` |
 | 3. Kaskádové stíny | Hotovo · `bf5ba60` |
-| 4. Průchod scény, vyhlazování, AO, záře, tónování, barevné ladění a mlha | Hotovo až po tónování, další je barevné ladění |
+| 4. Průchod scény, vyhlazování, AO, záře, tónování, barevné ladění a mlha | Hotovo až po barevné ladění, další je mlha |
 | 5. Čtyři předvolby, automatika a dynamické rozlišení | Čeká |
 | 6. Přizpůsobení jasu | Čeká |
 | 7. Měření všech předvoleb, snímky, protokol a pull request | Čeká |
@@ -56,4 +56,8 @@ Autor potvrdil zahájení E17. [Zadání E17](E17.md) · [Protokol E16](../E16.m
 - Porovnání tónování ponechalo výchozí ACES kvůli barvě dlažby a kontrastu
   nočních oken. Oba způsoby se ověřily v osmi referenčních pohledech.
   Prošlo sestavení, 46 testů Node a čtyři cílené prohlížečové scénáře.
+  Commit `da2f19c`.
+- Tři vlastní barevné tabulky mají celkem 353 947 bajtů. Kandidát se shoduje
+  s převzatými soubory. Prošlo 48 testů Node, 23 testů Pythonu, sestavení
+  a čtyři kontroly načtení na vysoké a nízké předvolbě v obou vykreslovačích.
 - Po dokončení čeká měření v autorově běžném prohlížeči a kontrola na telefonu.

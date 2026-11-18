@@ -239,6 +239,8 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 
 - Grafiku vykresluje [three.js 0.187.0](https://github.com/mrdoob/three.js/tree/r187),
   autoři three.js, [licence MIT](https://github.com/mrdoob/three.js/blob/r187/LICENSE).
+- Barevné tabulky pro den, soumrak a noc jsou vlastní podklad hry. Generuje je
+  [skript `build_luts.mjs`](tools/build_luts.mjs).
 - Sestavení používá [picomatch](https://github.com/micromatch/picomatch), autor Jon
   Schlinkert, licence MIT. [Místní oprava 4.0.8-plzen.1](vendor/picomatch/README.md)
   vychází z verze 4.0.7 a odstraňuje zaseknutí při opakovaných vzorech hledání souborů.

@@ -1,12 +1,14 @@
 import * as THREE from 'three/webgpu';
-import { convertToTexture, materialReference, mix, mrt, normalView, output, pass, renderOutput, vec4, velocity } from 'three/tsl';
+import { convertToTexture, materialReference, mix, mrt, normalView, output, pass, renderOutput, texture3D, vec4, velocity } from 'three/tsl';
 import { fxaa } from 'three/addons/tsl/display/FXAANode.js';
 import { ao } from 'three/addons/tsl/display/GTAONode.js';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
+import { lut3D } from 'three/addons/tsl/display/Lut3DNode.js';
 import { smaa } from 'three/addons/tsl/display/SMAANode.js';
 import { traa } from 'three/addons/tsl/display/TRAANode.js';
 import { PARAMS, QUALITY } from '../config.js';
 import { env } from './materials.js';
+import { loadColorLuts } from './color-luts.js';
 
 function buffers() {
   // Průhledné lampy a značky se přimíchají pouze do barvy. Normála a pohyb
@@ -35,6 +37,7 @@ export class PostFX {
     this.temporal = null;
     this.ambientOcclusion = null;
     this.glow = null;
+    this.luts = [];
     this.lastPosition = new THREE.Vector3();
     this.lastRotation = new THREE.Quaternion();
     this.hasPreviousCamera = false;
@@ -70,8 +73,12 @@ export class PostFX {
     }
 
     const toneMapping = PARAMS.get('tone') === 'agx' ? THREE.AgXToneMapping : THREE.ACESFilmicToneMapping;
-    const toned = renderOutput(image, toneMapping, THREE.LinearSRGBColorSpace);
-    const display = renderOutput(toned, THREE.NoToneMapping, THREE.SRGBColorSpace);
+    this.toned = renderOutput(image, toneMapping, THREE.LinearSRGBColorSpace);
+    for (const effect of this.effects) this.oncePerDraw(effect);
+  }
+
+  setupDisplay(color) {
+    const display = renderOutput(color, THREE.NoToneMapping, THREE.SRGBColorSpace);
     if (this.temporal) {
       this.pipeline.outputNode = display;
       this.antialias = 'traa';
@@ -80,10 +87,11 @@ export class PostFX {
       this.effects.push(displayTexture);
       const smoothing = QUALITY.shadowCascades === 0 ? fxaa(displayTexture) : smaa(displayTexture);
       this.effects.push(smoothing);
+      this.oncePerDraw(displayTexture);
+      this.oncePerDraw(smoothing);
       this.pipeline.outputNode = smoothing;
       this.antialias = QUALITY.shadowCascades === 0 ? 'fxaa' : 'smaa';
     }
-    for (const effect of this.effects) this.oncePerDraw(effect);
   }
 
   oncePerDraw(node) {
@@ -100,6 +108,18 @@ export class PostFX {
   }
 
   async prepare() {
+    let color = this.toned;
+    if (PARAMS.get('lut') !== '0') {
+      try {
+        this.luts = await loadColorLuts(import.meta.env.BASE_URL);
+        const [day, dusk, night] = this.luts.map((table) => lut3D(this.toned, texture3D(table), table.image.width, 1));
+        const weights = env.colorGrade;
+        color = day.mul(weights.x).add(dusk.mul(weights.y), night.mul(weights.z));
+      } catch (error) {
+        console.warn('Barevné ladění se nepodařilo načíst.', error);
+      }
+    }
+    this.setupDisplay(color);
     await this.scenePass.compileAsync(this.renderer);
   }
 
@@ -124,6 +144,7 @@ export class PostFX {
   dispose() {
     this.pipeline.dispose();
     for (const effect of this.effects) effect.dispose();
+    for (const table of this.luts) table.dispose();
     this.scenePass.dispose();
   }
 }

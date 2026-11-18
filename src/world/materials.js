@@ -16,6 +16,7 @@ export const env = {
   sunDir: uniform(new THREE.Vector3(0, 1, 0)).setGroup(renderGroup),
   cam: uniform(new THREE.Vector3()).setGroup(renderGroup),
   wetPaving: uniform(0).setGroup(renderGroup),
+  colorGrade: uniform(new THREE.Vector3(1, 0, 0)).setGroup(renderGroup),
 };
 
 const facadeNodes = new Map();

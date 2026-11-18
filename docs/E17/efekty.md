@@ -55,3 +55,13 @@ V nočním vzorku dvou sousedních oken byl rozdíl v červeném kanálu 144
 bodů z 255 u ACES a 104 u AgX. Denní vzorek dlažby měl v červeném kanálu
 175 bodů u ACES a 159 u AgX. Převod obrazu pro monitor probíhá samostatně
 po tónování, aby mezi ně v dalším kroku šlo přidat barevné ladění.
+
+## Barevné ladění
+
+Tři vlastní tabulky mají po 17 bodech na každou barevnou osu. Skript
+`tools/build_luts.mjs` upravuje sytost, násobí barevné kanály a přidává
+jemný odstín do středních tónů. Den je teplejší, soumrak zvýrazní teplé
+světlo a fialové stíny a noc lehce posílí modrou. Tabulky se plynule
+míchají podle výšky slunce. Parametr `?lut=0` úpravu vypne.
+[Soumrak bez barevného ladění](efekty/ladeni-pred.jpg) ·
+[Soumrak s barevným laděním](efekty/ladeni-soumrak.jpg).

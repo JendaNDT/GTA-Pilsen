@@ -11,6 +11,7 @@ import { SURFACE } from './material-table.js';
 import { hash21, valueNoise } from './material-noise.js';
 import { pragueOffset, solarDirection } from './solar.js';
 import { SkyLight } from './sky-light.js';
+import { lutWeights } from './color-luts.js';
 
 export const GROUND_HEX = 0x9aa873;
 
@@ -120,6 +121,7 @@ export class Environment {
     const dusk = 1 - THREE.MathUtils.smoothstep(Math.abs(elev + 0.025), 0.035, 0.24);
     const night = 1 - THREE.MathUtils.smoothstep(elev, -0.17, 0.04);
     env.night.value = night;
+    env.colorGrade.value.fromArray(lutWeights(elev));
 
     const hor = new THREE.Color(0xc3dcee).lerp(new THREE.Color(0xf0a060), dusk * 0.85).lerp(new THREE.Color(0x121a2c), 1 - day);
     const { top, sun, cloud, shade } = this.skyColors;
