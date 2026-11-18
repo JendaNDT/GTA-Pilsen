@@ -46,7 +46,7 @@ test('postava vyjde schod 30 cm a zastaví se před schodem 50 cm', async () => 
 test('postava vyjde třicetistupňový svah a nevyjde strmou rampu', async () => {
   const ramp = (degrees) => walk([[-10, 0], [0, 0], [10, 10 * Math.tan(degrees * Math.PI / 180)]], {}, 120);
   const gentle = await ramp(30);
-  assert.ok(gentle.x > 1 && gentle.y > 0.6, JSON.stringify(gentle));
+  assert.ok(gentle.grounded && gentle.x > 1 && gentle.y > 0.6, JSON.stringify(gentle));
   const steep = await ramp(60);
   assert.ok(steep.x < 0.4, JSON.stringify(steep));
 });

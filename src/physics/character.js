@@ -45,7 +45,8 @@ export class WalkingCharacter {
     const grounded = player.grounded;
     const previousY = player.y;
     let vy = grounded ? 0 : player.vy;
-    if (grounded && jump && !player.swimming) vy = 5;
+    const takingOff = grounded && jump && !player.swimming;
+    if (takingOff) vy = 5;
     let vertical = vy - 18 * dt;
     if (grounded && vy === 0 && character.GetGroundState() === physics.Jolt.EGroundState_OnGround) {
       const normal = character.GetGroundNormal();
@@ -58,7 +59,7 @@ export class WalkingCharacter {
     player.x = pos.GetX();
     player.y = pos.GetY() - CENTER_HEIGHT;
     player.z = pos.GetZ();
-    player.grounded = character.GetGroundState() === physics.Jolt.EGroundState_OnGround && vy <= 0;
+    player.grounded = character.GetGroundState() === physics.Jolt.EGroundState_OnGround && !takingOff;
     player.vy = player.grounded ? 0 : (player.y - previousY) / dt;
     if (grounded) player.fallStart = previousY;
     player.fallStart = Math.max(player.fallStart, player.y);

@@ -36,6 +36,12 @@ export class Player {
     }
   }
 
+  leaveVehicle(x, z, y) {
+    this.place(x, z, this.colliders.exitHeight(x, z, y));
+    this.setWalking(true);
+    this.mesh.visible = true;
+  }
+
   /** Postaví hráče na místo; bez výšky na zem (ne na most vysoko nad terénem). */
   place(x, z, y = null) {
     const w = this.world;

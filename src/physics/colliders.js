@@ -105,6 +105,25 @@ export class TileColliders {
     this.debug?.add(ci, positions);
   }
 
+  // U dveří vozidla hledáme jen blízkou oporu, aby výstup nepřeskočil na jiné patro.
+  exitHeight(x, z, y) {
+    this.update(x, z);
+    const { Jolt, system } = this.physics;
+    const ray = new Jolt.RRayCast();
+    ray.mOrigin.Set(x, y + 0.7, z);
+    ray.mDirection.Set(0, -1.7, 0);
+    const hit = new Jolt.CastRayClosestHitCollisionCollector();
+    const settings = new Jolt.RayCastSettings();
+    const filters = [new Jolt.BroadPhaseLayerFilter(), new Jolt.SpecifiedObjectLayerFilter(layers.STATIC),
+      new Jolt.BodyFilter(), new Jolt.ShapeFilter()];
+    try {
+      system.GetNarrowPhaseQuery().CastRay(ray, settings, hit, ...filters);
+      return hit.HadHit() ? y + 0.7 - 1.7 * hit.mHit.mFraction : y;
+    } finally {
+      for (const object of [ray, hit, settings, ...filters]) Jolt.destroy(object);
+    }
+  }
+
   update(x, z) {
     const w = this.world, radius = 384;
     const ix = Math.floor((x - w.minX) / CHUNK), iz = Math.floor((z - w.minZ) / CHUNK);

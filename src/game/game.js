@@ -325,7 +325,7 @@ export class Game {
     }
     car.mode = 'player'; car.wasAI = false; car.noDriver = true;
     this.car = car; this.mode = 'car'; this.focus = car;
-    p.mesh.visible = false; p.lastCar = car;
+    p.setWalking(false); p.mesh.visible = false; p.lastCar = car;
     this.lookIdle = 9;
     this.audio.door(car);
   }
@@ -342,7 +342,7 @@ export class Game {
     }
     car.mode = 'loose'; car.rest = 0; car.noDriver = true; car.wasAI = false;
     this.car = null; this.mode = 'foot'; this.focus = p;
-    p.place(x, z, w.groundY(x, z, car.y + 0.5)); p.yaw = car.yaw; p.mesh.visible = true;
+    p.yaw = car.yaw; p.leaveVehicle(x, z, car.y);
     this.audio.door(car);
     this.jobs.onExitCar(car);
     this.save();
@@ -350,6 +350,7 @@ export class Game {
 
   _enterHeli(h) {
     h.occupied = true; this.heli = h; this.mode = 'heli'; this.focus = h;
+    this.player.setWalking(false);
     this.player.mesh.visible = false;
     this.lookIdle = 9;
     this.audio.door(h);
@@ -362,12 +363,13 @@ export class Game {
     h.occupied = false;
     const lx = Math.cos(h.yaw), lz = -Math.sin(h.yaw);
     this.heli = null; this.mode = 'foot'; this.focus = p;
-    p.place(h.x + lx * 2.2, h.z + lz * 2.2, h.y); p.mesh.visible = true;
+    p.leaveVehicle(h.x + lx * 2.2, h.z + lz * 2.2, h.y);
     this.audio.door(h);
   }
 
   _board(v) {
     this.ride = v; this.mode = 'transit'; this.focus = v;
+    this.player.setWalking(false);
     this.player.mesh.visible = false;
     this.lookIdle = 9;
     this.jobs.onBoard(v);
@@ -380,7 +382,7 @@ export class Game {
     const o = this.transit.exitPoint(v, {});
     const c = this._clearSpot(o.x, o.z, 0.4);
     this.ride = null; this.mode = 'foot'; this.focus = p;
-    p.place(c.x, c.z, this.world.groundY(c.x, c.z, v.y + 0.5)); p.mesh.visible = true;
+    p.leaveVehicle(c.x, c.z, v.y);
     this.jobs.onAlight(v);
     this.updateDepartures();
   }
