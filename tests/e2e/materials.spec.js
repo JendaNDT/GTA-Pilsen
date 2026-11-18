@@ -91,26 +91,31 @@ test('E15 – světlomety auta zůstávají v noci jasné', async ({ page, baseU
   expect(headlight - bumper).toBeGreaterThan(160);
 });
 
-test('E15 – voda pod Wilsonovým mostem, dlažba, portály a značení u Valíku jsou vidět', { tag: '@webgpu' }, async ({ page, baseURL }) => {
+test('E15 – voda pod Wilsonovým mostem zůstává modrá', { tag: '@webgpu' }, async ({ page, baseURL }) => {
   await openReferenceGame(page, gameUrl(baseURL));
-  const view = (id) => reference.views.find((entry) => entry.id === id);
-  const region = (x, y, size = 32) => ({ x, y, width: size, height: size });
-  await renderReferenceView(page, view('wilson'));
-  const [riverRed, , riverBlue] = await averageRegion(page, region(460, 610));
+  await renderReferenceView(page, reference.views.find((view) => view.id === 'wilson'));
+  const [riverRed, , riverBlue] = await averageRegion(page, { x: 460, y: 610, width: 32, height: 32 });
   expect(riverBlue).toBeGreaterThan(125);
   expect(riverBlue - riverRed).toBeGreaterThan(25);
+});
 
-  await renderReferenceView(page, view('valik-zapad'));
-  const [, left] = await averageRegion(page, region(534, 315, 16));
-  const [, right] = await averageRegion(page, region(700, 315, 16));
-  const [, exterior] = await averageRegion(page, region(609, 280, 16));
+test('E15 – portály a značení u Valíku jsou vidět', { tag: '@webgpu' }, async ({ page, baseURL }) => {
+  await openReferenceGame(page, gameUrl(baseURL));
+  await renderReferenceView(page, reference.views.find((view) => view.id === 'valik-zapad'));
+  const region = (x, y) => ({ x, y, width: 16, height: 16 });
+  const [, left] = await averageRegion(page, region(534, 315));
+  const [, right] = await averageRegion(page, region(700, 315));
+  const [, exterior] = await averageRegion(page, region(609, 280));
   expect(exterior - Math.max(left, right)).toBeGreaterThan(25);
   const [, marking] = await averageRegion(page, { x: 402, y: 597, width: 9, height: 6 });
   const [, asphalt] = await averageRegion(page, { x: 420, y: 597, width: 9, height: 6 });
   expect(marking - asphalt).toBeGreaterThan(60);
+});
 
-  await renderReferenceView(page, view('namesti-den'));
-  const [brickRed, brickGreen, brickBlue] = await averageRegion(page, region(600, 665));
+test('E15 – dlažba náměstí Republiky je vidět', { tag: '@webgpu' }, async ({ page, baseURL }) => {
+  await openReferenceGame(page, gameUrl(baseURL));
+  await renderReferenceView(page, reference.views.find((view) => view.id === 'namesti-den'));
+  const [brickRed, brickGreen, brickBlue] = await averageRegion(page, { x: 600, y: 665, width: 32, height: 32 });
   expect(brickRed).toBeGreaterThan(170);
   expect(brickRed - brickBlue).toBeGreaterThan(18);
   expect(brickGreen - brickBlue).toBeGreaterThan(10);

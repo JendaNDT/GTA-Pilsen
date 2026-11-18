@@ -29,7 +29,7 @@ export async function renderReferenceView(page, view) {
     const deadline = performance.now() + 45_000;
     for (;;) {
       const built = chunks.update(x, z, game.camera.far / 1.35, 40, view.camera[1]);
-      if (!built && !chunks.pending && !chunks.heritage.fetching) break;
+      if (!built && !chunks.pending && !chunks.heritage.fetching && !chunks.orthophotoPending) break;
       if (performance.now() > deadline) throw new Error(`${view.name}: okolí se nestihlo dostavět.`);
       await new Promise(requestAnimationFrame);
     }

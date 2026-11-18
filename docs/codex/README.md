@@ -16,7 +16,7 @@ zadání. Když Sol v některé etapě opakovaně selže, přepni ji na Astru.
 | [E13](E13.md) | příprava a měření · [protokol](../E13.md) | Sol, Medium | Sol, Medium |
 | [E14](E14.md) | three.js 0.187 · [protokol](../E14.md) | Sol, High | Sol, Medium |
 | [E15](E15.md) | WebGPU a materiály v TSL · [protokol](../E15.md) | Astra, High | Astra, High |
-| [E16](E16.md) | ortofoto | Sol, High | Sol, Medium |
+| [E16](E16.md) | ortofoto · [protokol](../E16.md) | Sol, High | Sol, Medium |
 | [E17](E17.md) | grafika A: světlo a obraz | Sol, High | Astra, Medium |
 | [E18](E18.md) | fyzika Jolt a auto hráče | Astra, High | Astra, High |
 | [E19](E19.md) | chodci, zábradlí, ragdolly | Astra, High | Sol, High |

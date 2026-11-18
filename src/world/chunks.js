@@ -1,15 +1,16 @@
 // Stavba 3D geometrie po dlaždicích: budovy, silnice, koleje, stromy.
 import * as THREE from 'three/webgpu';
 import { Earcut } from 'three/src/extras/Earcut.js';
-import { CHUNK, QUALITY, BK, BF, RC, RF, LC, DRIVABLE_MAX } from '../config.js';
+import { CHUNK, QUALITY, PARAMS, BK, BF, RC, RF, LC, DRIVABLE_MAX } from '../config.js';
 import { makeBuildingMaterial, makeDecalMaterial, makeTerrainMaterial, getPoolMaterial, env } from './materials.js';
 import { Parts, getDetailMaterial } from '../entities/models.js';
 import { SURF } from './world.js';
 import { TUNNEL_HEIGHT } from './tunnels.js';
 import { buildTrafficMeshes } from './traffic-meshes.js';
-import { Heritage, pavingChunk } from './heritage.js';
+import { DETAIL_REQUEST_LIMIT, Heritage, pavingChunk } from './heritage.js';
 import { FORGE, forgeXZ } from './mill.js';
 import { Districts } from './districts.js';
+import { Orthophoto, orthophotoTile } from './orthophoto.js';
 
 const _c = new THREE.Color();
 function lin(hex) { _c.setHex(hex); return [_c.r, _c.g, _c.b]; }
@@ -439,6 +440,7 @@ const LAND_GROUP = {
   [LC.FOREST]: 1, [LC.SCRUB]: 1, [LC.GRASS]: 1, [LC.PARK]: 1, [LC.ALLOTMENTS]: 1, [LC.CEMETERY]: 1, [LC.GARDEN]: 1,
   [LC.PITCH]: 2, [LC.PLAYGROUND]: 2, [LC.PARKING]: 2, [LC.PLAZA]: 2, [LC.SAND]: 2,
 };
+const ORTHOPHOTO_LAND = new Set([LC.FARMLAND, LC.MEADOW, LC.GRASS, LC.SCRUB]);
 const FIELD_COLORS = ['#b7ae78', '#aba774', '#b8aa81', '#9fa975', '#bdb47e', '#a69d79', '#adb383', '#aeb078'];
 const MEADOW_COLORS = ['#9bad74', '#8da16c', '#9dab77', '#9ca465', '#a5b581'];
 const FOREST_COLORS = ['#56744e', '#507050', '#5a784d', '#4a684b', '#55764e'];
@@ -1071,7 +1073,7 @@ function drawFieldRows(g, field, x0, z0) {
 }
 
 /** Nakreslí povrch země jedné dlaždice (plochy, chodníky, pěšiny, podklad silnic, vodu jako průhlednost). */
-function drawGround(mgr, ci, S) {
+function drawGround(mgr, ci, S, tile, bitmap) {
   const world = mgr.world, L = world.l;
   const cxi = ci % world.cols, czi = Math.floor(ci / world.cols);
   const cx0 = world.minX + cxi * CHUNK, cz0 = world.minZ + czi * CHUNK;
@@ -1094,17 +1096,29 @@ function drawGround(mgr, ci, S) {
   g.setTransform(k, 0, 0, k, -cx0 * k, -cz0 * k);
   g.lineCap = 'round'; g.lineJoin = 'round';
 
-  const polyPath = (i) => {
-    g.beginPath();
+  const polyPath = (i, ctx = g) => {
+    ctx.beginPath();
     for (let rg = L.pRing[i], r1 = L.pRing[i + 1]; rg < r1; rg++) {
       const v0 = L.ringStart[rg], v1 = L.ringStart[rg + 1];
       for (let v = v0; v < v1; v++) {
-        if (v === v0) g.moveTo(L.vx[v] * 0.1, L.vz[v] * 0.1); else g.lineTo(L.vx[v] * 0.1, L.vz[v] * 0.1);
+        if (v === v0) ctx.moveTo(L.vx[v] * 0.1, L.vz[v] * 0.1);
+        else ctx.lineTo(L.vx[v] * 0.1, L.vz[v] * 0.1);
       }
-      g.closePath();
+      ctx.closePath();
     }
   };
   const polys = mgr.landIndex.polys[ci];
+  let overlay;
+  if (bitmap && polys) {
+    overlay = mgr.orthoScratch.get(S);
+    if (!overlay) {
+      overlay = document.createElement('canvas').getContext('2d');
+      overlay.canvas.width = overlay.canvas.height = S;
+      mgr.orthoScratch.set(S, overlay);
+    }
+    overlay.setTransform(k, 0, 0, k, -cx0 * k, -cz0 * k);
+    overlay.clearRect(cx0, cz0, CHUNK, CHUNK);
+  }
   if (polys) {
     for (let group = 0; group < 3; group++) {
       for (const i of polys) {
@@ -1121,9 +1135,26 @@ function drawGround(mgr, ci, S) {
         else if (cls === LC.RESIDENTIAL && context < 2) color = context ? '#a6aa92' : '#a2ae85';
         g.fillStyle = color;
         g.fill('evenodd');
-        if (field && hash(i, 24) > 0.15) drawFieldRows(g, field, cx0, cz0);
+        if (field && !overlay && hash(i, 24) > 0.15) drawFieldRows(g, field, cx0, cz0);
+        if (overlay) {
+          overlay.globalCompositeOperation = ORTHOPHOTO_LAND.has(cls) ? 'source-over' : 'destination-out';
+          polyPath(i, overlay);
+          overlay.fill('evenodd');
+        }
       }
     }
+  }
+  if (overlay) {
+    overlay.globalCompositeOperation = 'source-in';
+    overlay.drawImage(bitmap, tile.left, tile.top, tile.pixels, tile.pixels, cx0, cz0, CHUNK, CHUNK);
+    g.save();
+    g.beginPath();
+    g.rect(world.playMinX, world.playMinZ, world.playMaxX - world.playMinX, world.playMaxZ - world.playMinZ);
+    g.clip();
+    g.globalAlpha = 0.8;
+    g.globalCompositeOperation = 'soft-light';
+    g.drawImage(overlay.canvas, cx0, cz0, CHUNK, CHUNK);
+    g.restore();
   }
   const forgeBasin = cx0 < FORGE.x + 126 && cx0 + CHUNK > FORGE.x - 126 &&
     cz0 < FORGE.z + 126 && cz0 + CHUNK > FORGE.z - 126;
@@ -1425,11 +1456,19 @@ function buildLamps(world, ci) {
 const STAGES = 4;       // 0 terén, 1 budovy, 2 silnice a mosty, 3 stromy a lampy
 
 export class ChunkManager {
-  constructor(scene, world, renderer, heritage) {
+  constructor(scene, world, renderer, heritage, orthophotoSources) {
     this.scene = scene;
     this.world = world;
     this.renderer = renderer;
     this.chunks = new Map();
+    if (orthophotoSources && PARAMS.get('orthophoto') !== '0') {
+      this.orthophoto = new Orthophoto({
+        origin: [world.minX, world.minZ], cols: world.cols, rows: world.rows,
+        chunk: CHUNK, fingerprints: orthophotoSources,
+      }, QUALITY.groundTex === 256 ? 12 : 24, {
+        availableRequests: () => DETAIL_REQUEST_LIMIT - this.heritage.fetching,
+      });
+    }
     this.buildingMat = makeBuildingMaterial();
     this.paintedBuildings = QUALITY.heritageDetail ? makeBuildingMaterial({ textures: true }) : this.buildingMat;
     this.districts = new Districts(heritage.districts);
@@ -1456,14 +1495,31 @@ export class ChunkManager {
       this.roadVerge[i] = surfaceContext(world, this.districts, world.rpx[mid], world.rpz[mid]);
     }
     this.scratch = new Map();
+    this.orthoScratch = new Map();
     this.aniso = Math.min(4, renderer.getMaxAnisotropy());
     this.texNear = QUALITY.groundTex; this.texFar = QUALITY.groundTexFar;
     this.lastCenter = -1;
     this.pending = 0;
+    this.orthophotoPrepared = false;
+    this.orthophotoDrawnRevision = 0;
   }
 
-  _texture(ci, S) {
-    const cv = drawGround(this, ci, S);
+  setOrthophotoEnabled(enabled) {
+    if (!this.orthophoto) return;
+    this.orthophotoEnabled = enabled;
+    this.orthophotoPrepared = false;
+    if (enabled) void this.orthophoto.load();
+    else this.orthophoto.prefetch([]);
+  }
+
+  get orthophotoPending() {
+    const orthophoto = this.orthophoto;
+    return Boolean(orthophoto && (orthophoto.requests || orthophoto.revision !== this.orthophotoDrawnRevision));
+  }
+
+  _texture(ci, ch, S) {
+    ch.orthoBitmap = this.orthophoto?.get(ch.orthoTile?.key) ?? null;
+    const cv = drawGround(this, ci, S, ch.orthoTile, ch.orthoBitmap);
     const tex = new THREE.CanvasTexture(cv);
     tex.flipY = false;
     tex.premultiplyAlpha = true;
@@ -1497,7 +1553,7 @@ export class ChunkManager {
     if (ch.stage === 0) {
       const geo = buildTerrain(w, ci, x0, z0);
       ch.texSize = ch.dist < 420 ? this.texNear : this.texFar;
-      ch.tex = this._texture(ci, ch.texSize);
+      ch.tex = this._texture(ci, ch, ch.texSize);
       const portals = w.tunnels.flatMap((tunnel) => tunnel.portalCuts(x0, z0, CHUNK));
       ch.terrainMat = makeTerrainMaterial(ch.tex, portals, pavingChunk(x0, z0), QUALITY.heritageDetail);
       const m = new THREE.Mesh(geo, ch.terrainMat);
@@ -1551,7 +1607,8 @@ export class ChunkManager {
     const w = this.world;
     const ccx = Math.floor((x - w.minX) / CHUNK), ccz = Math.floor((z - w.minZ) / CHUNK);
     const center = ccz * 4096 + ccx;
-    if (center !== this.lastCenter || this._view !== view) {
+    const newCenter = center !== this.lastCenter || this._view !== view;
+    if (newCenter) {
       this.lastCenter = center; this._view = view;
       const rad = Math.ceil(view / CHUNK) + 1;
       const want = new Set();
@@ -1566,9 +1623,12 @@ export class ChunkManager {
           group.matrixAutoUpdate = false;
           this.scene.add(group);
           const centerX = w.minX + (cx + 0.5) * CHUNK, centerZ = w.minZ + (cz + 0.5) * CHUNK;
+          const orthoTile = this.orthophoto && this.landIndex.polys[ci]?.some((i) => ORTHOPHOTO_LAND.has(w.l.cls[i]))
+            ? orthophotoTile(ci, w.cols, CHUNK) : null;
           this.chunks.set(ci, {
             ci, group, district: this.districts.at(centerX, centerZ), disposables: [], obstacles: [], trees: [], lamps: null, asphalt: null, marks: null,
             stage: 0, tex: null, terrainMat: null, texSize: 0, dist: 0,
+            orthoTile, orthoBitmap: null,
             cx: centerX, cz: centerZ,
           });
         }
@@ -1581,9 +1641,16 @@ export class ChunkManager {
     const night = env.night.value > 0.03;
     let pending = 0, pendingStart = 0, rebake = null;
     const todo = [], cityRequests = [];
+    const orthophoto = this.orthophoto;
+    const orthoRequests = this.orthophotoEnabled && orthophoto?.blocks &&
+      (newCenter || !this.orthophotoPrepared) ? new Map() : null;
     for (const [ci, ch] of this.chunks) {
       const d = Math.hypot(ch.cx - x, ch.cz - z);
       ch.dist = d;
+      if (orthoRequests && ch.orthoTile) {
+        const key = ch.orthoTile.key;
+        if (d < (orthoRequests.get(key) ?? Infinity)) orthoRequests.set(key, d);
+      }
       if (!ch.cityRequest && d < 1080 && this.heritage.cells.has(ci)) cityRequests.push(ch);
       if (ch.regularBuildings) {
         ch.regularBuildings.material = d < 420 ? this.paintedBuildings : this.buildingMat;
@@ -1612,7 +1679,30 @@ export class ChunkManager {
         else if (ch.texSize === this.texNear && d > 640 && !rebake) rebake = [d, ci, ch, this.texFar];
       }
     }
-    this.heritage.prefetch(cityRequests);
+    this.heritage.prefetch(cityRequests, orthophoto?.requests);
+    let orthoRebake;
+    if (orthoRequests) {
+      orthophoto.prefetch([...orthoRequests].sort((a, b) => a[1] - b[1]).map(([key]) => key));
+      this.orthophotoPrepared = true;
+    } else if (this.orthophotoEnabled) {
+      orthophoto.pump();
+    }
+    if (orthophoto && orthophoto.revision !== this.orthophotoDrawnRevision && budget > 0) {
+      for (const ch of this.chunks.values()) {
+        if (!ch.tex || !ch.orthoTile || (orthoRebake && ch.dist >= orthoRebake.dist)) continue;
+        const bitmap = orthophoto.cache.get(ch.orthoTile.key) ?? null;
+        if (bitmap !== ch.orthoBitmap) orthoRebake = ch;
+      }
+      if (orthoRebake) {
+        const ch = orthoRebake;
+        ch.orthoBitmap = orthophoto.get(ch.orthoTile.key);
+        drawGround(this, ch.ci, ch.texSize, ch.orthoTile, ch.orthoBitmap);
+        ch.tex.needsUpdate = true;
+        this.renderer.initTexture(ch.tex);
+      } else {
+        this.orthophotoDrawnRevision = orthophoto.revision;
+      }
+    }
     let done = 0;
     if (todo.length) {
       todo.sort((a, b) => a[0] - b[0]);
@@ -1631,9 +1721,9 @@ export class ChunkManager {
         if (ch.stage >= STAGES) pending--;
         if (ch.stage === 1 || ch.dist < 520) pendingStart--;
       }
-    } else if (rebake && budget > 0) {
+    } else if (rebake && !orthoRebake && budget > 0) {
       const ch = rebake[2];
-      const tex = this._texture(rebake[1], rebake[3]);
+      const tex = this._texture(rebake[1], ch, rebake[3]);
       ch.tex.dispose();
       ch.tex = tex; ch.texSize = rebake[3];
       ch.terrainMat.map = tex;

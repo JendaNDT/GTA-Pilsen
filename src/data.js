@@ -102,6 +102,7 @@ export async function loadAll(onProgress) {
     out.landscape.header.sources?.[name] === fingerprint(name))) delete out.landscape;
   if (out.gradeSeparations && (!out.landscape || !['terrain', 'roads', 'rails', 'landscape'].every((name) =>
     out.gradeSeparations.sources?.[name] === fingerprint(name)))) delete out.gradeSeparations;
+  out.orthophotoSources = { terrain: fingerprint('terrain'), land: fingerprint('land') };
   out.soundPlaces = out.soundPlaces && out.soundPlaces.osm === out.meta.osmTimestamp ? out.soundPlaces.weirs : [];
   return out;
 }

@@ -15,6 +15,7 @@ a rozhodnutí autora:
 Aktualizace three.js na 0.187.0 je implementovaná v [E14](E14.md), včetně porovnání
 vzhledu, ručního měření a popisu zbývajících výkonnostních odchylek pro kontrolu.
 Přechod na WebGPU a uzlové materiály shrnuje [protokol E15](E15.md).
+Ortofoto otevřené krajiny a jeho ověření jsou v [protokolu E16](E16.md).
 **Zadání pro Codex:** [docs/codex/](codex/README.md), jeden soubor na etapu.
 **Pravidla pro agenty:** [AGENTS.md](../AGENTS.md).
 
