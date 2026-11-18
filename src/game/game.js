@@ -30,7 +30,8 @@ const START = { x: -42, z: 52 };
 const plain = (text) => String(text).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
 
 export class Game {
-  constructor(renderer, data) {
+  constructor(renderer, data, physics) {
+    this.physics = physics;
     this.renderer = renderer;
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.4, QUALITY.view * 1.35);

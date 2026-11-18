@@ -1,3 +1,5 @@
+import { loadJolt } from './physics/jolt.js';
+import { PhysicsWorld } from './physics/world.js';
 // Start hry: načtení dat, menu a hlavní smyčka.
 import * as THREE from 'three/webgpu';
 import { loadAll } from './data.js';
@@ -53,6 +55,7 @@ const ABOUT_HTML = (meta, rendering) => `
   <p>Grafiku vykresluje <a href="https://threejs.org" target="_blank" rel="noopener">three.js 0.187.0</a>
   (autoři three.js, licence <a href="https://github.com/mrdoob/three.js/blob/r187/LICENSE" target="_blank" rel="noopener">MIT</a>).
   Aktuální vykreslování: <strong>${rendering}</strong>.</p>
+  <p>Fyziku počítá <a href="https://github.com/jrouwe/JoltPhysics.js" target="_blank" rel="noopener">Jolt Physics 1.1.1</a> (Jorrit Rouwe, licence MIT).</p>
   <p>Sestavení hry používá picomatch od Jona Schlinkerta (licence
   <a href="https://github.com/micromatch/picomatch/blob/master/LICENSE" target="_blank" rel="noopener">MIT</a>)
   s místní opravou 4.0.8-plzen.1.</p>
@@ -116,10 +119,13 @@ async function boot() {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.0;
 
-  const data = await loadAll((p) => { bar.style.width = `${Math.round(p * 80)}%`; });
+  const data = await loadAll((p) => { bar.style.width = `${Math.round(p * 75)}%`; });
+  loadText.textContent = 'Načítám fyziku vozidel…';
+  const physics = new PhysicsWorld(await loadJolt());
+  bar.style.width = '80%';
   loadText.textContent = 'Stavím město…';
   await new Promise((r) => setTimeout(r, 30));
-  const game = new Game(renderer, data);
+  const game = new Game(renderer, data, physics);
   const perf = DEBUG || PARAMS.get('adapt') !== '0' ? createFrameProfiler(game, { sampleEvery: DEBUG ? 1 : 16 }) : null;
   initInput(canvas);
   if (PARAMS.has('hour') || PARAMS.has('date')) {
