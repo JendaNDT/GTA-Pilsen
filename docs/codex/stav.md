@@ -129,4 +129,5 @@ má potvrzenou kompresi gzip.
 Obě kompletní sady po poslední opravě běží nad sestavením na portu 4194.
 Každá obsahuje 110 prohlížečových zkoušek. Výsledky sledovat v místních
 `data-raw/e18/krok7/final-new.log` a `data-raw/e18/krok7/final-old.log`.
-Po dokončení zapsat výsledky, uzavřít protokol a otevřít PR do main.
+Na GitHubu je větev s ověřovanou revizí `1d58c88` a [rozpracovaný návrh na sloučení E18](https://github.com/JendaNDT/GTA-Pilsen/pull/11).
+Po dokončení obou sad zapsat výsledky, uzavřít protokol a předat návrh ke kontrole.
