@@ -47,6 +47,7 @@ async function drive(page, failWrite) {
     const g = window.__game, { shifts, transit, world, clock } = g, run = shifts.active, v = run.vehicle;
     const traffic = world.traffic, before = g.money, dt = 0.05;
     // Samostatné průjezdy ověřují řízení a skutečné semafory bez náhodné kolony.
+    traffic.time = 0;
     transit.vehicles = [v];
     transit.active.clear();
     transit.active.set(v.event.key, v);
@@ -106,6 +107,8 @@ for (const [name, type, id] of [
   test(`E11 – celá směna: ${name}`, async ({ page }, info) => {
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
+    // Nabídka směn vybere nejbližší odjezd. Porovnáváme spoje z měření E20.
+    await page.clock.setFixedTime(new Date('2026-11-18T16:18:00Z'));
     await boot(page);
     await start(page, id);
     await expect(page.locator('#mission')).toContainText('Dveře otevřeny');

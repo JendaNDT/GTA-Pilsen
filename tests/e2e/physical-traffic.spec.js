@@ -181,6 +181,43 @@ test('E20 – fyzikální auto odbočí z Kardinála Berana do Husovy a pokraču
   expect(result.outside).toBeLessThanOrEqual(0);
 });
 
+test('E20 – dodávka udrží vozovku při ostrém odbočení na Americkou i na Železniční', async ({ page }) => {
+  await start(page);
+  const runs = await page.evaluate(() => {
+    const g = __game, w = g.world, vm = g.vehicles, Car = g.player.lastCar.constructor;
+    for (const other of [...vm.cars]) vm.remove(other);
+    const results = [];
+    for (const [edge, next] of [[28371, 19522], [28768, 20738]]) {
+      const car = vm.add(new Car('van', 0x557799));
+      const start = Math.max(0, w.eLen[edge] - 38), lane = w.r.w[w.eRoad[edge]] / 4;
+      const p = w.edgePoint(edge, start, lane, {});
+      car.place(p.x, p.z, Math.atan2(p.tx, p.tz));
+      Object.assign(car, { mode: 'ai', edge, s: start, lane, speed: 8, vx: p.tx * 8, vz: p.tz * 8 });
+      car.exitPlan.push({ from: edge, to: next, lane: w.r.w[w.eRoad[next]] / 4, slow: 3.8 });
+      vm._pickNext(car);
+      g.player.place(p.x + p.tz * 12, p.z - p.tx * 12);
+      for (let i = 0; i < 25; i++) g.colliders.update(car.x, car.z);
+      g.trafficBodies.selectCars(g);
+      let departed = false, arrived = false;
+      for (let i = 0; i < 90 * 60 && !arrived; i++) {
+        w.traffic.tick(1 / 60);
+        vm.stepAI(car, 1 / 60, car.physical);
+        g.physics.engine.Step(1 / 60, 1);
+        car.physical.read();
+        departed ||= !w.onCarriageway(car.x, car.z, car.y);
+        arrived = car.edge === next && car.s >= 16;
+      }
+      results.push({ edge, arrived, departed });
+      vm.remove(car);
+    }
+    return results;
+  });
+  for (const run of runs) {
+    expect(run.arrived, String(run.edge)).toBe(true);
+    expect(run.departed, String(run.edge)).toBe(false);
+  }
+});
+
 test('E20 – náraz do jedoucího auta provozu změní rychlost obou aut', async ({ page }) => {
   await start(page);
   const result = await page.evaluate(() => {

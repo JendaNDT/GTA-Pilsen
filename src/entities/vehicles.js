@@ -1,5 +1,6 @@
 // Auta: jízdní fyzika hráče, běžný provoz, zaparkovaná auta a policie.
 import { driveRoute } from '../game/ai-driver.js';
+import { laneTurn, pathClearance, turnDistance, turnPoint } from '../game/ai-turn.js';
 import * as THREE from 'three/webgpu';
 import { CAR_TYPES, CAR_COLORS, makeCarMesh } from './models.js';
 import { QUALITY, RC, RF, DRIVABLE_MAX, CHUNK } from '../config.js';
@@ -29,6 +30,7 @@ export class Car {
     this.rest = 0; this.wasAI = false;
     this.route = null; this.wp = 0; this.repath = 0;
     this.turnContext = 0; this.trafficStop = null;
+    this.finishingTurn = null;
     this.halfLen = this.type.len / 2;
     this.radius = this.type.wid * 0.56;
     this.roll = 0; this.pitch = 0;       // náklon karoserie v zatáčce
@@ -47,6 +49,7 @@ export class Car {
     const w = Car.world;
     this.x = x; this.z = z; this.yaw = yaw; this.vx = this.vz = 0; this.speed = 0; this.vy = 0; this.air = false;
     this.turnContext = 0; this.trafficStop = null;
+    this.finishingTurn = null;
     this.exitPlan.length = 0;
     this.y = w.groundY(x, z, hint === null ? w.heightAt(x, z) + 1 : hint);
     const fx = Math.sin(yaw), fz = Math.cos(yaw), hl = this.type.len * 0.36;
@@ -75,6 +78,7 @@ export class VehicleManager {
     this.view = new THREE.Frustum();
     this.viewMatrix = new THREE.Matrix4();
     this.wreckBounds = new THREE.Sphere();
+    this.drivingPath = Array.from({ length: 6 }, () => ({ x: 0, z: 0 }));
     Car.world = world;
   }
 
@@ -280,8 +284,10 @@ export class VehicleManager {
     const rev = w.reverseEdge(e);
     this._edgeTangent(e, true, _pt);
     const ex = _pt.tx, ez = _pt.tz;
-    let total = 0;
+    let total = 0, compatible = 0;
     const cands = [];
+    const approach = w.eRoad[e];
+    const divided = (w.r.flags[approach] & RF.ONEWAY) && w.r.lanes[approach] >= 2 && lane;
     for (let q = w.outStart[node], qe = w.outStart[node + 1]; q < qe; q++) {
       const f = w.outEdges[q];
       if (f === rev) continue;
@@ -293,7 +299,10 @@ export class VehicleManager {
       const cos = ex * _pt2.tx + ez * _pt2.tz;
       if (cos < -0.8) continue;
       const wt = (1 + 2.2 * Math.max(0, cos)) * (cls <= RC.TERTIARY_LINK ? 1.6 : 1);
-      cands.push(f, wt, cos);
+      const turn = ex * _pt2.tz - ez * _pt2.tx;
+      const fits = !divided || cos > 0.85 || lane * turn > 0;
+      cands.push({ edge: f, wt, cos, turn, fits });
+      if (fits) compatible += wt;
       total += wt;
     }
     if (!cands.length) {
@@ -302,13 +311,14 @@ export class VehicleManager {
       }
       return { from: e, to: -1, lane: 0, slow: 99 };
     }
-    let r = Math.random() * total;
-    let pick = 0;
-    for (let k = 0; k < cands.length; k += 3) { r -= cands[k + 1]; if (r <= 0) { pick = k; break; } }
-    const to = cands[pick];
-    const cos = cands[pick + 2];
-    this._edgeTangent(to, false, _pt2);
-    const turn = ex * _pt2.tz - ez * _pt2.tx;
+    let r = Math.random() * (compatible || total), pick;
+    for (const candidate of cands) {
+      if (compatible && !candidate.fits) continue;
+      pick = candidate;
+      r -= pick.wt;
+      if (r <= 0) break;
+    }
+    const { edge: to, cos, turn } = pick;
     return { from: e, to, lane: this._laneFor(to, cos > 0.85 ? lane : turn), slow: cos > 0.92 ? 99 : 3.8 + 7 * Math.max(0, cos) };
   }
 
@@ -318,6 +328,7 @@ export class VehicleManager {
     car.next = move.to;
     car.nextLane = move.lane;
     car.turnSlow = move.slow;
+    car.plannedTurn = car.next >= 0 ? laneTurn(this.world, car) : null;
   }
 
   _planJunctionExit(car) {
@@ -336,9 +347,10 @@ export class VehicleManager {
     }
   }
 
-  _obstacleLimit(car, limit, ignore) {
+  _obstacleLimit(car, limit, ignore, pointAt) {
     const fx = Math.sin(car.yaw), fz = Math.cos(car.yaw);
     const lx = fz, lz = -fx;
+    let sampled = false;
     const check = (o) => {
       const dx = o.x - car.x, dz = o.z - car.z;
       if (dx * dx + dz * dz > 900 || Math.abs((o.y === undefined ? car.y : o.y) - car.y) > 3) return;
@@ -360,14 +372,27 @@ export class VehicleManager {
           }
         }
       }
-      const side = Math.abs(dx * lx + dz * lz);
-      const relative = car.yaw - (o.yaw ?? car.yaw);
-      const parallel = Math.abs(Math.cos(relative)), crossing = Math.abs(Math.sin(relative));
-      const half = o.halfLen ?? 1, width = o.radius ?? 0.45;
-      if (side > car.type.wid / 2 + width * parallel + half * crossing + 0.15) return;
-      const gap = ahead - car.halfLen - half * parallel - width * crossing;
+      let gap;
+      if (pointAt) {
+        if (!sampled) {
+          for (let i = 0; i < this.drivingPath.length; i++) {
+            const p = pointAt(4 * (i + 1));
+            this.drivingPath[i].x = p.x; this.drivingPath[i].z = p.z;
+          }
+          sampled = true;
+        }
+        gap = pathClearance(car.x, car.z, car.yaw, car.halfLen, car.type.wid / 2, o, this.drivingPath);
+      } else {
+        const side = Math.abs(dx * lx + dz * lz);
+        const relative = car.yaw - (o.yaw ?? car.yaw);
+        const parallel = Math.abs(Math.cos(relative)), crossing = Math.abs(Math.sin(relative));
+        const half = o.halfLen ?? 1, width = o.radius ?? 0.45;
+        if (side > car.type.wid / 2 + width * parallel + half * crossing + 0.15) return;
+        gap = ahead - car.halfLen - half * parallel - width * crossing;
+      }
       const along = (o.vx || 0) * fx + (o.vz || 0) * fz;
-      const allowed = Math.max(0, along * 0.95 + (gap - 2.2) * 1.3);
+      const allowed = Math.min(Math.max(0, along + (gap - 2.2 - Math.max(0, car.speed)) * 1.1),
+        Math.sqrt(Math.max(0, along) ** 2 + 6 * Math.max(0, gap - 2.2)));
       if (allowed < limit) limit = allowed;
     };
     for (const o of this.cars) if (o !== car && o !== ignore) check(o);
@@ -377,12 +402,31 @@ export class VehicleManager {
 
   stepAI(car, dt, physical = null) {
     const w = this.world;
-    if (physical) {
+    if (car.finishingTurn && car.finishingTurn.to !== car.edge) car.finishingTurn = null;
+    let turn = car.finishingTurn ?? car.plannedTurn;
+    let arcDistance = 0;
+    if (turn && (turn.from === car.edge && car.next === turn.to && car.s > turn.entry - 18 ||
+        car.finishingTurn && car.edge === turn.to)) {
+      arcDistance = turnDistance(turn, car.x, car.z);
+      if (car.edge === turn.to && arcDistance >= turn.radius * turn.angle) {
+        car.finishingTurn = null;
+        turn = null;
+      }
+    } else turn = null;
+    if (turn && arcDistance >= 0) {
+      const fraction = Math.min(1, arcDistance / (turn.radius * turn.angle));
+      const routeS = turn.entry + fraction * (turn.length - turn.entry + turn.exit);
+      if (car.edge === turn.from && routeS >= turn.length) {
+        car.finishingTurn = turn;
+        car.s = routeS;
+        this._advanceEdge(car);
+      } else car.s = Math.max(0, routeS - (car.edge === turn.to ? turn.length : 0));
+    } else if (physical) {
       w.edgePoint(car.edge, car.s, car.lane, _pt);
       const along = (car.x - _pt.x) * _pt.tx + (car.z - _pt.z) * _pt.tz;
       car.s = Math.max(0, car.s + along);
       const length = w.eLen[car.edge];
-      if (car.next >= 0 && length - car.s < car.type.len + Math.abs(car.nextLane)) {
+      if (!turn && car.next >= 0 && length - car.s < car.type.len + Math.abs(car.nextLane)) {
         // Při odbočení vpravo přední kola vjedou do nové ulice ještě před koncem její příčné osy.
         const end = w.edgePoint(car.edge, length, car.lane, _pt);
         const start = w.edgePoint(car.next, 0, car.nextLane, _pt2);
@@ -403,20 +447,40 @@ export class VehicleManager {
     if (car.next >= 0) {
       const nextLimit = w.roadSpeed(w.eRoad[car.next], w.eA[car.next] < w.eB[car.next]) / 3.6;
       vmax = Math.min(vmax, Math.sqrt(nextLimit ** 2 + 8 * Math.max(0, remain)));
-      if (remain < 50 && w.eLen[car.next] < 42 && !car.exitPlan.length && w.traffic.byEdge.has(car.edge)) {
+      if (remain < 50 && w.eLen[car.next] < 42 && !car.exitPlan.length) {
         this._planJunctionExit(car);
+      }
+      let distance = remain;
+      for (const move of car.exitPlan) {
+        distance += w.eLen[move.from];
+        vmax = Math.min(vmax, Math.sqrt(move.slow ** 2 + 5 * Math.max(0, distance - 8)));
       }
     }
     if (remain < 24 && car.turnSlow < vmax) vmax = car.turnSlow + (vmax - car.turnSlow) * Math.max(0, (remain - 6) / 18);
-    let limit = this._obstacleLimit(car, vmax, null);
+    if (turn) vmax = Math.min(vmax, Math.sqrt(3 * turn.radius + 6 * Math.max(0, -arcDistance)));
+    const pointAt = (look) => {
+      if (turn) {
+        const distance = arcDistance + look, arc = turn.radius * turn.angle;
+        if (distance < 0) return w.edgePoint(turn.from, turn.entry + distance,
+          turn.entryLane + (turn.lane - turn.entryLane) * Math.min(1, -distance / 12), _pt);
+        if (distance <= arc) return turnPoint(turn, distance, _pt);
+        const outgoing = turn.exit + distance - arc;
+        if (car.edge === turn.to && outgoing > len && car.next >= 0) {
+          return w.edgePoint(car.next, outgoing - len, car.nextLane, _pt);
+        }
+        return w.edgePoint(turn.to, outgoing,
+          turn.exitLane + (turn.nextLane - turn.exitLane) * Math.min(1, (distance - arc) / 12), _pt);
+      }
+      return car.s + look <= len || car.next < 0
+        ? w.edgePoint(car.edge, Math.min(len, car.s + look), car.lane, _pt)
+        : w.edgePoint(car.next, car.s + look - len, car.nextLane, _pt);
+    };
+    let limit = this._obstacleLimit(car, vmax, null, pointAt);
     if (physical) {
       let gap = Infinity;
       limit = w.traffic.drivingLimit(car, dt, limit, this.cars, this.obstacles,
         (distance) => { gap = Math.min(gap, distance); });
       car.blocked = car.speed < 0.3 ? car.blocked + dt : 0;
-      const pointAt = (look) => car.s + look <= len || car.next < 0
-        ? w.edgePoint(car.edge, Math.min(len, car.s + look), car.lane, _pt)
-        : w.edgePoint(car.next, car.s + look - len, car.nextLane, _pt);
       physical.input = driveRoute(car, pointAt, limit, gap, physical.input, dt);
       physical.driveAI(physical.input, dt, this.game.tireSurface);
       return;
@@ -427,20 +491,19 @@ export class VehicleManager {
     car.blocked = car.speed < 0.3 ? car.blocked + dt : 0;
 
     const look = 3.2 + car.speed * 0.45;
-    const s2 = car.s + look;
-    if (s2 <= len || car.next < 0) w.edgePoint(car.edge, Math.min(s2, len), car.lane, _pt);
-    else w.edgePoint(car.next, s2 - len, car.nextLane, _pt);
+    pointAt(look);
     const want = Math.atan2(_pt.x - car.x, _pt.z - car.z);
     const diff = wrapAngle(want - car.yaw);
     const maxTurn = 2.6 * dt * Math.min(1, car.speed / 2.5 + 0.1);
-    const turn = clamp(diff, -maxTurn, maxTurn);
-    car.yaw += turn;
+    car.yaw += clamp(diff, -maxTurn, maxTurn);
     car.steer = clamp(-diff * 1.5, -0.5, 0.5);
     car.vx = Math.sin(car.yaw) * car.speed; car.vz = Math.cos(car.yaw) * car.speed;
     car.x += car.vx * dt; car.z += car.vz * dt;
     this.followGround(car, dt, false);
-    car.s += car.speed * dt;
-    this._advanceEdge(car);
+    if (!turn || arcDistance < 0) {
+      car.s += car.speed * dt;
+      this._advanceEdge(car);
+    }
   }
 
   _advanceEdge(car) {
@@ -488,6 +551,7 @@ export class VehicleManager {
     const target = w.edgePoint(e, s, lane, _pt);
     if (Math.hypot(target.x - car.x, target.z - car.z) > Math.max(1.25, w.r.w[r.road] / 4)) return false;
     car.edge = e; car.s = s; car.lane = lane; car.turnContext = 0; car.trafficStop = null;
+    car.finishingTurn = null;
     car.exitPlan.length = 0;
     car.mode = car.wasAI === 'police' && this.game.wanted > 0 ? 'police' : 'ai';
     car.speed = 0; car.blocked = 0;
@@ -605,8 +669,12 @@ export class VehicleManager {
   spawnTraffic(px, pz, cam, { typeId = null, minD = 110, maxD = 300, ambient = true } = {}) {
     const w = this.world;
     const e = this._randomEdgeNear(px, pz, minD, maxD, ambient);
-    if (e < 0 || ambient && !this._throughRoad(e, 0)) return null;
-    const s = 2 + Math.random() * Math.max(0, w.eLen[e] - 8);
+    if (e < 0 || ambient && (w.eLen[e] < 24 || !this._throughRoad(e, 0))) return null;
+    // Nový řidič se zařadí mezi křižovatkami, kde má místo zareagovat na provoz.
+    const margin = ambient ? 10 : 2;
+    const s = margin + Math.random() * Math.max(0, w.eLen[e] - 2 * margin);
+    if (ambient && this.cars.some(c => c.edge === e && c.mode === 'ai' && c.blocked > 3 &&
+        c.s > s - 12 && c.s < s + 40)) return null;
     const lane = this._laneFor(e);
     w.edgePoint(e, s, lane, _pt);
     const d = Math.hypot(_pt.x - px, _pt.z - pz);
