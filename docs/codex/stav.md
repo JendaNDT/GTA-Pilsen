@@ -1,7 +1,7 @@
 # Stav etapy E19
 
-Větev `etapa/E19` vychází z revize `fb29b92`. Autor potvrdil zahájení.
-[Zadání E19](E19.md) · [Protokol E18](../E18.md)
+Větev `etapa/E19` vychází z revize `fb29b92`. Všech šest kroků je dokončeno. Zbývá autorská kontrola a sloučení do hlavní větve. Otevřené otázky pro E19 nejsou.
+[Zadání E19](E19.md) · [Protokol E19, měření a snímky](../E19.md)
 
 | Krok | Stav |
 | --- | --- |
@@ -10,7 +10,7 @@ Větev `etapa/E19` vychází z revize `fb29b92`. Autor potvrdil zahájení.
 | 3. Zábradlí a zobrazení kolizí | Hotovo. Společný vnější obvod a obě strany všech 20 mostů prošly kontrolou. |
 | 4. Kapsle okolních chodců a srážky | Hotovo |
 | 5. Pády postav a vstávání | Hotovo |
-| 6. Závěrečné zkoušky a protokol | Zbývají úplné testy, měření, dokumentace a návrh na sloučení. |
+| 6. Závěrečné zkoušky a protokol | Hotovo. Výsledky jsou v protokolu E19. |
 
 ## Ověření prvního kroku
 
@@ -159,3 +159,13 @@ ověřily zásah auta, jediný úbytek zdraví při pádu z devíti metrů, náv
 ovládání i výměnu nejstarší postavy v nízké kvalitě. Opakovaný náraz na
 stejném úseku u Prazdroje také prošel. Zápisy jsou v
 `data-raw/e19/{vstani,krok5-old,krok5-silnice,krok5-node,krok5-build}.log`.
+
+### Šestý krok
+
+Prošlo 82 testů JavaScriptu, 23 testů Pythonu, produkční sestavení a všech
+127 prohlížečových zkoušek (88 WebGL 2, 39 WebGPU) za 42 minut.
+Výsledky jsou v `data-raw/e19/final-{node,python,build}.log` a
+`data-raw/e19/uplne.log`. Dvakrát za každou verzi byla porovnána jízda a let.
+Časy z obou měření i první samostatný výkyv GPU jsou v [protokolu](../E19.md).
+README, katalog a nabídka „O hře“ popisují nové chování. Doporučená kontrola
+je Sol s vysokou úrovní uvažování. Nábřeží pod Wilsonovým mostem patří do E22.

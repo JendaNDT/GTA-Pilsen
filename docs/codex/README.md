@@ -19,7 +19,7 @@ zadání. Když Sol v některé etapě opakovaně selže, přepni ji na Astru.
 | [E16](E16.md) | ortofoto · [protokol](../E16.md) | Sol, High | Sol, Medium |
 | [E17](E17.md) | grafika A: světlo a obraz · [protokol](../E17.md) | Sol, High | Astra, Medium |
 | [E18](E18.md) | fyzika Jolt a auto hráče · [protokol](../E18.md) | Astra, High | Astra, High |
-| [E19](E19.md) | chodci, zábradlí, ragdolly | Astra, High | Sol, High |
+| [E19](E19.md) | chodci, zábradlí, ragdolly · [protokol](../E19.md) | Astra, High | Sol, High |
 | [E20](E20.md) | provoz, MHD, vrtulník, voda | Astra, High | Astra, Medium |
 | [E21](E21.md) | ničení a poškození | Sol, High | Astra, Medium |
 | [E22](E22.md) | měřené stavby a mosty | Astra, High (převod), Sol, High (dávky) | Astra, High |
