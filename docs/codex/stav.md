@@ -134,6 +134,13 @@ režimech i samostatné zopakování jediného neúspěšného testu. Záznamy j
 `data-raw/e18/krok7/` pod názvy `final-new.log`, `final-old.log`,
 `prestup-oprava-new.log`, `prestup-oprava-old.log` a `posledni-prestup.log`.
 
+Na GitHubu v první úplné kontrole revize `ab8b0d0` prošlo všech 31 scénářů
+WebGPU a 78 ze 79 scénářů WebGL 2. Zkouška rozvozu nahlásila nedokončený
+přenos leteckého snímku. Po rozdělení kroků simulace prošla zkouška lokálně
+s oběma verzemi fyziky a také se záměrně o 1,2 sekundy zpožděným přenosem
+stejného snímku. Záznamy jsou ve stejném adresáři pod názvy
+`rozvoz-s-prenosem-new.log`, `rozvoz-s-prenosem-old.log` a `pomaly-snim.log`.
+
 Zbývá kontrola autora podle [protokolu](../E18.md#kontrola-pro-autora), včetně
 vyzkoušení na skutečném telefonu. Doporučený model pro kontrolu je Astra, High.
 [Návrh na sloučení E18 do mainu](https://github.com/JendaNDT/GTA-Pilsen/pull/11)
