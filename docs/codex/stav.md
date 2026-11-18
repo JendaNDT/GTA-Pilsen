@@ -1,65 +1,98 @@
-# Stav etapy E16
+# Stav etapy E17
 
-Větev `etapa/E16` vychází z revize `7ad3671` na `main`. E15 je sloučená.
-Autor potvrdil zahájení E16 a postupné zpracování podkladů pro celou mapu.
-[Zadání E16](E16.md) · [Protokol E15](../E15.md)
+Větev `etapa/E17` vychází z revize `9661ee7` na `main`. E16 je sloučená.
+Autor potvrdil zahájení E17. [Zadání E17](E17.md) · [Protokol E16](../E16.md)
 
 | Krok | Stav |
 | --- | --- |
-| 1. Výběr, stahování a evidence listů ČÚZK | Hotovo · `4fb1104` |
-| 2. Převod souřadnic, složení bloků a testy | Hotovo · `1c434fc` |
-| 3. Načtení a vykreslení dvou pilotů | Hotovo · `786d840` |
-| 4. Srovnávací snímky a vyladění barev | Hotovo · `2f1eede` |
-| 5. Sestavení celého území a ověření velikosti a švů | Hotovo · `2207b05` |
-| 6. Přepínač, licence, dokumentace a závěrečné ověření | Hotovo |
+| 1. Fyzikálně založené materiály | Hotovo · `0e84e90` |
+| 2. Obloha, poloha slunce a světlo z oblohy | Hotovo · `9c27cd9` |
+| 3. Kaskádové stíny | Hotovo · `bf5ba60` |
+| 4. Průchod scény, vyhlazování, AO, záře, tónování, barevné ladění a mlha | Hotovo |
+| 5. Čtyři předvolby, automatika a dynamické rozlišení | Hotovo · `56108ea` |
+| 6. Přizpůsobení jasu | Hotovo · `e285dca` |
+| 7. Měření všech předvoleb, snímky, protokol a příprava na sloučení | Hotovo · `a084d47` · [Protokol E17](../E17.md) |
 
 ## Ověření a otevřené otázky
 
-- Zdroj ČÚZK je dostupný. Katalog obsahuje 16 301 záznamů a pro aktuální hranice
-  mapy vybírá 158 listů. Zkušební list Blovice 0-0 byl stažen v délce 59 684 796
-  bajtů a ověřen součtem SHA-256. Archiv obsahuje JPEG a tři soubory JGW pro
-  jednotlivé souřadnicové systémy.
-- Ověření kroku 1: 16 testů Pythonu, 38 testů Node a produkční sestavení prošly.
-  Test stahování ověřuje navázání na přerušený přenos a evidenci po převodu.
-- Ověření kroku 2: 21 testů Pythonu, 38 testů Node a produkční sestavení.
-  Skutečných sedm listů tvoří osm pilotních bloků mimo `public/`. Testy ověřují
-  převod s tolerancí půl zdrojového pixelu, hranici listů, vyrovnání barev a masku
-  otevřené krajiny.
-- GitHub potvrdil sloučení E15 v revizi `7ad3671`. Dokumentace i prohlížečové
-  kontroly po sloučení prošly. [Kontroly projektu](https://github.com/JendaNDT/GTA-Pilsen/actions/runs/44182177519).
-- Krok 3 prošel 22 testy Pythonu, 41 testy Node a produkčním sestavením. První
-  prohlížečový běh našel chybu volání `fetch`, kvůli které se katalog snímků
-  nenačetl. Opravené volání prošlo se stejnými očekáváními ve všech 14
-  dotčených prohlížečových testech, včetně pozdního načtení v obou režimech
-  vykreslování, výpadku bloku, vypnutí vrstvy a rozpočtu vykreslování.
-- Krok 4 vybral měkké světlo s 80% krytím. Snímky před a po, porovnání tří
-  způsobů prolnutí a odečet deseti kontrolních bodů jsou v [ověření pilotů](../E16/overeni-pilotu.md).
-  Prošlo 41 testů Node, 22 testů Pythonu, sestavení a osm dotčených prohlížečových
-  testů včetně referenčních pohledů v obou režimech.
-- Krok 5 zpracoval 158 listů z roku 2025, celkem 9 806 292 735 bajtů vstupních
-  archivů. Krátký výpadek spojení s katalogem překlenulo navázání na dokončené listy.
-  Test Pythonu ověřuje i opakování krátkých výpadků. Kandidát pokrývá 244,5 km²
-  otevřené krajiny a s katalogem má 4 851 182 bajtů v 615 blocích. Audit ověřil
-  231 751 dvojic pixelů na 979 hranách a nezjistil chybějící ani černé pixely
-  v masce otevřené krajiny. Po vizuálním ověření [ze země](../E16/hranice-ze-zeme.jpg)
-  a [ze vzduchu](../E16/hranice-ze-vzduchu.jpg) převzal kandidáta sestavovací skript.
-  Prošlo 42 testů Node, 23 testů Pythonu, sestavení a osm dotčených
-  prohlížečových testů.
-- Krok 6 doplnil nastavení a uložení volby, licenci ve hře, README, katalog
-  a protokol. Pět cílených prohlížečových testů po úpravě plánování snímků prošlo.
-  [Měření na Macu](../E16/mereni.md) a osm referenčních snímků jsou hotové.
-  První úplný běh ztratil dříve spuštěný server Vite a zbytek scénářů se k němu
-  nepřipojil. S vlastním serverem Playwright prošlo 58 z 59 scénářů. Zkušební
-  přesun v testu výplaty E10 mohl objevit památku a připsat samostatnou odměnu.
-  Test výplaty se ověřuje odděleně od objevování památek. Celá sada zakázek
-  prošla a původně neúspěšný scénář prošel ve třech opakováních.
-- Závěrečné ověření zahrnuje 42 testů Node, 23 testů Pythonu, produkční
-  sestavení a 59 prohlížečových scénářů. Etapa je připravená ke kontrole ve
-  hře. Zbývá autorovo ověření na telefonu. [Protokol E16](../E16.md).
-- Před sloučením probíhá ověření na GitHubu. Osm z devíti scénářů WebGPU
-  prošlo v prvním běhu. Příprava tří pohledů v jednom scénáři přesáhla limit
-  90 sekund. Každý pohled má vlastní scénář s tímto limitem a původními
-  kontrolami barev. Místně prošlo všech 12 dotčených prohlížečových scénářů,
-  42 testů Node a sestavení. [První kontroly na GitHubu](https://github.com/JendaNDT/GTA-Pilsen/actions/runs/44198060724).
-- Po dokončení bude potřeba autorova kontrola při přeletu Rokycan a Klabavy
-  a měření na telefonu. Další podklady a rozhodnutí zatím nejsou potřeba.
+- Výchozí sestavení a osm referenčních pohledů prošly na Apple M4 v Chromiu
+  159.0.8154.6 s WebGPU přes Metal. První měření nízké předvolby je v
+  `data-raw/e17/mereni-pred-low.json`. Pro porovnání na konci etapy se stejná
+  revize přeměřila s časovými značkami okolo celého snímku a s běžnou
+  obnovovací frekvencí prohlížeče.
+- Krok 1 zachovává barvy ve vrcholech a sdílí materiály mezi objekty.
+  Počty volání a trojúhelníků se v osmi pohledech nezměnily.
+  [Srovnávací snímky a odečty](../E17/materialy.md). Prošlo 43 testů Node
+  a 23 testů Pythonu i produkční sestavení. Prošla úplná sada 63 prohlížečových
+  scénářů na WebGL 2 a WebGPU, včetně kontrol materiálů, dlaždic památek,
+  mobilního ovládání a Valíku.
+- Pro kontrolu soumraku v 18:09 se použije 19. říjen 2026. V Plzni toho dne
+  slunce zapadá v 18:08. Pro srovnání denních a nočních snímků zůstává datum
+  E13, 17. listopad 2026. [Údaje U.S. Naval Observatory](https://aa.usno.navy.mil/api/rstt/oneday?date=2026-10-19&coords=49.7475%2C13.3776&tz=2).
+- Krok 2 prošel 46 testy Node, 23 testy Pythonu a produkčním sestavením.
+  První měření odhalilo víc práce pro stíny při nižším zimním slunci.
+  Po zúžení dosavadní oblasti stínů prošel rozpočet E13 na WebGL 2 a WebGPU
+  se stejnými očekáváními. Scénář s postupným výpočtem mapy světla a se
+  soumrakem prošel na obou vykreslovačích. Celkem prošlo 16 cílených scénářů
+  a čtyři opakované kontroly po doplnění počítadla pro všechny průchody.
+  [Snímky a porovnání](../E17/obloha.md).
+- Krok 3 prošel 46 testy Node, sestavením, osmi prohlížečovými scénáři
+  s mapami stínů všech předvoleb a rozpočtem na obou vykreslovačích. Tři
+  mapy ve vysoké předvolbě mají vlastní naměřený rozpočet se stejnou
+  tolerancí jako E13. Při místním měření byla GPU p95 6,68 ms při jízdě
+  a 7,80 ms při letu nad Plzní. [Měření a snímky](../E17/stiny.md).
+- Astra zkontrolovala návrh obrazových efektů proti three.js 0.187. První
+  část kroku 4 doplnila samostatný průchod obrazu a vyhlazování. Překrytí
+  světel a pruhů ponechává podkladové normály a vektory pohybu. Prošlo 46
+  testů Node, sestavení, deset prohlížečových kontrol předvoleb a rozpočtu
+  a zkouška pohybu dveří tramvaje na WebGPU. Commit `da0c231`.
+- Kontaktní zastínění běží v poloviční šířce a výšce. Prošly 46 testů Node,
+  sestavení a čtyři prohlížečové kontroly vysoké a nízké předvolby na obou
+  vykreslovačích. V Dobřívě je tmavší hlavně okolí stěn a dřevěných částí
+  hamru. Commit `a4d6d77`. [Snímky](../E17/efekty.md).
+- Záře světel běží na střední a vyšší předvolbě. Po vyladění prahu má denní
+  náměstí stejný průměrný jas a noční okna osvětlují bezprostřední okolí.
+  Prošlo sestavení, 46 testů Node a čtyři kontroly střední a nízké předvolby.
+  Commit `4427c28`.
+- Porovnání tónování ponechalo výchozí ACES kvůli barvě dlažby a kontrastu
+  nočních oken. Oba způsoby se ověřily v osmi referenčních pohledech.
+  Prošlo sestavení, 46 testů Node a čtyři cílené prohlížečové scénáře.
+  Commit `da2f19c`.
+- Tři vlastní barevné tabulky mají celkem 353 947 bajtů. Kandidát se shoduje
+  s převzatými soubory. Prošlo 48 testů Node, 23 testů Pythonu, sestavení
+  a čtyři kontroly načtení na vysoké a nízké předvolbě v obou vykreslovačích.
+  Commit `1f477bc`.
+- Výšková mlha čte hloubku a používá stávající vodní plochy pro ranní opar.
+  Prošlo sestavení, 49 testů Node a čtyři kontroly vysoké a nízké předvolby
+  na obou vykreslovačích. Commit `9840b0b`. [Porovnání obrazových efektů](../E17/efekty.md).
+- Předvolba se mění ve stejné instanci hry. Hráč, čas, peníze a rozpracované
+  úkoly zůstávají. Automatika používá práci prvních deseti sekund hraní
+  a ukládá předvolbu. Rozlišení má rozsah 60–100 %. Prošlo 52 testů Node,
+  sestavení, tři kontroly nastavení a uložení a dvě kontroly panelu měření.
+  Přepnutí vysoké předvolby na nízkou v záběru s dosahem 620 m trvalo na
+  Apple M4 1,2 s na WebGPU a 1,5 s na WebGL 2. Test na softwarovém ovladači
+  čeká na dokončení až 30 s, protože příprava obrazu tam trvala více než 5 s.
+- Adaptace jasu u Valíku prošla na WebGL 2 i WebGPU spolu s 54 testy Node
+  a sestavením. V záběru uvnitř byl naměřen zobrazovací jas 0,049 před
+  tónováním a za 2,5 s vzrostla expozice z 1,00 na 1,62. Test ověřil
+  postupné zesvětlení i ztlumení po výjezdu. [Snímky](../E17/efekty.md).
+- Závěrečné měření používá jedinou dvojici značek WebGPU okolo celého snímku.
+  Výchozí E16 je znovu naměřená stejným postupem. Všechny čtyři předvolby
+  držely na Apple M4 při jízdě i letu v centru 60 FPS. Po omezení vnitřního
+  rozlišení nízké předvolby na 75 % stoupl čas GPU při jízdě proti E16 o 2,0 %
+  a při letu klesl o 8,7 %. Vysoká a ultra předvolba při letu překročily
+  pracovní rozpočet GPU 12 ms. Skutečný telefon čeká na kontrolu autora.
+- Závěrečný běh našel v testu památek chybu staršího volání, které mění jen
+  hodinu. Oprava ponechává nastavené datum. Původní test zůstává a test oblohy
+  navíc ověřuje setrvání data po změně samotné hodiny. Po opravě prošly čtyři
+  cílené kontroly památek a oblohy a všech 24 opakovaných scénářů první části
+  úplné sady na opraveném sestavení. Prošly rozpočty všech čtyř předvoleb
+  na obou vykreslovačích a cílená kontrola měření času GPU.
+- Samostatná diagnostika Valíku na softwarovém WebGPU naměřila první odečet
+  jasu asi po 11 s včetně čekání na dříve zadané snímky. Test čeká na dokončení
+  přípravy pohledu před zahájením každého odečtu. Desetisekundová mez odečtu
+  a všechna očekávání na přizpůsobení jasu zůstávají stejná. Závěrečné
+  zopakování Valíku prošlo na obou vykreslovačích.
+- Na konečném sestavení prošlo ve více bězích všech 93 prohlížečových
+  scénářů (67 WebGL 2, 26 WebGPU). Prošlo i 55 testů Node, 23 testů Pythonu
+  a produkční sestavení. [Snímky a měření](../E17.md)

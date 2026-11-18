@@ -2,12 +2,13 @@
 import * as THREE from 'three/webgpu';
 import { Earcut } from 'three/src/extras/Earcut.js';
 import { CHUNK, QUALITY, PARAMS, BK, BF, RC, RF, LC, DRIVABLE_MAX } from '../config.js';
-import { makeBuildingMaterial, makeDecalMaterial, makeTerrainMaterial, getPoolMaterial, env } from './materials.js';
+import { makeBuildingMaterial, makeDecalMaterial, makeSurfaceMaterial, makeTerrainMaterial, getPoolMaterial, env } from './materials.js';
+import { SURFACE } from './material-table.js';
 import { Parts, getDetailMaterial } from '../entities/models.js';
 import { SURF } from './world.js';
 import { TUNNEL_HEIGHT } from './tunnels.js';
 import { buildTrafficMeshes } from './traffic-meshes.js';
-import { DETAIL_REQUEST_LIMIT, Heritage, pavingChunk } from './heritage.js';
+import { detailRequestLimit, Heritage, pavingChunk } from './heritage.js';
 import { FORGE, forgeXZ } from './mill.js';
 import { Districts } from './districts.js';
 import { Orthophoto, orthophotoTile } from './orthophoto.js';
@@ -112,23 +113,34 @@ function styleFor(world, i, district) {
       if (style === 3 && !historic && kind !== BK.CIVIC) { style = 1; floorH = 3.05; }
     }
   }
+  let wallSurface = SURFACE.plaster;
+  if (style === 2) wallSurface = SURFACE.panel;
+  else if (kind === BK.RELIGIOUS || kind === BK.TOWER) wallSurface = SURFACE.stone;
+  else if (PLZEN.brick.includes(wall)) wallSurface = SURFACE.brick;
+  else if (PLZEN.metal.includes(wall)) wallSurface = SURFACE.sheet;
+  else if (kind === BK.INDUSTRIAL || kind === BK.FARM || kind === BK.GARAGE) wallSurface = SURFACE.concrete;
+  let roofSurface = SURFACE.tile;
+  if (roof === PAL.copper) roofSurface = SURFACE.copper;
+  else if (PAL.flatRoof.includes(roof)) roofSurface = SURFACE.felt;
+  else if (PAL.lightRoof.includes(roof) || PLZEN.metal.includes(roof)) roofSurface = SURFACE.sheet;
   const col = B.colour[i];
   if (col) { _c.setHex(col & 0xffffff); wall = [_c.r, _c.g, _c.b]; }
   const rcol = B.roofColour ? B.roofColour[i] : 0;
   if (rcol) { _c.setHex(rcol & 0xffffff); roof = [_c.r, _c.g, _c.b]; }
   // jemná odchylka jasu, ať nejsou sousední domy stejné
   const k = 0.9 + r3 * 0.18;
-  return { wall: [wall[0] * k, wall[1] * k, wall[2] * k], roof, style, bay, floorH };
+  return { wall: [wall[0] * k, wall[1] * k, wall[2] * k], roof, wallSurface, roofSurface, style, bay, floorH };
 }
 
 // ------------------------------------------------------------ pomocníci ----
 class Buf {
-  constructor() { this.p = []; this.n = []; this.c = []; this.w = []; this.i = []; this.vc = 0; }
+  constructor() { this.p = []; this.n = []; this.c = []; this.w = []; this.s = []; this.i = []; this.vc = 0; }
   v(x, y, z, nx, ny, nz, col, k, wu, wv, ws) {
     this.p.push(x, y, z);
     this.n.push(nx * 127, ny * 127, nz * 127);
     this.c.push(col[0] * k * 255, col[1] * k * 255, col[2] * k * 255);
     this.w.push(wu, wv, ws);
+    this.s.push(Math.round(this.surface.roughness * 255), Math.round(this.surface.metalness * 255));
     return this.vc++;
   }
   tri(a, b, c) { this.i.push(a, b, c); }
@@ -153,6 +165,7 @@ class Buf {
     g.setAttribute('normal', new THREE.BufferAttribute(new Int8Array(this.n), 3, true));
     g.setAttribute('color', new THREE.BufferAttribute(new Uint8Array(this.c.map((v) => Math.min(255, v))), 3, true));
     g.setAttribute('aWin', new THREE.BufferAttribute(new Float32Array(this.w), 3));
+    g.setAttribute('aSurface', new THREE.BufferAttribute(new Uint8Array(this.s), 2, true));
     g.setIndex(this.vc > 65535 ? new THREE.BufferAttribute(new Uint32Array(this.i), 1) : new THREE.BufferAttribute(new Uint16Array(this.i), 1));
     g.computeBoundingSphere();
     return g;
@@ -283,6 +296,7 @@ function buildBuildings(world, list, replaced, district) {
     const floors = Math.max(1, Math.round((wallTop - ground) / st.floorH));
     const vBase = ((base - ground) / Math.max(0.5, wallTop - ground)) * floors;
     // zdi
+    buf.surface = st.wallSurface;
     for (let rg = r0; rg < r1; rg++) {
       const v0 = B.ringStart[rg], v1 = B.ringStart[rg + 1];
       let j = v1 - 1;
@@ -306,6 +320,7 @@ function buildBuildings(world, list, replaced, district) {
       }
     }
     // střecha
+    buf.surface = st.roofSurface;
     const nOuter = B.ringStart[r0 + 1] - B.ringStart[r0];
     if (gable && nOuter === 4 && r1 - r0 === 1) {
       const s = B.ringStart[r0];
@@ -322,6 +337,7 @@ function buildBuildings(world, list, replaced, district) {
       buf.face(X[Cq], y, Z[Cq], X[D], y, Z[D], m2x, top, m2z, 0, 1, 0, st.roof, 0.86);
       buf.face(X[Cq], y, Z[Cq], m2x, top, m2z, m1x, top, m1z, 0, 1, 0, st.roof, 0.86);
       // štíty
+      buf.surface = st.wallSurface;
       const cxm = (X[0] + X[1] + X[2] + X[3]) / 4, czm = (Z[0] + Z[1] + Z[2] + Z[3]) / 4;
       buf.face(X[Bq], y, Z[Bq], X[Cq], y, Z[Cq], m1x, top, m1z, m1x - cxm, 0, m1z - czm, st.wall, 1);
       buf.face(X[D], y, Z[D], X[A], y, Z[A], m2x, top, m2z, m2x - cxm, 0, m2z - czm, st.wall, 1);
@@ -799,16 +815,18 @@ function buildTunnel(world, tunnel) {
   for (let k = 0; k < D.n - 1; k++) {
     const a = sections[k], b = sections[k + 1];
     const inside = beyond(start, k) >= -0.01 && beyond(end, k + 1) >= -0.01;
-    solid.quad(a(-hw, 0), b(-hw, 0), b(hw, 0), a(hw, 0), road);
+    // Nad stropem Valíku leží terén, který do mapy stínů nekreslíme.
+    const daylight = inside ? 0.11 + 0.89 * Math.exp(-Math.min(beyond(start, k + 1), beyond(end, k)) / 2.8) : 1;
+    solid.quad(a(-hw, 0), b(-hw, 0), b(hw, 0), a(hw, 0), road, daylight);
     for (const side of [-hw, hw]) {
       const h0 = inside ? H : wallTop(a, side), h1 = inside ? H : wallTop(b, side);
-      solid.quad(a(side, -0.2), b(side, -0.2), b(side, h1), a(side, h0), concrete);
+      solid.quad(a(side, -0.2), b(side, -0.2), b(side, h1), a(side, h0), concrete, daylight);
       const line = side - Math.sign(side) * 0.85;
       lights.quad(a(line - 0.06, 0.014), b(line - 0.06, 0.014), b(line + 0.06, 0.014), a(line + 0.06, 0.014), white);
     }
     if (k % 3 !== 0) lights.quad(a(-0.07, 0.014), b(-0.07, 0.014), b(0.07, 0.014), a(0.07, 0.014), white);
     if (!inside) continue;
-    solid.quad(a(-hw, H), a(hw, H), b(hw, H), b(-hw, H), ceiling);
+    solid.quad(a(-hw, H), a(hw, H), b(hw, H), b(-hw, H), ceiling, daylight);
     if (k % 5 === 0) {
       for (const side of [-hw + 0.32, hw - 0.32]) {
         lights.quad(a(side - 0.12, H - 0.05), a(side + 0.12, H - 0.05), b(side + 0.12, H - 0.05), b(side - 0.12, H - 0.05), amber);
@@ -1316,7 +1334,7 @@ function treeAssets() {
     [new THREE.ConeGeometry(1.5, 3.0, 7), 0, 5.4, 0],
     [new THREE.ConeGeometry(1.0, 2.6, 7), 0, 7.1, 0],
   ], 2.4, 0.2, lin(0x4f4034), lin(0x3d6c44));
-  treeMat = new THREE.MeshLambertMaterial({ vertexColors: true });
+  treeMat = makeSurfaceMaterial(SURFACE.grass, { vertexColors: true });
 }
 
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(), _p = new THREE.Vector3();
@@ -1380,7 +1398,8 @@ function buildTrees(world, ci, cx0, cz0, forest) {
 }
 
 // ---------------------------------------------------------------- lampy ----
-const LAMP_POLE = lin(0x3a3f45), LAMP_HEAD = [1.0, 0.93, 0.72];
+const LAMP_POLE = lin(0x3a3f45), LAMP_HEAD = lin(SURFACE.lamp.emissive);
+const lampSurfaces = new Map([[LAMP_HEAD, SURFACE.lamp]]);
 const _lr = {};
 
 /** Pouliční lampy podél ulic + světelné kužely na zemi (viditelné v noci). */
@@ -1388,7 +1407,7 @@ function buildLamps(world, ci) {
   const pieces = world.rPieces[ci];
   if (!pieces) return null;
   const R = world.r, px = world.rpx, pz = world.rpz;
-  const parts = new Parts();
+  const parts = new Parts(SURFACE.metal, lampSurfaces);
   const pp = [], pu = [], pi = [];
   const obstacles = [];
   let count = 0;
@@ -1466,7 +1485,7 @@ export class ChunkManager {
         origin: [world.minX, world.minZ], cols: world.cols, rows: world.rows,
         chunk: CHUNK, fingerprints: orthophotoSources,
       }, QUALITY.groundTex === 256 ? 12 : 24, {
-        availableRequests: () => DETAIL_REQUEST_LIMIT - this.heritage.fetching,
+        availableRequests: () => detailRequestLimit() - this.heritage.fetching,
       });
     }
     this.buildingMat = makeBuildingMaterial();
@@ -1474,8 +1493,8 @@ export class ChunkManager {
     this.districts = new Districts(heritage.districts);
     this.heritage = new Heritage(world, heritage);
     this.asphaltMat = makeDecalMaterial({ polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -6 });
-    this.marksMat = makeDecalMaterial({ polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -14 });
-    this.solidMat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
+    this.marksMat = makeDecalMaterial({ polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -14 }, SURFACE.roadPaint);
+    this.solidMat = makeSurfaceMaterial(SURFACE.concrete, { vertexColors: true, side: THREE.DoubleSide });
     if (world.tunnels.length) {
       const lightMat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide });
       for (const tunnel of world.tunnels) {
@@ -1510,6 +1529,19 @@ export class ChunkManager {
     this.orthophotoPrepared = false;
     if (enabled) void this.orthophoto.load();
     else this.orthophoto.prefetch([]);
+  }
+
+  applyQuality() {
+    for (const chunk of this.chunks.values()) this._dispose(chunk);
+    this.chunks.clear();
+    this.lastCenter = -1;
+    this.texNear = QUALITY.groundTex;
+    this.texFar = QUALITY.groundTexFar;
+    this.orthophotoPrepared = false;
+    if (this.orthophoto) this.orthophoto.capacity = QUALITY.groundTex === 256 ? 12 : 24;
+    if (this.paintedBuildings !== this.buildingMat) this.paintedBuildings.dispose();
+    this.paintedBuildings = QUALITY.heritageDetail ? makeBuildingMaterial({ textures: true }) : this.buildingMat;
+    this.heritage.applyQuality();
   }
 
   get orthophotoPending() {

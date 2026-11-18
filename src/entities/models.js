@@ -1,7 +1,8 @@
 // Procedurální nízkopolygonové modely aut, MHD, postav a vrtulníku.
 import * as THREE from 'three/webgpu';
 import { step, vertexColor } from 'three/tsl';
-import { env, getPoolMaterial } from '../world/materials.js';
+import { env, getPoolMaterial, makeBatchedSurfaceMaterial, makeSurfaceMaterial } from '../world/materials.js';
+import { SURFACE } from '../world/material-table.js';
 import { QUALITY } from '../config.js';
 
 const _c = new THREE.Color();
@@ -10,7 +11,18 @@ const lin = (hex) => { _c.setHex(hex); return [_c.r, _c.g, _c.b]; };
 const RIM = [0.42, 0.44, 0.47];
 
 export class Parts {
-  constructor() { this.p = []; this.n = []; this.c = []; }
+  constructor(surface = null, surfaces = null) {
+    this.p = []; this.n = []; this.c = [];
+    this.surface = surface;
+    this.surfaces = surfaces;
+    this.s = surface ? [] : null;
+  }
+  vertex(x, y, z, nx, ny, nz, color, surface = this.surfaces?.get(color) ?? this.surface) {
+    this.p.push(x, y, z);
+    this.n.push(nx, ny, nz);
+    this.c.push(...color);
+    if (this.s) this.s.push(Math.round(surface.roughness * 255), Math.round(surface.metalness * 255));
+  }
   /** Kvádr se středem (x, y, z); volitelně zúžený nahoře (tx, tz = poměr horní podstavy). */
   box(w, h, l, x, y, z, col, tx = 1, tz = 1, zShiftTop = 0) {
     const hw = w / 2, hh = h / 2, hl = l / 2;
@@ -32,31 +44,28 @@ export class Parts {
       const order = out ? [a, b, c, a, c, d] : [a, c, b, a, d, c];
       if (!out) { nx = -nx; ny = -ny; nz = -nz; }
       for (const q of order) {
-        this.p.push(q[0] + x, q[1] + y, q[2] + z);
-        this.n.push(nx, ny, nz);
-        this.c.push(col[0], col[1], col[2]);
+        this.vertex(q[0] + x, q[1] + y, q[2] + z, nx, ny, nz, col);
       }
     }
     return this;
   }
   /** Válec s osou podél x (kolo). */
   wheel(r, w, x, y, z, col, seg = 10) {
+    const sideColor = col.map((shade) => shade * 1.6 + 0.02);
     for (let s = 0; s < seg; s++) {
       const a0 = (s / seg) * Math.PI * 2, a1 = ((s + 1) / seg) * Math.PI * 2;
       const y0 = Math.cos(a0) * r, z0 = Math.sin(a0) * r, y1 = Math.cos(a1) * r, z1 = Math.sin(a1) * r;
       const quad = [[-w / 2, y0, z0], [w / 2, y0, z0], [w / 2, y1, z1], [-w / 2, y0, z0], [w / 2, y1, z1], [-w / 2, y1, z1]];
       const ny = Math.cos((a0 + a1) / 2), nz = Math.sin((a0 + a1) / 2);
-      for (const q of quad) { this.p.push(q[0] + x, q[1] + y, q[2] + z); this.n.push(0, ny, nz); this.c.push(col[0], col[1], col[2]); }
+      for (const q of quad) this.vertex(q[0] + x, q[1] + y, q[2] + z, 0, ny, nz, col, SURFACE.rubber);
       for (const side of [-1, 1]) {
         const tri = side < 0 ? [[0, 0, 0], [0, y1, z1], [0, y0, z0]] : [[0, 0, 0], [0, y0, z0], [0, y1, z1]];
         for (const q of tri) {
-          this.p.push(q[0] + x + side * w / 2, q[1] + y, q[2] + z); this.n.push(side, 0, 0);
-          this.c.push(col[0] * 1.6 + 0.02, col[1] * 1.6 + 0.02, col[2] * 1.6 + 0.02);
+          this.vertex(q[0] + x + side * w / 2, q[1] + y, q[2] + z, side, 0, 0, sideColor, SURFACE.rubber);
         }
         // disk kola (světlejší střed)
         for (const q of tri) {
-          this.p.push(q[0] + x + side * (w / 2 + 0.012), q[1] * 0.62 + y, q[2] * 0.62 + z); this.n.push(side, 0, 0);
-          this.c.push(RIM[0], RIM[1], RIM[2]);
+          this.vertex(q[0] + x + side * (w / 2 + 0.012), q[1] * 0.62 + y, q[2] * 0.62 + z, side, 0, 0, RIM, SURFACE.metal);
         }
       }
     }
@@ -67,6 +76,7 @@ export class Parts {
     g.setAttribute('position', new THREE.Float32BufferAttribute(this.p, 3));
     g.setAttribute('normal', new THREE.Float32BufferAttribute(this.n, 3));
     g.setAttribute('color', new THREE.Float32BufferAttribute(this.c, 3));
+    if (this.s) g.setAttribute('aSurface', new THREE.BufferAttribute(new Uint8Array(this.s), 2, true));
     g.computeBoundingSphere();
     return g;
   }
@@ -74,6 +84,7 @@ export class Parts {
 
 const GLASS = lin(0x2a3947), TIRE = lin(0x17181a), HEAD = [1.0, 0.93, 0.72], TAIL = [0.95, 0.06, 0.05];
 const DARK = lin(0x24272b), CHROME = lin(0x8d949b), WHITE = [1, 1, 1], PLATE = lin(0xd8d8d0);
+const carSurfaces = new Map([[GLASS, SURFACE.glass], [CHROME, SURFACE.metal], [HEAD, SURFACE.lamp], [TAIL, SURFACE.lamp]]);
 
 // materiál detailů: světla (jasné barvy) v noci svítí
 let detailMat = null;
@@ -81,14 +92,14 @@ export function getDetailMaterial() {
   if (detailMat) return detailMat;
   const color = vertexColor().rgb;
   const brightness = step(0.9, color.r).mul(env.night.mul(0.9).add(0.35));
-  detailMat = new THREE.MeshLambertNodeMaterial({ vertexColors: true, emissiveNode: color.mul(brightness) });
+  detailMat = makeBatchedSurfaceMaterial({ emissiveNode: color.mul(brightness) });
   return detailMat;
 }
 
 const bodyMats = new Map();
 export function getBodyMaterial(hex) {
   let m = bodyMats.get(hex);
-  if (!m) { m = new THREE.MeshLambertMaterial({ color: hex, vertexColors: true }); bodyMats.set(hex, m); }
+  if (!m) { m = makeSurfaceMaterial(SURFACE.carPaint, { color: hex, vertexColors: true }); bodyMats.set(hex, m); }
   return m;
 }
 
@@ -118,7 +129,7 @@ function carGeometry(type) {
   const { len, wid, h, hood, trunk } = type;
   const ride = 0.3 + (type.ride || 0);
   const bodyH = Math.min(0.62, h * 0.42);
-  const body = new Parts(), det = new Parts();
+  const body = new Parts(), det = new Parts(SURFACE.rubber, carSurfaces);
   const wheelR = type.id === 'van' || type.ride > 0.1 ? 0.37 : 0.32;
   // karoserie
   body.box(wid, bodyH, len, 0, ride + bodyH / 2, 0, WHITE, 0.96, 0.985);
@@ -166,6 +177,18 @@ function carGeometry(type) {
 }
 
 let beaconGeo = null, lightGeo = null;
+export function addCarLight(group, type) {
+  if (group.userData.light) return;
+  if (!lightGeo) { lightGeo = new THREE.PlaneGeometry(1, 1); lightGeo.rotateX(-Math.PI / 2); }
+  const light = new THREE.Mesh(lightGeo, getPoolMaterial());
+  light.position.set(0, 0.04, type.len / 2 + 5.5);
+  light.scale.set(7, 1, 13);
+  light.renderOrder = 19;
+  light.visible = false;
+  group.add(light);
+  group.userData.light = light;
+}
+
 /** Vytvoří 3D objekt auta. */
 export function makeCarMesh(typeId, colorHex) {
   const type = CAR_TYPES[typeId];
@@ -175,17 +198,7 @@ export function makeCarMesh(typeId, colorHex) {
   const detail = new THREE.Mesh(g.detail, getDetailMaterial());
   body.castShadow = true; detail.castShadow = true;
   group.add(body, detail);
-  if (QUALITY.carLights) {
-    // světlo reflektorů na vozovce (v noci)
-    if (!lightGeo) { lightGeo = new THREE.PlaneGeometry(1, 1); lightGeo.rotateX(-Math.PI / 2); }
-    const light = new THREE.Mesh(lightGeo, getPoolMaterial());
-    light.position.set(0, 0.04, type.len / 2 + 5.5);
-    light.scale.set(7, 1, 13);
-    light.renderOrder = 19;
-    light.visible = false;
-    group.add(light);
-    group.userData.light = light;
-  }
+  if (QUALITY.carLights) addCarLight(group, type);
   if (type.police) {
     if (!beaconGeo) beaconGeo = new THREE.BoxGeometry(0.34, 0.12, 0.24);
     const zc = -(type.hood - type.trunk) / 2;
@@ -200,11 +213,12 @@ export function makeCarMesh(typeId, colorHex) {
 
 // ------------------------------------------------------------ trolejbus ----
 const TRANSIT_GLASS = lin(0x3b4d5f), TROLLEY_GREEN = lin(0x2f9a57), TROLLEY_GREY = lin(0xdedfdc);
+const trolleySurfaces = new Map([[TRANSIT_GLASS, SURFACE.glass], [DARK, SURFACE.transitMetal], [HEAD, SURFACE.lamp], [TAIL, SURFACE.lamp]]);
 let trolleyGeo;
 export const TROLLEY_LEN = 11.8;
 export function makeTrolleybus() {
   if (!trolleyGeo) {
-    const p = new Parts();
+    const p = new Parts(SURFACE.transitPaint, trolleySurfaces);
     const L = TROLLEY_LEN, W = 2.5;
     p.box(W, 1.0, L, 0, 0.85, 0, TROLLEY_GREEN, 1, 0.995);
     p.box(W * 0.985, 1.2, L * 0.985, 0, 1.95, 0, TRANSIT_GLASS, 0.95, 0.99);
@@ -274,7 +288,7 @@ export function animatePed(mesh, phase, amount) {
 
 // ------------------------------------------------------------- vrtulník ----
 export function makeHeliMesh() {
-  const p = new Parts();
+  const p = new Parts(SURFACE.carPaint, carSurfaces);
   const white = lin(0xf1f1ee), amber = lin(0xf2b632), dark = lin(0x22262b);
   p.box(1.7, 1.5, 3.6, 0, 1.45, 0.3, white, 0.8, 0.8);
   p.box(1.5, 0.9, 1.5, 0, 1.55, 1.75, GLASS, 0.7, 0.5, -0.3);
@@ -289,12 +303,12 @@ export function makeHeliMesh() {
   }
   const g = new THREE.Group();
   g.add(new THREE.Mesh(p.geometry(), getDetailMaterial()));
-  const rp = new Parts();
+  const rp = new Parts(SURFACE.metal);
   rp.box(0.24, 0.05, 10.4, 0, 0, 0, dark);
   rp.box(10.4, 0.05, 0.24, 0, 0, 0, dark);
   const rotor = new THREE.Mesh(rp.geometry(), getDetailMaterial());
   rotor.position.set(0, 2.62, 0.1);
-  const tp = new Parts();
+  const tp = new Parts(SURFACE.metal);
   tp.box(0.04, 1.7, 0.14, 0, 0, 0, dark);
   const tail = new THREE.Mesh(tp.geometry(), getDetailMaterial());
   tail.position.set(0.16, 2.5, -5.3);

@@ -1,4 +1,4 @@
-import { CLOCK_RATE, formatTime } from './clock.js';
+import { GameClock, formatTime } from './clock.js';
 import { shiftName, shiftOffers, shiftResult, shiftStops, SHIFT_LEAD, SHIFT_TYPES } from './shift-plans.js';
 import { STOP_DWELL } from './timetable.js';
 
@@ -25,7 +25,10 @@ export class Shifts {
   }
 
   snapshot() { return { active: this.active ? shiftName(this.active.offer) : null, last: this.last }; }
-  offers() { return shiftOffers(this.game.transit.timetable, this.game.clock); }
+  offers() {
+    const { clock, transit } = this.game;
+    return shiftOffers(transit.timetable, clock.followsPrague ? new GameClock() : clock);
+  }
 
   start(id) {
     const g = this.game;
@@ -49,7 +52,7 @@ export class Shifts {
     this.active = run;
     if (!g.save()) { this.active = null; return g.saveError; }
 
-    g.clock.add(offer.departure - SHIFT_LEAD * CLOCK_RATE - g.clock.now);
+    g.clock.setTime(offer.departure - SHIFT_LEAD);
     const start = stops[0];
     const at = g._clearSpot(start.x, start.z, 0.5);
     g.player.place(at.x, at.z);
@@ -85,7 +88,7 @@ export class Shifts {
     v.v = 0;
     run.served++;
     run.dwell = 0;
-    run.late += Math.max(0, (g.clock.now - stop.arrive) / CLOCK_RATE - 10);
+    run.late += Math.max(0, g.clock.now - stop.arrive - 10);
     v.doorsOpen = true;
     v.stopTarget = v.stops[stop.i];
     g.audio.transitDoors(v, true, stop.name);
@@ -132,7 +135,7 @@ export class Shifts {
     this.checkTraffic(run, traffic, v, front, advance, dt, cars, nearby);
     v.s = Math.min(v.route.length, v.s + advance);
     if (run.departure && v.s - run.departure.s > 0.8) {
-      run.early += Math.max(0, (run.departure.time - g.clock.now) / CLOCK_RATE - 2);
+      run.early += Math.max(0, run.departure.time - g.clock.now - 2);
       run.departure = null;
     }
     if (v.s <= stop.s + STOP_RANGE && (stop.i !== run.offer.last || v.s < v.route.length - 0.01)) return;
@@ -176,8 +179,8 @@ export class Shifts {
     }
     const stop = this.stop, v = run.vehicle;
     const metres = Math.max(0, Math.round(stop.s - v.s));
-    const remaining = Math.ceil((stop.depart - g.clock.now) / CLOCK_RATE);
-    const beforeArrival = Math.ceil((stop.arrive - g.clock.now) / CLOCK_RATE);
+    const remaining = Math.ceil(stop.depart - g.clock.now);
+    const beforeArrival = Math.ceil(stop.arrive - g.clock.now);
     const stopped = Math.abs(stop.s - v.s) <= STOP_RANGE && v.v <= STOP_SPEED;
     let action = `${metres} m · příjezd ${formatTime(stop.arrive)}${beforeArrival < 0 ? ` · +${-beforeArrival} s` : ''}`;
     if (v?.doorsOpen) {
@@ -187,7 +190,7 @@ export class Shifts {
           : remaining > 0 ? `Odjezd za ${remaining} s · F zavře dveře` : 'F · zavřít dveře a vyjet';
     } else if (stopped) action = 'F · otevřít dveře';
     else if (run.departure && g.clock.now < run.departure.time) {
-      action = `Odjezd za ${Math.ceil((run.departure.time - g.clock.now) / CLOCK_RATE)} s`;
+      action = `Odjezd za ${Math.ceil(run.departure.time - g.clock.now)} s`;
     }
     const signal = { red: 'Červená', amber: 'Žlutá', green: 'Zelená', stop: 'STOP', yield: 'Dej přednost' };
     const next = !v.doorsOpen && run.signal?.distance > 0

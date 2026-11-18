@@ -36,7 +36,7 @@ async function approach(page, id, station, date = '2026-11-09') {
     const event = table.events(day).find(({ trip, day: serviceDay }) => trip.id === id && serviceDay === day);
     const { trip } = event;
     const index = trip.stops.findIndex(({ target }) => target[1] === station);
-    const time = trip.times[index * 2] - (index === 0 ? 60 : 0);
+    const time = index === 0 ? trip.times[1] - 2 : trip.times[index * 2];
     const point = trip.route.posAt(trip.stops[index].target[0], 2.5, {});
     g.player.place(point.x, point.z);
     window.__setClock(date, time / 3600);
@@ -96,8 +96,11 @@ test('E08 – přestup z tramvaje na autobus po skutečné jízdě a výstupu', 
     }
     window.__setInput(0, 0);
     const walked = Math.hypot(x - g.player.x, z - g.player.z) < 4;
+    const connection = table.departuresAt(station, g.clock).rows.find(({ type }) => type === 'bus');
+    if (!connection) return { distance, walked, found: false };
+    const expectedArrival = connection.time + 120;
     let bus;
-    for (let tick = 0; tick < 2800; tick++) {
+    while (g.clock.now < expectedArrival) {
       window.__advanceTransit();
       bus = g.transit.vehicles.find((v) => v.route.type === 'bus' && v.visible && v.canBoard
         && v.event.trip.stops[v.stopIndex].stop === station);
@@ -160,10 +163,12 @@ test('E08 – víkendový noční autobus N12 s výstupem před hranicí mapy', 
   await action(page);
   await expect(page.locator('#vehname')).toContainText('autobus N12 → Stod');
 
-  // Zrychlený začátek závěrečného úseku před Líní. Další jízdu a výstup řídí hra.
+  // Přesun zkušebního vozu i hodin těsně před konečnou v Líních.
   const edge = await page.evaluate(() => {
     const g = window.__game, v = g.ride, trip = v.event.trip, route = v.route;
     v.stopIndex = trip.stops.length - 1;
+    const arrival = trip.times[v.stopIndex * 2];
+    g.clock.setTime(v.event.start - trip.start + (arrival >= 0 ? arrival : -arrival - 1) - 5);
     v.s = trip.lastS - 36;
     v.v = 7;
     v.wait = 0;

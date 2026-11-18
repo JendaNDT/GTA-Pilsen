@@ -1,9 +1,11 @@
 import * as THREE from 'three/webgpu';
+import { makeSurfaceMaterial } from './materials.js';
+import { SURFACE } from './material-table.js';
 
 const BOX = new THREE.BoxGeometry(1, 1, 1);
 const FACE = new THREE.PlaneGeometry(1, 1);
 const BULB = new THREE.CircleGeometry(1, 10);
-const PROPS = new THREE.MeshLambertMaterial({ vertexColors: false });
+const PROPS = makeSurfaceMaterial(SURFACE.metal);
 const LIGHTS = new THREE.MeshBasicMaterial({ toneMapped: false });
 const materials = new Map();
 const transform = new THREE.Object3D();

@@ -27,6 +27,7 @@ async function action(page, code) {
 }
 
 test('E09 – stereo tramvaje a vlastní hlášení dvou sousedních vozů', async ({ page }, info) => {
+  await page.clock.setFixedTime(new Date('2026-11-09T08:00:00Z'));
   const errors = await boot(page);
   await page.evaluate(() => {
     const g = window.__game, table = g.transit.timetable;
@@ -166,7 +167,7 @@ test('E09 – kola hamru a zvuk se zastaví spolu, náhon zůstane slyšet', asy
   const result = await page.evaluate(() => {
     const g = window.__game, heritage = g.chunks.heritage;
     g.player.place(22674, 3112);
-    window.__setClock(null, 16 + 59 / 60);
+    window.__setClock(null, 17 - 1 / 3600);
     g.vehicles.spawnTimer = g.peds.timer = 100_000;
     for (const c of [...g.vehicles.cars]) g.vehicles.remove(c);
     window.__step(1 / 60, 2);

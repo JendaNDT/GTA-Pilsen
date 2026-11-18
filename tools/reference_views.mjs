@@ -8,7 +8,8 @@ export const reference = JSON.parse(await readFile(new URL('./reference-views.js
 
 export async function openReferenceGame(page, address) {
   const url = new URL(address);
-  for (const [key, value] of Object.entries({ debug: '', adapt: '0', quality: 'high', date: reference.date, hour: '10' })) {
+  const quality = url.searchParams.get('quality') ?? 'high';
+  for (const [key, value] of Object.entries({ debug: '', adapt: '0', quality, date: reference.date, hour: '10' })) {
     url.searchParams.set(key, value);
   }
   await page.addInitScript(() => {
@@ -36,6 +37,15 @@ export async function renderReferenceView(page, view) {
     const missing = [...chunks.chunks.values()].find((tile) => tile.cityRequest && !tile.heritage?.city);
     if (missing) throw new Error(`${view.name}: chybí dlaždice měřených budov ${missing.ci}.`);
     window.__view(...view.camera, ...view.target);
+    // V režimu zastaveného času musí snímek dokončit rozpracované světlo z oblohy.
+    if (game.env.skyLight?.face >= 0) {
+      for (let i = 0; i < 6 && game.env.skyLight.face >= 0; i++) {
+        await new Promise(requestAnimationFrame);
+        game.render();
+      }
+      // Odečti ustálený pohled po dokončení aktualizace světla.
+      game.render();
+    }
     return window.__perf.renderStats();
   }, { view, date: reference.date });
 }

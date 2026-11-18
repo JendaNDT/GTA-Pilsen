@@ -1,10 +1,12 @@
 import * as THREE from 'three/webgpu';
+import { makeSurfaceMaterial } from '../world/materials.js';
+import { SURFACE } from '../world/material-table.js';
 
 const displayGeometry = new THREE.PlaneGeometry(2.1, 0.5);
 const recessGeometry = new THREE.PlaneGeometry(1.16, 2.06);
 const panelGeometry = new THREE.PlaneGeometry(0.54, 2.0);
 const recessMaterial = new THREE.MeshBasicMaterial({ color: 0x131b24 });
-const panelMaterial = new THREE.MeshLambertMaterial({ color: 0x566f7e });
+const panelMaterial = makeSurfaceMaterial(SURFACE.transitMetal, { color: 0x566f7e });
 
 export function addTransitDisplay(mesh, length, ref, destination) {
   const sign = mesh.userData.sign;

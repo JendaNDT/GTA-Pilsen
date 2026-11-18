@@ -1,0 +1,85 @@
+# E17 · Obrazové efekty
+
+## Průchod scény a vyhlazování
+
+Astra před implementací ověřila rozhraní v three.js 0.187. Návrh po kontrole
+ukládá normály přímo v souřadnicích kamery a při střihu vymaže historii
+vyhlazování. Povrchy, které nezapisují hloubku, například průhledná světla
+a pruhy na silnici, ovlivní barvu a ponechají normálu i pohyb plochy pod sebou.
+
+| Předvolba | Vyhlazování |
+| --- | --- |
+| Ultra a vysoká | TRAA s údaji o pohybu objektů |
+| Střední | SMAA |
+| Nízká | FXAA, jeden barevný výstup scény |
+
+WebGL 2 bez samostatného prolínání více výstupů použije SMAA i na vyšších
+předvolbách. Prohlížeč bez podpory plovoucího barevného výstupu použije
+přímé vykreslení. To lze zapnout i ručně parametrem `?postfx=0`.
+
+Výsledný obraz vykresluje scénu jednou i při vyžádání několika obrazů
+v témže kroku prohlížeče. Na WebGPU má stabilní obraz na náměstí po přidání
+TRAA 555 volání a 1 055 780 trojúhelníků proti 554 a 1 055 779 před efektem.
+[Náměstí](efekty/vyhlazovani-namesti.jpg) · [Valík](efekty/vyhlazovani-valik.jpg).
+
+## Kontaktní zastínění
+
+Na vysoké a ultra předvolbě s odděleným výstupem hloubky a normál počítá
+GTAO jemné zastínění v rozích, u zdí a pod předměty. Mapa zastínění má
+poloviční šířku a výšku a vyhlazování potlačuje její šum v čase.
+Zastínění se přidává před vyhlazením obrazu. Parametr `?ao=0` ho vypne.
+[Hamr před zastíněním](efekty/zastineni-pred.jpg) · [Hamr po úpravě](efekty/zastineni-hamr.jpg).
+
+## Záře světel
+
+Záře se rozlévá pouze z částí obrazu, které překročí hranici jasu. V noci
+je hranice nižší a záře silnější, aby vynikla okna, lampy a světlomety.
+Průměrný jas náměstí ve 22:00 stoupl z 27,7 na 31,7 z 255. Průměrný jas
+denního pohledu zůstal 166,1. Záře běží od střední předvolby a dá se vypnout
+parametrem `?bloom=0`. [Náměstí před přidáním záře](efekty/zare-pred.jpg) ·
+[Náměstí se září](efekty/zare-namesti.jpg).
+
+## Tónování
+
+ACES a AgX byly porovnány ve stejných pohledech s expozicí 1.
+Výchozí zůstává ACES. Uchovává teplejší odstín dlažby a silnější rozdíl
+mezi rozsvíceným a zhasnutým oknem. AgX v porovnání zvedá tmavé plochy
+a ve dne tlumí barvy. Lze ho zobrazit parametrem `?tone=agx`.
+
+| Pohled | ACES | AgX |
+| --- | --- | --- |
+| Náměstí ve dne | [Snímek](efekty/tonovani-aces-den.jpg) | [Snímek](efekty/tonovani-agx-den.jpg) |
+| Náměstí v noci | [Snímek](efekty/tonovani-aces-noc.jpg) | [Snímek](efekty/tonovani-agx-noc.jpg) |
+
+V nočním vzorku dvou sousedních oken byl rozdíl v červeném kanálu 144
+bodů z 255 u ACES a 104 u AgX. Denní vzorek dlažby měl v červeném kanálu
+175 bodů u ACES a 159 u AgX. Převod obrazu pro monitor probíhá samostatně
+po tónování, aby mezi ně v dalším kroku šlo přidat barevné ladění.
+
+## Barevné ladění
+
+Tři vlastní tabulky mají po 17 bodech na každou barevnou osu. Skript
+`tools/build_luts.mjs` upravuje sytost, násobí barevné kanály a přidává
+jemný odstín do středních tónů. Den je teplejší, soumrak zvýrazní teplé
+světlo a fialové stíny a noc lehce posílí modrou. Tabulky se plynule
+míchají podle výšky slunce. Parametr `?lut=0` úpravu vypne.
+[Soumrak bez barevného ladění](efekty/ladeni-pred.jpg) ·
+[Soumrak s barevným laděním](efekty/ladeni-soumrak.jpg).
+
+## Vzdušná perspektiva
+
+Dálka přechází do barvy oblohy. Opar je hustší nízko nad terénem a po
+svítání také v údolích a u vody. Pracovní mapa využívá původní vodní plochy
+OpenStreetMap včetně Radbuzy, Mže a Berounky. Hra ji odvozuje v paměti
+ze stávajících dat. Hustotu u vody snižuje výška nad hladinou. Parametr
+`?fog=0` zapne původní způsob vykreslení mlhy. [Ráno u Radbuzy před úpravou](efekty/mlha-pred.jpg) ·
+[Ráno s výškovou mlhou](efekty/mlha-reka.jpg).
+
+## Přizpůsobení jasu
+
+Střední, vysoká a ultra předvolba měří průměrný jas střední části obrazu.
+Každých zhruba 0,19 s se na grafice zprůměruje 25 vzorků a hra načte
+jediný pixel. Při vjezdu do tmy se expozice zvyšuje pomalu, po výjezdu
+do světla klesá rychleji. Parametr `?exposure=0` úpravu vypne.
+[Valík těsně po vjezdu](efekty/expozice-pred.jpg) ·
+[Valík po přizpůsobení](efekty/expozice-valik.jpg).

@@ -60,6 +60,14 @@ Na dotykové obrazovce se objeví páčka a tlačítka. Telefon automaticky pou�
 kvalitu. Na počítači ji lze zapnout parametrem `?quality=low`. Ve vyšší kvalitě zobrazí `?wet=1`
 tlumené odlesky na mokré dlažbě v obou ukázkových lokalitách.
 
+Hra ve výchozím nastavení používá aktuální čas v Plzni. V **Nastavení → Herní čas**
+můžeš zadat konkrétní hodinu a minutu. Herní čas pak plyne stejným tempem jako skutečný
+čas a při pauze stojí. **Použít aktuální čas v Plzni** obnoví živé hodiny. Po změně
+času se podle něj připraví spoje MHD a odjezdy ze zastávek. Při návratu z pauzy živé
+hodiny znovu ukážou čas v Plzni. Starší uložené hry použijí toto výchozí nastavení.
+Nástup do směny přestaví čas na její odjezd. Změna času uprostřed směny ji po potvrzení
+přeruší.
+
 ## Jak hru spustit u sebe
 
 Na Macu ve Finderu dvakrát klikni na [Spustit hru.command](Spustit%20hru.command). Terminál
@@ -111,6 +119,12 @@ WebGL 2 vynutit. Použitou cestu uvidíš v **O hře** i v panelu **Měření**.
 se načítají po malých blocích podle polohy a jsou sladěné s malovaným vzhledem hry.
 V nastavení je vypneš volbou **Letecké snímky krajiny** nebo adresou s `?orthophoto=0`.
 [Srovnání pole u Rokycan a údolí Klabavy](docs/E16/overeni-pilotu.md).
+
+[E17 mění světlo a obraz](docs/E17.md). Slunce a obloha sledují datum a čas v Plzni,
+sklo a lak aut odrážejí okolí, v noci září lampy a okna a ráno nad řekami leží opar.
+Po vjezdu do Valíku se na střední a vyšší kvalitě obraz postupně přizpůsobí tmě.
+V menu **Nastavení → Kvalita grafiky** můžeš vybrat jednu ze čtyř předvoleb. Výchozí
+volba **Automaticky** přizpůsobí kvalitu zařízení podle prvních deseti sekund hraní.
 
 Regresní testy kolizí, terénu, silničního grafu a distribuovaných dat:
 
@@ -239,6 +253,8 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 
 - Grafiku vykresluje [three.js 0.187.0](https://github.com/mrdoob/three.js/tree/r187),
   autoři three.js, [licence MIT](https://github.com/mrdoob/three.js/blob/r187/LICENSE).
+- Barevné tabulky pro den, soumrak a noc jsou vlastní podklad hry. Generuje je
+  [skript `build_luts.mjs`](tools/build_luts.mjs).
 - Sestavení používá [picomatch](https://github.com/micromatch/picomatch), autor Jon
   Schlinkert, licence MIT. [Místní oprava 4.0.8-plzen.1](vendor/picomatch/README.md)
   vychází z verze 4.0.7 a odstraňuje zaseknutí při opakovaných vzorech hledání souborů.

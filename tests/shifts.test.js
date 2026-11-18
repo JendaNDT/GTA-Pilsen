@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { GameClock, CLOCK_RATE, DAY_SECONDS, parseDay } from '../src/game/clock.js';
+import { GameClock, DAY_SECONDS, parseDay } from '../src/game/clock.js';
 import { Timetable, STOP_DWELL } from '../src/game/timetable.js';
 import { SHIFT_LEAD, shiftOffers, shiftResult, shiftStops } from '../src/game/shift-plans.js';
 import { Shifts } from '../src/game/shift.js';
@@ -15,7 +15,7 @@ test('E11 nabízí úseky všech tří druhů MHD v obou směrech ve všední de
     const offers = shiftOffers(timetable, clock);
     assert.deepEqual(offers.map(({ type }) => type), ['tram', 'tram', 'trolleybus', 'trolleybus', 'bus', 'bus']);
     for (const offer of offers) {
-      assert.ok(offer.departure >= clock.now + SHIFT_LEAD * CLOCK_RATE);
+      assert.ok(offer.departure >= clock.now + SHIFT_LEAD);
       assert.ok(timetable.events(Math.floor(offer.departure / DAY_SECONDS)).some(({ key }) => key === offer.event.key));
       const stops = shiftStops(offer, timetable);
       assert.ok(stops.length >= 4);
@@ -25,7 +25,7 @@ test('E11 nabízí úseky všech tří druhů MHD v obou směrech ve všední de
       for (let i = 1; i < stops.length; i++) {
         const { s, arrive, depart } = stops[i], prev = stops[i - 1];
         assert.ok(s > prev.s && arrive > prev.depart);
-        assert.ok(depart - arrive >= STOP_DWELL * CLOCK_RATE);
+        assert.ok(depart - arrive >= STOP_DWELL);
       }
     }
   }

@@ -2,6 +2,7 @@
 import * as THREE from 'three/webgpu';
 import { loadAll } from './data.js';
 import { Game } from './game/game.js';
+import { formatTime, HOUR_SECONDS } from './game/clock.js';
 import { initInput, input } from './game/input.js';
 import { initMapSearch } from './game/map-search.js';
 import { initWorkUI } from './game/work-ui.js';
@@ -58,6 +59,7 @@ const ABOUT_HTML = (meta, rendering) => `
   <p>Mapová data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">přispěvatelé OpenStreetMap</a>
   (licence ODbL). Terén vychází z digitálního modelu reliéfu DMR 5G, výšky budov z rozdílu modelu povrchu
   DMP 1G a DMR 5G © <a href="https://www.cuzk.gov.cz" target="_blank" rel="noopener">ČÚZK</a>.</p>
+  <p>Barevné tabulky pro den, soumrak a noc vznikly přímo pro tuto hru.</p>
   <p>Letecké snímky krajiny © ČÚZK. Podkladem je <a href="https://atom.cuzk.gov.cz/ORTOFOTO/ORTOFOTO.xml"
   target="_blank" rel="noopener">Ortofoto ČR</a> s licencí
   <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>.</p>
@@ -98,7 +100,7 @@ async function boot() {
   const renderer = new THREE.WebGPURenderer({
     canvas, antialias: !IS_MOBILE, powerPreference: 'high-performance',
     forceWebGL: PARAMS.get('renderer') === 'webgl',
-    trackTimestamp: DEBUG,
+    trackTimestamp: DEBUG || PARAMS.get('adapt') !== '0',
   });
   try {
     await renderer.init();
@@ -118,7 +120,7 @@ async function boot() {
   loadText.textContent = 'Stavím město…';
   await new Promise((r) => setTimeout(r, 30));
   const game = new Game(renderer, data);
-  const perf = DEBUG ? createFrameProfiler(game) : null;
+  const perf = DEBUG || PARAMS.get('adapt') !== '0' ? createFrameProfiler(game, { sampleEvery: DEBUG ? 1 : 16 }) : null;
   initInput(canvas);
   if (PARAMS.has('hour') || PARAMS.has('date')) {
     game.setClock(PARAMS.get('date'), PARAMS.has('hour') ? +PARAMS.get('hour') : game.hour);
@@ -136,9 +138,11 @@ async function boot() {
   }
   bar.style.width = '100%';
   game._updateCamera(0.016);
-  game.env.update(game.camera, game.focus);
+  game.env.update(game.camera);
   loadText.textContent = 'Připravuji vykreslování…';
-  await renderer.compileAsync(game.scene, game.camera);
+  await game.env.prepareSkyLight();
+  if (game.postfx) await game.postfx.prepare();
+  else await renderer.compileAsync(game.scene, game.camera);
   game.render();
 
   $('loading').classList.add('hidden');
@@ -149,8 +153,21 @@ async function boot() {
   if (IS_TOUCH) $('touch').classList.remove('hidden');
 
   let running = false, last = 0, firstPlay = true;
-  const perfPanel = perf && initPerfPanel(perf, rendering, () => running && !game.mapOpen);
+  const perfPanel = DEBUG ? initPerfPanel(perf, rendering, () => running && !game.mapOpen) : null;
   const menu = $('menu');
+  const timeInput = $('game-time'), clockStatus = $('clock-status');
+  const showClock = () => {
+    timeInput.value = formatTime(game.clock.seconds);
+    clockStatus.textContent = game.clock.followsPrague ? 'Aktuální čas v Plzni' : 'Ručně nastavený čas';
+  };
+  const applyTime = (change) => {
+    if (game.shifts.active && !confirm('Změna času přeruší rozjetou směnu. Chceš pokračovat?')) return;
+    change();
+    showClock();
+    if (!game.save()) clockStatus.textContent = game.saveError;
+    updateWork();
+    if (!game.graphicsBusy) game.render();
+  };
   const openMenu = () => {
     running = false; input.enabled = false; game.paused = true;
     perfPanel?.close();
@@ -192,12 +209,36 @@ async function boot() {
         updateWork();
         $('panel-' + name).scrollIntoView({ block: 'nearest' });
       }
+      if (open && name === 'settings') showClock();
     });
   }
   $('show-clock').checked = game.clockVisible;
   $('show-clock').addEventListener('change', (event) => game.setClockVisible(event.target.checked));
+  showClock();
+  $('clock-settings').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const hour = timeInput.valueAsNumber / (1000 * HOUR_SECONDS);
+    if (Number.isFinite(hour)) applyTime(() => game.setClock(null, hour));
+  });
+  $('use-prague-time').addEventListener('click', () => applyTime(() => game.usePragueTime()));
   $('sound-enabled').checked = !game.audio.muted;
   $('sound-enabled').addEventListener('change', (event) => game.setSoundEnabled(event.target.checked));
+  const qualitySelect = $('graphics-quality'), qualityStatus = $('graphics-status');
+  const showQuality = () => {
+    qualitySelect.value = game.graphicsOverride ?? game.graphics.choice;
+    qualityStatus.textContent = qualitySelect.value === 'auto'
+      ? `Automatická předvolba · ${qualitySelect.querySelector(`option[value="${QUALITY.name}"]`).textContent}` : '';
+  };
+  game.onGraphicsChanged = () => { perf?.reset(); showQuality(); };
+  showQuality();
+  qualitySelect.addEventListener('change', async () => {
+    qualitySelect.disabled = true;
+    qualityStatus.textContent = 'Připravuji grafiku…';
+    const applied = await game.setGraphicsChoice(qualitySelect.value);
+    showQuality();
+    if (!applied) qualityStatus.textContent = 'Předvolbu grafiky se nepodařilo použít.';
+    qualitySelect.disabled = false;
+  });
   $('orthophoto-enabled').disabled = !game.chunks.orthophoto;
   $('orthophoto-enabled').checked = Boolean(game.chunks.orthophoto) && game.orthophotoEnabled;
   $('orthophoto-enabled').addEventListener('change', (event) => game.setOrthophotoEnabled(event.target.checked));
@@ -216,28 +257,29 @@ async function boot() {
     if (!game.mapToWorld) return;
     setDestination(game.mapToWorld(e.clientX, e.clientY));
   });
-  addEventListener('resize', () => { game.resize(); if (!running) game.render(); });
+  addEventListener('resize', () => { game.resize(); if (!running && !game.graphicsBusy) game.render(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden && running) openMenu(); });
   addEventListener('pagehide', () => game.save());
 
   const loop = (now) => {
-    requestAnimationFrame(loop);
     if (!running) { input.pressed.clear(); return; }
-    const dt = Math.min(0.05, (now - last) / 1000);
+    const elapsed = Math.max(0, (now - last) / 1000);
+    const dt = Math.min(0.05, elapsed);
     last = now;
+    if (game.graphicsBusy) return;
     if (input.pressed.has('menu')) {
       input.pressed.delete('menu');
       if (game.mapOpen) game.toggleMap(false); else { openMenu(); return; }
     }
     if (perf) {
-      perf.frame(dt);
+      perf.frame(dt, elapsed);
     } else {
-      game.update(dt);
+      game.update(dt, elapsed);
       game.render();
     }
-    game.adapt(dt);
+    if (perf) game.adapt(elapsed, perf.summary);
   };
-  requestAnimationFrame(loop);
+  await renderer.setAnimationLoop(loop);
 
   if (DEBUG) {
     window.__perf = { summary: perf.summary, reset: perf.reset, renderStats: perf.renderStats };
@@ -248,7 +290,8 @@ async function boot() {
     window.__setInput = (steer, thr) => { input.debugSteer = steer; input.debugThr = thr; };
     window.__view = (x, y, z, tx, ty, tz) => {
       game.camera.position.set(x, y, z); game.camera.lookAt(tx, ty, tz);
-      game.env.update(game.camera, game.focus); game.render();
+      game.postfx?.resetHistory();
+      game.env.update(game.camera); game.render();
     };
   }
   window.__ready = true;

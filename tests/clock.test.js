@@ -11,13 +11,31 @@ test('herní hodiny převádějí neděli a poslední den měsíce bez závislos
   clock.set(clock.day, 23 + 59 / 60);
   assert.equal(weekday(clock.day), 6);
   assert.equal(formatTime(clock.seconds), '23:59');
-  clock.tick(60 / 45);
+  clock.tick(59);
+  assert.equal(formatTime(clock.seconds), '23:59');
+  clock.tick(1);
   assert.equal(formatDay(clock.day), '2027-02-01');
   assert.equal(weekday(clock.day), 0);
   assert.equal(formatTime(clock.seconds), '00:00');
   assert.equal(parseDay('2027-02-29'), null);
   assert.equal(parseDay('2028-02-29'), parseDay('2028-03-01') - 1);
   assert.equal(formatTime(DAY_SECONDS + 65), '00:01');
+});
+
+test('plzeňské hodiny používají datum v Plzni a zohlední letní čas', () => {
+  const clock = new GameClock();
+  clock.setPrague(Date.parse('2026-11-18T23:04:15.250Z'));
+  assert.equal(formatDay(clock.day), '2026-11-19');
+  assert.equal(clock.seconds, 255.25);
+  assert.equal(clock.followsPrague, true);
+  clock.setPrague(Date.parse('2026-03-29T00:59:59.250Z'));
+  assert.equal(formatTime(clock.seconds), '01:59');
+  clock.setPrague(Date.parse('2026-03-29T01:00:00.250Z'));
+  assert.equal(clock.seconds, 10800.25);
+  clock.setTime(clock.day * DAY_SECONDS + 18 * 3600 + 30 * 60);
+  clock.tick(5 * 60);
+  assert.equal(clock.followsPrague, false);
+  assert.equal(formatTime(clock.seconds), '18:35');
 });
 
 test('balík PMDP skutečně používá výjimku a po konci opakuje běžný týden', () => {
@@ -29,6 +47,16 @@ test('balík PMDP skutečně používá výjimku a po konci opakuje běžný tý
   assert.equal(t.profile(parseDay('2027-05-17')), t.profile(parseDay('2027-05-10')));
   assert.equal(t.profile(parseDay('2027-05-16')), t.profile(parseDay('2027-05-09')));
   assert.ok(t.events(parseDay('2027-05-10')).length > t.events(parseDay('2027-05-16')).length);
+});
+
+test('vypravení a pobyt na zastávce používají skutečné sekundy', () => {
+  const timetable = new Timetable(dataset);
+  const day = parseDay('2026-11-09');
+  const event = timetable.events(day).find(({ trip }) => trip.id === '692183');
+  const departure = day * DAY_SECONDS + event.trip.times[1];
+  assert.equal(departure - event.start, 5);
+  assert.equal(timetable.state(event, departure - 4).wait, 4);
+  assert.equal(timetable.state(event, departure).wait, 0);
 });
 
 test('pozice, vypravení i odjezdy po půlnoci čtou předchozí dopravní den', () => {

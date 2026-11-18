@@ -69,7 +69,7 @@ test('tabule přepočítá odjezd podle skutečné polohy a odstraní již obslo
     timetable.profile(day).includes(s) && t.route.ref === '30' && t.times[1] >= 8 * 3600);
   const planned = trip.times[index * 2 + 1];
   const clock = new GameClock(day);
-  clock.set(day, (planned - 15) / 3600);
+  clock.set(day, (planned + 65) / 3600);
   const at = () => timetable.departuresAt(station, clock, 90 * 60, live).rows;
   const event = { trip, day }, key = `${day}:${trip.id}`;
   const live = new Map([[key, {
@@ -80,7 +80,7 @@ test('tabule přepočítá odjezd podle skutečné polohy a odstraní již obslo
   assert.equal(first.ref, '30');
   assert.equal(first.boarding, true);
   assert.equal(first.delayed, true);
-  assert.ok(first.time > planned + day * DAY_SECONDS);
+  assert.equal(first.time, clock.now + 4.8);
   live.get(key).stopIndex++;
   assert.ok(at().every((row) => !row.boarding));
   assert.ok(at().every((row) => row.ref !== '30' || row.time !== planned + day * DAY_SECONDS));

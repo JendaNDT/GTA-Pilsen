@@ -23,6 +23,25 @@ async function start(page, id) {
   await page.evaluate(() => window.__freeze(true));
 }
 
+test('změna herního času přeruší směnu až po potvrzení', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-11-09T08:00:00Z'));
+  await boot(page);
+  await start(page, 'tram/1/53408/3');
+  await page.locator('#btn-menu').click();
+  await page.getByRole('button', { name: 'Nastavení', exact: true }).click();
+  await page.locator('#game-time').fill('18:30');
+  const submit = page.getByRole('button', { name: 'Nastavit čas', exact: true });
+  page.once('dialog', (dialog) => dialog.dismiss());
+  await submit.click();
+  expect(await page.evaluate(() => Boolean(window.__game.shifts.active))).toBe(true);
+  page.once('dialog', (dialog) => dialog.accept());
+  await submit.click();
+  expect(await page.evaluate(() => {
+    const g = window.__game;
+    return { mode: g.mode, hour: g.hour, shift: g.shifts.last.state };
+  })).toEqual({ mode: 'foot', hour: 18.5, shift: 'interrupted' });
+});
+
 async function drive(page, failWrite) {
   return page.evaluate((failWrite) => {
     const g = window.__game, { shifts, transit, world, clock } = g, run = shifts.active, v = run.vehicle;

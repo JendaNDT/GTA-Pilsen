@@ -3,10 +3,11 @@ import * as THREE from 'three/webgpu';
 import { CHUNK, QUALITY } from '../config.js';
 import { loadCityTile } from '../data.js';
 import { HeritageRoofs } from './heritage-geometry.js';
-import { env, makeBuildingMaterial, makeMillraceMaterial } from './materials.js';
+import { env, makeBuildingMaterial, makeMillraceMaterial, makeSurfaceMaterial } from './materials.js';
+import { SURFACE } from './material-table.js';
 import { FORGE, buildForge, forgeRoofHeight } from './mill.js';
 
-export const DETAIL_REQUEST_LIMIT = QUALITY.groundTex === 256 ? 2 : 4;
+export const detailRequestLimit = () => QUALITY.groundTex === 256 ? 2 : 4;
 
 function cityMesh(pack, prefix) {
   const src = pack[prefix + 'p'];
@@ -67,11 +68,18 @@ export class Heritage {
     this.forgeAngle = 0;
     if (forge >= 0) this.replaced.add(forge);
     this.forgeChunk = world.chunkIndex(FORGE.x, FORGE.z);
+    this.far = makeSurfaceMaterial(SURFACE.timber, { vertexColors: true });
+    this.cityFar = makeSurfaceMaterial(SURFACE.plaster, { vertexColors: true, side: THREE.DoubleSide });
+    this.applyQuality();
+  }
+
+  applyQuality() {
+    this.close?.dispose();
+    this.cityClose?.dispose();
+    this.water?.dispose();
     this.close = makeBuildingMaterial({ textures: QUALITY.heritageDetail, heritage: true });
-    this.far = new THREE.MeshLambertMaterial({ vertexColors: true });
     this.cityClose = makeBuildingMaterial({ textures: QUALITY.heritageDetail, heritage: true });
     this.cityClose.side = THREE.DoubleSide;
-    this.cityFar = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
     this.water = makeMillraceMaterial(QUALITY.heritageDetail);
   }
 
@@ -80,7 +88,7 @@ export class Heritage {
   }
 
   prefetch(candidates, otherRequests = 0) {
-    const limit = DETAIL_REQUEST_LIMIT - otherRequests;
+    const limit = detailRequestLimit() - otherRequests;
     if (this.fetching >= limit) return;
     candidates.sort((a, b) => a.dist - b.dist);
     for (const ch of candidates) {
@@ -134,7 +142,7 @@ export class Heritage {
       const pack = owner.cityData;
       const geometry = cityMesh(pack, '');
       add(geometry, this.cityClose, base);
-      add(cityMesh(pack, 'd'), this.far, detail);
+      add(cityMesh(pack, 'd'), this.cityFar, detail);
       roofs = new HeritageRoofs();
       roofs.add({ p: geometry.attributes.position.array, indices: pack.roof }, 0);
       const [x0, z0, x1, z1] = entry.bounds;

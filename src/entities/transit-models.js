@@ -1,6 +1,8 @@
 // Ručně modelované karoserie podle plzeňských vozů. Souřadnice jsou v metrech, +z je vpřed.
 import * as THREE from 'three/webgpu';
 import { Parts } from './models.js';
+import { makeBatchedSurfaceMaterial, makeSurfaceMaterial } from '../world/materials.js';
+import { SURFACE } from '../world/material-table.js';
 
 const color = (hex) => new THREE.Color(hex).toArray();
 const YELLOW = color(0xf2be25), RED = color(0xc4222a), WHITE = color(0xe5e3db);
@@ -36,7 +38,11 @@ const BUS = {
   paint: RED, trim: WHITE, glass: BUS_GLASS, doorWidth: 1.20, doorBottom: 0.34, doorTop: 2.48,
 };
 
-const shellMat = new THREE.MeshLambertMaterial({ vertexColors: true });
+const transitSurfaces = new Map([
+  [TRAM_GLASS, SURFACE.glass], [BUS_GLASS, SURFACE.glass], [REFLECTION, SURFACE.glass],
+  [METAL, SURFACE.transitMetal], [RUBBER, SURFACE.rubber], [DARK, SURFACE.rubber],
+]);
+const shellMat = makeBatchedSurfaceMaterial();
 const lampMat = new THREE.MeshBasicMaterial({ vertexColors: true });
 const geometry = new Map();
 const leafGeometry = new Map();
@@ -53,9 +59,7 @@ function face(parts, points, paint, outward) {
     if (size < 1e-8) continue;
     const sign = n.reduce((dot, p, k) => dot + p * outward[k], 0) < 0 ? -1 : 1;
     for (const q of sign > 0 ? [a, b, c] : [a, c, b]) {
-      parts.p.push(...q);
-      parts.n.push(...n.map((p) => p * sign / size));
-      parts.c.push(...paint);
+      parts.vertex(...q, ...n.map((p) => p * sign / size), paint);
     }
   }
 }
@@ -290,10 +294,9 @@ function pantograph(parts, base, z, paint) {
       arm.box(0.045, Math.hypot(yb - ya, zb - za), 0.051, 0, 0, 0, paint);
       const angle = Math.atan2(zb - za, yb - ya), cos = Math.cos(angle), sin = Math.sin(angle);
       for (let i = 0; i < arm.p.length; i += 3) {
-        parts.p.push(x + arm.p[i], base + (ya + yb) / 2 + arm.p[i + 1] * cos - arm.p[i + 2] * sin,
-          z + (za + zb) / 2 + arm.p[i + 1] * sin + arm.p[i + 2] * cos);
-        parts.n.push(arm.n[i], arm.n[i + 1] * cos - arm.n[i + 2] * sin, arm.n[i + 1] * sin + arm.n[i + 2] * cos);
-        parts.c.push(...paint);
+        parts.vertex(x + arm.p[i], base + (ya + yb) / 2 + arm.p[i + 1] * cos - arm.p[i + 2] * sin,
+          z + (za + zb) / 2 + arm.p[i + 1] * sin + arm.p[i + 2] * cos,
+          arm.n[i], arm.n[i + 1] * cos - arm.n[i + 2] * sin, arm.n[i + 1] * sin + arm.n[i + 2] * cos, paint);
       }
     }
   }
@@ -302,7 +305,7 @@ function pantograph(parts, base, z, paint) {
 
 function makeSection(section, style) {
   if (!geometry.has(section)) {
-    const body = new Parts(), lamps = new Parts();
+    const body = new Parts(SURFACE.transitPaint, transitSurfaces), lamps = new Parts();
     const half = section.length / 2;
     const lo = -half + (section.rear ? halfCab(style, -1) : 0.26);
     const hi = half - (section.front ? halfCab(style, 1) : 0.26);
@@ -327,7 +330,7 @@ function makeSection(section, style) {
   }
 
   if (!leafGeometry.has(style)) {
-    const leaf = new Parts();
+    const leaf = new Parts(SURFACE.transitPaint, transitSurfaces);
     doorLeaf(leaf, style, -1, 0);
     leafGeometry.set(style, leaf.geometry());
   }
@@ -506,7 +509,8 @@ function tatraEnd(parts, lamps, seam, side) {
 let tatraShell, tatraLamps, tatraLeaves;
 export function makeTatraCar() {
   if (!tatraShell) {
-    const body = new Parts(), lights = new Parts(), leaf = new Parts();
+    const body = new Parts(SURFACE.transitPaint, transitSurfaces), lights = new Parts();
+    const leaf = new Parts(SURFACE.transitPaint, transitSurfaces);
     tatraSide(body, 6.82);
     tatraEnd(body, lights, 6.82, 1);
     tatraEnd(body, lights, 6.82, -1);
@@ -540,7 +544,7 @@ export function makeTatraCar() {
 }
 
 const couplerGeometry = new THREE.BoxGeometry(0.22, 0.13, 1);
-const couplerMaterial = new THREE.MeshLambertMaterial({ color: 0x383b3a });
+const couplerMaterial = makeSurfaceMaterial(SURFACE.transitMetal, { color: 0x383b3a });
 export function makeTatraCoupler() {
   return new THREE.Mesh(couplerGeometry, couplerMaterial);
 }
@@ -548,7 +552,7 @@ export function makeTatraCoupler() {
 let bellows;
 export function makeTramJoint() {
   if (!bellows) {
-    const p = new Parts();
+    const p = new Parts(SURFACE.rubber);
     p.box(2.19, 2.71, 1, 0, 0, 0, RUBBER, 0.94);
     for (let i = -3; i <= 3; i++) p.box(2.23, 2.75, 0.044, 0, 0, i * 0.132, DARK, 0.94);
     bellows = p.geometry();

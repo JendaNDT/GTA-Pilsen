@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { gameUrl } from './game-url.js';
 
-async function boot(page) {
-  await page.goto(gameUrl('/?debug&view=620&shadows=0'));
+async function boot(page, options = '') {
+  await page.goto(gameUrl(`/?debug&view=620&shadows=0${options}`));
   await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
   await page.evaluate(() => __freeze(true));
@@ -252,6 +252,7 @@ test('E07 – kolona na Tylově nechá volný přechod a tramvajové koleje', as
 });
 
 test('E07 – stejný směr Klatovské má jiný provoz ve špičce a o víkendu', async ({ page, baseURL }, info) => {
+  await page.clock.setFixedTime(new Date('2026-11-09T08:00:00Z'));
   const remote = [];
   const local = new URL(baseURL).origin;
   await page.route('**/*', (route) => {
@@ -260,7 +261,7 @@ test('E07 – stejný směr Klatovské má jiný provoz ve špičce a o víkendu
     remote.push(url);
     return route.abort();
   });
-  await boot(page);
+  await boot(page, '&quality=high&adapt=0');
   const result = await page.evaluate(() => {
     const game = __game, w = game.world, t = w.traffic, vm = game.vehicles;
     const measured = [...game.trafficRhythm.measured];

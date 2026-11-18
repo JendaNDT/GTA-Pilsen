@@ -177,6 +177,11 @@ test('E10 – přerušení, pokuta a opakování výplaty po chybě zápisu', as
 });
 
 test('E10 – rozvoz autem vyžaduje průjezd Lochotínem a Bolevcem a pěší předání', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-11-09T08:00:00Z'));
+  await page.addInitScript(() => {
+    let seed = 1729;
+    Math.random = () => ((seed = (Math.imul(1664525, seed) + 1013904223) >>> 0) / (2 ** 32));
+  });
   await boot(page);
   await panel(page, 'Zakázky');
   await page.getByRole('button', { name: 'Rozvézt autem' }).click();
@@ -269,7 +274,8 @@ test('E10 – jízda tramvají 1, přestup na autobus 30 a doručení od rybník
     const g = window.__game, { player, jobs, transit, world } = g, j = jobs.job;
     for (const car of [...g.vehicles.cars]) g.vehicles.remove(car);
     g.player.place(j.pick.x, j.pick.z);
-    window.__setClock('2026-11-09', 8.85);
+    // Pondělní tramvaj v 18:00 navazuje v Bolevci na autobus v 18:13.
+    window.__setClock('2026-11-09', 17 + 57.5 / 60);
     jobs.update(0.05);
     const dt = 0.1, rideChecks = [];
     const tick = () => {
@@ -312,7 +318,11 @@ test('E10 – jízda tramvají 1, přestup na autobus 30 a doručení od rybník
       g.doAction();
       if (jobs.job?.phase !== 'ride') return { failure: 'nenastoupeno', line: leg.line, mode: g.mode, rideChecks };
       const start = chosen.s;
-      const arrived = until(() => chosen.canAlight && chosen.event.trip.stops[chosen.stopIndex]?.stop === leg.to.i, 650);
+      const { trip, start: dispatch } = chosen.event;
+      const target = trip.stops.findIndex(({ stop }, i) => i > chosen.stopIndex && stop === leg.to.i);
+      const scheduledArrival = dispatch - trip.start + trip.times[target * 2];
+      const arrived = until(() => chosen.canAlight && trip.stops[chosen.stopIndex]?.stop === leg.to.i,
+        Math.max(0, scheduledArrival - g.clock.now) + 120);
       if (!arrived) return { failure: 'nedojelo do cíle', line: leg.line, travelled: chosen.s - start, rideChecks };
       g.doAction();
       rideChecks.push({ line: leg.line, distance: chosen.s - start, phase: j.phase });
