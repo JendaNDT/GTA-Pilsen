@@ -158,6 +158,16 @@
       </section>
       <div id="panel-settings" class="panel hidden">
         <h3>Rozhraní</h3>
+        <label class="setting">Kvalita grafiky
+          <select id="graphics-quality">
+            <option value="auto">Automaticky</option>
+            <option value="ultra">Ultra</option>
+            <option value="high">Vysoká</option>
+            <option value="medium">Střední</option>
+            <option value="low">Nízká</option>
+          </select>
+        </label>
+        <p id="graphics-status" role="status"></p>
         <label class="setting"><input id="show-clock" type="checkbox" checked /> Zobrazovat herní hodiny</label>
         <label class="setting"><input id="sound-enabled" type="checkbox" checked /> Zvuk hry</label>
         <label class="setting"><input id="orthophoto-enabled" type="checkbox" checked /> Letecké snímky krajiny</label>

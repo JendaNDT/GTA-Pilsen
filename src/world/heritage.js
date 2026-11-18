@@ -7,7 +7,7 @@ import { env, makeBuildingMaterial, makeMillraceMaterial, makeSurfaceMaterial } 
 import { SURFACE } from './material-table.js';
 import { FORGE, buildForge, forgeRoofHeight } from './mill.js';
 
-export const DETAIL_REQUEST_LIMIT = QUALITY.groundTex === 256 ? 2 : 4;
+export const detailRequestLimit = () => QUALITY.groundTex === 256 ? 2 : 4;
 
 function cityMesh(pack, prefix) {
   const src = pack[prefix + 'p'];
@@ -68,11 +68,18 @@ export class Heritage {
     this.forgeAngle = 0;
     if (forge >= 0) this.replaced.add(forge);
     this.forgeChunk = world.chunkIndex(FORGE.x, FORGE.z);
-    this.close = makeBuildingMaterial({ textures: QUALITY.heritageDetail, heritage: true });
     this.far = makeSurfaceMaterial(SURFACE.timber, { vertexColors: true });
+    this.cityFar = makeSurfaceMaterial(SURFACE.plaster, { vertexColors: true, side: THREE.DoubleSide });
+    this.applyQuality();
+  }
+
+  applyQuality() {
+    this.close?.dispose();
+    this.cityClose?.dispose();
+    this.water?.dispose();
+    this.close = makeBuildingMaterial({ textures: QUALITY.heritageDetail, heritage: true });
     this.cityClose = makeBuildingMaterial({ textures: QUALITY.heritageDetail, heritage: true });
     this.cityClose.side = THREE.DoubleSide;
-    this.cityFar = makeSurfaceMaterial(SURFACE.plaster, { vertexColors: true, side: THREE.DoubleSide });
     this.water = makeMillraceMaterial(QUALITY.heritageDetail);
   }
 
@@ -81,7 +88,7 @@ export class Heritage {
   }
 
   prefetch(candidates, otherRequests = 0) {
-    const limit = DETAIL_REQUEST_LIMIT - otherRequests;
+    const limit = detailRequestLimit() - otherRequests;
     if (this.fetching >= limit) return;
     candidates.sort((a, b) => a.dist - b.dist);
     for (const ch of candidates) {

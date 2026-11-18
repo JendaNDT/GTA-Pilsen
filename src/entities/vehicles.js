@@ -688,7 +688,7 @@ export class VehicleManager {
       } else if (c.mode === 'parked') {
         if (d2 > 330 * 330 && c !== player.lastCar && c !== this.game.garage?.active) { this.remove(c); continue; }
       }
-      if (c.mesh.userData.light) c.mesh.userData.light.visible = lightsOn && c.mode !== 'parked' && !c.noLights && d2 < 300 * 300;
+      if (c.mesh.userData.light) c.mesh.userData.light.visible = QUALITY.carLights && lightsOn && c.mode !== 'parked' && !c.noLights && d2 < 300 * 300;
       if (c.mesh.userData.beacons) {
         const on = c.mode === 'police';
         const ph = Math.floor(this.game.time / 0.16) % 2;

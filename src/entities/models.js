@@ -177,6 +177,18 @@ function carGeometry(type) {
 }
 
 let beaconGeo = null, lightGeo = null;
+export function addCarLight(group, type) {
+  if (group.userData.light) return;
+  if (!lightGeo) { lightGeo = new THREE.PlaneGeometry(1, 1); lightGeo.rotateX(-Math.PI / 2); }
+  const light = new THREE.Mesh(lightGeo, getPoolMaterial());
+  light.position.set(0, 0.04, type.len / 2 + 5.5);
+  light.scale.set(7, 1, 13);
+  light.renderOrder = 19;
+  light.visible = false;
+  group.add(light);
+  group.userData.light = light;
+}
+
 /** Vytvoří 3D objekt auta. */
 export function makeCarMesh(typeId, colorHex) {
   const type = CAR_TYPES[typeId];
@@ -186,17 +198,7 @@ export function makeCarMesh(typeId, colorHex) {
   const detail = new THREE.Mesh(g.detail, getDetailMaterial());
   body.castShadow = true; detail.castShadow = true;
   group.add(body, detail);
-  if (QUALITY.carLights) {
-    // světlo reflektorů na vozovce (v noci)
-    if (!lightGeo) { lightGeo = new THREE.PlaneGeometry(1, 1); lightGeo.rotateX(-Math.PI / 2); }
-    const light = new THREE.Mesh(lightGeo, getPoolMaterial());
-    light.position.set(0, 0.04, type.len / 2 + 5.5);
-    light.scale.set(7, 1, 13);
-    light.renderOrder = 19;
-    light.visible = false;
-    group.add(light);
-    group.userData.light = light;
-  }
+  if (QUALITY.carLights) addCarLight(group, type);
   if (type.police) {
     if (!beaconGeo) beaconGeo = new THREE.BoxGeometry(0.34, 0.12, 0.24);
     const zc = -(type.hood - type.trunk) / 2;

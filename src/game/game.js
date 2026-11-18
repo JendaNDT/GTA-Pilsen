@@ -1,6 +1,7 @@
 // Řízení hry: stav hráče, kamera, pravidla (hledanost, zdraví, peníze), ukládání.
 import * as THREE from 'three/webgpu';
-import { QUALITY, RC, DRIVABLE_MAX, IS_TOUCH, DEBUG, PARAMS } from '../config.js';
+import { QUALITY, RC, DRIVABLE_MAX, IS_TOUCH, IS_MOBILE, DEBUG, PARAMS, DEFAULT_QUALITY, QUALITY_OVERRIDE,
+  SAVED_GRAPHICS, applyQualityProfile } from '../config.js';
 import { World } from '../world/world.js';
 import { TUNNEL_HEIGHT } from '../world/tunnels.js';
 import { ChunkManager } from '../world/chunks.js';
@@ -8,6 +9,7 @@ import { Environment } from '../world/scene.js';
 import { createPostFX } from '../world/postfx.js';
 import { env } from '../world/materials.js';
 import { VehicleManager, Car, wrapAngle } from '../entities/vehicles.js';
+import { addCarLight } from '../entities/models.js';
 import { Player, PedManager } from '../entities/player.js';
 import { TRANSIT_NAME, TransitManager } from '../entities/transit.js';
 import { Heli } from '../entities/heli.js';
@@ -19,8 +21,8 @@ import { GameAudio } from './audio.js';
 import { input, pollInput, endFrame } from './input.js';
 import { GameClock, HOUR_SECONDS, formatDay, parseDay } from './clock.js';
 import { TrafficRhythm } from './traffic-rhythm.js';
+import { automaticQuality, PROFILES, resolutionScale, SAVE_KEY } from './graphics-quality.js';
 
-const SAVE_KEY = 'plzen-naplno-v1';
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const _road = {};
 const _v = new THREE.Vector3();
@@ -65,7 +67,13 @@ export class Game {
     this.camYaw = 2.4; this.camPitch = 0.3; this.zoom = 1; this.camDist = 6; this.lookIdle = 9; this.camMode = 0;
     this.shake = 0; this.crashCool = 0; this.wantedCool = 0;
     this.paused = true; this.mapOpen = false;
-    this.fpsAcc = 0; this.fpsN = 0; this.pixelRatio = Math.min(devicePixelRatio || 1, QUALITY.pixelRatio);
+    this.graphics = { ...SAVED_GRAPHICS };
+    this.graphicsOverride = QUALITY_OVERRIDE;
+    this.graphicsBusy = false;
+    this.graphicsTime = 0;
+    this.resolutionTime = 0;
+    this.resolutionScale = 1;
+    this.pixelRatio = Math.min(devicePixelRatio || 1, QUALITY.pixelRatio);
     this.garage = new Garage(this);
     this.jobs = new Jobs(this);
     this.shifts = new Shifts(this);
@@ -167,6 +175,7 @@ export class Game {
       localStorage.setItem(SAVE_KEY, JSON.stringify({
         v: 2, money: this.money, date: formatDay(this.clock.day), hour: this.hour, clockVisible: this.clockVisible,
         soundEnabled: !this.audio.muted, orthophotoEnabled: this.orthophotoEnabled,
+        graphics: this.graphics,
         stats: this.stats, x: Math.round(safe.x), z: Math.round(safe.z),
         found: this.jobs.landmarks.filter((l) => l.found).map((l) => l.name),
         garage: this.garage.snapshot(), job: this.jobs.snapshot(), shift: this.shifts.snapshot(),
@@ -744,24 +753,93 @@ export class Game {
     else this.renderer.render(this.scene, this.camera);
   }
 
-  /** Přizpůsobí rozlišení výkonu zařízení. */
-  adapt(dt) {
-    if (PARAMS.get('adapt') === '0') return;
-    this.fpsAcc += dt; this.fpsN++;
-    if (this.fpsAcc < 2) return;
-    const fps = this.fpsN / this.fpsAcc;
-    this.fps = fps;
-    this.fpsAcc = 0; this.fpsN = 0;
-    const max = Math.min(devicePixelRatio || 1, QUALITY.pixelRatio);
-    let pr = this.pixelRatio;
-    // když nepomáhá ani nižší rozlišení, vypni stíny
-    if (fps < 24 && pr <= 0.75 && this.env.shadows && this.env.sun.castShadow) {
-      this.env.setShadows(false);
-      this.hud.toast('Kvůli plynulosti vypínám stíny.');
+  adapt(elapsed, measure) {
+    if (PARAMS.get('adapt') === '0' || this.graphicsBusy || this.mapOpen) return;
+    this.graphicsTime += elapsed;
+    this.resolutionTime += elapsed;
+    const choosing = this.graphicsTime >= 10 && !this.graphicsOverride && this.graphics.choice === 'auto' && !this.graphics.automatic;
+    if (this.resolutionTime < 2 && !choosing) return;
+    this.resolutionTime = 0;
+    const { workMs, gpuMs } = measure(choosing ? 10000 : 2000);
+    if (!workMs) return;
+    const cpu = workMs.p95, gpu = gpuMs?.p95 ?? null;
+    if (choosing) {
+      const profile = automaticQuality(IS_MOBILE, cpu, gpu);
+      this.graphics.automatic = profile;
+      void this.changeGraphics(profile).then((applied) => {
+        if (!applied) this.graphics.automatic = QUALITY.name;
+        this.save();
+        this.onGraphicsChanged?.();
+      });
+      return;
     }
-    if (fps < 30 && pr > 0.7) pr = Math.max(0.7, pr * 0.85);
-    else if (fps > 56 && pr < max) pr = Math.min(max, pr * 1.1);
-    if (pr !== this.pixelRatio) { this.pixelRatio = pr; this.renderer.setPixelRatio(pr); }
+    this.setResolutionScale(resolutionScale(this.resolutionScale, cpu, gpu));
+  }
+
+  setResolutionScale(scale) {
+    const ratio = Math.min(devicePixelRatio || 1, QUALITY.pixelRatio) * scale;
+    this.resolutionScale = scale;
+    if (ratio === this.pixelRatio) return;
+    this.pixelRatio = ratio;
+    this.renderer.setPixelRatio(ratio);
+  }
+
+  async setGraphicsChoice(choice) {
+    if (this.graphicsBusy || (choice !== 'auto' && !Object.hasOwn(PROFILES, choice))) return false;
+    if (!await this.changeGraphics(choice === 'auto' ? DEFAULT_QUALITY : choice)) return false;
+    this.graphicsOverride = null;
+    this.graphics = { choice, automatic: null };
+    this.graphicsTime = 0;
+    this.save();
+    this.onGraphicsChanged?.();
+    return true;
+  }
+
+  async changeGraphics(profile) {
+    if (profile === QUALITY.name) return true;
+    const previous = QUALITY.name;
+    this.graphicsBusy = true;
+    try {
+      await this.rebuildGraphics(profile);
+      return true;
+    } catch (error) {
+      console.warn('Předvolbu grafiky se nepodařilo použít.', error);
+      try { await this.rebuildGraphics(previous); }
+      catch (restoreError) { console.error('Původní grafiku se nepodařilo obnovit.', restoreError); }
+      return false;
+    } finally {
+      this.graphicsBusy = false;
+    }
+  }
+
+  async rebuildGraphics(profile) {
+    this.postfx?.dispose();
+    this.postfx = null;
+    this.env.dispose();
+    applyQualityProfile(profile);
+    this.renderer.shadowMap.enabled = QUALITY.shadows;
+    this.camera.far = QUALITY.view * 1.35;
+    this.camera.updateProjectionMatrix();
+    this.setResolutionScale(1);
+    this.chunks.applyQuality();
+    for (const car of this.vehicles.cars) {
+      if (QUALITY.carLights) addCarLight(car.mesh, car.type);
+      else if (car.mesh.userData.light) car.mesh.userData.light.visible = false;
+    }
+    this.env = new Environment(this.scene, this.renderer);
+    this.env.setHour(this.hour, this.clock.day);
+    this.env.update(this.camera);
+    this.postfx = createPostFX(this.renderer, this.scene, this.camera, this.world);
+    const { x, y, z } = this.focus;
+    this.chunks.update(x, z, QUALITY.view, 0, y);
+    while (this.chunks.pendingStart > 0) {
+      this.chunks.update(x, z, QUALITY.view, 6, y);
+      await new Promise(requestAnimationFrame);
+    }
+    await this.env.prepareSkyLight();
+    if (this.postfx) await this.postfx.prepare();
+    else await this.renderer.compileAsync(this.scene, this.camera);
+    this.render();
   }
 
   resize() {

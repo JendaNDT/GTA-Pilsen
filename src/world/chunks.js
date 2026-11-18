@@ -8,7 +8,7 @@ import { Parts, getDetailMaterial } from '../entities/models.js';
 import { SURF } from './world.js';
 import { TUNNEL_HEIGHT } from './tunnels.js';
 import { buildTrafficMeshes } from './traffic-meshes.js';
-import { DETAIL_REQUEST_LIMIT, Heritage, pavingChunk } from './heritage.js';
+import { detailRequestLimit, Heritage, pavingChunk } from './heritage.js';
 import { FORGE, forgeXZ } from './mill.js';
 import { Districts } from './districts.js';
 import { Orthophoto, orthophotoTile } from './orthophoto.js';
@@ -1485,7 +1485,7 @@ export class ChunkManager {
         origin: [world.minX, world.minZ], cols: world.cols, rows: world.rows,
         chunk: CHUNK, fingerprints: orthophotoSources,
       }, QUALITY.groundTex === 256 ? 12 : 24, {
-        availableRequests: () => DETAIL_REQUEST_LIMIT - this.heritage.fetching,
+        availableRequests: () => detailRequestLimit() - this.heritage.fetching,
       });
     }
     this.buildingMat = makeBuildingMaterial();
@@ -1529,6 +1529,19 @@ export class ChunkManager {
     this.orthophotoPrepared = false;
     if (enabled) void this.orthophoto.load();
     else this.orthophoto.prefetch([]);
+  }
+
+  applyQuality() {
+    for (const chunk of this.chunks.values()) this._dispose(chunk);
+    this.chunks.clear();
+    this.lastCenter = -1;
+    this.texNear = QUALITY.groundTex;
+    this.texFar = QUALITY.groundTexFar;
+    this.orthophotoPrepared = false;
+    if (this.orthophoto) this.orthophoto.capacity = QUALITY.groundTex === 256 ? 12 : 24;
+    if (this.paintedBuildings !== this.buildingMat) this.paintedBuildings.dispose();
+    this.paintedBuildings = QUALITY.heritageDetail ? makeBuildingMaterial({ textures: true }) : this.buildingMat;
+    this.heritage.applyQuality();
   }
 
   get orthophotoPending() {

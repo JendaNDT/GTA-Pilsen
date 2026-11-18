@@ -9,8 +9,8 @@ Autor potvrdil zahájení E17. [Zadání E17](E17.md) · [Protokol E16](../E16.m
 | 2. Obloha, poloha slunce a světlo z oblohy | Hotovo · `9c27cd9` |
 | 3. Kaskádové stíny | Hotovo · `bf5ba60` |
 | 4. Průchod scény, vyhlazování, AO, záře, tónování, barevné ladění a mlha | Hotovo |
-| 5. Čtyři předvolby, automatika a dynamické rozlišení | Další krok |
-| 6. Přizpůsobení jasu | Čeká |
+| 5. Čtyři předvolby, automatika a dynamické rozlišení | Hotovo |
+| 6. Přizpůsobení jasu | Další krok |
 | 7. Měření všech předvoleb, snímky, protokol a pull request | Čeká |
 
 ## Ověření a otevřené otázky
@@ -63,5 +63,12 @@ Autor potvrdil zahájení E17. [Zadání E17](E17.md) · [Protokol E16](../E16.m
   Commit `1f477bc`.
 - Výšková mlha čte hloubku a používá stávající vodní plochy pro ranní opar.
   Prošlo sestavení, 49 testů Node a čtyři kontroly vysoké a nízké předvolby
-  na obou vykreslovačích. [Porovnání obrazových efektů](../E17/efekty.md).
+  na obou vykreslovačích. Commit `9840b0b`. [Porovnání obrazových efektů](../E17/efekty.md).
+- Předvolba se mění ve stejné instanci hry. Hráč, čas, peníze a rozpracované
+  úkoly zůstávají. Automatika používá práci prvních deseti sekund hraní
+  a ukládá předvolbu. Rozlišení má rozsah 60–100 %. Prošlo 52 testů Node,
+  sestavení, tři kontroly nastavení a uložení a dvě kontroly panelu měření.
+  Přepnutí vysoké předvolby na nízkou v záběru s dosahem 620 m trvalo na
+  Apple M4 1,2 s na WebGPU a 1,5 s na WebGL 2. Test na softwarovém ovladači
+  čeká na dokončení až 30 s, protože příprava obrazu tam trvala více než 5 s.
 - Po dokončení čeká měření v autorově běžném prohlížeči a kontrola na telefonu.

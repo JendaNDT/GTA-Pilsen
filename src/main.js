@@ -99,7 +99,7 @@ async function boot() {
   const renderer = new THREE.WebGPURenderer({
     canvas, antialias: !IS_MOBILE, powerPreference: 'high-performance',
     forceWebGL: PARAMS.get('renderer') === 'webgl',
-    trackTimestamp: DEBUG,
+    trackTimestamp: DEBUG || PARAMS.get('adapt') !== '0',
   });
   try {
     await renderer.init();
@@ -119,7 +119,7 @@ async function boot() {
   loadText.textContent = 'Stavím město…';
   await new Promise((r) => setTimeout(r, 30));
   const game = new Game(renderer, data);
-  const perf = DEBUG ? createFrameProfiler(game) : null;
+  const perf = DEBUG || PARAMS.get('adapt') !== '0' ? createFrameProfiler(game, { sampleEvery: DEBUG ? 1 : 16 }) : null;
   initInput(canvas);
   if (PARAMS.has('hour') || PARAMS.has('date')) {
     game.setClock(PARAMS.get('date'), PARAMS.has('hour') ? +PARAMS.get('hour') : game.hour);
@@ -152,7 +152,7 @@ async function boot() {
   if (IS_TOUCH) $('touch').classList.remove('hidden');
 
   let running = false, last = 0, firstPlay = true;
-  const perfPanel = perf && initPerfPanel(perf, rendering, () => running && !game.mapOpen);
+  const perfPanel = DEBUG ? initPerfPanel(perf, rendering, () => running && !game.mapOpen) : null;
   const menu = $('menu');
   const openMenu = () => {
     running = false; input.enabled = false; game.paused = true;
@@ -201,6 +201,22 @@ async function boot() {
   $('show-clock').addEventListener('change', (event) => game.setClockVisible(event.target.checked));
   $('sound-enabled').checked = !game.audio.muted;
   $('sound-enabled').addEventListener('change', (event) => game.setSoundEnabled(event.target.checked));
+  const qualitySelect = $('graphics-quality'), qualityStatus = $('graphics-status');
+  const showQuality = () => {
+    qualitySelect.value = game.graphicsOverride ?? game.graphics.choice;
+    qualityStatus.textContent = qualitySelect.value === 'auto'
+      ? `Automatická předvolba · ${qualitySelect.querySelector(`option[value="${QUALITY.name}"]`).textContent}` : '';
+  };
+  game.onGraphicsChanged = () => { perf?.reset(); showQuality(); };
+  showQuality();
+  qualitySelect.addEventListener('change', async () => {
+    qualitySelect.disabled = true;
+    qualityStatus.textContent = 'Připravuji grafiku…';
+    const applied = await game.setGraphicsChoice(qualitySelect.value);
+    showQuality();
+    if (!applied) qualityStatus.textContent = 'Předvolbu grafiky se nepodařilo použít.';
+    qualitySelect.disabled = false;
+  });
   $('orthophoto-enabled').disabled = !game.chunks.orthophoto;
   $('orthophoto-enabled').checked = Boolean(game.chunks.orthophoto) && game.orthophotoEnabled;
   $('orthophoto-enabled').addEventListener('change', (event) => game.setOrthophotoEnabled(event.target.checked));
@@ -219,14 +235,16 @@ async function boot() {
     if (!game.mapToWorld) return;
     setDestination(game.mapToWorld(e.clientX, e.clientY));
   });
-  addEventListener('resize', () => { game.resize(); if (!running) game.render(); });
+  addEventListener('resize', () => { game.resize(); if (!running && !game.graphicsBusy) game.render(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden && running) openMenu(); });
   addEventListener('pagehide', () => game.save());
 
   const loop = (now) => {
     if (!running) { input.pressed.clear(); return; }
-    const dt = Math.min(0.05, (now - last) / 1000);
+    const elapsed = (now - last) / 1000;
+    const dt = Math.min(0.05, elapsed);
     last = now;
+    if (game.graphicsBusy) return;
     if (input.pressed.has('menu')) {
       input.pressed.delete('menu');
       if (game.mapOpen) game.toggleMap(false); else { openMenu(); return; }
@@ -237,7 +255,7 @@ async function boot() {
       game.update(dt);
       game.render();
     }
-    game.adapt(dt);
+    if (perf) game.adapt(elapsed, perf.summary);
   };
   await renderer.setAnimationLoop(loop);
 

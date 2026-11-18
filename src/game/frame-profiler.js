@@ -15,11 +15,12 @@ function percentiles(values) {
   return { median: at(0.5), p95: at(0.95), p99: at(0.99) };
 }
 
-export function createFrameProfiler(game) {
+export function createFrameProfiler(game, { sampleEvery = 1 } = {}) {
   const { renderer } = game;
   const { backend } = renderer;
   let trackGpu = backend.trackTimestamp && backend.hasTimestamp;
   let resolving = false;
+  let frameNumber = 0;
   let samples = [], first = 0, startedAt = null;
 
   async function measureGpu(sample, frameId) {
@@ -50,7 +51,7 @@ export function createFrameProfiler(game) {
       at, updateMs: updatedAt - at, renderMs,
       gpuMs: null, ...readRenderStats(renderer),
     };
-    if (trackGpu && !resolving) void measureGpu(sample, renderer.info.frame);
+    if (trackGpu && !resolving && frameNumber++ % sampleEvery === 0) void measureGpu(sample, renderer.info.frame);
     samples.push(sample);
     while (samples[first].at < at - WINDOW_MS) first++;
     if (first >= 1024) {
@@ -59,9 +60,9 @@ export function createFrameProfiler(game) {
     }
   }
 
-  function summary() {
-    const frames = samples.slice(first);
-    const last = frames.at(-1);
+  function summary(windowMs = WINDOW_MS) {
+    const last = samples.at(-1);
+    const frames = samples.slice(first).filter((frame) => last.at - frame.at <= windowMs);
     const gpu = frames.flatMap((frame) => frame.gpuMs === null ? [] : [frame.gpuMs]);
     return {
       durationMs: last ? Math.min(WINDOW_MS, last.at - startedAt) : 0,

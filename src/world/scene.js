@@ -99,9 +99,9 @@ export class Environment {
     gg.rotateX(-Math.PI / 2);
     gg.translate(0, -80, 0);
     this.groundMat = makeSurfaceMaterial(SURFACE.soil, { color: GROUND_HEX });
-    const ground = new THREE.Mesh(gg, this.groundMat);
-    ground.frustumCulled = false;
-    scene.add(ground);
+    this.ground = new THREE.Mesh(gg, this.groundMat);
+    this.ground.frustumCulled = false;
+    scene.add(this.ground);
     this.poolMat = getPoolMaterial();
     this.hour = 10;
     this.tint = new THREE.Color();
@@ -184,8 +184,16 @@ export class Environment {
     env.cam.value.copy(cam.position);
   }
 
-  setShadows(on) {
-    if (!this.shadows) return;
-    this.sun.castShadow = on;
+  dispose() {
+    this.scene.remove(this.sky, this.hemi, this.sun, this.sun.target, this.moon, this.ground);
+    this.scene.environment = null;
+    this.skyLight?.dispose();
+    this.sky.geometry.dispose();
+    this.sky.material.dispose();
+    this.ground.geometry.dispose();
+    this.groundMat.dispose();
+    for (const { shadow } of this.csm?.lights ?? []) shadow.dispose();
+    this.csm?.dispose();
+    this.sun.shadow.dispose();
   }
 }

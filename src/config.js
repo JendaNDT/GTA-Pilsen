@@ -1,4 +1,5 @@
 // Společné konstanty a nastavení podle zařízení.
+import { graphicsPreferences, PROFILES, SAVE_KEY } from './game/graphics-quality.js';
 
 export const IS_TOUCH = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
 export const IS_MOBILE = IS_TOUCH && Math.min(screen.width, screen.height) < 900;
@@ -10,25 +11,21 @@ export const PARAMS = params;
 export const CHUNK = 256;            // velikost dlaždice světa v metrech
 export const COLL_CELL = 64;         // buňka kolizní mřížky
 
-const lowQuality = IS_MOBILE || params.get('quality') === 'low';
-const shadowProfiles = {
-  __proto__: null,
-  ultra: { shadowCascades: 4, shadowSize: 2048, shadowFar: 900 },
-  high: { shadowCascades: 3, shadowSize: 2048, shadowFar: 750 },
-  medium: { shadowCascades: 2, shadowSize: 1024, shadowFar: 600 },
-  low: { shadowCascades: 0, shadowSize: 0, shadowFar: 0 },
-};
-const shadowProfile = lowQuality ? shadowProfiles.low : (shadowProfiles[params.get('quality')] ?? shadowProfiles.high);
+let storedGraphics;
+try { storedGraphics = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null')?.graphics; } catch { /* stará nebo nedostupná uložená hra */ }
+export const SAVED_GRAPHICS = graphicsPreferences(storedGraphics);
+export const QUALITY_OVERRIDE = Object.hasOwn(PROFILES, params.get('quality')) ? params.get('quality') : null;
+export const DEFAULT_QUALITY = IS_MOBILE ? 'low' : 'high';
+export const QUALITY = {};
 
-export const QUALITY = lowQuality
-  ? { view: 620, pixelRatio: 1.5, traffic: 12, peds: 8, parked: 26, treesPerForestChunk: 110,
-      shadows: false, clouds: 3, carLights: false, groundTex: 256, groundTexFar: 256, heritageDetail: false }
-  : { view: 1600, pixelRatio: 2, traffic: 42, peds: 26, parked: 70, treesPerForestChunk: 320,
-      shadows: true, clouds: 5, carLights: true, groundTex: 512, groundTexFar: 256, heritageDetail: true };
-Object.assign(QUALITY, shadowProfile);
+export function applyQualityProfile(name) {
+  const profile = PROFILES[name];
+  Object.assign(QUALITY, profile, { name, shadows: profile.shadowCascades > 0 && params.get('shadows') !== '0' });
+  if (params.has('view')) QUALITY.view = +params.get('view');
+}
 
-if (params.has('view')) QUALITY.view = +params.get('view');
-if (params.get('shadows') === '0') QUALITY.shadows = false;
+applyQualityProfile(QUALITY_OVERRIDE ?? (SAVED_GRAPHICS.choice === 'auto'
+  ? SAVED_GRAPHICS.automatic ?? DEFAULT_QUALITY : SAVED_GRAPHICS.choice));
 
 // třídy silnic (stejné číslování jako v tools/build_data.py)
 export const RC = {
