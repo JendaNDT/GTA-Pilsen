@@ -96,3 +96,30 @@ test('fyzický náraz poškodí karoserii, lehký dotyk stěny ji nepoškodí', 
     } finally { close(); }
   }
 });
+
+test('malé auto drží na suchém padesátimetrovém kruhu boční zrychlení 0,85 až 0,95 g', () => {
+  const { car, vehicle, tick, close } = track('hatch');
+  try {
+    const radius = 50, targetSpeed = 21;
+    car.vz = car.speed = targetSpeed;
+    vehicle.teleport();
+    let total = 0, samples = 0, largestError = 0;
+    for (let i = 0; i < 24 * 60; i++) {
+      const angle = Math.atan2(car.z, radius - car.x) + 8 / radius;
+      const dx = radius * (1 - Math.cos(angle)) - car.x, dz = radius * Math.sin(angle) - car.z;
+      const direction = Math.atan2(dx, dz) - car.yaw;
+      const wheelAngle = Math.atan2(2 * vehicle.spec.wheelbase * Math.sin(direction), Math.hypot(dx, dz));
+      const steeringLimit = Math.min(1, 0.13 + 32 / (32 + car.speed ** 2));
+      const vx = car.vx, vz = car.vz;
+      const clampInput = (value) => Math.max(-1, Math.min(1, value));
+      tick(clampInput((targetSpeed - car.speed) * 0.8), clampInput(-wheelAngle / (0.62 * steeringLimit)), false, false);
+      if (i < 12 * 60) continue;
+      const distance = Math.hypot(car.x - radius, car.z);
+      largestError = Math.max(largestError, Math.abs(distance - radius));
+      total += ((vx - car.vx) * (car.x - radius) + (vz - car.vz) * car.z) * 60 / (distance * 9.81);
+      samples++;
+    }
+    assert.ok(largestError < 0.5, 'Odchylka od kružnice ' + largestError + ' m');
+    assert.ok(total / samples >= 0.85 && total / samples <= 0.95, 'Boční zrychlení ' + total / samples + ' g');
+  } finally { close(); }
+});

@@ -159,7 +159,7 @@ async function boot() {
   if (IS_TOUCH) $('touch').classList.remove('hidden');
 
   let running = false, last = 0, firstPlay = true;
-  const perfPanel = DEBUG ? initPerfPanel(perf, rendering, () => running && !game.mapOpen) : null;
+  const perfPanel = DEBUG ? initPerfPanel(perf, rendering, game, () => running && !game.mapOpen) : null;
   const menu = $('menu');
   const timeInput = $('game-time'), clockStatus = $('clock-status');
   const showClock = () => {

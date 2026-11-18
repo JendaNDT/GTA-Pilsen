@@ -69,20 +69,25 @@ test('E18 – volba řízení se uloží a skutečný motor rozjede hráčovo au
     g.paused = false;
     window.__setInput(0, 1);
     window.__step(1 / 60, 140);
-    return { driving: g.driver?.car === car, steering: g.steering, rpm: car.rpm, speed: car.speed, gear: car.gear };
+    return { old: g.oldPhysics, driving: g.driver?.car === car, steering: g.steering, rpm: car.rpm, speed: car.speed, gear: car.gear };
   });
-  expect(result.driving).toBe(true);
+  expect(result.old).toBe(process.env.PLZEN_TEST_PHYSICS === 'old');
+  expect(result.driving).toBe(!result.old);
   expect(result.steering).toBe('realistic');
-  expect(result.rpm).toBeGreaterThan(1000);
+
   expect(result.speed).toBeGreaterThan(1);
-  expect(result.gear).toBeGreaterThan(0);
+  if (!result.old) {
+    expect(result.rpm).toBeGreaterThan(1000);
+    expect(result.gear).toBeGreaterThan(0);
+  }
 });
 
 test('E18 – vlastní auto po návratu na silnici a načtení zachová místo, stav a úpravy', async ({ page }) => {
-  await page.goto(gameUrl('/?debug&adapt=0&quality=low'));
+  await page.goto(gameUrl('/?debug&adapt=0&quality=low&date=2026-11-17&hour=10'));
   await page.waitForFunction(() => window.__ready);
   const saved = await page.evaluate(() => {
     const g = window.__game;
+    g.vehicles.spawnTimer = g.peds.timer = Infinity;
     g.player.place(841, 254);
     g.money = 5000;
     for (const action of ['buy', 'brakes', 'tires', 'retrieve']) g.garage.perform(action);
@@ -91,7 +96,12 @@ test('E18 – vlastní auto po návratu na silnici a načtení zachová místo, 
     g.paused = false;
     g.update(1 / 60);
     car.health = 73;
+    const road = g.world.nearestRoad(car.x, car.z, 400, 12, 0, {}, car.y);
+    const parked = g.vehicles.add(new car.constructor('sedan', 0x326b87));
+    parked.place(road.x, road.z, Math.atan2(road.dx, road.dz));
     g.unstuck();
+    const clearance = Math.hypot(parked.x - car.x, parked.z - car.z);
+    if (clearance < parked.halfLen + car.halfLen) throw new Error('Návrat umístil vůz do obsazeného místa.');
     g.update(1 / 60);
     if (!g.save()) throw new Error('Uložení auta selhalo');
     return { x: car.x, z: car.z, yaw: car.yaw, speed: car.speed };
@@ -102,16 +112,32 @@ test('E18 – vlastní auto po návratu na silnici a načtení zachová místo, 
   const loaded = await page.evaluate(() => {
     const g = window.__game;
     g.paused = false;
+    g.vehicles.spawnTimer = g.peds.timer = Infinity;
+    const atLoad = { x: g.car.x, z: g.car.z, yaw: g.car.yaw };
     g.update(1 / 60);
     const car = g.car;
-    const result = { x: car.x, z: car.z, yaw: car.yaw, health: car.health, owned: car === g.garage.active,
+    const result = { atLoad, x: car.x, z: car.z, yaw: car.yaw, health: car.health, owned: car === g.garage.active,
       upgrades: car.upgrades, speed: car.speed, driving: g.oldPhysics || g.driver?.car === car };
     g._exitCar();
     g.update(1 / 60);
     return { ...result, exited: g.mode === 'foot' && !g.driver };
   });
   expect(loaded).toMatchObject({ health: 73, owned: true, upgrades: { brakes: true, tires: true }, driving: true, exited: true });
-  expect(Math.hypot(loaded.x - saved.x, loaded.z - saved.z)).toBeLessThan(0.1);
+  expect(loaded.atLoad).toEqual({ x: saved.x, z: saved.z, yaw: saved.yaw });
+  expect(Math.hypot(loaded.x - saved.x, loaded.z - saved.z), JSON.stringify({ loaded, saved })).toBeLessThan(0.1);
   expect(loaded.yaw).toBeCloseTo(saved.yaw, 2);
   expect(Math.abs(loaded.speed)).toBeLessThan(0.5);
+});
+
+test('E18 – panel měření ukazuje čas kroku, počet těles a při jízdě otáčky motoru', async ({ page }) => {
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0&hour=10'));
+  await page.waitForFunction(() => window.__ready);
+  await page.getByRole('button', { name: 'Hrát', exact: true }).click();
+  await page.evaluate(() => window.__game._enterCar(window.__game.player.lastCar));
+  await page.keyboard.press('F9');
+  const output = page.getByRole('textbox', { name: 'Výsledky měření výkonu' });
+  await expect(output).toHaveValue(/Krok fyziky [\d,]+ ms · tělesa \d+/);
+  if (process.env.PLZEN_TEST_PHYSICS !== 'old') {
+    await expect(output).toHaveValue(/Motor \d+ ot\/min · stupeň -?\d+ · podélný prokluz kol/);
+  }
 });

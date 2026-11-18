@@ -128,3 +128,41 @@ test('Jolt protne Wilsonův most, Rondel i vozovky a stropy Valíku ve výšce p
     physics.dispose();
   }
 });
+
+test('kola při přejezdu skutečné hranice dvou dlaždic nedostanou svislý ráz 0,5 m/s', async () => {
+  const { PlayerVehicle } = await import('../src/physics/vehicle.js');
+  const { CAR_TYPES } = await import('../src/entities/models.js');
+  const terrain = await pack('terrain.bin');
+  const w = Object.create(World.prototype);
+  Object.assign(w, { minX: terrain.header.x0, minZ: terrain.header.z0,
+    cols: (terrain.header.cols - 1) * terrain.header.g / 256, rows: (terrain.header.rows - 1) * terrain.header.g / 256,
+    tunnels: [] });
+  w._initTerrain(terrain);
+  w._initTerrainDetail(await pack('landscape.bin'));
+  w._initGradeTerrain(JSON.parse(await readFile(new URL('../public/data/grade-separations.json', import.meta.url))));
+  const physics = new PhysicsWorld(await loadJolt());
+  const x = -40, edge = w.minZ + Math.round(-w.minZ / 256) * 256;
+  const car = { type: CAR_TYPES.hatch, x, z: edge - 18, y: w.heightAt(x, edge - 18), yaw: 0,
+    vx: 0, vy: 0, vz: 0, speed: 0, steer: 0, health: 100 };
+  for (const z0 of [edge - 256, edge]) {
+    const ci = w.chunkIndex(x, z0 + 1), x0 = w.minX + ci % w.cols * 256;
+    const points = [];
+    terrainTriangles(w, ci, x0, z0, 256, (a, b, c) => points.push(...a, ...b, ...c));
+    staticMeshBody(physics, Float32Array.from(points));
+  }
+  const vehicle = new PlayerVehicle(physics, car);
+  let peak = 0, contact = true;
+  try {
+    for (let i = 0; i < 600 && car.z < edge + 6; i++) {
+      vehicle.drive(1 / 60, i < 60 ? 0 : 1, 0, i < 60, true, () => 1);
+      physics.engine.Step(1 / 60, 1);
+      vehicle.read();
+      if (Math.abs(car.z - edge) < 2) {
+        peak = Math.max(peak, Math.abs(car.vy));
+        contact &&= vehicle.wheels.every((wheel) => wheel.HasContact());
+      }
+    }
+    assert.ok(car.z > edge + 5 && contact);
+    assert.ok(peak < 0.5, 'Svislá rychlost na hraně ' + peak + ' m/s');
+  } finally { vehicle.dispose(); physics.dispose(); }
+});

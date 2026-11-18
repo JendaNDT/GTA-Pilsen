@@ -126,6 +126,13 @@ Po vjezdu do Valíku se na střední a vyšší kvalitě obraz postupně přizp�
 V menu **Nastavení → Kvalita grafiky** můžeš vybrat jednu ze čtyř předvoleb. Výchozí
 volba **Automaticky** přizpůsobí kvalitu zařízení podle prvních deseti sekund hraní.
 
+[E18 přidává odpružení, pneumatiky a automatickou převodovku auta](docs/E18.md).
+V **Nastavení → Řízení** si zvolíš arkádový nebo realistický režim. Klávesa **R**
+vrátí auto na nejbližší silnici. Pokud hru uložíš za volantem, při návratu
+najdeš stojící auto na uloženém místě. Původní jízdu můžeš porovnat přidáním
+`?physics=old` k adrese hry. V režimu `?debug` zobrazí **F8** povrchy pro
+fyziku a **F9** měření včetně otáček a prokluzu jednotlivých kol.
+
 Regresní testy kolizí, terénu, silničního grafu a distribuovaných dat:
 
 ```bash

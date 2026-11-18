@@ -48,9 +48,11 @@ export class Game {
     };
     physics.onImpact = (first, second, impulse) => this.driver?.recordImpact(first, second, impulse);
     physics.step = (dt) => {
+      const start = DEBUG ? performance.now() : 0;
       this.driver?.drive(dt, input.moveY, input.moveX, input.handbrake, this.steering === 'arcade', this.tireSurface);
       physics.engine.Step(dt, 1);
       this.driver?.read();
+      if (DEBUG) physics.lastStepMs = performance.now() - start;
     };
     this.renderer = renderer;
     this.scene = new THREE.Scene();
@@ -405,8 +407,24 @@ export class Game {
   unstuck() {
     const f = this.focus, w = this.world;
     if (this.mode === 'transit' || this.mode === 'heli') return;
-    const r = w.nearestRoad(f.x, f.z, 400, RC.LIVING, 0, _road, f.y);
+    let r = w.nearestRoad(f.x, f.z, 400, RC.LIVING, 0, _road, f.y);
     if (!r) return;
+    if (this.mode === 'car') {
+      const first = r;
+      const occupied = (obstacle, road) => obstacle !== f && Math.abs(obstacle.y - f.y) < 3
+        && Math.hypot(obstacle.x - road.x, obstacle.z - road.z) < f.halfLen + obstacle.halfLen + 1;
+      const free = (road) => !this.vehicles.cars.some((other) => occupied(other, road))
+        && !this.transit.obstacles.some((other) => occupied(other, road));
+      if (!free(first)) {
+        r = null;
+        for (const shift of [8, -8, 16, -16, 24, -24, 32, -32]) {
+          const candidate = w.nearestRoad(first.x + first.dx * shift, first.z + first.dz * shift,
+            6, RC.LIVING, 0, {}, f.y);
+          if (candidate && free(candidate)) { r = candidate; break; }
+        }
+        if (!r) { this.hud.toast('Silnice je obsazená. Zkus to za chvíli.'); return; }
+      }
+    }
     const tube = w.tunnelAt(r.x, r.z, f.y);
     const y = tube?.floor ?? w.roadSurfaceY(r.road, r.seg, r.t, r.x, r.z);
     if (this.mode === 'car') {

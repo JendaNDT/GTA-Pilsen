@@ -11,7 +11,7 @@ Autor potvrdil zahájení. [Zadání E18](E18.md) · [Protokol E17](../E17.md)
 | 4. Mostovky, Rondel, tunely a uzavírky | Hotovo |
 | 5. Auto hráče, ovládání a zvuk | Hotovo. Hra ukládá volbu řízení a zvuk sleduje otáčky motoru. |
 | 6. Poškození, garáž, návrat na silnici a uložení | Hotovo |
-| 7. Měření, ladění a protokol | Čeká |
+| 7. Měření, ladění a protokol | Jízdní zkoušky dokončené, čeká se na úplné ověření a PR. |
 
 ## Ověření
 
@@ -114,3 +114,19 @@ Klabavu do Rokycan (19,02 km). Největší zanoření spodního referenčního b
 auta vůči jízdní ploše bylo 0,162 m. Zkouška používá fyzikální kroky po 1/60 s,
 bez přemístění auta. Všechny dotčené testy JavaScriptu a sestavení prošly.
 Sedmý krok pokračuje zbývajícími jízdními zkouškami, měřením a úplnými sadami.
+
+## Závěrečné ověření
+
+Zkušební auto dojelo z Plzně k hamru v Dobřívě (29,78 km) a zpět (29,80 km).
+Každý směr trval přes 50 minut simulované jízdy. Prošly výšky kontaktů kol
+na Wilsonově mostě do 5 cm, průjezdy Valíkem, skok, dopad a zkouška na
+hraně dlaždic. V obou způsobech řízení prošlo také uložení a návrat na
+obsazenou silnici s výběrem volného místa. Prošlo 71 testů JavaScriptu,
+23 testů Pythonu a produkční sestavení. Pracovní protokol je v [E18](../E18.md).
+Na telefonu je ke zkoušce dostupná oprava lávky, veřejný přenos Jolt i střech
+má potvrzenou kompresi gzip.
+
+Obě kompletní sady po poslední opravě běží nad sestavením na portu 4194.
+Každá obsahuje 110 prohlížečových zkoušek. Výsledky sledovat v místních
+`data-raw/e18/krok7/final-new.log` a `data-raw/e18/krok7/final-old.log`.
+Po dokončení zapsat výsledky, uzavřít protokol a otevřít PR do main.
