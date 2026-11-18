@@ -123,3 +123,44 @@ test('malé auto drží na suchém padesátimetrovém kruhu boční zrychlení 0
     assert.ok(total / samples >= 0.85 && total / samples <= 0.95, 'Boční zrychlení ' + total / samples + ' g');
   } finally { close(); }
 });
+
+const { driveRoute } = await import('../src/game/ai-driver.js');
+
+for (const route of ['rovina', 'zatáčka', 'stop čára']) {
+  test('řidič AI na fyzikálním voze – ' + route, (t) => {
+    const { car, vehicle, close } = track('hatch');
+    const radius = 15, line = 46, dt = 1 / 60;
+    const startSpeed = route === 'stop čára' ? 50 / 3.6 : 5;
+    car.speed = car.vz = startSpeed;
+    vehicle.teleport();
+    let state, distance = 0, maxError = 0;
+    try {
+      for (let i = 0; i < 24 * 60; i++) {
+        const angle = Math.atan2(car.z, radius - car.x);
+        const sample = (look) => route === 'zatáčka'
+          ? { x: radius * (1 - Math.cos(angle + look / radius)), z: radius * Math.sin(angle + look / radius) }
+          : { x: 0, z: car.z + look };
+        const gap = route === 'stop čára' ? line - car.z - car.type.len / 2 : Infinity;
+        state = driveRoute(car, sample, startSpeed, gap, state, dt);
+        assert.ok(state.throttle >= 0 && state.throttle <= 1 && state.brake >= 0 && state.brake <= 1);
+        assert.ok(Math.abs(state.steer) <= 1 && state.throttle * state.brake === 0);
+        vehicle.controller.SetDriverInput(state.throttle, state.steer, state.brake, 0);
+        vehicle.physics.engine.Step(dt, 1);
+        vehicle.read();
+        distance += car.speed * dt;
+        if (route === 'zatáčka') maxError = Math.max(maxError, Math.abs(Math.hypot(car.x - radius, car.z) - radius));
+        if (route === 'rovina') maxError = Math.max(maxError, Math.abs(car.x));
+        if (route === 'stop čára') assert.ok(car.z + car.type.len / 2 <= line);
+      }
+      if (route === 'stop čára') {
+        t.diagnostic('Příď zastavila ' + (line - car.z - car.type.len / 2).toFixed(2) + ' m před čárou.');
+        assert.ok(line - car.z - car.type.len / 2 < 1, 'Vzdálenost před čárou ' + (line - car.z - car.type.len / 2));
+        assert.ok(Math.abs(car.speed) < 0.05);
+      } else {
+        t.diagnostic('Ujetá dráha ' + distance.toFixed(1) + ' m, největší odchylka ' + maxError.toFixed(2) + ' m.');
+        assert.ok(distance > 2 * Math.PI * radius);
+        assert.ok(maxError < 0.5, 'Největší odchylka ' + maxError);
+      }
+    } finally { close(); }
+  });
+}
