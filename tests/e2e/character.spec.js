@@ -57,3 +57,58 @@ test('E19 – vystoupení na mostě, v tunelu a po přistání na střeše', { t
     expect(Math.abs(sample.height - sample.expected), JSON.stringify(sample)).toBeLessThan(0.35);
   }
 });
+
+const historical = [[19, 0], [3070, 0]];
+const otherBridges = [[4074, 1], [341, 0], [344, 0], [499, 0], [496, 0], [3445, 0], [4166, 0],
+  [64, 0], [363, 0], [17658, 0], [31, 0], [253, 0], [2085, 0], [21571, 0], [665, 0], [2450, 0],
+  [9670, 0], [1839, 0]];
+
+async function runAtEdges(page, bridges) {
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0'));
+  await page.waitForFunction(() => window.__ready);
+  return page.evaluate((bridges) => {
+    const { world: w, player, colliders } = __game;
+    const results = [];
+    for (const [road, segment] of bridges) {
+      const k = w.rOff[road] + segment;
+      const x = (w.rpx[k] + w.rpx[k + 1]) / 2, z = (w.rpz[k] + w.rpz[k + 1]) / 2;
+      const y = (w.rpy[k] + w.rpy[k + 1]) / 2;
+      const dx = w.rpx[k + 1] - w.rpx[k], dz = w.rpz[k + 1] - w.rpz[k], length = Math.hypot(dx, dz);
+      const nx = -dz / length, nz = dx / length, width = w.deckHalfWidth(road);
+      for (let j = 0; j < 25; j++) colliders.update(x, z);
+      for (const side of [-1, 1]) {
+        player.place(x, z, y);
+        for (let j = 0; j < 200; j++) player.update(1 / 60, nx * side, nz * side, true, false);
+        // Po uvolnění směru se kapsle po styku s hranou schodu může usadit.
+        for (let j = 0; j < 60; j++) player.update(1 / 60, 0, 0, false, false);
+        const alongNormal = (player.x - x) * nx + (player.z - z) * nz;
+        results.push({ road, side, gap: width - side * alongNormal, grounded: player.grounded,
+          height: player.y - y, stone: w.archedBridges.has(road) });
+      }
+    }
+    return results;
+  }, bridges);
+}
+
+test('E19 – kamenné ohrazení zastaví běžce na obou stranách Švédského i Wilsonova mostu', { tag: '@webgpu' }, async ({ page }) => {
+  const samples = await runAtEdges(page, historical);
+  expect(samples).toHaveLength(4);
+  for (const s of samples) {
+    expect(s.stone).toBe(true);
+    expect(s.grounded, JSON.stringify(s)).toBe(true);
+    expect(Math.abs(s.height)).toBeLessThan(0.15);
+    expect(s.gap).toBeGreaterThan(0.7);
+    expect(s.gap).toBeLessThan(1.05);
+  }
+});
+
+test('E19 – zábradlí na silničních mostech a lávkách včetně Rondelu', { tag: '@webgpu' }, async ({ page }) => {
+  const samples = await runAtEdges(page, otherBridges);
+  expect(samples).toHaveLength(36);
+  for (const s of samples) {
+    expect(s.grounded, JSON.stringify(s)).toBe(true);
+    expect(Math.abs(s.height), JSON.stringify(s)).toBeLessThan(0.35);
+    expect(s.gap, JSON.stringify(s)).toBeGreaterThan(0);
+    expect(s.gap, JSON.stringify(s)).toBeLessThan(1.2);
+  }
+});

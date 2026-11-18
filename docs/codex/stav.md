@@ -7,7 +7,7 @@ Větev `etapa/E19` vychází z revize `fb29b92`. Autor potvrdil zahájení.
 | --- | --- |
 | 1. Fyzikální chůze, schody, svahy a pády | Hotovo |
 | 2. Střechy, mostovky, tunely a přestupy | Hotovo |
-| 3. Zábradlí a zobrazení kolizí | Čeká na rozhodnutí autora o nízkých mostech |
+| 3. Zábradlí a zobrazení kolizí | Rozpracováno. Kamenné zídky jsou ve hře, u souběžných mostovek se ověřuje umístění. |
 | 4. Kapsle okolních chodců a srážky | Čeká |
 | 5. Pády postav a vstávání | Čeká |
 | 6. Závěrečné zkoušky a protokol | Čeká |
@@ -58,7 +58,45 @@ zábradlí i s překážkou pro chodce. Mezi 956 úseky silnic a cest označený
 jako most (bez sdílených mostovek) zůstalo při stejném odečtu 540 po celé
 délce pod prahem. Jde o úseky mapových dat, jeden most může mít více úseků.
 
-Autor má určit, zda zachovat zábradlí na vlastním mostě a práh uplatnit jen na
-přechodech na souš, nebo práh uplatnit po celé délce i u těchto nízkých mostů.
-Odečet lze zopakovat místně příkazem `node data-raw/e19/vysky-mostu.mjs`.
-Do rozhodnutí čeká třetí krok. Profily mostů patří do E22.
+Autor určil, že na historických mostech s kamenným ohrazením má chodce zachytit
+samotná zídka. Na Švédský ani Wilsonův most se nepřidává další zábradlí.
+Pro ostatní úseky platí práh 1,5 m ze zadání. Výškový odečet lze zopakovat
+příkazem `node data-raw/e19/vysky-mostu.mjs`.
+
+### Třetí krok
+
+Vykreslování a fyzika používají stejné body okrajů a drátový pohled F8 zobrazuje
+i překážky pro chodce. Při rozběhu na vedlejší mostovku uměl Jolt vyzvednout
+kapsli na hranu. Změna polohy při takovém kroku se dříve přenesla do rychlosti
+jako skok. Oprava zachovává rychlost skutečného skoku a zabrání vymrštění
+postavy. Záznamy z obou verzí jsou v `data-raw/e19/stopy.json` a
+`data-raw/e19/vzorek-oprava.json`.
+
+Na Domažlické u bodu (−2137,60 m, 495,30 m) má silniční úsek 2256 poloviční
+šířku 5,60 m. Střed pěšího úseku 2450 leží 5,32 m od osy vozovky a jeho
+povrch je o 0,24 m výš. Silniční zábradlí proto protíná chodníkovou kapsli
+o poloměru 0,35 m už na ose pěší cesty. V datech chybí příznak sdílené
+mostovky. Na mostě K Prokopávce se dva profily liší ve výšce jen o 0,01 m
+a zábradlí pěšího úseku 4598 leží uvnitř mostovky úseku 665.
+Otevřená otázka pro autora se týká vedení zábradlí na takových překryvech:
+použít vnější obrys společné plochy nebo rozhodnout podle podkladů pro
+jednotlivé mosty.
+
+Při průchodu spodem pod Wilsonovým mostem vybrala zkouška střed řeky.
+Zkouška v původním čase řeku nepřekonala. V hlavní ose mostu vyšlo při
+vzorkování po 6,2 cm místo s největším odstupem od suchého terénu jen 4 cm
+pod mostovkou. Ověření průchodu pod mostem zůstává otevřené. Podklady
+jsou v `data-raw/e19/pruchod.log`.
+
+Prošlo všech 77 testů JavaScriptu včetně 100 náběhů pod různými úhly,
+produkční sestavení a obě kontroly rozpočtu nízké kvality. V závěrečném
+cíleném běhu prošlo šest z osmi prohlížečových kontrol. Obě kamenné zídky
+udržely hráče na Švédském i Wilsonově mostě ve WebGL 2 i WebGPU.
+[Snímek Švédského mostu](../E19/svedsky-most.jpg)
+
+V rozšířené zkoušce 18 dalších mostů včetně Rondelu neprošla v obou
+vykreslovačích výška postavy na úseku 363. Po puštění směru skončila 1,15 m
+nad výchozí úrovní. Po rozhodnutí o překrývajících se mostovkách znovu
+prověřit geometrii okolí, výšku při náběhu i po zastavení a oba směry
+u všech 20 mostů. Zkouška zůstává zapnutá ve stejné přesnosti. Výsledky jsou
+v `data-raw/e19/predani3.log`. Třetí krok zůstává otevřený.

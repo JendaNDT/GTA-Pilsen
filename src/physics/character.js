@@ -50,7 +50,9 @@ export class WalkingCharacter {
     let vertical = vy - 18 * dt;
     if (grounded && vy === 0 && character.GetGroundState() === physics.Jolt.EGroundState_OnGround) {
       const normal = character.GetGroundNormal();
-      vertical = -(normal.GetX() * player.vx + normal.GetZ() * player.vz) / normal.GetY();
+      if (normal.GetY() >= Math.SQRT1_2) {
+        vertical = -(normal.GetX() * player.vx + normal.GetZ() * player.vz) / normal.GetY();
+      }
     }
     velocity.Set(player.vx, vertical, player.vz);
     character.SetLinearVelocity(velocity);
@@ -60,7 +62,8 @@ export class WalkingCharacter {
     player.y = pos.GetY() - CENTER_HEIGHT;
     player.z = pos.GetZ();
     player.grounded = character.GetGroundState() === physics.Jolt.EGroundState_OnGround && !takingOff;
-    player.vy = player.grounded ? 0 : (player.y - previousY) / dt;
+    // Vysunutí kapsle z hrany či pomocný krok na schod jí nesmějí udělit rychlost skoku.
+    player.vy = player.grounded ? 0 : Math.min(vy - 18 * dt, (player.y - previousY) / dt);
     if (grounded) player.fallStart = previousY;
     player.fallStart = Math.max(player.fallStart, player.y);
     return !grounded && player.grounded ? Math.max(0, player.fallStart - player.y - 5) * 6 : 0;

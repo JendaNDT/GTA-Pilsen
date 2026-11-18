@@ -20,14 +20,16 @@ export class CollisionView {
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     const mesh = new THREE.Mesh(geometry, this.material);
     mesh.renderOrder = 100;
-    this.tiles.set(ci, mesh);
+    if (!this.tiles.has(ci)) this.tiles.set(ci, []);
+    this.tiles.get(ci).push(mesh);
     this.group.add(mesh);
   }
 
   remove(ci) {
-    const mesh = this.tiles.get(ci);
-    this.group.remove(mesh);
-    mesh.geometry.dispose();
+    for (const mesh of this.tiles.get(ci)) {
+      this.group.remove(mesh);
+      mesh.geometry.dispose();
+    }
     this.tiles.delete(ci);
   }
 }

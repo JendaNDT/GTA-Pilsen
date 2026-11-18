@@ -96,3 +96,42 @@ test('chodec odsune lehký předmět a neodtlačí zabrzděné auto', async () =
   const light = push(8, layers.DEBRIS), heavy = push(1200, layers.VEHICLE);
   assert.ok(light > 0.5 && Math.abs(heavy) < 0.02, JSON.stringify({ light, heavy }));
 });
+
+test('zábradlí zastaví běžící kapsli při sto různých úhlech náběhu', async () => {
+  const { bridgeEdges, railingFaces } = await import('../src/physics/railings.js');
+  const { densePath } = await import('../src/world/road-profile.js');
+  const physics = new PhysicsWorld(await loadJolt());
+  const pairs = physics.engine.GetObjectLayerPairFilter();
+  assert.equal(pairs.ShouldCollide(layers.CHARACTER, layers.RAILING), true);
+  assert.equal(pairs.ShouldCollide(layers.VEHICLE, layers.RAILING), false);
+  const floor = staticMeshBody(physics, Float32Array.from([
+    -25, 0, -4, -25, 0, 4, 25, 0, -4, 25, 0, -4, -25, 0, 4, 25, 0, 4,
+  ]));
+  const path = densePath([-25, 25], [0, 0], [0, 0], 0, 1, 0, 1, Infinity);
+  const geometry = (type, ground) => {
+    const triangles = [];
+    bridgeEdges({ heightAt: () => ground }, path, 4, type, edge =>
+      railingFaces(edge, (a, b, c, d) => triangles.push(...a, ...b, ...c, ...a, ...c, ...d)));
+    return Float32Array.from(triangles);
+  };
+  assert.equal(geometry('open', -1).length, 0);
+  assert.ok(geometry('stone', -0.4).length > 0);
+  for (const type of ['open', 'stone']) {
+    const rail = staticMeshBody(physics, geometry(type, -3), layers.RAILING);
+    for (let i = 0; i < 50; i++) {
+      const index = 2 * i + Number(type === 'stone');
+      const angle = (index - 49.5) / 100 * Math.PI * 0.75, side = i % 2 ? 1 : -1;
+      const p = { x: 0, y: 0, z: 0, grounded: true, vy: 0, fallStart: 0,
+        vx: Math.sin(angle) * 6.4, vz: side * Math.cos(angle) * 6.4 };
+      const walker = new WalkingCharacter(physics, p);
+      for (let j = 0; j < 150; j++) walker.move(1 / 60, p, false);
+      assert.ok(p.grounded && p.z * side > 2.8 && p.z * side < 3.8, JSON.stringify({ type, i, p }));
+      walker.dispose();
+    }
+    physics.bodies.RemoveBody(rail.GetID());
+    physics.bodies.DestroyBody(rail.GetID());
+  }
+  physics.bodies.RemoveBody(floor.GetID());
+  physics.bodies.DestroyBody(floor.GetID());
+  physics.dispose();
+});
