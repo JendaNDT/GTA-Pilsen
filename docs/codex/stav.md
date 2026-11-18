@@ -160,6 +160,8 @@ Změna způsobu testování vychází z výše uvedených úplných místních v
 Po úpravě nastavení na Macu znovu prošlo 71 testů JavaScriptu, 23 testů Pythonu,
 kontrola syntaxe nástrojů a produkční sestavení. Audit závislostí ohlásil nula nálezů.
 
-Zbývá kontrola autora podle [protokolu](../E18.md#kontrola-pro-autora), včetně
-vyzkoušení na skutečném telefonu. Doporučený model pro kontrolu je Astra, High.
+Autor potvrdil, že E18 funguje i na jeho telefonu. Po zápisu prošlo všech
+71 místních testů JavaScriptu včetně kontroly dokumentace a produkční sestavení.
+Podrobnosti k jízdním zkouškám obsahuje [protokol](../E18.md#kontrola-pro-autora).
+Pro kontrolu před sloučením plán doporučuje model Astra s úrovní uvažování High.
 [Návrh na sloučení E18 do mainu](https://github.com/JendaNDT/GTA-Pilsen/pull/11)
