@@ -10,7 +10,7 @@ Větev `etapa/E20` vychází ze sloučené etapy E19 na revizi `10832b4`. [Zadá
 | 4. MHD a směny | Hotovo. Články vozidel, odstrčení auta, rozjezdy a brzdění ve směnách. |
 | 5. Vrtulník | Hotovo. Let s asistencí, přistání na střeše a na heliportu. |
 | 6. Voda | Hotovo. Vztlak a odpor vody, pozvolné potopení auta a plavání ke břehu. |
-| 7. Závěrečné scénáře, výkon a protokol | Rozpracováno. Prošly samostatné zkoušky míjení v Barrandově, světel v Tylově, směn i četnosti průjezdů na Klatovské. Výkon při 40 autech splnil rozpočet. V desetiminutové špičce přetrvává dlouhé stání na Klatovské a na Železniční, kde bylo zaznamenáno i vyjetí z vozovky. Pak zbývá celkové ověření, protokol a žádost o sloučení. Podrobnosti jsou na konci souboru. |
+| 7. Závěrečné scénáře, výkon a protokol | Rozpracováno. Prošly samostatné zkoušky míjení v Barrandově, světel v Tylově, směn i četnosti průjezdů na Klatovské. Před křižovatkou s Husovou už řidič může změnit směr, když jeho výjezd blokuje vrak. Poslední výsledky a zbývající kontroly jsou na konci souboru. |
 
 ## Otevřené otázky
 
@@ -19,6 +19,8 @@ Kontrolním údajem je kóta dna u Wilsonova mostu v městské tabulce. Poppler 
 Měřené příčné profily nebudou potřeba. [Tabulka města](https://gis.plzen.eu/foto/pov_model/profily/PM_Psany_PP.pdf)
 
 Autor schválil, že cizí nepojízdné auto může hra odklidit po minutě stání, jakmile je celé mimo záběr. Hráčovo poslední auto, právě řízené auto a auto z garáže jsou chráněná.
+
+Autor schválil také změnu směru před křižovatkou, pokud původní výjezd blokuje vrak. Běžný řidič může zvolit jiný volný směr povolený z jeho dosavadního pruhu. Žádost o sloučení se po úspěšné kontrole otevře přes připojený GitHub v Codexu.
 
 ## Ověření
 
@@ -187,3 +189,34 @@ Před uložením prošlo 99 z 99 testů JavaScriptu, 23 z 23 testů Pythonu v pr
 **Navázání v kroku 7:** Při doplňujícím pozorování byla u Husovy po 210 sekundách stání před autem zelená (semafor 3073913700, 28439 → 1423). Uložené polohy a rychlosti okolních aut jsou v `data-raw/e20/tylova-posledni-fronty-Klatovská.json`. Podle nich ověřit, co na zelenou skutečně zabírá výjezd v místě napojení na Husovu. Na Železniční projetí samotného malého auta, sedanu i dodávky vyšlo ve všech šesti pokusech. Polovina vyjížděla ze začátku úseku 20737, druhá z klidu z místa zaznamenaného stání. Všechny vozy dojely na 518 a udržely se na vozovce (`data-raw/e20/zeleznicni-20737-prujezd.json`). V dalším pozorování u nádraží bylo nejdelší stání 109 s a žádné vyjetí. Pro zachycení příčiny při opakování lze spustit `node data-raw/e20/tylova-posledni-fronty.mjs 'hlavní nádraží'` nad místním produkčním sestavením. Zaznamenává polohy okolních vozů, kontakt kol s vozovkou, směr, rychlost a požadavek řidiče.
 
 Po opravách znovu spustit obě desetiminutové zkoušky, celou sadu a měření při 40 autech. K uzavření E20 zbývá protokol se snímky, README, katalog a žádost o sloučení do `main`. Od autora teď nejsou potřeba fotografie, měření ani rozhodnutí.
+
+#### Pokračování po revizi `cd85f0d`
+
+Na Americké se fronta protáhla až ke třem vozům MHD. Dva protijedoucí řidiči taxi chtěli odbočit vlevo (27738 → 56972 a 56968 → 56970). I po 490 sekundách si stále dávali přednost navzájem. Společná zkouška původní chování zopakovala. Po rozpoznání dvojice levých odbočení i před místem míjení oba taxíky projely a jejich karoserie se při žádném kroku nedotkly. Údaje jsou v `data-raw/e20/dodelani-zelena-Klatovská.json` a `americka-taxi-{pred,po}.log`.
+
+Na Husově projely při běžném příjezdu od stopčar všechny čtyři vozy. Záznam celé ranní špičky ale znovu zachytil dvě auta s levým odbočením a dvě těsně za nimi už uvnitř křižovatky. Dodávka a pickup ve vnitřních výjezdových pruzích zůstaly stát přes osm minut. V samostatném pokusu se dvěma volnými vnějšími výjezdovými pruhy všechna čtyři auta projela, v nejtěsnějším místě je dělilo 36 cm. Příčinou a rozměry se zabývají `data-raw/e20/zaznam-rozjezdu-Klatovská.json` a `dodelani-pruhy-mezery.jsonl`.
+
+Při volbě pruhu se kontroluje místo za koncem oblouku. Příčný provoz před tímto místem řidič během odbočování dál sleduje. Zkoušky s oběma volbami výjezdu i obsazeným druhým pruhem prošly. Obě desetiminutové zkoušky na této dílčí verzi skončily s 72 s na Klatovské a 53,5 s u nádraží bez vyjetí. V následném běhu se u Husovy ocitlo taxi již za stopčárou před levou zatáčkou protijedoucího auta. Stálo 470 s. Při samostatném opakování nová zkouška na původním řízení zachytila předčasné překročení čáry a následné uváznutí.
+
+Řidič před levým odbočením nyní vyčká před vstupní čarou, dokud dříve vjeté auto neuvolní společnou část obou tras. Řidič v souběžném volném pruhu může pokračovat. Zkouška rozjezdu z protějších stran prošla. Při nočním běhu původní zkoušky fronty v Tylově chyběl spoj tramvaje 4 z Univerzity. Pro tuto zkoušku je nyní zvolen pracovní den v 7.30. Znovu prošla s původním požadavkem na průjezd skutečné tramvaje přes volné koleje (`data-raw/e20/prednost-prujezd.log`).
+
+Další pozorování našlo v cestě ze sadů havarovanou dodávku. Řidič před zelenou měl obsazené levé odbočení a volnou cestu rovně po Klatovské. Přesných 128,5 s čekání je v `data-raw/e20/rezervace-prubeh-Klatovská.json`, porovnání výjezdů je v `vrak-mozne-smery.json`. Na Železniční projela všechna tři zkušební vozidla také z příjezdu 29310 přes 20737 až na 518. Při následných pozorováních bylo nejdelší stání u nádraží 53,5 s a 55,5 s, oba běhy bez vyjetí z vozovky.
+
+Řidič, který stojí před čárou a má ve výjezdu havarovaný vůz, nově posoudí i další povolené směry ze svého jízdního pruhu. Přes krátké spojky sleduje, zda je na konci místo pro celé auto. Před červenou dál čeká. Pokud jsou všechny výjezdy obsazené nebo původní výjezd blokuje běžná kolona, zachová původní trasu. Zkouška v sadech používá skutečnou polohu dodávky ze záznamu a ověřuje všechny tři situace.
+
+#### Výsledky po zavedení objížďky
+
+Před opravou zůstal řidič v samostatné zkoušce na původní trase 1423. Po opravě projel přes 19355 rovně po Klatovské. Při ucpání všech výjezdů zůstal před čárou. Po nahrazení vraku běžným stojícím autem ponechal původní odbočení. Ze 30 cílených prohlížečových zkoušek prošlo 29 včetně těchto tří situací, jízdy MHD v Tylově, front na Husově, celé sady fyzického provozu a porovnání počtu průjezdů ve špičce a o víkendu. Prošlo 100 ze 100 testů JavaScriptu, 23 z 23 testů Pythonu a produkční sestavení. Záznamy jsou v `data-raw/e20/objizdka-{pred,ove,node,python,build}.log`.
+
+| Deset minut ráno | Různá auta s fyzikou | Nejvíce současně | Nejdelší stání | Polohy mimo vozovku pod plynem |
+| --- | ---: | ---: | ---: | ---: |
+| Klatovská | 137 | 40 | 130 s | 0 |
+| Hlavní nádraží | 81 | 40 | 60 s | 0 |
+
+Jedinou neúspěšnou zkouškou z této skupiny byla Klatovská. Taxi ze Smetanových sadů stálo od 266. do 396. sekundy u světla 10274015045. Při zelené mu stál v cestě vůz odbočující z jeho pruhu, autobus 41 a později vozy linky 4. Po uvolnění kolejí už svítila oranžová. Taxi vyjelo na další zelenou. Všechny čtyři pneumatiky měly kontakt se zemí. Obě samostatná sledování potvrdila tentýž průběh. Polohy jsou v `data-raw/e20/objizdka-ove/*/pozorovani.json`; stav světel a jednotlivých vozů po sekundách v `smetanovy-cary-Klatovská.json`.
+
+Původní měření začínalo čekat na hustý provoz ještě před načtením okolí. Během vlastního měření bylo současně jen 37 aut, takže tento pokus nesplnil požadovanou zátěž. Nástroj teď nejdřív načte okolí a počká na 40 přirozeně přijíždějících vozů. Naměřil 605 kroků fyziky a v 95 % z nich čas do 3,8 ms při rozpočtu 4 ms. Současně mělo fyziku až 40 aut, z toho až 25 řídila hra. [Měřicí nástroj](../../tools/measure_map.mjs). Oba záznamy jsou v `data-raw/e20/objizdka-vykon{,-plna}.json`.
+
+Běh úplné sady zahájený na předchozím sestavení byl ukončen po 35 úspěšných zkouškách a jedné chybě. Při zkoušce rozvozu se přerušilo stažení leteckého snímku `8_11.webp`. Při samostatném zopakování na sestavení s objížďkou stejná zkouška prošla včetně kontroly načtených souborů (`data-raw/e20/objizdka-rozvoz.log`). Úplné ověření výsledného sestavení zbývá.
+
+**Navázání v E20, krok 7.** Příčinu fronty lze hledat před příjezdem taxi. V čase 254,33 s fyzika zaznamenala nehodu kombi při vjezdu z 28439 na 1423. V tom okamžiku jelo kombi 8,0 m/s a na jeho levé straně byl autobus 41 jedoucí rychlostí 6,3 m/s. Havarované kombi pak stálo 5,1 m od čela autobusu, který už vjel do křižovatky. Autobus měl zavřené dveře. Záznam nárazu a následného stání je v `data-raw/e20/smetanovy-nehoda-Klatovská.json` a `smetanovy-linka41-Klatovská.json`. V další zkoušce od obou vstupních čar zjistit, kdo vjel na zelenou první, a ověřit bezpečný průjezd autobusu 41 a kombi bez dotyku. Zachovat pravidla pro červenou, přednost i odklízení vraku. Potom zopakovat obě desetiminutové zkoušky, měření při 40 autech a úplnou sadu. Zbývá protokol `docs/E20.md` se snímky, záznam v README a katalogu a žádost o sloučení do `main` přes připojený GitHub. Další rozhodnutí ani podklady od autora nejsou potřeba.

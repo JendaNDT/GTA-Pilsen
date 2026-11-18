@@ -231,3 +231,17 @@ test('pěší kapsle se u země vysune od sloupu a nad sloupem má volno', () =>
   assert.equal(world.collideStreetObjects(hit, 0.35, 3), false);
   assert.equal(hit.x, 2.1);
 });
+test('před levým odbočením řidič nechá projet rozjetý protisměr a vedlejší průběžný pruh zůstává volný', () => {
+  const traffic = Object.create(Traffic.prototype), group = {};
+  const head = { group, tx: 0, tz: 1 }, opposite = { group, tx: 0, tz: -1 };
+  const first = { control: head, lane: -1.8, left: true };
+  const leader = { mode: 'ai', junctionMovement: first };
+  const driver = { type: { wid: 1.8 } };
+  const waiting = (control, lane, left) => traffic.turnInProgress(driver, { control, lane, left }, [leader]);
+  assert.equal(waiting(opposite, 1.8, true), first);
+  assert.equal(waiting(head, -1.8, false), first);
+  assert.equal(waiting(head, 1.8, false), undefined);
+  assert.equal(waiting(opposite, 1.8, false), undefined);
+  leader.junctionMovement = null;
+  assert.equal(waiting(opposite, 1.8, true), undefined);
+});

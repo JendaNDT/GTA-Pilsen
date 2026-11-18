@@ -1,6 +1,6 @@
 // Auta: jízdní fyzika hráče, běžný provoz, zaparkovaná auta a policie.
 import { driveRoute } from '../game/ai-driver.js';
-import { divergingLeftTurns, laneTurn, oncomingDistance, pathClearance, turnDistance, turnPoint } from '../game/ai-turn.js';
+import { opposingLeftTurns, laneTurn, oncomingDistance, pathClearance, turnDistance, turnPoint } from '../game/ai-turn.js';
 import * as THREE from 'three/webgpu';
 import { CAR_TYPES, CAR_COLORS, makeCarMesh } from './models.js';
 import { QUALITY, RC, RF, DRIVABLE_MAX, CHUNK } from '../config.js';
@@ -43,6 +43,8 @@ export class Car {
   /** Postaví auto na místo; bez výšky na zem (hint = výška, ze které se hledá povrch, např. pro most). */
   place(x, z, yaw, hint = null) {
     this.enteredSignal = null;
+    this.junctionMovement = null;
+    this.nextDetourCheck = 0;
     this.upcomingLeft = null;
     this.queued = false;
     this.pathBlocked = false;
@@ -288,13 +290,12 @@ export class VehicleManager {
     return true;
   }
 
-  _nextMove(e, context, lane) {
+  _movesFrom(e, context, lane) {
     const w = this.world;
     const node = w.eTo[e];
     const rev = w.reverseEdge(e);
     this._edgeTangent(e, true, _pt);
     const ex = _pt.tx, ez = _pt.tz;
-    let total = 0, compatible = 0;
     const cands = [];
     const approach = w.eRoad[e];
     const divided = (w.r.flags[approach] & RF.ONEWAY) && w.r.lanes[approach] >= 2 && lane;
@@ -312,33 +313,105 @@ export class VehicleManager {
       const turn = ex * _pt2.tz - ez * _pt2.tx;
       const fits = !divided || cos > 0.85 || lane * turn > 0;
       cands.push({ edge: f, wt, cos, turn, fits });
-      if (fits) compatible += wt;
-      total += wt;
     }
+    return cands;
+  }
+
+  _moveTo(e, lane, { edge: to, cos, turn }) {
+    return { from: e, to, lane: this._laneFor(to, cos > 0.85 ? lane : turn),
+      slow: cos > 0.92 ? 99 : 3.8 + 7 * Math.max(0, cos) };
+  }
+
+  _nextMove(e, context, lane) {
+    const cands = this._movesFrom(e, context, lane);
     if (!cands.length) {
-      if (rev >= 0 && w.turnContext(e, rev, context) >= 0) {
+      const rev = this.world.reverseEdge(e);
+      if (rev >= 0 && this.world.turnContext(e, rev, context) >= 0) {
         return { from: e, to: rev, lane: this._laneFor(rev), slow: 2.5 };
       }
       return { from: e, to: -1, lane: 0, slow: 99 };
     }
-    let r = Math.random() * (compatible || total), pick;
-    for (const candidate of cands) {
-      if (compatible && !candidate.fits) continue;
+    const compatible = cands.filter(candidate => candidate.fits);
+    const choices = compatible.length ? compatible : cands;
+    let r = Math.random() * choices.reduce((sum, candidate) => sum + candidate.wt, 0), pick;
+    for (const candidate of choices) {
       pick = candidate;
       r -= pick.wt;
       if (r <= 0) break;
     }
-    const { edge: to, cos, turn } = pick;
-    return { from: e, to, lane: this._laneFor(to, cos > 0.85 ? lane : turn), slow: cos > 0.92 ? 99 : 3.8 + 7 * Math.max(0, cos) };
+    return this._moveTo(e, lane, pick);
+  }
+
+  _detourAroundWreck(car) {
+    const w = this.world, traffic = w.traffic, state = car.trafficStop, rule = state?.rule;
+    if (!rule || rule.edge !== car.edge || car.finishingTurn || car.enteredSignal && car.enteredSignal.group === rule.group ||
+        traffic.time < car.nextDetourCheck) return;
+    const gap = rule.s - car.s - car.halfLen;
+    if (gap < 0 || gap > 4 || w.eLen[car.edge] - rule.s > 27) return;
+    car.nextDetourCheck = traffic.time + 2;
+    if (!this.cars.some(other => other.crashed && (other.mode === 'loose' || other.mode === 'parked') &&
+        Math.hypot(other.x - car.x, other.z - car.z) < 65 && traffic.exitBlocked(car, rule, [other], []))) return;
+
+    // Projdeme povolené výjezdy ze stávajícího pruhu. Křižovatka může mít
+    // více krátkých spojek před místem, kde se za odbočením vejde celé auto.
+    const others = this.cars.filter(other => other !== car);
+    const paths = [{ edge: car.edge, lane: car.lane, context: car.turnContext, moves: [] }];
+    for (let i = 0; i < paths.length; i++) {
+      const { edge, lane, context, moves } = paths[i];
+      const choices = this._movesFrom(edge, context, lane).filter(c => c.fits).sort((a, b) => b.cos - a.cos);
+      for (const choice of choices) {
+        if (choice.edge === car.edge || moves.some(m => m.to === choice.edge)) continue;
+        const move = this._moveTo(edge, lane, choice);
+        this._planTurn(car, edge, lane, move);
+        const path = [...moves, move];
+        if (w.eLen[move.to] < Math.max(12, car.type.len + 7)) {
+          if (path.length < 4) paths.push({ edge: move.to, lane: move.lane,
+            context: w.turnContext(edge, move.to, context), moves: path });
+          continue;
+        }
+        const [first, ...rest] = path;
+        const trial = { edge: car.edge, lane: car.lane, y: car.y, halfLen: car.halfLen, radius: car.radius,
+          next: first.to, nextLane: first.lane, exitPlan: rest };
+        if (traffic.exitBlocked(trial, rule, others, this.obstacles)) continue;
+        car.exitPlan = path;
+        this._pickNext(car);
+        state.movement = undefined;
+        state.yieldingTo = null;
+        state.crossing = false;
+        return;
+      }
+    }
+  }
+
+  _planTurn(car, edge, lane, move) {
+    const w = this.world;
+    if (move.turn !== undefined) return;
+    const route = { type: car.type, edge, lane, next: move.to, nextLane: move.lane };
+    move.turn = move.to < 0 ? null : laneTurn(w, route);
+    if (!move.turn || move.turn.sign >= 0 || move.turn.entry >= car.halfLen ||
+        w.eLen[edge] > car.type.len * 2 || move.lane >= 0) return;
+    const road = w.eRoad[move.to];
+    if (!(w.r.flags[road] & RF.ONEWAY) || w.r.lanes[road] < 2 || w.busContraflow.has(road)) return;
+    // Na krátké spojce dělené křižovatky by záď ještě zasahovala do předchozího
+    // křížení. Ve volném druhém pruhu může celé auto před odbočením popojet rovně.
+    route.nextLane = this._laneFor(move.to, 1);
+    const outer = laneTurn(w, route);
+    if (!outer || outer.entry < car.halfLen) return;
+    const end = outer.exit + car.type.len + 2;
+    if (end <= w.eLen[move.to] && !w.traffic.laneOccupied(car, move.to, route.nextLane,
+      outer.exit + car.halfLen, end, this.cars, this.obstacles)) {
+      move.turn = outer;
+      move.lane = route.nextLane;
+    }
   }
 
   _pickNext(car) {
     if (car.exitPlan[0]?.from !== car.edge) car.exitPlan.length = 0;
     const move = car.exitPlan.shift() ?? this._nextMove(car.edge, car.turnContext, car.lane);
+    this._planTurn(car, car.edge, car.lane, move);
     car.next = move.to;
     car.nextLane = move.lane;
     car.turnSlow = move.slow;
-    if (move.turn === undefined) move.turn = car.next >= 0 ? laneTurn(this.world, car) : null;
     car.plannedTurn = move.turn;
   }
 
@@ -349,6 +422,7 @@ export class VehicleManager {
     // Stejná rozhodnutí použije auto při průjezdu, i když spojka sama nepojme celé auto.
     while (distance < 42 && car.exitPlan.length < 3) {
       const move = this._nextMove(edge, context, lane);
+      this._planTurn(car, edge, lane, move);
       car.exitPlan.push(move);
       if (move.to < 0) break;
       context = w.turnContext(edge, move.to, context);
@@ -423,8 +497,9 @@ export class VehicleManager {
       const tx = Math.sin(other.yaw), tz = Math.cos(other.yaw);
       const speed = Math.max(0, other.vx * tx + other.vz * tz);
       if (other.queued && speed < 0.5 && other.blocked > 0.5) continue;
+      if (speed < 0.5 && car.junctionMovement && other.trafficStop?.yieldingTo === car.junctionMovement) continue;
       const opposing = other.upcomingLeft;
-      if (divergingLeftTurns(turn, opposing)) {
+      if (opposingLeftTurns(turn, opposing)) {
         const b = opposing.start, otherDistance = (b.x - other.x) * b.tx + (b.z - other.z) * b.tz;
         // Obě auta odbočují vlevo. Druhé počká před místem, kde první vůz
         // protne jeho pruh, jinak mohou obě čela ve společném prostoru uváznout.
@@ -452,6 +527,7 @@ export class VehicleManager {
 
   stepAI(car, dt, physical = null) {
     const w = this.world;
+    if (car.blocked > 2 && Math.abs(car.speed) < 0.3) this._detourAroundWreck(car);
     if (car.finishingTurn && car.finishingTurn.to !== car.edge) car.finishingTurn = null;
     let turn = car.finishingTurn ?? car.plannedTurn;
     let arcDistance = 0;
@@ -506,8 +582,7 @@ export class VehicleManager {
       for (const move of car.exitPlan) {
         // Na krátké spojce už nemusí zbývat dost místa k zastavení před protisměrem.
         if (!leftTurn && distance < 18 && move.to >= 0) {
-          if (move.turn === undefined) move.turn = laneTurn(w, { type: car.type, edge: move.from,
-            next: move.to, lane, nextLane: move.lane });
+          this._planTurn(car, move.from, lane, move);
           if (move.turn?.sign < 0) {
             leftTurn = move.turn;
             leftDistance = distance + leftTurn.entry;
@@ -625,6 +700,7 @@ export class VehicleManager {
     const target = w.edgePoint(e, s, lane, _pt);
     if (Math.hypot(target.x - car.x, target.z - car.z) > Math.max(1.25, w.r.w[r.road] / 4)) return false;
     car.edge = e; car.s = s; car.lane = lane; car.turnContext = 0; car.trafficStop = null;
+    car.enteredSignal = null; car.junctionMovement = null;
     car.finishingTurn = null;
     car.exitPlan.length = 0;
     car.mode = car.wasAI === 'police' && this.game.wanted > 0 ? 'police' : 'ai';

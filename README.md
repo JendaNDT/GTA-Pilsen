@@ -268,6 +268,7 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 ## Zdroje a licence dat
 
 - Fyziku počítá [Jolt Physics 1.1.1](https://github.com/jrouwe/JoltPhysics.js) od Jorrita Rouweho ([licence MIT](https://github.com/jrouwe/JoltPhysics.js/blob/main/LICENSE)).
+- Tvar říčního dna je vlastní herní odhad podle vzdálenosti od břehu. Pro kontrolu výšky u Wilsonova mostu sloužil profil R19. [Povodňový model města Plzně](https://gis.plzen.eu/foto/pov_model/profily/PM_Psany_PP.pdf).
 
 - Grafiku vykresluje [three.js 0.187.0](https://github.com/mrdoob/three.js/tree/r187),
   autoři three.js, [licence MIT](https://github.com/mrdoob/three.js/blob/r187/LICENSE).

@@ -76,10 +76,6 @@ try {
             entry.curve.id === 'klatovska-jih' && entry.distance === 0);
           const p = world.edgePoint(edge, 58, 0, {});
           game.player.place(p.x - p.tz * 10, p.z + p.tx * 10);
-          for (let i = 0; i < 3600; i++) {
-            game.update(1 / 30);
-            if (game.trafficBodies.dynamic.size === 40) break;
-          }
         } else if (mode === 'car') {
           const [x, z] = site === 'Hrádek' ? [19592, 4145] : pilot ? [45, -48] : [90, 530];
           const road = world.nearestRoad(x, z, 120, 13, 0, {});
@@ -110,6 +106,14 @@ try {
             if (performance.now() > deadline) throw new Error('Okolí měření se nestihlo dostavět.');
           } while (built || game.chunks.pending || game.chunks.heritage.fetching || game.chunks.orthophotoPending);
           window.__step(1 / 60);
+          if (mode === 'traffic') {
+            // Po načtení okolí necháme přijet běžný ranní provoz. Měření začne při plném počtu aut.
+            for (let i = 0; i < 10 * 60 * 30 && game.trafficBodies.dynamic.size < 40; i++) {
+              game.update(1 / 30);
+              if ((i + 1) % 300 === 0) await new Promise(requestAnimationFrame);
+            }
+            if (game.trafficBodies.dynamic.size !== 40) throw new Error('Na Klatovské se během deseti herních minut nesešlo 40 fyzikálních aut.');
+          }
           await new Promise(requestAnimationFrame);
           await new Promise(requestAnimationFrame);
           window.__freeze(false);

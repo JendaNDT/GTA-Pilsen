@@ -76,15 +76,13 @@ export function turnPoint(turn, distance, out) {
   return out;
 }
 
-export function divergingLeftTurns(first, second) {
+export function opposingLeftTurns(first, second) {
   if (!second || first.sign >= 0 || second.sign >= 0) return false;
   const a = first.start, b = second.start;
   if (a.tx * b.tx + a.tz * b.tz > -0.9) return false;
-  const dx = a.x - b.x, dz = a.z - b.z;
-  // Protější pruhy téže křižovatky. Když se začátky oblouků již minuly,
-  // oba řidiči zatáčejí od sebe a nepotřebují čekat na průjezd rovně.
-  return Math.hypot(dx, dz) < first.radius + second.radius &&
-    dx * a.tx + dz * a.tz >= 0 && dx * b.tx + dz * b.tz <= 0;
+  // Oba oblouky patří do téže křižovatky také tehdy, když řidiči
+  // začnou odbočovat ještě před místem, kde by se při jízdě rovně minuli.
+  return Math.hypot(a.x - b.x, a.z - b.z) < first.radius + second.radius;
 }
 
 // Vzdálenost po ose protijedoucího auta do místa, kde ji protne levé odbočení.

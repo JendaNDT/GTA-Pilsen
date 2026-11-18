@@ -368,6 +368,9 @@ export class Traffic {
     if (signal) {
       const color = this.light(control);
       stop = color === 'red' || (color === 'amber' && speed ** 2 < 11 * Math.max(0, distance));
+      if (checkExit && control.directedHead && distance < 22 && state.movement === undefined) {
+        state.movement = this.junctionMovement(car, control);
+      }
     } else {
       // U auta je distance měřena od bodu 45 cm před nárazníkem.
       if (distance <= 0.5 && Math.abs(speed) < 0.18) state.held += dt;
@@ -376,12 +379,46 @@ export class Traffic {
       stop = !ready || (distance < 22 && this.conflict(car, control, others, extra));
     }
     // Při povinném zastavení před stejnou čárou stačí zkoumat výjezd až při rozjezdu.
-    if (!stop && checkExit) stop = this.exitBlocked(car, control, others, extra);
+    state.yieldingTo = null;
+    if (!stop && checkExit) {
+      if (state.movement) state.yieldingTo = this.turnInProgress(car, state.movement, others);
+      stop = !!state.yieldingTo || this.exitBlocked(car, control, others, extra);
+    }
+    state.crossing = !stop && checkExit && control.directedHead && speed > 0 && distance < 2;
     if (stop) stopping?.(distance + 0.45);
     else if (checkExit && control.directedHead && limit > 0 && speed > 0 && distance <= speed * dt) {
       this.enterJunction(car, control);
     }
     return stop ? Math.min(limit, stopDistance(distance, dt)) : limit;
+  }
+
+  junctionMovement(car, control) {
+    const w = this.world;
+    if (car.next < 0 || w.eLen[car.edge] - control.s > 27) return null;
+    let edge = car.next, turn = car.plannedTurn, width = w.r.w[w.eRoad[car.edge]];
+    for (const move of car.exitPlan) {
+      if (move.from !== edge || move.to < 0 || w.eLen[edge] >= 12) break;
+      width = Math.max(width, w.r.w[w.eRoad[edge]]);
+      edge = move.to;
+      turn = move.turn;
+    }
+    const exit = w.edgePoint(edge, turn?.exit ?? 0, 0, {});
+    const left = control.tx * exit.tz - control.tz * exit.tx < -0.35;
+    return { control, lane: car.lane, edge, left, reached: false,
+      clearAt: Math.min(w.eLen[edge], Math.max(width / 2, turn?.exit ?? 0) + car.halfLen + 1) };
+  }
+
+  turnInProgress(car, mine, others) {
+    const light = mine.control;
+    return others.find(other => {
+      const active = other.junctionMovement;
+      if (other === car || other.mode !== 'ai' || !active || active.control.group !== light.group) return false;
+      const alignment = active.control.tx * light.tx + active.control.tz * light.tz;
+      // Vlevo odbočíme až po uvolnění protisměru. Vůz jedoucí rovně si
+      // zachovává přednost. Za odbočujícím ve vlastním pruhu necháme prostor.
+      if (alignment < -0.75) return mine.left;
+      return active.left && active.control === light && Math.abs(active.lane - mine.lane) < car.type.wid;
+    })?.junctionMovement;
   }
 
   conflict(car, control, others, extra) {
@@ -487,6 +524,13 @@ export class Traffic {
 
   drivingLimit(car, dt, limit, others, extra, stopping) {
     const w = this.world;
+    const previous = car.trafficStop;
+    // Při změně úseku nebo rychlém kroku může nárazník přejet celou toleranci
+    // hledání čáry. Vjezd posoudíme podle posledního kroku těsně před ní.
+    if (previous?.crossing && previous.rule.edge === car.edge && car.s + car.halfLen + 0.45 > previous.rule.s) {
+      this.enterJunction(car, previous.rule);
+      previous.crossing = false;
+    }
     this.updateJunction(car, car.x, car.z);
     const lead = car.s + car.halfLen + 0.45;
     const first = this.byEdge.get(car.edge)?.find((c) => c.s >= lead - 0.42 && !this.passedEntry(car, c));
@@ -559,6 +603,13 @@ export class Traffic {
   updateJunction(vehicle, x, z) {
     const group = vehicle.enteredSignal?.group;
     if (group && Math.hypot(x - group.x, z - group.z) > group.radius + vehicle.halfLen + 2) vehicle.enteredSignal = null;
+    const movement = vehicle.junctionMovement;
+    if (movement) {
+      const atExit = vehicle.edge === movement.edge;
+      if (!vehicle.enteredSignal || (atExit && vehicle.s >= movement.clearAt) || (movement.reached && !atExit)) {
+        vehicle.junctionMovement = null;
+      } else if (atExit) movement.reached = true;
+    }
   }
 
   passedEntry(vehicle, control) {
@@ -570,6 +621,9 @@ export class Traffic {
   }
 
   enterJunction(vehicle, control) {
-    if (control.directedHead) vehicle.enteredSignal = control;
+    if (control.directedHead) {
+      vehicle.enteredSignal = control;
+      vehicle.junctionMovement = vehicle.trafficStop?.movement ?? null;
+    }
   }
 }
