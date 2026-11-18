@@ -136,7 +136,7 @@ async function boot() {
   }
   bar.style.width = '100%';
   game._updateCamera(0.016);
-  game.env.update(game.camera, game.focus);
+  game.env.update(game.camera);
   loadText.textContent = 'Připravuji vykreslování…';
   await game.env.prepareSkyLight();
   await renderer.compileAsync(game.scene, game.camera);
@@ -249,7 +249,7 @@ async function boot() {
     window.__setInput = (steer, thr) => { input.debugSteer = steer; input.debugThr = thr; };
     window.__view = (x, y, z, tx, ty, tz) => {
       game.camera.position.set(x, y, z); game.camera.lookAt(tx, ty, tz);
-      game.env.update(game.camera, game.focus); game.render();
+      game.env.update(game.camera); game.render();
     };
   }
   window.__ready = true;

@@ -633,7 +633,7 @@ export class Game {
     this._updateCamera(dt);
     this.chunks.heritage.updateForge(this.hour, dt);
     this.audio.update(dt, input.moveY);
-    this.env.update(this.camera, this.focus);
+    this.env.update(this.camera);
     const fast = Math.hypot(this.focus.vx || 0, this.focus.vz || 0) > 18;
     this.chunks.update(this.focus.x, this.focus.z, QUALITY.view, fast ? 2 : 1, this.focus.y);
     this._updateHud(dt);
@@ -763,6 +763,7 @@ export class Game {
   resize() {
     this.camera.aspect = innerWidth / innerHeight;
     this.camera.updateProjectionMatrix();
+    if (this.env.csm?.camera) this.env.csm.updateFrustums();
     this.renderer.setSize(innerWidth, innerHeight);
   }
 }

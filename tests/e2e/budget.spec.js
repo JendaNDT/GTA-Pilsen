@@ -4,7 +4,8 @@ import { openReferenceGame, reference, renderReferenceView } from '../../tools/r
 import { gameUrl } from './game-url.js';
 
 const viewIds = ['namesti-den', 'lochotin', 'rokycany-pole'];
-const budgetFile = new URL('../budgets.json', import.meta.url);
+// E17 kreslí tři mapy stínů včetně vzdálených budov. Srovnání s jedinou mapou je v protokolu.
+const budgetFile = new URL('../budgets-e17.json', import.meta.url);
 
 test.use({ viewport: reference.viewport, deviceScaleFactor: 1 });
 

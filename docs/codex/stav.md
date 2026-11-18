@@ -6,9 +6,9 @@ Autor potvrdil zahájení E17. [Zadání E17](E17.md) · [Protokol E16](../E16.m
 | Krok | Stav |
 | --- | --- |
 | 1. Fyzikálně založené materiály | Hotovo · `0e84e90` |
-| 2. Obloha, poloha slunce a světlo z oblohy | Hotovo |
-| 3. Kaskádové stíny | Další krok |
-| 4. Průchod scény, vyhlazování, AO, záře, tónování, barevné ladění a mlha | Čeká na návrh a kontrolu Astrou |
+| 2. Obloha, poloha slunce a světlo z oblohy | Hotovo · `9c27cd9` |
+| 3. Kaskádové stíny | Hotovo |
+| 4. Průchod scény, vyhlazování, AO, záře, tónování, barevné ladění a mlha | Další krok, návrh nejprve zkontroluje Astra |
 | 5. Čtyři předvolby, automatika a dynamické rozlišení | Čeká |
 | 6. Přizpůsobení jasu | Čeká |
 | 7. Měření všech předvoleb, snímky, protokol a pull request | Čeká |
@@ -32,5 +32,12 @@ Autor potvrdil zahájení E17. [Zadání E17](E17.md) · [Protokol E16](../E16.m
   První měření odhalilo víc práce pro stíny při nižším zimním slunci.
   Po zúžení dosavadní oblasti stínů prošel rozpočet E13 na WebGL 2 a WebGPU
   se stejnými očekáváními. Scénář s postupným výpočtem mapy světla a se
-  soumrakem prošel na obou vykreslovačích. [Snímky a porovnání](../E17/obloha.md).
+  soumrakem prošel na obou vykreslovačích. Celkem prošlo 16 cílených scénářů
+  a čtyři opakované kontroly po doplnění počítadla pro všechny průchody.
+  [Snímky a porovnání](../E17/obloha.md).
+- Krok 3 prošel 46 testy Node, sestavením, osmi prohlížečovými scénáři
+  s mapami stínů všech předvoleb a rozpočtem na obou vykreslovačích. Tři
+  mapy ve vysoké předvolbě mají vlastní naměřený rozpočet se stejnou
+  tolerancí jako E13. Při místním měření byla GPU p95 6,68 ms při jízdě
+  a 7,80 ms při letu nad Plzní. [Měření a snímky](../E17/stiny.md).
 - Po dokončení čeká měření v autorově běžném prohlížeči a kontrola na telefonu.

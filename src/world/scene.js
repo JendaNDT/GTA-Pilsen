@@ -1,5 +1,6 @@
 // Obloha, světla, stíny a denní doba. (Terén a povrch země kreslí chunks.js.)
 import * as THREE from 'three/webgpu';
+import { CSMShadowNode } from 'three/addons/csm/CSMShadowNode.js';
 import { SkyMesh } from 'three/addons/objects/SkyMesh.js';
 import {
   Fn, float, Loop, mix, positionLocal, renderGroup, smoothstep, step, uniform, vec2, vec4,
@@ -55,8 +56,6 @@ function makeSky(colors, atmosphere) {
   return mesh;
 }
 
-const _right = new THREE.Vector3(), _upv = new THREE.Vector3(), _tgt = new THREE.Vector3();
-
 export class Environment {
   constructor(scene, renderer) {
     this.scene = scene;
@@ -81,14 +80,16 @@ export class Environment {
     scene.add(this.moon);
     scene.fog = new THREE.Fog(0xbcd9ee, QUALITY.view * 0.4, QUALITY.view);
     this.shadows = QUALITY.shadows;
+    this.csm = null;
     if (this.shadows) {
       const sh = this.sun.shadow;
       this.sun.castShadow = true;
       sh.mapSize.set(QUALITY.shadowSize, QUALITY.shadowSize);
-      sh.camera.near = 10; sh.camera.far = 1400;
-      sh.bias = -0.0006; sh.normalBias = 0.35;
-      this.shadowR = 0;
-      this.shadowHeight = 0;
+      sh.camera.near = 1; sh.camera.far = QUALITY.shadowFar + 250;
+      sh.bias = -0.00025; sh.normalBias = 0.16;
+      this.csm = new CSMShadowNode(this.sun, { cascades: QUALITY.shadowCascades, maxFar: QUALITY.shadowFar, lightMargin: 170 });
+      this.csm.fade = true;
+      sh.shadowNode = this.csm;
     }
 
     // vzdálená zem za hranicí mapy (hluboko pod terénem)
@@ -135,8 +136,14 @@ export class Environment {
 
     this.sun.color.setHex(0xfff0d8).lerp(new THREE.Color(0xffa05a), dusk);
     this.sun.intensity = 1.85 * THREE.MathUtils.smoothstep(elev, -0.06, 0.19);
+    this.sun.position.copy(dir).multiplyScalar(700);
     this.moon.intensity = 0.62 * night;
-    this.sun.shadow.intensity = 0.43 + 0.48 * day * (1 - dusk * 0.50);
+    const shadowIntensity = 0.43 + 0.48 * day * (1 - dusk * 0.50);
+    this.sun.shadow.intensity = shadowIntensity;
+    for (const { shadow } of this.csm?.lights ?? []) {
+      shadow.intensity = shadowIntensity;
+      shadow.autoUpdate = this.sun.intensity > 0;
+    }
     this.hemi.color.copy(new THREE.Color(0xffe9d5).lerp(new THREE.Color(0x6f83c0), 1 - day));
     this.hemi.groundColor.copy(new THREE.Color(0x9a927c).lerp(new THREE.Color(0x343a52), 1 - day));
     this.hemi.intensity = 0.95 + 1.18 * day;
@@ -168,37 +175,10 @@ export class Environment {
     }
   }
 
-  /** focus = bod, kolem kterého se počítají stíny (hráč). */
-  update(cam, focus) {
+  update(cam) {
     this.sky.position.copy(cam.position);
     this.sky.scale.setScalar(cam.far * 0.9);
     env.cam.value.copy(cam.position);
-    const f = focus || cam.position;
-    _tgt.set(f.x, f.y || 0, f.z);
-    if (this.shadows && this.sun.castShadow) {
-      // oblast stínů roste s výškou kamery; střed se přichytává na rastr, aby stíny neblikaly
-      const sc = this.sun.shadow.camera;
-      const R = Math.min(520, 79 + Math.max(0, cam.position.y - 12) * 1.6);
-      const Rq = Math.ceil(R / 20) * 20;
-      // Při šikmém slunci odpovídá stejně velká plocha v mapě stínů delšímu pásu země.
-      const Hq = Math.min(Rq, Math.ceil(R * (0.4 + Math.abs(this.sunDir.y)) / 20) * 20);
-      if (Rq !== this.shadowR || Hq !== this.shadowHeight) {
-        this.shadowR = Rq;
-        this.shadowHeight = Hq;
-        sc.left = -Rq; sc.right = Rq; sc.top = Hq; sc.bottom = -Hq;
-        sc.updateProjectionMatrix();
-      }
-      const texel = (2 * Rq) / this.sun.shadow.mapSize.x;
-      const texelY = (2 * Hq) / this.sun.shadow.mapSize.y;
-      _right.set(0, 1, 0).cross(this.sunDir).normalize();
-      _upv.copy(this.sunDir).cross(_right).normalize();
-      const rx = _tgt.dot(_right), ry = _tgt.dot(_upv);
-      _tgt.addScaledVector(_right, Math.round(rx / texel) * texel - rx)
-        .addScaledVector(_upv, Math.round(ry / texelY) * texelY - ry);
-    }
-    this.sun.position.copy(_tgt).addScaledVector(this.sunDir, 700);
-    this.sun.target.position.copy(_tgt);
-    this.sun.target.updateMatrixWorld();
   }
 
   setShadows(on) {
