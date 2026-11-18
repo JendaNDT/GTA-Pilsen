@@ -32,6 +32,7 @@ npm run test:e2e     # testy v Chromiu nad dist/ (nejdřív npm run build)
 ```
 
 - Prohlížečové testy spouštěj s `--trace off`, pokud nehledáš konkrétní chybu.
+- Kontroly spouštěj místně. Výsledky před nahráním změn zapiš do stavu etapy.
 - V cloudovém prostředí s předinstalovaným Chromiem nastav
   `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/opt/pw-browsers/chromium`.
   Lokálně stačí jednou `npx playwright install chromium`.

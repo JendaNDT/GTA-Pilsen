@@ -154,6 +154,12 @@ Linuxová kontrola revize `d858a53` při druhém pokusu dokončila 30 z 31
 scénářů WebGPU úspěšně. U osmi referenčních pohledů vypršel celkový limit
 180 s. Podrobnosti a odkazy na kontroly jednotlivých revizí jsou v protokolu.
 
+Na přání autora probíhají další kontroly místně na Macu. Poslední běh na GitHubu
+nad revizí `00d108e` dokončil 23 z 31 grafických zkoušek WebGPU v časovém limitu.
+Změna způsobu testování vychází z výše uvedených úplných místních výsledků obou verzí fyziky.
+Po úpravě nastavení na Macu znovu prošlo 71 testů JavaScriptu, 23 testů Pythonu,
+kontrola syntaxe nástrojů a produkční sestavení. Audit závislostí ohlásil nula nálezů.
+
 Zbývá kontrola autora podle [protokolu](../E18.md#kontrola-pro-autora), včetně
 vyzkoušení na skutečném telefonu. Doporučený model pro kontrolu je Astra, High.
 [Návrh na sloučení E18 do mainu](https://github.com/JendaNDT/GTA-Pilsen/pull/11)
