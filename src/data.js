@@ -41,6 +41,7 @@ export function parsePack(buf) {
 
 // přibližné velikosti souborů (bajty) pro ukazatel průběhu
 const FILES = [
+  ['collisionRoofs', 'data/collision-roofs.json', 2_335_000],
   ['buildings', 'data/buildings.bin', 6_104_000],
   ['roads', 'data/roads.bin', 2_100_000],
   ['land', 'data/land.bin', 3_215_000],

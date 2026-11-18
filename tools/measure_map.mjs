@@ -111,7 +111,17 @@ try {
           window.__freeze(false);
         }
         const start = [focus.x, focus.z];
-        window.__setInput(0, mode === 'car' ? (pilot ? 0.27 : 0.55) : 1);
+        // Na stejné trase musí pilot i s převodovkou Jolt projet do další dlaždice.
+        const pedal = game.driver ? 0.38 : 0.27;
+        window.__setInput(0, mode === 'car' ? (pilot ? pedal : 0.55) : 1);
+        const physicsTimes = [];
+        const physics = game.physics;
+        const originalStep = physics?.step;
+        if (work && physics) physics.step = (dt) => {
+          const start = performance.now();
+          originalStep(dt);
+          physicsTimes.push(performance.now() - start);
+        };
         const frames = [], chunks = new Set([world.chunkIndex(...start)]);
         const ahead = {};
         let maxPending = 0;
@@ -129,11 +139,13 @@ try {
             if (rd) {
               const yaw = Math.atan2(rd.x - rd.dz * 1.3 - focus.x, rd.z + rd.dx * 1.3 - focus.z);
               const angle = Math.atan2(Math.sin(focus.yaw - yaw), Math.cos(focus.yaw - yaw));
-              window.__setInput(Math.max(-0.48, Math.min(0.48, angle * 1.5)), 0.27);
+              window.__setInput(Math.max(-0.48, Math.min(0.48, angle * 1.5)), pedal);
             }
           }
           previous = now;
         }
+        if (work && physics) physics.step = originalStep;
+        physicsTimes.sort((a, b) => a - b);
         const measurement = work ? window.__perf.summary() : null;
         if (work && !measurement.workMs) throw new Error('Měření práce snímku nezískalo žádné vzorky.');
         window.__setInput(0, 0);
@@ -150,6 +162,8 @@ try {
           maxFrameMs: +frames.at(-1).toFixed(1),
           framesOver50Ms: frames.filter((value) => value > 50).length,
           ...(work && { measurement }),
+          ...(physicsTimes.length > 0 && { physicsSteps: physicsTimes.length,
+            physicsP95Ms: physicsTimes[Math.ceil(physicsTimes.length * 0.95) - 1] }),
         };
       }, { mode, pilot, site, work });
       if (site) report[name].site = site;

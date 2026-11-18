@@ -1,98 +1,167 @@
-# Stav etapy E17
+# Stav etapy E18
 
-Větev `etapa/E17` vychází z revize `9661ee7` na `main`. E16 je sloučená.
-Autor potvrdil zahájení E17. [Zadání E17](E17.md) · [Protokol E16](../E16.md)
+Větev `etapa/E18` vychází z `974c25b` na `main`, včetně opravy hodin a MHD.
+Autor potvrdil zahájení. [Zadání E18](E18.md) · [Protokol E17](../E17.md)
 
 | Krok | Stav |
 | --- | --- |
-| 1. Fyzikálně založené materiály | Hotovo · `0e84e90` |
-| 2. Obloha, poloha slunce a světlo z oblohy | Hotovo · `9c27cd9` |
-| 3. Kaskádové stíny | Hotovo · `bf5ba60` |
-| 4. Průchod scény, vyhlazování, AO, záře, tónování, barevné ladění a mlha | Hotovo |
-| 5. Čtyři předvolby, automatika a dynamické rozlišení | Hotovo · `56108ea` |
-| 6. Přizpůsobení jasu | Hotovo · `e285dca` |
-| 7. Měření všech předvoleb, snímky, protokol a příprava na sloučení | Hotovo · `a084d47` · [Protokol E17](../E17.md) |
+| 1. Načtení Jolt, svět a vrstvy | Hotovo. Pád tělesa, načtení hry i chyba při stažení ověřeny. |
+| 2. Pevný krok a interpolace | Hotovo. Ověřeno při 30 i 144 snímcích/s, po delším snímku, v pauze a při přesunutí tělesa. |
+| 3. Terén, budovy a zobrazení kolizí | Hotovo |
+| 4. Mostovky, Rondel, tunely a uzavírky | Hotovo |
+| 5. Auto hráče, ovládání a zvuk | Hotovo. Hra ukládá volbu řízení a zvuk sleduje otáčky motoru. |
+| 6. Poškození, garáž, návrat na silnici a uložení | Hotovo |
+| 7. Měření, ladění a protokol | Hotovo. Jízdní zkoušky i úplné místní ověření jsou v [protokolu](../E18.md). |
 
-## Ověření a otevřené otázky
+## Ověření
 
-- Výchozí sestavení a osm referenčních pohledů prošly na Apple M4 v Chromiu
-  159.0.8154.6 s WebGPU přes Metal. První měření nízké předvolby je v
-  `data-raw/e17/mereni-pred-low.json`. Pro porovnání na konci etapy se stejná
-  revize přeměřila s časovými značkami okolo celého snímku a s běžnou
-  obnovovací frekvencí prohlížeče.
-- Krok 1 zachovává barvy ve vrcholech a sdílí materiály mezi objekty.
-  Počty volání a trojúhelníků se v osmi pohledech nezměnily.
-  [Srovnávací snímky a odečty](../E17/materialy.md). Prošlo 43 testů Node
-  a 23 testů Pythonu i produkční sestavení. Prošla úplná sada 63 prohlížečových
-  scénářů na WebGL 2 a WebGPU, včetně kontrol materiálů, dlaždic památek,
-  mobilního ovládání a Valíku.
-- Pro kontrolu soumraku v 18:09 se použije 19. říjen 2026. V Plzni toho dne
-  slunce zapadá v 18:08. Pro srovnání denních a nočních snímků zůstává datum
-  E13, 17. listopad 2026. [Údaje U.S. Naval Observatory](https://aa.usno.navy.mil/api/rstt/oneday?date=2026-10-19&coords=49.7475%2C13.3776&tz=2).
-- Krok 2 prošel 46 testy Node, 23 testy Pythonu a produkčním sestavením.
-  První měření odhalilo víc práce pro stíny při nižším zimním slunci.
-  Po zúžení dosavadní oblasti stínů prošel rozpočet E13 na WebGL 2 a WebGPU
-  se stejnými očekáváními. Scénář s postupným výpočtem mapy světla a se
-  soumrakem prošel na obou vykreslovačích. Celkem prošlo 16 cílených scénářů
-  a čtyři opakované kontroly po doplnění počítadla pro všechny průchody.
-  [Snímky a porovnání](../E17/obloha.md).
-- Krok 3 prošel 46 testy Node, sestavením, osmi prohlížečovými scénáři
-  s mapami stínů všech předvoleb a rozpočtem na obou vykreslovačích. Tři
-  mapy ve vysoké předvolbě mají vlastní naměřený rozpočet se stejnou
-  tolerancí jako E13. Při místním měření byla GPU p95 6,68 ms při jízdě
-  a 7,80 ms při letu nad Plzní. [Měření a snímky](../E17/stiny.md).
-- Astra zkontrolovala návrh obrazových efektů proti three.js 0.187. První
-  část kroku 4 doplnila samostatný průchod obrazu a vyhlazování. Překrytí
-  světel a pruhů ponechává podkladové normály a vektory pohybu. Prošlo 46
-  testů Node, sestavení, deset prohlížečových kontrol předvoleb a rozpočtu
-  a zkouška pohybu dveří tramvaje na WebGPU. Commit `da0c231`.
-- Kontaktní zastínění běží v poloviční šířce a výšce. Prošly 46 testů Node,
-  sestavení a čtyři prohlížečové kontroly vysoké a nízké předvolby na obou
-  vykreslovačích. V Dobřívě je tmavší hlavně okolí stěn a dřevěných částí
-  hamru. Commit `a4d6d77`. [Snímky](../E17/efekty.md).
-- Záře světel běží na střední a vyšší předvolbě. Po vyladění prahu má denní
-  náměstí stejný průměrný jas a noční okna osvětlují bezprostřední okolí.
-  Prošlo sestavení, 46 testů Node a čtyři kontroly střední a nízké předvolby.
-  Commit `4427c28`.
-- Porovnání tónování ponechalo výchozí ACES kvůli barvě dlažby a kontrastu
-  nočních oken. Oba způsoby se ověřily v osmi referenčních pohledech.
-  Prošlo sestavení, 46 testů Node a čtyři cílené prohlížečové scénáře.
-  Commit `da2f19c`.
-- Tři vlastní barevné tabulky mají celkem 353 947 bajtů. Kandidát se shoduje
-  s převzatými soubory. Prošlo 48 testů Node, 23 testů Pythonu, sestavení
-  a čtyři kontroly načtení na vysoké a nízké předvolbě v obou vykreslovačích.
-  Commit `1f477bc`.
-- Výšková mlha čte hloubku a používá stávající vodní plochy pro ranní opar.
-  Prošlo sestavení, 49 testů Node a čtyři kontroly vysoké a nízké předvolby
-  na obou vykreslovačích. Commit `9840b0b`. [Porovnání obrazových efektů](../E17/efekty.md).
-- Předvolba se mění ve stejné instanci hry. Hráč, čas, peníze a rozpracované
-  úkoly zůstávají. Automatika používá práci prvních deseti sekund hraní
-  a ukládá předvolbu. Rozlišení má rozsah 60–100 %. Prošlo 52 testů Node,
-  sestavení, tři kontroly nastavení a uložení a dvě kontroly panelu měření.
-  Přepnutí vysoké předvolby na nízkou v záběru s dosahem 620 m trvalo na
-  Apple M4 1,2 s na WebGPU a 1,5 s na WebGL 2. Test na softwarovém ovladači
-  čeká na dokončení až 30 s, protože příprava obrazu tam trvala více než 5 s.
-- Adaptace jasu u Valíku prošla na WebGL 2 i WebGPU spolu s 54 testy Node
-  a sestavením. V záběru uvnitř byl naměřen zobrazovací jas 0,049 před
-  tónováním a za 2,5 s vzrostla expozice z 1,00 na 1,62. Test ověřil
-  postupné zesvětlení i ztlumení po výjezdu. [Snímky](../E17/efekty.md).
-- Závěrečné měření používá jedinou dvojici značek WebGPU okolo celého snímku.
-  Výchozí E16 je znovu naměřená stejným postupem. Všechny čtyři předvolby
-  držely na Apple M4 při jízdě i letu v centru 60 FPS. Po omezení vnitřního
-  rozlišení nízké předvolby na 75 % stoupl čas GPU při jízdě proti E16 o 2,0 %
-  a při letu klesl o 8,7 %. Vysoká a ultra předvolba při letu překročily
-  pracovní rozpočet GPU 12 ms. Skutečný telefon čeká na kontrolu autora.
-- Závěrečný běh našel v testu památek chybu staršího volání, které mění jen
-  hodinu. Oprava ponechává nastavené datum. Původní test zůstává a test oblohy
-  navíc ověřuje setrvání data po změně samotné hodiny. Po opravě prošly čtyři
-  cílené kontroly památek a oblohy a všech 24 opakovaných scénářů první části
-  úplné sady na opraveném sestavení. Prošly rozpočty všech čtyř předvoleb
-  na obou vykreslovačích a cílená kontrola měření času GPU.
-- Samostatná diagnostika Valíku na softwarovém WebGPU naměřila první odečet
-  jasu asi po 11 s včetně čekání na dříve zadané snímky. Test čeká na dokončení
-  přípravy pohledu před zahájením každého odečtu. Desetisekundová mez odečtu
-  a všechna očekávání na přizpůsobení jasu zůstávají stejná. Závěrečné
-  zopakování Valíku prošlo na obou vykreslovačích.
-- Na konečném sestavení prošlo ve více bězích všech 93 prohlížečových
-  scénářů (67 WebGL 2, 26 WebGPU). Prošlo i 55 testů Node, 23 testů Pythonu
-  a produkční sestavení. [Snímky a měření](../E17.md)
+Prošlo 58 testů JavaScriptu včetně pádu, nárazu a zastavení tělesa na podložce.
+Prošlo produkční sestavení. Samostatný soubor Jolt má 3 572,85 kB před kompresí
+a 953,32 kB s gzipem. Prošly všechny tři cílené prohlížečové kontroly prvního kroku na Macu, včetně spuštění s WebGL 2 a WebGPU. Prošlo také všech 96 původních scénářů za 33,6 minuty.
+
+Ve druhém kroku prošlo 61 testů JavaScriptu, produkční sestavení a pět cílených
+prohlížečových kontrol. Pro tento krok běžel samostatný server nad jeho sestavením.
+Výsledky obou běhů jsou v místním adresáři `data-raw/e18/`.
+První krok je v revizi `efa2cf2`.
+
+## Rozhodnutí autora
+
+Limit 3 MiB navíc proti E12 se počítá ze skutečně přenesených dat při studeném
+startu se zapnutou přenosovou kompresí. Samotný Jolt při místní zkoušce
+přenesl 944 375 bajtů. Při zveřejnění ověříme kompresi také na adrese pro telefon.
+
+Ve třetím kroku prošlo 62 testů JavaScriptu, 23 testů Pythonu, sestavení a sedm
+cílených prohlížečových kontrol. Paprsky v Jolt ověřily základní, jemný i upravený
+terén do 5 cm. Všech 76 740 trojúhelníků střech v 93 dlaždicích se shoduje s daty
+města. F8 ukazuje stejnou síť, jakou používá fyzika.
+Při studeném startu v nízké kvalitě přenesly hra, základní data a katalogy
+o 2 103 364 bajtů (2,01 MiB) více než archiv E12. S dokončenými požadavky na okolí
+do zobrazení nabídky to bylo 32 656 336 proti 33 641 355 bajtům v E12. Výběr
+detailů závisí na vydání a rychlosti načítání. Odečet lze zopakovat nástrojem
+`node tools/measure_startup.mjs adresář-E12 adresář-nového-sestavení`.
+
+Ve čtvrtém kroku první měření našlo tři překryvy při napojení silnic. Na Lobezské
+se fyzická plocha odchylovala od osy vozovky až o 17,4 cm. Ve společné ploše nyní
+výšku určuje vzdálenost od os připojených silnic se zachováním jejich podélných
+profilů. Po opravě prošlo 63 testů JavaScriptu, sestavení a pět dotčených
+prohlížečových scénářů. Původní mez 5 cm prošla pro Wilsonův most, Rondel,
+upravené mostovky a obě vozovky i stropy Valíku.
+
+## Předání po pátém kroku
+
+Malé auto na suchém asfaltu dosáhlo 100 km/h za 12,8 s a ubrzdilo ze stejné
+rychlosti na 43 m. Sporťák potřeboval 5,3 s a 41 m. Ruční brzda udržela auto
+na 15% svahu. Při nárazu rychlostí 250 km/h auto zůstalo před 20cm stěnou.
+Prošlo 68 testů JavaScriptu, produkční sestavení a sedm cílených prohlížečových
+kontrol. Volbu řízení, její uchování a rozjezd ověřily WebGL 2 i WebGPU.
+
+Při opakovaném místním studeném startu přenesly hra, základní data a katalogy
+o 2 107 829 bajtů (2,01 MiB) více než E12. Celkem se do zobrazení nabídky
+přeneslo 32 660 801 bajtů proti 33 641 355 bajtům v E12 včetně okolí.
+
+Při předání po kroku 5 bylo třeba pokračovat krokem 6. Je třeba propojit nárazy s poškozením a
+ověřit nastupování, vystupování, návrat na silnici, garáž a obnovení uložené hry.
+V kroku 7 zbývá diagnostika, měření v zatáčce a na hraně dlaždic, zkoušky
+mostu, tunelů a dopadu, půlhodinová jízda, výkon a úplné testy obou způsobů
+simulace. Následuje protokol, README, katalog, kontrola komprese na adrese
+pro telefon při zveřejnění a návrh na sloučení do hlavní větve. Žádné otázky
+pro autora teď nejsou otevřené.
+
+## Šestý krok
+
+Po fyzikálním kroku hra zpracuje nejsilnější kontakt hráčova auta. Lehký dotyk
+při 2 m/s nezpůsobil škodu, náraz do stěny při 15 m/s snížil stav karoserie.
+Po návratu na silnici se zastaví i otáčení kol. Hra uložená za volantem se
+obnoví ve stojícím autě, u vlastního vozu také se stavem a úpravami z garáže.
+Starší pozice se otevře pěšky jako dosud.
+
+Prošlo 69 testů JavaScriptu, produkční sestavení a čtyři dotčené prohlížečové
+scénáře včetně garáže, staré pozice a obnovení auta po návratu na silnici.
+Zbývá sedmý krok a jeho úplné přejímací zkoušky.
+
+## Sedmý krok – rozhodnutí o lávce v ulici U Prazdroje
+
+První automatická jízda nové fyziky po trase E12 z Plzně přes Klabavu směrem
+na Rokycany skončila po 754 metrech v ulici U Prazdroje. Zkouška jela bez
+ostatních vozidel. U souřadnic x = 657 m, z = 162 m má vozovka č. 14422 výšku
+−3,29 m a pěší lávka č. 32249 v témže místě −2,94 m. Mezi jejich horními
+plochami je jen 35 cm. Přední kola zůstala v kontaktu, bok mostovky zastavil
+karoserii. Ověřeno průjezdem a odečtem trojúhelníků z kolizní sítě. Jde
+o hodnoty v herní mapě. Skutečnou světlou výšku zatím nemáme ověřenou.
+
+Kalibrace lávek podle měření patří podle plánu do E22. Autor má rozhodnout,
+zda přesunout ověření a místní opravu této jedné lávky do E18. Do té doby
+se profil nemění. Půlhodinová jízda zůstává nesplněná. Místní reprodukce
+a odečty jsou v `data-raw/e18/krok7/route.mjs`, `route.log` a `steny.log`.
+V pracovní kopii je rozpracovaný panel fyziky, test jízdy na kruhu a volba
+simulace pro prohlížečové testy. První úplný prohlížečový běh nové fyziky
+zapisuje do `data-raw/e18/krok7/new.log`. Před dalším během ověřit jeho výsledek.
+
+## Oprava povolená autorem v E18
+
+Městský archiv 430 má SHA-256 `825dc3e395044b1f5a47e27c812cc4189829e9134cc027865ffc8fcb3e7bb9ac`.
+Lávce U Prazdroje odpovídá objekt `00000002023003269`. Středy protilehlých hran horní
+plochy dávají profil přes obě vozovky a po zakřivené rampě. V bodě (657, 162)
+má vršek 316,615 m Bpv a spodní plocha 315,96 m Bpv. Herní vozovka pod
+lávkou má 309,91 m Bpv. Opravená lávka používá stejný profil pro vykreslení,
+dotazy na výšku i fyziku. Místní zkouška v obou směrech zachovala 100 % stavu
+auta. Kontrola horní i spodní plochy ve fyzice prošla s tolerancí 5 cm.
+[Podklady města](https://opendata.plzen.eu/public/opendata/detail/37) ·
+[Snímek před opravou](../E18/lavka-pred.jpg) · [Snímek po opravě](../E18/lavka-po.jpg)
+
+Na trase E12 s novou fyzikou dojelo auto v první souvislé půlhodině z Plzně přes
+Klabavu do Rokycan (19,02 km). Největší zanoření spodního referenčního bodu
+auta vůči jízdní ploše bylo 0,162 m. Zkouška používá fyzikální kroky po 1/60 s,
+bez přemístění auta. Všechny dotčené testy JavaScriptu a sestavení prošly.
+Sedmý krok pokračuje zbývajícími jízdními zkouškami, měřením a úplnými sadami.
+
+## Závěrečné ověření
+
+Zkušební auto dojelo z Plzně k hamru v Dobřívě (29,78 km) a zpět (29,80 km).
+Každý směr trval přes 50 minut simulované jízdy. Prošly výšky kontaktů kol
+na Wilsonově mostě do 5 cm, průjezdy Valíkem, skok, dopad a zkouška na
+hraně dlaždic. V obou způsobech řízení prošlo také uložení a návrat na
+obsazenou silnici s výběrem volného místa. Prošlo 71 testů JavaScriptu,
+23 testů Pythonu a produkční sestavení. Pracovní protokol je v [E18](../E18.md).
+Na telefonu je ke zkoušce dostupná oprava lávky, veřejný přenos Jolt i střech
+má potvrzenou kompresi gzip.
+
+Obě úplné sady nad sestavením hry z revize `1d58c88` doběhly za 50,2 minuty.
+S původní fyzikou prošlo 110/110. S novou fyzikou prošlo 109/110 v prvním
+běhu. V testu přestupu na náměstí Republiky se při čekání posouvají nově
+také chodci. Se stejným limitem pak prošly všechny tři scénáře MHD v obou
+režimech i samostatné zopakování jediného neúspěšného testu. Záznamy jsou v
+`data-raw/e18/krok7/` pod názvy `final-new.log`, `final-old.log`,
+`prestup-oprava-new.log`, `prestup-oprava-old.log` a `posledni-prestup.log`.
+
+Na GitHubu v první úplné kontrole revize `ab8b0d0` prošlo všech 31 scénářů
+WebGPU a 78 ze 79 scénářů WebGL 2. Zkouška rozvozu nahlásila nedokončený
+přenos leteckého snímku. Po rozdělení kroků simulace prošla zkouška lokálně
+s oběma verzemi fyziky a také se záměrně o 1,2 sekundy zpožděným přenosem
+stejného snímku. Záznamy jsou ve stejném adresáři pod názvy
+`rozvoz-s-prenosem-new.log`, `rozvoz-s-prenosem-old.log` a `pomaly-snim.log`.
+
+Po opravě čekání prošlo s novou fyzikou 110/110 v jednom místním běhu za
+37,9 minuty. Na GitHubu nad revizí `7480ece` prošel rozvoz i přestup.
+U taxi se po přemístění stojícímu autu odečetlo 0,35 bodu za předchozí smyk.
+Zkouška umí tento stav zopakovat. Přemístění nyní příznak smyku vynuluje.
+Nad opravenou revizí `d858a53` na Macu prošlo 110/110 s novou fyzikou
+za 46,0 minuty a 110/110 s původní za 45,9 minuty. Ani jeden běh nevyžadoval
+opakování scénáře. Záznamy jsou v `taxi-sada-new.log` a `taxi-sada-old.log`
+v témže adresáři. Prošlo také 71 testů JavaScriptu, 23 testů Pythonu
+a produkční sestavení. Aktualizovaný náhled na telefon otevírá dotykové ovládání.
+Linuxová kontrola revize `d858a53` při druhém pokusu dokončila 30 z 31
+scénářů WebGPU úspěšně. U osmi referenčních pohledů vypršel celkový limit
+180 s. Podrobnosti a odkazy na kontroly jednotlivých revizí jsou v protokolu.
+
+Na přání autora probíhají další kontroly místně na Macu. Poslední běh na GitHubu
+nad revizí `00d108e` dokončil 23 z 31 grafických zkoušek WebGPU v časovém limitu.
+Změna způsobu testování vychází z výše uvedených úplných místních výsledků obou verzí fyziky.
+Po úpravě nastavení na Macu znovu prošlo 71 testů JavaScriptu, 23 testů Pythonu,
+kontrola syntaxe nástrojů a produkční sestavení. Audit závislostí ohlásil nula nálezů.
+
+Autor potvrdil, že E18 funguje i na jeho telefonu. Po zápisu prošlo všech
+71 místních testů JavaScriptu včetně kontroly dokumentace a produkční sestavení.
+Podrobnosti k jízdním zkouškám obsahuje [protokol](../E18.md#kontrola-pro-autora).
+Pro kontrolu před sloučením plán doporučuje model Astra s úrovní uvažování High.
+[Návrh na sloučení E18 do mainu](https://github.com/JendaNDT/GTA-Pilsen/pull/11)

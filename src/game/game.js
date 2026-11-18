@@ -1,3 +1,7 @@
+import { TrafficBodies } from '../physics/traffic-bodies.js';
+import { PlayerVehicle } from '../physics/vehicle.js';
+import { TileColliders } from '../physics/colliders.js';
+import { CollisionView } from '../physics/debug.js';
 // Řízení hry: stav hráče, kamera, pravidla (hledanost, zdraví, peníze), ukládání.
 import * as THREE from 'three/webgpu';
 import { QUALITY, RC, DRIVABLE_MAX, IS_TOUCH, IS_MOBILE, DEBUG, PARAMS, DEFAULT_QUALITY, QUALITY_OVERRIDE,
@@ -9,7 +13,7 @@ import { Environment } from '../world/scene.js';
 import { createPostFX } from '../world/postfx.js';
 import { env } from '../world/materials.js';
 import { VehicleManager, Car, wrapAngle } from '../entities/vehicles.js';
-import { addCarLight } from '../entities/models.js';
+import { addCarLight, CAR_TYPES } from '../entities/models.js';
 import { Player, PedManager } from '../entities/player.js';
 import { TRANSIT_NAME, TransitManager } from '../entities/transit.js';
 import { Heli } from '../entities/heli.js';
@@ -30,7 +34,26 @@ const START = { x: -42, z: 52 };
 const plain = (text) => String(text).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
 
 export class Game {
-  constructor(renderer, data) {
+  constructor(renderer, data, physics) {
+    this.physics = physics;
+    this.oldPhysics = PARAMS.get('physics') === 'old';
+    this.steering = 'arcade';
+    this.driver = null;
+    this.trafficBodies = new TrafficBodies(physics);
+    this.tireSurface = (x, z) => {
+      if (x > -66 && x < 75 && z > -60 && z < 68) return 0.9;
+      const w = this.world;
+      if (w.onRoad(x, z)) return w.r.cls[w._tmpRoad.road] >= RC.TRACK ? 0.6 : 1;
+      return w.isSoft(x, z) ? 0.5 : 0.6;
+    };
+    physics.onImpact = (first, second, impulse) => this.driver?.recordImpact(first, second, impulse);
+    physics.step = (dt) => {
+      const start = DEBUG ? performance.now() : 0;
+      this.driver?.drive(dt, input.moveY, input.moveX, input.handbrake, this.steering === 'arcade', this.tireSurface);
+      physics.engine.Step(dt, 1);
+      this.driver?.read();
+      if (DEBUG) physics.lastStepMs = performance.now() - start;
+    };
     this.renderer = renderer;
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.4, QUALITY.view * 1.35);
@@ -43,6 +66,7 @@ export class Game {
     this.env = new Environment(this.scene, renderer);
     this.postfx = createPostFX(renderer, this.scene, this.camera, this.world);
     this.chunks = new ChunkManager(this.scene, this.world, renderer, data.heritage, data.orthophotoSources);
+    this.colliders = new TileColliders(physics, this.world, data, DEBUG ? new CollisionView(this.scene) : null);
     this.hud = new Hud(this.world);
     this.soundPlaces = data.soundPlaces;
     this.audio = new GameAudio(this);
@@ -80,7 +104,7 @@ export class Game {
     this._load();
     this.chunks.setOrthophotoEnabled(this.orthophotoEnabled);
     this.player.yaw = this.camYaw;
-    this._spawnStarterCar();
+    if (!this.car) this._spawnStarterCar();
     this.hud.money(this.money);
     this.syncClock(true);
     if (DEBUG) window.__game = this;
@@ -162,6 +186,7 @@ export class Game {
       }
       const found = new Set(s.found || []);
       for (const lm of this.jobs.landmarks) lm.found = found.has(lm.name);
+      this.steering = s.steering === 'realistic' ? 'realistic' : 'arcade';
       this.garage.load(s.garage);
       this.jobs.load(s.job);
       this.shifts.load(s.shift);
@@ -169,6 +194,24 @@ export class Game {
     }
     const p = this._clearSpot(x, z, 0.6);
     this.player.place(p.x, p.z);
+    if (this.hasSave) this._restoreCar(s.car);
+  }
+
+  _restoreCar(saved) {
+    const w = this.world;
+    if (!saved || !Object.hasOwn(CAR_TYPES, saved.model)
+        || ![saved.x, saved.z, saved.y, saved.yaw].every(Number.isFinite)
+        || saved.x < w.playMinX || saved.x > w.playMaxX || saved.z < w.playMinZ || saved.z > w.playMaxZ) return;
+    const owned = saved.owned === true ? this.garage.owned : null;
+    if (saved.owned === true && owned?.model !== saved.model) return;
+    const car = new Car(saved.model, Number.isInteger(saved.color) ? saved.color : 0xc8922e);
+    car.place(saved.x, saved.z, saved.yaw, saved.y);
+    car.health = owned?.health ?? (Number.isFinite(saved.health) ? clamp(saved.health, 0, 100) : 100);
+    if (owned) {
+      car.upgrades = owned.upgrades;
+      this.garage.active = car;
+    }
+    this._enterCar(this.vehicles.add(car));
   }
 
   _writeSave(changes = {}) {
@@ -181,7 +224,11 @@ export class Game {
         v: 2, money: this.money, date: formatDay(this.clock.day), hour: this.hour, clockVisible: this.clockVisible,
         clockMode: this.clock.followsPrague ? 'prague' : 'manual',
         soundEnabled: !this.audio.muted, orthophotoEnabled: this.orthophotoEnabled,
-        graphics: this.graphics,
+        graphics: this.graphics, steering: this.steering,
+        car: this.mode === 'car' ? {
+          model: f.typeId, color: f.color, x: f.x, z: f.z, y: f.y, yaw: f.yaw,
+          health: f.health, owned: f === this.garage.active,
+        } : null,
         stats: this.stats, x: Math.round(safe.x), z: Math.round(safe.z),
         found: this.jobs.landmarks.filter((l) => l.found).map((l) => l.name),
         garage: this.garage.snapshot(), job: this.jobs.snapshot(), shift: this.shifts.snapshot(),
@@ -360,8 +407,24 @@ export class Game {
   unstuck() {
     const f = this.focus, w = this.world;
     if (this.mode === 'transit' || this.mode === 'heli') return;
-    const r = w.nearestRoad(f.x, f.z, 400, RC.LIVING, 0, _road, f.y);
+    let r = w.nearestRoad(f.x, f.z, 400, RC.LIVING, 0, _road, f.y);
     if (!r) return;
+    if (this.mode === 'car') {
+      const first = r;
+      const occupied = (obstacle, road) => obstacle !== f && Math.abs(obstacle.y - f.y) < 3
+        && Math.hypot(obstacle.x - road.x, obstacle.z - road.z) < f.halfLen + obstacle.halfLen + 1;
+      const free = (road) => !this.vehicles.cars.some((other) => occupied(other, road))
+        && !this.transit.obstacles.some((other) => occupied(other, road));
+      if (!free(first)) {
+        r = null;
+        for (const shift of [8, -8, 16, -16, 24, -24, 32, -32]) {
+          const candidate = w.nearestRoad(first.x + first.dx * shift, first.z + first.dz * shift,
+            6, RC.LIVING, 0, {}, f.y);
+          if (candidate && free(candidate)) { r = candidate; break; }
+        }
+        if (!r) { this.hud.toast('Silnice je obsazená. Zkus to za chvíli.'); return; }
+      }
+    }
     const tube = w.tunnelAt(r.x, r.z, f.y);
     const y = tube?.floor ?? w.roadSurfaceY(r.road, r.seg, r.t, r.x, r.z);
     if (this.mode === 'car') {
@@ -587,6 +650,26 @@ export class Game {
     this.world.traffic.tick(dt, this.mode === 'foot' ? this.player : null);
     env.time.value = this.time;
 
+    if (this.driver && (this.mode !== 'car' || this.car !== this.driver.car)) {
+      this.driver.dispose();
+      this.driver = null;
+    }
+    if (!this.oldPhysics) {
+      this.colliders.update(this.focus.x, this.focus.z);
+      if (this.mode === 'car' && !this.driver) this.driver = new PlayerVehicle(this.physics, this.car);
+      if (this.car?.physicsTeleport && this.driver) {
+        this.driver.teleport();
+        this.car.physicsTeleport = false;
+      }
+      this.trafficBodies.update(this, dt);
+    }
+    this.physics.update(elapsed);
+    if (this.driver?.impactSpeed > 0) {
+      const other = this.trafficBodies.carForBody(this.driver.impactBody);
+      const impact = this.driver.applyImpact();
+      this.onCrash(this.driver.car, impact, other);
+    }
+
     // pohyb podle režimu
     if (this.mode === 'foot') {
       const fx = Math.sin(this.camYaw), fz = Math.cos(this.camYaw);
@@ -597,7 +680,7 @@ export class Game {
     } else if (this.mode === 'car') {
       const car = this.car;
       car.reverseTime = car.speed < -1 ? (car.reverseTime || 0) + dt : 0;
-      this.vehicles.stepDynamic(car, dt, input.moveY, input.moveX, input.handbrake);
+      if (this.oldPhysics) this.vehicles.stepDynamic(car, dt, input.moveY, input.moveX, input.handbrake);
       this.waterTimer -= dt;
       if (this.waterTimer <= 0) {
         this.waterTimer = 0.3;
@@ -634,6 +717,7 @@ export class Game {
       heavy.push({ x: h.x + hx * 0.6, z: h.z + hz * 0.6, y: h.y, r: 1.5, vx: h.vx, vz: h.vz }, { x: h.x - hx * 2.6, z: h.z - hz * 2.6, y: h.y, r: 0.8, vx: h.vx, vz: h.vz });
     }
     this.vehicles.update(dt, this.focus, this.camInfo, heavy);
+    this.driver?.render(this.physics.clock.alpha);
     this.peds.update(dt, this.focus, this.camInfo, this.vehicles.cars);
     // hráče pěšky může srazit auto
     if (onFoot && p.stun <= 0) {

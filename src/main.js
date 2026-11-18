@@ -1,3 +1,5 @@
+import { loadJolt } from './physics/jolt.js';
+import { PhysicsWorld } from './physics/world.js';
 // Start hry: načtení dat, menu a hlavní smyčka.
 import * as THREE from 'three/webgpu';
 import { loadAll } from './data.js';
@@ -53,6 +55,7 @@ const ABOUT_HTML = (meta, rendering) => `
   <p>Grafiku vykresluje <a href="https://threejs.org" target="_blank" rel="noopener">three.js 0.187.0</a>
   (autoři three.js, licence <a href="https://github.com/mrdoob/three.js/blob/r187/LICENSE" target="_blank" rel="noopener">MIT</a>).
   Aktuální vykreslování: <strong>${rendering}</strong>.</p>
+  <p>Fyziku počítá <a href="https://github.com/jrouwe/JoltPhysics.js" target="_blank" rel="noopener">Jolt Physics 1.1.1</a> (Jorrit Rouwe, licence MIT).</p>
   <p>Sestavení hry používá picomatch od Jona Schlinkerta (licence
   <a href="https://github.com/micromatch/picomatch/blob/master/LICENSE" target="_blank" rel="noopener">MIT</a>)
   s místní opravou 4.0.8-plzen.1.</p>
@@ -72,7 +75,7 @@ const ABOUT_HTML = (meta, rendering) => `
   Pro ostatní ulice a pro chodce hra používá odhad.</p>
   <p>Čtyři mapové listy centra používají otevřená data
   <a href="https://opendata.plzen.eu/public/opendata/detail/37" target="_blank" rel="noopener">3D budov centra Plzně, 2024</a>
-  (GEOREAL – Vybíral, město Plzeň). Geometrie je převedená do herních souřadnic. Materiály v dalších
+  (GEOREAL – Vybíral, město Plzeň). Stejná data určují výšku lávky U Prazdroje. Geometrie je převedená do herních souřadnic. Materiály v dalších
   čtvrtích využívají hranice <a href="https://opendata.plzen.eu/public/opendata/detail/108" target="_blank" rel="noopener">městských částí</a>.
   Model hamru
   vychází z mapy a fotografie obnovy zveřejněné
@@ -116,10 +119,13 @@ async function boot() {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.0;
 
-  const data = await loadAll((p) => { bar.style.width = `${Math.round(p * 80)}%`; });
+  const data = await loadAll((p) => { bar.style.width = `${Math.round(p * 75)}%`; });
+  loadText.textContent = 'Načítám fyziku vozidel…';
+  const physics = new PhysicsWorld(await loadJolt());
+  bar.style.width = '80%';
   loadText.textContent = 'Stavím město…';
   await new Promise((r) => setTimeout(r, 30));
-  const game = new Game(renderer, data);
+  const game = new Game(renderer, data, physics);
   const perf = DEBUG || PARAMS.get('adapt') !== '0' ? createFrameProfiler(game, { sampleEvery: DEBUG ? 1 : 16 }) : null;
   initInput(canvas);
   if (PARAMS.has('hour') || PARAMS.has('date')) {
@@ -153,7 +159,7 @@ async function boot() {
   if (IS_TOUCH) $('touch').classList.remove('hidden');
 
   let running = false, last = 0, firstPlay = true;
-  const perfPanel = DEBUG ? initPerfPanel(perf, rendering, () => running && !game.mapOpen) : null;
+  const perfPanel = DEBUG ? initPerfPanel(perf, rendering, game, () => running && !game.mapOpen) : null;
   const menu = $('menu');
   const timeInput = $('game-time'), clockStatus = $('clock-status');
   const showClock = () => {
@@ -223,6 +229,9 @@ async function boot() {
   $('use-prague-time').addEventListener('click', () => applyTime(() => game.usePragueTime()));
   $('sound-enabled').checked = !game.audio.muted;
   $('sound-enabled').addEventListener('change', (event) => game.setSoundEnabled(event.target.checked));
+  const steering = $('steering');
+  steering.value = game.steering;
+  steering.addEventListener('change', () => { game.steering = steering.value; game.save(); });
   const qualitySelect = $('graphics-quality'), qualityStatus = $('graphics-status');
   const showQuality = () => {
     qualitySelect.value = game.graphicsOverride ?? game.graphics.choice;

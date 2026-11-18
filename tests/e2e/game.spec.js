@@ -17,18 +17,35 @@ async function action(page, code) {
   }, code);
 }
 
+async function advanceFrames(page, count) {
+  await page.evaluate(async (count) => {
+    const game = window.__game;
+    for (let frame = 1; frame <= count; frame++) {
+      game.update(1 / 60);
+      // Při zrychlené jízdě musí prohlížeč mezi kroky obsloužit i stahování mapy.
+      if (frame % 12 === 0) await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+    game.render();
+  }, count);
+}
+
 test('chůze, navigace, auto, vrtulník a dokončení rozvozu', async ({ page }) => {
   const errors = [], failed = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('requestfailed', (request) => {
     // Rychlé přesuny odstraňují dlaždice a záměrně přerušují jejich načítání.
     if (request.failure()?.errorText === 'net::ERR_ABORTED' && new URL(request.url()).pathname.includes('/detail/city/')) return;
-    failed.push(request.url());
+    failed.push([request.url(), request.failure()?.errorText]);
+  });
+  page.on('response', (response) => {
+    if (response.status() >= 400 && new URL(response.url()).pathname.includes('/detail/orthophoto/')) {
+      failed.push([response.url(), response.status()]);
+    }
   });
   await boot(page);
   const start = await page.evaluate(() => ({ x: __game.player.x, z: __game.player.z }));
   await page.keyboard.down('w');
-  await page.evaluate(() => __step(1 / 60, 120));
+  await advanceFrames(page, 120);
   await page.keyboard.up('w');
   expect(await page.evaluate((p) => Math.hypot(__game.player.x - p.x, __game.player.z - p.z), start)).toBeGreaterThan(4);
   await action(page, 'KeyM');
@@ -44,7 +61,7 @@ test('chůze, navigace, auto, vrtulník a dokončení rozvozu', async ({ page })
   await action(page, 'KeyF');
   expect(await page.evaluate(() => __game.mode)).toBe('car');
   await page.keyboard.down('w');
-  const speed = await page.evaluate(() => {
+  const spawnTimer = await page.evaluate(() => {
     const { vehicles, car, world } = window.__game;
     // Pro zkoušku rozjezdu uvolni vozovku.
     for (const other of [...vehicles.cars]) if (other !== car) vehicles.remove(other);
@@ -52,10 +69,19 @@ test('chůze, navigace, auto, vrtulník a dokončení rozvozu', async ({ page })
     car.place(road.x - road.dz * 1.8, road.z + road.dx * 1.8, Math.atan2(road.dx, road.dz));
     const spawnTimer = vehicles.spawnTimer;
     vehicles.spawnTimer = 3;
-    window.__step(1 / 60, 120);
-    vehicles.spawnTimer = spawnTimer;
-    return car.speed;
+    return spawnTimer;
   });
+  // Před opuštěním této silnice ověř i dokončení přenosu leteckého snímku.
+  const [photo] = await Promise.all([
+    page.waitForResponse('**/detail/orthophoto/11_17.webp'),
+    advanceFrames(page, 120),
+  ]);
+  expect(photo.ok()).toBe(true);
+  expect(await photo.finished()).toBeNull();
+  const speed = await page.evaluate((timer) => {
+    window.__game.vehicles.spawnTimer = timer;
+    return window.__game.car.speed;
+  }, spawnTimer);
   await page.keyboard.up('w');
   expect(speed).toBeGreaterThan(5);
   await page.evaluate(() => { __game.car.vx = __game.car.vz = __game.car.speed = 0; });
@@ -67,7 +93,7 @@ test('chůze, navigace, auto, vrtulník a dokončení rozvozu', async ({ page })
   expect(await page.evaluate(() => __game.mode)).toBe('heli');
   const y = await page.evaluate(() => __game.heli.y);
   await page.keyboard.down('Space');
-  await page.evaluate(() => __step(1 / 60, 240));
+  await advanceFrames(page, 240);
   await page.keyboard.up('Space');
   expect(await page.evaluate(() => __game.heli.y)).toBeGreaterThan(y + 5);
   await page.evaluate(() => { const h = __game.heli; h.y = __game.world.surfaceAt(h.x, h.z); h.vy = 0; h.landed = true; });

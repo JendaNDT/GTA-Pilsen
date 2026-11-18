@@ -19,6 +19,7 @@ export class Car {
     this.mesh = makeCarMesh(typeId, color);
     this.x = 0; this.z = 0; this.y = 0; this.yaw = 0;
     this.vx = 0; this.vz = 0; this.speed = 0; this.steer = 0;
+    this.skid = 0;
     this.mode = 'parked';        // parked | ai | player | loose | police
     this.health = 100;
     this.edge = -1; this.s = 0; this.next = -1; this.lane = 0; this.nextLane = 0; this.turnSlow = 99;
@@ -38,6 +39,9 @@ export class Car {
 
   /** Postaví auto na místo; bez výšky na zem (hint = výška, ze které se hledá povrch, např. pro most). */
   place(x, z, yaw, hint = null) {
+    this.physicsTeleport = true;
+    this.skid = 0;
+    this.pitch = this.roll = this.gRoll = this.steer = 0;
     const w = Car.world;
     this.x = x; this.z = z; this.yaw = yaw; this.vx = this.vz = 0; this.speed = 0; this.vy = 0; this.air = false;
     this.turnContext = 0; this.trafficStop = null;
@@ -571,7 +575,7 @@ export class VehicleManager {
     const cars = this.cars;
     const px = player.x, pz = player.z;
     const near = [];
-    for (const c of cars) if ((c.x - px) ** 2 + (c.z - pz) ** 2 < 90 * 90) near.push(c);
+    for (const c of cars) if (c !== this.game.driver?.car && (c.x - px) ** 2 + (c.z - pz) ** 2 < 90 * 90) near.push(c);
     for (let i = 0; i < near.length; i++) {
       const a = near[i];
       for (let j = i + 1; j < near.length; j++) {
@@ -616,7 +620,7 @@ export class VehicleManager {
   /** Kolize aut s kruhovými překážkami s nekonečnou hmotností (tramvaje). */
   _resolveHeavy(heavy) {
     for (const c of this.cars) {
-      if (c.kinematic) continue;
+      if (c.kinematic || c === this.game.driver?.car) continue;
       const fx = Math.sin(c.yaw), fz = Math.cos(c.yaw), o = c.type.len * 0.27;
       for (const h of heavy) {
         if (h.y !== undefined && Math.abs(h.y - c.y) > 3) continue;

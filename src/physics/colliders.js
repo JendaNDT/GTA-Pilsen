@@ -1,0 +1,132 @@
+import { Earcut } from 'three/src/extras/Earcut.js';
+import { CHUNK } from '../config.js';
+import { terrainTriangles } from './terrain.js';
+import { RoadStructures } from './structures.js';
+import { layers } from './world.js';
+import { forgeRoofFaces } from '../world/mill.js';
+
+function roof(emit, a, b, c) {
+  if ((b[2] - a[2]) * (c[0] - a[0]) > (b[0] - a[0]) * (c[2] - a[2])) emit(a, b, c);
+  else emit(a, c, b);
+}
+
+function building(world, i, measured, emit) {
+  const { bRing, ringStart } = world.b;
+  const flat = [], holes = [], top = [], bottom = [];
+  for (let r = bRing[i]; r < bRing[i + 1]; r++) {
+    const start = top.length;
+    if (start) holes.push(start);
+    for (let v = ringStart[r]; v < ringStart[r + 1]; v++) {
+      const x = world.bvx[v], z = world.bvz[v];
+      flat.push(x, z);
+      top.push([x, world.bTop[i], z]);
+      bottom.push([x, world.bBase[i], z]);
+    }
+    for (let a = start, b = top.length - 1; a < top.length; b = a++) {
+      emit(bottom[a], top[a], bottom[b]);
+      emit(top[a], top[b], bottom[b]);
+      // Síť musí zastavit auto i při vyjíždění z vnitřního dvora.
+      emit(bottom[b], top[a], bottom[a]);
+      emit(bottom[b], top[b], top[a]);
+    }
+  }
+  if (measured) return;
+  const indices = Earcut.triangulate(flat, holes, 2);
+  for (let k = 0; k < indices.length; k += 3) roof(emit, ...indices.slice(k, k + 3).map((id) => top[id]));
+}
+
+export function staticMeshBody(physics, triangles) {
+  const { Jolt, bodies } = physics;
+  // Zápis do jednoho předem velkého pole vynechá volání do WASM pro každý vrchol.
+  const count = triangles.length / 9;
+  const list = new Jolt.TriangleList();
+  list.resize(Math.max(2, count));
+  const address = (i) => Jolt.getPointer(list.at(i).get_mV(0)) / 4;
+  const offset = address(0), stride = address(1) - offset;
+  const heap = Jolt.HEAPF32;
+  for (let i = 0; i < count; i++) heap.set(triangles.subarray(i * 9, i * 9 + 9), offset + stride * i);
+  list.resize(count);
+  const mesh = new Jolt.MeshShapeSettings(list);
+  Jolt.destroy(list);
+  const result = mesh.Create();
+  try {
+    if (result.HasError()) throw new Error('Nepodařilo se vytvořit kolizní síť: ' + result.GetError().c_str());
+    const origin = new Jolt.RVec3(0, 0, 0), rotation = new Jolt.Quat(0, 0, 0, 1);
+    const bodySettings = new Jolt.BodyCreationSettings(result.Get(), origin, rotation, Jolt.EMotionType_Static, layers.STATIC);
+    const body = bodies.CreateBody(bodySettings);
+    bodies.AddBody(body.GetID(), Jolt.EActivation_DontActivate);
+    Jolt.destroy(bodySettings);
+    Jolt.destroy(rotation);
+    Jolt.destroy(origin);
+    return body;
+  } finally {
+    result.Clear();
+    Jolt.destroy(mesh);
+  }
+}
+
+export class TileColliders {
+  constructor(physics, world, data, debug) {
+    this.physics = physics;
+    this.world = world;
+    this.debug = debug;
+    this.tiles = new Map();
+    this.structures = new RoadStructures(world);
+    this.roofs = new Map();
+    this.replaced = new Set();
+    if (data.heritage.sha256 !== data.collisionRoofs.source) throw new Error('Nesouhlasí verze měřených střech.');
+    const valid = new Map(data.heritage.tiles.map(([x, z, , , ids]) => [world.chunkIndex(x, z), ids]));
+    for (const tile of data.collisionRoofs.tiles) {
+      const ci = world.chunkIndex(tile[0], tile[1]);
+      if (!valid.has(ci)) continue;
+      this.roofs.set(ci, tile);
+      for (const id of valid.get(ci)) this.replaced.add(id);
+    }
+  }
+
+  build(ci) {
+    const w = this.world;
+    const x = w.minX + (ci % w.cols) * CHUNK, z = w.minZ + Math.floor(ci / w.cols) * CHUNK;
+    const triangles = [];
+    const emit = (a, b, c) => triangles.push(...a, ...b, ...c);
+    terrainTriangles(w, ci, x, z, CHUNK, emit);
+    for (const i of w.bChunks[ci] ?? []) building(w, i, this.replaced.has(i) || i === w.heritage.forgeIndex, emit);
+    if (ci === w.heritage.forgeChunk) forgeRoofFaces(w, w.heritage.forgeIndex, (a, b, c) => roof(emit, a, b, c));
+    const tile = this.roofs.get(ci);
+    if (tile) {
+      const [cx, cz, points, indices] = tile;
+      const vertex = (i) => [cx + points[3 * i] * 0.02, points[3 * i + 1] * 0.02, cz + points[3 * i + 2] * 0.02];
+      for (let k = 0; k < indices.length; k += 3) roof(emit, vertex(indices[k]), vertex(indices[k + 1]), vertex(indices[k + 2]));
+    }
+    this.structures.emit(ci, emit);
+    const positions = Float32Array.from(triangles);
+    const body = staticMeshBody(this.physics, positions);
+    this.tiles.set(ci, body);
+    this.debug?.add(ci, positions);
+  }
+
+  update(x, z) {
+    const w = this.world, radius = 384;
+    const ix = Math.floor((x - w.minX) / CHUNK), iz = Math.floor((z - w.minZ) / CHUNK);
+    const nearby = new Set();
+    let next = -1, nearest = Infinity;
+    for (let j = Math.max(0, iz - 2); j <= Math.min(w.rows - 1, iz + 2); j++) {
+      for (let i = Math.max(0, ix - 2); i <= Math.min(w.cols - 1, ix + 2); i++) {
+        const dx = Math.abs(w.minX + (i + 0.5) * CHUNK - x);
+        const dz = Math.abs(w.minZ + (j + 0.5) * CHUNK - z);
+        if (Math.hypot(Math.max(0, dx - CHUNK / 2), Math.max(0, dz - CHUNK / 2)) > radius) continue;
+        const ci = j * w.cols + i, distance = i === ix && j === iz ? -1 : dx * dx + dz * dz;
+        nearby.add(ci);
+        if (!this.tiles.has(ci) && distance < nearest) { nearest = distance; next = ci; }
+      }
+    }
+    for (const [ci, body] of this.tiles) if (!nearby.has(ci)) {
+      const id = body.GetID();
+      this.physics.bodies.RemoveBody(id);
+      this.physics.bodies.DestroyBody(id);
+      this.tiles.delete(ci);
+      this.debug?.remove(ci);
+    }
+    if (next >= 0) this.build(next);
+  }
+}

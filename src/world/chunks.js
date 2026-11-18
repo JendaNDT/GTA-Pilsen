@@ -1,5 +1,8 @@
+import { prazdrojThickness } from './prazdroj-bridge.js';
+import { densePath, pathNormal } from './road-profile.js';
 // Stavba 3D geometrie po dlaždicích: budovy, silnice, koleje, stromy.
 import * as THREE from 'three/webgpu';
+import { terrainGridStep } from '../physics/terrain.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
 import { CHUNK, QUALITY, PARAMS, BK, BF, RC, RF, LC, DRIVABLE_MAX } from '../config.js';
 import { makeBuildingMaterial, makeDecalMaterial, makeSurfaceMaterial, makeTerrainMaterial, getPoolMaterial, env } from './materials.js';
@@ -486,28 +489,6 @@ function roadHex(cls) {
 
 const LIFT_MARK = 0.02, LIFT_RAIL = 0.035;
 
-/**
- * Zahuštěná lomená čára: body s až e pole (xs, zs), u mostů i výšky mostovky (ys).
- * a, b = meze celé linie – sousední body mimo úsek slouží k plynulému navázání.
- */
-function densePath(xs, zs, ys, s, e, a, b, step) {
-  const X = [xs[s]], Z = [zs[s]], Y = ys ? [ys[s]] : null;
-  for (let k = s; k < e; k++) {
-    const dx = xs[k + 1] - xs[k], dz = zs[k + 1] - zs[k];
-    const n = Math.max(1, Math.ceil(Math.hypot(dx, dz) / step));
-    for (let q = 1; q <= n; q++) {
-      const t = q / n;
-      X.push(xs[k] + dx * t); Z.push(zs[k] + dz * t);
-      if (Y) Y.push(ys[k] + (ys[k + 1] - ys[k]) * t);
-    }
-  }
-  return {
-    x: X, z: Z, y: Y, n: X.length,
-    px: s > a ? xs[s - 1] : NaN, pz: s > a ? zs[s - 1] : NaN,
-    nx: e < b ? xs[e + 1] : NaN, nz: e < b ? zs[e + 1] : NaN,
-  };
-}
-
 /** Vozovku u portálu tvoří samostatný pás s přesným podélným profilem. */
 function trimApproach(D, start, end) {
   const outside = (p, x, z) => (x - p.outside.x) * p.dx + (z - p.outside.z) * p.dz <= 0;
@@ -527,27 +508,7 @@ function trimApproach(D, start, end) {
   return D.n >= 2;
 }
 
-/** Směr kolmý na čáru v bodě k (průměr sousedních úseků) + měřítko pro ostré lomy. */
-const _nrm = { x: 0, z: 0, scale: 1, dot: 1 };
-function pathNormal(D, k) {
-  const X = D.x, Z = D.z, n = D.n;
-  const ax = k > 0 ? X[k - 1] : D.px, az = k > 0 ? Z[k - 1] : D.pz;
-  const bx = k < n - 1 ? X[k + 1] : D.nx, bz = k < n - 1 ? Z[k + 1] : D.nz;
-  let d0x = 0, d0z = 0, d1x = 0, d1z = 0;
-  const has0 = ax === ax, has1 = bx === bx;
-  if (has0) { d0x = X[k] - ax; d0z = Z[k] - az; const l = Math.hypot(d0x, d0z) || 1; d0x /= l; d0z /= l; }
-  if (has1) { d1x = bx - X[k]; d1z = bz - Z[k]; const l = Math.hypot(d1x, d1z) || 1; d1x /= l; d1z /= l; }
-  let nx, nz, scale = 1, dot = 1;
-  if (has0 && has1) {
-    nx = -(d0z + d1z); nz = d0x + d1x;
-    const l = Math.hypot(nx, nz);
-    if (l < 1e-4) { nx = -d1z; nz = d1x; } else { nx /= l; nz /= l; }
-    dot = nx * -d1z + nz * d1x;
-    scale = 1 / Math.max(0.55, dot);
-  } else if (has1) { nx = -d1z; nz = d1x; } else { nx = -d0z; nz = d0x; }
-  _nrm.x = nx; _nrm.z = nz; _nrm.scale = scale; _nrm.dot = dot;
-  return _nrm;
-}
+
 
 /** Pás položený na terén (nebo na mostovku). center = přidat středovou řadu bodů (lépe kopíruje terén). */
 function ribbon(world, buf, D, hw, col, lateral, lift, capStart, capEnd, center) {
@@ -601,10 +562,10 @@ function dashes(world, buf, D, hw, col, dash, gap, lateral, lift) {
 }
 
 /** Těleso mostu: deska pod vozovkou, zábradlí a pilíře až na terén. */
-function bridgeSlab(world, solid, D, hw, railings, topCol, supports = true) {
+function bridgeSlab(world, solid, D, hw, railings, topCol, supports = true, depth = 0.94) {
   const n = D.n;
   if (n < 2 || !D.y) return;
-  const T = 0.9;
+  const T = depth - 0.04;
   const L = [], R = [];
   for (let k = 0; k < n; k++) {
     const nr = pathNormal(D, k);
@@ -873,7 +834,8 @@ function buildRoads(world, ci) {
         const arches = world.archedBridges.get(i);
         if (arches) stoneBridge(world, solid, D, world.deckHalfWidth(i), arches);
         else bridgeSlab(world, solid, D, world.deckHalfWidth(i), measured === undefined && !world.gradeRoads.has(i) ? true : 'open',
-          cls <= RC.LIVING ? COL.sidewalk : COL.concrete, measured === undefined);
+          cls <= RC.LIVING ? COL.sidewalk : COL.concrete, measured === undefined && i !== world.prazdrojRoad,
+          i === world.prazdrojRoad ? prazdrojThickness : undefined);
       } else if (measured !== undefined && D.y.some((y, k) => y - world.heightAt(D.x[k], D.z[k]) > 0.75)) {
         bridgeSlab(world, solid, D, measured, false, COL.concrete, false);
       }
@@ -957,7 +919,7 @@ const terrainIndices = new Map();
 function buildTerrain(world, ci, cx0, cz0) {
   const grade = world.gradeTerrain.has(ci);
   const detail = world.terrainDetail.has(ci) || grade;
-  const G = grade ? world.gradeStep : detail ? world.tDetailG : world.tG;
+  const G = terrainGridStep(world, ci);
   const N = CHUNK / G, n1 = N + 1;
   const pos = new Float32Array(n1 * n1 * 3), nor = new Float32Array(n1 * n1 * 3), uv = new Float32Array(n1 * n1 * 2);
   const gi0 = Math.round((cx0 - world.tX0) / G), gj0 = Math.round((cz0 - world.tZ0) / G);

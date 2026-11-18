@@ -3,6 +3,7 @@ import { CHUNK, COLL_CELL, DRIVABLE_MAX, RF, RC, LC, BF } from '../config.js';
 import { Tunnel, TUNNEL_HEIGHT } from './tunnels.js';
 import { TurnRules } from './turns.js';
 import { Traffic } from '../game/traffic.js';
+import { prazdrojDeck, identifyPrazdrojBridge } from './prazdroj-bridge.js';
 import { prepareRondel } from './rondel.js';
 
 export const SURF = 0.05;    // o kolik nad terénem leží povrch, po kterém se jezdí (kvůli vrstvě asfaltu)
@@ -271,6 +272,7 @@ export class World {
 
   /** Poloviční šířka mostovky silnice (včetně chodníků). */
   deckHalfWidth(road) {
+    if (road === this.prazdrojRoad) return 1.55;
     const measured = this.rondel?.elevated.get(road);
     if (measured !== undefined) return measured;
     // Wilsonův most má podle městské dokumentace včetně chodníků 15 metrů.
@@ -594,13 +596,21 @@ export class World {
     const n = R.header.count;
     this.r = R;
     this.rCount = n;
-    const nPts = R.dx.length + n;
+    this.prazdrojRoad = identifyPrazdrojBridge(R);
+    const originalLength = this.prazdrojRoad < 0 ? 0 : R.start[this.prazdrojRoad + 1] - R.start[this.prazdrojRoad] + 1;
+    const nPts = R.dx.length + n + (originalLength ? prazdrojDeck.length - originalLength : 0);
     const px = new Float32Array(nPts), pz = new Float32Array(nPts);
     const pOff = new Uint32Array(n + 1);
     const roadOfPt = new Uint32Array(nPts);
     let o = 0;
     for (let i = 0; i < n; i++) {
       pOff[i] = o;
+      if (i === this.prazdrojRoad) {
+        for (const [x, z] of prazdrojDeck) {
+          px[o] = x; pz[o] = z; roadOfPt[o++] = i;
+        }
+        continue;
+      }
       let x = R.x0[i], z = R.z0[i];
       px[o] = x * 0.1; pz[o] = z * 0.1; roadOfPt[o] = i; o++;
       for (let k = R.start[i], ke = R.start[i + 1]; k < ke; k++) {
@@ -613,6 +623,10 @@ export class World {
     // výška bodů: mostovka u mostů, jinak terén
     const py = new Float32Array(nPts);
     for (let i = 0; i < n; i++) {
+      if (i === this.prazdrojRoad) {
+        for (let k = 0; k < prazdrojDeck.length; k++) py[pOff[i] + k] = prazdrojDeck[k][2] - this.baseElevation;
+        continue;
+      }
       const bo = R.bridgeOff ? R.bridgeOff[i] : 0xFFFFFFFF;
       for (let k = pOff[i], ke = pOff[i + 1]; k < ke; k++) {
         py[k] = bo !== 0xFFFFFFFF ? R.bridgeY[bo + k - pOff[i]] * 0.02 : this.heightAt(px[k], pz[k]) + SURF;
@@ -1032,6 +1046,12 @@ export class World {
     for (let i = 0; i < n; i++) {
       const cnt = R.start[i + 1] - R.start[i] + 1;
       const pts = new Float32Array(cnt * 2);
+      if (i === this.prazdrojRoad) {
+        for (const [x, z] of prazdrojDeck) {
+          px[o] = x; pz[o] = z; roadOfPt[o++] = i;
+        }
+        continue;
+      }
       let x = R.x0[i], z = R.z0[i];
       pts[0] = x * 0.1; pts[1] = z * 0.1;
       let o = 2;

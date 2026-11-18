@@ -58,6 +58,10 @@ vlastní metriky v plánu.
 
 ## Fyzika
 
+E18 zavádí F01–F05 a F14 pro hráčovo auto. Má automatickou převodovku, čtyři
+suché povrchy a dvě volby řízení. Mokro a sníh přidá E24. Fyzika chodců
+a ničitelné vybavení mají vlastní etapy. [Výsledky jízd a měření](E18.md)
+
 | ID | Vylepšení | Co hráč pozná | Jak | Etapa |
 | --- | --- | --- | --- | --- |
 | F01 | Pevný krok a interpolace | plynulý a stejný pohyb při 30 i 144 FPS | střádač času, krok 1/60 s, nejvýš 4 kroky za snímek, interpolace polohy a natočení pro vykreslení | E18 |

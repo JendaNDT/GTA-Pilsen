@@ -168,7 +168,7 @@ export class GameAudio {
       const engine = car.health > 0 && (car.mode === 'ai' || car.mode === 'police' || car === g.car);
       const siren = car.mode === 'police' && Boolean(g.wanted) && car.health > 0;
       if (!car.dead && (engine || car.mode === 'loose' && speed > 0.45 || siren)) {
-        add(car, 'car', siren ? 192 : 105, { ...vehicleState(car, speed, engine, siren), skid: car === g.car ? car.skid : 0 }, siren ? 0.48 : 0);
+        add(car, 'car', siren ? 192 : 105, { ...vehicleState(car, speed, engine, siren), rpm: car.rpm, skid: car === g.car ? car.skid : 0 }, siren ? 0.48 : 0);
       }
     }
     for (const v of g.transit.vehicles) if (v.visible) {

@@ -126,6 +126,13 @@ Po vjezdu do Valíku se na střední a vyšší kvalitě obraz postupně přizp�
 V menu **Nastavení → Kvalita grafiky** můžeš vybrat jednu ze čtyř předvoleb. Výchozí
 volba **Automaticky** přizpůsobí kvalitu zařízení podle prvních deseti sekund hraní.
 
+[E18 přidává odpružení, pneumatiky a automatickou převodovku auta](docs/E18.md).
+V **Nastavení → Řízení** si zvolíš arkádový nebo realistický režim. Klávesa **R**
+vrátí auto na nejbližší silnici. Pokud hru uložíš za volantem, při návratu
+najdeš stojící auto na uloženém místě. Původní jízdu můžeš porovnat přidáním
+`?physics=old` k adrese hry. V režimu `?debug` zobrazí **F8** povrchy pro
+fyziku a **F9** měření včetně otáček a prokluzu jednotlivých kol.
+
 Regresní testy kolizí, terénu, silničního grafu a distribuovaných dat:
 
 ```bash
@@ -152,12 +159,15 @@ npm run test:e2e -- --trace off
 
 Testy si samy spustí lokální server nad `dist/`. Projekt `webgl2` spouští úplnou sadu.
 Projekt `webgpu` ověřuje start, rozpočet, noc, Wilsonův most, Valík a referenční pohledy.
-GitHub Actions spouští testy JavaScriptu a Pythonu, audit závislostí a sestavení na
-Node.js 20.19, 22.12 a 24. Oba prohlížečové projekty běží na Node.js 24. Při selhání
-prohlížečového testu GitHub uloží snímek obrazovky jako artefakt.
-Kontroly běží jednou pro každý pull request a po sloučení do `main`. Změna jen v dokumentaci
-(`docs/` a soubory `.md`) spustí jen rychlou kontrolu odkazů mezi dokumenty
-(`node --test tests/docs.test.js`).
+
+Kontroly projektu spouštíme místně před nahráním změn na GitHub. Pro ověření
+kompatibility spusť na Node.js 20.19, 22.12 a 24 příkazy `npm ci`, `npm test`,
+`npm run test:python`, `python3 -m py_compile tools/*.py`,
+`npm audit --audit-level=moderate` a `npm run build`. Testy JavaScriptu zahrnují
+i odkazy v dokumentaci. Prohlížečové testy spusť na Node.js 24 podle postupu výše.
+V E18 ověř na Macu také původní fyziku příkazem
+`PLZEN_TEST_PHYSICS=old npm run test:e2e -- --trace off`. Snímky při selhání najdeš
+v místní složce `test-results/`.
 
 ## Odkud jsou data a jak je obnovit
 
@@ -251,6 +261,8 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 
 ## Zdroje a licence dat
 
+- Fyziku počítá [Jolt Physics 1.1.1](https://github.com/jrouwe/JoltPhysics.js) od Jorrita Rouweho ([licence MIT](https://github.com/jrouwe/JoltPhysics.js/blob/main/LICENSE)).
+
 - Grafiku vykresluje [three.js 0.187.0](https://github.com/mrdoob/three.js/tree/r187),
   autoři three.js, [licence MIT](https://github.com/mrdoob/three.js/blob/r187/LICENSE).
 - Barevné tabulky pro den, soumrak a noc jsou vlastní podklad hry. Generuje je
@@ -273,7 +285,7 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
   Pro další ulice a pro chodce hra používá odhad. [Dopravní detektory](https://opendata.plzen.eu/public/opendata/detail/160) ·
   [Hodinové profily PoliVisu](https://polivisuapi.plzen.eu/api/)
 
-- Měřené budovy centra vycházejí z dat města Plzně z roku 2024 od GEOREAL – Vybíral. Plochy jsou
+- Měřené budovy centra a profil lávky U Prazdroje vycházejí z dat města Plzně z roku 2024 od GEOREAL – Vybíral. Plochy jsou
   převedené do herních souřadnic a doplněné vlastními materiály. Hranice městských částí určují
   místní palety. [3D budovy centra Plzně](https://opendata.plzen.eu/public/opendata/detail/37) ·
   [Městské části](https://opendata.plzen.eu/public/opendata/detail/108)
