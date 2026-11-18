@@ -1,10 +1,11 @@
 // Materiály světa. Fasády domů, povrch země i voda se dokreslují přímo v shaderu.
 import * as THREE from 'three/webgpu';
 import {
-  Discard, Fn, If, Loop, float, materialColor, materialReference, mix, positionLocal, positionWorld, reflect, renderGroup,
-  smoothstep, transformNormalToView, uniform, vec2, vec3, vec4, vertexColor,
+  attribute, Discard, Fn, If, Loop, float, materialColor, materialReference, mix, positionLocal, positionWorld, reflect, renderGroup,
+  smoothstep, struct, transformNormalToView, uniform, vec2, vec3, vec4, vertexColor,
 } from 'three/tsl';
 import { buildingNodes } from './building-nodes.js';
+import { SURFACE } from './material-table.js';
 import { hash21, valueNoise } from './material-noise.js';
 import { TUNNEL_HEIGHT, TUNNEL_PORTAL_CUT } from './tunnels.js';
 
@@ -18,6 +19,17 @@ export const env = {
 };
 
 const facadeNodes = new Map();
+const surfaceProperties = attribute('aSurface', 'vec2');
+
+export function makeSurfaceMaterial(surface, opts = {}) {
+  return new THREE.MeshStandardNodeMaterial({ ...surface, ...opts });
+}
+
+export function makeBatchedSurfaceMaterial(opts = {}) {
+  return makeSurfaceMaterial(SURFACE.plaster, {
+    vertexColors: true, roughnessNode: surfaceProperties.x, metalnessNode: surfaceProperties.y, ...opts,
+  });
+}
 
 /**
  * Fasády: atribut aWin = (pozice v polích oken, pozice v patrech, styl + 8 × počet pater).
@@ -26,7 +38,7 @@ const facadeNodes = new Map();
 export function makeBuildingMaterial({ textures = false, heritage = false } = {}) {
   const key = `${textures}/${heritage}`;
   if (!facadeNodes.has(key)) facadeNodes.set(key, buildingNodes(env.night, textures, heritage));
-  return new THREE.MeshLambertNodeMaterial(facadeNodes.get(key));
+  return makeSurfaceMaterial(SURFACE.plaster, facadeNodes.get(key));
 }
 
 const decalColor = Fn(() => {
@@ -35,8 +47,8 @@ const decalColor = Fn(() => {
 })();
 
 /** Ploché povrchy na zemi (silnice, plochy) se kreslí v pevném pořadí bez zápisu hloubky. */
-export function makeDecalMaterial(opts = {}) {
-  return new THREE.MeshLambertNodeMaterial({
+export function makeDecalMaterial(opts = {}, surface = SURFACE.asphalt) {
+  return makeSurfaceMaterial(surface, {
     vertexColors: true, depthWrite: false, ...opts,
     colorNode: decalColor,
     normalNode: transformNormalToView(vec3(0, 1, 0)),
@@ -91,11 +103,13 @@ function addPaving(landColor, profile, local, worldPosition, noise, detail) {
     }
     landColor.assign(mix(landColor, tint, coverage));
   });
+  return coverage;
 }
 
 // Sdílená síť uzlů pro každou kombinaci dlažby, detailu a počtu portálů.
 // Texturu i souřadnice portálů síť bere z právě vykreslované dlaždice.
 const terrainNodes = new Map();
+const terrainSurface = struct({ color: 'vec3', glint: 'float', roughness: 'float' });
 function getTerrainNodes(paving, detail, portalCount) {
   const key = `${paving}/${detail}/${portalCount}`;
   const cached = terrainNodes.get(key);
@@ -111,10 +125,14 @@ function getTerrainNodes(paving, detail, portalCount) {
     const land = sample.a.clamp(0, 1).toVar();
     const noise = groundNoise(point);
     const landColor = sample.rgb.div(land.max(0.06)).mul(noise.gain).toVar();
+    const earth = landColor.r.sub(landColor.g).mul(4).saturate();
+    const roughness = mix(SURFACE.grass.roughness, SURFACE.soil.roughness, earth).toVar();
     if (profile) {
-      addPaving(landColor, profile, pavingLocal(point, profile), positionWorld, noise, detail);
+      const coverage = addPaving(landColor, profile, pavingLocal(point, profile), positionWorld, noise, detail);
+      roughness.assign(mix(roughness, mix(SURFACE.paving.roughness, 0.34, env.wetPaving), coverage));
     }
     const waterMask = smoothstep(0.35, 0.65, land).oneMinus().toVar();
+    roughness.assign(mix(roughness, SURFACE.water.roughness, waterMask));
     const color = landColor.toVar();
     const sunGlint = float(0).toVar();
     If(waterMask.greaterThan(0.001), () => {
@@ -136,7 +154,7 @@ function getTerrainNodes(paving, detail, portalCount) {
       }
       color.assign(mix(landColor, water, waterMask));
     });
-    return vec4(color, sunGlint);
+    return terrainSurface(color, sunGlint, roughness);
   })().toVar();
 
   const colorNode = Fn(() => {
@@ -153,16 +171,16 @@ function getTerrainNodes(paving, detail, portalCount) {
           .and(along.lessThan(0).or(below)));
       });
     }
-    return vec4(surface.rgb, 1);
+    return vec4(surface.get('color'), 1);
   })();
   const emissiveNode = Fn(() => {
-    const spec = detail ? vec3(1, 0.94, 0.80).mul(surface.a, 1.4) : vec3(0);
+    const spec = detail ? vec3(1, 0.94, 0.80).mul(surface.get('glint'), 1.4) : vec3(0);
     if (paving !== 2) return spec;
     const distance = pavingLocal(positionWorld.xz, profile).sub(vec2(-2.6, 18.25)).length();
     const lampGlow = smoothstep(0.4, 4.7, distance).oneMinus().mul(env.night);
     return spec.add(vec3(0.27, 0.16, 0.080).mul(lampGlow));
   })();
-  const nodes = { colorNode, emissiveNode };
+  const nodes = { colorNode, emissiveNode, roughnessNode: surface.get('roughness') };
   terrainNodes.set(key, nodes);
   return nodes;
 }
@@ -181,12 +199,12 @@ export function makeMillraceMaterial(detail) {
     const reflection = glancing.pow2().mul(ripple.mul(0.20).add(0.28)).add(0.12);
     return vec4(mix(water, env.sky, reflection), 1);
   })();
-  return new THREE.MeshLambertNodeMaterial({ colorNode });
+  return makeSurfaceMaterial(SURFACE.water, { colorNode });
 }
 
 /** Materiál terénu jedné dlaždice (textura země s vodou v průhlednosti). */
 export function makeTerrainMaterial(tex, portals = [], paving = 0, detail = false) {
-  const mat = new THREE.MeshLambertNodeMaterial({ map: tex, ...getTerrainNodes(paving, detail, portals.length) });
+  const mat = makeSurfaceMaterial(SURFACE.grass, { map: tex, ...getTerrainNodes(paving, detail, portals.length) });
   if (portals.length) {
     mat.portalAxes = portals.map((p) => new THREE.Vector4(p.x, p.z, p.dx, p.dz));
     mat.portalProfiles = portals.map((p) => new THREE.Vector3(p.y, p.slope, p.width));

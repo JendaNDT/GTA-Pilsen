@@ -2,7 +2,8 @@
 import * as THREE from 'three/webgpu';
 import { Earcut } from 'three/src/extras/Earcut.js';
 import { CHUNK, QUALITY, PARAMS, BK, BF, RC, RF, LC, DRIVABLE_MAX } from '../config.js';
-import { makeBuildingMaterial, makeDecalMaterial, makeTerrainMaterial, getPoolMaterial, env } from './materials.js';
+import { makeBuildingMaterial, makeDecalMaterial, makeSurfaceMaterial, makeTerrainMaterial, getPoolMaterial, env } from './materials.js';
+import { SURFACE } from './material-table.js';
 import { Parts, getDetailMaterial } from '../entities/models.js';
 import { SURF } from './world.js';
 import { TUNNEL_HEIGHT } from './tunnels.js';
@@ -112,23 +113,34 @@ function styleFor(world, i, district) {
       if (style === 3 && !historic && kind !== BK.CIVIC) { style = 1; floorH = 3.05; }
     }
   }
+  let wallSurface = SURFACE.plaster;
+  if (style === 2) wallSurface = SURFACE.panel;
+  else if (kind === BK.RELIGIOUS || kind === BK.TOWER) wallSurface = SURFACE.stone;
+  else if (PLZEN.brick.includes(wall)) wallSurface = SURFACE.brick;
+  else if (PLZEN.metal.includes(wall)) wallSurface = SURFACE.sheet;
+  else if (kind === BK.INDUSTRIAL || kind === BK.FARM || kind === BK.GARAGE) wallSurface = SURFACE.concrete;
+  let roofSurface = SURFACE.tile;
+  if (roof === PAL.copper) roofSurface = SURFACE.copper;
+  else if (PAL.flatRoof.includes(roof)) roofSurface = SURFACE.felt;
+  else if (PAL.lightRoof.includes(roof) || PLZEN.metal.includes(roof)) roofSurface = SURFACE.sheet;
   const col = B.colour[i];
   if (col) { _c.setHex(col & 0xffffff); wall = [_c.r, _c.g, _c.b]; }
   const rcol = B.roofColour ? B.roofColour[i] : 0;
   if (rcol) { _c.setHex(rcol & 0xffffff); roof = [_c.r, _c.g, _c.b]; }
   // jemná odchylka jasu, ať nejsou sousední domy stejné
   const k = 0.9 + r3 * 0.18;
-  return { wall: [wall[0] * k, wall[1] * k, wall[2] * k], roof, style, bay, floorH };
+  return { wall: [wall[0] * k, wall[1] * k, wall[2] * k], roof, wallSurface, roofSurface, style, bay, floorH };
 }
 
 // ------------------------------------------------------------ pomocníci ----
 class Buf {
-  constructor() { this.p = []; this.n = []; this.c = []; this.w = []; this.i = []; this.vc = 0; }
+  constructor() { this.p = []; this.n = []; this.c = []; this.w = []; this.s = []; this.i = []; this.vc = 0; }
   v(x, y, z, nx, ny, nz, col, k, wu, wv, ws) {
     this.p.push(x, y, z);
     this.n.push(nx * 127, ny * 127, nz * 127);
     this.c.push(col[0] * k * 255, col[1] * k * 255, col[2] * k * 255);
     this.w.push(wu, wv, ws);
+    this.s.push(Math.round(this.surface.roughness * 255), Math.round(this.surface.metalness * 255));
     return this.vc++;
   }
   tri(a, b, c) { this.i.push(a, b, c); }
@@ -153,6 +165,7 @@ class Buf {
     g.setAttribute('normal', new THREE.BufferAttribute(new Int8Array(this.n), 3, true));
     g.setAttribute('color', new THREE.BufferAttribute(new Uint8Array(this.c.map((v) => Math.min(255, v))), 3, true));
     g.setAttribute('aWin', new THREE.BufferAttribute(new Float32Array(this.w), 3));
+    g.setAttribute('aSurface', new THREE.BufferAttribute(new Uint8Array(this.s), 2, true));
     g.setIndex(this.vc > 65535 ? new THREE.BufferAttribute(new Uint32Array(this.i), 1) : new THREE.BufferAttribute(new Uint16Array(this.i), 1));
     g.computeBoundingSphere();
     return g;
@@ -283,6 +296,7 @@ function buildBuildings(world, list, replaced, district) {
     const floors = Math.max(1, Math.round((wallTop - ground) / st.floorH));
     const vBase = ((base - ground) / Math.max(0.5, wallTop - ground)) * floors;
     // zdi
+    buf.surface = st.wallSurface;
     for (let rg = r0; rg < r1; rg++) {
       const v0 = B.ringStart[rg], v1 = B.ringStart[rg + 1];
       let j = v1 - 1;
@@ -306,6 +320,7 @@ function buildBuildings(world, list, replaced, district) {
       }
     }
     // střecha
+    buf.surface = st.roofSurface;
     const nOuter = B.ringStart[r0 + 1] - B.ringStart[r0];
     if (gable && nOuter === 4 && r1 - r0 === 1) {
       const s = B.ringStart[r0];
@@ -322,6 +337,7 @@ function buildBuildings(world, list, replaced, district) {
       buf.face(X[Cq], y, Z[Cq], X[D], y, Z[D], m2x, top, m2z, 0, 1, 0, st.roof, 0.86);
       buf.face(X[Cq], y, Z[Cq], m2x, top, m2z, m1x, top, m1z, 0, 1, 0, st.roof, 0.86);
       // štíty
+      buf.surface = st.wallSurface;
       const cxm = (X[0] + X[1] + X[2] + X[3]) / 4, czm = (Z[0] + Z[1] + Z[2] + Z[3]) / 4;
       buf.face(X[Bq], y, Z[Bq], X[Cq], y, Z[Cq], m1x, top, m1z, m1x - cxm, 0, m1z - czm, st.wall, 1);
       buf.face(X[D], y, Z[D], X[A], y, Z[A], m2x, top, m2z, m2x - cxm, 0, m2z - czm, st.wall, 1);
@@ -1316,7 +1332,7 @@ function treeAssets() {
     [new THREE.ConeGeometry(1.5, 3.0, 7), 0, 5.4, 0],
     [new THREE.ConeGeometry(1.0, 2.6, 7), 0, 7.1, 0],
   ], 2.4, 0.2, lin(0x4f4034), lin(0x3d6c44));
-  treeMat = new THREE.MeshLambertMaterial({ vertexColors: true });
+  treeMat = makeSurfaceMaterial(SURFACE.grass, { vertexColors: true });
 }
 
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(), _p = new THREE.Vector3();
@@ -1380,7 +1396,8 @@ function buildTrees(world, ci, cx0, cz0, forest) {
 }
 
 // ---------------------------------------------------------------- lampy ----
-const LAMP_POLE = lin(0x3a3f45), LAMP_HEAD = [1.0, 0.93, 0.72];
+const LAMP_POLE = lin(0x3a3f45), LAMP_HEAD = lin(SURFACE.lamp.emissive);
+const lampSurfaces = new Map([[LAMP_HEAD, SURFACE.lamp]]);
 const _lr = {};
 
 /** Pouliční lampy podél ulic + světelné kužely na zemi (viditelné v noci). */
@@ -1388,7 +1405,7 @@ function buildLamps(world, ci) {
   const pieces = world.rPieces[ci];
   if (!pieces) return null;
   const R = world.r, px = world.rpx, pz = world.rpz;
-  const parts = new Parts();
+  const parts = new Parts(SURFACE.metal, lampSurfaces);
   const pp = [], pu = [], pi = [];
   const obstacles = [];
   let count = 0;
@@ -1474,8 +1491,8 @@ export class ChunkManager {
     this.districts = new Districts(heritage.districts);
     this.heritage = new Heritage(world, heritage);
     this.asphaltMat = makeDecalMaterial({ polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -6 });
-    this.marksMat = makeDecalMaterial({ polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -14 });
-    this.solidMat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
+    this.marksMat = makeDecalMaterial({ polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -14 }, SURFACE.roadPaint);
+    this.solidMat = makeSurfaceMaterial(SURFACE.concrete, { vertexColors: true, side: THREE.DoubleSide });
     if (world.tunnels.length) {
       const lightMat = new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide });
       for (const tunnel of world.tunnels) {

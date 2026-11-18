@@ -4,7 +4,8 @@ import {
   Fn, float, Loop, mix, modelViewProjection, positionLocal, renderGroup, smoothstep, step, uniform, vec2, vec4,
 } from 'three/tsl';
 import { QUALITY, PARAMS } from '../config.js';
-import { env, getPoolMaterial } from './materials.js';
+import { env, getPoolMaterial, makeSurfaceMaterial } from './materials.js';
+import { SURFACE } from './material-table.js';
 import { hash21, valueNoise } from './material-noise.js';
 
 export const GROUND_HEX = 0x9aa873;
@@ -81,7 +82,7 @@ export class Environment {
     const gg = new THREE.PlaneGeometry(half * 2, half * 2);
     gg.rotateX(-Math.PI / 2);
     gg.translate(0, -80, 0);
-    this.groundMat = new THREE.MeshLambertMaterial({ color: GROUND_HEX });
+    this.groundMat = makeSurfaceMaterial(SURFACE.soil, { color: GROUND_HEX });
     const ground = new THREE.Mesh(gg, this.groundMat);
     ground.frustumCulled = false;
     scene.add(ground);

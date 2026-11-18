@@ -1,65 +1,31 @@
-# Stav etapy E16
+# Stav etapy E17
 
-Větev `etapa/E16` vychází z revize `7ad3671` na `main`. E15 je sloučená.
-Autor potvrdil zahájení E16 a postupné zpracování podkladů pro celou mapu.
-[Zadání E16](E16.md) · [Protokol E15](../E15.md)
+Větev `etapa/E17` vychází z revize `9661ee7` na `main`. E16 je sloučená.
+Autor potvrdil zahájení E17. [Zadání E17](E17.md) · [Protokol E16](../E16.md)
 
 | Krok | Stav |
 | --- | --- |
-| 1. Výběr, stahování a evidence listů ČÚZK | Hotovo · `4fb1104` |
-| 2. Převod souřadnic, složení bloků a testy | Hotovo · `1c434fc` |
-| 3. Načtení a vykreslení dvou pilotů | Hotovo · `786d840` |
-| 4. Srovnávací snímky a vyladění barev | Hotovo · `2f1eede` |
-| 5. Sestavení celého území a ověření velikosti a švů | Hotovo · `2207b05` |
-| 6. Přepínač, licence, dokumentace a závěrečné ověření | Hotovo |
+| 1. Fyzikálně založené materiály | Hotovo, běží ještě úplná regresní sada |
+| 2. Obloha, poloha slunce a světlo z oblohy | Další krok |
+| 3. Kaskádové stíny | Čeká |
+| 4. Průchod scény, vyhlazování, AO, záře, tónování, barevné ladění a mlha | Čeká na návrh a kontrolu Astrou |
+| 5. Čtyři předvolby, automatika a dynamické rozlišení | Čeká |
+| 6. Přizpůsobení jasu | Čeká |
+| 7. Měření všech předvoleb, snímky, protokol a pull request | Čeká |
 
 ## Ověření a otevřené otázky
 
-- Zdroj ČÚZK je dostupný. Katalog obsahuje 16 301 záznamů a pro aktuální hranice
-  mapy vybírá 158 listů. Zkušební list Blovice 0-0 byl stažen v délce 59 684 796
-  bajtů a ověřen součtem SHA-256. Archiv obsahuje JPEG a tři soubory JGW pro
-  jednotlivé souřadnicové systémy.
-- Ověření kroku 1: 16 testů Pythonu, 38 testů Node a produkční sestavení prošly.
-  Test stahování ověřuje navázání na přerušený přenos a evidenci po převodu.
-- Ověření kroku 2: 21 testů Pythonu, 38 testů Node a produkční sestavení.
-  Skutečných sedm listů tvoří osm pilotních bloků mimo `public/`. Testy ověřují
-  převod s tolerancí půl zdrojového pixelu, hranici listů, vyrovnání barev a masku
-  otevřené krajiny.
-- GitHub potvrdil sloučení E15 v revizi `7ad3671`. Dokumentace i prohlížečové
-  kontroly po sloučení prošly. [Kontroly projektu](https://github.com/JendaNDT/GTA-Pilsen/actions/runs/44182177519).
-- Krok 3 prošel 22 testy Pythonu, 41 testy Node a produkčním sestavením. První
-  prohlížečový běh našel chybu volání `fetch`, kvůli které se katalog snímků
-  nenačetl. Opravené volání prošlo se stejnými očekáváními ve všech 14
-  dotčených prohlížečových testech, včetně pozdního načtení v obou režimech
-  vykreslování, výpadku bloku, vypnutí vrstvy a rozpočtu vykreslování.
-- Krok 4 vybral měkké světlo s 80% krytím. Snímky před a po, porovnání tří
-  způsobů prolnutí a odečet deseti kontrolních bodů jsou v [ověření pilotů](../E16/overeni-pilotu.md).
-  Prošlo 41 testů Node, 22 testů Pythonu, sestavení a osm dotčených prohlížečových
-  testů včetně referenčních pohledů v obou režimech.
-- Krok 5 zpracoval 158 listů z roku 2025, celkem 9 806 292 735 bajtů vstupních
-  archivů. Krátký výpadek spojení s katalogem překlenulo navázání na dokončené listy.
-  Test Pythonu ověřuje i opakování krátkých výpadků. Kandidát pokrývá 244,5 km²
-  otevřené krajiny a s katalogem má 4 851 182 bajtů v 615 blocích. Audit ověřil
-  231 751 dvojic pixelů na 979 hranách a nezjistil chybějící ani černé pixely
-  v masce otevřené krajiny. Po vizuálním ověření [ze země](../E16/hranice-ze-zeme.jpg)
-  a [ze vzduchu](../E16/hranice-ze-vzduchu.jpg) převzal kandidáta sestavovací skript.
-  Prošlo 42 testů Node, 23 testů Pythonu, sestavení a osm dotčených
-  prohlížečových testů.
-- Krok 6 doplnil nastavení a uložení volby, licenci ve hře, README, katalog
-  a protokol. Pět cílených prohlížečových testů po úpravě plánování snímků prošlo.
-  [Měření na Macu](../E16/mereni.md) a osm referenčních snímků jsou hotové.
-  První úplný běh ztratil dříve spuštěný server Vite a zbytek scénářů se k němu
-  nepřipojil. S vlastním serverem Playwright prošlo 58 z 59 scénářů. Zkušební
-  přesun v testu výplaty E10 mohl objevit památku a připsat samostatnou odměnu.
-  Test výplaty se ověřuje odděleně od objevování památek. Celá sada zakázek
-  prošla a původně neúspěšný scénář prošel ve třech opakováních.
-- Závěrečné ověření zahrnuje 42 testů Node, 23 testů Pythonu, produkční
-  sestavení a 59 prohlížečových scénářů. Etapa je připravená ke kontrole ve
-  hře. Zbývá autorovo ověření na telefonu. [Protokol E16](../E16.md).
-- Před sloučením probíhá ověření na GitHubu. Osm z devíti scénářů WebGPU
-  prošlo v prvním běhu. Příprava tří pohledů v jednom scénáři přesáhla limit
-  90 sekund. Každý pohled má vlastní scénář s tímto limitem a původními
-  kontrolami barev. Místně prošlo všech 12 dotčených prohlížečových scénářů,
-  42 testů Node a sestavení. [První kontroly na GitHubu](https://github.com/JendaNDT/GTA-Pilsen/actions/runs/44198060724).
-- Po dokončení bude potřeba autorova kontrola při přeletu Rokycan a Klabavy
-  a měření na telefonu. Další podklady a rozhodnutí zatím nejsou potřeba.
+- Výchozí sestavení a osm referenčních pohledů prošly na Apple M4 v Chromiu
+  159.0.8154.6 s WebGPU přes Metal. Výchozí měření nízké předvolby je v
+  `data-raw/e17/mereni-pred-low.json`. Jízda v centru měla CPU p95 1,10 ms
+  a GPU p95 2,03 ms při 1920 × 1080.
+- Krok 1 zachovává barvy ve vrcholech a sdílí materiály mezi objekty.
+  Počty volání a trojúhelníků se v osmi pohledech nezměnily.
+  [Srovnávací snímky a odečty](../E17/materialy.md). Prošlo 43 testů Node
+  a 23 testů Pythonu i produkční sestavení. Prošlo šest cílených kontrol WebGPU
+  (materiály a rozpočet) a prvních 24 kontrol úplné sady na WebGL 2, včetně
+  všech sedmi kontrol materiálů, dlaždic památek, mobilního ovládání a Valíku.
+- Pro kontrolu soumraku v 18:09 se použije 19. říjen 2026. V Plzni toho dne
+  slunce zapadá v 18:08. Pro srovnání denních a nočních snímků zůstává datum
+  E13, 17. listopad 2026. [Údaje U.S. Naval Observatory](https://aa.usno.navy.mil/api/rstt/oneday?date=2026-10-19&coords=49.7475%2C13.3776&tz=2).
+- Po dokončení čeká měření v autorově běžném prohlížeči a kontrola na telefonu.

@@ -1,8 +1,9 @@
 import {
-  Fn, If, attribute, float, mix, positionWorld, select, smoothstep, step, vec2, vec3, vec4,
+  Fn, If, attribute, float, mix, positionWorld, select, smoothstep, step, struct, vec2, vec3, vec4,
   vertexColor,
 } from 'three/tsl';
 import { hash21, valueNoise } from './material-noise.js';
+import { SURFACE } from './material-table.js';
 
 function softRange(value, min, max, width) {
   return smoothstep(float(min).sub(width), float(min).add(width), value)
@@ -10,9 +11,11 @@ function softRange(value, min, max, width) {
 }
 
 const windowData = attribute('aWin', 'vec3');
+const surfaceProperties = attribute('aSurface', 'vec2');
 const wallColor = vertexColor().rgb;
+const buildingSurface = struct({ color: 'vec3', illumination: 'float', glass: 'float' });
 
-function facade(color, illumination, cell, code, style, width, night, heritage) {
+function facade(color, illumination, glazing, cell, code, style, width, night, heritage) {
   const uv = cell.fract().toVar(), id = cell.floor().toVar();
   const detail = smoothstep(0.25, 0.8, width.x.max(width.y)).oneMinus().toVar();
   const ground = step(id.y, 0.5).toVar();
@@ -148,6 +151,7 @@ function facade(color, illumination, cell, code, style, width, night, heritage) 
   shade = mix(wall.mul(0.78), shade, above);
   color.assign(mix(shade, trim, cornice).mul(corniceShade.mul(0.22, detail).oneMinus()));
   illumination.assign(lit.mul(above, mix(windowArea, window.mul(bars.oneMinus()), detail), h1.mul(0.45).add(0.55)));
+  glazing.assign(window.mul(bars.oneMinus(), door.oneMinus(), detail));
 }
 
 function addSurfaceDetail(color, facadePoint, cell, code) {
@@ -181,16 +185,17 @@ export function buildingNodes(night, textures, heritage) {
     const width = cell.fwidth().mul(0.75).add(0.0001).toVar();
     const color = wallColor.toVar();
     const illumination = float(0).toVar();
+    const glazing = float(0).toVar();
     If(code.greaterThan(0).and(style.greaterThan(0.5)), () => {
-      facade(color, illumination, cell, code, style, width, night, heritage);
+      facade(color, illumination, glazing, cell, code, style, width, night, heritage);
     });
     if (textures) addSurfaceDetail(color, positionWorld, cell, code);
-    return vec4(color, illumination);
+    return buildingSurface(color, illumination, glazing);
   })().toVar();
 
-  const colorNode = vec4(surface.rgb, 1);
+  const colorNode = vec4(surface.get('color'), 1);
   const emissiveNode = Fn(() => {
-    const emission = vec3(1, 0.78, 0.42).mul(surface.a, 0.90).toVar();
+    const emission = vec3(1, 0.78, 0.42).mul(surface.get('illumination'), 0.90).toVar();
     if (heritage) {
       const code = windowData.z;
       If(code.lessThan(-4.5), () => {
@@ -203,5 +208,15 @@ export function buildingNodes(night, textures, heritage) {
     }
     return emission;
   })();
-  return { colorNode, emissiveNode };
+  let roughness = surfaceProperties.x;
+  if (heritage) {
+    const code = windowData.z.add(0.5).floor();
+    roughness = select(code.equal(-1), SURFACE.tile.roughness,
+      select(code.equal(-2), SURFACE.stone.roughness,
+        select(code.equal(-4), SURFACE.timber.roughness,
+          select(code.equal(-5), SURFACE.glass.roughness, SURFACE.plaster.roughness))));
+  }
+  const roughnessNode = mix(roughness, SURFACE.glass.roughness, surface.get('glass'));
+  const metalnessNode = heritage ? null : surfaceProperties.y.mul(surface.get('glass').oneMinus());
+  return { colorNode, emissiveNode, roughnessNode, metalnessNode };
 }

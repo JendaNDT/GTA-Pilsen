@@ -1,0 +1,27 @@
+const surface = (roughness, metalness = 0) => Object.freeze({ roughness, metalness });
+
+export const SURFACE = Object.freeze({
+  plaster: surface(0.88),
+  brick: surface(0.92),
+  concrete: surface(0.85),
+  panel: surface(0.78),
+  stone: surface(0.80),
+  glass: surface(0.21),
+  metal: surface(0.52, 0.52),
+  copper: surface(0.67, 0.35),
+  tile: surface(0.76),
+  sheet: surface(0.63, 0.36),
+  felt: surface(0.94),
+  asphalt: surface(0.96),
+  roadPaint: surface(0.78),
+  paving: surface(0.82),
+  grass: surface(0.95),
+  soil: surface(0.99),
+  water: surface(0.26),
+  carPaint: surface(0.32, 0.12),
+  transitPaint: surface(0.45, 0.10),
+  transitMetal: surface(0.46, 0.58),
+  rubber: surface(0.94),
+  timber: surface(0.89),
+  lamp: Object.freeze({ ...surface(0.38), emissive: 0xfff7dd }),
+});
