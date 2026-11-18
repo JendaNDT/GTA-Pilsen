@@ -78,3 +78,21 @@ Starší pozice se otevře pěšky jako dosud.
 Prošlo 69 testů JavaScriptu, produkční sestavení a čtyři dotčené prohlížečové
 scénáře včetně garáže, staré pozice a obnovení auta po návratu na silnici.
 Zbývá sedmý krok a jeho úplné přejímací zkoušky.
+
+## Sedmý krok – rozhodnutí o lávce v ulici U Prazdroje
+
+První automatická jízda nové fyziky po trase E12 z Plzně přes Klabavu směrem
+na Rokycany skončila po 754 metrech v ulici U Prazdroje. Zkouška jela bez
+ostatních vozidel. U souřadnic x = 657 m, z = 162 m má vozovka č. 14422 výšku
+−3,29 m a pěší lávka č. 32249 v témže místě −2,94 m. Mezi jejich horními
+plochami je jen 35 cm. Přední kola zůstala v kontaktu, bok mostovky zastavil
+karoserii. Ověřeno průjezdem a odečtem trojúhelníků z kolizní sítě. Jde
+o hodnoty v herní mapě. Skutečnou světlou výšku zatím nemáme ověřenou.
+
+Kalibrace lávek podle měření patří podle plánu do E22. Autor má rozhodnout,
+zda přesunout ověření a místní opravu této jedné lávky do E18. Do té doby
+se profil nemění. Půlhodinová jízda zůstává nesplněná. Místní reprodukce
+a odečty jsou v `data-raw/e18/krok7/route.mjs`, `route.log` a `steny.log`.
+V pracovní kopii je rozpracovaný panel fyziky, test jízdy na kruhu a volba
+simulace pro prohlížečové testy. První úplný prohlížečový běh nové fyziky
+zapisuje do `data-raw/e18/krok7/new.log`. Před dalším během ověřit jeho výsledek.
