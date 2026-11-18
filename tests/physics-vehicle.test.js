@@ -8,6 +8,7 @@ globalThis.window = {};
 globalThis.location = { search: '' };
 globalThis.matchMedia = () => ({ matches: false });
 const { CAR_TYPES } = await import('../src/entities/models.js');
+const { VehicleManager } = await import('../src/entities/vehicles.js');
 const Jolt = await loadJolt();
 const asphalt = () => 1;
 
@@ -197,4 +198,51 @@ test('okruh provozu drží rozpočet, rychlost a pořadí i mezi oběma hranicem
     applyQualityProfile('high');
     physics.dispose();
   }
+});
+
+test('řidič se nepokusí rozjet auto, které po nehodě leží na střeše', () => {
+  const { car, vehicle, tick, close } = track('hatch');
+  try {
+    car.physical = vehicle;
+    car.y = 1.5;
+    car.gRoll = Math.PI;
+    vehicle.teleport();
+    for (let i = 0; i < 180; i++) tick();
+    assert.ok(Math.cos(car.roll) * Math.cos(car.pitch) < 0);
+    assert.ok(vehicle.wheels.every((wheel) => !wheel.HasContact()));
+    assert.equal(VehicleManager.prototype._resumeAI.call({}, car), false);
+  } finally { close(); }
+});
+
+test('odklizení nabouraného auta vyžaduje celou minutu stání a celý vůz mimo záběr', async () => {
+  const { PerspectiveCamera, Scene } = await import('three/webgpu');
+  const camera = new PerspectiveCamera(60, 1, 0.1, 250);
+  camera.position.set(0, 1, 0);
+  camera.lookAt(0, 1, -20);
+  const game = { camera, player: {}, garage: {} };
+  const manager = new VehicleManager(new Scene(), {}, game);
+  const wreck = { mode: 'parked', crashed: true, x: 0, y: 0, z: 20, vx: 0, vy: 0, vz: 0,
+    type: CAR_TYPES.sedan, halfLen: CAR_TYPES.sedan.len / 2 };
+  assert.equal(manager.clearWreck(wreck, 59.9), false);
+  wreck.vx = 1;
+  assert.equal(manager.clearWreck(wreck, 0.1), false);
+  wreck.vx = 0;
+  assert.equal(manager.clearWreck(wreck, 59), false);
+  wreck.z = -20;
+  assert.equal(manager.clearWreck(wreck, 1), false);
+  wreck.x = 12; // Střed je za pravým okrajem, část karoserie je stále v záběru.
+  assert.equal(manager.clearWreck(wreck, 10), false);
+  wreck.z = 20;
+  game.player.lastCar = wreck;
+  assert.equal(manager.clearWreck(wreck, 1), false);
+  game.player.lastCar = null;
+  game.garage.active = wreck;
+  assert.equal(manager.clearWreck(wreck, 1), false);
+  game.garage.active = null;
+  game.car = wreck;
+  assert.equal(manager.clearWreck(wreck, 1), false);
+  game.car = null;
+  assert.equal(manager.clearWreck(wreck, 1), true);
+  wreck.crashed = false;
+  assert.equal(manager.clearWreck(wreck, 100), false);
 });

@@ -72,6 +72,9 @@ export class VehicleManager {
     this.spawnTimer = 0;
     this.obstacles = [];       // další překážky pro provoz (tramvaje, hráč pěšky): {x, y, z, vx, vz, halfLen, radius}
     this.crashPoints = 0;
+    this.view = new THREE.Frustum();
+    this.viewMatrix = new THREE.Matrix4();
+    this.wreckBounds = new THREE.Sphere();
     Car.world = world;
   }
 
@@ -329,6 +332,17 @@ export class VehicleManager {
       w.edgePoint(car.edge, car.s, car.lane, _pt);
       const along = (car.x - _pt.x) * _pt.tx + (car.z - _pt.z) * _pt.tz;
       car.s = Math.max(0, car.s + along);
+      const length = w.eLen[car.edge];
+      if (car.next >= 0 && length - car.s < car.type.len + Math.abs(car.nextLane)) {
+        // Při odbočení vpravo přední kola vjedou do nové ulice ještě před koncem její příčné osy.
+        const end = w.edgePoint(car.edge, length, car.lane, _pt);
+        const start = w.edgePoint(car.next, 0, car.nextLane, _pt2);
+        const x = Math.sin(car.yaw), z = Math.cos(car.yaw);
+        const outgoing = (car.x - start.x) * start.tx + (car.z - start.z) * start.tz;
+        if (outgoing >= 0 && x * start.tx + z * start.tz > x * end.tx + z * end.tz + 0.05) {
+          car.s = length + outgoing;
+        }
+      }
       this._advanceEdge(car);
       if (car.dead) return;
     }
@@ -346,7 +360,6 @@ export class VehicleManager {
     }
     if (remain < 24 && car.turnSlow < vmax) vmax = car.turnSlow + (vmax - car.turnSlow) * Math.max(0, (remain - 6) / 18);
     let limit = this._obstacleLimit(car, vmax, null);
-    if (car.blocked > 12) limit = Math.max(limit, 1.2);       // po dlouhém čekání se zkus protlačit
     if (physical) {
       let gap = Infinity;
       limit = w.traffic.drivingLimit(car, dt, limit, this.cars, this.obstacles,
@@ -400,6 +413,8 @@ export class VehicleManager {
   }
 
   _resumeAI(car) {
+    if (car.physical && (Math.cos(car.pitch) * Math.cos(car.roll) < 0.65 ||
+        car.physical.wheels.filter((wheel) => wheel.HasContact()).length < 2)) return false;
     const w = this.world;
     const r = w.nearestRoad(car.x, car.z, 9, RC.LIVING, 0, _road, car.y);
     if (!r) return false;
@@ -687,6 +702,26 @@ export class VehicleManager {
     }
   }
 
+  clearWreck(car, dt) {
+    if (!car.crashed || car.floodTime || (car.mode !== 'loose' && car.mode !== 'parked') ||
+        Math.hypot(car.vx, car.vy, car.vz) >= 0.2) {
+      car.wreckTime = 0;
+      return false;
+    }
+    car.wreckTime = (car.wreckTime || 0) + dt;
+    const g = this.game;
+    if (car.wreckTime < 60 || car === g.car || car === g.player?.lastCar || car === g.garage?.active) return false;
+    if (car.wasAI && car.health > 25 && !car.noDriver && car.mode === 'loose') return false;
+    const cam = g.camera;
+    if (!cam) return false;
+    cam.updateMatrixWorld();
+    this.viewMatrix.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse);
+    this.view.setFromProjectionMatrix(this.viewMatrix, cam.coordinateSystem, cam.reversedDepth);
+    this.wreckBounds.center.set(car.x, car.y, car.z);
+    this.wreckBounds.radius = Math.hypot(car.halfLen, car.type.wid / 2, car.type.h);
+    return !this.view.intersectsSphere(this.wreckBounds);
+  }
+
   // ------------------------------------------------------------- update ----
   update(dt, player, cam, heavy) {
     const w = this.world;
@@ -715,6 +750,7 @@ export class VehicleManager {
     for (let i = this.cars.length - 1; i >= 0; i--) {
       const c = this.cars[i];
       const d2 = (c.x - px) ** 2 + (c.z - pz) ** 2;
+      if (this.clearWreck(c, dt)) { this.remove(c); continue; }
       if (c.mode === 'ai') {
         // policejní hlídka se při hledanosti přidá k pronásledování
         if (c.typeId === 'police' && wanted > 0 && d2 < 160 * 160) { c.mode = 'police'; c.repath = 0; }
@@ -734,9 +770,9 @@ export class VehicleManager {
           if (c.rest > 3 && c.wasAI && c.health > 25 && !c.noDriver) { if (this._resumeAI(c)) c.wasAI = false; else if (c.rest > 8) c.wasAI = false; }
           else if (c.rest > 2.5 && (c.noDriver || !c.wasAI)) { c.mode = 'parked'; c.vx = c.vz = 0; c.speed = 0; }
         } else c.rest = 0;
-        if (d2 > 380 * 380 && c !== this.game.garage?.active) { this.remove(c); continue; }
+        if (!c.crashed && d2 > 380 * 380 && c !== this.game.player?.lastCar && c !== this.game.garage?.active) { this.remove(c); continue; }
       } else if (c.mode === 'parked') {
-        if (d2 > 330 * 330 && c !== player.lastCar && c !== this.game.garage?.active) { this.remove(c); continue; }
+        if (!c.crashed && d2 > 330 * 330 && c !== this.game.player?.lastCar && c !== this.game.garage?.active) { this.remove(c); continue; }
       }
       if (c.mesh.userData.light) c.mesh.userData.light.visible = QUALITY.carLights && lightsOn && c.mode !== 'parked' && !c.noLights && d2 < 300 * 300;
       if (c.mesh.userData.beacons) {

@@ -151,3 +151,104 @@ test('E20 – tramvaj brzdí a při náhlé překážce odstrčí auto na kolej�
   expect(result.advance).toBeGreaterThan(5);
   expect(result.removed && result.reset).toBe(true);
 });
+
+test('E20 – fyzikální auto odbočí z Kardinála Berana do Husovy a pokračuje svým pruhem', async ({ page }) => {
+  await start(page);
+  const result = await page.evaluate(() => {
+    const g = __game, w = g.world, car = g.player.lastCar;
+    for (const other of [...g.vehicles.cars]) if (other !== car) g.vehicles.remove(other);
+    const edge = 36764, next = 34497;
+    const p = w.edgePoint(edge, w.eLen[edge] - 15, 0, {});
+    car.place(p.x, p.z, Math.atan2(p.tx, p.tz));
+    const lane = w.r.w[w.eRoad[next]] / 4;
+    Object.assign(car, { mode: 'ai', edge, s: w.eLen[edge] - 15, lane: 0, next, nextLane: lane,
+      turnSlow: 3.8, speed: 5, vx: 5 * p.tx, vz: 5 * p.tz });
+    g.player.place(car.x - 8, car.z);
+    for (let i = 0; i < 25; i++) g.colliders.update(car.x, car.z);
+    g.trafficBodies.update(g, 1 / 60);
+    let outside = -Infinity;
+    for (let tick = 0; tick < 900; tick++) {
+      w.traffic.tick(1 / 60);
+      g.physics.step(1 / 60);
+      const r = w.nearestRoad(car.x, car.z, 15, 13, 0, {}, car.y);
+      outside = Math.max(outside, r ? r.dist - w.r.w[r.road] / 2 : 15);
+      if (car.edge === next && car.s > 12) break;
+    }
+    return { edge: car.edge, next, distance: car.s, outside };
+  });
+  expect(result.edge, JSON.stringify(result)).toBe(result.next);
+  expect(result.distance).toBeGreaterThan(12);
+  expect(result.outside).toBeLessThanOrEqual(0);
+});
+
+test('E20 – náraz do jedoucího auta provozu změní rychlost obou aut', async ({ page }) => {
+  await start(page);
+  const result = await page.evaluate(() => {
+    const g = __game, w = g.world, car = g.player.lastCar;
+    for (const other of [...g.vehicles.cars]) if (other !== car) g.vehicles.remove(other);
+    const edge = 36764;
+    const put = (c, distance, speed) => {
+      const p = w.edgePoint(edge, distance, 0, {});
+      c.place(p.x, p.z, Math.atan2(p.tx, p.tz));
+      Object.assign(c, { speed, vx: p.tx * speed, vz: p.tz * speed });
+    };
+    const lead = g.vehicles.add(new car.constructor('sedan', 0x888888));
+    put(lead, 40, 5);
+    Object.assign(lead, { mode: 'ai', edge, s: 40, lane: 0 });
+    g.vehicles._pickNext(lead);
+    put(car, 28, 22);
+    g._enterCar(car);
+    g.vehicles.spawnTimer = Infinity;
+    for (let i = 0; i < 25; i++) g.colliders.update(car.x, car.z);
+    let contact;
+    for (let i = 0; i < 120; i++) {
+      const before = [car.speed, lead.speed];
+      g.update(1 / 60);
+      if (lead.crashed && !contact) {
+        contact = { before, after: [car.speed, lead.speed], mode: lead.mode, health: [car.health, lead.health] };
+        break;
+      }
+    }
+    return contact;
+  });
+  expect(result).toBeTruthy();
+  expect(result.before[1]).toBeGreaterThan(2);
+  expect(result.before[0] - result.after[0]).toBeGreaterThan(2);
+  expect(result.after[1] - result.before[1]).toBeGreaterThan(2);
+  expect(result.mode).toBe('loose');
+  expect(Math.max(...result.health)).toBeLessThan(100);
+});
+
+test('E20 – hra odklidí stojící cizí vrak až po minutě mimo záběr a zachová oba hráčovy vozy', async ({ page }) => {
+  await start(page);
+  const states = await page.evaluate(() => {
+    const g = __game, vm = g.vehicles, last = g.player.lastCar;
+    for (const c of [...vm.cars]) if (c !== last) vm.remove(c);
+    const create = (x) => {
+      const car = vm.add(new last.constructor('sedan', 0x888888));
+      car.place(x, 52, 0);
+      car.health = 0;
+      car.crashed = true;
+      return car;
+    };
+    const wreck = create(-30), owned = create(-20);
+    g.garage.active = owned;
+    last.crashed = true;
+    vm.spawnTimer = Infinity;
+    const tick = () => vm.update(1 / 30, g.player, g.camInfo, []);
+    const view = (target) => {
+      g.camera.position.set(-30, wreck.y + 3, 65);
+      g.camera.lookAt(-30, wreck.y + 1, target);
+    };
+    view(85);
+    for (let i = 0; i < 1799; i++) tick();
+    const before = vm.cars.includes(wreck);
+    view(52);
+    for (let i = 0; i < 90; i++) tick();
+    const visible = vm.cars.includes(wreck);
+    view(85);
+    tick();
+    return { before, visible, cleared: !vm.cars.includes(wreck), last: vm.cars.includes(last), garage: vm.cars.includes(owned) };
+  });
+  expect(states).toEqual({ before: true, visible: true, cleared: true, last: true, garage: true });
+});

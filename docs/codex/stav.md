@@ -18,6 +18,8 @@ Autor schválil rozumný odhad podvodního profilu. Využije obrys vodní plochy
 Kontrolním údajem je kóta dna u Wilsonova mostu v městské tabulce. Poppler 26.11.0 z ní přečetl profil R19 v říčním km 1,372 s kótou 299,30 m n. m. Hloubku určuje rozdíl od hladiny.
 Měřené příčné profily nebudou potřeba. [Tabulka města](https://gis.plzen.eu/foto/pov_model/profily/PM_Psany_PP.pdf)
 
+Autor schválil, že cizí nepojízdné auto může hra odklidit po minutě stání, jakmile je celé mimo záběr. Hráčovo poslední auto, právě řízené auto a auto z garáže jsou chráněná.
+
 ## Ověření
 
 Řidič dostává trasu, povolenou rychlost a vzdálenost od předního nárazníku k místu zastavení.
@@ -59,3 +61,9 @@ Voda v materiálu terénu používá stejnou síť jako `world.heightAt`. Dno pr
 V obou vykreslovačích malé auto sjelo ze suchého západního břehu do Radbuzy asi 20 m po proudu od mostu. Při zkoušce zaznělo jedno šplouchnutí, vůz plaval bez dotyku kol se dnem, hráč vyplaval a dostal se zpět na souš. Od prvního kontaktu s vodou po úplné ponoření a vyřazení auta uplynulo 7,05 s. Na mělčině zůstává vyčnívající karoserie ve hře. Prošlo 90 testů JavaScriptu, sestavení a devět závěrečných prohlížečových scénářů. Širší ověření jízdy, fyziky a vody mělo 20 úspěšných scénářů. Záznamy jsou v `data-raw/e20/krok6-{node,build,overeni,kalibrace}.log`.
 
 První delší pozorování okolního provozu odhalilo chyby při odbočení do Husovy a při návratu převráceného auta do provozu. Ve špičce některé vozy zůstaly stát několik minut. Pro přijetí kroku 7 je potřeba odstranit příčiny a dlouhý běh zopakovat. Souřadnice a průběh jsou v `data-raw/e20/stopa-Klatovská.json` a `data-raw/e20/pozorovani-v2-*.json`.
+
+### Sedmý krok, rozpracováno
+
+Střet s jedoucím autem provozu i odbočení z ulice Kardinála Berana do Husovy už mají vlastní zkoušku ve hře. Přední vůz při střetu zrychlil, hráčův zpomalil, oba utrpěly škodu. Převrácené auto už se nepokouší jet po střeše. Odklizení cizího auta hlídá dobu stání, vlastníka a okraje záběru kamery včetně rozměrů auta. Prošlo 92 testů JavaScriptu a sestavení. Zbývá ověřit návrat plynulého provozu v husté dopravě a uzavřít společné měření, testy a protokol.
+
+K uložení této části sedmého kroku prošlo 13 prohlížečových scénářů provozu a MHD a samostatná prohlížečová zkouška odklizení vraku. Ověřila dobu před minutovým limitem, viditelný vrak po limitu, odstranění po otočení kamery a zachování posledního i garážového auta. Předběžné dlouhé pozorování stále zachytilo dlouhé fronty a vyjetí z vozovky. Záznamy jsou v `data-raw/e20/{krok7-odklid,vrak,odklid-provoz}.log`.
