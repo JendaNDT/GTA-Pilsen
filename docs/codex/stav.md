@@ -10,15 +10,16 @@ Autor potvrdil zahájení E17. [Zadání E17](E17.md) · [Protokol E16](../E16.m
 | 3. Kaskádové stíny | Hotovo · `bf5ba60` |
 | 4. Průchod scény, vyhlazování, AO, záře, tónování, barevné ladění a mlha | Hotovo |
 | 5. Čtyři předvolby, automatika a dynamické rozlišení | Hotovo · `56108ea` |
-| 6. Přizpůsobení jasu | Hotovo |
-| 7. Měření všech předvoleb, snímky, protokol a pull request | Další krok |
+| 6. Přizpůsobení jasu | Hotovo · `e285dca` |
+| 7. Měření všech předvoleb, snímky, protokol a příprava na sloučení | Hotovo · `a084d47` · [Protokol E17](../E17.md) |
 
 ## Ověření a otevřené otázky
 
 - Výchozí sestavení a osm referenčních pohledů prošly na Apple M4 v Chromiu
-  159.0.8154.6 s WebGPU přes Metal. Výchozí měření nízké předvolby je v
-  `data-raw/e17/mereni-pred-low.json`. Jízda v centru měla CPU p95 1,10 ms
-  a GPU p95 2,03 ms při 1920 × 1080.
+  159.0.8154.6 s WebGPU přes Metal. První měření nízké předvolby je v
+  `data-raw/e17/mereni-pred-low.json`. Pro porovnání na konci etapy se stejná
+  revize přeměřila s časovými značkami okolo celého snímku a s běžnou
+  obnovovací frekvencí prohlížeče.
 - Krok 1 zachovává barvy ve vrcholech a sdílí materiály mezi objekty.
   Počty volání a trojúhelníků se v osmi pohledech nezměnily.
   [Srovnávací snímky a odečty](../E17/materialy.md). Prošlo 43 testů Node
@@ -75,4 +76,23 @@ Autor potvrdil zahájení E17. [Zadání E17](E17.md) · [Protokol E16](../E16.m
   a sestavením. V záběru uvnitř byl naměřen zobrazovací jas 0,049 před
   tónováním a za 2,5 s vzrostla expozice z 1,00 na 1,62. Test ověřil
   postupné zesvětlení i ztlumení po výjezdu. [Snímky](../E17/efekty.md).
-- Po dokončení čeká měření v autorově běžném prohlížeči a kontrola na telefonu.
+- Závěrečné měření používá jedinou dvojici značek WebGPU okolo celého snímku.
+  Výchozí E16 je znovu naměřená stejným postupem. Všechny čtyři předvolby
+  držely na Apple M4 při jízdě i letu v centru 60 FPS. Po omezení vnitřního
+  rozlišení nízké předvolby na 75 % stoupl čas GPU při jízdě proti E16 o 2,0 %
+  a při letu klesl o 8,7 %. Vysoká a ultra předvolba při letu překročily
+  pracovní rozpočet GPU 12 ms. Skutečný telefon čeká na kontrolu autora.
+- Závěrečný běh našel v testu památek chybu staršího volání, které mění jen
+  hodinu. Oprava ponechává nastavené datum. Původní test zůstává a test oblohy
+  navíc ověřuje setrvání data po změně samotné hodiny. Po opravě prošly čtyři
+  cílené kontroly památek a oblohy a všech 24 opakovaných scénářů první části
+  úplné sady na opraveném sestavení. Prošly rozpočty všech čtyř předvoleb
+  na obou vykreslovačích a cílená kontrola měření času GPU.
+- Samostatná diagnostika Valíku na softwarovém WebGPU naměřila první odečet
+  jasu asi po 11 s včetně čekání na dříve zadané snímky. Test čeká na dokončení
+  přípravy pohledu před zahájením každého odečtu. Desetisekundová mez odečtu
+  a všechna očekávání na přizpůsobení jasu zůstávají stejná. Závěrečné
+  zopakování Valíku prošlo na obou vykreslovačích.
+- Na konečném sestavení prošlo ve více bězích všech 93 prohlížečových
+  scénářů (67 WebGL 2, 26 WebGPU). Prošlo i 55 testů Node, 23 testů Pythonu
+  a produkční sestavení. [Snímky a měření](../E17.md)

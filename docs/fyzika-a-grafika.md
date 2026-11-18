@@ -1,6 +1,6 @@
 # Katalog vylepšení fyziky a grafiky
 
-Verze 2 ze 17. listopadu 2026. Každé vylepšení má označení. Na označení odkazují
+Verze 2 z 18. listopadu 2026. Každé vylepšení má označení. Na označení odkazují
 [plán](plan-presnost-a-vzhled.md) a [zadání etap](codex/README.md). Rozhodnutí autora:
 WebGPU, fyzika Jolt, zábradlí zastaví chodce, vybavení ulic se dá zničit.
 
@@ -27,14 +27,18 @@ Rozpočet vykreslování hlídají oba prohlížečové projekty. [Protokol E15]
 využívají snímky ČÚZK ve 2 m na pixel. Měkké prolnutí zachovává malované barvy hry.
 Vrstva se načítá za běhu a je samostatně vypínatelná. [Protokol E16](E16.md).
 
-## Stav po E16 (ověřeno v kódu)
+**Světlo a obraz (E17) jsou hotové.** Povrchy reagují na světlo podle materiálu. Obloha
+sleduje datum a čas v Plzni. Čtyři předvolby určují kvalitu stínů, záře a vyhlazování.
+[Protokol a měření E17](E17.md).
+
+## Stav po E17 (ověřeno v kódu)
 
 - **Fyzika:** auto se otáčí podle natočení kol a boční skluz se tlumí. Nemá hmotnost,
   zavěšení ani pneumatiky (`stepDynamic()` ve `vehicles.js`). Náklony jsou vizuální,
   kolize řeší tři kruhy. Vrtulník a chodci mají zjednodušený pohyb. Krok se mění se snímkem.
-- **Grafika:** three.js 0.187.0 s WebGPU a záložním WebGL 2. Matné materiály Lambert,
-  vlastní obloha a povrchy v TSL, jedna stínová mapa 2 048 px. Při poklesu FPS
-  hra snižuje rozlišení (`Game.adapt()`). Nové efekty zůstávají v plánu příslušných etap.
+- **Grafika** používá three.js 0.187.0 s WebGPU a záložním WebGL 2, fyzikálně založené
+  povrchy, stíny podle předvolby a samostatný průchod obrazových efektů. Vnitřní
+  rozlišení se řídí naměřenou prací snímku (`Game.adapt()`).
 
 ## Měření fyzikálních knihoven
 
@@ -90,23 +94,24 @@ budov ani simulaci tekutin.
 
 ## Grafika
 
-Předvolby kvality: **U** ultra, **V** vysoká (výchozí na počítači), **S** střední (výchozí
-na telefonu), **N** nízká (jako dnešní `?quality=low`). Moduly jsou ověřené v three.js 0.187.
+Předvolby kvality jsou **U** ultra, **V** vysoká, **S** střední a **N** nízká. Automatika
+spouští první měření na vysoké předvolbě na počítači a na nízké na telefonu. Moduly jsou
+ověřené v three.js 0.187.
 
 ### Světlo a obraz (E17)
 
-| ID | Vylepšení | Co bude vidět | Jak (three.js 0.187) | Předvolby |
-| --- | --- | --- | --- | --- |
-| G01 | Fyzikálně založené materiály | lesk aut a skla, matná omítka, kov, mokrá dlažba; světlo reaguje podle povrchu | `MeshStandardNodeMaterial`, tabulka materiálů (omítka, cihla, beton, sklo, kov, asfalt, dlažba, tráva, tašky, plech, měď) s drsností a kovovostí; barvy ve vrcholech zůstávají jako albedo | U V S N |
-| G02 | Obloha a světlo z oblohy | realistická obloha podle času, barevné ranní a večerní světlo, odrazy oblohy | `SkyMesh` řízené herními hodinami; prostředí (PMREM) se přepočítá při posunu slunce o 2° nebo za 10 herních minut; v noci měsíc a hvězdy | U V S N |
-| G03 | Kaskádové stíny | ostré stíny zblízka a stíny budov a stromů do dálky | `CSMShadowNode`: U 4 × 2048, V 3 × 2048, S 2 × 1024, N bez stínů | U V S |
-| G04 | Ambient occlusion | domy a auta „sedí“ na zemi, plastické kouty a římsy | `GTAONode` v poloviční velikosti s odšuměním | U V |
-| G05 | Barevné ladění | jednotný „lehce malovaný realismus“ ve dne, za soumraku i v noci | ACES nebo AgX a `Lut3DNode` se třemi vlastními LUT (den, soumrak, noc) v `public/luts/` | U V S N |
-| G06 | Vzdušná perspektiva a mlha v údolích | hloubka krajiny, namodralý opar v dálce, ranní mlha nad Radbuzou, Mží a Berounkou | výšková exponenciální mlha zbarvená oblohou, místní mlha nad vodou podle času a ročního období | U V S N |
-| G07 | Záře světel | svítící lampy, okna, světlomety a odlesky slunce | `BloomNode` s prahem; vyzařující materiály lamp, oken a aut | U V S |
-| G08 | Vyhlazování | hladké hrany bez blikání | U, V: `TRAANode`; S: `SMAANode`; N: `FXAANode` | U V S N |
-| G09 | Předvolby a dynamické rozlišení | stabilní FPS; volba v nastavení | nastavení předvolby v menu, automatická volba podle prvních 10 s; dynamické rozlišení místo `Game.adapt()`, volitelně `FSR1Node` | U V S N |
-| G10 | Adaptace oka | vjezd do Valíku nebo vyjetí na slunce oslní a pak se zrak přizpůsobí | automatická expozice podle průměrného jasu | U V S |
+| ID | Vylepšení | Co je vidět | Jak (three.js 0.187) | Předvolby | Stav |
+| --- | --- | --- | --- | --- | --- |
+| G01 | Fyzikálně založené materiály | lesk aut, skla a kovu, matná omítka, asfalt a dlažba | `MeshStandardNodeMaterial` s tabulkou drsnosti a kovovosti, barvy ve vrcholech zůstávají jako albedo | U V S N | hotovo |
+| G02 | Obloha a světlo z oblohy | obloha a odrazy podle času, barevné ranní a večerní světlo, měsíc a hvězdy | `SkyMesh` podle data a času, mapa světla se postupně přepočítá při posunu slunce o 2° nebo po 10 herních minutách | U V S N | hotovo |
+| G03 | Kaskádové stíny | drobné stíny v popředí i stíny budov a stromů v dálce | `CSMShadowNode` s mapami U 4 × 2048, V 3 × 2048, S 2 × 1024 | U V S | hotovo |
+| G04 | Kontaktní zastínění | stín u paty domu, pod autem a v koutech | `GTAONode` v poloviční velikosti s odšuměním | U V | hotovo |
+| G05 | Barevné ladění | malovaný vzhled ve dne, za soumraku i v noci | výchozí ACES a `Lut3DNode` s plynulou směsí tří vlastních tabulek v `public/luts/` | U V S N | hotovo |
+| G06 | Vzdušná perspektiva a mlha v údolích | opar v dálce a ranní mlha nad Radbuzou, Mží a Berounkou | výšková mlha zbarvená oblohou, opar podle ranního času a blízkosti vody | U V S N | hotovo |
+| G07 | Záře světel | záře lamp, oken, světlometů a odlesků slunce | `BloomNode` s prahem podle světla, vyzařující materiály | U V S | hotovo |
+| G08 | Vyhlazování | hladší hrany | U a V používají `TRAANode`, S `SMAANode` a N `FXAANode` | U V S N | hotovo |
+| G09 | Předvolby a dynamické rozlišení | volba kvality v menu a plynulejší obraz při velké zátěži | automatická volba podle zařízení a práce prvních 10 s, vnitřní rozlišení 60–100 % maxima předvolby | U V S N | hotovo |
+| G10 | Adaptace oka | jas se postupně přizpůsobí při vjezdu do Valíku a po výjezdu | automatická expozice z průměrného jasu scény | U V S | hotovo |
 
 ### Krajina, voda a noc (E23)
 

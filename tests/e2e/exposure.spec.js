@@ -9,8 +9,12 @@ test('E17 – expozice reaguje na jas uvnitř a venku u Valíku', { tag: '@webgp
   await renderReferenceView(page, reference.views.find(({ id }) => id === 'valik-zapad'));
   const observed = await page.evaluate(async () => {
     const game = window.__game, eye = game.postfx.exposure;
+    const backend = game.renderer.backend;
+    const queue = backend.isWebGPUBackend ? backend.device.queue : null;
     const afterFrame = () => new Promise(requestAnimationFrame);
     const read = async () => {
+      // Odečet měří nový snímek až po dokončení předchozího pohledu a jeho stínů.
+      await queue?.onSubmittedWorkDone();
       eye.update(0.20);
       game.render();
       const finish = performance.now() + 10_000;

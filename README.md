@@ -112,6 +112,12 @@ se načítají po malých blocích podle polohy a jsou sladěné s malovaným vz
 V nastavení je vypneš volbou **Letecké snímky krajiny** nebo adresou s `?orthophoto=0`.
 [Srovnání pole u Rokycan a údolí Klabavy](docs/E16/overeni-pilotu.md).
 
+[E17 mění světlo a obraz](docs/E17.md). Slunce a obloha sledují datum a čas v Plzni,
+sklo a lak aut odrážejí okolí, v noci září lampy a okna a ráno nad řekami leží opar.
+Po vjezdu do Valíku se na střední a vyšší kvalitě obraz postupně přizpůsobí tmě.
+V menu **Nastavení → Kvalita grafiky** můžeš vybrat jednu ze čtyř předvoleb. Výchozí
+volba **Automaticky** přizpůsobí kvalitu zařízení podle prvních deseti sekund hraní.
+
 Regresní testy kolizí, terénu, silničního grafu a distribuovaných dat:
 
 ```bash
