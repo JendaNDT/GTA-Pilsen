@@ -2,6 +2,10 @@ import { Euler, Quaternion, Vector3 } from 'three/webgpu';
 import { layers } from './world.js';
 
 const MASS = 2500, G = 9.81;
+const MAX_HORIZONTAL_SPEED = 300 / 3.6;
+const ASSISTED_PITCH = 0.51;
+// Při plném náklonu v rovném letu vyrovná odpor vzduchu vodorovnou složku tahu.
+const FORWARD_DRAG = G * Math.tan(ASSISTED_PITCH) / MAX_HORIZONTAL_SPEED ** 2;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const skidEnds = [[-0.95, -1.4], [-0.95, 2], [0.95, -1.4], [0.95, 2]];
 
@@ -95,15 +99,20 @@ export class HelicopterBody {
     if (!h.occupied || h.landed && lift <= 0 && this.holdY <= h.y + 0.2) thrust = 0;
     if (h.y >= ceiling) thrust = Math.min(thrust, G - Math.max(0, h.vy));
     thrust = clamp(thrust * groundEffect * power, 0, 1.3 * G);
+    const sin = Math.sin(h.yaw), cos = Math.cos(h.yaw);
+    const forwardSpeed = Math.max(0, h.vx * sin + h.vz * cos);
     const drag = h.landed ? 3 : 0.14;
-    vec.Set(MASS * (thrust * point.x - h.vx * drag), MASS * thrust * point.y,
-      MASS * (thrust * point.z - h.vz * drag));
+    // Jemné manévry, boční skluz i brzdění po vyrovnání používají původní tlumení.
+    const cruise = h.landed ? 0 : clamp(2 * h.pitch / ASSISTED_PITCH - 1, 0, 1);
+    const forwardCorrection = cruise * forwardSpeed * (drag - FORWARD_DRAG * forwardSpeed);
+    vec.Set(MASS * (thrust * point.x - h.vx * drag + sin * forwardCorrection), MASS * thrust * point.y,
+      MASS * (thrust * point.z - h.vz * drag + cos * forwardCorrection));
     body.AddForce(vec);
 
-    const omega = body.GetAngularVelocity(), sin = Math.sin(h.yaw), cos = Math.cos(h.yaw);
+    const omega = body.GetAngularVelocity();
     const pitchRate = cos * omega.GetX() - sin * omega.GetZ();
     const rollRate = sin * omega.GetX() + cos * omega.GetZ();
-    const pitch = assisted ? (forward * 0.51 - h.pitch) * 5 : forward * 0.9;
+    const pitch = assisted ? (forward * ASSISTED_PITCH - h.pitch) * 5 : forward * 0.9;
     const roll = assisted ? (-turn * Math.min(0.22, h.speed * 0.018) - h.roll) * 5 : 0;
     const pitchTorque = (pitch - pitchRate) * 16500 * power;
     const rollTorque = (roll - rollRate) * 4300 * power;
@@ -123,15 +132,24 @@ export class HelicopterBody {
     h.z = clamp(pos.GetZ(), h.world.playMinZ + 40, h.world.playMaxZ - 40);
     h.y = pos.GetY();
     h.vx = v.GetX(); h.vy = v.GetY(); h.vz = v.GetZ();
-    if (h.x !== pos.GetX() || h.z !== pos.GetZ()) {
+    const atBoundary = h.x !== pos.GetX() || h.z !== pos.GetZ();
+    if (atBoundary) {
       if (h.x !== pos.GetX()) h.vx = 0;
       if (h.z !== pos.GetZ()) h.vz = 0;
       this.pos.Set(h.x, h.y, h.z);
       this.physics.bodies.SetPosition(body.GetID(), this.pos, this.physics.Jolt.EActivation_Activate);
+    }
+    h.speed = Math.hypot(h.vx, h.vz);
+    const overLimit = h.speed > MAX_HORIZONTAL_SPEED;
+    if (overLimit) {
+      const scale = MAX_HORIZONTAL_SPEED / h.speed;
+      h.vx *= scale; h.vz *= scale;
+      h.speed = MAX_HORIZONTAL_SPEED;
+    }
+    if (overLimit || atBoundary) {
       this.vec.Set(h.vx, h.vy, h.vz);
       body.SetLinearVelocity(this.vec);
     }
-    h.speed = Math.hypot(h.vx, h.vz);
     h.sync();
   }
 

@@ -54,6 +54,14 @@ Záznamy jsou v `data-raw/e20/krok4-{node,build,final,smeny,provoz}.log` a `krok
 
 Vrtulník váží 2 500 kg. Zkouška s počátečním náklonem a klesáním ověřila, že při zapnuté asistenci udrží výšku v rozmezí ±0,5 m po dobu 20 sekund. Ve hře bez poškození přistál z výšky 12 m na střeše FN Lochotín i na pozemním heliportu. Prošlo všech 88 testů JavaScriptu, produkční sestavení a čtyři prohlížečové kontroly včetně načtení vypnuté asistence, dokončení rozvozu a návratu od hranice mapy. Záznamy jsou v `data-raw/e20/krok5-{node,build,final}.log`.
 
+#### Vyšší vodorovná rychlost na přání autora
+
+V letovém modelu E20 má vrtulník vodorovné maximum 300 km/h. Při větším náklonu vpřed se mění podélný odpor vzduchu. Při jemném manévrování a po vyrovnání působí dosavadní tlumení. Omezení se počítá z obou vodorovných složek rychlosti, takže zachovává směr i rychlost stoupání nebo klesání.
+
+Při měření z visu s výchozí asistencí a plným povelem vpřed dosahoval původní model nejvýše 141,1 km/h. Po změně dosáhl 258,9 km/h za 20 s a 299,2 km/h za 50 s. Po uvolnění W z maximální rychlosti zpomalil za deset sekund na 76 km/h. V prohlížeči zkouška porovnává rychloměr se vzdáleností uletěnou za posledních pět sekund a ověřuje také udržení výšky.
+
+Prošlo všech 93 testů JavaScriptu, produkční sestavení a šest dotčených zkoušek v prohlížeči. Přelet prošel na WebGPU i WebGL 2. Prošlo i přistání na střeše FN Lochotín a na heliportu a let k okraji mapy. Záznamy jsou v `data-raw/e20/rychlost-vrtulniku-{node,build,prohlizec,webgpu}.log`.
+
 ### Šestý krok
 
 Voda v materiálu terénu používá stejnou síť jako `world.heightAt`. Dno pro kola vychází z obrysu vody včetně ostrovů. Do osmi metrů od břehu klesá přibližně o 12 cm na metr, dále o 2,5 cm na metr, nejvýše do hloubky 2,4 m. Na ose Wilsonova mostu poblíž středu řeky je herní hladina ve výšce 300,70 m n. m. Při vzdálenosti 30,5 m od břehu vychází odhad dna na 299,18 m n. m., tedy asi o 12 cm níž než údaj města. Tvar koryta mezi břehy je odhad.

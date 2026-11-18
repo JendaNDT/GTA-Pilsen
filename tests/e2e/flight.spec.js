@@ -1,6 +1,42 @@
 import { expect, test } from '@playwright/test';
 import { gameUrl } from './game-url.js';
 
+test('E20 – vrtulník v rovném letu zrychlí na 300 km/h a po uvolnění W zpomalí', { tag: '@webgpu' }, async ({ page }) => {
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0&hour=10'));
+  await page.waitForFunction(() => window.__ready);
+  await page.getByRole('button', { name: 'Hrát', exact: true }).click();
+  const height = await page.evaluate(() => {
+    __freeze(true);
+    const g = __game, h = g.helis[3];
+    h.y = g.world.heightAt(h.x, h.z) + 250;
+    h.yaw = Math.PI / 3;
+    h.rotor = 30;
+    g._enterHeli(h);
+    return h.y;
+  });
+  await page.keyboard.down('w');
+  const cruise = await page.evaluate(async () => {
+    const g = __game, h = g.heli;
+    let x, z;
+    for (let second = 0; second < 65; second++) {
+      if (second === 60) { x = h.x; z = h.z; }
+      for (let frame = 0; frame < 30; frame++) g.update(1 / 30);
+      await new Promise(requestAnimationFrame);
+    }
+    return { kmh: Math.hypot(h.x - x, h.z - z) / 5 * 3.6, y: h.y };
+  });
+  await page.keyboard.up('w');
+  await expect(page.locator('#kmh')).toHaveText('300');
+  expect(cruise.kmh).toBeGreaterThan(299);
+  expect(cruise.kmh).toBeLessThanOrEqual(300.1);
+  expect(Math.abs(cruise.y - height)).toBeLessThan(0.5);
+  const after = await page.evaluate(() => {
+    for (let i = 0; i < 300; i++) __game.update(1 / 30);
+    return __game.heli.speed * 3.6;
+  });
+  expect(after).toBeLessThan(90);
+});
+
 test('E20 – vrtulník přistane na střeše FN Lochotín i na pozemním heliportu', async ({ page }) => {
   await page.goto(gameUrl('/?debug&quality=low&adapt=0'));
   await page.waitForFunction(() => window.__ready);
