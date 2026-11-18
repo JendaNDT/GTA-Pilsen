@@ -1,3 +1,4 @@
+import { railingFaces } from './railings.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
 import { CHUNK } from '../config.js';
 import { terrainTriangles } from './terrain.js';
@@ -35,7 +36,7 @@ function building(world, i, measured, emit) {
   for (let k = 0; k < indices.length; k += 3) roof(emit, ...indices.slice(k, k + 3).map((id) => top[id]));
 }
 
-export function staticMeshBody(physics, triangles) {
+export function staticMeshBody(physics, triangles, layer = layers.STATIC) {
   const { Jolt, bodies } = physics;
   // Zápis do jednoho předem velkého pole vynechá volání do WASM pro každý vrchol.
   const count = triangles.length / 9;
@@ -52,7 +53,8 @@ export function staticMeshBody(physics, triangles) {
   try {
     if (result.HasError()) throw new Error('Nepodařilo se vytvořit kolizní síť: ' + result.GetError().c_str());
     const origin = new Jolt.RVec3(0, 0, 0), rotation = new Jolt.Quat(0, 0, 0, 1);
-    const bodySettings = new Jolt.BodyCreationSettings(result.Get(), origin, rotation, Jolt.EMotionType_Static, layers.STATIC);
+    const bodySettings = new Jolt.BodyCreationSettings(result.Get(), origin, rotation, Jolt.EMotionType_Static, layer);
+    bodySettings.mUserData = layer;
     const body = bodies.CreateBody(bodySettings);
     bodies.AddBody(body.GetID(), Jolt.EActivation_DontActivate);
     Jolt.destroy(bodySettings);
@@ -101,8 +103,36 @@ export class TileColliders {
     this.structures.emit(ci, emit);
     const positions = Float32Array.from(triangles);
     const body = staticMeshBody(this.physics, positions);
-    this.tiles.set(ci, body);
+    const bodies = [body];
+    this.tiles.set(ci, bodies);
+    const edges = w.bridgeEdges.get(ci);
+    if (edges?.length) {
+      const rails = [];
+      for (const edge of edges) railingFaces(edge, (a, b, c, d) => rails.push(...a, ...b, ...c, ...a, ...c, ...d));
+      const railPositions = Float32Array.from(rails);
+      bodies.push(staticMeshBody(this.physics, railPositions, layers.RAILING));
+      this.debug?.add(ci, railPositions);
+    }
     this.debug?.add(ci, positions);
+  }
+
+  // U dveří vozidla hledáme jen blízkou oporu, aby výstup nepřeskočil na jiné patro.
+  exitHeight(x, z, y) {
+    this.update(x, z);
+    const { Jolt, system } = this.physics;
+    const ray = new Jolt.RRayCast();
+    ray.mOrigin.Set(x, y + 0.7, z);
+    ray.mDirection.Set(0, -1.7, 0);
+    const hit = new Jolt.CastRayClosestHitCollisionCollector();
+    const settings = new Jolt.RayCastSettings();
+    const filters = [new Jolt.BroadPhaseLayerFilter(), new Jolt.SpecifiedObjectLayerFilter(layers.STATIC),
+      new Jolt.BodyFilter(), new Jolt.ShapeFilter()];
+    try {
+      system.GetNarrowPhaseQuery().CastRay(ray, settings, hit, ...filters);
+      return hit.HadHit() ? y + 0.7 - 1.7 * hit.mHit.mFraction : y;
+    } finally {
+      for (const object of [ray, hit, settings, ...filters]) Jolt.destroy(object);
+    }
   }
 
   update(x, z) {
@@ -120,10 +150,12 @@ export class TileColliders {
         if (!this.tiles.has(ci) && distance < nearest) { nearest = distance; next = ci; }
       }
     }
-    for (const [ci, body] of this.tiles) if (!nearby.has(ci)) {
-      const id = body.GetID();
-      this.physics.bodies.RemoveBody(id);
-      this.physics.bodies.DestroyBody(id);
+    for (const [ci, bodies] of this.tiles) if (!nearby.has(ci)) {
+      for (const body of bodies) {
+        const id = body.GetID();
+        this.physics.bodies.RemoveBody(id);
+        this.physics.bodies.DestroyBody(id);
+      }
       this.tiles.delete(ci);
       this.debug?.remove(ci);
     }

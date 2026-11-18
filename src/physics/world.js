@@ -47,18 +47,27 @@ export class PhysicsWorld {
 
     this.listener = new Jolt.ContactListenerJS();
     this.listener.OnContactValidate = () => Jolt.ValidateResult_AcceptAllContactsForThisBodyPair;
-    this.listener.OnContactPersisted = () => {};
+
     this.listener.OnContactRemoved = () => {};
-    this.listener.OnContactAdded = (a, b, contact) => {
-      if (!this.onImpact) return;
+    const contactEvent = (a, b, contact, added) => {
       const first = Jolt.wrapPointer(a, Jolt.Body);
       const second = Jolt.wrapPointer(b, Jolt.Body);
+      const la = first.GetObjectLayer(), lb = second.GetObjectLayer();
+      if ((la === CHARACTER && lb === VEHICLE) || (lb === CHARACTER && la === VEHICLE)) {
+        this.onPedContact?.(la === CHARACTER ? first : second, la === VEHICLE ? first : second);
+        return;
+      }
+      if (!added || !this.onImpact) return;
       const inverseMass = (first.IsDynamic() ? first.GetMotionProperties().GetInverseMass() : 0)
         + (second.IsDynamic() ? second.GetMotionProperties().GetInverseMass() : 0);
       if (!inverseMass) return;
       const normal = Jolt.wrapPointer(contact, Jolt.ContactManifold).mWorldSpaceNormal;
       const approach = first.GetLinearVelocity().Dot(normal) - second.GetLinearVelocity().Dot(normal);
       if (approach > 0) this.onImpact(first, second, approach / inverseMass);
+    };
+    this.listener.OnContactAdded = (a, b, contact) => contactEvent(a, b, contact, true);
+    this.listener.OnContactPersisted = (a, b, contact) => {
+      if (this.onPedContact) contactEvent(a, b, contact, false);
     };
     this.system.SetContactListener(this.listener);
   }

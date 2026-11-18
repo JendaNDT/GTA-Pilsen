@@ -1,4 +1,5 @@
 // Hráč pěšky a chodci.
+import { WalkingCharacter } from '../physics/character.js';
 import { makePedMesh, animatePed } from './models.js';
 import { QUALITY, RC, RF } from '../config.js';
 import { wrapAngle } from './vehicles.js';
@@ -7,7 +8,7 @@ const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const _pt = { x: 0, z: 0, tx: 0, tz: 1 };
 
 export class Player {
-  constructor(scene, world) {
+  constructor(scene, world, physics, colliders) {
     this.world = world;
     this.mesh = makePedMesh(0, true);
     scene.add(this.mesh);
@@ -21,6 +22,24 @@ export class Player {
     this.fallStart = 0;
     this.stun = 0;
     this.lastCar = null;
+    this.physics = physics;
+    this.colliders = colliders;
+    this.character = null;
+    this.streetContact = { x: 0, z: 0, depth: 0 };
+  }
+
+  setWalking(active) {
+    if (active && !this.character) this.character = new WalkingCharacter(this.physics, this);
+    if (!active && this.character) {
+      this.character.dispose();
+      this.character = null;
+    }
+  }
+
+  leaveVehicle(x, z, y) {
+    this.place(x, z, this.colliders.exitHeight(x, z, y));
+    this.setWalking(true);
+    this.mesh.visible = true;
   }
 
   /** Postaví hráče na místo; bez výšky na zem (ne na most vysoko nad terénem). */
@@ -29,6 +48,8 @@ export class Player {
     this.x = x; this.z = z;
     this.y = y === null ? w.groundY(x, z, w.heightAt(x, z) + 1) : y;
     this.vy = 0; this.vx = this.vz = 0; this.grounded = true;
+    this.fallStart = this.y;
+    this.character?.place(this.x, this.y, this.z);
     this.sync(0);
   }
 
@@ -38,7 +59,7 @@ export class Player {
     const len = Math.hypot(dirX, dirZ);
     this.swimming = this.y <= w.heightAt(this.x, this.z) + 0.3 && w.isWater(this.x, this.z) && !w.onRoad(this.x, this.z, 0.3);
     let speed = this.swimming ? 1.7 : run ? 6.4 : 2.4;
-    if (this.stun > 0) { this.stun -= dt; speed = 0; }
+    if (this.stun > 0) { this.stun -= dt; speed = 0; jump = false; }
     let tvx = 0, tvz = 0;
     if (len > 0.05) {
       tvx = (dirX / Math.max(1, len)) * speed; tvz = (dirZ / Math.max(1, len)) * speed;
@@ -47,31 +68,18 @@ export class Player {
     }
     const k = Math.min(1, dt * (this.grounded ? 12 : 2.5));
     this.vx += (tvx - this.vx) * k; this.vz += (tvz - this.vz) * k;
-    this.x += this.vx * dt; this.z += this.vz * dt;
-
-    if (w.collideCircle(this.x, this.z, this.radius, this.y + 0.15, this.y + 1.7)) {
-      this.x = w.hit.x; this.z = w.hit.z;
-    }
-    const m = 20;
-    this.x = clamp(this.x, w.playMinX + m, w.playMaxX - m);
-    this.z = clamp(this.z, w.playMinZ + m, w.playMaxZ - m);
-
-    // svislý pohyb: stojí se na zemi nebo na střeše, na kterou jde vystoupit
-    const surface = w.surfaceAt(this.x, this.z, this.y + 0.55);
-    if (this.grounded) {
-      if (jump && !this.swimming) { this.vy = 5.0; this.grounded = false; this.fallStart = this.y; }
-      else if (this.y > surface + 0.4) { this.grounded = false; this.vy = 0; this.fallStart = this.y; }   // hrana střechy, mostu
-      else this.y = surface;                                                                             // svah: drž se země
-    }
-    let fallDamage = 0;
-    if (!this.grounded) {
-      this.vy -= 18 * dt;
-      this.y += this.vy * dt;
-      if (this.y <= surface && this.vy <= 0) {
-        const drop = this.fallStart - surface;
-        if (drop > 5) fallDamage = (drop - 5) * 6;
-        this.y = surface; this.vy = 0; this.grounded = true;
-      } else if (this.vy > 0) this.fallStart = Math.max(this.fallStart, this.y);
+    this.setWalking(true);
+    const tile = w.chunkIndex(this.x, this.z);
+    if (tile >= 0 && !this.colliders.tiles.has(tile)) this.colliders.update(this.x, this.z);
+    const fallDamage = this.character.move(dt, this, jump);
+    const contact = this.streetContact;
+    contact.x = this.x; contact.z = this.z; contact.depth = 0;
+    w.collideStreetObjects(contact, this.radius, this.y + 0.15);
+    const x = clamp(contact.x, w.playMinX + 20, w.playMaxX - 20);
+    const z = clamp(contact.z, w.playMinZ + 20, w.playMaxZ - 20);
+    if (x !== this.x || z !== this.z) {
+      this.x = x; this.z = z;
+      this.character.place(x, this.y, z);
     }
     const moving = Math.hypot(this.vx, this.vz);
     this.phase += dt * (3 + moving * 2.2);
@@ -151,6 +159,7 @@ export class PedManager {
   }
 
   remove(i) {
+    this.game.falls.finish(this.peds[i]);
     this.world.traffic.users.delete(this.peds[i]);
     this.scene.remove(this.peds[i].mesh);
     this.peds.splice(i, 1);
@@ -220,7 +229,15 @@ export class PedManager {
       const d2 = (p.x - player.x) ** 2 + (p.z - player.z) ** 2;
       if (d2 > 230 * 230) { this.remove(i); continue; }
       let moving = 0;
-      p.y = w.groundY(p.x, p.z, p.y);
+      if (this.game.falls.active.has(p)) continue;
+      const surface = w.groundY(p.x, p.z, p.y);
+      if (p.y - surface > 5 && this.game.falls.enabled && d2 <= 80 ** 2) {
+        w.traffic.users.delete(p); p.crossing = null;
+        p.state = 'down';
+        this.game.falls.start(p, 0, -1, 0);
+        continue;
+      }
+      p.y = surface;
       if (p.state === 'down') {
         p.timer -= dt;
         p.x += p.vx * dt; p.z += p.vz * dt;
@@ -238,24 +255,8 @@ export class PedManager {
           const dd = dx * dx + dz * dz;
           if (dd > 100 || Math.abs(p.y - c.y) > 2) continue;
           const sp = Math.hypot(c.vx, c.vz);
-          const hitR = c.radius + 0.3;
-          // zásah autem
           const fx = Math.sin(c.yaw), fz = Math.cos(c.yaw);
-          const along = dx * fx + dz * fz, across = Math.abs(dx * fz - dz * fx);
-          if (Math.abs(along) < c.halfLen + 0.3 && across < hitR) {
-            if (sp > 2.5) {
-              w.traffic.users.delete(p);
-              p.crossing = null;
-              p.state = 'down'; p.timer = 7;
-              p.vx = c.vx * 0.9 + dx * 0.8; p.vz = c.vz * 0.9 + dz * 0.8;
-              this.game.onPedHit(p, c, sp);
-              break;
-            } else {
-              // pomalé auto chodce jen odtlačí
-              const sgn = (dx * fz - dz * fx) >= 0 ? 1 : -1;
-              p.x += fz * sgn * 0.08; p.z -= fx * sgn * 0.08;
-            }
-          } else if (sp > 4 && p.state === 'walk') {
+          if (sp > 4 && p.state === 'walk') {
             const approaching = -(dx * c.vx + dz * c.vz) / (Math.sqrt(dd) * sp + 1e-6);
             if (approaching < -0.75 && dd < 64) {
               p.state = 'flee'; p.timer = 1.6;
@@ -264,7 +265,6 @@ export class PedManager {
             }
           }
         }
-        if (p.state === 'down') continue;
       }
       if (p.crossing) {
         moving = this._stepCrossing(p, dt, cars);

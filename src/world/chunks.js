@@ -1,7 +1,8 @@
 import { prazdrojThickness } from './prazdroj-bridge.js';
-import { densePath, pathNormal } from './road-profile.js';
+import { BRIDGE_THICKNESS, densePath, pathNormal } from './road-profile.js';
 // Stavba 3D geometrie po dlaždicích: budovy, silnice, koleje, stromy.
 import * as THREE from 'three/webgpu';
+import { railingFaces } from '../physics/railings.js';
 import { terrainGridStep } from '../physics/terrain.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
 import { CHUNK, QUALITY, PARAMS, BK, BF, RC, RF, LC, DRIVABLE_MAX } from '../config.js';
@@ -438,7 +439,7 @@ const COL = {
   pedestrian: lin(0xb3ab9c), footway: lin(0xa39f95), path: lin(0x8a7a5e), track: lin(0x7f7257),
   cycleway: lin(0x8c5b52), steps: lin(0x8a8a8a), mark: lin(0xdcdcd4), markYellow: lin(0xd8b740),
   ballast: lin(0x6a6259), rail: lin(0xa6acb2), tramBed: lin(0x43464b), bridge: lin(0x62656a),
-  concrete: lin(0x9b9a94), railing: lin(0x8d949b),
+  concrete: lin(0x9b9a94), railing: lin(0x8d949b), bridgeStone: lin(0xa69b87),
 };
 // tytéž barvy pro kreslení do textury země
 const HEX = {
@@ -562,7 +563,7 @@ function dashes(world, buf, D, hw, col, dash, gap, lateral, lift) {
 }
 
 /** Těleso mostu: deska pod vozovkou, zábradlí a pilíře až na terén. */
-function bridgeSlab(world, solid, D, hw, railings, topCol, supports = true, depth = 0.94) {
+function bridgeSlab(world, solid, D, hw, topCol, supports = true, depth = BRIDGE_THICKNESS) {
   const n = D.n;
   if (n < 2 || !D.y) return;
   const T = depth - 0.04;
@@ -581,24 +582,6 @@ function bridgeSlab(world, solid, D, hw, railings, topCol, supports = true, dept
     solid.quad([l0[0], y0 - T, l0[1]], [r0[0], y0 - T, r0[1]], [r1[0], y1 - T, r1[1]], [l1[0], y1 - T, l1[1]], COL.concrete, 0.55);  // spodek
     solid.quad([l0[0], y0 - T, l0[1]], [l1[0], y1 - T, l1[1]], [l1[0], y1, l1[1]], [l0[0], y0, l0[1]], COL.concrete, 0.85);
     solid.quad([r0[0], y0, r0[1]], [r1[0], y1, r1[1]], [r1[0], y1 - T, r1[1]], [r0[0], y0 - T, r0[1]], COL.concrete, 0.85);
-    if (railings) {
-      for (const [a, b] of [[l0, l1], [r0, r1]]) {
-        const rail = (lo, hi, color) => solid.quad([a[0], y0 + lo, a[1]], [b[0], y1 + lo, b[1]],
-          [b[0], y1 + hi, b[1]], [a[0], y0 + hi, a[1]], color);
-        if (railings === 'open') {
-          rail(0, 0.16, COL.concrete);
-          rail(0.48, 0.54, COL.railing);
-          rail(0.89, 0.96, COL.railing);
-          const posts = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 3.4));
-          for (let j = 0; j < posts; j++) {
-            const t = j / posts;
-            const y = y0 + (y1 - y0) * t;
-            solid.box(a[0] + (b[0] - a[0]) * t, y + 0.12, y + 0.96,
-              a[1] + (b[1] - a[1]) * t, 0.045, COL.railing);
-          }
-        } else rail(0, 0.95, COL.railing);
-      }
-    }
     // pilíře po ~26 m, kde je pod mostem dost místa
     if (!supports) continue;
     const len = Math.hypot(D.x[k + 1] - D.x[k], D.z[k + 1] - D.z[k]);
@@ -727,10 +710,7 @@ function stoneBridge(world, solid, D, hw, arches) {
     solid.quad(point(t0, -hw, y0), point(t1, -hw, y1), point(t1, hw, y1), point(t0, hw, y0), COL.sidewalk);
     solid.quad(point(t0, -hw, u0), point(t0, hw, u0), point(t1, hw, u1), point(t1, -hw, u1), stone, 0.66);
     for (const side of [-hw, hw]) {
-      solid.quad(point(t0, side, u0), point(t1, side, u1), point(t1, side, y1 + 0.95), point(t0, side, y0 + 0.95), stone);
-      const inner = side - Math.sign(side) * 0.32;
-      solid.quad(point(t0, inner, y0), point(t1, inner, y1), point(t1, inner, y1 + 0.95), point(t0, inner, y0 + 0.95), stone, 0.88);
-      solid.quad(point(t0, side, y0 + 0.95), point(t1, side, y1 + 0.95), point(t1, inner, y1 + 0.95), point(t0, inner, y0 + 0.95), stone);
+      solid.quad(point(t0, side, u0), point(t1, side, u1), point(t1, side, deck(t1)), point(t0, side, deck(t0)), stone);
     }
   }
 }
@@ -833,11 +813,11 @@ function buildRoads(world, ci) {
       if (bridge) {
         const arches = world.archedBridges.get(i);
         if (arches) stoneBridge(world, solid, D, world.deckHalfWidth(i), arches);
-        else bridgeSlab(world, solid, D, world.deckHalfWidth(i), measured === undefined && !world.gradeRoads.has(i) ? true : 'open',
+        else bridgeSlab(world, solid, D, world.deckHalfWidth(i),
           cls <= RC.LIVING ? COL.sidewalk : COL.concrete, measured === undefined && i !== world.prazdrojRoad,
           i === world.prazdrojRoad ? prazdrojThickness : undefined);
       } else if (measured !== undefined && D.y.some((y, k) => y - world.heightAt(D.x[k], D.z[k]) > 0.75)) {
-        bridgeSlab(world, solid, D, measured, false, COL.concrete, false);
+        bridgeSlab(world, solid, D, measured, COL.concrete, false);
       }
       // vodorovné značení
       if (ring) rondelMarkings(world, marks, D, hw, surfaceWidth, R.lanes[i]);
@@ -862,6 +842,21 @@ function buildRoads(world, ci) {
       }
     }
   }
+  for (const edge of world.bridgeEdges.get(ci) ?? []) {
+    if (edge.style === 'stone') {
+      railingFaces(edge, (a, b, c, d) => solid.quad(a, b, c, d, COL.bridgeStone));
+    } else {
+      const [a, b] = edge.corners;
+      const band = (lo, hi, color) => solid.quad([a[0], a[1] + lo, a[2]], [b[0], b[1] + lo, b[2]],
+        [b[0], b[1] + hi, b[2]], [a[0], a[1] + hi, a[2]], color);
+      if (edge.style === 'open') {
+        band(0, 0.16, COL.concrete);
+        band(0.48, 0.54, COL.railing);
+        band(0.92, edge.height, COL.railing);
+        solid.box(a[0], a[1], a[1] + edge.height, a[2], 0.045, COL.railing);
+      } else band(0, edge.height, COL.railing);
+    }
+  }
   rondelAbutments(world, solid, ci);
   for (const underpass of world.trackUnderpasses.get(ci) ?? []) buildTrackUnderpass(world, solid, underpass);
   // koleje
@@ -879,7 +874,7 @@ function buildRoads(world, ci) {
       ribbon(world, marks, D, 0.07, COL.rail, -0.7175, LIFT_RAIL);
       if (rail.y) {
         const halfWidth = rail.cls === 1 ? 2.4 : 1.7;
-        bridgeSlab(world, solid, D, halfWidth, world.gradeRails.has(ri) ? 'open' : true, COL.concrete);
+        bridgeSlab(world, solid, D, halfWidth, COL.concrete);
         if (world.gradeRailAbutments.has(ri)) railAbutments(world, solid, D, halfWidth);
       }
     }

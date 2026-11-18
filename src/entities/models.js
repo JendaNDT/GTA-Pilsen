@@ -3,6 +3,7 @@ import * as THREE from 'three/webgpu';
 import { step, vertexColor } from 'three/tsl';
 import { env, getPoolMaterial, makeBatchedSurfaceMaterial, makeSurfaceMaterial } from '../world/materials.js';
 import { SURFACE } from '../world/material-table.js';
+import { parts as ragdollParts } from '../physics/ragdoll.js';
 import { QUALITY } from '../config.js';
 
 const _c = new THREE.Color();
@@ -264,7 +265,7 @@ export function makePedMesh(variant, hero = false) {
     const leg = new Parts();
     leg.box(0.17, 0.78, 0.19, 0, -0.39, 0, pants);
     leg.box(0.17, 0.08, 0.26, 0, -0.8, 0.04, lin(0x1a1a1a));
-    geo = { body: body.geometry(), arm: arm.geometry(), leg: leg.geometry() };
+    geo = { body: body.geometry(), arm: arm.geometry(), leg: leg.geometry(), colors: { shirt, pants, skin, hair } };
     pedGeoCache.set(key, geo);
   }
   const g = new THREE.Group();
@@ -275,8 +276,27 @@ export function makePedMesh(variant, hero = false) {
   armL.position.set(0.3, 1.42, 0); armR.position.set(-0.3, 1.42, 0);
   g.add(body, legL, legR, armL, armR);
   for (const m of g.children) m.castShadow = true;
-  g.userData = { legL, legR, armL, armR, body };
+  g.userData = { legL, legR, armL, armR, body, geo };
   return g;
+}
+
+export function makeFallenMesh(walkingMesh) {
+  const geo = walkingMesh.userData.geo;
+  geo.fallen ??= ragdollParts.map(part => {
+    const p = new Parts();
+    p.box(...part.size, 0, 0, 0, geo.colors[part.color]);
+    if (part.name === 'hlava') p.box(0.26, 0.09, 0.26, 0, 0.14, -0.01, geo.colors.hair);
+    if (part.name.startsWith('predlokti')) p.box(0.1, 0.1, 0.12, 0, -0.15, 0, geo.colors.skin);
+    if (part.name.startsWith('lytko')) p.box(0.17, 0.08, 0.26, 0, -0.19, 0.04, lin(0x1a1a1a));
+    return p.geometry();
+  });
+  const group = new THREE.Group();
+  for (const geometry of geo.fallen) {
+    const limb = new THREE.Mesh(geometry, pedMat);
+    limb.castShadow = true;
+    group.add(limb);
+  }
+  return group;
 }
 
 export function animatePed(mesh, phase, amount) {

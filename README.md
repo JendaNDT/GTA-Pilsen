@@ -11,7 +11,7 @@ otevřených dat. Běží na počítači i na mobilu, bez instalace.
   (přibližně tři čtvrtiny s výškou z měření ČÚZK), 41 tisíc silnic a cest, řeky, rybníky, lesy a parky.
 - **Skutečný terén**: kopce a údolí řek podle výškopisu ČÚZK (Lochotín je o 60 m výš než náměstí
   Republiky, Chlum o 100 m, Radyně o 250 m), 1179 silničních a kolejových mostů a dva průjezdné
-  tubusy tunelu Valík. Auta se naklánějí podle svahu, do kopce zpomalují a z mostu se dá spadnout.
+  tubusy tunelu Valík. Auta se naklánějí podle svahu, do kopce zpomalují. Pěšího hráče u okraje mostu zastaví zábradlí nebo historická kamenná zídka.
 - **Krajina mezi obcemi.** Na vybraných svazích a v údolích má terén hustší výškovou síť.
   Po celé mapě se střídají povrchy polí, luk, lesů, břehů a obcí podle mapových ploch.
 - **Kompletní síť PMDP.** Tramvaje, trolejbusy i denní a noční autobusy obsluhují 51 linek z vybraného
@@ -132,6 +132,12 @@ vrátí auto na nejbližší silnici. Pokud hru uložíš za volantem, při náv
 najdeš stojící auto na uloženém místě. Původní jízdu můžeš porovnat přidáním
 `?physics=old` k adrese hry. V režimu `?debug` zobrazí **F8** povrchy pro
 fyziku a **F9** měření včetně otáček a prokluzu jednotlivých kol.
+
+[E19 přidává fyzikální chůzi a pády postav](docs/E19.md). Pěšky vyjdeš schod,
+přejdeš most po chodníku nebo vystoupíš z vrtulníku na střeše. Na Švédském
+i Wilsonově mostě tě zastaví kamenná zídka. Při sražení autem postava padne
+ve směru nárazu a zase vstane. Volba **Nastavení → Fyzikální pády postav**
+se zachová i při dalším spuštění hry.
 
 Regresní testy kolizí, terénu, silničního grafu a distribuovaných dat:
 

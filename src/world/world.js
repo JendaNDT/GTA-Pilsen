@@ -4,6 +4,7 @@ import { Tunnel, TUNNEL_HEIGHT } from './tunnels.js';
 import { TurnRules } from './turns.js';
 import { Traffic } from '../game/traffic.js';
 import { prazdrojDeck, identifyPrazdrojBridge } from './prazdroj-bridge.js';
+import { indexBridgeEdges } from '../physics/railings.js';
 import { prepareRondel } from './rondel.js';
 
 export const SURF = 0.05;    // o kolik nad terénem leží povrch, po kterém se jezdí (kvůli vrstvě asfaltu)
@@ -74,6 +75,7 @@ export class World {
     });
     this.gradeRailAbutments = new Set((grades?.railAbutments ?? []).filter((i) => this.gradeRails.has(i)));
     this._initBridges();
+    this.bridgeEdges = indexBridgeEdges(this);
     this.trees = data.trees;
     this._initTrees(data.trees);
     this.roadClosures = data.meta.roadClosures ?? [];
@@ -457,7 +459,11 @@ export class World {
       }
       if (!moved) break;
     }
-    // kruhové překážky (stromy)
+    return this.collideStreetObjects(hit, r, y) || any;
+  }
+
+  collideStreetObjects(hit, r, y) {
+    let any = false;
     const ox0 = Math.floor((hit.x - r - 1) / 16), ox1 = Math.floor((hit.x + r + 1) / 16);
     const oz0 = Math.floor((hit.z - r - 1) / 16), oz1 = Math.floor((hit.z + r + 1) / 16);
     {

@@ -51,6 +51,8 @@ const ABOUT_HTML = (meta, rendering) => `
   <p>Co se dá dělat: chodit, půjčovat si auta, vozit se tramvají, trolejbusem i autobusem, létat vrtulníkem,
   rozvážet jídlo ze skutečných podniků, vozit zákazníky, koupit si vlastní auto, jet směnu řidiče MHD,
   objevovat památky a ujíždět policii.</p>
+  <p>Na mostě tě u kraje zastaví zábradlí. Na historických kamenných mostech tě zachytí zídka.
+  Po prudkém nárazu nebo pádu z výšky postava spadne a zase vstane. Fyzikální pády můžeš vypnout v nastavení.</p>
   <h3>Zdroje dat</h3>
   <p>Grafiku vykresluje <a href="https://threejs.org" target="_blank" rel="noopener">three.js 0.187.0</a>
   (autoři three.js, licence <a href="https://github.com/mrdoob/three.js/blob/r187/LICENSE" target="_blank" rel="noopener">MIT</a>).
@@ -247,6 +249,12 @@ async function boot() {
     showQuality();
     if (!applied) qualityStatus.textContent = 'Předvolbu grafiky se nepodařilo použít.';
     qualitySelect.disabled = false;
+  });
+  $('falls-enabled').checked = game.falls.enabled;
+  $('falls-enabled').addEventListener('change', event => {
+    game.falls.enabled = event.target.checked;
+    if (!game.falls.enabled) game.falls.limit(0);
+    game.save();
   });
   $('orthophoto-enabled').disabled = !game.chunks.orthophoto;
   $('orthophoto-enabled').checked = Boolean(game.chunks.orthophoto) && game.orthophotoEnabled;

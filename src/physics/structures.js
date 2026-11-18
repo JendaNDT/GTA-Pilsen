@@ -1,6 +1,6 @@
 import { CHUNK, COLL_CELL, RF } from '../config.js';
 import { prazdrojThickness } from '../world/prazdroj-bridge.js';
-import { densePath, pathNormal } from '../world/road-profile.js';
+import { BRIDGE_THICKNESS, densePath, pathNormal } from '../world/road-profile.js';
 import { TUNNEL_HEIGHT } from '../world/tunnels.js';
 
 export class RoadStructures {
@@ -82,7 +82,7 @@ export class RoadStructures {
     }
   }
 
-  strip(path, width, tunnel = null, thickness = 0.94) {
+  strip(path, width, tunnel = null, thickness = BRIDGE_THICKNESS) {
     let previous;
     for (let k = 0; k < path.n; k++) {
       const { x, z, scale } = pathNormal(path, k);

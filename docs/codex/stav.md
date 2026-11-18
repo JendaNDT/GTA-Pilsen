@@ -1,167 +1,171 @@
-# Stav etapy E18
+# Stav etapy E19
 
-Větev `etapa/E18` vychází z `974c25b` na `main`, včetně opravy hodin a MHD.
-Autor potvrdil zahájení. [Zadání E18](E18.md) · [Protokol E17](../E17.md)
+Větev `etapa/E19` vychází z revize `fb29b92`. Všech šest kroků je dokončeno. Zbývá autorská kontrola a sloučení do hlavní větve. Otevřené otázky pro E19 nejsou.
+[Zadání E19](E19.md) · [Protokol E19, měření a snímky](../E19.md)
 
 | Krok | Stav |
 | --- | --- |
-| 1. Načtení Jolt, svět a vrstvy | Hotovo. Pád tělesa, načtení hry i chyba při stažení ověřeny. |
-| 2. Pevný krok a interpolace | Hotovo. Ověřeno při 30 i 144 snímcích/s, po delším snímku, v pauze a při přesunutí tělesa. |
-| 3. Terén, budovy a zobrazení kolizí | Hotovo |
-| 4. Mostovky, Rondel, tunely a uzavírky | Hotovo |
-| 5. Auto hráče, ovládání a zvuk | Hotovo. Hra ukládá volbu řízení a zvuk sleduje otáčky motoru. |
-| 6. Poškození, garáž, návrat na silnici a uložení | Hotovo |
-| 7. Měření, ladění a protokol | Hotovo. Jízdní zkoušky i úplné místní ověření jsou v [protokolu](../E18.md). |
+| 1. Fyzikální chůze, schody, svahy a pády | Hotovo |
+| 2. Střechy, mostovky, tunely a přestupy | Hotovo |
+| 3. Zábradlí a zobrazení kolizí | Hotovo. Společný vnější obvod a obě strany všech 20 mostů prošly kontrolou. |
+| 4. Kapsle okolních chodců a srážky | Hotovo |
+| 5. Pády postav a vstávání | Hotovo |
+| 6. Závěrečné zkoušky a protokol | Hotovo. Výsledky jsou v protokolu E19. |
 
-## Ověření
+## Ověření prvního kroku
 
-Prošlo 58 testů JavaScriptu včetně pádu, nárazu a zastavení tělesa na podložce.
-Prošlo produkční sestavení. Samostatný soubor Jolt má 3 572,85 kB před kompresí
-a 953,32 kB s gzipem. Prošly všechny tři cílené prohlížečové kontroly prvního kroku na Macu, včetně spuštění s WebGL 2 a WebGPU. Prošlo také všech 96 původních scénářů za 33,6 minuty.
+Prošlo 76 testů JavaScriptu, sestavení a všech šest dotčených prohlížečových scénářů (WebGL 2). Zahrnují také dotykové ovládání, cestu k hamru, pěší předání u Boleváku a Klabavu. Záznamy jsou v `data-raw/e19/krok1-*.log`.
 
-Ve druhém kroku prošlo 61 testů JavaScriptu, produkční sestavení a pět cílených
-prohlížečových kontrol. Pro tento krok běžel samostatný server nad jeho sestavením.
-Výsledky obou běhů jsou v místním adresáři `data-raw/e18/`.
-První krok je v revizi `efa2cf2`.
+### První krok
 
-## Rozhodnutí autora
+Hráč používá v pevném kroku kapsli vysokou 1,8 m. V Node překonala schod
+30 cm a svah 30°, zastavila před 50cm schodem a nevyšla 60° rampu. Ověřen
+byl také skok, jednorázové poškození při pádu z 9 m a rozdíl mezi
+odstrčením 8kg předmětu a 1 200kg tělesa. Kolize s registrovanými stromy
+a sloupy zůstávají součástí pěšího pohybu. Koš zastupuje zkušební těleso,
+městské vybavení patří podle plánu do E25.
 
-Limit 3 MiB navíc proti E12 se počítá ze skutečně přenesených dat při studeném
-startu se zapnutou přenosovou kompresí. Samotný Jolt při místní zkoušce
-přenesl 944 375 bajtů. Při zveřejnění ověříme kompresi také na adrese pro telefon.
+Původní zkouška u Klabavy předpokládala pevný odstup chodidel 5 cm od
+země. Kapsle se na svahu dotýká terénu stranou od své svislé osy. Test nyní
+porovnává skutečný bod dotyku Jolt s výškou terénu ve stejných souřadnicích
+se stejnou přesností na čtyři desetinná místa. Ověřuje také oporu a
+vzdálenost bodu od osy postavy. Tento důvod patří i do závěrečného protokolu.
 
-Ve třetím kroku prošlo 62 testů JavaScriptu, 23 testů Pythonu, sestavení a sedm
-cílených prohlížečových kontrol. Paprsky v Jolt ověřily základní, jemný i upravený
-terén do 5 cm. Všech 76 740 trojúhelníků střech v 93 dlaždicích se shoduje s daty
-města. F8 ukazuje stejnou síť, jakou používá fyzika.
-Při studeném startu v nízké kvalitě přenesly hra, základní data a katalogy
-o 2 103 364 bajtů (2,01 MiB) více než archiv E12. S dokončenými požadavky na okolí
-do zobrazení nabídky to bylo 32 656 336 proti 33 641 355 bajtům v E12. Výběr
-detailů závisí na vydání a rychlosti načítání. Odečet lze zopakovat nástrojem
-`node tools/measure_startup.mjs adresář-E12 adresář-nového-sestavení`.
+Výchozí snímek Wilsonova mostu z hlavní větve je v
+`data-raw/e19/wilson-pred.jpg`. Po prvním kroku nebyly otevřené otázky.
 
-Ve čtvrtém kroku první měření našlo tři překryvy při napojení silnic. Na Lobezské
-se fyzická plocha odchylovala od osy vozovky až o 17,4 cm. Ve společné ploše nyní
-výšku určuje vzdálenost od os připojených silnic se zachováním jejich podélných
-profilů. Po opravě prošlo 63 testů JavaScriptu, sestavení a pět dotčených
-prohlížečových scénářů. Původní mez 5 cm prošla pro Wilsonův most, Rondel,
-upravené mostovky a obě vozovky i stropy Valíku.
+### Druhý krok
 
-## Předání po pátém kroku
+První krok je v revizi `15e0ce9`. Při nástupu do auta, vrtulníku a MHD se
+pěší těleso hned odstraní. Při výstupu se vedle dveří vyhledá blízký
+povrch statické sítě Jolt. Na místě bez blízké opory hráč začne ve výšce
+vozidla a může spadnout. Zkouška na stoupající vozovce ve Valíku zachytila,
+že svislá složka rychlosti při chůzi do kopce byla považována za skok.
+Po opravě určuje oporu kontakt s vozovkou.
 
-Malé auto na suchém asfaltu dosáhlo 100 km/h za 12,8 s a ubrzdilo ze stejné
-rychlosti na 43 m. Sporťák potřeboval 5,3 s a 41 m. Ruční brzda udržela auto
-na 15% svahu. Při nárazu rychlostí 250 km/h auto zůstalo před 20cm stěnou.
-Prošlo 68 testů JavaScriptu, produkční sestavení a sedm cílených prohlížečových
-kontrol. Volbu řízení, její uchování a rozjezd ověřily WebGL 2 i WebGPU.
+Prošlo 76 testů JavaScriptu, produkční sestavení a šest dotčených
+prohlížečových kontrol. Výstup na Wilsonově mostě, ve Valíku i po přistání
+na střeše prošel na WebGL 2 i na WebGPU. Zápis běhu je v
+`data-raw/e19/krok2-final.log`.
 
-Při opakovaném místním studeném startu přenesly hra, základní data a katalogy
-o 2 107 829 bajtů (2,01 MiB) více než E12. Celkem se do zobrazení nabídky
-přeneslo 32 660 801 bajtů proti 33 641 355 bajtům v E12 včetně okolí.
+### Rozhodnutí pro třetí krok
 
-Při předání po kroku 5 bylo třeba pokračovat krokem 6. Je třeba propojit nárazy s poškozením a
-ověřit nastupování, vystupování, návrat na silnici, garáž a obnovení uložené hry.
-V kroku 7 zbývá diagnostika, měření v zatáčce a na hraně dlaždic, zkoušky
-mostu, tunelů a dopadu, půlhodinová jízda, výkon a úplné testy obou způsobů
-simulace. Následuje protokol, README, katalog, kontrola komprese na adrese
-pro telefon při zveřejnění a návrh na sloučení do hlavní větve. Žádné otázky
-pro autora teď nejsou otevřené.
+Švédský most v Dobřívě (herní cesta 3070) má viditelné kamenné zábradlí po
+obou stranách. V 161 příčných řezech vzdálených nejvýše 10 cm dosahuje rozdíl
+mezi mostovkou a herním terénem na její ose nejvýše 0,61 m a na okrajích
+0,77 m a 0,46 m. Při použití pravidla 1,5 m po celé délce by zmizelo celé
+zábradlí i s překážkou pro chodce. Mezi 956 úseky silnic a cest označenými
+jako most (bez sdílených mostovek) zůstalo při stejném odečtu 540 po celé
+délce pod prahem. Jde o úseky mapových dat, jeden most může mít více úseků.
 
-## Šestý krok
+Autor určil, že na historických mostech s kamenným ohrazením má chodce zachytit
+samotná zídka. Na Švédský ani Wilsonův most se nepřidává další zábradlí.
+Pro ostatní úseky platí práh 1,5 m ze zadání. Výškový odečet lze zopakovat
+příkazem `node data-raw/e19/vysky-mostu.mjs`.
 
-Po fyzikálním kroku hra zpracuje nejsilnější kontakt hráčova auta. Lehký dotyk
-při 2 m/s nezpůsobil škodu, náraz do stěny při 15 m/s snížil stav karoserie.
-Po návratu na silnici se zastaví i otáčení kol. Hra uložená za volantem se
-obnoví ve stojícím autě, u vlastního vozu také se stavem a úpravami z garáže.
-Starší pozice se otevře pěšky jako dosud.
+### Třetí krok
 
-Prošlo 69 testů JavaScriptu, produkční sestavení a čtyři dotčené prohlížečové
-scénáře včetně garáže, staré pozice a obnovení auta po návratu na silnici.
-Zbývá sedmý krok a jeho úplné přejímací zkoušky.
+Vykreslování a fyzika používají stejné body okrajů a drátový pohled F8 zobrazuje
+i překážky pro chodce. Při rozběhu na vedlejší mostovku uměl Jolt vyzvednout
+kapsli na hranu. Změna polohy při takovém kroku se dříve přenesla do rychlosti
+jako skok. Oprava zachovává rychlost skutečného skoku a zabrání vymrštění
+postavy. Záznamy z obou verzí jsou v `data-raw/e19/stopy.json` a
+`data-raw/e19/vzorek-oprava.json`.
 
-## Sedmý krok – rozhodnutí o lávce v ulici U Prazdroje
+Na Domažlické u bodu (−2137,60 m, 495,30 m) má silniční úsek 2256 poloviční
+šířku 5,60 m. Střed pěšího úseku 2450 leží 5,32 m od osy vozovky a jeho
+povrch je o 0,24 m výš. Silniční zábradlí proto protíná chodníkovou kapsli
+o poloměru 0,35 m už na ose pěší cesty. V datech chybí příznak sdílené
+mostovky. Na mostě K Prokopávce se dva profily liší ve výšce jen o 0,01 m
+a zábradlí pěšího úseku 4598 leží uvnitř mostovky úseku 665.
+Autor schválil vedení zábradlí po vnějším obvodu společné plochy.
 
-První automatická jízda nové fyziky po trase E12 z Plzně přes Klabavu směrem
-na Rokycany skončila po 754 metrech v ulici U Prazdroje. Zkouška jela bez
-ostatních vozidel. U souřadnic x = 657 m, z = 162 m má vozovka č. 14422 výšku
-−3,29 m a pěší lávka č. 32249 v témže místě −2,94 m. Mezi jejich horními
-plochami je jen 35 cm. Přední kola zůstala v kontaktu, bok mostovky zastavil
-karoserii. Ověřeno průjezdem a odečtem trojúhelníků z kolizní sítě. Jde
-o hodnoty v herní mapě. Skutečnou světlou výšku zatím nemáme ověřenou.
+Při průchodu spodem pod Wilsonovým mostem vybrala zkouška střed řeky.
+Zkouška v původním čase řeku nepřekonala. V hlavní ose mostu vyšlo při
+vzorkování po 6,2 cm místo s největším odstupem od suchého terénu jen 4 cm
+pod mostovkou. Ověření průchodu pod mostem zůstává otevřené. Podklady
+jsou v `data-raw/e19/pruchod.log`.
 
-Kalibrace lávek podle měření patří podle plánu do E22. Autor má rozhodnout,
-zda přesunout ověření a místní opravu této jedné lávky do E18. Do té doby
-se profil nemění. Půlhodinová jízda zůstává nesplněná. Místní reprodukce
-a odečty jsou v `data-raw/e18/krok7/route.mjs`, `route.log` a `steny.log`.
-V pracovní kopii je rozpracovaný panel fyziky, test jízdy na kruhu a volba
-simulace pro prohlížečové testy. První úplný prohlížečový běh nové fyziky
-zapisuje do `data-raw/e18/krok7/new.log`. Před dalším během ověřit jeho výsledek.
+Prošlo všech 77 testů JavaScriptu včetně 100 náběhů pod různými úhly,
+produkční sestavení a obě kontroly rozpočtu nízké kvality. V závěrečném
+cíleném běhu prošlo šest z osmi prohlížečových kontrol. Obě kamenné zídky
+udržely hráče na Švédském i Wilsonově mostě ve WebGL 2 i WebGPU.
+[Snímek Švédského mostu](../E19/svedsky-most.jpg)
 
-## Oprava povolená autorem v E18
+V rozšířené zkoušce 18 dalších mostů včetně Rondelu neprošla v obou
+vykreslovačích výška postavy na úseku 363. Po puštění směru skončila 1,15 m
+nad výchozí úrovní. Po rozhodnutí o překrývajících se mostovkách znovu
+prověřit geometrii okolí, výšku při náběhu i po zastavení a oba směry
+u všech 20 mostů. Zkouška zůstává zapnutá ve stejné přesnosti. Výsledky jsou
+v `data-raw/e19/predani3.log`. To byl stav před úpravou společného obvodu.
 
-Městský archiv 430 má SHA-256 `825dc3e395044b1f5a47e27c812cc4189829e9134cc027865ffc8fcb3e7bb9ac`.
-Lávce U Prazdroje odpovídá objekt `00000002023003269`. Středy protilehlých hran horní
-plochy dávají profil přes obě vozovky a po zakřivené rampě. V bodě (657, 162)
-má vršek 316,615 m Bpv a spodní plocha 315,96 m Bpv. Herní vozovka pod
-lávkou má 309,91 m Bpv. Opravená lávka používá stejný profil pro vykreslení,
-dotazy na výšku i fyziku. Místní zkouška v obou směrech zachovala 100 % stavu
-auta. Kontrola horní i spodní plochy ve fyzice prošla s tolerancí 5 cm.
-[Podklady města](https://opendata.plzen.eu/public/opendata/detail/37) ·
-[Snímek před opravou](../E18/lavka-pred.jpg) · [Snímek po opravě](../E18/lavka-po.jpg)
+### Společný obvod vozovky a chodníku
 
-Na trase E12 s novou fyzikou dojelo auto v první souvislé půlhodině z Plzně přes
-Klabavu do Rokycan (19,02 km). Největší zanoření spodního referenčního bodu
-auta vůči jízdní ploše bylo 0,162 m. Zkouška používá fyzikální kroky po 1/60 s,
-bez přemístění auta. Všechny dotčené testy JavaScriptu a sestavení prošly.
-Sedmý krok pokračuje zbývajícími jízdními zkouškami, měřením a úplnými sadami.
+Zábradlí končí přesně tam, kde jeho hranu překryje sousední mostovka ve stejné
+úrovni. Při výpočtu se používá tloušťka mostovky stejně jako při jejím
+vykreslení a ve fyzice. Oddělená výšková patra si zachovávají vlastní okraje.
+Na historických mostech s kamenným ohrazením zachytí hráče přímo zídka.
 
-## Závěrečné ověření
+U společné plochy teď zkouška měří odstup od skutečné vnější hrany a výšku nad
+mostovkou v místě zastavení. Na šikmém okraji běžec po prvním dotyku zatlačí
+dvě sekundy kolmo proti zábradlí. Po puštění směru musí stále stát na mostě.
+Přesnost výškové zkoušky zůstala 15 cm u zídek a 35 cm u ostatních mostů.
+Na Domažlické vede příčná trasa třemi čtvrtinami délky pěšího úseku 2450,
+kde mají obě vnější strany předepsanou výšku nad terénem. Z chodníku hráč
+urazil k protějšímu zábradlí 23,63 m. Samostatná podélná zkouška prochází
+chodník od metru za začátkem do metru před koncem. Stejnou trasu po chodníku
+má i Wilsonův most.
 
-Zkušební auto dojelo z Plzně k hamru v Dobřívě (29,78 km) a zpět (29,80 km).
-Každý směr trval přes 50 minut simulované jízdy. Prošly výšky kontaktů kol
-na Wilsonově mostě do 5 cm, průjezdy Valíkem, skok, dopad a zkouška na
-hraně dlaždic. V obou způsobech řízení prošlo také uložení a návrat na
-obsazenou silnici s výběrem volného místa. Prošlo 71 testů JavaScriptu,
-23 testů Pythonu a produkční sestavení. Pracovní protokol je v [E18](../E18.md).
-Na telefonu je ke zkoušce dostupná oprava lávky, veřejný přenos Jolt i střech
-má potvrzenou kompresi gzip.
+[Snímek Domažlické před E19](../E19/domazlicka-pred.jpg) ·
+[Stejný pohled po úpravě](../E19/domazlicka-po.jpg)
 
-Obě úplné sady nad sestavením hry z revize `1d58c88` doběhly za 50,2 minuty.
-S původní fyzikou prošlo 110/110. S novou fyzikou prošlo 109/110 v prvním
-běhu. V testu přestupu na náměstí Republiky se při čekání posouvají nově
-také chodci. Se stejným limitem pak prošly všechny tři scénáře MHD v obou
-režimech i samostatné zopakování jediného neúspěšného testu. Záznamy jsou v
-`data-raw/e18/krok7/` pod názvy `final-new.log`, `final-old.log`,
-`prestup-oprava-new.log`, `prestup-oprava-old.log` a `posledni-prestup.log`.
+**Poslední ověření.** Prošlo všech 79 testů JavaScriptu, produkční sestavení a
+16 dotčených prohlížečových kontrol. Oba vykreslovače ověřily 40 náběhů na
+vnější okraje 20 mostů, obě podélné trasy, výstupy z vozidel, průchod pod lávkou
+U Prazdroje, pohyb pod Wilsonovým mostem řekou a rozpočet nízké kvality.
+Prošly i trasy k hamru, u Klabavy, pěší předání u Boleváku a průjezd auta
+ulicí U Prazdroje. Výsledky jsou v `data-raw/e19/obrys-{node,build,e2e,trasy}.log`.
 
-Na GitHubu v první úplné kontrole revize `ab8b0d0` prošlo všech 31 scénářů
-WebGPU a 78 ze 79 scénářů WebGL 2. Zkouška rozvozu nahlásila nedokončený
-přenos leteckého snímku. Po rozdělení kroků simulace prošla zkouška lokálně
-s oběma verzemi fyziky a také se záměrně o 1,2 sekundy zpožděným přenosem
-stejného snímku. Záznamy jsou ve stejném adresáři pod názvy
-`rozvoz-s-prenosem-new.log`, `rozvoz-s-prenosem-old.log` a `pomaly-snim.log`.
+**Rozhodnutí autora.** Suchá cesta po nábřeží pod Wilsonovým mostem patří
+do E22. V E19 je ověřen pohyb řekou pod Wilsonovým mostem a pěší průchod
+po suchu pod lávkou U Prazdroje. Zbývají kroky 4 až 6.
 
-Po opravě čekání prošlo s novou fyzikou 110/110 v jednom místním běhu za
-37,9 minuty. Na GitHubu nad revizí `7480ece` prošel rozvoz i přestup.
-U taxi se po přemístění stojícímu autu odečetlo 0,35 bodu za předchozí smyk.
-Zkouška umí tento stav zopakovat. Přemístění nyní příznak smyku vynuluje.
-Nad opravenou revizí `d858a53` na Macu prošlo 110/110 s novou fyzikou
-za 46,0 minuty a 110/110 s původní za 45,9 minuty. Ani jeden běh nevyžadoval
-opakování scénáře. Záznamy jsou v `taxi-sada-new.log` a `taxi-sada-old.log`
-v témže adresáři. Prošlo také 71 testů JavaScriptu, 23 testů Pythonu
-a produkční sestavení. Aktualizovaný náhled na telefon otevírá dotykové ovládání.
-Linuxová kontrola revize `d858a53` při druhém pokusu dokončila 30 z 31
-scénářů WebGPU úspěšně. U osmi referenčních pohledů vypršel celkový limit
-180 s. Podrobnosti a odkazy na kontroly jednotlivých revizí jsou v protokolu.
+### Čtvrtý krok
 
-Na přání autora probíhají další kontroly místně na Macu. Poslední běh na GitHubu
-nad revizí `00d108e` dokončil 23 z 31 grafických zkoušek WebGPU v časovém limitu.
-Změna způsobu testování vychází z výše uvedených úplných místních výsledků obou verzí fyziky.
-Po úpravě nastavení na Macu znovu prošlo 71 testů JavaScriptu, 23 testů Pythonu,
-kontrola syntaxe nástrojů a produkční sestavení. Audit závislostí ohlásil nula nálezů.
+Chodci do 80 m mají ve fyzice kapsli. Auta i při pěší hře předávají fyzice
+svůj pohyb. Rychlost a směr zásahu se přebírají při dotyku auta s kapslí.
+U hráče se počítá i dotyk virtuální kapsle, která může před kapotou ustoupit
+dříve, než na sebe narazí vnitřní tělesa. Jedna srážka hráčova auta přičetla
+jeden přestupek. Auto nad hlavou chodce ho nezasáhlo.
 
-Autor potvrdil, že E18 funguje i na jeho telefonu. Po zápisu prošlo všech
-71 místních testů JavaScriptu včetně kontroly dokumentace a produkční sestavení.
-Podrobnosti k jízdním zkouškám obsahuje [protokol](../E18.md#kontrola-pro-autora).
-Pro kontrolu před sloučením plán doporučuje model Astra s úrovní uvažování High.
-[Návrh na sloučení E18 do mainu](https://github.com/JendaNDT/GTA-Pilsen/pull/11)
+Prošlo všech 80 testů JavaScriptu a produkční sestavení. V prohlížeči prošlo
+17 kontrol dopravy a fyziky a závěrečné čtyři zkoušky zasažení chodce i hráče
+na WebGL 2 a WebGPU. Zápisy jsou v `data-raw/e19/krok4-{node,build,e2e,final}.log`.
+Následují pády, vstávání a závěrečné ověření.
+
+### Pátý krok
+
+Postava má při pádu 11 samostatných částí a deset kloubů. Při nárazu rychlostí
+10 m/s dolehla v obou směrech na podložku a uklidnila se do pěti sekund.
+Hráče během pádu sleduje kamera a po dvou až čtyřech sekundách se vrátí k chůzi.
+Ostatní chodci začnou vstávat po třech sekundách klidu. Přechod do stoje trvá
+0,35 sekundy. Při zaplnění limitu se uvolní nejstarší postava.
+Volba „Fyzikální pády postav“ v nastavení se ukládá. Ve starších uložených
+hrách je zapnutá. Prostředky Jolt se po pádu uvolní.
+
+Prošlo všech 82 testů JavaScriptu, produkční sestavení, sedm prohlížečových
+kontrol pádů s výchozí jízdou i sedm s původní jízdou. Oba vykreslovače
+ověřily zásah auta, jediný úbytek zdraví při pádu z devíti metrů, návrat
+ovládání i výměnu nejstarší postavy v nízké kvalitě. Opakovaný náraz na
+stejném úseku u Prazdroje také prošel. Zápisy jsou v
+`data-raw/e19/{vstani,krok5-old,krok5-silnice,krok5-node,krok5-build}.log`.
+
+### Šestý krok
+
+Prošlo 82 testů JavaScriptu, 23 testů Pythonu, produkční sestavení a všech
+127 prohlížečových zkoušek (88 WebGL 2, 39 WebGPU) za 42 minut.
+Výsledky jsou v `data-raw/e19/final-{node,python,build}.log` a
+`data-raw/e19/uplne.log`. Dvakrát za každou verzi byla porovnána jízda a let.
+Časy z obou měření i první samostatný výkyv GPU jsou v [protokolu](../E19.md).
+README, katalog a nabídka „O hře“ popisují nové chování. Doporučená kontrola
+je Sol s vysokou úrovní uvažování. Nábřeží pod Wilsonovým mostem patří do E22.

@@ -160,3 +160,14 @@ test('zákaz přes mezilehlý úsek platí jen po příjezdu z určené silnice'
   assert.equal(world.findPath(world.eFrom[from], world.eTo[to]), null);
   assert.deepEqual(world.findPath(world.eFrom[side], world.eTo[to]), [side, via, to]);
 });
+
+test('pěší kapsle se u země vysune od sloupu a nad sloupem má volno', () => {
+  const world = emptyWorld();
+  world.addObstacles([2, 1, 0.15]);
+  const hit = { x: 2.1, z: 1, depth: 0 };
+  assert.equal(world.collideStreetObjects(hit, 0.35, 0.15), true);
+  assert.equal(hit.x, 2.5);
+  hit.x = 2.1;
+  assert.equal(world.collideStreetObjects(hit, 0.35, 3), false);
+  assert.equal(hit.x, 2.1);
+});
