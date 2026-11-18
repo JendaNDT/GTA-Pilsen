@@ -10,19 +10,23 @@ export class Heli {
     scene.add(this.mesh);
     this.x = x; this.z = z; this.yaw = yaw;
     this.y = world.surfaceAt(x, z, 1e9);
-    this.vx = 0; this.vy = 0; this.vz = 0;
+    this.speed = 0; this.vx = 0; this.vy = 0; this.vz = 0;
     this.rotor = 0; this.spin = 0; this.pitch = 0; this.roll = 0;
     this.occupied = false; this.landed = true;
     this.radius = 2.2; this.halfLen = 3;
     this.sync();
   }
 
-  /** fwd, turn ∈ ⟨-1, 1⟩; lift: 1 nahoru, -1 dolů. */
-  update(dt, fwd, turn, lift) {
-    const w = this.world;
+  spinRotor(dt) {
     const target = this.occupied ? 30 : 0;
     this.rotor += (target - this.rotor) * Math.min(1, dt * (this.occupied ? 1.2 : 0.5));
     this.spin += this.rotor * dt;
+  }
+
+  /** fwd, turn ∈ ⟨-1, 1⟩; lift: 1 nahoru, -1 dolů. */
+  update(dt, fwd, turn, lift) {
+    const w = this.world;
+    this.spinRotor(dt);
     const power = clamp((this.rotor - 12) / 14, 0, 1);
     if (!this.occupied) { fwd = 0; turn = 0; lift = this.landed ? 0 : -0.6; }
     const surface = w.surfaceAt(this.x, this.z, this.y + 0.7);
