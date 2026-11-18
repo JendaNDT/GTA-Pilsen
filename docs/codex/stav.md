@@ -150,7 +150,9 @@ za 46,0 minuty a 110/110 s původní za 45,9 minuty. Ani jeden běh nevyžadoval
 opakování scénáře. Záznamy jsou v `taxi-sada-new.log` a `taxi-sada-old.log`
 v témže adresáři. Prošlo také 71 testů JavaScriptu, 23 testů Pythonu
 a produkční sestavení. Aktualizovaný náhled na telefon otevírá dotykové ovládání.
-Výsledky linuxových kontrol jednotlivých revizí jsou u návrhu na sloučení.
+Linuxová kontrola revize `d858a53` při druhém pokusu dokončila 30 z 31
+scénářů WebGPU úspěšně. U osmi referenčních pohledů vypršel celkový limit
+180 s. Podrobnosti a odkazy na kontroly jednotlivých revizí jsou v protokolu.
 
 Zbývá kontrola autora podle [protokolu](../E18.md#kontrola-pro-autora), včetně
 vyzkoušení na skutečném telefonu. Doporučený model pro kontrolu je Astra, High.
