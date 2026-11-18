@@ -1,5 +1,7 @@
 import { TUNNEL_HEIGHT, TUNNEL_PORTAL_CUT } from '../world/tunnels.js';
 
+import { riverBed } from './water.js';
+
 export function terrainGridStep(world, ci) {
   if (world.gradeTerrain.has(ci)) return world.gradeStep;
   return world.terrainDetail.has(ci) ? world.tDetailG : world.tG;
@@ -48,9 +50,10 @@ function portalPlanes(p) {
 }
 
 export function terrainTriangles(world, ci, x0, z0, size, emit) {
-  const step = terrainGridStep(world, ci);
+  const bed = riverBed(world, x0, z0, size);
+  const step = Math.min(terrainGridStep(world, ci), bed ? 4 : Infinity);
   const holes = world.tunnels.flatMap((t) => t.portalCuts(x0, z0, size)).flatMap(portalPlanes);
-  const vertex = (x, z) => [x, world.heightAt(x, z), z];
+  const vertex = (x, z) => [x, world.heightAt(x, z) - (bed ? bed(x, z) : 0), z];
   const triangle = holes.length ? (a, b, c) => {
     let pieces = [[a, b, c]];
     for (const planes of holes) pieces = pieces.flatMap((p) => subtract(p, planes));

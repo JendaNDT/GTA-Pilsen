@@ -211,7 +211,7 @@ export class PlayerVehicle {
   render(alpha) {
     const { mesh } = this.car;
     this.pose.interpolate(alpha, mesh.position, mesh.quaternion);
-    mesh.position.y -= this.spec.height;
+    mesh.translateY(-this.spec.height);
   }
 
   dispose() {

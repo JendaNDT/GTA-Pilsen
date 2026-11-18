@@ -56,6 +56,10 @@ export class WalkingCharacter {
         vertical = -(normal.GetX() * player.vx + normal.GetZ() * player.vz) / normal.GetY();
       }
     }
+    if (player.swimming) {
+      vertical = Math.max(-2, Math.min(2, (player.world.heightAt(player.x, player.z) - player.y) * 8));
+    }
+    this.settings.mStickToFloorStepDown.Set(0, player.swimming ? 0 : -0.35, 0);
     velocity.Set(player.vx, vertical, player.vz);
     character.SetLinearVelocity(velocity);
     const contacts = character.GetActiveContacts();
@@ -73,6 +77,11 @@ export class WalkingCharacter {
     player.grounded = character.GetGroundState() === physics.Jolt.EGroundState_OnGround && !takingOff;
     // Vysunutí kapsle z hrany či pomocný krok na schod jí nesmějí udělit rychlost skoku.
     player.vy = player.grounded ? 0 : Math.min(vy - 18 * dt, (player.y - previousY) / dt);
+    if (player.swimming) {
+      player.vy = vertical;
+      player.fallStart = player.y;
+      return 0;
+    }
     if (grounded) player.fallStart = previousY;
     player.fallStart = Math.max(player.fallStart, player.y);
     return !grounded && player.grounded ? Math.max(0, player.fallStart - player.y - 5) * 6 : 0;

@@ -35,6 +35,13 @@ export class TrafficBodies {
     return vehicle;
   }
 
+  keepCar(vehicle) {
+    const { car } = vehicle;
+    car.physical = vehicle;
+    this.dynamic.set(car, vehicle);
+    this.owners.set(vehicle.body.GetID().GetIndexAndSequenceNumber(), car);
+  }
+
   removeCar(car) {
     this.takeCar(car)?.dispose();
   }
@@ -48,16 +55,14 @@ export class TrafficBodies {
       colliders.tiles.has(world.chunkIndex(car.x, car.z));
     const candidates = vehicles.cars.filter((car) => eligible(car) && distance(car) <= (car.physical ? 220 : 150) ** 2);
     // Obsazené místo držíme až k vnějšímu okraji. Při snížení kvality mají přednost bližší auta.
-    candidates.sort((a, b) => Number(b.mode === 'police') - Number(a.mode === 'police') || Number(!!b.physical) - Number(!!a.physical) || distance(a) - distance(b));
+    candidates.sort((a, b) => Number(!!b.floodTime) - Number(!!a.floodTime) || Number(b.mode === 'police') - Number(a.mode === 'police') || Number(!!b.physical) - Number(!!a.physical) || distance(a) - distance(b));
     const selected = new Set(candidates.slice(0, cap));
     for (const car of this.dynamic.keys()) if (!selected.has(car)) this.removeCar(car);
     for (const car of selected) {
       if (car.physical && !car.physicsTeleport) continue;
       if (!car.physical) {
         this.removeProxy(car);
-        car.physical = new PlayerVehicle(this.physics, car);
-        this.dynamic.set(car, car.physical);
-        this.owners.set(car.physical.body.GetID().GetIndexAndSequenceNumber(), car);
+        this.keepCar(new PlayerVehicle(this.physics, car));
       } else car.physical.teleport();
       if (car.mode === 'parked' && Math.abs(car.speed) < 0.1) this.physics.bodies.DeactivateBody(car.physical.body.GetID());
       car.physicsTeleport = false;

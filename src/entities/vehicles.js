@@ -40,6 +40,7 @@ export class Car {
 
   /** Postaví auto na místo; bez výšky na zem (hint = výška, ze které se hledá povrch, např. pro most). */
   place(x, z, yaw, hint = null) {
+    this.floodTime = 0;
     this.physicsTeleport = true;
     this.skid = 0;
     this.pitch = this.roll = this.gRoll = this.steer = 0;
@@ -728,7 +729,7 @@ export class VehicleManager {
           this.stepDynamic(c, dt, 0, 0, Math.abs(c.speed) < 4);
           c.vx *= Math.exp(-1.2 * dt); c.vz *= Math.exp(-1.2 * dt);
         }
-        if (Math.hypot(c.vx, c.vz) < 0.4) {
+        if (!c.floodTime && Math.hypot(c.vx, c.vz) < 0.4) {
           c.rest += dt;
           if (c.rest > 3 && c.wasAI && c.health > 25 && !c.noDriver) { if (this._resumeAI(c)) c.wasAI = false; else if (c.rest > 8) c.wasAI = false; }
           else if (c.rest > 2.5 && (c.noDriver || !c.wasAI)) { c.mode = 'parked'; c.vx = c.vz = 0; c.speed = 0; }
@@ -759,7 +760,7 @@ export class VehicleManager {
   nearestEnterable(x, z, y, maxD = 3.6) {
     let best = null, bd = maxD * maxD;
     for (const c of this.cars) {
-      if (c.mode === 'player' || Math.abs(c.y - y) > 2) continue;
+      if (c.mode === 'player' || c.floodTime || Math.abs(c.y - y) > 2) continue;
       const d = (c.x - x) ** 2 + (c.z - z) ** 2;
       const lim = (maxD + c.halfLen * 0.5) ** 2;
       if (d < lim && d < bd + 4) { if (!best || d < bd) { best = c; bd = d; } }

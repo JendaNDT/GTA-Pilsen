@@ -1,3 +1,4 @@
+import { Water } from '../physics/water.js';
 import { Falls } from './falls.js';
 import { HelicopterBody } from '../physics/heli.js';
 import { TransitBodies } from '../physics/transit-bodies.js';
@@ -44,6 +45,7 @@ export class Game {
     this.heliAssist = true;
     this.driver = null;
     this.falls = new Falls(this);
+    this.water = new Water(physics);
     this.trafficBodies = new TrafficBodies(physics, QUALITY);
     this.transitBodies = new TransitBodies(physics);
     this.tireSurface = (x, z) => {
@@ -98,6 +100,10 @@ export class Game {
           const car = this.trafficBodies.carForBody(contact.mBodyB.GetIndexAndSequenceNumber());
           if (car) this.queuePedHit(this.player, car, contact.mLinearVelocity);
         }
+      }
+      if (this.driver && this.water.step(this.driver, this.world, dt)) this.audio.splash(this.driver.car);
+      for (const [car, vehicle] of this.trafficBodies.dynamic) {
+        if (this.water.step(vehicle, this.world, dt)) this.audio.splash(car);
       }
       physics.engine.Step(dt, 1);
       this.driver?.read();
@@ -390,7 +396,7 @@ export class Game {
 
   _exitCar() {
     const car = this.car, p = this.player, w = this.world;
-    if (Math.abs(car.speed) > 5) { this.hud.toast('Nejdřív zpomal.'); return; }
+    if (!car.floodTime && Math.abs(car.speed) > 5) { this.hud.toast('Nejdřív zpomal.'); return; }
     const lx = Math.cos(car.yaw), lz = -Math.sin(car.yaw);
     const off = car.type.wid / 2 + 0.75;
     let x = car.x + lx * off, z = car.z + lz * off;
@@ -400,7 +406,12 @@ export class Game {
     }
     car.mode = 'loose'; car.rest = 0; car.noDriver = true; car.wasAI = false;
     this.car = null; this.mode = 'foot'; this.focus = p;
-    p.yaw = car.yaw; p.leaveVehicle(x, z, car.y);
+    p.yaw = car.yaw;
+    if (car.floodTime && w.isWater(x, z)) {
+      p.place(x, z, w.heightAt(x, z));
+      p.setWalking(true);
+      p.mesh.visible = true;
+    } else p.leaveVehicle(x, z, car.y);
     this.audio.door(car);
     this.jobs.onExitCar(car);
     this.save();
@@ -757,7 +768,8 @@ export class Game {
     env.time.value = this.time;
 
     if (this.driver && (this.mode !== 'car' || this.car !== this.driver.car)) {
-      this.driver.dispose();
+      if (this.driver.car.floodTime && this.vehicles.cars.includes(this.driver.car)) this.trafficBodies.keepCar(this.driver);
+      else this.driver.dispose();
       this.driver = null;
     }
     if (!this.oldPhysics || this.mode === 'foot') this.colliders.update(this.focus.x, this.focus.z);
@@ -789,6 +801,18 @@ export class Game {
       this.onCrash(this.driver.car, impact, other);
     }
 
+    if (this.car?.floodTime >= 4) this._exitCar();
+    for (const car of this.water.sunk) {
+      if (p.lastCar === car) {
+        p.lastCar = null;
+        this.hud.toast('Auto se potopilo.', 'bad');
+      }
+      if (car === this.garage.active) car.health = 0;
+      this.vehicles.remove(car);
+      this.save();
+    }
+    this.water.sunk.clear();
+
     // pohyb podle režimu
     if (this.mode === 'foot') {
       if (this.fallDamage > 0) {
@@ -801,7 +825,7 @@ export class Game {
       car.reverseTime = car.speed < -1 ? (car.reverseTime || 0) + dt : 0;
       if (this.oldPhysics) this.vehicles.stepDynamic(car, dt, input.moveY, input.moveX, input.handbrake);
       this.waterTimer -= dt;
-      if (this.waterTimer <= 0) {
+      if (this.oldPhysics && this.waterTimer <= 0) {
         this.waterTimer = 0.3;
         const w = this.world;
         if (car.y < w.heightAt(car.x, car.z) + 0.8 && !car.air && w.isWater(car.x, car.z) && !w.onRoad(car.x, car.z, 2.5)) {

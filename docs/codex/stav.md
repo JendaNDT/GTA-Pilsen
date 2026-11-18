@@ -9,8 +9,8 @@ Větev `etapa/E20` vychází ze sloučené etapy E19 na revizi `10832b4`. [Zadá
 | 3. Zaparkovaná auta a policie | Hotovo. Střet a dojetí hlídky k chodci ověřeny ve hře. |
 | 4. MHD a směny | Hotovo. Články vozidel, odstrčení auta, rozjezdy a brzdění ve směnách. |
 | 5. Vrtulník | Hotovo. Let s asistencí, přistání na střeše a na heliportu. |
-| 6. Voda | Zbývá |
-| 7. Závěrečné scénáře, výkon a protokol | Zbývá |
+| 6. Voda | Hotovo. Vztlak a odpor vody, pozvolné potopení auta a plavání ke břehu. |
+| 7. Závěrečné scénáře, výkon a protokol | Zbývá ověřit pohyb provozu po dobu deseti minut na obou místech, střet s jedoucím autem, výkon a společné testy. |
 
 ## Otevřené otázky
 
@@ -51,3 +51,11 @@ Záznamy jsou v `data-raw/e20/krok4-{node,build,final,smeny,provoz}.log` a `krok
 ### Pátý krok
 
 Vrtulník váží 2 500 kg. Zkouška s počátečním náklonem a klesáním ověřila, že při zapnuté asistenci udrží výšku v rozmezí ±0,5 m po dobu 20 sekund. Ve hře bez poškození přistál z výšky 12 m na střeše FN Lochotín i na pozemním heliportu. Prošlo všech 88 testů JavaScriptu, produkční sestavení a čtyři prohlížečové kontroly včetně načtení vypnuté asistence, dokončení rozvozu a návratu od hranice mapy. Záznamy jsou v `data-raw/e20/krok5-{node,build,final}.log`.
+
+### Šestý krok
+
+Voda v materiálu terénu používá stejnou síť jako `world.heightAt`. Dno pro kola vychází z obrysu vody včetně ostrovů. Do osmi metrů od břehu klesá přibližně o 12 cm na metr, dále o 2,5 cm na metr, nejvýše do hloubky 2,4 m. Na ose Wilsonova mostu poblíž středu řeky je herní hladina ve výšce 300,70 m n. m. Při vzdálenosti 30,5 m od břehu vychází odhad dna na 299,18 m n. m., tedy asi o 12 cm níž než údaj města. Tvar koryta mezi břehy je odhad.
+
+V obou vykreslovačích malé auto sjelo ze suchého západního břehu do Radbuzy asi 20 m po proudu od mostu. Při zkoušce zaznělo jedno šplouchnutí, vůz plaval bez dotyku kol se dnem, hráč vyplaval a dostal se zpět na souš. Od prvního kontaktu s vodou po úplné ponoření a vyřazení auta uplynulo 7,05 s. Na mělčině zůstává vyčnívající karoserie ve hře. Prošlo 90 testů JavaScriptu, sestavení a devět závěrečných prohlížečových scénářů. Širší ověření jízdy, fyziky a vody mělo 20 úspěšných scénářů. Záznamy jsou v `data-raw/e20/krok6-{node,build,overeni,kalibrace}.log`.
+
+První delší pozorování okolního provozu odhalilo chyby při odbočení do Husovy a při návratu převráceného auta do provozu. Ve špičce některé vozy zůstaly stát několik minut. Pro přijetí kroku 7 je potřeba odstranit příčiny a dlouhý běh zopakovat. Souřadnice a průběh jsou v `data-raw/e20/stopa-Klatovská.json` a `data-raw/e20/pozorovani-v2-*.json`.

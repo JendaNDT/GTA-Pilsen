@@ -57,7 +57,8 @@ export class Player {
   update(dt, dirX, dirZ, run, jump) {
     const w = this.world;
     const len = Math.hypot(dirX, dirZ);
-    this.swimming = this.y <= w.heightAt(this.x, this.z) + 0.3 && w.isWater(this.x, this.z) && !w.onRoad(this.x, this.z, 0.3);
+    this.swimming = this.y <= w.heightAt(this.x, this.z) + 0.3 && w.isWater(this.x, this.z) &&
+      (!w.onRoad(this.x, this.z, 0.3) || w.deckAt(this.x, this.z, Infinity) > this.y + 1.8);
     let speed = this.swimming ? 1.7 : run ? 6.4 : 2.4;
     if (this.stun > 0) { this.stun -= dt; speed = 0; jump = false; }
     let tvx = 0, tvz = 0;
