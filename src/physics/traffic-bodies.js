@@ -44,20 +44,22 @@ export class TrafficBodies {
     const cap = this.quality.name === 'low' ? 10 : this.quality.name === 'medium' ? 20 : 40;
     const distance = (car) => (car.x - focus.x) ** 2 + (car.z - focus.z) ** 2;
     const eligible = (car) => !game.oldPhysics && !car.dead && car !== game.driver?.car &&
-      (car.mode === 'ai' || car.mode === 'loose' && car.physical) &&
+      (car.mode === 'ai' || car.mode === 'police' || car.mode === 'parked' || car.mode === 'loose') &&
       colliders.tiles.has(world.chunkIndex(car.x, car.z));
     const candidates = vehicles.cars.filter((car) => eligible(car) && distance(car) <= (car.physical ? 220 : 150) ** 2);
     // Obsazené místo držíme až k vnějšímu okraji. Při snížení kvality mají přednost bližší auta.
-    candidates.sort((a, b) => Number(!!b.physical) - Number(!!a.physical) || distance(a) - distance(b));
+    candidates.sort((a, b) => Number(b.mode === 'police') - Number(a.mode === 'police') || Number(!!b.physical) - Number(!!a.physical) || distance(a) - distance(b));
     const selected = new Set(candidates.slice(0, cap));
     for (const car of this.dynamic.keys()) if (!selected.has(car)) this.removeCar(car);
     for (const car of selected) {
+      if (car.physical && !car.physicsTeleport) continue;
       if (!car.physical) {
         this.removeProxy(car);
         car.physical = new PlayerVehicle(this.physics, car);
         this.dynamic.set(car, car.physical);
         this.owners.set(car.physical.body.GetID().GetIndexAndSequenceNumber(), car);
-      } else if (car.physicsTeleport) car.physical.teleport();
+      } else car.physical.teleport();
+      if (car.mode === 'parked' && Math.abs(car.speed) < 0.1) this.physics.bodies.DeactivateBody(car.physical.body.GetID());
       car.physicsTeleport = false;
     }
   }
@@ -65,7 +67,8 @@ export class TrafficBodies {
   drive(game, dt) {
     for (const [car, vehicle] of this.dynamic) {
       if (car.mode === 'ai') game.vehicles.stepAI(car, dt, vehicle);
-      else vehicle.controller.SetDriverInput(0, 0, 0.6, 0);
+      else if (car.mode === 'police' && game.wanted > 0) game.vehicles.stepPolice(car, dt, game.focus, vehicle);
+      else if (vehicle.body.IsActive()) vehicle.controller.SetDriverInput(0, 0, 0.6, 0);
     }
   }
 
@@ -78,6 +81,7 @@ export class TrafficBodies {
 
   read(game) {
     for (const [car, vehicle] of this.dynamic) {
+      if (car.mode === 'parked' && !vehicle.body.IsActive() && !vehicle.impactSpeed) continue;
       vehicle.read();
       if (!vehicle.impactSpeed) continue;
       const other = this.carForBody(vehicle.impactBody);

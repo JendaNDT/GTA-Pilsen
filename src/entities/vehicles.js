@@ -426,7 +426,7 @@ export class VehicleManager {
   }
 
   // ----------------------------------------------------------- policie ----
-  stepPolice(car, dt, target) {
+  stepPolice(car, dt, target, physical = null) {
     const w = this.world;
     const dx = target.x - car.x, dz = target.z - car.z;
     const dist = Math.hypot(dx, dz);
@@ -474,6 +474,20 @@ export class VehicleManager {
     else if (dist < 14) vmax = Math.min(vmax, Math.max(4, Math.hypot(target.vx || 0, target.vz || 0) + dist * 0.6));
     let limit = this._obstacleLimit(car, vmax, target);
     if (car.blocked > 1.2) limit = Math.max(limit, 4);
+    car.policeDist = dist;
+    if (physical) {
+      const pointAt = (look) => {
+        // Bod před kapotou umožní i otočení za cílem přímo v zádech.
+        const heading = car.yaw + clamp(diff, -1.4, 1.4);
+        const range = Math.min(look, Math.hypot(tx - car.x, tz - car.z));
+        return { x: car.x + Math.sin(heading) * range, z: car.z + Math.cos(heading) * range };
+      };
+      const gap = direct && !target.isCar ? dist - 6.5 : Infinity;
+      physical.input = driveRoute(car, pointAt, limit, gap, physical.input, dt);
+      physical.driveAI(physical.input, dt, this.game.tireSurface);
+      car.blocked = car.speed < 0.5 ? car.blocked + dt : 0;
+      return;
+    }
     if (car.speed < limit) car.speed = Math.min(limit, car.speed + car.type.accel * 0.8 * dt);
     else car.speed = Math.max(limit, car.speed - 17 * dt);
     car.blocked = car.speed < 0.5 ? car.blocked + dt : 0;
@@ -488,7 +502,6 @@ export class VehicleManager {
       car.speed *= 0.9;
       car.yaw += (Math.random() - 0.5) * 0.1;
     }
-    car.policeDist = dist;
   }
 
   // ------------------------------------------------------- spawn/úklid ----
@@ -593,7 +606,10 @@ export class VehicleManager {
 
   spawnPolice(target, cam) {
     const car = this.spawnTraffic(target.x, target.z, cam, { typeId: 'police', maxD: 210, ambient: false });
-    if (car) { car.mode = 'police'; car.repath = 0; car.speed = 10; }
+    if (car) {
+      car.mode = 'police'; car.repath = 0; car.speed = 10;
+      car.vx = Math.sin(car.yaw) * car.speed; car.vz = Math.cos(car.yaw) * car.speed;
+    }
     return car;
   }
 
@@ -705,7 +721,7 @@ export class VehicleManager {
         if (c.dead || d2 > 420 * 420) { this.remove(c); continue; }
       } else if (c.mode === 'police') {
         if (wanted <= 0) { c.wasAI = 'ai'; if (!this._resumeAI(c)) { c.mode = 'loose'; c.wasAI = 'ai'; } }
-        else this.stepPolice(c, dt, player);
+        else if (!c.physical) this.stepPolice(c, dt, player);
         if (d2 > 520 * 520) { this.remove(c); continue; }
       } else if (c.mode === 'loose') {
         if (!c.physical) {
