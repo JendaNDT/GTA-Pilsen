@@ -7,7 +7,7 @@ Větev `etapa/E19` vychází z revize `fb29b92`. Autor potvrdil zahájení.
 | --- | --- |
 | 1. Fyzikální chůze, schody, svahy a pády | Hotovo |
 | 2. Střechy, mostovky, tunely a přestupy | Hotovo |
-| 3. Zábradlí a zobrazení kolizí | Rozpracováno. Kamenné zídky jsou ve hře, u souběžných mostovek se ověřuje umístění. |
+| 3. Zábradlí a zobrazení kolizí | Hotovo. Společný vnější obvod a obě strany všech 20 mostů prošly kontrolou. |
 | 4. Kapsle okolních chodců a srážky | Čeká |
 | 5. Pády postav a vstávání | Čeká |
 | 6. Závěrečné zkoušky a protokol | Čeká |
@@ -32,7 +32,7 @@ se stejnou přesností na čtyři desetinná místa. Ověřuje také oporu a
 vzdálenost bodu od osy postavy. Tento důvod patří i do závěrečného protokolu.
 
 Výchozí snímek Wilsonova mostu z hlavní větve je v
-`data-raw/e19/wilson-pred.jpg`. Otevřené otázky zatím nejsou.
+`data-raw/e19/wilson-pred.jpg`. Po prvním kroku nebyly otevřené otázky.
 
 ### Druhý krok
 
@@ -78,9 +78,7 @@ povrch je o 0,24 m výš. Silniční zábradlí proto protíná chodníkovou kap
 o poloměru 0,35 m už na ose pěší cesty. V datech chybí příznak sdílené
 mostovky. Na mostě K Prokopávce se dva profily liší ve výšce jen o 0,01 m
 a zábradlí pěšího úseku 4598 leží uvnitř mostovky úseku 665.
-Otevřená otázka pro autora se týká vedení zábradlí na takových překryvech:
-použít vnější obrys společné plochy nebo rozhodnout podle podkladů pro
-jednotlivé mosty.
+Autor schválil vedení zábradlí po vnějším obvodu společné plochy.
 
 Při průchodu spodem pod Wilsonovým mostem vybrala zkouška střed řeky.
 Zkouška v původním čase řeku nepřekonala. V hlavní ose mostu vyšlo při
@@ -99,4 +97,38 @@ vykreslovačích výška postavy na úseku 363. Po puštění směru skončila 1
 nad výchozí úrovní. Po rozhodnutí o překrývajících se mostovkách znovu
 prověřit geometrii okolí, výšku při náběhu i po zastavení a oba směry
 u všech 20 mostů. Zkouška zůstává zapnutá ve stejné přesnosti. Výsledky jsou
-v `data-raw/e19/predani3.log`. Třetí krok zůstává otevřený.
+v `data-raw/e19/predani3.log`. To byl stav před úpravou společného obvodu.
+
+### Společný obvod vozovky a chodníku
+
+Zábradlí končí přesně tam, kde jeho hranu překryje sousední mostovka ve stejné
+úrovni. Při výpočtu se používá tloušťka mostovky stejně jako při jejím
+vykreslení a ve fyzice. Oddělená výšková patra si zachovávají vlastní okraje.
+Na historických mostech s kamenným ohrazením zachytí hráče přímo zídka.
+
+U společné plochy teď zkouška měří odstup od skutečné vnější hrany a výšku nad
+mostovkou v místě zastavení. Na šikmém okraji běžec po prvním dotyku zatlačí
+dvě sekundy kolmo proti zábradlí. Po puštění směru musí stále stát na mostě.
+Přesnost výškové zkoušky zůstala 15 cm u zídek a 35 cm u ostatních mostů.
+Na Domažlické vede příčná trasa třemi čtvrtinami délky pěšího úseku 2450,
+kde mají obě vnější strany předepsanou výšku nad terénem. Z chodníku hráč
+urazil k protějšímu zábradlí 23,63 m. Samostatná podélná zkouška prochází
+chodník od metru za začátkem do metru před koncem. Stejnou trasu po chodníku
+má i Wilsonův most.
+
+[Snímek Domažlické před E19](../E19/domazlicka-pred.jpg) ·
+[Stejný pohled po úpravě](../E19/domazlicka-po.jpg)
+
+**Poslední ověření.** Prošlo všech 79 testů JavaScriptu, produkční sestavení a
+16 dotčených prohlížečových kontrol. Oba vykreslovače ověřily 40 náběhů na
+vnější okraje 20 mostů, obě podélné trasy, výstupy z vozidel, průchod pod lávkou
+U Prazdroje, pohyb pod Wilsonovým mostem řekou a rozpočet nízké kvality.
+Prošly i trasy k hamru, u Klabavy, pěší předání u Boleváku a průjezd auta
+ulicí U Prazdroje. Výsledky jsou v `data-raw/e19/obrys-{node,build,e2e,trasy}.log`.
+
+**Otevřená otázka.** Krok 3 je dokončen. Před pokračováním autor rozhodne,
+zda pro E19 ověřit suchý průchod pod lávkou U Prazdroje a u Wilsonova mostu
+průchod řekou, nebo rozšířit E19 o suchou pěší trasu přímo pod Wilsonovým
+mostem. Měřené nábřeží u Wilsonova mostu má v plánu E22. V současné mapě
+nevede pod celou šířkou mostu souvislá suchá cesta s výškou pro postavu 1,8 m.
+Obě dostupné trasy jsou ověřené ve hře. Zbývají kroky 4 až 6.

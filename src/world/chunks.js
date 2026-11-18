@@ -1,5 +1,5 @@
 import { prazdrojThickness } from './prazdroj-bridge.js';
-import { densePath, pathNormal } from './road-profile.js';
+import { BRIDGE_THICKNESS, densePath, pathNormal } from './road-profile.js';
 // Stavba 3D geometrie po dlaždicích: budovy, silnice, koleje, stromy.
 import * as THREE from 'three/webgpu';
 import { railingFaces } from '../physics/railings.js';
@@ -563,7 +563,7 @@ function dashes(world, buf, D, hw, col, dash, gap, lateral, lift) {
 }
 
 /** Těleso mostu: deska pod vozovkou, zábradlí a pilíře až na terén. */
-function bridgeSlab(world, solid, D, hw, topCol, supports = true, depth = 0.94) {
+function bridgeSlab(world, solid, D, hw, topCol, supports = true, depth = BRIDGE_THICKNESS) {
   const n = D.n;
   if (n < 2 || !D.y) return;
   const T = depth - 0.04;

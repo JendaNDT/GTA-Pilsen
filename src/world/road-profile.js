@@ -1,3 +1,5 @@
+export const BRIDGE_THICKNESS = 0.94;
+
 /**
  * Zahuštěná lomená čára: body s až e pole (xs, zs), u mostů i výšky mostovky (ys).
  * a, b = meze celé linie – sousední body mimo úsek slouží k plynulému navázání.

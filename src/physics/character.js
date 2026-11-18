@@ -14,6 +14,8 @@ export class WalkingCharacter {
     const settings = new Jolt.CharacterVirtualSettings();
     settings.mMaxSlopeAngle = Math.PI / 4;
     settings.mMaxStrength = 85;
+    // Oporu tvoří spodní polokoule kapsle. Kontakt boku se zdí není došlap.
+    settings.mSupportingVolume.SetConstant(CENTER_HEIGHT - RADIUS);
     settings.mShape = shape;
     settings.mInnerBodyShape = shape;
     settings.mInnerBodyLayer = layers.CHARACTER;
@@ -56,6 +58,13 @@ export class WalkingCharacter {
     }
     velocity.Set(player.vx, vertical, player.vz);
     character.SetLinearVelocity(velocity);
+    const contacts = character.GetActiveContacts();
+    let stepHeight = 0.35;
+    for (let i = 0; i < contacts.size(); i++) {
+      const hit = contacts.at(i);
+      if (hit.mUserData === layers.RAILING) { stepHeight = 0; break; }
+    }
+    this.settings.mWalkStairsStepUp.Set(0, stepHeight, 0);
     character.ExtendedUpdate(dt, physics.system.GetGravity(), this.settings, ...this.filters, this.allocator);
     const pos = character.GetPosition();
     player.x = pos.GetX();

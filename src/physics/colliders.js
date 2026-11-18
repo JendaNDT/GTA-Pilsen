@@ -54,6 +54,7 @@ export function staticMeshBody(physics, triangles, layer = layers.STATIC) {
     if (result.HasError()) throw new Error('Nepodařilo se vytvořit kolizní síť: ' + result.GetError().c_str());
     const origin = new Jolt.RVec3(0, 0, 0), rotation = new Jolt.Quat(0, 0, 0, 1);
     const bodySettings = new Jolt.BodyCreationSettings(result.Get(), origin, rotation, Jolt.EMotionType_Static, layer);
+    bodySettings.mUserData = layer;
     const body = bodies.CreateBody(bodySettings);
     bodies.AddBody(body.GetID(), Jolt.EActivation_DontActivate);
     Jolt.destroy(bodySettings);
