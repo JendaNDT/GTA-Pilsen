@@ -122,6 +122,7 @@ export class Environment {
     const night = 1 - THREE.MathUtils.smoothstep(elev, -0.17, 0.04);
     env.night.value = night;
     env.colorGrade.value.fromArray(lutWeights(elev));
+    env.morningFog.value = THREE.MathUtils.smoothstep(h, 4, 7) * (1 - THREE.MathUtils.smoothstep(h, 8, 10.5));
 
     const hor = new THREE.Color(0xc3dcee).lerp(new THREE.Color(0xf0a060), dusk * 0.85).lerp(new THREE.Color(0x121a2c), 1 - day);
     const { top, sun, cloud, shade } = this.skyColors;
@@ -132,7 +133,7 @@ export class Environment {
     sun.value.setHex(0xfff4e0).lerp(new THREE.Color(0xff9a4a), dusk).multiplyScalar(elev > -0.05 ? 1 : 0.22);
     cloud.value.setHex(0xffffff).lerp(new THREE.Color(0xffc089), dusk * 0.8).lerp(new THREE.Color(0x1b2338), 1 - day);
     shade.value.setHex(0xaab6c6).lerp(new THREE.Color(0x8f6f6a), dusk * 0.7).lerp(new THREE.Color(0x0c1120), 1 - day);
-    this.scene.fog.color.copy(hor);
+    this.scene.fog?.color.copy(hor);
     env.sky.value.copy(hor);
     env.sunDir.value.copy(dir);
 

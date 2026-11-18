@@ -39,7 +39,7 @@ export class Game {
       this.scene.add(this.tunnelLight);
     }
     this.env = new Environment(this.scene, renderer);
-    this.postfx = createPostFX(renderer, this.scene, this.camera);
+    this.postfx = createPostFX(renderer, this.scene, this.camera, this.world);
     this.chunks = new ChunkManager(this.scene, this.world, renderer, data.heritage, data.orthophotoSources);
     this.hud = new Hud(this.world);
     this.soundPlaces = data.soundPlaces;

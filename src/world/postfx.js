@@ -9,6 +9,7 @@ import { traa } from 'three/addons/tsl/display/TRAANode.js';
 import { PARAMS, QUALITY } from '../config.js';
 import { env } from './materials.js';
 import { loadColorLuts } from './color-luts.js';
+import { makeAirPerspective } from './air-perspective.js';
 
 function buffers() {
   // Průhledné lampy a značky se přimíchají pouze do barvy. Normála a pohyb
@@ -22,7 +23,7 @@ function buffers() {
 }
 
 export class PostFX {
-  constructor(renderer, scene, camera, independentBlending) {
+  constructor(renderer, scene, camera, world, independentBlending) {
     this.renderer = renderer;
     this.camera = camera;
     this.renderNumber = 0;
@@ -38,6 +39,8 @@ export class PostFX {
     this.ambientOcclusion = null;
     this.glow = null;
     this.luts = [];
+    this.air = PARAMS.get('fog') !== '0' ? makeAirPerspective(camera, world, QUALITY.view) : null;
+    if (this.air) scene.fog = null;
     this.lastPosition = new THREE.Vector3();
     this.lastRotation = new THREE.Quaternion();
     this.hasPreviousCamera = false;
@@ -57,12 +60,19 @@ export class PostFX {
         occlusion.useTemporalFiltering = true;
         this.ambientOcclusion = occlusion;
         const indirect = mix(1, occlusion.getTextureNode().r, 0.55);
-        lit = convertToTexture(vec4(this.color.rgb.mul(indirect), this.color.a));
-        this.effects.push(occlusion, lit);
+        lit = vec4(this.color.rgb.mul(indirect), this.color.a);
+        this.effects.push(occlusion);
+      }
+      if (this.air) lit = this.air.color(lit, this.depth);
+      if (lit !== this.color) {
+        lit = convertToTexture(lit);
+        this.effects.push(lit);
       }
       this.temporal = traa(lit, this.depth, this.velocity, camera);
       this.effects.push(this.temporal);
       image = this.temporal.getTextureNode();
+    } else if (this.air) {
+      image = this.air.color(image, this.depth);
     }
 
     if (QUALITY.shadowCascades > 0 && PARAMS.get('bloom') !== '0') {
@@ -145,15 +155,16 @@ export class PostFX {
     this.pipeline.dispose();
     for (const effect of this.effects) effect.dispose();
     for (const table of this.luts) table.dispose();
+    this.air?.field.dispose();
     this.scenePass.dispose();
   }
 }
 
-export function createPostFX(renderer, scene, camera) {
+export function createPostFX(renderer, scene, camera, world) {
   if (PARAMS.get('postfx') === '0') return null;
   const webgpu = renderer.backend.isWebGPUBackend;
   const gl = webgpu ? null : renderer.backend.getContext();
   if (gl && !gl.getExtension('EXT_color_buffer_float')) return null;
   const independentBlending = webgpu ? !renderer.backend.compatibilityMode : Boolean(gl.getExtension('OES_draw_buffers_indexed'));
-  return new PostFX(renderer, scene, camera, independentBlending);
+  return new PostFX(renderer, scene, camera, world, independentBlending);
 }

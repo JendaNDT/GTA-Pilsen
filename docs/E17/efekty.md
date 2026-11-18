@@ -65,3 +65,12 @@ světlo a fialové stíny a noc lehce posílí modrou. Tabulky se plynule
 míchají podle výšky slunce. Parametr `?lut=0` úpravu vypne.
 [Soumrak bez barevného ladění](efekty/ladeni-pred.jpg) ·
 [Soumrak s barevným laděním](efekty/ladeni-soumrak.jpg).
+
+## Vzdušná perspektiva
+
+Dálka přechází do barvy oblohy. Opar je hustší nízko nad terénem a po
+svítání také v údolích a u vody. Pracovní mapa využívá původní vodní plochy
+OpenStreetMap včetně Radbuzy, Mže a Berounky. Hra ji odvozuje v paměti
+ze stávajících dat. Hustotu u vody snižuje výška nad hladinou. Parametr
+`?fog=0` zapne původní způsob vykreslení mlhy. [Ráno u Radbuzy před úpravou](efekty/mlha-pred.jpg) ·
+[Ráno s výškovou mlhou](efekty/mlha-reka.jpg).
