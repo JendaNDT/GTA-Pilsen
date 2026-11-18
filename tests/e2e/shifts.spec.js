@@ -126,6 +126,8 @@ for (const [name, type, id] of [
     const result = failWrite ? outcome.pending : outcome.result;
     expect(result.state).toBe('paid');
     expect(result.score).toBeGreaterThanOrEqual(75);
+    const reference = { tram: 93, trolleybus: 99, bus: 100 }[type];
+    expect(Math.abs(result.score - reference), name + ' získal ' + result.score + ' bodů').toBeLessThanOrEqual(5);
     if (failWrite) {
       expect(outcome.active).toBe(true);
       expect(outcome.money).toBe(outcome.before);

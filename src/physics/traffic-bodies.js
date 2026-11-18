@@ -105,14 +105,6 @@ export class TrafficBodies {
     for (const car of game.vehicles.cars) if (!car.physical && car !== game.driver?.car && !car.dead) {
       this.move(game.focus, car, car.x, car.y, car.z, car.yaw, car.type.wid, car.type.h, car.type.len, dt, layers.VEHICLE);
     }
-    if (game.driver) {
-      for (const vehicle of game.transit.vehicles) if (vehicle.visible && vehicle.meshes) {
-        for (const [i, mesh] of vehicle.meshes.entries()) {
-          const p = mesh.position;
-          this.move(game.car, mesh, p.x, p.y, p.z, mesh.rotation.y, 2.5, 2.9, vehicle.sections[i].length, dt, layers.TRANSIT);
-        }
-      }
-    }
     for (const [key, entry] of this.active) if (entry.frame !== this.frame) {
       this.removeProxy(key);
     }

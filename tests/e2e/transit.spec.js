@@ -122,7 +122,7 @@ test('E08 – přestup z tramvaje na autobus po skutečné jízdě a výstupu', 
   await info.attach('návaznost na stanovišti 4', { body: JSON.stringify(transfer), contentType: 'application/json' });
   expect(transfer.found).toBe(true);
   expect(transfer.distance).toBeLessThan(90);
-  expect(transfer.exact && transfer.walked && transfer.boarding && transfer.boardable).toBe(true);
+  expect(transfer.exact && transfer.walked && transfer.boarding && transfer.boardable, JSON.stringify(transfer)).toBe(true);
   expect(transfer.display).toBe(512);
   await action(page);
   await expect(page.locator('#vehname')).toContainText(`autobus ${transfer.ref}`);

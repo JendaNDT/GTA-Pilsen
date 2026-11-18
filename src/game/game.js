@@ -1,4 +1,5 @@
 import { Falls } from './falls.js';
+import { TransitBodies } from '../physics/transit-bodies.js';
 import { TrafficBodies } from '../physics/traffic-bodies.js';
 import { PlayerVehicle } from '../physics/vehicle.js';
 import { TileColliders } from '../physics/colliders.js';
@@ -42,6 +43,7 @@ export class Game {
     this.driver = null;
     this.falls = new Falls(this);
     this.trafficBodies = new TrafficBodies(physics, QUALITY);
+    this.transitBodies = new TransitBodies(physics);
     this.tireSurface = (x, z) => {
       if (x > -66 && x < 75 && z > -60 && z < 68) return 0.9;
       const w = this.world;
@@ -63,7 +65,9 @@ export class Game {
       this.trafficBodies.recordImpact(first, second, impulse);
     };
     physics.step = (dt) => {
+      this.transit.update(dt, this.focus, this.vehicles.cars, this.mode === 'foot', this.clock, input);
       const start = DEBUG ? performance.now() : 0;
+      this.transitBodies.update(this.transit.vehicles, this.focus, dt);
       this.trafficBodies.drive(this, dt);
       this.driver?.drive(dt, input.moveY, input.moveX, input.handbrake, this.steering === 'arcade', this.tireSurface);
       if (this.mode === 'foot' && !this.falls.active.has(this.player)) {
@@ -775,13 +779,12 @@ export class Game {
 
     // svět
     const onFoot = this.mode === 'foot';
-    this.transit.update(dt, this.focus, this.vehicles.cars, onFoot, this.clock, input);
     const obs = this.vehicles.obstacles;
     obs.length = 0;
     for (const o of this.transit.obstacles) obs.push(o);
     if (onFoot) obs.push(p);
     // stojící vrtulníky jsou pro auta pevná překážka
-    const heavy = this.transit.heavy;
+    const heavy = this.transit.heavy.slice();
     for (const h of this.helis) {
       if (!h.landed) continue;
       obs.push(h);

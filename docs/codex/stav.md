@@ -7,20 +7,16 @@ Větev `etapa/E20` vychází ze sloučené etapy E19 na revizi `10832b4`. [Zadá
 | 1. Řidič AI | Hotovo. |
 | 2. Provoz v okruhu hráče | Hotovo. Převzetí řízení fyzikou, pravidla na trase a volný vůz po nárazu. |
 | 3. Zaparkovaná auta a policie | Hotovo. Střet a dojetí hlídky k chodci ověřeny ve hře. |
-| 4. MHD a směny | Zbývá |
+| 4. MHD a směny | Hotovo. Články vozidel, odstrčení auta, rozjezdy a brzdění ve směnách. |
 | 5. Vrtulník | Zbývá |
 | 6. Voda | Zbývá |
 | 7. Závěrečné scénáře, výkon a protokol | Zbývá |
 
 ## Otevřené otázky
 
-Autor zvolil skutečná měření hloubky. Hladina v mapě leží na stejné síti jako dosavadní kolize terénu.
-Pro krok 6 prověřit prostorový průběh dna a licenci pro začlenění číselných dat. Město zveřejňuje [dokumentaci povodňového modelu](https://mapy.plzen.eu/dokumentace-povodnoveho-modelu/) a [tabulku kót dna](https://gis.plzen.eu/foto/pov_model/profily/PM_Psany_PP.pdf).
-Na přání autora je místně nainstalován Poppler 26.11.0. Nástroj pdftotext přečetl všech 14 stran.
-Profil R19 označený jako Wilsonův most uvádí na říčním kilometru 1,372 kótu dna 299,30 m n. m.
-Tabulka udává jednu výšku dna na profil. Pro prostorový tvar potřebujeme měřené příčné profily nebo síť výšek a doloženou licenci.
-Datový sklad MŽP při ověření vracel HTTP 503 s oznámením o odstávce. Autor dostal dotaz na souhlas s oslovením městského GIS.
-[Poskytování dat městem](https://mapy.plzen.eu/poskytovane-sluzby/poskytovani-dat-z-gis/)
+Autor schválil rozumný odhad podvodního profilu. Využije obrys vodní plochy a výšku vykreslené hladiny.
+Kontrolním údajem je kóta dna u Wilsonova mostu v městské tabulce. Poppler 26.11.0 z ní přečetl profil R19 v říčním km 1,372 s kótou 299,30 m n. m. Hloubku určuje rozdíl od hladiny.
+Měřené příčné profily nebudou potřeba. [Tabulka města](https://gis.plzen.eu/foto/pov_model/profily/PM_Psany_PP.pdf)
 
 ## Ověření
 
@@ -42,3 +38,12 @@ Poblíž hráče zaparkované auto spí, čelní náraz ho probudí a odstrčí.
 sleduje trasu k hráči a před stojícím chodcem zastaví v dosahu zatčení. V rozpočtu počtu aut má při pronásledování přednost.
 Prošlo všech 86 testů JavaScriptu, sestavení a všech 11 dotčených prohlížečových kontrol včetně nehody, hlídky, pokuty a pádů chodců.
 Záznamy jsou v `data-raw/e20/krok3-{node,build,e2e}.log`.
+
+### Čtvrtý krok
+
+Prošlo 87 testů JavaScriptu, produkční sestavení a prohlížečové sady MHD, směn a provozu.
+Tramvaj při náhlé překážce brzdila a odtlačila stojící auto. Při skoku v čase se staré těleso odebere,
+aby při přemístění vozu mezi zastávkami neodstrčilo chodce. Kontrola ověřila i pěší přestup na náměstí Republiky.
+Při stejném průjezdu jako v E12 získala tramvaj 1 celkem 93 bodů, trolejbus 16 získal 99 a autobus 30 získal 100.
+Rozjezd i přechod na provozní brzdu mají omezenou změnu zrychlení. Nouzové zabrzdění má kratší dráhu.
+Záznamy jsou v `data-raw/e20/krok4-{node,build,final,smeny,provoz}.log` a `krok4-body.json`.

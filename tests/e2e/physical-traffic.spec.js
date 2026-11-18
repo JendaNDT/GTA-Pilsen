@@ -102,3 +102,52 @@ test('E20 – fyzikální policejní vůz dojede k chodci a zastaví před ním'
   expect(sample.distance).toBeLessThan(9);
   expect(Math.abs(sample.speed)).toBeLessThan(0.25);
 });
+
+test('E20 – tramvaj brzdí a při náhlé překážce odstrčí auto na kolejích', async ({ page }) => {
+  await start(page);
+  const result = await page.evaluate(() => {
+    const g = __game, { transit, transitBodies, physics } = g;
+    const tram = transit.vehicles.find((v) => v.route.ref === '4' && v.route.from === 'Univerzita');
+    const car = g.player.lastCar;
+    for (const c of [...g.vehicles.cars]) if (c !== car) g.vehicles.remove(c);
+    const start = 3430, p = tram.route.posAt(start + 5, tram.side, {});
+    car.place(p.x, p.z, Math.atan2(p.tx, p.tz) + Math.PI / 2);
+    g.player.place(p.x + p.tz * 16, p.z - p.tx * 16);
+    for (let i = 0; i < 20; i++) g.colliders.update(p.x, p.z);
+    g.trafficBodies.update(g, 1 / 60);
+    transit.vehicles = [tram];
+    Object.assign(tram, { s: start, v: 11, wait: 0, doorsOpen: false, stopTarget: null, y: car.y });
+    transit._show(tram, true);
+    transit._pose(tram, 0);
+    transitBodies.update([tram], g.focus, 1 / 60);
+    const sections = transitBodies.sections.size;
+    let peak = 0, braked = false, firstMovement = Infinity;
+    for (let i = 0; i < 120; i++) {
+      transit.update(1 / 60, g.focus, [car], true);
+      transitBodies.update([tram], g.focus, 1 / 60);
+      physics.engine.Step(1 / 60, 1);
+      g.trafficBodies.read(g);
+      const speed = Math.hypot(car.vx, car.vz);
+      peak = Math.max(peak, speed);
+      if (speed > 1) firstMovement = Math.min(firstMovement, i);
+      if (i < firstMovement && tram.v < 10.9) braked = true;
+    }
+    const distance = Math.hypot(car.x - p.x, car.z - p.z);
+    // Skok v jízdním řádu přemístí těleso bez průjezdu celou vynechanou ulicí.
+    const mesh = tram.meshes[0], oldId = transitBodies.sections.get(mesh).body.GetID().GetIndexAndSequenceNumber();
+    mesh.position.x += 30;
+    transitBodies.update([tram], g.focus, 1 / 60);
+    const body = transitBodies.sections.get(mesh).body;
+    const reset = body.GetID().GetIndexAndSequenceNumber() !== oldId && body.GetLinearVelocity().Length() < 0.1;
+    transitBodies.update([], g.focus, 1 / 60);
+    return { sections, expected: tram.sections.length, reset, removed: !transitBodies.sections.size,
+      peak, distance, braked, advance: tram.s - start };
+  });
+  expect(result.sections).toBe(result.expected);
+  expect(result.sections).toBeGreaterThan(1);
+  expect(result.braked, JSON.stringify(result)).toBe(true);
+  expect(result.peak).toBeGreaterThan(2);
+  expect(result.distance).toBeGreaterThan(2);
+  expect(result.advance).toBeGreaterThan(5);
+  expect(result.removed && result.reset).toBe(true);
+});
