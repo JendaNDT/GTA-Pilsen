@@ -46,6 +46,16 @@ export class Game {
       if (w.onRoad(x, z)) return w.r.cls[w._tmpRoad.road] >= RC.TRACK ? 0.6 : 1;
       return w.isSoft(x, z) ? 0.5 : 0.6;
     };
+    this.pedHits = new Map();
+    physics.onPedContact = (walker, vehicle) => {
+      const id = walker.GetID().GetIndexAndSequenceNumber();
+      const inner = this.player.character?.character.GetInnerBodyID().GetIndexAndSequenceNumber();
+      const ped = id === inner ? this.player : this.trafficBodies.owners.get(id);
+      const carID = vehicle.GetID().GetIndexAndSequenceNumber();
+      const car = carID === this.driver?.body.GetID().GetIndexAndSequenceNumber()
+        ? this.car : this.trafficBodies.carForBody(carID);
+      if (ped && car) this.queuePedHit(ped, car, vehicle.GetLinearVelocity());
+    };
     physics.onImpact = (first, second, impulse) => this.driver?.recordImpact(first, second, impulse);
     physics.step = (dt) => {
       const start = DEBUG ? performance.now() : 0;
@@ -54,6 +64,14 @@ export class Game {
         const fx = Math.sin(this.camYaw), fz = Math.cos(this.camYaw);
         const dx = fx * input.moveY - fz * input.moveX, dz = fz * input.moveY + fx * input.moveX;
         this.fallDamage += this.player.update(dt, dx, dz, input.run, input.handbrake);
+        // Virtuální kapsle může ustoupit před kapotou ještě před dotykem vnitřního tělesa.
+        const contacts = this.player.character.character.GetActiveContacts();
+        for (let i = 0; i < contacts.size(); i++) {
+          const contact = contacts.at(i);
+          if (!contact.mHadCollision) continue;
+          const car = this.trafficBodies.carForBody(contact.mBodyB.GetIndexAndSequenceNumber());
+          if (car) this.queuePedHit(this.player, car, contact.mLinearVelocity);
+        }
       }
       physics.engine.Step(dt, 1);
       this.driver?.read();
@@ -466,6 +484,34 @@ export class Game {
     }
   }
 
+  queuePedHit(ped, car, velocity) {
+    const vx = velocity.GetX(), vz = velocity.GetZ(), speed = Math.hypot(vx, vz);
+    if (ped.state === 'down' || ped.stun > 0 || speed < 0.1) return;
+    if ((this.pedHits.get(ped)?.speed ?? 0) < speed) this.pedHits.set(ped, { car, vx, vz, speed });
+  }
+
+  applyPedHit(ped, { car, vx, vz, speed }) {
+    if (ped === this.player) {
+      if (this.mode !== 'foot' || speed <= 4) return;
+      ped.stun = 0.7;
+      ped.vx = vx * 0.5; ped.vz = vz * 0.5;
+      this.audio.crash(speed, car); this.shake = 0.6;
+      this._hurt(speed * 2.4);
+      return;
+    }
+    if (speed <= 4) {
+      const fx = Math.sin(car.yaw), fz = Math.cos(car.yaw);
+      const side = (ped.x - car.x) * fz - (ped.z - car.z) * fx >= 0 ? 1 : -1;
+      ped.x += fz * side * 0.08; ped.z -= fx * side * 0.08;
+      return;
+    }
+    this.world.traffic.users.delete(ped);
+    ped.crossing = null;
+    ped.state = 'down'; ped.timer = 7;
+    ped.vx = vx * 0.9; ped.vz = vz * 0.9;
+    this.onPedHit(ped, car, speed);
+  }
+
   onPedHit(ped, car, speed) {
     this.audio.crash(5, ped);
     if (car === this.car) {
@@ -669,10 +715,12 @@ export class Game {
         this.driver.teleport();
         this.car.physicsTeleport = false;
       }
-      this.trafficBodies.update(this, dt);
     }
+    this.trafficBodies.update(this, dt);
     this.fallDamage = 0;
     this.physics.update(elapsed);
+    for (const [ped, hit] of this.pedHits) this.applyPedHit(ped, hit);
+    this.pedHits.clear();
     if (this.driver?.impactSpeed > 0) {
       const other = this.trafficBodies.carForBody(this.driver.impactBody);
       const impact = this.driver.applyImpact();
@@ -725,21 +773,6 @@ export class Game {
     this.vehicles.update(dt, this.focus, this.camInfo, heavy);
     this.driver?.render(this.physics.clock.alpha);
     this.peds.update(dt, this.focus, this.camInfo, this.vehicles.cars);
-    // hráče pěšky může srazit auto
-    if (onFoot && p.stun <= 0) {
-      for (const c of this.vehicles.cars) {
-        const dx = p.x - c.x, dz = p.z - c.z;
-        if (dx * dx + dz * dz > 16) continue;
-        const cfx = Math.sin(c.yaw), cfz = Math.cos(c.yaw);
-        const along = dx * cfx + dz * cfz, across = dx * cfz - dz * cfx;
-        if (Math.abs(along) < c.halfLen + 0.3 && Math.abs(across) < c.radius + 0.25 && Math.abs(p.y - c.y) < 1.4) {
-          const sgn = across >= 0 ? 1 : -1;
-          p.x += cfz * sgn * (c.radius + 0.3 - Math.abs(across)); p.z -= cfx * sgn * (c.radius + 0.3 - Math.abs(across));
-          const sp = Math.hypot(c.vx, c.vz);
-          if (sp > 4) { this._hurt(sp * 2.4); p.stun = 0.7; p.vx = c.vx * 0.5; p.vz = c.vz * 0.5; this.audio.crash(sp, c); this.shake = 0.6; }
-        }
-      }
-    }
     this.jobs.update(dt);
     this.shifts.show();
     this._updateWanted(dt);

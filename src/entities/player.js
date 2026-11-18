@@ -246,24 +246,8 @@ export class PedManager {
           const dd = dx * dx + dz * dz;
           if (dd > 100 || Math.abs(p.y - c.y) > 2) continue;
           const sp = Math.hypot(c.vx, c.vz);
-          const hitR = c.radius + 0.3;
-          // zásah autem
           const fx = Math.sin(c.yaw), fz = Math.cos(c.yaw);
-          const along = dx * fx + dz * fz, across = Math.abs(dx * fz - dz * fx);
-          if (Math.abs(along) < c.halfLen + 0.3 && across < hitR) {
-            if (sp > 2.5) {
-              w.traffic.users.delete(p);
-              p.crossing = null;
-              p.state = 'down'; p.timer = 7;
-              p.vx = c.vx * 0.9 + dx * 0.8; p.vz = c.vz * 0.9 + dz * 0.8;
-              this.game.onPedHit(p, c, sp);
-              break;
-            } else {
-              // pomalé auto chodce jen odtlačí
-              const sgn = (dx * fz - dz * fx) >= 0 ? 1 : -1;
-              p.x += fz * sgn * 0.08; p.z -= fx * sgn * 0.08;
-            }
-          } else if (sp > 4 && p.state === 'walk') {
+          if (sp > 4 && p.state === 'walk') {
             const approaching = -(dx * c.vx + dz * c.vz) / (Math.sqrt(dd) * sp + 1e-6);
             if (approaching < -0.75 && dd < 64) {
               p.state = 'flee'; p.timer = 1.6;
@@ -272,7 +256,6 @@ export class PedManager {
             }
           }
         }
-        if (p.state === 'down') continue;
       }
       if (p.crossing) {
         moving = this._stepCrossing(p, dt, cars);

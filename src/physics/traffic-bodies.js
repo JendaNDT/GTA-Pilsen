@@ -5,6 +5,7 @@ export class TrafficBodies {
   constructor(physics) {
     this.physics = physics;
     this.active = new Map();
+    this.owners = new Map();
     const { Jolt } = physics;
     this.pos = new Jolt.RVec3(0, 0, 0);
     this.rotation = new Jolt.Quat(0, 0, 0, 1);
@@ -13,10 +14,14 @@ export class TrafficBodies {
 
   update(game, dt) {
     this.frame++;
+    for (const ped of game.peds.peds) {
+      if (ped.state === 'down' || Math.hypot(ped.x - game.focus.x, ped.z - game.focus.z) > 80) continue;
+      this.move(game.focus, ped, ped.x, ped.y, ped.z, 0, 0.7, 1.8, 0.7, dt, layers.CHARACTER);
+    }
+    for (const car of game.vehicles.cars) if (car !== game.driver?.car && !car.dead) {
+      this.move(game.focus, car, car.x, car.y, car.z, car.yaw, car.type.wid, car.type.h, car.type.len, dt, layers.VEHICLE);
+    }
     if (game.driver) {
-      for (const car of game.vehicles.cars) if (car !== game.car && !car.dead) {
-        this.move(game.car, car, car.x, car.y, car.z, car.yaw, car.type.wid, car.type.h, car.type.len, dt, layers.VEHICLE);
-      }
       for (const vehicle of game.transit.vehicles) if (vehicle.visible && vehicle.meshes) {
         for (const [i, mesh] of vehicle.meshes.entries()) {
           const p = mesh.position;
@@ -26,6 +31,7 @@ export class TrafficBodies {
     }
     for (const [key, entry] of this.active) if (entry.frame !== this.frame) {
       const id = entry.body.GetID();
+      this.owners.delete(id.GetIndexAndSequenceNumber());
       this.physics.bodies.RemoveBody(id);
       this.physics.bodies.DestroyBody(id);
       this.active.delete(key);
@@ -33,10 +39,8 @@ export class TrafficBodies {
   }
 
   carForBody(id) {
-    for (const [key, entry] of this.active) {
-      if (key.isCar && entry.body.GetID().GetIndexAndSequenceNumber() === id) return key;
-    }
-    return null;
+    const owner = this.owners.get(id);
+    return owner?.isCar ? owner : null;
   }
 
   move(focus, key, x, y, z, yaw, width, height, length, dt, layer) {
@@ -47,9 +51,13 @@ export class TrafficBodies {
     let entry = this.active.get(key);
     if (!entry) {
       const half = new Jolt.Vec3(width / 2, height / 2, length / 2);
-      const shape = new Jolt.BoxShape(half);
+      const isPed = layer === layers.CHARACTER;
+      const shape = isPed ? new Jolt.CapsuleShape((height - width) / 2, width / 2) : new Jolt.BoxShape(half);
       const settings = new Jolt.BodyCreationSettings(shape, this.pos, this.rotation, Jolt.EMotionType_Kinematic, layer);
+      settings.mIsSensor = isPed;
+      settings.mCollideKinematicVsNonDynamic = isPed;
       const body = bodies.CreateBody(settings);
+      this.owners.set(body.GetID().GetIndexAndSequenceNumber(), key);
       bodies.AddBody(body.GetID(), Jolt.EActivation_DontActivate);
       Jolt.destroy(settings);
       Jolt.destroy(half);

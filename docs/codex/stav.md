@@ -8,7 +8,7 @@ Větev `etapa/E19` vychází z revize `fb29b92`. Autor potvrdil zahájení.
 | 1. Fyzikální chůze, schody, svahy a pády | Hotovo |
 | 2. Střechy, mostovky, tunely a přestupy | Hotovo |
 | 3. Zábradlí a zobrazení kolizí | Hotovo. Společný vnější obvod a obě strany všech 20 mostů prošly kontrolou. |
-| 4. Kapsle okolních chodců a srážky | Čeká |
+| 4. Kapsle okolních chodců a srážky | Hotovo |
 | 5. Pády postav a vstávání | Čeká |
 | 6. Závěrečné zkoušky a protokol | Čeká |
 
@@ -126,9 +126,19 @@ U Prazdroje, pohyb pod Wilsonovým mostem řekou a rozpočet nízké kvality.
 Prošly i trasy k hamru, u Klabavy, pěší předání u Boleváku a průjezd auta
 ulicí U Prazdroje. Výsledky jsou v `data-raw/e19/obrys-{node,build,e2e,trasy}.log`.
 
-**Otevřená otázka.** Krok 3 je dokončen. Před pokračováním autor rozhodne,
-zda pro E19 ověřit suchý průchod pod lávkou U Prazdroje a u Wilsonova mostu
-průchod řekou, nebo rozšířit E19 o suchou pěší trasu přímo pod Wilsonovým
-mostem. Měřené nábřeží u Wilsonova mostu má v plánu E22. V současné mapě
-nevede pod celou šířkou mostu souvislá suchá cesta s výškou pro postavu 1,8 m.
-Obě dostupné trasy jsou ověřené ve hře. Zbývají kroky 4 až 6.
+**Rozhodnutí autora.** Suchá cesta po nábřeží pod Wilsonovým mostem patří
+do E22. V E19 je ověřen pohyb řekou pod Wilsonovým mostem a pěší průchod
+po suchu pod lávkou U Prazdroje. Zbývají kroky 4 až 6.
+
+### Čtvrtý krok
+
+Chodci do 80 m mají ve fyzice kapsli. Auta i při pěší hře předávají fyzice
+svůj pohyb. Rychlost a směr zásahu se přebírají při dotyku auta s kapslí.
+U hráče se počítá i dotyk virtuální kapsle, která může před kapotou ustoupit
+dříve, než na sebe narazí vnitřní tělesa. Jedna srážka hráčova auta přičetla
+jeden přestupek. Auto nad hlavou chodce ho nezasáhlo.
+
+Prošlo všech 80 testů JavaScriptu a produkční sestavení. V prohlížeči prošlo
+17 kontrol dopravy a fyziky a závěrečné čtyři zkoušky zasažení chodce i hráče
+na WebGL 2 a WebGPU. Zápisy jsou v `data-raw/e19/krok4-{node,build,e2e,final}.log`.
+Následují pády, vstávání a závěrečné ověření.
