@@ -457,7 +457,11 @@ export class World {
       }
       if (!moved) break;
     }
-    // kruhové překážky (stromy)
+    return this.collideStreetObjects(hit, r, y) || any;
+  }
+
+  collideStreetObjects(hit, r, y) {
+    let any = false;
     const ox0 = Math.floor((hit.x - r - 1) / 16), ox1 = Math.floor((hit.x + r + 1) / 16);
     const oz0 = Math.floor((hit.z - r - 1) / 16), oz1 = Math.floor((hit.z + r + 1) / 16);
     {

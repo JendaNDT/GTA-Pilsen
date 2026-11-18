@@ -462,14 +462,20 @@ test('jemný terén u Klabavy má v grafice i při chůzi stejný povrch', async
     const ground = w.heightAt(x, z);
     game.player.place(x, z, ground + 0.05);
     for (let i = 0; i < 20; i++) game.player.update(1 / 60, 0, 0, false, false);
-    return { distance, vertices: positions.count, surface, ground, bodyY: game.player.y,
+    const character = game.player.character.character;
+    const contact = character.GetGroundPosition();
+    return { distance, vertices: positions.count, surface, ground, grounded: game.player.grounded,
+      contactY: contact.GetY(), contactGround: w.heightAt(contact.GetX(), contact.GetZ()),
+      contactDistance: Math.hypot(contact.GetX() - x, contact.GetZ() - z), radius: game.player.radius,
       change: Math.abs(y - w.baseHeightAt(positions.getX(peak), positions.getZ(peak))) };
   });
   expect(result.distance).toBeLessThan(850);
   expect(result.vertices).toBe(65 ** 2);
   expect(result.change).toBeGreaterThan(0.4);
   expect(result.surface).toBeCloseTo(result.ground, 4);
-  expect(result.bodyY).toBeCloseTo(result.ground + 0.05, 4);
+  expect(result.grounded).toBe(true);
+  expect(result.contactY).toBeCloseTo(result.contactGround, 4);
+  expect(result.contactDistance).toBeLessThan(result.radius);
 });
 
 test('E03 – oba tubusy Valíku mají vlastní vozovku, stěny a kameru pod terénem', { tag: '@webgpu' }, async ({ page }, testInfo) => {

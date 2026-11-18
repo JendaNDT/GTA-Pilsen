@@ -1,4 +1,5 @@
 // Hráč pěšky a chodci.
+import { WalkingCharacter } from '../physics/character.js';
 import { makePedMesh, animatePed } from './models.js';
 import { QUALITY, RC, RF } from '../config.js';
 import { wrapAngle } from './vehicles.js';
@@ -7,7 +8,7 @@ const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const _pt = { x: 0, z: 0, tx: 0, tz: 1 };
 
 export class Player {
-  constructor(scene, world) {
+  constructor(scene, world, physics, colliders) {
     this.world = world;
     this.mesh = makePedMesh(0, true);
     scene.add(this.mesh);
@@ -21,6 +22,18 @@ export class Player {
     this.fallStart = 0;
     this.stun = 0;
     this.lastCar = null;
+    this.physics = physics;
+    this.colliders = colliders;
+    this.character = null;
+    this.streetContact = { x: 0, z: 0, depth: 0 };
+  }
+
+  setWalking(active) {
+    if (active && !this.character) this.character = new WalkingCharacter(this.physics, this);
+    if (!active && this.character) {
+      this.character.dispose();
+      this.character = null;
+    }
   }
 
   /** Postaví hráče na místo; bez výšky na zem (ne na most vysoko nad terénem). */
@@ -29,6 +42,8 @@ export class Player {
     this.x = x; this.z = z;
     this.y = y === null ? w.groundY(x, z, w.heightAt(x, z) + 1) : y;
     this.vy = 0; this.vx = this.vz = 0; this.grounded = true;
+    this.fallStart = this.y;
+    this.character?.place(this.x, this.y, this.z);
     this.sync(0);
   }
 
@@ -47,31 +62,18 @@ export class Player {
     }
     const k = Math.min(1, dt * (this.grounded ? 12 : 2.5));
     this.vx += (tvx - this.vx) * k; this.vz += (tvz - this.vz) * k;
-    this.x += this.vx * dt; this.z += this.vz * dt;
-
-    if (w.collideCircle(this.x, this.z, this.radius, this.y + 0.15, this.y + 1.7)) {
-      this.x = w.hit.x; this.z = w.hit.z;
-    }
-    const m = 20;
-    this.x = clamp(this.x, w.playMinX + m, w.playMaxX - m);
-    this.z = clamp(this.z, w.playMinZ + m, w.playMaxZ - m);
-
-    // svislý pohyb: stojí se na zemi nebo na střeše, na kterou jde vystoupit
-    const surface = w.surfaceAt(this.x, this.z, this.y + 0.55);
-    if (this.grounded) {
-      if (jump && !this.swimming) { this.vy = 5.0; this.grounded = false; this.fallStart = this.y; }
-      else if (this.y > surface + 0.4) { this.grounded = false; this.vy = 0; this.fallStart = this.y; }   // hrana střechy, mostu
-      else this.y = surface;                                                                             // svah: drž se země
-    }
-    let fallDamage = 0;
-    if (!this.grounded) {
-      this.vy -= 18 * dt;
-      this.y += this.vy * dt;
-      if (this.y <= surface && this.vy <= 0) {
-        const drop = this.fallStart - surface;
-        if (drop > 5) fallDamage = (drop - 5) * 6;
-        this.y = surface; this.vy = 0; this.grounded = true;
-      } else if (this.vy > 0) this.fallStart = Math.max(this.fallStart, this.y);
+    this.setWalking(true);
+    const tile = w.chunkIndex(this.x, this.z);
+    if (tile >= 0 && !this.colliders.tiles.has(tile)) this.colliders.update(this.x, this.z);
+    const fallDamage = this.character.move(dt, this, jump);
+    const contact = this.streetContact;
+    contact.x = this.x; contact.z = this.z; contact.depth = 0;
+    w.collideStreetObjects(contact, this.radius, this.y + 0.15);
+    const x = clamp(contact.x, w.playMinX + 20, w.playMaxX - 20);
+    const z = clamp(contact.z, w.playMinZ + 20, w.playMaxZ - 20);
+    if (x !== this.x || z !== this.z) {
+      this.x = x; this.z = z;
+      this.character.place(x, this.y, z);
     }
     const moving = Math.hypot(this.vx, this.vz);
     this.phase += dt * (3 + moving * 2.2);

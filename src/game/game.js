@@ -50,6 +50,11 @@ export class Game {
     physics.step = (dt) => {
       const start = DEBUG ? performance.now() : 0;
       this.driver?.drive(dt, input.moveY, input.moveX, input.handbrake, this.steering === 'arcade', this.tireSurface);
+      if (this.mode === 'foot') {
+        const fx = Math.sin(this.camYaw), fz = Math.cos(this.camYaw);
+        const dx = fx * input.moveY - fz * input.moveX, dz = fz * input.moveY + fx * input.moveX;
+        this.fallDamage += this.player.update(dt, dx, dz, input.run, input.handbrake);
+      }
       physics.engine.Step(dt, 1);
       this.driver?.read();
       if (DEBUG) physics.lastStepMs = performance.now() - start;
@@ -77,7 +82,7 @@ export class Game {
     this.trafficRhythm = new TrafficRhythm(this.world, data.trafficProfiles, this.transit.timetable);
     this.clockVisible = true;
     this.orthophotoEnabled = true;
-    this.player = new Player(this.scene, this.world);
+    this.player = new Player(this.scene, this.world, physics, this.colliders);
     // vrtulníky: heliporty z mapy (FN Lochotín, pivovar, Bory) a jeden na náměstí Republiky
     this.helis = [[106, -1596], [984, -396], [-266, 1314], [48, 52]].map(([x, z], i) => {
       const p = this._heliSpot(x, z);
@@ -654,8 +659,9 @@ export class Game {
       this.driver.dispose();
       this.driver = null;
     }
+    if (!this.oldPhysics || this.mode === 'foot') this.colliders.update(this.focus.x, this.focus.z);
+    this.player.setWalking(this.mode === 'foot');
     if (!this.oldPhysics) {
-      this.colliders.update(this.focus.x, this.focus.z);
       if (this.mode === 'car' && !this.driver) this.driver = new PlayerVehicle(this.physics, this.car);
       if (this.car?.physicsTeleport && this.driver) {
         this.driver.teleport();
@@ -663,6 +669,7 @@ export class Game {
       }
       this.trafficBodies.update(this, dt);
     }
+    this.fallDamage = 0;
     this.physics.update(elapsed);
     if (this.driver?.impactSpeed > 0) {
       const other = this.trafficBodies.carForBody(this.driver.impactBody);
@@ -672,10 +679,7 @@ export class Game {
 
     // pohyb podle režimu
     if (this.mode === 'foot') {
-      const fx = Math.sin(this.camYaw), fz = Math.cos(this.camYaw);
-      const dx = fx * input.moveY - fz * input.moveX, dz = fz * input.moveY + fx * input.moveX;
-      const fall = p.update(dt, dx, dz, input.run, input.handbrake);
-      if (fall > 0) { this.audio.crash(8, p); this._hurt(fall); }
+      if (this.fallDamage > 0) { this.audio.crash(8, p); this._hurt(this.fallDamage); }
       if (p.health < 100) p.health = Math.min(100, p.health + dt * 0.8);
     } else if (this.mode === 'car') {
       const car = this.car;
