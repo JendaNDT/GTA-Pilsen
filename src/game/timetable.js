@@ -1,4 +1,4 @@
-import { CLOCK_RATE, DAY_SECONDS, parseDay, weekday } from './clock.js';
+import { DAY_SECONDS, parseDay, weekday } from './clock.js';
 
 const timeValue = (value) => value >= 0 ? value : -value - 1;
 export const STOP_DWELL = 5;
@@ -41,8 +41,8 @@ export class Timetable {
       const firstDeparture = timeValue(values[1]), lastArrival = timeValue(values.at(-2));
       const trip = {
         id, ...p, times: values, startS, lastS, endS,
-        start: firstDeparture - Math.round((STOP_DWELL + (p.entry ? startS / APPROACH_SPEED : 0)) * CLOCK_RATE),
-        end: lastArrival + Math.round((STOP_DWELL + (endS - lastS) / APPROACH_SPEED) * CLOCK_RATE),
+        start: firstDeparture - STOP_DWELL - Math.round(p.entry ? startS / APPROACH_SPEED : 0),
+        end: lastArrival + STOP_DWELL + Math.round((endS - lastS) / APPROACH_SPEED),
       };
       this.maxOffset = Math.max(this.maxOffset, Math.floor(trip.end / DAY_SECONDS));
       (this.byService[service] ??= []).push(trip);
@@ -82,13 +82,12 @@ export class Timetable {
     const { trip, day } = event, { stops, times } = trip;
     const elapsed = now - day * DAY_SECONDS;
     const firstDeparture = timeValue(times[1]);
-    const dwell = STOP_DWELL * CLOCK_RATE;
     if (elapsed < firstDeparture) {
-      const opening = firstDeparture - dwell;
+      const opening = firstDeparture - STOP_DWELL;
       if (trip.entry && elapsed < opening) {
         return { s: trip.startS * Math.max(0, (now - event.start) / (opening - trip.start)), index: 0, wait: 0 };
       }
-      return { s: trip.startS, index: 0, wait: (firstDeparture - elapsed) / CLOCK_RATE };
+      return { s: trip.startS, index: 0, wait: firstDeparture - elapsed };
     }
     let previousRelease = firstDeparture;
     for (let i = 1; i < stops.length; i++) {
@@ -96,15 +95,16 @@ export class Timetable {
       const s = stops[i].target[0];
       const end = i === stops.length - 1;
       const toNext = end ? 0 : timeValue(times[(i + 1) * 2]) - arrival;
-      const release = end ? arrival + dwell : Math.max(arrival + Math.max(1, Math.min(60, toNext * 0.45)), departure);
+      const release = end ? arrival + STOP_DWELL
+        : Math.max(arrival + Math.max(1, Math.min(STOP_DWELL, toNext * 0.45)), departure);
       if (elapsed >= release) { previousRelease = release; continue; }
-      if (elapsed >= arrival) return { s, index: i, wait: (release - elapsed) / CLOCK_RATE };
+      if (elapsed >= arrival) return { s, index: i, wait: release - elapsed };
       const start = previousRelease, a = stops[i - 1].target[0];
       const progress = Math.max(0, (elapsed - start) / Math.max(1, arrival - start));
       return { s: a + (s - a) * progress, index: i, wait: 0 };
     }
-    const progress = Math.max(0, Math.min(1, (elapsed - (trip.end - (trip.endS - trip.lastS) / APPROACH_SPEED * CLOCK_RATE))
-      / Math.max(1, (trip.endS - trip.lastS) / APPROACH_SPEED * CLOCK_RATE)));
+    const exitDuration = (trip.endS - trip.lastS) / APPROACH_SPEED;
+    const progress = Math.max(0, Math.min(1, (elapsed - (trip.end - exitDuration)) / Math.max(1, exitDuration)));
     return { s: trip.lastS + (trip.endS - trip.lastS) * progress, index: stops.length, wait: 0 };
   }
 
@@ -168,10 +168,10 @@ export class Timetable {
     const { stopIndex, s, doorsOpen, wait, event: { trip } } = vehicle;
     if (index < stopIndex) return false;
     if (index === stopIndex && vehicle.visible && doorsOpen) {
-      return { time: Math.max(planned, now + wait * CLOCK_RATE), boarding: true };
+      return { time: Math.max(planned, now + wait), boarding: true };
     }
     const remaining = Math.max(0, trip.stops[index].target[0] - s);
     const dwell = (index - stopIndex) * STOP_DWELL + Math.max(STOP_DWELL, wait);
-    return { time: Math.max(planned, now + (remaining / APPROACH_SPEED + dwell) * CLOCK_RATE) };
+    return { time: Math.max(planned, now + remaining / APPROACH_SPEED + dwell) };
   }
 }

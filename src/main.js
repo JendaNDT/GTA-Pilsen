@@ -2,6 +2,7 @@
 import * as THREE from 'three/webgpu';
 import { loadAll } from './data.js';
 import { Game } from './game/game.js';
+import { formatTime, HOUR_SECONDS } from './game/clock.js';
 import { initInput, input } from './game/input.js';
 import { initMapSearch } from './game/map-search.js';
 import { initWorkUI } from './game/work-ui.js';
@@ -154,6 +155,19 @@ async function boot() {
   let running = false, last = 0, firstPlay = true;
   const perfPanel = DEBUG ? initPerfPanel(perf, rendering, () => running && !game.mapOpen) : null;
   const menu = $('menu');
+  const timeInput = $('game-time'), clockStatus = $('clock-status');
+  const showClock = () => {
+    timeInput.value = formatTime(game.clock.seconds);
+    clockStatus.textContent = game.clock.followsPrague ? 'Aktuální čas v Plzni' : 'Ručně nastavený čas';
+  };
+  const applyTime = (change) => {
+    if (game.shifts.active && !confirm('Změna času přeruší rozjetou směnu. Chceš pokračovat?')) return;
+    change();
+    showClock();
+    if (!game.save()) clockStatus.textContent = game.saveError;
+    updateWork();
+    if (!game.graphicsBusy) game.render();
+  };
   const openMenu = () => {
     running = false; input.enabled = false; game.paused = true;
     perfPanel?.close();
@@ -195,10 +209,18 @@ async function boot() {
         updateWork();
         $('panel-' + name).scrollIntoView({ block: 'nearest' });
       }
+      if (open && name === 'settings') showClock();
     });
   }
   $('show-clock').checked = game.clockVisible;
   $('show-clock').addEventListener('change', (event) => game.setClockVisible(event.target.checked));
+  showClock();
+  $('clock-settings').addEventListener('submit', (event) => {
+    event.preventDefault();
+    const hour = timeInput.valueAsNumber / (1000 * HOUR_SECONDS);
+    if (Number.isFinite(hour)) applyTime(() => game.setClock(null, hour));
+  });
+  $('use-prague-time').addEventListener('click', () => applyTime(() => game.usePragueTime()));
   $('sound-enabled').checked = !game.audio.muted;
   $('sound-enabled').addEventListener('change', (event) => game.setSoundEnabled(event.target.checked));
   const qualitySelect = $('graphics-quality'), qualityStatus = $('graphics-status');
@@ -241,7 +263,7 @@ async function boot() {
 
   const loop = (now) => {
     if (!running) { input.pressed.clear(); return; }
-    const elapsed = (now - last) / 1000;
+    const elapsed = Math.max(0, (now - last) / 1000);
     const dt = Math.min(0.05, elapsed);
     last = now;
     if (game.graphicsBusy) return;
@@ -250,9 +272,9 @@ async function boot() {
       if (game.mapOpen) game.toggleMap(false); else { openMenu(); return; }
     }
     if (perf) {
-      perf.frame(dt);
+      perf.frame(dt, elapsed);
     } else {
-      game.update(dt);
+      game.update(dt, elapsed);
       game.render();
     }
     if (perf) game.adapt(elapsed, perf.summary);

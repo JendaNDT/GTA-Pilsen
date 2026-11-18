@@ -87,6 +87,7 @@ test('chůze, navigace, auto, vrtulník a dokončení rozvozu', async ({ page })
 });
 
 test('tramvaj lze použít a uložený postup přežije opětovné načtení', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-11-09T08:00:00Z'));
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await boot(page);
@@ -133,6 +134,7 @@ test('tramvaj lze použít a uložený postup přežije opětovné načtení', a
 });
 
 test('uložení verze 1 a kontrolní trasy E01', async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-11-18T10:20:00Z'));
   const save = {
     x: -42, z: 52, hour: 17.5, money: 1460,
     stats: { deliveries: 4 }, found: ['Plzeňský Prazdroj'],
@@ -147,8 +149,8 @@ test('uložení verze 1 a kontrolní trasy E01', async ({ page }) => {
     return { x: g.player.x, z: g.player.z, hour: g.hour, money: g.money, stats: g.stats,
       found: g.jobs.landmarks.filter((landmark) => landmark.found).map((landmark) => landmark.name) };
   });
-  expect(restored).toEqual(save);
-  expect(await page.evaluate(() => new Date(__game.clock.day * 86_400_000).toISOString().slice(0, 10))).toBe('2026-11-09');
+  expect(restored).toEqual({ ...save, hour: 11 + 20 / 60 });
+  expect(await page.evaluate(() => new Date(__game.clock.day * 86_400_000).toISOString().slice(0, 10))).toBe('2026-11-18');
 
   const gps = await page.evaluate(() => {
     const world = window.__game.world;

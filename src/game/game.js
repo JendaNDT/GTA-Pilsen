@@ -49,7 +49,7 @@ export class Game {
     this.vehicles = new VehicleManager(this.scene, this.world, this);
     this.peds = new PedManager(this.scene, this.world, this);
     this.transit = new TransitManager(this.scene, this.world, this, data.timetable);
-    this.clock = new GameClock(this.transit.timetable.monday);
+    this.clock = new GameClock();
     this.trafficRhythm = new TrafficRhythm(this.world, data.trafficProfiles, this.transit.timetable);
     this.clockVisible = true;
     this.orthophotoEnabled = true;
@@ -95,6 +95,12 @@ export class Game {
     this.clock.set(day, hour);
     this.syncClock(true);
     return true;
+  }
+
+  usePragueTime() {
+    if (this.shifts.active) this.shifts.end('interrupted', 'Změna herního času');
+    this.clock.setPrague();
+    this.syncClock(true);
   }
 
   syncClock(reposition = false) {
@@ -143,9 +149,8 @@ export class Game {
     let x = START.x, z = START.z;
     if (s && (s.v === 1 || s.v === 2)) {
       this.money = s.money ?? 500; this.stats = s.stats || {};
-      const hour = Number.isFinite(s.hour) && s.hour >= 0 && s.hour < 24 ? s.hour : 9;
-      const day = s.v === 2 ? parseDay(s.date) : null;
-      this.clock.set(day ?? this.transit.timetable.monday, hour);
+      const day = s.clockMode === 'manual' ? parseDay(s.date) : null;
+      if (day !== null && Number.isFinite(s.hour) && s.hour >= 0 && s.hour < 24) this.clock.set(day, s.hour);
       this.clockVisible = s.v === 1 || s.clockVisible !== false;
       this.orthophotoEnabled = s.orthophotoEnabled !== false;
       this.audio.setMuted(s.soundEnabled === false);
@@ -174,6 +179,7 @@ export class Game {
         .reduce((a, b) => Math.hypot(a.x - f.x, a.z - f.z) < Math.hypot(b.x - f.x, b.z - f.z) ? a : b) : f;
       localStorage.setItem(SAVE_KEY, JSON.stringify({
         v: 2, money: this.money, date: formatDay(this.clock.day), hour: this.hour, clockVisible: this.clockVisible,
+        clockMode: this.clock.followsPrague ? 'prague' : 'manual',
         soundEnabled: !this.audio.muted, orthophotoEnabled: this.orthophotoEnabled,
         graphics: this.graphics,
         stats: this.stats, x: Math.round(safe.x), z: Math.round(safe.z),
@@ -544,7 +550,7 @@ export class Game {
   }
 
   // -------------------------------------------------------------- krok ----
-  update(dt) {
+  update(dt, elapsed = dt) {
     if (this.paused) return;
     pollInput();
     if (input.pressed.has('map')) this.toggleMap();
@@ -562,12 +568,16 @@ export class Game {
     if (input.pressed.has('horn') && this.shifts.active) {
       if (this.ride.isTram) this.audio.bell(this.ride); else this.audio.horn(this.ride);
     }
-    const previousDay = this.clock.day;
-    this.clock.tick(dt);
+    const previousDay = this.clock.day, previousTime = this.clock.now;
+    if (this.clock.followsPrague) this.clock.setPrague();
+    else this.clock.tick(elapsed);
+    const clockAdvance = this.clock.now - previousTime;
     const jump = input.pressed.has('time');
     if (jump && this.shifts.active) this.hud.toast('Během směny platí její herní rozpis.');
     if (jump && !this.shifts.active) {
-      this.clock.add(3 * HOUR_SECONDS);
+      this.clock.setTime(this.clock.now + 3 * HOUR_SECONDS);
+      this.syncClock(true);
+    } else if (!this.shifts.active && (clockAdvance < 0 || clockAdvance > dt + 2)) {
       this.syncClock(true);
     } else {
       this.envTimer -= dt;

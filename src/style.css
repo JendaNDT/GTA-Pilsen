@@ -64,7 +64,10 @@ body.touch #perf-toggle { margin-left: 48px; }
 #bigmap-date { font-size: 13px; color: #d4dce3; font-variant-numeric: tabular-nums; }
 .setting { display: flex; gap: 8px; align-items: center; min-height: 40px; cursor: pointer; }
 .setting input { width: 18px; height: 18px; accent-color: var(--amber); }
-.setting select { background: #1b242c; color: var(--paper); font: inherit; min-height: 36px; padding: 3px 8px; border: 1px solid #69747f; border-radius: 6px; }
+.setting select, #game-time { background: #1b242c; color: var(--paper); font: inherit; min-height: 36px; padding: 3px 8px; border: 1px solid #69747f; border-radius: 6px; }
+#clock-settings { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 6px 0; }
+#game-time { color-scheme: dark; }
+#clock-status { width: 100%; margin: 0; }
 #graphics-status { margin: 0 0 8px; }
 #graphics-status:empty { display: none; }
 

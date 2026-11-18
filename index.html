@@ -169,6 +169,13 @@
         </label>
         <p id="graphics-status" role="status"></p>
         <label class="setting"><input id="show-clock" type="checkbox" checked /> Zobrazovat herní hodiny</label>
+        <form id="clock-settings">
+          <label for="game-time">Herní čas</label>
+          <input id="game-time" type="time" required />
+          <button type="submit">Nastavit čas</button>
+          <button id="use-prague-time" type="button">Použít aktuální čas v Plzni</button>
+          <p id="clock-status" role="status"></p>
+        </form>
         <label class="setting"><input id="sound-enabled" type="checkbox" checked /> Zvuk hry</label>
         <label class="setting"><input id="orthophoto-enabled" type="checkbox" checked /> Letecké snímky krajiny</label>
       </div>

@@ -1,6 +1,6 @@
 import { Vector3 } from 'three/webgpu';
 import { STOP_DWELL, Timetable } from '../game/timetable.js';
-import { CLOCK_RATE, DAY_SECONDS } from '../game/clock.js';
+import { DAY_SECONDS } from '../game/clock.js';
 import { DRIVABLE_MAX, RF } from '../config.js';
 import { makeTrolleybus, TROLLEY_LEN } from './models.js';
 import { addTransitDisplay, addTransitDoors, setTransitDoors } from './transit-details.js';
@@ -24,6 +24,7 @@ const SECTIONS = { tram: TRAM_SECTIONS, bus: [BUS_SECTION], trolleybus: [TROLLEY
 const VIEW_DISTANCE = 520;
 const DOOR_SPEED = 3;
 const ARRIVE_DISTANCE = 0.55;
+const SPAWN_GRACE_SECONDS = 80;
 
 class Route {
   constructor({ type, ref, from, to, path, stops }) {
@@ -157,7 +158,7 @@ export class TransitManager {
       if (now >= event.end || this.seen.has(event.key)) continue;
       this.seen.set(event.key, event.end);
       const v = new TransitVehicle(event, this.timetable.state(event, now));
-      v.justDispatched = now - event.start < CLOCK_RATE * 0.5;
+      v.justDispatched = now - event.start < 0.5;
       v.route.posAt(v.s, v.side, entryPoint);
       v.x = entryPoint.x;
       v.z = entryPoint.z;
@@ -248,7 +249,7 @@ export class TransitManager {
     const { trip, day } = v.event;
     const time = trip.times[index * 2 + 1];
     const planned = day * DAY_SECONDS + (time >= 0 ? time : -time - 1);
-    v.wait = Math.max(STOP_DWELL, now === undefined ? 0 : (planned - now) / CLOCK_RATE);
+    v.wait = Math.max(STOP_DWELL, now === undefined ? 0 : planned - now);
   }
 
   _roadLane(v, dt) {
@@ -401,7 +402,7 @@ export class TransitManager {
       v.route.posAt(v.s, v.side, frontPoint);
       const near = player === v || (frontPoint.x - px) ** 2 + (frontPoint.z - pz) ** 2 < VIEW_DISTANCE ** 2;
       const finished = v.stopIndex >= v.stops.length && v.s >= trip.endS - 0.02;
-      const grace = near && v.waitingForSpace ? 3600 : 0;
+      const grace = near && v.waitingForSpace ? SPAWN_GRACE_SECONDS : 0;
       if (!manual && (finished || now >= v.event.end + grace && (!near || !v.visible))) {
         if (this.game.ride === v) this.game._alight(true);
         this._dispose(v);

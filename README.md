@@ -60,6 +60,14 @@ Na dotykové obrazovce se objeví páčka a tlačítka. Telefon automaticky pou�
 kvalitu. Na počítači ji lze zapnout parametrem `?quality=low`. Ve vyšší kvalitě zobrazí `?wet=1`
 tlumené odlesky na mokré dlažbě v obou ukázkových lokalitách.
 
+Hra ve výchozím nastavení používá aktuální čas v Plzni. V **Nastavení → Herní čas**
+můžeš zadat konkrétní hodinu a minutu. Herní čas pak plyne stejným tempem jako skutečný
+čas a při pauze stojí. **Použít aktuální čas v Plzni** obnoví živé hodiny. Po změně
+času se podle něj připraví spoje MHD a odjezdy ze zastávek. Při návratu z pauzy živé
+hodiny znovu ukážou čas v Plzni. Starší uložené hry použijí toto výchozí nastavení.
+Nástup do směny přestaví čas na její odjezd. Změna času uprostřed směny ji po potvrzení
+přeruší.
+
 ## Jak hru spustit u sebe
 
 Na Macu ve Finderu dvakrát klikni na [Spustit hru.command](Spustit%20hru.command). Terminál

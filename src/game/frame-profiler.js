@@ -74,10 +74,10 @@ export function createFrameProfiler(game, { sampleEvery = 1 } = {}) {
     }
   }
 
-  function frame(dt) {
+  function frame(dt, elapsed = dt) {
     const at = performance.now();
     startedAt ??= at;
-    game.update(dt);
+    game.update(dt, elapsed);
     const updatedAt = performance.now();
     const timed = timer && !resolving && frameNumber++ % sampleEvery === 0;
     if (timed) timer.start();

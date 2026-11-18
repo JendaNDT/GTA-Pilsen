@@ -1,4 +1,4 @@
-import { CLOCK_RATE, DAY_SECONDS, formatTime } from './clock.js';
+import { DAY_SECONDS, formatTime } from './clock.js';
 import { STOP_DWELL } from './timetable.js';
 
 // Stanoviště rozlišují oba směry i jednotlivé větve v přestupních uzlech.
@@ -24,7 +24,7 @@ export function shiftOffers(table, clock) {
       for (const [service, trip, first] of table.stopEntries[start]) {
         if (trip.route.type !== type || trip.route.ref !== ref || !profile.has(service)) continue;
         const departure = day * DAY_SECONDS + trip.times[first * 2 + 1];
-        if (departure < clock.now + SHIFT_LEAD * CLOCK_RATE || departure >= (selected?.departure ?? Infinity)) continue;
+        if (departure < clock.now + SHIFT_LEAD || departure >= (selected?.departure ?? Infinity)) continue;
         const last = trip.stops.findIndex(({ stop }, index) => index > first && stop === end);
         if (last < first + 2) continue;
         const part = trip.stops.slice(first, last + 1);
@@ -55,10 +55,10 @@ export function shiftStops(offer, table) {
     const s = target[0], previous = stops.at(-1);
     const publishedRide = trip.times[i * 2] - trip.times[i * 2 - 1];
     const publishedDwell = trip.times[i * 2 + 1] - trip.times[i * 2];
-    // Herní den běží 45× rychleji. Cestovní čas má rezervu na fyzický průjezd a světla.
-    const arrive = previous ? previous.depart + Math.max(publishedRide, ((s - previous.s) / 6.6 + 28) * CLOCK_RATE)
-      : offer.departure - SHIFT_LEAD * CLOCK_RATE;
-    const depart = previous ? arrive + Math.max(publishedDwell, STOP_DWELL * CLOCK_RATE) : offer.departure;
+    // Cestovní čas má rezervu na průjezd a světla.
+    const arrive = previous ? previous.depart + Math.max(publishedRide, (s - previous.s) / 6.6 + 28)
+      : offer.departure - SHIFT_LEAD;
+    const depart = previous ? arrive + Math.max(publishedDwell, STOP_DWELL) : offer.departure;
     stops.push({ i, s, name, x, z, platform: code?.split('/')[1], arrive, depart });
   }
   return stops;

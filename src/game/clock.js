@@ -1,9 +1,12 @@
-// Občanský kalendář hry. Každý herní den má 24 hodin a trvá 32 minut aktivní hry.
+// Občanský kalendář hry a převod skutečného času na místní čas v Plzni.
 export const DAY_SECONDS = 86400;
 export const HOUR_SECONDS = 3600;
-export const CLOCK_RATE = 45;
 const DAY_MS = DAY_SECONDS * 1000;
 export const WEEKDAYS = ['pondělí', 'úterý', 'středa', 'čtvrtek', 'pátek', 'sobota', 'neděle'];
+const pragueTime = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Europe/Prague', year: 'numeric', month: 'numeric', day: 'numeric',
+  hour: 'numeric', minute: 'numeric', second: 'numeric', hourCycle: 'h23',
+});
 
 export function parseDay(value) {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
@@ -22,11 +25,31 @@ export function formatTime(seconds) {
 }
 
 export class GameClock {
-  constructor(day) { this.set(day, 9); }
+  constructor(day) {
+    if (day === undefined) this.setPrague();
+    else this.set(day, 9);
+  }
 
   set(day, hour) {
+    this.followsPrague = false;
     this.day = day;
     this.seconds = hour * HOUR_SECONDS;
+  }
+
+  setTime(time) {
+    const day = Math.floor(time / DAY_SECONDS);
+    this.set(day, (time - day * DAY_SECONDS) / HOUR_SECONDS);
+  }
+
+  setPrague(instant = Date.now()) {
+    const fields = {};
+    for (const { type, value } of pragueTime.formatToParts(instant)) {
+      if (type !== 'literal') fields[type] = Number(value);
+    }
+    const { year, month, day, hour, minute, second } = fields;
+    this.followsPrague = true;
+    this.day = Date.UTC(year, month - 1, day) / DAY_MS;
+    this.seconds = hour * HOUR_SECONDS + minute * 60 + second + ((instant % 1000 + 1000) % 1000) / 1000;
   }
 
   add(seconds) {
@@ -36,7 +59,7 @@ export class GameClock {
     this.seconds -= days * DAY_SECONDS;
   }
 
-  tick(dt) { this.add(dt * CLOCK_RATE); }
+  tick(dt) { this.add(dt); }
   get hour() { return this.seconds / HOUR_SECONDS; }
   get now() { return this.day * DAY_SECONDS + this.seconds; }
 }

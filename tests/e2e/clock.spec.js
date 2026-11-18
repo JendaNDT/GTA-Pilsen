@@ -10,7 +10,7 @@ test('E06 – půlnoc, odjezdy, pauza a uložené nastavení hodin', async ({ pa
   await page.evaluate(() => window.__freeze(true));
   const transition = await page.evaluate(() => {
     const g = window.__game;
-    window.__setClock('2026-11-15', 23 + 59 / 60);
+    window.__setClock('2026-11-15', 24 - 1 / 3600);
     const v = g.transit.vehicles.find((v) => v.event.trip.id === '695549');
     const before = { hour: g.hour, s: v.s, day: g.clock.day };
     window.__step(1 / 60, 82);
@@ -73,4 +73,44 @@ test('E06 – půlnoc, odjezdy, pauza a uložené nastavení hodin', async ({ pa
   await expect(page.locator('#bigmap-date')).toBeHidden();
   expect(await page.evaluate(() => localStorage.getItem('plzen-naplno-v1'))).toContain('"date":"2026-11-16"');
   expect(errors).toEqual([]);
+});
+
+test('hodiny ukážou čas v Plzni, uloží ruční volbu a přepočítají spoje', { tag: '@webgpu' }, async ({ page }) => {
+  await page.clock.setFixedTime(new Date('2026-11-18T17:45:00Z'));
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0'));
+  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  await page.getByRole('button', { name: 'Nastavení' }).click();
+  const field = page.locator('#clock-settings').getByLabel('Herní čas', { exact: true });
+  await expect(field).toHaveValue('18:45');
+  const saveKey = 'plzen-naplno-v1';
+  await field.fill('09:15');
+  await page.getByRole('button', { name: 'Nastavit čas', exact: true }).click();
+  await expect(page.locator('#clock-status')).toHaveText('Ručně nastavený čas');
+  expect(await page.evaluate((key) => {
+    const { clock, transit, env } = window.__game;
+    const expected = transit.timetable.events(clock.day).filter(({ start, end }) => start <= clock.now && end > clock.now);
+    return { hour: clock.hour, sky: env.hour, correctVehicles: transit.vehicles.length === expected.length
+      && expected.every(({ key }) => transit.active.has(key)), save: JSON.parse(localStorage.getItem(key)).clockMode };
+  }, saveKey)).toEqual({ hour: 9.25, sky: 9.25, correctVehicles: true, save: 'manual' });
+
+  await page.getByRole('button', { name: 'Hrát', exact: true }).click();
+  expect(await page.evaluate(() => {
+    const g = window.__game;
+    window.__freeze(true);
+    const before = g.clock.now;
+    g.update(0.05, 0.75);
+    return g.clock.now - before;
+  })).toBeCloseTo(0.75, 5);
+  await page.locator('#btn-menu').click();
+  await page.clock.setFixedTime(new Date('2026-11-18T20:34:00Z'));
+  await page.reload();
+  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  await page.getByRole('button', { name: 'Nastavení' }).click();
+  await expect(field).toHaveValue('09:15');
+  await page.getByRole('button', { name: 'Použít aktuální čas v Plzni' }).click();
+  await expect(field).toHaveValue('21:34');
+  expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key)).clockMode, saveKey)).toBe('prague');
+  await page.clock.setFixedTime(new Date('2026-11-18T22:07:00Z'));
+  await page.getByRole('button', { name: 'Pokračovat', exact: true }).click();
+  await expect(page.locator('#clock-time')).toHaveText('23:07');
 });
