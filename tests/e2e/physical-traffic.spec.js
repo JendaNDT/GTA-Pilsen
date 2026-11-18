@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 import { gameUrl } from './game-url.js';
 
-async function start(page) {
-  await page.goto(gameUrl('/?debug&quality=low'));
+async function start(page, options = '') {
+  await page.goto(gameUrl('/?debug&quality=low' + options));
   await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
   await page.evaluate(() => __freeze(true));
@@ -104,7 +104,7 @@ test('E20 – fyzikální policejní vůz dojede k chodci a zastaví před ním'
 });
 
 test('E20 – tramvaj brzdí a při náhlé překážce odstrčí auto na kolejích', async ({ page }) => {
-  await start(page);
+  await start(page, '&date=2026-11-09&hour=7.5');
   const result = await page.evaluate(() => {
     const g = __game, { transit, transitBodies, physics } = g;
     const tram = transit.vehicles.find((v) => v.route.ref === '4' && v.route.from === 'Univerzita');
@@ -251,4 +251,49 @@ test('E20 – hra odklidí stojící cizí vrak až po minutě mimo záběr a za
     return { before, visible, cleared: !vm.cars.includes(wreck), last: vm.cars.includes(last), garage: vm.cars.includes(owned) };
   });
   expect(states).toEqual({ before: true, visible: true, cleared: true, last: true, garage: true });
+});
+
+test('E20 – provoz vybírá průjezdnou ulici a při parkování nechá vozovku volnou', async ({ page }) => {
+  await start(page);
+  const result = await page.evaluate(() => {
+    const g = __game, w = g.world, vm = g.vehicles;
+    const end = w.edgePoint(990, w.eLen[990], 0, {});
+    const through = w.edgePoint(34497, 15, 0, {});
+    const samples = [];
+    for (let i = 0; i < 1000 && samples.length < 15; i++) {
+      const car = vm.spawnParked(through.x, through.z, null);
+      if (!car) continue;
+      const fx = Math.sin(car.yaw), fz = Math.cos(car.yaw);
+      let overlaps = false;
+      for (const along of [-car.halfLen, 0, car.halfLen]) for (const side of [-1, 1]) {
+        const offset = side * car.type.wid / 2;
+        overlaps ||= w.onCarriageway(car.x + along * fx + offset * fz, car.z + along * fz - offset * fx, car.y);
+      }
+      samples.push(overlaps);
+    }
+    return { through: vm._throughRoad(34497, 0), blind: vm._throughRoad(990, 0), samples,
+      endpoints: [end, through].every(p => w.onCarriageway(p.x, p.z, w.heightAt(p.x, p.z))) };
+  });
+  expect(result.through && result.endpoints).toBe(true);
+  expect(result.blind).toBe(false);
+  expect(result.samples).toHaveLength(15);
+  expect(result.samples.every(overlap => !overlap)).toBe(true);
+});
+
+test('E20 – tramvaj počká se zařazením na trasu, dokud její místo zabírá auto', async ({ page }) => {
+  await start(page, '&date=2026-11-09&hour=7.5');
+  const result = await page.evaluate(() => {
+    const g = __game, t = g.transit, car = g.player.lastCar;
+    const tram = t.vehicles.find(v => v.route.ref === '4' && v.route.from === 'Univerzita');
+    t._show(tram, false);
+    t.vehicles = [tram];
+    tram.s = 3430;
+    const p = tram.route.posAt(tram.s - tram.halfLen, tram.side, {});
+    car.place(p.x, p.z, Math.atan2(p.tx, p.tz));
+    t.update(1 / 60, car, [car], false);
+    const held = !tram.visible && tram.waitingForSpace;
+    t.update(1 / 60, car, [], false);
+    return { held, released: tram.visible && !tram.waitingForSpace };
+  });
+  expect(result).toEqual({ held: true, released: true });
 });

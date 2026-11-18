@@ -8,6 +8,12 @@ export class TrafficBodies {
     this.active = new Map();
     this.dynamic = new Map();
     this.owners = new Map();
+    physics.onVehicleContact = (first, second) => {
+      const a = this.carForBody(first.GetID().GetIndexAndSequenceNumber());
+      const b = this.carForBody(second.GetID().GetIndexAndSequenceNumber());
+      if (a?.physical) a.physical.touchedVehicle = true;
+      if (b?.physical) b.physical.touchedVehicle = true;
+    };
     const { Jolt } = physics;
     this.pos = new Jolt.RVec3(0, 0, 0);
     this.rotation = new Jolt.Quat(0, 0, 0, 1);
@@ -54,8 +60,14 @@ export class TrafficBodies {
       (car.mode === 'ai' || car.mode === 'police' || car.mode === 'parked' || car.mode === 'loose') &&
       colliders.tiles.has(world.chunkIndex(car.x, car.z));
     const candidates = vehicles.cars.filter((car) => eligible(car) && distance(car) <= (car.physical ? 220 : 150) ** 2);
-    // Obsazené místo držíme až k vnějšímu okraji. Při snížení kvality mají přednost bližší auta.
-    candidates.sort((a, b) => Number(!!b.floodTime) - Number(!!a.floodTime) || Number(b.mode === 'police') - Number(a.mode === 'police') || Number(!!b.physical) - Number(!!a.physical) || distance(a) - distance(b));
+    // Nejbližší auto musí jít odtlačit. Za ním potřebují kola hlavně vozy v provozu.
+    const priority = (car) => {
+      if (car.floodTime || car.mode === 'police') return 3;
+      if (distance(car) < 25 ** 2 || car.mode === 'loose' && car.physical?.body.IsActive()) return 2;
+      return car.mode === 'parked' ? 0 : 1;
+    };
+    candidates.sort((a, b) => priority(b) - priority(a) ||
+      Number(!!b.physical) - Number(!!a.physical) || distance(a) - distance(b));
     const selected = new Set(candidates.slice(0, cap));
     for (const car of this.dynamic.keys()) if (!selected.has(car)) this.removeCar(car);
     for (const car of selected) {
@@ -88,14 +100,17 @@ export class TrafficBodies {
     for (const [car, vehicle] of this.dynamic) {
       if (car.mode === 'parked' && !vehicle.body.IsActive() && !vehicle.impactSpeed) continue;
       vehicle.read();
+      if (vehicle.touchedVehicle) {
+        vehicle.touchedVehicle = false;
+        const sideSpeed = car.vx * Math.cos(car.yaw) - car.vz * Math.sin(car.yaw);
+        if ((car.mode === 'ai' || car.mode === 'police') && (Math.abs(sideSpeed) > 1.5 || car.speed < -1) ||
+            car.mode === 'parked' && Math.hypot(car.vx, car.vz) > 0.6) game.vehicles.knock(car);
+      }
       if (!vehicle.impactSpeed) continue;
       const other = this.carForBody(vehicle.impactBody);
       const hitPlayer = vehicle.impactBody === game.driver?.body.GetID().GetIndexAndSequenceNumber();
       const impact = vehicle.applyImpact();
-      if (impact > 4) {
-        game.vehicles.knock(car);
-        car.crashed = true;
-      }
+      if (impact > 4) game.vehicles.knock(car);
       if (!hitPlayer) game.onCrash(car, impact, other);
     }
   }

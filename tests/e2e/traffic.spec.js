@@ -101,7 +101,8 @@ test('E04 – sdílené fáze pro chodce, auta a MHD', async ({ page }, info) =>
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (msg) => { if (msg.type() === 'error') errors.push(msg.text()); });
-  await boot(page);
+  // V pondělí v 7.30 podle jízdního řádu jedou oba sledované spoje.
+  await boot(page, '&date=2026-11-09&hour=7.5');
   const result = await page.evaluate(() => {
     const g = __game, w = g.world, t = w.traffic;
     const head = t.controls.find((c) => c.kind === 'signal' && c.id === 3073913683);

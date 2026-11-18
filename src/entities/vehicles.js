@@ -239,17 +239,42 @@ export class VehicleManager {
     return out;
   }
 
-  _laneFor(e) {
+  _laneFor(e, side) {
     const w = this.world, road = w.eRoad[e];
     const width = w.r.w[road];
     if (w.r.flags[road] & RF.ONEWAY) {
       const lanes = w.r.lanes[road];
-      return lanes >= 2 ? (Math.random() < 0.5 ? -1 : 1) * width / 4 : 0;
+      if (lanes < 2) return 0;
+      const direction = side === undefined ? (Math.random() < 0.5 ? -1 : 1) : side < 0 ? -1 : 1;
+      return direction * width / 4;
     }
     return Math.max(1.25, width / 4);
   }
 
-  _nextMove(e, context) {
+  // Průběžný provoz nemá cíl ve slepé ulici, kde by se musel otočit přes chodník.
+  _throughRoad(edge, context) {
+    const w = this.world, seen = new Set();
+    while (!seen.has(edge)) {
+      seen.add(edge);
+      const node = w.eTo[edge], reverse = w.reverseEdge(edge);
+      let onward = -1, nextContext = 0;
+      for (let q = w.outStart[node]; q < w.outStart[node + 1]; q++) {
+        const next = w.outEdges[q];
+        if (next === reverse || w.r.cls[w.eRoad[next]] > RC.LIVING) continue;
+        const allowed = w.turnContext(edge, next, context);
+        if (allowed < 0) continue;
+        if (onward >= 0) return true;
+        onward = next;
+        nextContext = allowed;
+      }
+      if (onward < 0) return false;
+      edge = onward;
+      context = nextContext;
+    }
+    return true;
+  }
+
+  _nextMove(e, context, lane) {
     const w = this.world;
     const node = w.eTo[e];
     const rev = w.reverseEdge(e);
@@ -261,7 +286,9 @@ export class VehicleManager {
       const f = w.outEdges[q];
       if (f === rev) continue;
       const road = w.eRoad[f], cls = w.r.cls[road];
-      if (cls > RC.LIVING || w.turnContext(e, f, context) < 0) continue;
+      if (cls > RC.LIVING) continue;
+      const allowed = w.turnContext(e, f, context);
+      if (allowed < 0 || !this._throughRoad(f, allowed)) continue;
       this._edgeTangent(f, false, _pt2);
       const cos = ex * _pt2.tx + ez * _pt2.tz;
       if (cos < -0.8) continue;
@@ -280,12 +307,14 @@ export class VehicleManager {
     for (let k = 0; k < cands.length; k += 3) { r -= cands[k + 1]; if (r <= 0) { pick = k; break; } }
     const to = cands[pick];
     const cos = cands[pick + 2];
-    return { from: e, to, lane: this._laneFor(to), slow: cos > 0.92 ? 99 : 3.8 + 7 * Math.max(0, cos) };
+    this._edgeTangent(to, false, _pt2);
+    const turn = ex * _pt2.tz - ez * _pt2.tx;
+    return { from: e, to, lane: this._laneFor(to, cos > 0.85 ? lane : turn), slow: cos > 0.92 ? 99 : 3.8 + 7 * Math.max(0, cos) };
   }
 
   _pickNext(car) {
     if (car.exitPlan[0]?.from !== car.edge) car.exitPlan.length = 0;
-    const move = car.exitPlan.shift() ?? this._nextMove(car.edge, car.turnContext);
+    const move = car.exitPlan.shift() ?? this._nextMove(car.edge, car.turnContext, car.lane);
     car.next = move.to;
     car.nextLane = move.lane;
     car.turnSlow = move.slow;
@@ -293,15 +322,16 @@ export class VehicleManager {
 
   _planJunctionExit(car) {
     const w = this.world;
-    let edge = car.next, distance = w.eLen[edge];
+    let edge = car.next, lane = car.nextLane, distance = w.eLen[edge];
     let context = w.turnContext(car.edge, edge, car.turnContext);
     // Stejná rozhodnutí použije auto při průjezdu, i když spojka sama nepojme celé auto.
     while (distance < 42 && car.exitPlan.length < 3) {
-      const move = this._nextMove(edge, context);
+      const move = this._nextMove(edge, context, lane);
       car.exitPlan.push(move);
       if (move.to < 0) break;
       context = w.turnContext(edge, move.to, context);
       edge = move.to;
+      lane = move.lane;
       distance += w.eLen[edge];
     }
   }
@@ -314,9 +344,28 @@ export class VehicleManager {
       if (dx * dx + dz * dz > 900 || Math.abs((o.y === undefined ? car.y : o.y) - car.y) > 3) return;
       const ahead = dx * fx + dz * fz;
       if (ahead < 0.4 || ahead > 28) return;
+      // Při křížení drah se zařaď až za vozidlo, které do společného místa dorazí dřív.
+      if (Number.isFinite(o.yaw) && Math.hypot(o.vx || 0, o.vz || 0) > 1) {
+        const gx = Math.sin(o.yaw), gz = Math.cos(o.yaw), det = fx * gz - fz * gx;
+        if (Math.abs(det) > 0.45) {
+          const mine = (dx * gz - dz * gx) / det, theirs = (dx * fz - dz * fx) / det;
+          const speed = (o.vx || 0) * gx + (o.vz || 0) * gz;
+          const half = o.halfLen ?? 1;
+          if (mine > 0 && mine < 26 && speed > 1 && theirs > -half && theirs < 30) {
+            const enter = (theirs - half) / speed, leave = (theirs + half + car.radius) / speed;
+            const arrival = (mine - car.halfLen) / Math.max(1, car.speed);
+            if (enter < 3 && leave > arrival && (enter < arrival - 0.15 || Math.abs(enter - arrival) <= 0.15 && det > 0)) {
+              limit = Math.min(limit, Math.max(0, (mine - car.halfLen - (o.radius || 1) - 1) / Math.max(0.5, leave)));
+            }
+          }
+        }
+      }
       const side = Math.abs(dx * lx + dz * lz);
-      if (side > 1.25 + (o.radius || 1) * 0.6) return;
-      const gap = ahead - car.halfLen - (o.halfLen || 1);
+      const relative = car.yaw - (o.yaw ?? car.yaw);
+      const parallel = Math.abs(Math.cos(relative)), crossing = Math.abs(Math.sin(relative));
+      const half = o.halfLen ?? 1, width = o.radius ?? 0.45;
+      if (side > car.type.wid / 2 + width * parallel + half * crossing + 0.15) return;
+      const gap = ahead - car.halfLen - half * parallel - width * crossing;
       const along = (o.vx || 0) * fx + (o.vz || 0) * fz;
       const allowed = Math.max(0, along * 0.95 + (gap - 2.2) * 1.3);
       if (allowed < limit) limit = allowed;
@@ -407,6 +456,7 @@ export class VehicleManager {
 
   /** Vrátí auto z režimu provozu do dynamického (po nárazu, vyhození řidiče…). */
   knock(car) {
+    car.crashed = true;
     if (car.mode === 'ai' || car.mode === 'police') car.wasAI = car.mode;
     if (car.mode !== 'player') car.mode = 'loose';
     car.rest = 0;
@@ -415,6 +465,7 @@ export class VehicleManager {
   _resumeAI(car) {
     if (car.physical && (Math.cos(car.pitch) * Math.cos(car.roll) < 0.65 ||
         car.physical.wheels.filter((wheel) => wheel.HasContact()).length < 2)) return false;
+    if (this._obstacleLimit(car, 4, null) < 0.4) return false;
     const w = this.world;
     const r = w.nearestRoad(car.x, car.z, 9, RC.LIVING, 0, _road, car.y);
     if (!r) return false;
@@ -423,7 +474,7 @@ export class VehicleManager {
     const fx = Math.sin(car.yaw), fz = Math.cos(car.yaw);
     let along = r.dx * fx + r.dz * fz;
     if (along < 0) { const rev = w.reverseEdge(e); if (rev < 0) return false; e = rev; along = -along; }
-    if (along < 0.3) return false;
+    if (along < 0.75 || r.dist + car.type.wid / 2 > w.r.w[r.road] / 2) return false;
     // vzdálenost od začátku hrany
     const A = w.eA[e], B = w.eB[e], step = A < B ? 1 : -1;
     let s = 0;
@@ -433,7 +484,10 @@ export class VehicleManager {
       if (lo === r.seg) { s += step > 0 ? l * r.t : l * (1 - r.t); break; }
       s += l;
     }
-    car.edge = e; car.s = s; car.lane = this._laneFor(e); car.turnContext = 0; car.trafficStop = null;
+    const lane = this._laneFor(e);
+    const target = w.edgePoint(e, s, lane, _pt);
+    if (Math.hypot(target.x - car.x, target.z - car.z) > Math.max(1.25, w.r.w[r.road] / 4)) return false;
+    car.edge = e; car.s = s; car.lane = lane; car.turnContext = 0; car.trafficStop = null;
     car.exitPlan.length = 0;
     car.mode = car.wasAI === 'police' && this.game.wanted > 0 ? 'police' : 'ai';
     car.speed = 0; car.blocked = 0;
@@ -551,7 +605,7 @@ export class VehicleManager {
   spawnTraffic(px, pz, cam, { typeId = null, minD = 110, maxD = 300, ambient = true } = {}) {
     const w = this.world;
     const e = this._randomEdgeNear(px, pz, minD, maxD, ambient);
-    if (e < 0) return null;
+    if (e < 0 || ambient && !this._throughRoad(e, 0)) return null;
     const s = 2 + Math.random() * Math.max(0, w.eLen[e] - 8);
     const lane = this._laneFor(e);
     w.edgePoint(e, s, lane, _pt);
@@ -565,10 +619,19 @@ export class VehicleManager {
     if (ambient && Math.random() >= this.game.trafficRhythm.carWeight(e, this.game.clock)) return null;
     if (!this._freeSpot(_pt.x, _pt.z, 7)) return null;
     const type = typeId || TRAFFIC_TYPES[Math.floor(Math.random() * TRAFFIC_TYPES.length)];
+    const y = w.roadSurfaceY(w.eRoad[e], _pt.seg, _pt.t, _pt.x, _pt.z);
+    const half = CAR_TYPES[type].len / 2;
+    for (const section of this.game.transit?.obstacles ?? []) {
+      if (Math.abs(section.y - y) > 3) continue;
+      const dx = _pt.x - section.x, dz = _pt.z - section.z;
+      const tx = Math.sin(section.yaw), tz = Math.cos(section.yaw);
+      const parallel = Math.abs(_pt.tx * tx + _pt.tz * tz), across = Math.abs(_pt.tx * tz - _pt.tz * tx);
+      if (Math.abs(dx * tx + dz * tz) < section.halfLen + half * parallel + CAR_TYPES[type].wid / 2 * across + 3 &&
+          Math.abs(dx * tz - dz * tx) < section.radius + half * across + CAR_TYPES[type].wid / 2 * parallel) return null;
+    }
     const car = this.add(new Car(type, CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)]));
     car.mode = 'ai';
     car.edge = e; car.s = s; car.lane = lane;
-    const y = w.roadSurfaceY(w.eRoad[e], _pt.seg, _pt.t, _pt.x, _pt.z);
     car.place(_pt.x, _pt.z, Math.atan2(_pt.tx, _pt.tz), y);
     car.speed = 6;
     car.vx = Math.sin(car.yaw) * car.speed; car.vz = Math.cos(car.yaw) * car.speed;
@@ -598,7 +661,8 @@ export class VehicleManager {
     const side = Math.random() < 0.5 ? 1 : -1;
     const hw = R.w[i] / 2;
     const typeId = TRAFFIC_TYPES[Math.floor(Math.random() * (TRAFFIC_TYPES.length - 1))];
-    const off = aisle ? hw + 2.5 : hw + 0.8;
+    const type = CAR_TYPES[typeId];
+    const off = hw + (aisle ? type.len / 2 : type.wid / 2) + 0.35;
     const x = x1 + (x2 - x1) * t - tz * side * off, z = z1 + (z2 - z1) * t + tx * side * off;
     let yaw = Math.atan2(tx, tz);
     if (aisle) yaw += side * Math.PI / 2 + (Math.random() < 0.5 ? Math.PI : 0);
@@ -611,9 +675,11 @@ export class VehicleManager {
     }
     if (!this._freeSpot(x, z, 3.4)) return null;
     if (w.blocked(x, z, 2.3, 0.3, 1.5) || w.isWater(x, z)) return null;
-    // nesmí stát na jiné vozovce
-    const r = w.nearestRoad(x, z, 8, DRIVABLE_MAX, 0, _road);
-    if (r && r.dist < R.w[r.road] / 2 + (aisle ? 1.6 : 0.2)) return null;
+    // Za rohem může být jiná ulice blíž nárazníku než středu zaparkovaného auta.
+    const fx = Math.sin(yaw), fz = Math.cos(yaw), y = w.heightAt(x, z);
+    for (const along of [-type.len / 2, 0, type.len / 2]) for (const side of [-type.wid / 2, type.wid / 2]) {
+      if (w.onCarriageway(x + fx * along + fz * side, z + fz * along - fx * side, y)) return null;
+    }
     const car = this.add(new Car(typeId, CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)]));
     car.mode = 'parked';
     car.place(x, z, yaw);

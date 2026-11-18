@@ -10,7 +10,7 @@ Větev `etapa/E20` vychází ze sloučené etapy E19 na revizi `10832b4`. [Zadá
 | 4. MHD a směny | Hotovo. Články vozidel, odstrčení auta, rozjezdy a brzdění ve směnách. |
 | 5. Vrtulník | Hotovo. Let s asistencí, přistání na střeše a na heliportu. |
 | 6. Voda | Hotovo. Vztlak a odpor vody, pozvolné potopení auta a plavání ke břehu. |
-| 7. Závěrečné scénáře, výkon a protokol | Zbývá ověřit pohyb provozu po dobu deseti minut na obou místech, střet s jedoucím autem, výkon a společné testy. |
+| 7. Závěrečné scénáře, výkon a protokol | Střet dvou jedoucích aut, odklizení vraku a měření ve špičce ověřeny. Otevřené jsou dlouhé fronty a vyjíždění z vozovky na Klatovské a u nádraží. Po opravě zbývají všechny testy, protokol a žádost o sloučení. |
 
 ## Otevřené otázky
 
@@ -67,3 +67,17 @@ První delší pozorování okolního provozu odhalilo chyby při odbočení do 
 Střet s jedoucím autem provozu i odbočení z ulice Kardinála Berana do Husovy už mají vlastní zkoušku ve hře. Přední vůz při střetu zrychlil, hráčův zpomalil, oba utrpěly škodu. Převrácené auto už se nepokouší jet po střeše. Odklizení cizího auta hlídá dobu stání, vlastníka a okraje záběru kamery včetně rozměrů auta. Prošlo 92 testů JavaScriptu a sestavení. Zbývá ověřit návrat plynulého provozu v husté dopravě a uzavřít společné měření, testy a protokol.
 
 K uložení této části sedmého kroku prošlo 13 prohlížečových scénářů provozu a MHD a samostatná prohlížečová zkouška odklizení vraku. Ověřila dobu před minutovým limitem, viditelný vrak po limitu, odstranění po otočení kamery a zachování posledního i garážového auta. Předběžné dlouhé pozorování stále zachytilo dlouhé fronty a vyjetí z vozovky. Záznamy jsou v `data-raw/e20/{krok7-odklid,vrak,odklid-provoz}.log`.
+
+#### Pokračování po revizi `33b5724`
+
+Průběžný provoz při výběru trasy prověřuje slepé ulice a na navazující jednosměrce drží pruh. Při parkování se kontrolují i rohy karoserie, aby auto nezasahovalo do křižovatky. Když místo na trase právě zabírá auto, vůz MHD se zařadí až po jeho uvolnění. Obě změny prošly zkouškou ve hře. Při návratu po nehodě řidič kontroluje směr, prostor a dotyk kol s vozovkou. Při bočním odstrčení dalším autem nebo tramvají řízení převezme fyzika.
+
+Měření na Klatovské proběhlo na autorově Macu v pondělní herní špičce v 7.30, na vysoké předvolbě a s WebGPU. Během 10 sekund měření bylo v blízkosti až 40 aut s plnou fyzikou, z nich až 18 s aktivním řidičem. Z 604 měřených kroků fyziky jich 95 % trvalo nejvýše 3,80 ms při rozpočtu 4 ms. Příkaz je `node tools/measure_map.mjs http://127.0.0.1:4173/ --rush`, výsledek je v `data-raw/e20/vykon-spicka.json`.
+
+Desetiminutová zkouška ve hře sleduje ranní provoz dvakrát. U hlavního nádraží stojí pozorovatel na chodníku u Železniční, přibližně 88 m od bodu nádražní budovy. Při prvním běhu na těchto místech se na Klatovské za deset minut vystřídalo 117 fyzikálně řízených aut a u nádraží 69. V každé minutě se některá auta pohybovala. Nejdelší souvislé čekání jednoho vozu ale dosáhlo 356,5 s na Klatovské a 448,5 s u nádraží, nad mezí 120 s. Pod plynem vyjela auta také z vozovky, mimo jiné na úsecích 28371 na Klatovské a 20738 na Železniční. Časy a souřadnice jsou v `data-raw/e20/pozorovani2/*/pozorovani.json`.
+
+Před uložením prošlo 92 z 92 testů JavaScriptu, 23 z 23 testů Pythonu a sestavení. Z 16 dotčených prohlížečových scénářů jich původně prošlo 15. Šestnáctý používal aktuální čas počítače a ve večerním jízdním řádu nenašel svůj zkušební spoj. Po nastavení pondělí v 7.30 prošla kontrola semaforu pro chodce, trolejbus 10 a tramvaj 4 se stejnými očekáváními. Záznamy jsou v `data-raw/e20/krok7-pravidla.log` a `krok7-semafor.log`.
+
+Při posledním opakování prošly obě zkoušky tramvaje a společná zkouška semaforů. Obě desetiminutová pozorování znovu selhala. Na Klatovské stálo auto 284,5 s na úseku 19355 před úsekem 4, i když na konci čekání řidič požadoval 10,9 m/s. U nádraží bylo nejdelší čekání 201 s na Barrandově, na úseku 1173 před úsekem 6376, kde řidič žádal nulovou rychlost. První vyjetí nastala v sadech Pětatřicátníků a na Koterovské. Záznamy jsou v `data-raw/e20/krok7-ulozeni/*/pozorovani.json`.
+
+Na této větvi pokračovat krokem 7. Po sestavení lze opakovat obě pozorování příkazem `npm run test:e2e -- traffic-observation.spec.js --trace off --output=data-raw/e20/dalsi-pozorovani`. Každý běh zapíše do souboru `pozorovani.json` také místo nejdelšího čekání, požadovanou rychlost řidiče a první souřadnice vyjetí. Zbývá opravit dlouhé čekání a vyjíždění, zopakovat kontrolu i měření a pak uzavřít E20. Od autora nyní nic dalšího nepotřebujeme.

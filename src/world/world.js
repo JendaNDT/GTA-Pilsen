@@ -658,6 +658,7 @@ export class World {
       }
     }
     this.rPieces = pieces;
+    this.maxRoadHalfWidth = R.w.reduce((maximum, width, i) => R.cls[i] <= DRIVABLE_MAX ? Math.max(maximum, width / 2) : maximum, 0);
 
     // mřížka úseků pro hledání nejbližší silnice
     const cnt = new Uint32Array(this.gcols * this.grows + 1);
@@ -738,6 +739,29 @@ export class World {
       return this.rpy[seg] + (this.rpy[seg + 1] - this.rpy[seg]) * t;
     }
     return this.heightAt(x, z) + SURF;
+  }
+
+  /** Zahrnuje celou šířku všech překrývajících se vozovek v téže výšce. */
+  onCarriageway(x, z, y) {
+    const range = this.maxRoadHalfWidth;
+    const minCol = Math.max(0, Math.floor((x - range - this.minX) / COLL_CELL));
+    const maxCol = Math.min(this.gcols - 1, Math.floor((x + range - this.minX) / COLL_CELL));
+    const minRow = Math.max(0, Math.floor((z - range - this.minZ) / COLL_CELL));
+    const maxRow = Math.min(this.grows - 1, Math.floor((z + range - this.minZ) / COLL_CELL));
+    for (let row = minRow; row <= maxRow; row++) for (let col = minCol; col <= maxCol; col++) {
+      const cell = row * this.gcols + col;
+      for (let j = this.segCellStart[cell]; j < this.segCellStart[cell + 1]; j++) {
+        const k = this.segCellItems[j], road = this.roadOfPt[k];
+        if (this.r.cls[road] > DRIVABLE_MAX) continue;
+        const ax = this.rpx[k], az = this.rpz[k], dx = this.rpx[k + 1] - ax, dz = this.rpz[k + 1] - az;
+        const length2 = dx * dx + dz * dz;
+        const t = length2 ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / length2)) : 0;
+        const px = ax + t * dx, pz = az + t * dz;
+        if ((px - x) ** 2 + (pz - z) ** 2 <= (this.r.w[road] / 2) ** 2 &&
+            Math.abs(this.roadSurfaceY(road, k, t, px, pz) - y) < 2.5) return true;
+      }
+    }
+    return false;
   }
 
   /** Je bod na vozovce / cestě? (s tolerancí) */

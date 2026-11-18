@@ -57,6 +57,9 @@ export class PhysicsWorld {
         this.onPedContact?.(la === CHARACTER ? first : second, la === VEHICLE ? first : second);
         return;
       }
+      if ((la === VEHICLE || la === TRANSIT) && (lb === VEHICLE || lb === TRANSIT)) {
+        this.onVehicleContact?.(first, second);
+      }
       if (!added || !this.onImpact) return;
       const inverseMass = (first.IsDynamic() ? first.GetMotionProperties().GetInverseMass() : 0)
         + (second.IsDynamic() ? second.GetMotionProperties().GetInverseMass() : 0);
@@ -67,7 +70,7 @@ export class PhysicsWorld {
     };
     this.listener.OnContactAdded = (a, b, contact) => contactEvent(a, b, contact, true);
     this.listener.OnContactPersisted = (a, b, contact) => {
-      if (this.onPedContact) contactEvent(a, b, contact, false);
+      if (this.onPedContact || this.onVehicleContact) contactEvent(a, b, contact, false);
     };
     this.system.SetContactListener(this.listener);
   }

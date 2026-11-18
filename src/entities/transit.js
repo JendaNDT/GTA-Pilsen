@@ -219,9 +219,17 @@ export class TransitManager {
     for (const mesh of v.meshes ?? []) mesh.userData.doors?.mesh.dispose();
   }
 
-  _spawnSpace(v, nearby) {
+  _spawnSpace(v, nearby, cars) {
     const { x, z, tx, tz } = frontPoint;
     const centerX = x - tx * v.halfLen, centerZ = z - tz * v.halfLen;
+    for (const car of cars) {
+      if (Math.abs(car.y - v.y) > 3) continue;
+      const dx = car.x - centerX, dz = car.z - centerZ;
+      const fx = Math.sin(car.yaw), fz = Math.cos(car.yaw);
+      const parallel = Math.abs(fx * tx + fz * tz), across = Math.abs(fx * tz - fz * tx);
+      if (Math.abs(dx * tx + dz * tz) < v.halfLen + car.halfLen * parallel + car.radius * across + 1 &&
+          Math.abs(dx * tz - dz * tx) < v.radius + car.halfLen * across + car.radius * parallel) return false;
+    }
     return !nearby.some((other) => {
       if (other === v || !other.visible || Math.abs(other.y - v.y) > 3) return false;
       const dx = other.x - centerX, dz = other.z - centerZ;
@@ -421,7 +429,7 @@ export class TransitManager {
       const wasVisible = v.visible, wasOpen = v.doorsOpen;
       if (!v.visible) {
         v.y = this._routeSurface(v, frontPoint);
-        if (!this._spawnSpace(v, nearby)) { v.waitingForSpace = true; continue; }
+        if (!this._spawnSpace(v, nearby, cars)) { v.waitingForSpace = true; continue; }
         v.waitingForSpace = false;
         if (v.wait > 0) v.wait = Math.max(v.wait, STOP_DWELL * 0.7);
         v.v = v.wait > 0 ? 0 : 6.5;

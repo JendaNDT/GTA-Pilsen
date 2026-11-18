@@ -6,14 +6,17 @@ import { dirname } from 'node:path';
 const args = process.argv.slice(2);
 const centerFlight = args.includes('--center-flight');
 const release = args.includes('--release');
-const work = args.includes('--work');
-const pilot = release || centerFlight || args.includes('--pilot');
+const rush = args.includes('--rush');
+const work = rush || args.includes('--work');
+const pilot = !rush && (release || centerFlight || args.includes('--pilot'));
+if (rush && release) throw new Error('Špičku a vydání měř samostatně.');
 const url = new URL(args.find((arg) => !arg.startsWith('--')) || 'http://127.0.0.1:4173/');
 url.searchParams.set('debug', '');
 if (work) {
   url.searchParams.set('adapt', '0');
-  if (!url.searchParams.has('date')) url.searchParams.set('date', '2026-11-17');
-  if (!url.searchParams.has('hour')) url.searchParams.set('hour', '10');
+  if (rush) url.searchParams.set('quality', 'high');
+  if (!url.searchParams.has('date')) url.searchParams.set('date', rush ? '2026-11-09' : '2026-11-17');
+  if (!url.searchParams.has('hour')) url.searchParams.set('hour', rush ? '7.5' : '10');
 }
 const workFlags = args.includes('--paced') ? [] : ['--disable-gpu-vsync', '--disable-frame-rate-limit'];
 const browser = await chromium.launch({
@@ -22,7 +25,7 @@ const browser = await chromium.launch({
   ...(work && { channel: 'chromium', args: workFlags }),
 });
 const report = { browser: browser.version(), viewport: '1920 × 1080', pilot, centerFlight, coldStartMs: [] };
-const scenarios = release ? [
+const scenarios = rush ? [{ name: 'rush', mode: 'traffic', site: 'Klatovská třída' }] : release ? [
   { name: 'car', mode: 'car', site: 'Plzeň' },
   { name: 'heli', mode: 'heli', site: 'Dobřív' },
   { name: 'carEast', mode: 'car', site: 'Hrádek' },
@@ -67,7 +70,17 @@ try {
       await page.getByRole('button', { name: 'Hrát', exact: true }).click();
       report[name] = await page.evaluate(async ({ mode, pilot, site, work }) => {
         const game = window.__game, world = game.world;
-        if (mode === 'car') {
+        if (mode === 'traffic') {
+          window.__freeze(true);
+          const [edge] = [...game.trafficRhythm.measured].find(([, entry]) =>
+            entry.curve.id === 'klatovska-jih' && entry.distance === 0);
+          const p = world.edgePoint(edge, 58, 0, {});
+          game.player.place(p.x - p.tz * 10, p.z + p.tx * 10);
+          for (let i = 0; i < 3600; i++) {
+            game.update(1 / 30);
+            if (game.trafficBodies.dynamic.size === 40) break;
+          }
+        } else if (mode === 'car') {
           const [x, z] = site === 'Hrádek' ? [19592, 4145] : pilot ? [45, -48] : [90, 530];
           const road = world.nearestRoad(x, z, 120, 13, 0, {});
           if (!road) throw new Error(`Chybí výchozí silnice u ${site ?? 'Plzně'}.`);
@@ -113,8 +126,9 @@ try {
         const start = [focus.x, focus.z];
         // Na stejné trase musí pilot i s převodovkou Jolt projet do další dlaždice.
         const pedal = game.driver ? 0.38 : 0.27;
-        window.__setInput(0, mode === 'car' ? (pilot ? pedal : 0.55) : 1);
+        window.__setInput(0, mode === 'traffic' ? 0 : mode === 'car' ? (pilot ? pedal : 0.55) : 1);
         const physicsTimes = [];
+        let peakCars = 0, peakDriven = 0;
         const physics = game.physics;
         const originalStep = physics?.step;
         if (work && physics) physics.step = (dt) => {
@@ -133,6 +147,12 @@ try {
           frames.push(now - previous);
           chunks.add(world.chunkIndex(focus.x, focus.z));
           maxPending = Math.max(maxPending, game.chunks.pending);
+          if (mode === 'traffic') {
+            peakCars = Math.max(peakCars, game.trafficBodies.dynamic.size);
+            let driven = 0;
+            for (const c of game.trafficBodies.dynamic.keys()) if (c.mode === 'ai' || c.mode === 'police') driven++;
+            peakDriven = Math.max(peakDriven, driven);
+          }
           if (pilot && mode === 'car') {
             const x = focus.x + Math.sin(focus.yaw) * 7, z = focus.z + Math.cos(focus.yaw) * 7;
             const rd = world.nearestRoad(x, z, 8, 13, 0, ahead);
@@ -162,6 +182,7 @@ try {
           maxFrameMs: +frames.at(-1).toFixed(1),
           framesOver50Ms: frames.filter((value) => value > 50).length,
           ...(work && { measurement }),
+          ...(mode === 'traffic' && { peakCars, peakDriven }),
           ...(physicsTimes.length > 0 && { physicsSteps: physicsTimes.length,
             physicsP95Ms: physicsTimes[Math.ceil(physicsTimes.length * 0.95) - 1] }),
         };
@@ -173,11 +194,13 @@ try {
   const json = JSON.stringify(report, null, 2) + '\n';
   if (work) {
     const output = args.find((arg) => arg.startsWith('--output='))?.slice('--output='.length)
-      ?? 'data-raw/e13/measure-work.json';
+      ?? (rush ? 'data-raw/e20/vykon-spicka.json' : 'data-raw/e13/measure-work.json');
     await mkdir(dirname(output), { recursive: true });
     await writeFile(output, json);
   }
   process.stdout.write(json);
+  if (rush && (report.rush.physicsP95Ms > 4 || !report.rush.physicsSteps ||
+      report.rush.peakCars !== 40 || !report.rush.peakDriven)) process.exitCode = 1;
   if (release && (report.carEast.metres < 25 || report.heliCenter.chunks < 2 || !report.heliCenter.cityTiles)) process.exitCode = 1;
   if (pilot && ([report.car, report.heli].some(({ chunks }) => chunks < 2) || !report.car.cityTiles
       || centerFlight && !report.heli.cityTiles)) process.exitCode = 1;
