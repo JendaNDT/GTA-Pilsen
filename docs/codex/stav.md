@@ -9,7 +9,7 @@ Autor potvrdil zahájení. [Zadání E18](E18.md) · [Protokol E17](../E17.md)
 | 2. Pevný krok a interpolace | Hotovo. Ověřeno při 30 i 144 snímcích/s, po delším snímku, v pauze a při přesunutí tělesa. |
 | 3. Terén, budovy a zobrazení kolizí | Hotovo |
 | 4. Mostovky, Rondel, tunely a uzavírky | Hotovo |
-| 5. Auto hráče, ovládání a zvuk | Čeká |
+| 5. Auto hráče, ovládání a zvuk | Hotovo. Hra ukládá volbu řízení a zvuk sleduje otáčky motoru. |
 | 6. Poškození, garáž, návrat na silnici a uložení | Čeká |
 | 7. Měření, ladění a protokol | Čeká |
 
@@ -46,3 +46,23 @@ výšku určuje vzdálenost od os připojených silnic se zachováním jejich po
 profilů. Po opravě prošlo 63 testů JavaScriptu, sestavení a pět dotčených
 prohlížečových scénářů. Původní mez 5 cm prošla pro Wilsonův most, Rondel,
 upravené mostovky a obě vozovky i stropy Valíku.
+
+## Předání po pátém kroku
+
+Malé auto na suchém asfaltu dosáhlo 100 km/h za 12,8 s a ubrzdilo ze stejné
+rychlosti na 43 m. Sporťák potřeboval 5,3 s a 41 m. Ruční brzda udržela auto
+na 15% svahu. Při nárazu rychlostí 250 km/h auto zůstalo před 20cm stěnou.
+Prošlo 68 testů JavaScriptu, produkční sestavení a sedm cílených prohlížečových
+kontrol. Volbu řízení, její uchování a rozjezd ověřily WebGL 2 i WebGPU.
+
+Při opakovaném místním studeném startu přenesly hra, základní data a katalogy
+o 2 107 829 bajtů (2,01 MiB) více než E12. Celkem se do zobrazení nabídky
+přeneslo 32 660 801 bajtů proti 33 641 355 bajtům v E12 včetně okolí.
+
+Pokračovat krokem 6 podle zadání. Je třeba propojit nárazy s poškozením a
+ověřit nastupování, vystupování, návrat na silnici, garáž a obnovení uložené hry.
+V kroku 7 zbývá diagnostika, měření v zatáčce a na hraně dlaždic, zkoušky
+mostu, tunelů a dopadu, půlhodinová jízda, výkon a úplné testy obou způsobů
+simulace. Následuje protokol, README, katalog, kontrola komprese na adrese
+pro telefon při zveřejnění a návrh na sloučení do hlavní větve. Žádné otázky
+pro autora teď nejsou otevřené.

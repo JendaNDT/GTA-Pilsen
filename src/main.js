@@ -229,6 +229,9 @@ async function boot() {
   $('use-prague-time').addEventListener('click', () => applyTime(() => game.usePragueTime()));
   $('sound-enabled').checked = !game.audio.muted;
   $('sound-enabled').addEventListener('change', (event) => game.setSoundEnabled(event.target.checked));
+  const steering = $('steering');
+  steering.value = game.steering;
+  steering.addEventListener('change', () => { game.steering = steering.value; game.save(); });
   const qualitySelect = $('graphics-quality'), qualityStatus = $('graphics-status');
   const showQuality = () => {
     qualitySelect.value = game.graphicsOverride ?? game.graphics.choice;

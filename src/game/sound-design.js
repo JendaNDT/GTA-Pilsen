@@ -101,7 +101,7 @@ export class LoopVoice {
     const { speed = 0, power = 0, road, engine, siren, skid = 0 } = state;
     if (this.profile) {
       const p = this.profile;
-      const rate = Math.min(1, speed / (this.kind === 'car' ? 27 : 14));
+      const rate = Number.isFinite(state.rpm) ? Math.min(1, state.rpm / 6500) : Math.min(1, speed / (this.kind === 'car' ? 27 : 14));
       const electric = this.kind === 'tram' || this.kind === 'trolleybus';
       target(this.motor.source.frequency, p.tone + p.rise * rate + power * (electric ? 18 : 24));
       target(this.motor.filter.frequency, 260 + rate * 1150 + power * 510);

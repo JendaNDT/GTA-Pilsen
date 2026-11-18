@@ -1,3 +1,5 @@
+import { TrafficBodies } from '../physics/traffic-bodies.js';
+import { PlayerVehicle } from '../physics/vehicle.js';
 import { TileColliders } from '../physics/colliders.js';
 import { CollisionView } from '../physics/debug.js';
 // Řízení hry: stav hráče, kamera, pravidla (hledanost, zdraví, peníze), ukládání.
@@ -34,6 +36,21 @@ const plain = (text) => String(text).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '
 export class Game {
   constructor(renderer, data, physics) {
     this.physics = physics;
+    this.oldPhysics = PARAMS.get('physics') === 'old';
+    this.steering = 'arcade';
+    this.driver = null;
+    this.trafficBodies = new TrafficBodies(physics);
+    this.tireSurface = (x, z) => {
+      if (x > -66 && x < 75 && z > -60 && z < 68) return 0.9;
+      const w = this.world;
+      if (w.onRoad(x, z)) return w.r.cls[w._tmpRoad.road] >= RC.TRACK ? 0.6 : 1;
+      return w.isSoft(x, z) ? 0.5 : 0.6;
+    };
+    physics.step = (dt) => {
+      this.driver?.drive(dt, input.moveY, input.moveX, input.handbrake, this.steering === 'arcade', this.tireSurface);
+      physics.engine.Step(dt, 1);
+      this.driver?.read();
+    };
     this.renderer = renderer;
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.4, QUALITY.view * 1.35);
@@ -166,6 +183,7 @@ export class Game {
       }
       const found = new Set(s.found || []);
       for (const lm of this.jobs.landmarks) lm.found = found.has(lm.name);
+      this.steering = s.steering === 'realistic' ? 'realistic' : 'arcade';
       this.garage.load(s.garage);
       this.jobs.load(s.job);
       this.shifts.load(s.shift);
@@ -185,7 +203,7 @@ export class Game {
         v: 2, money: this.money, date: formatDay(this.clock.day), hour: this.hour, clockVisible: this.clockVisible,
         clockMode: this.clock.followsPrague ? 'prague' : 'manual',
         soundEnabled: !this.audio.muted, orthophotoEnabled: this.orthophotoEnabled,
-        graphics: this.graphics,
+        graphics: this.graphics, steering: this.steering,
         stats: this.stats, x: Math.round(safe.x), z: Math.round(safe.z),
         found: this.jobs.landmarks.filter((l) => l.found).map((l) => l.name),
         garage: this.garage.snapshot(), job: this.jobs.snapshot(), shift: this.shifts.snapshot(),
@@ -591,7 +609,19 @@ export class Game {
     this.world.traffic.tick(dt, this.mode === 'foot' ? this.player : null);
     env.time.value = this.time;
 
-    this.colliders.update(this.focus.x, this.focus.z);
+    if (this.driver && (this.mode !== 'car' || this.car !== this.driver.car)) {
+      this.driver.dispose();
+      this.driver = null;
+    }
+    if (!this.oldPhysics) {
+      this.colliders.update(this.focus.x, this.focus.z);
+      if (this.mode === 'car' && !this.driver) this.driver = new PlayerVehicle(this.physics, this.car);
+      if (this.car?.physicsTeleport && this.driver) {
+        this.driver.teleport();
+        this.car.physicsTeleport = false;
+      }
+      this.trafficBodies.update(this, dt);
+    }
     this.physics.update(elapsed);
 
     // pohyb podle režimu
@@ -604,7 +634,7 @@ export class Game {
     } else if (this.mode === 'car') {
       const car = this.car;
       car.reverseTime = car.speed < -1 ? (car.reverseTime || 0) + dt : 0;
-      this.vehicles.stepDynamic(car, dt, input.moveY, input.moveX, input.handbrake);
+      if (this.oldPhysics) this.vehicles.stepDynamic(car, dt, input.moveY, input.moveX, input.handbrake);
       this.waterTimer -= dt;
       if (this.waterTimer <= 0) {
         this.waterTimer = 0.3;
@@ -641,6 +671,7 @@ export class Game {
       heavy.push({ x: h.x + hx * 0.6, z: h.z + hz * 0.6, y: h.y, r: 1.5, vx: h.vx, vz: h.vz }, { x: h.x - hx * 2.6, z: h.z - hz * 2.6, y: h.y, r: 0.8, vx: h.vx, vz: h.vz });
     }
     this.vehicles.update(dt, this.focus, this.camInfo, heavy);
+    this.driver?.render(this.physics.clock.alpha);
     this.peds.update(dt, this.focus, this.camInfo, this.vehicles.cars);
     // hráče pěšky může srazit auto
     if (onFoot && p.stun <= 0) {

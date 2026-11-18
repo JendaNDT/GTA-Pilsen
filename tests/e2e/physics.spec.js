@@ -54,3 +54,26 @@ test('E18 – dlaždice pod hráčem má přednost a F8 ukáže její skutečné
   await page.keyboard.press('F8');
   expect(await page.evaluate(() => window.__game.colliders.debug.group.visible)).toBe(true);
 });
+
+test('E18 – volba řízení se uloží a skutečný motor rozjede hráčovo auto', { tag: '@webgpu' }, async ({ page }) => {
+  await page.goto(gameUrl('/?debug&adapt=0&quality=low'));
+  await page.waitForFunction(() => window.__ready);
+  await page.getByRole('button', { name: 'Nastavení', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Řízení', exact: true }).selectOption('realistic');
+  await page.reload();
+  await page.waitForFunction(() => window.__ready);
+  const result = await page.evaluate(() => {
+    const g = window.__game;
+    const car = g.player.lastCar ?? g.vehicles.cars.find((c) => c.mode === 'parked');
+    g._enterCar(car);
+    g.paused = false;
+    window.__setInput(0, 1);
+    window.__step(1 / 60, 140);
+    return { driving: g.driver?.car === car, steering: g.steering, rpm: car.rpm, speed: car.speed, gear: car.gear };
+  });
+  expect(result.driving).toBe(true);
+  expect(result.steering).toBe('realistic');
+  expect(result.rpm).toBeGreaterThan(1000);
+  expect(result.speed).toBeGreaterThan(1);
+  expect(result.gear).toBeGreaterThan(0);
+});
