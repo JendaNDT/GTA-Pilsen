@@ -58,6 +58,8 @@ test('E10 – taxi, příjem ze zakázek a vlastní auto po obnovení hry', asyn
       g.jobs.checkTimer = 10;
       const canWait = j.type !== 'taxi' || (j.pick.waiting && !g.world.isWater(j.pick.waiting.x, j.pick.waiting.z));
       for (const t of [j.pick, j.drop]) {
+        // Přesun musí ukončit i smyk z předchozí jízdy, než zakázka ohodnotí zastavení.
+        if (j.type === 'taxi' && t === j.drop) car.skid = 1;
         if (car) car.place(t.x, t.z, Math.atan2(t.tx ?? 0, t.tz ?? 1));
         else g.player.place(t.x, t.z);
         g.jobs.update(0.05);

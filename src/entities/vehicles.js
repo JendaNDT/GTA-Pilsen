@@ -19,6 +19,7 @@ export class Car {
     this.mesh = makeCarMesh(typeId, color);
     this.x = 0; this.z = 0; this.y = 0; this.yaw = 0;
     this.vx = 0; this.vz = 0; this.speed = 0; this.steer = 0;
+    this.skid = 0;
     this.mode = 'parked';        // parked | ai | player | loose | police
     this.health = 100;
     this.edge = -1; this.s = 0; this.next = -1; this.lane = 0; this.nextLane = 0; this.turnSlow = 99;
@@ -39,6 +40,7 @@ export class Car {
   /** Postaví auto na místo; bez výšky na zem (hint = výška, ze které se hledá povrch, např. pro most). */
   place(x, z, yaw, hint = null) {
     this.physicsTeleport = true;
+    this.skid = 0;
     this.pitch = this.roll = this.gRoll = this.steer = 0;
     const w = Car.world;
     this.x = x; this.z = z; this.yaw = yaw; this.vx = this.vz = 0; this.speed = 0; this.vy = 0; this.air = false;
