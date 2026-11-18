@@ -57,3 +57,65 @@ test('síť Jolt odpovídá dotazu na výšku do 5 cm na základním, jemném i 
     physics.dispose();
   }
 });
+
+test('Jolt protne Wilsonův most, Rondel i vozovky a stropy Valíku ve výšce profilu', async () => {
+  const { RoadStructures } = await import('../src/physics/structures.js');
+  const { TUNNEL_HEIGHT } = await import('../src/world/tunnels.js');
+  const data = {};
+  for (const name of ['buildings', 'roads', 'land', 'terrain', 'rails', 'trees', 'landscape']) data[name] = await pack(name + '.bin');
+  const json = async (file) => JSON.parse(await readFile(new URL('../public/data/' + file, import.meta.url)));
+  data.meta = await json('meta.json');
+  data.gradeSeparations = await json('grade-separations.json');
+  // Barevná mapa podkladu potřebuje plátno, výškové profily se načítají samostatně.
+  class ProfileWorld extends World { _initLand() {} }
+  const w = new ProfileWorld(data), structures = new RoadStructures(w);
+  const Jolt = await loadJolt(), physics = new PhysicsWorld(Jolt);
+  const loaded = new Set();
+  const deviations = [];
+  let label;
+  const check = (x, z, expected, down = true) => {
+    const ci = w.chunkIndex(x, z);
+    for (const di of [-1, 0, 1]) for (const dj of [-1, 0, 1]) {
+      const neighbor = ci + di + dj * w.cols;
+      if (loaded.has(neighbor)) continue;
+      const triangles = [];
+      structures.emit(neighbor, (a, b, c) => triangles.push(...a, ...b, ...c));
+      if (triangles.length) staticMeshBody(physics, Float32Array.from(triangles));
+      loaded.add(neighbor);
+    }
+    const direction = down ? -1 : 1;
+    const origin = new Jolt.RVec3(x, expected - direction * 0.25, z);
+    const vec = new Jolt.Vec3(0, direction * 0.5, 0);
+    const ray = new Jolt.RRayCast(origin, vec), result = new Jolt.CastRayClosestHitCollisionCollector();
+    const settings = new Jolt.RayCastSettings();
+    const filters = [new Jolt.BroadPhaseLayerFilter(), new Jolt.ObjectLayerFilter(), new Jolt.BodyFilter(), new Jolt.ShapeFilter()];
+    physics.system.GetNarrowPhaseQuery().CastRay(ray, settings, result, ...filters);
+    try {
+      const error = result.HadHit() ? direction * (result.mHit.mFraction - 0.5) * 0.5 : Infinity;
+      if (Math.abs(error) >= 0.05) deviations.push({ label, x, z, expected, error });
+    } finally {
+      for (const value of [result, ray, vec, origin, settings, ...filters]) Jolt.destroy(value);
+    }
+  };
+  try {
+    const wilson = [...w.archedBridges.keys()].find((i) => w.roadNames[w.r.name[i]] === 'Wilsonův most');
+    assert.ok(Number.isInteger(wilson));
+    for (const road of [wilson, ...w.rondel.elevated.keys(), ...w.gradeRoads]) {
+      label = [road, w.roadNames[w.r.name[road]], w.r.flags[road]];
+      const k = Math.floor((w.rOff[road] + w.rOff[road + 1] - 2) / 2);
+      check((w.rpx[k] + w.rpx[k + 1]) / 2, (w.rpz[k] + w.rpz[k + 1]) / 2, (w.rpy[k] + w.rpy[k + 1]) / 2);
+    }
+    assert.equal(w.tunnels.length, 2);
+    for (const tunnel of w.tunnels) {
+      label = [tunnel.road, 'Valík'];
+      const k = Math.floor(tunnel.points.length / 2);
+      const a = tunnel.points[k - 1], b = tunnel.points[k];
+      const x = (a.x + b.x) / 2, z = (a.z + b.z) / 2, y = (a.y + b.y) / 2;
+      check(x, z, y);
+      check(x, z, y + TUNNEL_HEIGHT, false);
+    }
+    assert.deepEqual(deviations, []);
+  } finally {
+    physics.dispose();
+  }
+});

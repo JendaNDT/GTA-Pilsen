@@ -8,7 +8,7 @@ Autor potvrdil zahájení. [Zadání E18](E18.md) · [Protokol E17](../E17.md)
 | 1. Načtení Jolt, svět a vrstvy | Hotovo. Pád tělesa, načtení hry i chyba při stažení ověřeny. |
 | 2. Pevný krok a interpolace | Hotovo. Ověřeno při 30 i 144 snímcích/s, po delším snímku, v pauze a při přesunutí tělesa. |
 | 3. Terén, budovy a zobrazení kolizí | Hotovo |
-| 4. Mostovky, Rondel, tunely a uzavírky | Čeká |
+| 4. Mostovky, Rondel, tunely a uzavírky | Hotovo |
 | 5. Auto hráče, ovládání a zvuk | Čeká |
 | 6. Poškození, garáž, návrat na silnici a uložení | Čeká |
 | 7. Měření, ladění a protokol | Čeká |
@@ -17,7 +17,7 @@ Autor potvrdil zahájení. [Zadání E18](E18.md) · [Protokol E17](../E17.md)
 
 Prošlo 58 testů JavaScriptu včetně pádu, nárazu a zastavení tělesa na podložce.
 Prošlo produkční sestavení. Samostatný soubor Jolt má 3 572,85 kB před kompresí
-a 953,32 kB s gzipem. Prošly všechny tři cílené prohlížečové kontroly prvního kroku na Macu, včetně spuštění s WebGL 2 a WebGPU. Běží také původních 96 scénářů.
+a 953,32 kB s gzipem. Prošly všechny tři cílené prohlížečové kontroly prvního kroku na Macu, včetně spuštění s WebGL 2 a WebGPU. Prošlo také všech 96 původních scénářů za 33,6 minuty.
 
 Ve druhém kroku prošlo 61 testů JavaScriptu, produkční sestavení a pět cílených
 prohlížečových kontrol. Pro tento krok běžel samostatný server nad jeho sestavením.
@@ -39,3 +39,10 @@ o 2 103 364 bajtů (2,01 MiB) více než archiv E12. S dokončenými požadavky 
 do zobrazení nabídky to bylo 32 656 336 proti 33 641 355 bajtům v E12. Výběr
 detailů závisí na vydání a rychlosti načítání. Odečet lze zopakovat nástrojem
 `node tools/measure_startup.mjs adresář-E12 adresář-nového-sestavení`.
+
+Ve čtvrtém kroku první měření našlo tři překryvy při napojení silnic. Na Lobezské
+se fyzická plocha odchylovala od osy vozovky až o 17,4 cm. Ve společné ploše nyní
+výšku určuje vzdálenost od os připojených silnic se zachováním jejich podélných
+profilů. Po opravě prošlo 63 testů JavaScriptu, sestavení a pět dotčených
+prohlížečových scénářů. Původní mez 5 cm prošla pro Wilsonův most, Rondel,
+upravené mostovky a obě vozovky i stropy Valíku.

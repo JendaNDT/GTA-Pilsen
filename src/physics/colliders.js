@@ -1,6 +1,7 @@
 import { Earcut } from 'three/src/extras/Earcut.js';
 import { CHUNK } from '../config.js';
 import { terrainTriangles } from './terrain.js';
+import { RoadStructures } from './structures.js';
 import { layers } from './world.js';
 import { forgeRoofFaces } from '../world/mill.js';
 
@@ -70,6 +71,7 @@ export class TileColliders {
     this.world = world;
     this.debug = debug;
     this.tiles = new Map();
+    this.structures = new RoadStructures(world);
     this.roofs = new Map();
     this.replaced = new Set();
     if (data.heritage.sha256 !== data.collisionRoofs.source) throw new Error('Nesouhlasí verze měřených střech.');
@@ -96,6 +98,7 @@ export class TileColliders {
       const vertex = (i) => [cx + points[3 * i] * 0.02, points[3 * i + 1] * 0.02, cz + points[3 * i + 2] * 0.02];
       for (let k = 0; k < indices.length; k += 3) roof(emit, vertex(indices[k]), vertex(indices[k + 1]), vertex(indices[k + 2]));
     }
+    this.structures.emit(ci, emit);
     const positions = Float32Array.from(triangles);
     const body = staticMeshBody(this.physics, positions);
     this.tiles.set(ci, body);
