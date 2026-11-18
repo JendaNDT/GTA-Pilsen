@@ -588,6 +588,8 @@ export class Game {
     this.world.traffic.tick(dt, this.mode === 'foot' ? this.player : null);
     env.time.value = this.time;
 
+    this.physics.update(elapsed);
+
     // pohyb podle režimu
     if (this.mode === 'foot') {
       const fx = Math.sin(this.camYaw), fz = Math.cos(this.camYaw);

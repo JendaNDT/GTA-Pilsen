@@ -1,3 +1,5 @@
+import { FixedStep } from './step.js';
+
 export const layers = Object.freeze({
   STATIC: 0, VEHICLE: 1, CHARACTER: 2, RAILING: 3,
   BREAKABLE: 4, DEBRIS: 5, TRANSIT: 6, SENSOR: 7,
@@ -14,6 +16,8 @@ const partners = [
 export class PhysicsWorld {
   constructor(Jolt) {
     this.Jolt = Jolt;
+    this.clock = new FixedStep();
+    this.step = (dt) => this.engine.Step(dt, 1);
     const count = Object.keys(layers).length;
     const pairs = new Jolt.ObjectLayerPairFilterTable(count);
     for (const [layer, ...others] of partners) {
@@ -57,6 +61,10 @@ export class PhysicsWorld {
       if (approach > 0) this.onImpact(first, second, approach / inverseMass);
     };
     this.system.SetContactListener(this.listener);
+  }
+
+  update(elapsed) {
+    this.clock.advance(elapsed, this.step);
   }
 
   dispose() {
