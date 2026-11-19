@@ -1,5 +1,10 @@
 # Stav etapy E24
 
+## Klávesové ovládání mapy a fotorežimu
+
+Po stisku O v mapě lze pokračovat klávesou Escape a ze hry pak znovu otevřít fotorežim. Celou posloupnost ověřilo Chromium 159 na WebGL 2 i WebGPU. Prošlo 166 testů JavaScriptu a produkční sestavení. [Protokol E24](../E24.md)
+
+
 E24 navazuje na G17 ve větvi E23 (`fe30ef0`). [Zadání E24](E24.md)
 
 ## Výsledek měření E24
