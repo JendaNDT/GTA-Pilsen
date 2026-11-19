@@ -47,20 +47,26 @@ test('při parkování u koleje rozhoduje směr karoserie a výška mostu', () =
 
 test('výjezd z křižovatky je volný za odjíždějícím autem, před brzdícím nebo křížícím vozem je obsazený', () => {
   const traffic = Object.create(Traffic.prototype);
+  let samples = 0;
   traffic.world = {
     eLen: [40],
-    edgePoint(edge, s, lane, point) { Object.assign(point, { x: lane, z: s }); },
+    edgePoint(edge, s, lane, point) { samples++; Object.assign(point, { x: lane, z: s }); },
   };
   const driver = { x: 0, y: 0, z: 0, radius: 1 };
   const lead = { x: 0, y: 0, z: 10, radius: 1, halfLen: 2, yaw: 0, vx: 0, vz: 0 };
   const occupied = () => traffic.laneOccupied(driver, 0, 0, 0, 25, [lead], []);
   assert.equal(occupied(), true);
+  const firstSamples = samples;
+  assert.ok(firstSamples > 0);
   lead.vz = 5;
   assert.equal(occupied(), false);
   lead.physical = { input: { targetSpeed: 0 } };
   assert.equal(occupied(), true);
   Object.assign(lead, { vx: 5, vz: 0, yaw: Math.PI / 2, physical: null });
   assert.equal(occupied(), true);
+  assert.equal(samples, firstSamples);
+  lead.x = 100;
+  assert.equal(occupied(), false);
 });
 
 test('řidič, který zastaví nárazníkem 90 cm před stopčárou, po zastavení pokračuje', () => {

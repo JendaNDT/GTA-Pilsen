@@ -484,42 +484,57 @@ export class Traffic {
     return false;
   }
 
-  laneOccupied(car, edge, lane, start, end, others, extra) {
-    const w = this.world;
-    end = Math.min(w.eLen[edge], end);
-    w.edgePoint(edge, start, lane, exitStart);
-    // Krátké kroky kopírují i zakřivený výjezd při odbočení.
+  exitSegments(edge, lane, start, end) {
+    const cache = this.exitGeometry ??= new Map();
+    const key = [edge, lane, start, end].join(',');
+    if (cache.has(key)) return cache.get(key);
+    const path = { segments: [], minX: Infinity, minZ: Infinity, maxX: -Infinity, maxZ: -Infinity };
+    this.world.edgePoint(edge, start, lane, exitStart);
     for (let s = start; s < end; s += 4) {
-      w.edgePoint(edge, Math.min(s + 4, end), lane, exitEnd);
-      const dx = exitEnd.x - exitStart.x, dz = exitEnd.z - exitStart.z;
-      const length = Math.hypot(dx, dz);
+      this.world.edgePoint(edge, Math.min(s + 4, end), lane, exitEnd);
+      const x = exitStart.x, z = exitStart.z;
+      const dx = exitEnd.x - x, dz = exitEnd.z - z, length = Math.hypot(dx, dz);
       if (length > 0.01) {
-        const tx = dx / length, tz = dz / length;
-        const inLane = (other) => {
-          if (other === car || Math.abs((other.y ?? car.y) - car.y) > 3) return false;
-          const ox = other.x - exitStart.x, oz = other.z - exitStart.z;
-          const width = other.radius ?? 1;
-          const half = other.halfLen ?? width;
-          const reachBound = length + Math.max(width, half) + car.radius + 0.15;
-          if (Math.abs(ox) > reachBound || Math.abs(oz) > reachBound) return false;
-          // Plynule odjíždějící vůz ve stejném pruhu řidič sleduje s odstupem.
-          // Čekání až na jeho úplné vyjetí by na zelenou pouštělo auta po jednom.
-          const vx = other.vx || 0, vz = other.vz || 0;
-          if (!other.upcomingLeft && vx * tx + vz * tz > 2 && Math.abs(vx * tz - vz * tx) < 0.5 &&
-              (other.physical?.input?.targetSpeed ?? Infinity) > 2) return false;
-          const alignment = Number.isFinite(other.yaw) ? Math.abs(Math.sin(other.yaw) * tx + Math.cos(other.yaw) * tz) : 1;
-          const across = Math.sqrt(Math.max(0, 1 - alignment ** 2));
-          const along = ox * tx + oz * tz;
-          // Konec stojícího vozu může přesahovat do výjezdu i s jeho středem za ním.
-          const reach = Math.max(half * alignment, width * across);
-          return along + reach > 0 && along - reach < length &&
-            Math.abs(ox * tz - oz * tx) < car.radius + Math.max(width * alignment, half * across) + 0.15;
-        };
-        if (others.some(inLane) || extra.some(inLane)) return true;
+        path.segments.push({ x, z, length, tx: dx / length, tz: dz / length });
+        path.minX = Math.min(path.minX, x - length);
+        path.maxX = Math.max(path.maxX, x + length);
+        path.minZ = Math.min(path.minZ, z - length);
+        path.maxZ = Math.max(path.maxZ, z + length);
       }
-      Object.assign(exitStart, exitEnd);
+      exitStart.x = exitEnd.x; exitStart.z = exitEnd.z;
     }
-    return false;
+    // Geometrie silnice je stálá. Polohu a pohyb vozidel posuzujeme při každém dotazu.
+    if (cache.size >= 1024) cache.clear();
+    cache.set(key, path);
+    return path;
+  }
+
+  laneOccupied(car, edge, lane, start, end, others, extra) {
+    const path = this.exitSegments(edge, lane, start, Math.min(this.world.eLen[edge], end));
+    const inLane = other => {
+      if (other === car || Math.abs((other.y ?? car.y) - car.y) > 3) return false;
+      const width = other.radius ?? 1, half = other.halfLen ?? width;
+      const margin = Math.max(width, half) + car.radius + 0.15;
+      if (other.x < path.minX - margin || other.x > path.maxX + margin ||
+          other.z < path.minZ - margin || other.z > path.maxZ + margin) return false;
+      const vx = other.vx || 0, vz = other.vz || 0;
+      const directed = Number.isFinite(other.yaw);
+      const fx = directed ? Math.sin(other.yaw) : 0, fz = directed ? Math.cos(other.yaw) : 0;
+      for (const { x, z, length, tx, tz } of path.segments) {
+        const ox = other.x - x, oz = other.z - z;
+        if (Math.abs(ox) > length + margin || Math.abs(oz) > length + margin) continue;
+        // Plynule odjíždějící vůz ve stejném pruhu řidič sleduje s odstupem.
+        if (!other.upcomingLeft && vx * tx + vz * tz > 2 && Math.abs(vx * tz - vz * tx) < 0.5 &&
+            (other.physical?.input?.targetSpeed ?? Infinity) > 2) continue;
+        const alignment = directed ? Math.abs(fx * tx + fz * tz) : 1;
+        const across = Math.sqrt(Math.max(0, 1 - alignment ** 2));
+        const along = ox * tx + oz * tz, reach = Math.max(half * alignment, width * across);
+        if (along + reach > 0 && along - reach < length &&
+            Math.abs(ox * tz - oz * tx) < car.radius + Math.max(width * alignment, half * across) + 0.15) return true;
+      }
+      return false;
+    };
+    return others.some(inLane) || extra.some(inLane);
   }
 
   drivingLimit(car, dt, limit, others, extra, stopping) {

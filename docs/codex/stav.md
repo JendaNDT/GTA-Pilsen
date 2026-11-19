@@ -10,7 +10,7 @@ Větev `etapa/E20` vychází ze sloučené etapy E19 na revizi `10832b4`. [Zadá
 | 4. MHD a směny | Hotovo. Články vozidel, odstrčení auta, rozjezdy a brzdění ve směnách. |
 | 5. Vrtulník | Hotovo. Let s asistencí, přistání na střeše a na heliportu. |
 | 6. Voda | Hotovo. Vztlak a odpor vody, pozvolné potopení auta a plavání ke břehu. |
-| 7. Závěrečné scénáře, výkon a protokol | Rozpracováno. Prošly samostatné zkoušky míjení v Barrandově, světel v Tylově, směn i četnosti průjezdů na Klatovské. Před křižovatkou s Husovou už řidič může změnit směr, když jeho výjezd blokuje vrak. Poslední výsledky a zbývající kontroly jsou na konci souboru. |
+| 7. Závěrečné scénáře, výkon a protokol | Rozpracováno. Na revizi `63aa4e5` prošlo všech 164 prohlížečových zkoušek. Po úpravě výkonu probíhá závěrečné měření a ověření. |
 
 ## Otevřené otázky
 
@@ -245,4 +245,14 @@ V obou vykreslovačích sjelo malé auto u Wilsonova mostu na mělčinu. Po vyst
 
 Kontrola modelem Astra s úrovní Medium našla tři vady. Po vystoupení na suchu teď vůz předá stejné fyzikální těleso také okolnímu provozu. Převrácený vůz při vystoupení zůstal na střeše. Zaplavený vůz mimo okruh fyziky drží polohu, dokud se k němu hráč nevrátí. Zkouška linky 41 používá jediný běžný krok pohybu MHD a pozorovatel stojí mimo vozovku. Při této kontrole projely kombi i autobus bez střetu. Prošlo 101 zkoušek JavaScriptu, 23 zkoušek Pythonu, produkční sestavení a cílené zkoušky všech tří oprav. Záznamy jsou v `data-raw/e20/uzavreni-{node,python,build,kontrola,autobus}.log`.
 
-Úplná prohlížečová sada běží nad výsledným sestavením. Při navázání nejdříve ověřit `data-raw/e20/uzavreni-uplna.log` a `uzavreni-uplna.json`. Zbývá vyřešit případné nálezy, ověřit závěrečný výkon, doplnit skutečné hodnoty a obě místa zkoušky vody do pracovního protokolu v `data-raw/e20/navrh-protokolu/`, převzít protokol, snímky a odkazy do dokumentace, otevřít PR přes připojený GitHub, sloučit jej a navázat další etapou.
+#### Opakované měření špičky a závěrečný běh
+
+Na revizi `63aa4e5` prošlo všech 164 prohlížečových zkoušek bez opakování. Při desetiminutovém pozorování projelo Klatovskou 129 různých aut a kolem nádraží 89. Nejdelší stání trvalo 70 a 79 sekund. Na obou místech bylo nejvýše 40 fyzikálních aut a žádné při sledování nevyjelo pod plynem mimo silnici. V samostatném měření špičky trvalo 95 % kroků fyziky nejvýše 4,1 ms při rozpočtu 4 ms.
+
+Při hledání volného výjezdu se opakovaně počítal tvar stejného úseku silnice. Hra si nyní pamatuje jeho geometrii. Polohu, rychlost a směr všech vozidel dál posuzuje při každém dotazu. Rozšířený test kontroluje i pohyb překážky mimo výjezd. Prošlo 101 ze 101 testů JavaScriptu a produkční sestavení. Záznamy jsou v `data-raw/e20/geometrie-{node,build}.log`.
+
+Ve třech samostatných zkouškách na Klatovské s 40 fyzikálními auty trvalo 95 % kroků nejvýše 1,8 ms, 1,9 ms a 2,2 ms. Každá zkouška pokryla 604 kroků a současně jelo až 27, 17 a 24 aut. Všechny tři splnily rozpočet 4 ms. Záznamy jsou v `data-raw/e20/geometrie-vykon-{1,2,3}.json`. Nezávislá kontrola porovnala nový a původní výpočet na 40 000 případech se shodným výsledkem.
+
+Na nízké kvalitě auto za deset sekund ujelo 61 m (práce procesoru v 95 % snímků do 1,3 ms), vrtulník uletěl 248 m (do 1,5 ms). Čerstvý snímek u Wilsonova mostu a výsledky výkonu již obsahuje pracovní protokol v `data-raw/e20/navrh-protokolu/`.
+
+Nyní běží 164 prohlížečových kontrol nad stejným sestavením (jeden pracovní proces). Při navázání zkontrolovat `data-raw/e20/geometrie-uplna.log` a po dokončení `geometrie-uplna.json`. Po úspěšném výsledku doplnit do pracovního protokolu revizi a ověřené výsledky, převzít protokol, snímky a odkazy, otevřít žádost přes připojený GitHub a po kontrole ji sloučit. Poté navázat E21.
