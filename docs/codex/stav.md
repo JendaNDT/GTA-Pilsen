@@ -46,6 +46,12 @@ Na vysoké předvolbě a na ultra prochází každý paprsek deseti vzorky vrstv
 
 Produkční sestavení prošlo. WebGPU i WebGL 2 načetly skutečně vykreslené pixely z cílové textury, ověřily rozměry vůči plátnu, střídání obou textur, opětovné použití při malém pohybu i reset po přesunu o sto metrů.
 
+## G25–G27 · Slunce, fotorežim a pohybové rozmazání
+
+Na ultra procházejí sluneční paprsky stínem vzdálené sluneční kaskády. Odlesk objektivu a pohybové rozmazání mají vlastní přepínače. Rozmazání čte vektory pohybu z časového vyhlazování a ve výchozím nastavení je vypnuté. Fotorežim se otevírá klávesou O nebo z menu, zastaví čas a skryje herní ukazatele. Volná kamera má dosah 100 m, nastavitelnou vzdálenost zaostření a ukládá snímky PNG.
+
+Prošlo 166 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. Ve WebGL 2 i WebGPU prošly čtyři prohlížečové zkoušky. Ověřily zastavení času, návrat kamery, stažení souboru PNG a zapojení paprsků, odlesku i pohybových vektorů na ultra.
+
 ## Výchozí etapa E23
 
 E23 vychází z dokončené větve E22 (`496a72d`). Prvním krokem je detail země při chůzi. Další pořadí tvoří povrchy silnic, voda, stromy, tráva, noční světla a částice. [Zadání E23](E23.md) · [Protokol E22](../E22.md)
