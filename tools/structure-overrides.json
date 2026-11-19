@@ -61,5 +61,49 @@
   ],
   "pending": {
     "00000002021000451-5f749d9b2f6f5db5": "Navržený půdorys trati 6 zasahuje okrajem do průchozího profilu pěší cesty a kolejí. Ponechat dosavadní mostovku."
+  },
+  "waterParts": {
+    "00000000024061110-aa1a392042612cda": {
+      "reason": "Ponechat mimo hru kvůli překryvu s herní budovou a vozovkou."
+    },
+    "00000000024061115-b78f7bda61034101": {
+      "reason": "Ponechat mimo hru kvůli zásahu do pěší trasy."
+    },
+    "00000000024062334-643118d3144dda88": {
+      "reason": "Část nízkého objektu leží ve vodním polygonu. Podoba na břehu čeká na ověření."
+    },
+    "00000000024062336-d275c1b5abeb5858": {
+      "reason": "Nízký objekt zasahuje do břehu. Před převzetím ověřit viditelný tvar."
+    },
+    "00000000024062338-650f2fc4956eca8d": {
+      "reason": "Všechny vrcholy nádrže jsou pod herním terénem a půdorys se překrývá s budovou.",
+      "status": "nevhodný"
+    },
+    "00000000024062339-7dd53e4af39b95ad": {
+      "reason": "Nádrž částečně leží ve vodním polygonu. Nad herním povrchem je vidět jen malá část. Ověřit obrys na břehu."
+    },
+    "00000000024062345-650c6585f53bdc22": {
+      "reason": "Část členitého objektu leží na suchu a část ve vodním polygonu. Ověřit podobu břehu."
+    },
+    "00000000024062477-113e1e5dfcba66e9": {
+      "reason": "Nejvyšší vrchol vyčnívá nad herní povrch jen o 2 cm. Samostatný model vynechat.",
+      "status": "nevhodný"
+    },
+    "00000002023003248-8eab812036e4c8a7": {
+      "reason": "Přidat měřený jez v místě zvuku vody. Všechny vzorky leží ve vodním polygonu.",
+      "role": "weir"
+    },
+    "00000002023003254-97ead4acf1c1da4b": {
+      "reason": "Přidat boční díl jezu na hranici herního vodního polygonu u zvuku vody.",
+      "role": "weir"
+    },
+    "00000002023003256-6891c9e9c1ca7294": {
+      "reason": "Přidat díl jezu ve vodním polygonu u zvuku vody.",
+      "role": "weir"
+    },
+    "00000002023003259-5f244e0d363d803f": {
+      "reason": "Přidat boční díl jezu u břehu a existujícího zvuku vody.",
+      "role": "weir"
+    }
   }
 }

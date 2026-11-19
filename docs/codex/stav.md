@@ -244,3 +244,11 @@ U dvou železničních konstrukcí (herní tratě 8 a 21) nyní pět městských
 Převod nyní kontroluje výsledné okraje po oříznutí sousedními mostovkami. Trať 6 zůstala v původní podobě, protože by nový okraj zasáhl do pěší cesty i do prostoru kolejí. Důvod je také v inventuře. Dvě sestavení a distribuovaná data se shodují po bajtech. Základ vrstvy má dál 811 308 bajtů.
 
 Prošlo 145 testů JavaScriptu, 25 testů Pythonu i produkční sestavení. Na WebGPU se u obou mostů a na obou okrajích ověřila poloha viditelného vrcholu do 1 cm. Fyzická opora i výškový dotaz uvnitř okraje odpovídaly hernímu profilu do 9 cm. Další práci v E22 tvoří posouzení dosud nezařazených samostatných zábradlí, vodních a ostatních objektů, přístupů k mostům a závěrečný protokol.
+
+### Jezy, nádrže a ostatní objekty
+
+U všech dvanácti samostatných dílů v těchto třech třídách převod porovnal střed a jedinečné vrcholy s vodními polygony hry i půdorysy budov. Výšku každého vrcholu porovnal s terénem pod ním, na němž hra vykresluje hladinu. Čtyři díly jezů se shodují s polohou dosavadních zvuků vody do 12 metrů. Jejich geometrie i výsledné obaly prošly kontrolou herních tras. Základní balík nyní obsahuje 258 statických objektů a má 811 932 bajtů. [Posouzení dvanácti městských dílů](../E22/vodni-objekty.tsv)
+
+Dva z osmi dalších dílů jsou pro tento model terénu nevhodné. Jedna nádrž leží pod povrchem a v půdorysu budovy, jiný díl vystupuje nanejvýš o dva centimetry. Šest dílů čeká na vyjasnění překryvu s trasou nebo podoby břehu. Ve hře se nezobrazují.
+
+Dva samostatné převody se shodují po bajtech s distribuovanými daty. Prošlo 146 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. Na WebGPU při nízké kvalitě se všechna čtyři tělesa načetla v podrobných dlaždicích. U každého test ověřil polohu ve vodním polygonu a vrcholy nad hladinou i pod ní.

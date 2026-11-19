@@ -175,3 +175,15 @@ test('základ načte i první verzi a odmítne index trojúhelníku mimo vrcholy
     else assert.equal(layer,null);
   }
 });
+
+test('u vodního dílu změří podíl vzorků ve vodě a výšku každého vrcholu nad místním terénem', async () => {
+  const {sampleWaterPart} = await import('../tools/review_water_structures.mjs');
+  const part = {faces:[floor(0,4,0,2,2),floor(0,4,0,2,2)]};
+  const world = {
+    landContains: (i,x) => i === 9 && x >= 1,
+    buildingAt: (x,z) => x === 0 && z === 0 ? 0 : -1,
+    heightAt: x => 3+x
+  };
+  const result = sampleWaterPart(part,world,[9],[[1,5]]);
+  assert.deepEqual(result,{samples:5,wet:3,buildings:1,min:-1,max:1,nearest:4});
+});

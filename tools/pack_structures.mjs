@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
 import { Vector3 } from 'three/webgpu';
+import { reviewWaterParts } from './review_water_structures.mjs';
 import { selectDistricts } from './district_structures.mjs';
 import { indexTriangles } from './static_structures.mjs';
 import { loadStructureMap } from './audit_structures.mjs';
@@ -16,7 +17,7 @@ const [dir = 'data-raw/structures', output = 'data-raw/kandidat/detail/structure
 const json = file => JSON.parse(fs.readFileSync(file));
 const {parts, source} = json(path.join(dir, 'dily.json'));
 const {sources, reports} = json(path.join(dir, 'kontroly.json'));
-const {parts: overrides, bridges: choices, footbridges = [], roadBridges = [], railBridges = [], pending = {}, districts = []} = json('tools/structure-overrides.json');
+const {parts: overrides, bridges: choices, footbridges = [], roadBridges = [], railBridges = [], pending = {}, districts = [], waterParts = {}} = json('tools/structure-overrides.json');
 const meta = json('public/data/meta.json');
 const tiles = new Map(), chunk = 256;
 const minX = Math.floor(meta.bounds.minX / chunk) * chunk, minZ = Math.floor(meta.bounds.minZ / chunk) * chunk;
@@ -66,8 +67,8 @@ const bridges = choices.map(choice => {
 });
 const planChoices = [...footbridges,...roadBridges];
 const railDecks = [];
+const {world} = await loadStructureMap('public/data');
 if (planChoices.length || railBridges.length) {
-  const {world} = await loadStructureMap('public/data');
   const rows = await surveyBridges(parts,world);
   for (const choice of planChoices) {
     bridges.push(planCalibration(choice,rows,world));
@@ -80,8 +81,9 @@ if (planChoices.length || railBridges.length) {
   await checkPlanEdges(bridges,'public/data',railDecks);
 }
 const excluded = new Set([...accepted,...calibrationReasons.keys()]);
+const water = await reviewWaterParts(parts,reportsById,waterParts,'public/data',world);
 const districtData = await selectDistricts(parts, reportsById, {size:chunk,x:minX,z:minZ},
-  json('public/detail/city/index.json').districts, districts, excluded, 'public/data', bridges, railDecks);
+  json('public/detail/city/index.json').districts, districts, excluded, 'public/data', bridges, railDecks, water.decisions);
 const districtReasons = districtData.reasons;
 for (const part of districtData.accepted) {
   for (const tile of part.meshes) {
@@ -90,7 +92,7 @@ for (const part of districtData.accepted) {
     tiles.get(key).parts.push({id:part.id,role:part.role,core:tile.shells.flat(),detail:tile.detail});
   }
   accepted.add(part.id);
-  districtReasons.set(part.id, 'Obvod ' + part.district + '. Městské plochy i kolizní obaly prošly kontrolou herních tras.');
+  districtReasons.set(part.id, (water.decisions.get(part.id)?.reason ?? ('Obvod ' + part.district + '.')) + ' Městské plochy i kolizní obaly prošly kontrolou herních tras.');
 }
 fs.mkdirSync(output, {recursive: true});
 const all = [], entries = [];
@@ -116,7 +118,9 @@ const rows = [['díl', 'zdrojové ID', 'ploch v SHP', 'unikátních ploch', 'sta
 for (const part of parts) {
   const chosen = accepted.has(part.id) || calibrationReasons.has(part.id);
   rows.push([part.id, part.uid, part.records, part.faces.length,
-    chosen ? 'začleněn' : part.status, districtReasons.get(part.id) ?? calibrationReasons.get(part.id) ?? overrides[part.id]?.reason ?? pending[part.id] ?? part.reason]);
+    chosen ? 'začleněn' : (water.decisions.get(part.id)?.status ?? part.status), districtReasons.get(part.id) ?? calibrationReasons.get(part.id) ?? overrides[part.id]?.reason ?? pending[part.id] ?? water.decisions.get(part.id)?.reason ?? part.reason]);
 }
+const waterRows = [['díl','druh','vzorky','vzorky ve vodě','vzorky v budovách','nejnižší vrchol vůči povrchu (m)','nejvyšší vrchol vůči povrchu (m)','vzdálenost ke zvuku jezu (m)','střet s trasou','posouzení'], ...water.rows];
+fs.writeFileSync(path.join(dir, 'vodni-objekty.tsv'), waterRows.map(row => row.join('\t')).join('\n') + '\n');
 fs.writeFileSync(path.join(dir, 'inventura.tsv'), rows.map(row => row.join('\t')).join('\n') + '\n');
 console.log(accepted.size + ' objektů, ' + bytes.length + ' bajtů v základní vrstvě.');

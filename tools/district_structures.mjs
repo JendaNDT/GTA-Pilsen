@@ -33,15 +33,16 @@ async function blockedMeshes(candidates, mapDir, bridges, railDecks) {
   return blocked;
 }
 
-export async function selectDistricts(parts, reports, grid, districts, enabled, excluded, mapDir, bridges, railDecks) {
+export async function selectDistricts(parts, reports, grid, districts, enabled, excluded, mapDir, bridges, railDecks, reviewed = new Map()) {
   const boundaries = new Districts(districts);
   const candidates = [],
     reasons = new Map();
   for (const part of parts) {
+    const review = reviewed.get(part.id);
     if (
       excluded.has(part.id) ||
       part.status !== 'čeká na ověření' ||
-      !part.faces.every((face) => roles.has(face[0]))
+      (!review?.role && !part.faces.every((face) => roles.has(face[0])))
     )
       continue;
     const surfaces = part.faces.map(structureSurface);
@@ -49,7 +50,7 @@ export async function selectDistricts(parts, reports, grid, districts, enabled, 
     for (const surface of surfaces) bounds.union(surface.box);
     const center = bounds.getCenter(new Vector3()),
       district = boundaries.at(center.x, center.z);
-    if (!enabled.includes(district)) continue;
+    if (!review?.role && !enabled.includes(district)) continue;
     const report = reports.get(part.id);
     if (!report) throw Error('Chybí kontrola dílu ' + part.id);
     if (report.categories.length) {
@@ -68,7 +69,7 @@ export async function selectDistricts(parts, reports, grid, districts, enabled, 
       reasons.set(part.id, 'Po oříznutí chybí kolizní objem.');
       continue;
     }
-    candidates.push({ id: part.id, role: roles.get(part.faces[0][0]), district, meshes, surfaces });
+    candidates.push({ id: part.id, role: review?.role ?? roles.get(part.faces[0][0]), district, meshes, surfaces });
   }
   const blocked = await blockedMeshes(candidates, mapDir, bridges, railDecks);
   const refined = candidates.filter((p) => blocked.has(p.id));
