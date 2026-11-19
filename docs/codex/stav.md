@@ -34,7 +34,7 @@ Na malém zkušebním repozitáři prošlo dvojí zabalení, porovnání obou ar
 
 ## Výška vstupů nad chodníkem
 
-První snímky ukázaly nízká okna a zčásti zapuštěné dveře. U všech 21 vstupů ležel spodek měřené stěny 1,05 až 3,14 m pod chodníkem. Převod teď odvozuje výšku prahu z herního terénu v místě dveří. Otisky stěn, počet vrcholů a jejich poloha zůstávají platné. Kontrola našla všech 21 vstupů v distribuovaných dlaždicích a ověřila polohu prahu s tolerancí 4 cm. Prošlo 176 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. Na opraveném vysokém WebGPU je při pohledu z Americké vidět celý vstup až k chodníku. Pokračuje porovnání všech tří dvojic snímků. [Protokol E25](../E25.md)
+První snímky ukázaly nízká okna a zčásti zapuštěné dveře. U všech 21 vstupů ležel spodek měřené stěny 1,05 až 3,14 m pod chodníkem. Převod teď odvozuje výšku prahu z herního terénu v místě dveří. Otisky stěn, počet vrcholů a jejich poloha zůstávají platné. Kontrola našla všech 21 vstupů v distribuovaných dlaždicích a ověřila polohu prahu s tolerancí 4 cm. Prošlo 176 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. Na opraveném vysokém WebGPU je při pohledu z Americké vidět celý vstup až k chodníku. Všech šest snímků je v protokolu včetně počtu trojúhelníků, vykreslovacích volání a mediánu z pěti snímků v každém pohledu. Na WebGL 2 v Chromiu prošlo i vykreslení jediné přízemní vrstvy v pilotu po opravě prahů. Fotografická shoda podle autorových předloh zůstává otevřená. [Protokol E25](../E25.md)
 
 ## Vymezení pilotu
 
