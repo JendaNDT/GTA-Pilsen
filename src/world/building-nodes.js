@@ -217,7 +217,9 @@ export function buildingNodes(night, schedule, camera, sky, textures, heritage, 
       color.assign(mix(color, vec3(.10,.16,.18), glass.select(.85,0)));
       glazing.assign(glass.select(.9,0));
       illumination.assign(glass.select(night.mul(.19),0));
-      If(front.y.lessThan(.38), () => color.mulAssign(.68));
+      If(front.y.lessThan(.38), () => {
+        color.mulAssign(.68);
+      });
       const entrance = attribute('aEntrance', 'float');
       const offset = front.x.sub(entrance);
       If(entrance.greaterThan(0).and(offset.abs().lessThan(.55), front.y.lessThan(2.25)), () => {
@@ -230,7 +232,9 @@ export function buildingNodes(night, schedule, camera, sky, textures, heritage, 
           glazing.assign(0);
         });
       });
-      If(front.y.sub(height.sub(.25)).abs().lessThan(.065), () => color.mulAssign(1.18));
+      If(front.y.sub(height.sub(.25)).abs().lessThan(.065), () => {
+        color.mulAssign(1.18);
+      });
     });
     if (textures) addSurfaceDetail(color, positionWorld, cell, code);
     return buildingSurface(color, illumination, glazing);
