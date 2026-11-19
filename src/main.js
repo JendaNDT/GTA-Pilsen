@@ -58,6 +58,9 @@ const ABOUT_HTML = (meta, rendering) => `
   (autoři three.js, licence <a href="https://github.com/mrdoob/three.js/blob/r187/LICENSE" target="_blank" rel="noopener">MIT</a>).
   Aktuální vykreslování: <strong>${rendering}</strong>.</p>
   <p>Fyziku počítá <a href="https://github.com/jrouwe/JoltPhysics.js" target="_blank" rel="noopener">Jolt Physics 1.1.1</a> (Jorrit Rouwe, licence MIT).</p>
+  <p>Tvar říčního dna je vlastní herní odhad podle vzdálenosti od břehu.
+  Výška dna u Wilsonova mostu byla porovnána s <a href="https://gis.plzen.eu/foto/pov_model/profily/PM_Psany_PP.pdf"
+  target="_blank" rel="noopener">profilem R19 v povodňovém modelu města Plzně</a>.</p>
   <p>Sestavení hry používá picomatch od Jona Schlinkerta (licence
   <a href="https://github.com/micromatch/picomatch/blob/master/LICENSE" target="_blank" rel="noopener">MIT</a>)
   s místní opravou 4.0.8-plzen.1.</p>
@@ -231,6 +234,9 @@ async function boot() {
   $('use-prague-time').addEventListener('click', () => applyTime(() => game.usePragueTime()));
   $('sound-enabled').checked = !game.audio.muted;
   $('sound-enabled').addEventListener('change', (event) => game.setSoundEnabled(event.target.checked));
+  const heliAssist = $('heli-assist');
+  heliAssist.checked = game.heliAssist;
+  heliAssist.addEventListener('change', () => { game.heliAssist = heliAssist.checked; game.save(); });
   const steering = $('steering');
   steering.value = game.steering;
   steering.addEventListener('change', () => { game.steering = steering.value; game.save(); });

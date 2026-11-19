@@ -20,6 +20,7 @@ const { World, SURF } = await import('../src/world/world.js');
 const { TurnRules } = await import('../src/world/turns.js');
 const { RC, RF } = await import('../src/config.js');
 const { hourlyActivity } = await import('../src/game/traffic-rhythm.js');
+const { Traffic } = await import('../src/game/traffic.js');
 const { matchCityProfile } = await import('../src/game/traffic-profile-map.js');
 const { GameClock, parseDay } = await import('../src/game/clock.js');
 
@@ -31,6 +32,71 @@ function emptyWorld() {
     bridgeSeg: new Float32Array(), bridgeGrid: new Map(),
   });
 }
+
+test('při parkování u koleje rozhoduje směr karoserie a výška mostu', () => {
+  const world = emptyWorld();
+  world._initRails({
+    header: { count: 1 }, x0: [0], z0: [-200], dx: [0], dz: [400], start: [0, 1],
+    cls: [0], flags: [RF.BRIDGE], bridgeOff: [0], bridgeY: [250, 250],
+  });
+  assert.equal(world.blocksTramTrack(3.2, 0, 5, Math.PI / 2, 5, 2), true);
+  assert.equal(world.blocksTramTrack(3.2, 0, 5, 0, 5, 2), false);
+  assert.equal(world.blocksTramTrack(0, 0, 0, 0, 5, 2), false);
+  assert.equal(world.blocksTramTrack(0, 26, 5, 0, 5, 2), false);
+});
+
+test('výjezd z křižovatky je volný za odjíždějícím autem, před brzdícím nebo křížícím vozem je obsazený', () => {
+  const traffic = Object.create(Traffic.prototype);
+  let samples = 0;
+  traffic.world = {
+    eLen: [40],
+    edgePoint(edge, s, lane, point) { samples++; Object.assign(point, { x: lane, z: s }); },
+  };
+  const driver = { x: 0, y: 0, z: 0, radius: 1 };
+  const lead = { x: 0, y: 0, z: 10, radius: 1, halfLen: 2, yaw: 0, vx: 0, vz: 0 };
+  const occupied = () => traffic.laneOccupied(driver, 0, 0, 0, 25, [lead], []);
+  assert.equal(occupied(), true);
+  const firstSamples = samples;
+  assert.ok(firstSamples > 0);
+  lead.vz = 5;
+  assert.equal(occupied(), false);
+  lead.physical = { input: { targetSpeed: 0 } };
+  assert.equal(occupied(), true);
+  Object.assign(lead, { vx: 5, vz: 0, yaw: Math.PI / 2, physical: null });
+  assert.equal(occupied(), true);
+  assert.equal(samples, firstSamples);
+  lead.x = 100;
+  assert.equal(occupied(), false);
+});
+
+test('řidič, který zastaví nárazníkem 90 cm před stopčárou, po zastavení pokračuje', () => {
+  const traffic = Object.assign(Object.create(Traffic.prototype), { time: 10, conflict: () => false });
+  const car = { speed: 0 };
+  const stop = { kind: 'stop' };
+  let speed;
+  for (let i = 0; i < 42; i++) speed = traffic.drivingRule(car, stop, 0.45, 1 / 60, 9, []);
+  assert.equal(speed, 9);
+  assert.ok(car.trafficStop.held >= 0.65);
+});
+
+test('auto smí využít volné místo mezi křižovatkou a dalším přechodem', () => {
+  const traffic = Object.create(Traffic.prototype), group = {};
+  traffic.world = {
+    eLen: [20, 80],
+    edgePoint(edge, s, lane, p) { Object.assign(p, { x: lane, z: 20 * edge + s }); },
+  };
+  traffic.crossingsByEdge = new Map([[1, [{ s: 25, crossing: { group } }]]]);
+  const car = { edge: 0, lane: 0, next: 1, nextLane: 0, y: 0, radius: 1, halfLen: 2.3, exitPlan: [] };
+  const ahead = { x: 0, y: 0, z: 42, radius: 1, halfLen: 2, yaw: 0 };
+  const blocked = () => traffic.exitBlocked(car, { edge: 0, s: 12, group }, [ahead], []);
+  assert.equal(blocked(), false);
+  ahead.z = 31;
+  assert.equal(blocked(), true);
+  // Přechod těsně za křižovatkou naopak musí zůstat celý volný.
+  traffic.crossingsByEdge.get(1)[0].s = 11;
+  ahead.z = 36;
+  assert.equal(blocked(), true);
+});
 
 test('hodinový profil plynule přechází z pracovní doby na víkend i přes půlnoc', () => {
   const friday = parseDay('2026-11-13');
@@ -170,4 +236,18 @@ test('pěší kapsle se u země vysune od sloupu a nad sloupem má volno', () =>
   hit.x = 2.1;
   assert.equal(world.collideStreetObjects(hit, 0.35, 3), false);
   assert.equal(hit.x, 2.1);
+});
+test('před levým odbočením řidič nechá projet rozjetý protisměr a vedlejší průběžný pruh zůstává volný', () => {
+  const traffic = Object.create(Traffic.prototype), group = {};
+  const head = { group, tx: 0, tz: 1 }, opposite = { group, tx: 0, tz: -1 };
+  const first = { control: head, lane: -1.8, left: true };
+  const leader = { mode: 'ai', junctionMovement: first };
+  const driver = { type: { wid: 1.8 } };
+  const waiting = (control, lane, left) => traffic.turnInProgress(driver, { control, lane, left }, [leader]);
+  assert.equal(waiting(opposite, 1.8, true), first);
+  assert.equal(waiting(head, -1.8, false), first);
+  assert.equal(waiting(head, 1.8, false), undefined);
+  assert.equal(waiting(opposite, 1.8, false), undefined);
+  leader.junctionMovement = null;
+  assert.equal(waiting(opposite, 1.8, true), undefined);
 });

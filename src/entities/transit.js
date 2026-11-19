@@ -1,5 +1,6 @@
 import { Vector3 } from 'three/webgpu';
 import { STOP_DWELL, Timetable } from '../game/timetable.js';
+import { pathClearance } from '../game/ai-turn.js';
 import { DAY_SECONDS } from '../game/clock.js';
 import { DRIVABLE_MAX, RF } from '../config.js';
 import { makeTrolleybus, TROLLEY_LEN } from './models.js';
@@ -42,6 +43,28 @@ class Route {
       if (i) this.cum[i] = this.cum[i - 1] + Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]);
     }
     this.length = this.cum[n - 1];
+    this.laneNormals = new Float32Array(2 * n);
+    // Posunuté sousední úseky sdílejí jeden vrchol i v zatáčce. Každá náprava
+    // tak dojede na začátek dalšího úseku bez bočního skoku.
+    let nx = 0, nz = 0, previous = 0;
+    for (let i = 1; i < n; i++) {
+      const length = this.cum[i] - this.cum[previous];
+      if (!length) continue;
+      const x = -(this.pts[2 * i + 1] - this.pts[2 * previous + 1]) / length;
+      const z = (this.pts[2 * i] - this.pts[2 * previous]) / length;
+      if (!previous) { nx = x; nz = z; }
+      const scale = 1 / Math.max(0.5, 1 + nx * x + nz * z);
+      for (let j = previous; j < i; j++) {
+        this.laneNormals[2 * j] = (nx + x) * scale;
+        this.laneNormals[2 * j + 1] = (nz + z) * scale;
+      }
+      previous = i;
+      nx = x; nz = z;
+    }
+    for (let j = previous; j < n; j++) {
+      this.laneNormals[2 * j] = nx;
+      this.laneNormals[2 * j + 1] = nz;
+    }
   }
 
   posAt(s, side, out) {
@@ -58,8 +81,9 @@ class Route {
     const length = cum[hi] - cum[lo] || 1;
     const along = (s - cum[lo]) / length;
     const tx = dx / length, tz = dz / length;
-    out.x = x + dx * along - tz * side;
-    out.z = z + dz * along + tx * side;
+    const normals = this.laneNormals;
+    out.x = x + dx * along + side * (normals[lo * 2] + along * (normals[hi * 2] - normals[lo * 2]));
+    out.z = z + dz * along + side * (normals[lo * 2 + 1] + along * (normals[hi * 2 + 1] - normals[lo * 2 + 1]));
     out.tx = tx;
     out.tz = tz;
     return out;
@@ -77,6 +101,7 @@ class TransitVehicle {
     // Herní střídání na spojích linek 1 a 2, stálé pro konkrétní spoj.
     this.isTatra = this.isTram && ['1', '2'].includes(this.route.ref) && Number(trip.id) % 2 === 0;
     this.sections = this.isTatra ? TATRA_SECTIONS : SECTIONS[this.route.type];
+    this.footprints = this.sections.map(() => ({}));
     this.len = this.sections.reduce((sum, { length }) => sum + length, 0);
     this.halfLen = this.len / 2;
     this.radius = 1.4;
@@ -95,6 +120,7 @@ class TransitVehicle {
   }
 
   followSchedule({ s, index, wait }) {
+    this.enteredSignal = null;
     this.s = s;
     this.stopIndex = index;
     this.wait = wait;
@@ -129,6 +155,7 @@ export class TransitManager {
     this.active = new Map();
     this.heavy = [];
     this.obstacles = [];
+    this.drivingPath = Array.from({ length: 7 }, () => ({}));
     this.timetable = new Timetable(schedule, routes);
     this.seen = new Map();
     this.serviceDay = null;
@@ -219,9 +246,17 @@ export class TransitManager {
     for (const mesh of v.meshes ?? []) mesh.userData.doors?.mesh.dispose();
   }
 
-  _spawnSpace(v, nearby) {
+  _spawnSpace(v, nearby, cars) {
     const { x, z, tx, tz } = frontPoint;
     const centerX = x - tx * v.halfLen, centerZ = z - tz * v.halfLen;
+    for (const car of cars) {
+      if (Math.abs(car.y - v.y) > 3) continue;
+      const dx = car.x - centerX, dz = car.z - centerZ;
+      const fx = Math.sin(car.yaw), fz = Math.cos(car.yaw);
+      const parallel = Math.abs(fx * tx + fz * tz), across = Math.abs(fx * tz - fz * tx);
+      if (Math.abs(dx * tx + dz * tz) < v.halfLen + car.halfLen * parallel + car.radius * across + 1 &&
+          Math.abs(dx * tz - dz * tx) < v.radius + car.halfLen * across + car.radius * parallel) return false;
+    }
     return !nearby.some((other) => {
       if (other === v || !other.visible || Math.abs(other.y - v.y) > 3) return false;
       const dx = other.x - centerX, dz = other.z - centerZ;
@@ -261,9 +296,11 @@ export class TransitManager {
       const forward = road && road.dx * frontPoint.tx + road.dz * frontPoint.tz >= 0;
       v.roadLimit = road ? this.world.roadSpeed(road.road, forward) / 3.6 : 10.5;
       const { lanes, w, flags } = this.world.r;
-      const oneWay = road && (flags[road.road] & RF.ONEWAY);
+      const contraflow = road && this.world.busContraflow.has(road.road);
+      const oneWay = road && (flags[road.road] & RF.ONEWAY) && !contraflow;
       const count = road && Math.max(oneWay ? 1 : 2, lanes[road.road]);
       v.lane = road ? Math.min(2.5, w[road.road] * (1 - 1 / count) / 2) : 1.7;
+      if (contraflow) v.lane = Math.min(2.5, Math.max(v.lane, w[road.road] / 2 - 1.3));
       v.limitTimer = 0.5;
     }
     v.side += (v.lane - v.side) * Math.min(1, dt * 4);
@@ -307,17 +344,26 @@ export class TransitManager {
       else this.game.audio.horn(v);
       v.hornWait = -6;
     }
+    let sampled = false;
     const check = (other) => {
       if (other === v || Math.abs((other.y ?? v.y) - v.y) > 3) return;
       const dx = other.x - frontPoint.x, dz = other.z - frontPoint.z;
       if (dx * dx + dz * dz > 32 ** 2) return;
       const along = dx * tx + dz * tz;
-      if (along < 0.2 || Math.abs(dx * tz - dz * tx) > 1.5 + (other.radius || 1) * 0.35) return;
-      const gap = along - (other.halfLen || 1) - 0.5;
+      if (along < 0.2) return;
+      if (!sampled) {
+        for (let i = 0; i < this.drivingPath.length; i++) v.route.posAt(v.s + 4 * (i + 1), v.side, this.drivingPath[i]);
+        sampled = true;
+      }
+      const gap = pathClearance(frontPoint.x, frontPoint.z, Math.atan2(tx, tz), 0, 1.25, other, this.drivingPath);
       const speed = (other.vx || 0) * tx + (other.vz || 0) * tz;
-      limit = Math.min(limit, Math.max(0, speed + (gap - 2.5) * 1.2));
+      limit = Math.min(limit, Math.max(0, speed + (gap - 2.5 - v.v) * 1.2),
+        Math.sqrt(Math.max(0, speed) ** 2 + 4 * Math.max(0, gap - 2.5)));
     };
-    for (const other of nearby) if (other.visible) check(other);
+    for (const other of nearby) {
+      if (other === v || !other.visible || Math.hypot(other.x - v.x, other.z - v.z) > 65) continue;
+      for (const section of other.footprints) check(section);
+    }
     for (const car of cars) check(car);
     if (playerOnFoot) check(player);
 
@@ -353,7 +399,9 @@ export class TransitManager {
       const collisionSpan = v.isTatra ? length / 2 - 1.35 : axle;
       const collisionPoints = v.isTatra ? [-collisionSpan, -axle, 0, axle, collisionSpan] : [-axle, 0, axle];
       for (const k of collisionPoints) this.heavy.push({ x: x + fx * k, y, z: z + fz * k, r: 1.35, vx, vz });
-      this.obstacles.push({ x, y, z, vx, vz, yaw, halfLen: length / 2, radius: 1.4 });
+      const footprint = v.footprints[index];
+      Object.assign(footprint, { x, y, z, vx, vz, yaw, halfLen: length / 2, radius: 1.4 });
+      this.obstacles.push(footprint);
       if (index === (v.isTram ? 1 : 0)) Object.assign(v, { x, y, z, yaw, vx, vz });
     }
     // Spřáhlo nebo měch překrývá konce sousedních skříní i v oblouku.
@@ -421,7 +469,7 @@ export class TransitManager {
       const wasVisible = v.visible, wasOpen = v.doorsOpen;
       if (!v.visible) {
         v.y = this._routeSurface(v, frontPoint);
-        if (!this._spawnSpace(v, nearby)) { v.waitingForSpace = true; continue; }
+        if (!this._spawnSpace(v, nearby, cars)) { v.waitingForSpace = true; continue; }
         v.waitingForSpace = false;
         if (v.wait > 0) v.wait = Math.max(v.wait, STOP_DWELL * 0.7);
         v.v = v.wait > 0 ? 0 : 6.5;

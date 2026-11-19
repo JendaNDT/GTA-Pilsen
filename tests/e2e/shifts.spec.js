@@ -18,9 +18,11 @@ async function start(page, id) {
   await panel(page);
   await page.locator('#shift-offer').selectOption(id);
   await expect(page.locator('#shift-direction')).toContainText('odjezd');
-  await page.getByRole('button', { name: 'Nastoupit do směny' }).click();
+  const button = page.getByRole('button', { name: 'Nastoupit do směny' });
+  // Po nastoupení odměřuje čas test. První volný snímek nesmí zkrátit pobyt v zastávce.
+  await button.evaluate(el => el.addEventListener('click', () => window.__freeze(true), { once: true }));
+  await button.click();
   await expect(page.locator('#menu')).toBeHidden();
-  await page.evaluate(() => window.__freeze(true));
 }
 
 test('změna herního času přeruší směnu až po potvrzení', async ({ page }) => {
@@ -47,6 +49,7 @@ async function drive(page, failWrite) {
     const g = window.__game, { shifts, transit, world, clock } = g, run = shifts.active, v = run.vehicle;
     const traffic = world.traffic, before = g.money, dt = 0.05;
     // Samostatné průjezdy ověřují řízení a skutečné semafory bez náhodné kolony.
+    traffic.time = 0;
     transit.vehicles = [v];
     transit.active.clear();
     transit.active.set(v.event.key, v);
@@ -80,7 +83,7 @@ async function drive(page, failWrite) {
         const distance = stop.s - v.s;
         const p = v.route.posAt(v.s, v.side, {});
         let wanted = Math.min((v.isTram ? 40 / 3.6 : v.roadLimit || 10) - 0.35, Math.sqrt(3.4 * Math.max(0, distance - 0.85)));
-        const next = traffic.controlAhead(p.x, p.z, p.tx, p.tz, 42);
+        const next = traffic.transitControl(v, p);
         if (next && !run.passed.has(next.control)) {
           const { control, distance: approach } = next;
           const stopSign = control.kind === 'stop' && (run.rule !== control || run.held < 0.7);
@@ -106,6 +109,8 @@ for (const [name, type, id] of [
   test(`E11 – celá směna: ${name}`, async ({ page }, info) => {
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
+    // Nabídka směn vybere nejbližší odjezd. Porovnáváme spoje z měření E20.
+    await page.clock.setFixedTime(new Date('2026-11-18T16:18:00Z'));
     await boot(page);
     await start(page, id);
     await expect(page.locator('#mission')).toContainText('Dveře otevřeny');
@@ -126,6 +131,8 @@ for (const [name, type, id] of [
     const result = failWrite ? outcome.pending : outcome.result;
     expect(result.state).toBe('paid');
     expect(result.score).toBeGreaterThanOrEqual(75);
+    const reference = { tram: 93, trolleybus: 99, bus: 100 }[type];
+    expect(Math.abs(result.score - reference), name + ' získal ' + result.score + ' bodů').toBeLessThanOrEqual(5);
     if (failWrite) {
       expect(outcome.active).toBe(true);
       expect(outcome.money).toBe(outcome.before);

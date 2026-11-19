@@ -7,6 +7,19 @@ const STOP_SPEED = 0.28;
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const text = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
 
+// Zrychlení vozu ve směru kolejí nebo jízdního pruhu. Přilnavost omezuje sílu na obvodu kol.
+export function shiftMotion(speed, previousAccel, demand, emergency, tram, dt) {
+  const adhesion = tram ? 0.24 : 0.62;
+  const grip = adhesion * 9.81;
+  const effort = demand > 0 ? demand * (tram ? 1.22 : 1.45) : demand * 2.6 - 0.28;
+  // Nouzová brzda tramvaje používá i kolejnicovou brzdu.
+  const target = emergency ? -Math.min(4.6, grip + (tram ? 2.3 : 0)) : clamp(effort, -grip, grip);
+  const change = (emergency ? 9 : 2.8) * dt;
+  const accel = clamp(target, previousAccel - change, previousAccel + change);
+  const next = clamp(speed + (previousAccel + accel) * 0.5 * dt, 0, 17);
+  return { speed: next, accel: next === 0 && accel < 0 ? 0 : accel };
+}
+
 export const SHIFT_STATUS = { paid: 'Dokončeno', failed: 'Bez odměny', cancelled: 'Zrušeno', interrupted: 'Přerušeno' };
 
 export class Shifts {
@@ -98,6 +111,7 @@ export class Shifts {
     const run = this.active, g = this.game;
     if (v.doorsOpen || run.pending || v.doorFraction > 0.01) {
       v.v = 0;
+      v.shiftAccel = 0;
       if (v.doorsOpen) {
         run.dwell += dt;
         v.wait = Math.max(0, STOP_DWELL - run.dwell);
@@ -106,9 +120,8 @@ export class Shifts {
     }
     const stop = this.stop, traffic = g.world.traffic;
     const throttle = controls.moveY, emergency = controls.handbrake;
-    const brake = emergency ? 4.6 : throttle < 0 ? -throttle * 2.6 : 0;
-    const accel = throttle > 0 && !emergency ? throttle * (v.isTram ? 1.22 : 1.45) : -0.28 - brake;
-    const speed = clamp(v.v + accel * dt, 0, 17);
+    const motion = shiftMotion(v.v, v.shiftAccel ?? 0, throttle, emergency, v.isTram, dt);
+    v.shiftAccel = motion.accel;
     const ahead = v.route.posAt(v.s + 18, v.side, {});
     let clear = traffic.pedestrianDistance(front.x, front.z, ahead) - 1.5;
     for (const other of [...nearby, ...cars]) {
@@ -128,7 +141,8 @@ export class Shifts {
       g.hud.toast('Zásah brzdy kvůli překážce před vozem.', 'bad');
     } else if (clear > 18) run.protected = false;
     if (v.v > 3 && (emergency || v.v > safeSpeed + 0.9)) run.harsh += dt;
-    v.v = Math.min(speed, safeSpeed);
+    v.v = Math.min(motion.speed, safeSpeed);
+    if (v.v < motion.speed) v.shiftAccel = Math.min(0, v.shiftAccel);
     const advance = Math.min(v.v * dt, Math.max(0, clear));
     if (v.v > limit + 0.55) run.speeding += dt;
 
@@ -148,7 +162,7 @@ export class Shifts {
   }
 
   checkTraffic(run, traffic, v, front, advance, dt, cars, nearby) {
-    const next = traffic.controlAhead(front.x, front.z, front.tx, front.tz, 42);
+    const next = traffic.transitControl(v, front);
     run.signal = null;
     if (!next || run.passed.has(next.control)) return;
     const { control, distance } = next;
@@ -162,6 +176,7 @@ export class Shifts {
     if (color === 'stop' && distance <= 5 && v.v <= STOP_SPEED) run.held += dt;
     if (advance <= 0 || distance > advance) return;
     run.passed.add(control);
+    traffic.enterJunction(v, control);
     if (color === 'red') { run.red++; this.game.hud.toast('Průjezd na červenou.', 'bad'); }
     if (color === 'stop' && run.held < 0.65) { run.ignoredStop++; this.game.hud.toast('Nezastavil jsi u značky STOP.', 'bad'); }
     if ((color === 'yield' || color === 'stop') && traffic.conflict(v, control, cars, nearby)) {

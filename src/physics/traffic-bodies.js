@@ -1,40 +1,132 @@
+import { PlayerVehicle } from './vehicle.js';
 import { layers } from './world.js';
 
-// Ostatní vozy předávají fyzice své polohy z existující simulace dopravy.
 export class TrafficBodies {
-  constructor(physics) {
+  constructor(physics, quality = {}) {
+    this.quality = quality;
     this.physics = physics;
     this.active = new Map();
+    this.dynamic = new Map();
     this.owners = new Map();
+    physics.onVehicleContact = (first, second) => {
+      const a = this.carForBody(first.GetID().GetIndexAndSequenceNumber());
+      const b = this.carForBody(second.GetID().GetIndexAndSequenceNumber());
+      if (a?.physical) a.physical.touchedVehicle = true;
+      if (b?.physical) b.physical.touchedVehicle = true;
+    };
     const { Jolt } = physics;
     this.pos = new Jolt.RVec3(0, 0, 0);
     this.rotation = new Jolt.Quat(0, 0, 0, 1);
     this.frame = 0;
   }
 
+  removeProxy(key) {
+    const entry = this.active.get(key);
+    if (!entry) return;
+    const id = entry.body.GetID();
+    this.owners.delete(id.GetIndexAndSequenceNumber());
+    this.physics.bodies.RemoveBody(id);
+    this.physics.bodies.DestroyBody(id);
+    this.active.delete(key);
+  }
+
+  takeCar(car) {
+    this.removeProxy(car);
+    const vehicle = this.dynamic.get(car);
+    if (vehicle) {
+      this.owners.delete(vehicle.body.GetID().GetIndexAndSequenceNumber());
+      this.dynamic.delete(car);
+      car.physical = null;
+    }
+    return vehicle;
+  }
+
+  keepCar(vehicle) {
+    const { car } = vehicle;
+    car.physical = vehicle;
+    this.dynamic.set(car, vehicle);
+    this.owners.set(vehicle.body.GetID().GetIndexAndSequenceNumber(), car);
+  }
+
+  removeCar(car) {
+    this.takeCar(car)?.dispose();
+  }
+
+  selectCars(game) {
+    const { focus, vehicles, world, colliders } = game;
+    const cap = this.quality.name === 'low' ? 10 : this.quality.name === 'medium' ? 20 : 40;
+    const distance = (car) => (car.x - focus.x) ** 2 + (car.z - focus.z) ** 2;
+    const eligible = (car) => !game.oldPhysics && !car.dead && car !== game.driver?.car &&
+      (car.mode === 'ai' || car.mode === 'police' || car.mode === 'parked' || car.mode === 'loose') &&
+      colliders.tiles.has(world.chunkIndex(car.x, car.z));
+    const candidates = vehicles.cars.filter((car) => eligible(car) && distance(car) <= (car.physical ? 220 : 150) ** 2);
+    // Nejbližší auto musí jít odtlačit. Za ním potřebují kola hlavně vozy v provozu.
+    const priority = (car) => {
+      if (car.floodTime || car.mode === 'police') return 3;
+      if (distance(car) < 25 ** 2 || car.mode === 'loose' && car.physical?.body.IsActive()) return 2;
+      return car.mode === 'parked' ? 0 : 1;
+    };
+    candidates.sort((a, b) => priority(b) - priority(a) ||
+      Number(!!b.physical) - Number(!!a.physical) || distance(a) - distance(b));
+    const selected = new Set(candidates.slice(0, cap));
+    for (const car of this.dynamic.keys()) if (!selected.has(car)) this.removeCar(car);
+    for (const car of selected) {
+      if (car.physical && !car.physicsTeleport) continue;
+      if (!car.physical) {
+        this.removeProxy(car);
+        this.keepCar(new PlayerVehicle(this.physics, car));
+      } else car.physical.teleport();
+      if (car.mode === 'parked' && Math.abs(car.speed) < 0.1) this.physics.bodies.DeactivateBody(car.physical.body.GetID());
+      car.physicsTeleport = false;
+    }
+  }
+
+  drive(game, dt) {
+    for (const [car, vehicle] of this.dynamic) {
+      if (car.mode === 'ai') game.vehicles.stepAI(car, dt, vehicle);
+      else if (car.mode === 'police' && game.wanted > 0) game.vehicles.stepPolice(car, dt, game.focus, vehicle);
+      else if (vehicle.body.IsActive()) vehicle.controller.SetDriverInput(0, 0, 0.6, 0);
+    }
+  }
+
+  recordImpact(a, b, impulse) {
+    for (const body of [a, b]) {
+      const car = this.owners.get(body.GetID().GetIndexAndSequenceNumber());
+      car?.physical?.recordImpact(a, b, impulse);
+    }
+  }
+
+  read(game) {
+    for (const [car, vehicle] of this.dynamic) {
+      if (car.mode === 'parked' && !vehicle.body.IsActive() && !vehicle.impactSpeed) continue;
+      vehicle.read();
+      if (vehicle.touchedVehicle) {
+        vehicle.touchedVehicle = false;
+        const sideSpeed = car.vx * Math.cos(car.yaw) - car.vz * Math.sin(car.yaw);
+        if ((car.mode === 'ai' || car.mode === 'police') && (Math.abs(sideSpeed) > 1.5 || car.speed < -1) ||
+            car.mode === 'parked' && Math.hypot(car.vx, car.vz) > 0.6) game.vehicles.knock(car);
+      }
+      if (!vehicle.impactSpeed) continue;
+      const other = this.carForBody(vehicle.impactBody);
+      const hitPlayer = vehicle.impactBody === game.driver?.body.GetID().GetIndexAndSequenceNumber();
+      const impact = vehicle.applyImpact();
+      if (impact > 4) game.vehicles.knock(car);
+      if (!hitPlayer) game.onCrash(car, impact, other);
+    }
+  }
+
   update(game, dt) {
     this.frame++;
+    this.selectCars(game);
     for (const ped of game.peds.peds) {
       if (ped.state === 'down' || Math.hypot(ped.x - game.focus.x, ped.z - game.focus.z) > 80) continue;
       this.move(game.focus, ped, ped.x, ped.y, ped.z, 0, 0.7, 1.8, 0.7, dt, layers.CHARACTER);
     }
-    for (const car of game.vehicles.cars) if (car !== game.driver?.car && !car.dead) {
+    for (const car of game.vehicles.cars) if (!car.physical && car !== game.driver?.car && !car.dead) {
       this.move(game.focus, car, car.x, car.y, car.z, car.yaw, car.type.wid, car.type.h, car.type.len, dt, layers.VEHICLE);
     }
-    if (game.driver) {
-      for (const vehicle of game.transit.vehicles) if (vehicle.visible && vehicle.meshes) {
-        for (const [i, mesh] of vehicle.meshes.entries()) {
-          const p = mesh.position;
-          this.move(game.car, mesh, p.x, p.y, p.z, mesh.rotation.y, 2.5, 2.9, vehicle.sections[i].length, dt, layers.TRANSIT);
-        }
-      }
-    }
     for (const [key, entry] of this.active) if (entry.frame !== this.frame) {
-      const id = entry.body.GetID();
-      this.owners.delete(id.GetIndexAndSequenceNumber());
-      this.physics.bodies.RemoveBody(id);
-      this.physics.bodies.DestroyBody(id);
-      this.active.delete(key);
+      this.removeProxy(key);
     }
   }
 

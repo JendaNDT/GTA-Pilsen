@@ -123,7 +123,9 @@ export class PlayerVehicle {
   teleport() {
     const { car, physics } = this;
     this.pos.Set(car.x, car.y + this.spec.height, car.z);
-    const q = this.rotation.setFromEuler(this.euler.set(car.gPitch || 0, car.yaw, car.gRoll || 0, 'YXZ'));
+    const pitch = (car.gPitch || 0) + (car.mode === 'loose' ? car.pitch || 0 : 0);
+    const roll = (car.gRoll || 0) + (car.mode === 'loose' ? car.roll || 0 : 0);
+    const q = this.rotation.setFromEuler(this.euler.set(pitch, car.yaw, roll, 'YXZ'));
     this.quat.Set(q.x, q.y, q.z, q.w);
     this.velocity.Set(car.vx || 0, car.vy || 0, car.vz || 0);
     const id = this.body.GetID();
@@ -180,6 +182,23 @@ export class PlayerVehicle {
     }
   }
 
+  driveAI(input, dt, surface) {
+    this.surfaceTimer -= dt;
+    if (this.surfaceTimer <= 0) {
+      this.surfaceTimer = 0.25;
+      this.friction = surface(this.car.x, this.car.z) * this.spec.grip;
+    }
+    this.car.steer = input.steer;
+    const c = this.car;
+    const holding = input.brake === 1 && !input.throttle && Math.hypot(c.vx, c.vz) < 0.45 && Math.abs(c.vy) < 0.35;
+    this.controller.SetDriverInput(input.throttle, input.steer, input.brake, holding ? 1 : 0);
+    if (input.throttle) this.physics.bodies.ActivateBody(this.body.GetID());
+    // Na příčném svahu zabrzděné pneumatiky v klidu drží. Náraz nebo rozjezd
+    // spící dynamické auto opět probudí stejně jako zaparkovaný vůz.
+    if (holding && this.body.IsActive() && !this.touchedVehicle && Math.abs(c.roll) < 0.45 &&
+        this.wheels.filter(wheel => wheel.HasContact()).length >= 3) this.physics.bodies.DeactivateBody(this.body.GetID());
+  }
+
   read() {
     const { car } = this;
     this.pose.read(this.body);
@@ -200,7 +219,7 @@ export class PlayerVehicle {
   render(alpha) {
     const { mesh } = this.car;
     this.pose.interpolate(alpha, mesh.position, mesh.quaternion);
-    mesh.position.y -= this.spec.height;
+    mesh.translateY(-this.spec.height);
   }
 
   dispose() {

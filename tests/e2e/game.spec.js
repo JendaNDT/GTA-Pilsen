@@ -96,7 +96,10 @@ test('chůze, navigace, auto, vrtulník a dokončení rozvozu', async ({ page })
   await advanceFrames(page, 240);
   await page.keyboard.up('Space');
   expect(await page.evaluate(() => __game.heli.y)).toBeGreaterThan(y + 5);
-  await page.evaluate(() => { const h = __game.heli; h.y = __game.world.surfaceAt(h.x, h.z); h.vy = 0; h.landed = true; });
+  await page.keyboard.down('Shift');
+  await advanceFrames(page, 480);
+  await page.keyboard.up('Shift');
+  expect(await page.evaluate(() => __game.heli.landed)).toBe(true);
   await action(page, 'KeyF');
 
   await action(page, 'KeyJ');
@@ -404,15 +407,20 @@ test('E03 – pěší přístup k hamru, mosty a hranice pro chůzi, jízdu a le
     for (let i = 0; i < 180; i++) player.update(1 / 60, 1, 0, true, false);
     const footMargin = w.playMaxX - player.x;
     const heli = g.helis[3];
-    heli.occupied = true; heli.rotor = 30; heli.yaw = Math.PI / 2;
+    heli.rotor = 30; heli.yaw = Math.PI / 2;
     heli.z = 3100; heli.x = 18138; heli.y = w.heightAt(heli.x, heli.z) + 140;
+    g._enterHeli(heli);
+    g.paused = false;
+    __setInput(0, 1);
     for (let i = 0; i < 520; i++) {
-      heli.update(1 / 60, 1, 0, 0);
+      g.update(1 / 60);
       if (i % 15 === 0) g.chunks.update(heli.x, heli.z, 620, 4);
     }
     const heliCrossed = heli.x > 18238 && heli.y - w.heightAt(heli.x, heli.z) > 80;
     heli.x = w.playMaxX - 85; heli.y = w.heightAt(heli.x, heli.z) + 140;
-    for (let i = 0; i < 300; i++) heli.update(1 / 60, 1, 0, 0);
+    g._enterHeli(heli);
+    for (let i = 0; i < 300; i++) g.update(1 / 60);
+    __setInput(0, 0);
     return { footGap, swimming, arrived, bridges, closest, escaped, footMargin, heliCrossed, heliMargin: w.playMaxX - heli.x };
   });
   await testInfo.attach('chůze, jízda u závory a let', { body: JSON.stringify(result, null, 2), contentType: 'application/json' });

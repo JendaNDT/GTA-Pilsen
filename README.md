@@ -139,6 +139,8 @@ i Wilsonově mostě tě zastaví kamenná zídka. Při sražení autem postava p
 ve směru nárazu a zase vstane. Volba **Nastavení → Fyzikální pády postav**
 se zachová i při dalším spuštění hry.
 
+V E20 můžeš autem odstrčit zaparkovaný vůz nebo pocítit náraz tramvaje. Vrtulník při dlouhém přímém letu dosáhne přibližně 300 km/h. Když sjedeš autem do Radbuzy u Wilsonova mostu, vůz chvíli plave, nabere vodu a dosedne na mělčinu. Můžeš vystoupit a doplavat ke břehu. [Protokol E20, snímky a zkoušky ve hře](docs/E20.md).
+
 Regresní testy kolizí, terénu, silničního grafu a distribuovaných dat:
 
 ```bash
@@ -268,6 +270,7 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 ## Zdroje a licence dat
 
 - Fyziku počítá [Jolt Physics 1.1.1](https://github.com/jrouwe/JoltPhysics.js) od Jorrita Rouweho ([licence MIT](https://github.com/jrouwe/JoltPhysics.js/blob/main/LICENSE)).
+- Tvar říčního dna je vlastní herní odhad podle vzdálenosti od břehu. Pro kontrolu výšky u Wilsonova mostu sloužil profil R19. [Povodňový model města Plzně](https://gis.plzen.eu/foto/pov_model/profily/PM_Psany_PP.pdf).
 
 - Grafiku vykresluje [three.js 0.187.0](https://github.com/mrdoob/three.js/tree/r187),
   autoři three.js, [licence MIT](https://github.com/mrdoob/three.js/blob/r187/LICENSE).

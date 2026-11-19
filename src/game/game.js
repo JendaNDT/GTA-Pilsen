@@ -1,4 +1,7 @@
+import { Water } from '../physics/water.js';
 import { Falls } from './falls.js';
+import { HelicopterBody } from '../physics/heli.js';
+import { TransitBodies } from '../physics/transit-bodies.js';
 import { TrafficBodies } from '../physics/traffic-bodies.js';
 import { PlayerVehicle } from '../physics/vehicle.js';
 import { TileColliders } from '../physics/colliders.js';
@@ -39,9 +42,12 @@ export class Game {
     this.physics = physics;
     this.oldPhysics = PARAMS.get('physics') === 'old';
     this.steering = 'arcade';
+    this.heliAssist = true;
     this.driver = null;
     this.falls = new Falls(this);
-    this.trafficBodies = new TrafficBodies(physics);
+    this.water = new Water(physics);
+    this.trafficBodies = new TrafficBodies(physics, QUALITY);
+    this.transitBodies = new TransitBodies(physics);
     this.tireSurface = (x, z) => {
       if (x > -66 && x < 75 && z > -60 && z < 68) return 0.9;
       const w = this.world;
@@ -58,9 +64,29 @@ export class Game {
         ? this.car : this.trafficBodies.carForBody(carID);
       if (ped && car) this.queuePedHit(ped, car, vehicle.GetLinearVelocity());
     };
-    physics.onImpact = (first, second, impulse) => this.driver?.recordImpact(first, second, impulse);
+    physics.onImpact = (first, second, impulse) => {
+      this.driver?.recordImpact(first, second, impulse);
+      this.trafficBodies.recordImpact(first, second, impulse);
+      const flight = this.heli?.physical;
+      if (flight) {
+        const id = flight.body.GetID().GetIndexAndSequenceNumber();
+        if (first.GetID().GetIndexAndSequenceNumber() === id || second.GetID().GetIndexAndSequenceNumber() === id) {
+          flight.impact = Math.max(flight.impact, impulse / 2500);
+        }
+      }
+    };
     physics.step = (dt) => {
+      this.transit.update(dt, this.focus, this.vehicles.cars, this.mode === 'foot', this.clock, input);
       const start = DEBUG ? performance.now() : 0;
+      this.transitBodies.update(this.transit.vehicles, this.focus, dt);
+      this.trafficBodies.drive(this, dt);
+      if (!this.oldPhysics) for (const h of this.helis) {
+        if (!h.physical) continue;
+        h.spinRotor(dt);
+        const touchLift = IS_TOUCH && input.touchDrive;
+        const lift = Number(input.handbrake) - Number(input.down) + (touchLift ? input.moveY : 0);
+        h.physical.drive(dt, touchLift ? 0 : input.moveY, input.moveX, clamp(lift, -1, 1), this.heliAssist);
+      }
       this.driver?.drive(dt, input.moveY, input.moveX, input.handbrake, this.steering === 'arcade', this.tireSurface);
       if (this.mode === 'foot' && !this.falls.active.has(this.player)) {
         const fx = Math.sin(this.camYaw), fz = Math.cos(this.camYaw);
@@ -75,8 +101,23 @@ export class Game {
           if (car) this.queuePedHit(this.player, car, contact.mLinearVelocity);
         }
       }
+      if (this.driver && this.water.step(this.driver, this.world, dt)) this.audio.splash(this.driver.car);
+      for (const [car, vehicle] of this.trafficBodies.dynamic) {
+        if (this.water.step(vehicle, this.world, dt)) this.audio.splash(car);
+      }
       physics.engine.Step(dt, 1);
       this.driver?.read();
+      this.trafficBodies.read(this);
+      for (const h of this.helis) if (h.physical) {
+        h.physical.read();
+        const impact = h.physical.impact;
+        h.physical.impact = 0;
+        if (h === this.heli && impact > 5 && !h.physical.impactCooldown) {
+          h.physical.impactCooldown = 0.45;
+          this.audio.crash(impact, h);
+          this._hurt(impact * 3);
+        }
+      }
       this.falls.step(dt);
       if (DEBUG) physics.lastStepMs = performance.now() - start;
     };
@@ -213,6 +254,7 @@ export class Game {
       }
       const found = new Set(s.found || []);
       for (const lm of this.jobs.landmarks) lm.found = found.has(lm.name);
+      this.heliAssist = s.heliAssist !== false;
       this.steering = s.steering === 'realistic' ? 'realistic' : 'arcade';
       this.garage.load(s.garage);
       this.jobs.load(s.job);
@@ -251,7 +293,7 @@ export class Game {
         v: 2, money: this.money, date: formatDay(this.clock.day), hour: this.hour, clockVisible: this.clockVisible,
         clockMode: this.clock.followsPrague ? 'prague' : 'manual',
         soundEnabled: !this.audio.muted, orthophotoEnabled: this.orthophotoEnabled,
-        fallsEnabled: this.falls.enabled, graphics: this.graphics, steering: this.steering,
+        fallsEnabled: this.falls.enabled, graphics: this.graphics, steering: this.steering, heliAssist: this.heliAssist,
         car: this.mode === 'car' ? {
           model: f.typeId, color: f.color, x: f.x, z: f.z, y: f.y, yaw: f.yaw,
           health: f.health, owned: f === this.garage.active,
@@ -354,7 +396,7 @@ export class Game {
 
   _exitCar() {
     const car = this.car, p = this.player, w = this.world;
-    if (Math.abs(car.speed) > 5) { this.hud.toast('Nejdřív zpomal.'); return; }
+    if (!car.floodTime && Math.abs(car.speed) > 5) { this.hud.toast('Nejdřív zpomal.'); return; }
     const lx = Math.cos(car.yaw), lz = -Math.sin(car.yaw);
     const off = car.type.wid / 2 + 0.75;
     let x = car.x + lx * off, z = car.z + lz * off;
@@ -364,13 +406,25 @@ export class Game {
     }
     car.mode = 'loose'; car.rest = 0; car.noDriver = true; car.wasAI = false;
     this.car = null; this.mode = 'foot'; this.focus = p;
-    p.yaw = car.yaw; p.leaveVehicle(x, z, car.y);
+    p.yaw = car.yaw;
+    if (car.floodTime && w.isWater(x, z)) {
+      p.place(x, z, w.heightAt(x, z));
+      p.setWalking(true);
+      p.mesh.visible = true;
+    } else p.leaveVehicle(x, z, car.y);
     this.audio.door(car);
     this.jobs.onExitCar(car);
     this.save();
   }
 
   _enterHeli(h) {
+    if (h.physical) {
+      const p = h.physical.body.GetPosition();
+      if (Math.hypot(p.GetX() - h.x, p.GetY() - h.y, p.GetZ() - h.z) > 0.1) {
+        h.physical.dispose();
+        h.physical = null;
+      }
+    }
     h.occupied = true; this.heli = h; this.mode = 'heli'; this.focus = h;
     this.player.setWalking(false);
     this.player.mesh.visible = false;
@@ -714,16 +768,26 @@ export class Game {
     env.time.value = this.time;
 
     if (this.driver && (this.mode !== 'car' || this.car !== this.driver.car)) {
-      this.driver.dispose();
+      if (!this.oldPhysics && this.vehicles.cars.includes(this.driver.car)) this.trafficBodies.keepCar(this.driver);
+      else this.driver.dispose();
       this.driver = null;
     }
     if (!this.oldPhysics || this.mode === 'foot') this.colliders.update(this.focus.x, this.focus.z);
     this.player.setWalking(this.mode === 'foot' && !this.falls.active.has(this.player));
     if (!this.oldPhysics) {
-      if (this.mode === 'car' && !this.driver) this.driver = new PlayerVehicle(this.physics, this.car);
+      if (this.mode === 'car' && !this.driver) this.driver = this.trafficBodies.takeCar(this.car) ?? new PlayerVehicle(this.physics, this.car);
       if (this.car?.physicsTeleport && this.driver) {
         this.driver.teleport();
         this.car.physicsTeleport = false;
+      }
+    }
+    if (!this.oldPhysics) for (const h of this.helis) {
+      const near = h === this.heli || Math.hypot(h.x - this.focus.x, h.z - this.focus.z) <= 150;
+      if (near && this.colliders.tiles.has(this.world.chunkIndex(h.x, h.z))) {
+        if (!h.physical) h.physical = new HelicopterBody(this.physics, h);
+      } else if (h.physical) {
+        h.physical.dispose();
+        h.physical = null;
       }
     }
     this.trafficBodies.update(this, dt);
@@ -737,6 +801,18 @@ export class Game {
       this.onCrash(this.driver.car, impact, other);
     }
 
+    if (this.car?.floodTime >= 4) this._exitCar();
+    for (const car of this.water.sunk) {
+      if (p.lastCar === car) {
+        p.lastCar = null;
+        this.hud.toast('Auto se potopilo.', 'bad');
+      }
+      if (car === this.garage.active) car.health = 0;
+      this.vehicles.remove(car);
+      this.save();
+    }
+    this.water.sunk.clear();
+
     // pohyb podle režimu
     if (this.mode === 'foot') {
       if (this.fallDamage > 0) {
@@ -749,7 +825,7 @@ export class Game {
       car.reverseTime = car.speed < -1 ? (car.reverseTime || 0) + dt : 0;
       if (this.oldPhysics) this.vehicles.stepDynamic(car, dt, input.moveY, input.moveX, input.handbrake);
       this.waterTimer -= dt;
-      if (this.waterTimer <= 0) {
+      if (this.oldPhysics && this.waterTimer <= 0) {
         this.waterTimer = 0.3;
         const w = this.world;
         if (car.y < w.heightAt(car.x, car.z) + 0.8 && !car.air && w.isWater(car.x, car.z) && !w.onRoad(car.x, car.z, 2.5)) {
@@ -761,22 +837,21 @@ export class Game {
           this.mode = 'foot'; this.focus = p; p.place(x, z); p.mesh.visible = true;
         }
       }
-    } else if (this.mode === 'heli') {
+    } else if (this.mode === 'heli' && this.oldPhysics) {
       const lift = (input.handbrake ? 1 : 0) - (input.down ? 1 : 0) + (IS_TOUCH && input.touchDrive ? input.moveY : 0);
       const impact = this.heli.update(dt, IS_TOUCH && input.touchDrive ? 0 : input.moveY, input.moveX, clamp(lift, -1, 1));
       if (impact > 0) { this.audio.crash(impact, this.heli); this._hurt(impact * 3); }
     }
-    for (const h of this.helis) if (h !== this.heli) h.update(dt, 0, 0, 0);
+    if (this.oldPhysics) for (const h of this.helis) if (h !== this.heli) h.update(dt, 0, 0, 0);
 
     // svět
     const onFoot = this.mode === 'foot';
-    this.transit.update(dt, this.focus, this.vehicles.cars, onFoot, this.clock, input);
     const obs = this.vehicles.obstacles;
     obs.length = 0;
     for (const o of this.transit.obstacles) obs.push(o);
     if (onFoot) obs.push(p);
     // stojící vrtulníky jsou pro auta pevná překážka
-    const heavy = this.transit.heavy;
+    const heavy = this.transit.heavy.slice();
     for (const h of this.helis) {
       if (!h.landed) continue;
       obs.push(h);

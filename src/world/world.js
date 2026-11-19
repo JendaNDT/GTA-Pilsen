@@ -63,6 +63,7 @@ export class World {
       }
     }
     this._initGraph();
+    this.busContraflow = new Set(data.meta.traffic?.busContraflow);
     this.turns = new TurnRules(this, data.meta.traffic?.restrictions);
     this.traffic = new Traffic(this, data.meta.traffic);
     this._initLand(data.land);
@@ -658,6 +659,7 @@ export class World {
       }
     }
     this.rPieces = pieces;
+    this.maxRoadHalfWidth = R.w.reduce((maximum, width, i) => R.cls[i] <= DRIVABLE_MAX ? Math.max(maximum, width / 2) : maximum, 0);
 
     // mřížka úseků pro hledání nejbližší silnice
     const cnt = new Uint32Array(this.gcols * this.grows + 1);
@@ -740,6 +742,29 @@ export class World {
     return this.heightAt(x, z) + SURF;
   }
 
+  /** Zahrnuje celou šířku všech překrývajících se vozovek v téže výšce. */
+  onCarriageway(x, z, y) {
+    const range = this.maxRoadHalfWidth;
+    const minCol = Math.max(0, Math.floor((x - range - this.minX) / COLL_CELL));
+    const maxCol = Math.min(this.gcols - 1, Math.floor((x + range - this.minX) / COLL_CELL));
+    const minRow = Math.max(0, Math.floor((z - range - this.minZ) / COLL_CELL));
+    const maxRow = Math.min(this.grows - 1, Math.floor((z + range - this.minZ) / COLL_CELL));
+    for (let row = minRow; row <= maxRow; row++) for (let col = minCol; col <= maxCol; col++) {
+      const cell = row * this.gcols + col;
+      for (let j = this.segCellStart[cell]; j < this.segCellStart[cell + 1]; j++) {
+        const k = this.segCellItems[j], road = this.roadOfPt[k];
+        if (this.r.cls[road] > DRIVABLE_MAX) continue;
+        const ax = this.rpx[k], az = this.rpz[k], dx = this.rpx[k + 1] - ax, dz = this.rpz[k + 1] - az;
+        const length2 = dx * dx + dz * dz;
+        const t = length2 ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / length2)) : 0;
+        const px = ax + t * dx, pz = az + t * dz;
+        if ((px - x) ** 2 + (pz - z) ** 2 <= (this.r.w[road] / 2) ** 2 &&
+            Math.abs(this.roadSurfaceY(road, k, t, px, pz) - y) < 2.5) return true;
+      }
+    }
+    return false;
+  }
+
   /** Je bod na vozovce / cestě? (s tolerancí) */
   onRoad(x, z, extra = 0.5) {
     const r = this.nearestRoad(x, z, 14, 99, 0, this._tmpRoad || (this._tmpRoad = {}));
@@ -797,6 +822,16 @@ export class World {
     this.eFrom = Uint32Array.from(eFrom); this.eTo = Uint32Array.from(eTo);
     this.eA = Uint32Array.from(eA); this.eB = Uint32Array.from(eB);
     this.eLen = Float32Array.from(eLen); this.eRoad = Uint32Array.from(eRoad);
+    this.junctionArms = new Uint16Array(nN);
+    this.junctionHalfWidth = new Float32Array(nN);
+    for (let e = 0; e < nE; e++) {
+      if (eA[e] >= eB[e]) continue;
+      const half = R.w[eRoad[e]] / 2;
+      for (const node of [eFrom[e], eTo[e]]) {
+        this.junctionArms[node]++;
+        this.junctionHalfWidth[node] = Math.max(this.junctionHalfWidth[node], half);
+      }
+    }
     const outStart = new Uint32Array(nN + 1);
     for (let e = 0; e < nE; e++) outStart[this.eFrom[e] + 1]++;
     for (let i = 1; i <= nN; i++) outStart[i] += outStart[i - 1];
@@ -839,6 +874,20 @@ export class World {
       if (this.eTo[f] === a && this.eA[f] === B && this.eB[f] === A) return f;
     }
     return -1;
+  }
+
+  /** Zda by parkování u kraje této silnice zabralo místo potřebné pro odbočení. */
+  blocksStreetCorner(edge, x, z, yaw, length, width) {
+    if (edge < 0) return false;
+    const fx = Math.sin(yaw), fz = Math.cos(yaw);
+    for (const node of [this.eFrom[edge], this.eTo[edge]]) {
+      if (this.junctionArms[node] < 3) continue;
+      const dx = this.nodeX[node] - x, dz = this.nodeZ[node] - z;
+      const along = Math.max(0, Math.abs(dx * fx + dz * fz) - length / 2);
+      const across = Math.max(0, Math.abs(dx * fz - dz * fx) - width / 2);
+      if (Math.hypot(along, across) < this.junctionHalfWidth[node] + 5) return true;
+    }
+    return false;
   }
 
   roadSpeed(road, forward) {
@@ -1048,6 +1097,7 @@ export class World {
   _initRails(R) {
     const n = R.header.count;
     this.rails = [];
+    this.tramTracks = [];
     const lists = new Array(this.cols * this.rows);
     for (let i = 0; i < n; i++) {
       const cnt = R.start[i + 1] - R.start[i] + 1;
@@ -1072,11 +1122,47 @@ export class World {
         for (let k = 0; k < cnt; k++) rail.y[k] = R.bridgeY[bo + k] * 0.02;
       }
       this.rails.push(rail);
+      if (rail.cls === 0) {
+        let minX = pts[0], maxX = minX, minZ = pts[1], maxZ = minZ;
+        for (let k = 2; k < pts.length; k += 2) {
+          minX = Math.min(minX, pts[k]); maxX = Math.max(maxX, pts[k]);
+          minZ = Math.min(minZ, pts[k + 1]); maxZ = Math.max(maxZ, pts[k + 1]);
+        }
+        this.tramTracks.push({ rail, minX, maxX, minZ, maxZ });
+      }
       const mid = (cnt >> 1) * 2;
       const ci = this.chunkIndex(pts[mid], pts[mid + 1]);
       if (ci >= 0) (lists[ci] || (lists[ci] = [])).push(i);
     }
     this.railChunks = lists;
+  }
+
+  /** Zda by zaparkovaná karoserie zasahovala do průjezdného prostoru tramvaje. */
+  blocksTramTrack(x, z, y, yaw, length, width) {
+    const fx = Math.sin(yaw), fz = Math.cos(yaw);
+    const reach = Math.hypot(length, width) / 2 + 1.7;
+    for (const { rail, minX, maxX, minZ, maxZ } of this.tramTracks) {
+      if (x < minX - reach || x > maxX + reach || z < minZ - reach || z > maxZ + reach) continue;
+      const p = rail.pts;
+      for (let i = 2; i < p.length; i += 2) {
+        const ax = p[i - 2] - x, az = p[i - 1] - z, dx = p[i] - p[i - 2], dz = p[i + 1] - p[i - 1];
+        const length2 = dx * dx + dz * dz;
+        if (!length2) continue;
+        const t = Math.max(0, Math.min(1, -(ax * dx + az * dz) / length2));
+        const ox = ax + t * dx, oz = az + t * dz;
+        if (ox * ox + oz * oz > reach * reach) continue;
+        const k = i / 2 - 1;
+        const railY = rail.y ? rail.y[k] + t * (rail.y[k + 1] - rail.y[k]) : this.heightAt(x + ox, z + oz);
+        if (Math.abs(railY - y) >= 2.5) continue;
+        // Průměty na osy karoserie a na kolmici ke koleji. Započtena je i šířka tramvaje.
+        const along = dx * fx + dz * fz, across = dx * fz - dz * fx;
+        if (Math.abs(ax * fx + az * fz + along / 2) > length / 2 + Math.abs(along) / 2 + 1.7 ||
+            Math.abs(ax * fz - az * fx + across / 2) > width / 2 + Math.abs(across) / 2 + 1.7) continue;
+        if (Math.abs(ax * dz - az * dx) <=
+            (length * Math.abs(across) + width * Math.abs(along)) / 2 + 1.7 * Math.sqrt(length2)) return true;
+      }
+    }
+    return false;
   }
 
   _initTrees(T) {

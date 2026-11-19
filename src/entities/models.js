@@ -172,7 +172,11 @@ function carGeometry(type) {
     det.box(wid * 1.005, 0.16, len * 0.62, 0, ride + bodyH * 0.55, 0, lin(0x1e56b3));
     det.box(wid * 1.01, 0.05, len * 0.62, 0, ride + bodyH * 0.55, 0, lin(0xd8d820));
   }
-  g = { body: body.geometry(), detail: det.geometry(), wheelR };
+  const hazards = new Parts(SURFACE.lamp);
+  for (const side of [-1, 1]) for (const end of [-1, 1]) {
+    hazards.box(0.14, 0.12, 0.08, side * wid * 0.42, ride + bodyH * 0.73, end * len * 0.495, [1, 0.38, 0.01]);
+  }
+  g = { body: body.geometry(), detail: det.geometry(), hazards: hazards.geometry(), wheelR };
   carGeo.set(type.id, g);
   return g;
 }
@@ -198,7 +202,10 @@ export function makeCarMesh(typeId, colorHex) {
   const body = new THREE.Mesh(g.body, getBodyMaterial(type.police ? 0xdfe3e6 : type.sign ? 0xe0b020 : colorHex));
   const detail = new THREE.Mesh(g.detail, getDetailMaterial());
   body.castShadow = true; detail.castShadow = true;
-  group.add(body, detail);
+  const hazards = new THREE.Mesh(g.hazards, getDetailMaterial());
+  hazards.visible = false;
+  group.userData.hazards = hazards;
+  group.add(body, detail, hazards);
   if (QUALITY.carLights) addCarLight(group, type);
   if (type.police) {
     if (!beaconGeo) beaconGeo = new THREE.BoxGeometry(0.34, 0.12, 0.24);
