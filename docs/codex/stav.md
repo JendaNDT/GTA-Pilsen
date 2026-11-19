@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Uložené hry na rozbaleném webu 0.2.0
+
+Chromium 159 na stejné adrese ověřilo přechod z vydání E12 i z posledního sestavení E25 do rozbaleného webového ZIPu a zpět. Po návratu obě starší verze načetly 4 085 Kč, dva objevy, sedm doručení a hatchback s upravenými brzdami a pneumatikami. E25 načetla také znečištění 0,5, poškození levých dveří 0,4 a jasné počasí. [Otisk webového ZIPu a postup obnovy](../E26.md)
+
 ## Kandidát se vstupy ve výšce chodníku
 
 Po opravě E25 se mezi 785 chráněnými soubory změnily tři uliční úseky a jejich katalog. Produkční web měl na Node.js 20.19.0, 22.12.0 a 24.22.1 všech 815 souborů shodných po bajtech. Prošlo 179 testů JavaScriptu a 27 testů Pythonu. Při rozbalení webového ZIPu prošlo porovnání každého souboru s tímto sestavením. Úplná prohlížečová sada začala na produkčním náhledu a obsahuje 352 případů včetně fiktivní zkušebny vybavení na obou vykreslovačích. Dlouhá jízda, výsledky celé sady a měření na cílových zařízeních jsou otevřené. [Protokol E26](../E26.md)
