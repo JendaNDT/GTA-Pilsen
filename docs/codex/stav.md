@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Sestavení z archivu po přidání vstupů
+
+S údaji o vstupech z E25 se změnily otisky tří úseků a jejich společného katalogu. Generátor vydání dal po opakování totožný manifest. Prošlo 178 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. Z předběžného zdrojového ZIPu se podařilo pomocí místní mezipaměti npm sestavit celý web znovu. Všech 815 souborů má stejný SHA-256 jako v předběžném webovém ZIPu. Návrat k nádraží po pozdrženém požadavku a odjezdu prošel na WebGL 2 i WebGPU. Konečné archivy a celkový výsledek zkoušek zůstávají otevřené. [Protokol E26](../E26.md)
+
 ## Otisky vydání a obnova z E25
 
 Manifest obsahuje 785 souborů a chrání také seznam střech používaný fyzikou. Na WebGL 2 i WebGPU prošla zkouška chybějící textury a pozměněné tabulky barev. V obou vykreslovačích vzniklo hratelné původní město i při současné chybě 404 čtyř katalogů nebo po přidání jediného bajtu do každého z nich. Prošlo všech 176 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. Samostatné porovnání kandidáta na třech verzích Node.js je v protokolu.
