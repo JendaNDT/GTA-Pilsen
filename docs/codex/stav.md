@@ -13,6 +13,10 @@ Větev `etapa/E21` navazuje na E20 sloučenou revizí `623e081`. [Zadání E21](
 | 7. Částice | Hotovo. Prošla kontrola výpočtu na WebGPU i náhradního výpočtu na WebGL 2. |
 | 8. Závěrečné ověření | Probíhají závěrečné prohlížečové zkoušky. Snímky a měření ze softwarového vykreslovače jsou v protokolu. Měření na autorově počítači je otevřené. |
 
+### Hodiny po opětovném načtení hry
+
+Chromium 159 na WebGPU ověřilo změnu času na 09:15, přepočet jízdního řádu, opětovné načtení hry i návrat k aktuálnímu času v Plzni. Stejná zkouška už prošla na WebGL 2. Test při načítání nyní vypíše chybu startu hry a respektuje čas přidělený prohlížečové zkoušce. Prošlo 128 testů JavaScriptu a všech 741 souborů nového produkčního sestavení se po bajtech shodovalo s webem, nad kterým běží zkoušky. Při kontrole materiálů na WebGPU vrátilo kopírování prezentačního plátna černé pixely. Pokračuje ověření čtení přímo z vykreslené textury.
+
 ### Doprava, směny a doručování
 
 Na WebGL 2 prošla kolona na Tylově, změna provozu ve špičce, přestup z tramvaje na autobus, trolejbus 49 i víkendová noční linka. Prošly také čtyři zkoušky zakázek včetně rozvozu s pěším předáním a přestupu s doručením. Při minutě hraní na softwarovém WebGL 2 vykázal Mesa llvmpipe 19 dokončených snímků v měřicím okně při požadavku více než 30. Starší běh se SwiftShaderem vykázal 11. Sada zachovává původní mez. Zbývající zkoušky běží na WebGPU.
