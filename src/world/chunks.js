@@ -7,6 +7,7 @@ import * as THREE from 'three/webgpu';
 import { hash } from './hash.js';
 import { streetLamps } from './lamps.js';
 import { railingFaces } from '../physics/railings.js';
+import { Grass } from './grass.js';
 import { vegetationBatch } from './vegetation.js';
 import { treeType } from './tree-models.js';
 import { waterTile } from './water.js';
@@ -1537,6 +1538,7 @@ export class ChunkManager {
     }
     this.density = buildDensity(world);
     this.landIndex = buildLandIndex(world, this.districts);
+    this.grass = QUALITY.grassRadius ? new Grass(this, QUALITY.grassRadius) : null;
     this.roadVerge = new Uint8Array(world.rCount);
     for (let i = 0; i < world.rCount; i++) {
       if (world.r.cls[i] < RC.PRIMARY || world.r.cls[i] > RC.LIVING) continue;
@@ -1562,6 +1564,8 @@ export class ChunkManager {
   }
 
   applyQuality() {
+    this.grass?.dispose();
+    this.grass = QUALITY.grassRadius ? new Grass(this, QUALITY.grassRadius) : null;
     for (const chunk of this.chunks.values()) this._dispose(chunk);
     this.chunks.clear();
     this.asphaltMat.dispose();
@@ -1813,6 +1817,7 @@ export class ChunkManager {
       ch.tex = tex; ch.texSize = rebake[3];
       ch.terrainMat.map = tex;
     }
+    this.grass?.update(x, z, y, budget);
     this.pending = pending;
     this.pendingStart = Math.max(0, pendingStart);    // kolik kroků zbývá, než jde hrát (terén všude + okolí hotové)
     return done;

@@ -786,7 +786,7 @@ export class World {
   }
 
   /** Zahrnuje celou šířku všech překrývajících se vozovek v téže výšce. */
-  onCarriageway(x, z, y, padding = 0) {
+  onCarriageway(x, z, y, padding = 0, maxClass = DRIVABLE_MAX) {
     const range = this.maxRoadHalfWidth + padding;
     const minCol = Math.max(0, Math.floor((x - range - this.minX) / COLL_CELL));
     const maxCol = Math.min(this.gcols - 1, Math.floor((x + range - this.minX) / COLL_CELL));
@@ -796,7 +796,7 @@ export class World {
       const cell = row * this.gcols + col;
       for (let j = this.segCellStart[cell]; j < this.segCellStart[cell + 1]; j++) {
         const k = this.segCellItems[j], road = this.roadOfPt[k];
-        if (this.r.cls[road] > DRIVABLE_MAX) continue;
+        if (this.r.cls[road] > maxClass) continue;
         const ax = this.rpx[k], az = this.rpz[k], dx = this.rpx[k + 1] - ax, dz = this.rpz[k + 1] - az;
         const length2 = dx * dx + dz * dz;
         const t = length2 ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / length2)) : 0;

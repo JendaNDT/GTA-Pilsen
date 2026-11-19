@@ -28,6 +28,12 @@ Prošlo 154 jednotkových testů a produkční sestavení. Syntetická řeka ov�
 
 Sestavení atlasu a převod mapových značek se po opakování shodovaly po bajtech. Atlas má 96 KiB a mapa olistění 106 KiB. Prošlo 156 jednotkových testů JavaScriptu, produkční sestavení a 24 z 25 zkoušek Pythonu. Jedna kontrola vyžaduje úplný archiv městských objektů. Ve WebGL 2 i WebGPU prošlo vykreslení lesa poblíž Dobříva, výměna obou úrovní detailu a zachování polohy překážek při změně data na leden.
 
+## G15 · Tráva zblízka
+
+V parcích, na loukách a v travních plochách se kolem hráče vytvářejí trsy čtyř stébel. Jejich rozmístění je stálé při odchodu a návratu. Hustota závisí na třídě plochy a zelené složce dostupného ortofota. Výběr vynechává vodu, budovy i celou šířku cest a silnic ve stejné výšce. Vrcholy stébel rozhýbává vítr. Dosah je 30 m na střední, 50 m na vysoké a 80 m na ultra předvolbě. Nízká předvolba trsy nevytváří.
+
+Prošlo 157 jednotkových testů a produkční sestavení. Zkoušky na WebGL 2 a WebGPU našly skutečný městský park, vykreslily jeho trsy a prověřily polohu každého trsu vůči cestám a budovám. Po přesunu pohledu 100 m nad terén tráva zmizela. Rozpočet vykreslování se změří společně s ostatními efekty na konci etapy.
+
 ## Výchozí etapa E22
 
 Ve větvi `etapa/E22` jsou převedené městské objekty, ověřený Wilsonův most i tři dávky zdí a pilířů. Hra používá další dvě lávky, silniční desku, dvě železniční mostovky a čtyři díly jezů. Vývoj a dostupné přejímací kontroly E22 jsou dokončené. Zůstává porovnání s autorovými fotografiemi a změření plynulosti na jeho zařízení. [Protokol E22](../E22.md). [Zadání E22](E22.md) · [Výsledky převodu a pilotu](#e22--převod-a-inventura)
