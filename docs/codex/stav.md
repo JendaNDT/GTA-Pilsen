@@ -4,9 +4,11 @@ E23 vychází z dokončené větve E22 (`496a72d`). Prvním krokem je detail zem
 
 ## G11 · Detail terénu
 
-První commit přidává dva atlasy se šesti povrchy. Rozpracovaný herní materiál v pracovní kopii používá masku po čtyřech metrech, přechod mezi 80 a 120 m a tři projekce na svazích nad 35°. Nízká předvolba na WebGPU prošla. Při ověření střední předvolby hlásil WebGPU chybu kompilace materiálu. Dokončení a ověření vykreslení pokračuje v této větvi.
+Dva atlasy obsahují šest fotografických povrchů včetně normálových map z Poly Haven (CC0). Na střední až ultra předvolbě se mísí s původní barvou země. Čtyřmetrová maska respektuje otvory v polygonech, vodu i pořadí překrývajících se tříd. Detail slábne od 80 do 120 m od kamery. Svahy nad 35° používají tři projekce. Nízká předvolba používá původní materiál a atlasy nestahuje.
 
-Všechny zdrojové fotografie i normálové mapy mají ověřený otisk. Dva převody a distribuované soubory se shodují po bajtech. Zdrojové odkazy jsou v převodním seznamu, licence CC0 je v README i v nabídce O hře. Výsledkem jsou dva soubory WebP o souhrnné velikosti přibližně 3,7 MiB. Prošlo místní produkční sestavení a 25 testů Pythonu.
+Otisky všech 12 zdrojových souborů jsou v převodním seznamu a dva převody se po bajtech shodují s distribuovanými atlasy o souhrnné velikosti přibližně 3,7 MiB. Licence je v README i v nabídce O hře. Prošlo 151 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. Na střední předvolbě byla nalezena rekurze při čtení normály upravovaného materiálu. Detail nyní používá výchozí normálu geometrie. Opakované vykreslení prošlo na WebGPU i WebGL 2 a na WebGPU prošla také nízká předvolba bez požadavků na nové textury.
+
+Rozdíl po přenosu atlasů zachycují dva snímky ze stejného místa a zastavené kamery. Dalším krokem je G12, povrch vozovky a mokrý asfalt. [Původní svah](../E23/teren-pred.jpg) · [Svah s detailem](../E23/teren-po.jpg)
 
 ## Výchozí etapa E22
 

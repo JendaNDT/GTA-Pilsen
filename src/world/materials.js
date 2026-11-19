@@ -4,6 +4,7 @@ import {
   attribute, Discard, Fn, If, Loop, float, materialColor, materialReference, mix, positionLocal, positionWorld, reflect, renderGroup,
   smoothstep, struct, transformNormalToView, uniform, vec2, vec3, vec4, vertexColor,
 } from 'three/tsl';
+import { terrainDetailNodes } from './terrain-detail.js';
 import { buildingNodes } from './building-nodes.js';
 import { SURFACE } from './material-table.js';
 import { hash21, valueNoise } from './material-noise.js';
@@ -112,8 +113,8 @@ function addPaving(landColor, profile, local, worldPosition, noise, detail) {
 // Texturu i souřadnice portálů síť bere z právě vykreslované dlaždice.
 const terrainNodes = new Map();
 const terrainSurface = struct({ color: 'vec3', glint: 'float', roughness: 'float' });
-function getTerrainNodes(paving, detail, portalCount) {
-  const key = `${paving}/${detail}/${portalCount}`;
+function getTerrainNodes(paving, detail, portalCount, terrainDetail) {
+  const key = `${paving}/${detail}/${portalCount}/${terrainDetail}`;
   const cached = terrainNodes.get(key);
   if (cached) return cached;
 
@@ -121,12 +122,14 @@ function getTerrainNodes(paving, detail, portalCount) {
   const portalAxes = materialReference('portalAxes', 'vec4');
   const portalProfiles = materialReference('portalProfiles', 'vec3');
   const profile = PAVING[paving];
+  const close = terrainDetail ? terrainDetailNodes(env.cam) : null;
   const surface = Fn(() => {
     const point = positionWorld.xz.toVar();
     const sample = vec4(map).toVar();
     const land = sample.a.clamp(0, 1).toVar();
     const noise = groundNoise(point);
     const landColor = sample.rgb.div(land.max(0.06)).mul(noise.gain).toVar();
+    if (close) landColor.mulAssign(close.gain);
     const earth = landColor.r.sub(landColor.g).mul(4).saturate();
     const roughness = mix(SURFACE.grass.roughness, SURFACE.soil.roughness, earth).toVar();
     if (profile) {
@@ -183,6 +186,7 @@ function getTerrainNodes(paving, detail, portalCount) {
     return spec.add(vec3(0.27, 0.16, 0.080).mul(lampGlow));
   })();
   const nodes = { colorNode, emissiveNode, roughnessNode: surface.get('roughness') };
+  if (close) nodes.normalNode = close.normal;
   terrainNodes.set(key, nodes);
   return nodes;
 }
@@ -205,8 +209,9 @@ export function makeMillraceMaterial(detail) {
 }
 
 /** Materiál terénu jedné dlaždice (textura země s vodou v průhlednosti). */
-export function makeTerrainMaterial(tex, portals = [], paving = 0, detail = false) {
-  const mat = makeSurfaceMaterial(SURFACE.grass, { map: tex, ...getTerrainNodes(paving, detail, portals.length) });
+export function makeTerrainMaterial(tex, portals = [], paving = 0, detail = false, mask = null) {
+  const mat = makeSurfaceMaterial(SURFACE.grass, { map: tex, ...getTerrainNodes(paving, detail, portals.length, Boolean(mask)) });
+  if (mask) mat.terrainClasses = mask;
   if (portals.length) {
     mat.portalAxes = portals.map((p) => new THREE.Vector4(p.x, p.z, p.dx, p.dz));
     mat.portalProfiles = portals.map((p) => new THREE.Vector3(p.y, p.slope, p.width));
