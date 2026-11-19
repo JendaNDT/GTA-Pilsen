@@ -46,6 +46,10 @@ Na suché polní cestě a v trávě se od zadních kol zvedá prach. Na mokré v
 
 Prošlo 160 jednotkových testů a produkční sestavení. Oba vykreslovače ověřily vznik částic od kol, zastavení emise ve vzduchu i společný rozpočet. WebGPU přečetl výslednou polohu z výpočetního bufferu, WebGL 2 ověřil stejný výpočet na CPU. Závěrečné ověření E23 zahrnuje rozpočet všech předvoleb, referenční pohledy a měření výkonu.
 
+## Měření po G17
+
+Všechny čtyři předvolby dokončily pět vykreslení u Wilsonova mostu ve dne a na náměstí v noci. Protokol obsahuje mediány, počty volání a trojúhelníků a dva snímky vysoké předvolby. Na konečném kódu prošlo všech 25 testů Pythonu včetně městského archivu. Úplný test rozpočtu běží odděleně v rozlišení 1280 × 720. Na ultra překročilo vyhodnocení referenčního pohledu 25 minut na sdíleném softwarovém adaptéru. Ostatní výsledky ještě nejsou uzavřeny. [Protokol E23](../E23.md)
+
 ## Výchozí etapa E22
 
 Ve větvi `etapa/E22` jsou převedené městské objekty, ověřený Wilsonův most i tři dávky zdí a pilířů. Hra používá další dvě lávky, silniční desku, dvě železniční mostovky a čtyři díly jezů. Vývoj a dostupné přejímací kontroly E22 jsou dokončené. Zůstává porovnání s autorovými fotografiemi a změření plynulosti na jeho zařízení. [Protokol E22](../E22.md). [Zadání E22](E22.md) · [Výsledky převodu a pilotu](#e22--převod-a-inventura)

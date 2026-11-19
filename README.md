@@ -14,6 +14,7 @@ otevřených dat. Běží na počítači i na mobilu, bez instalace.
   tubusy tunelu Valík. Auta se naklánějí podle svahu, do kopce zpomalují. Pěšího hráče u okraje mostu zastaví zábradlí nebo historická kamenná zídka.
 - **Krajina mezi obcemi.** Na vybraných svazích a v údolích má terén hustší výškovou síť.
   Po celé mapě se střídají povrchy polí, luk, lesů, břehů a obcí podle mapových ploch.
+- **Roční období a noční město.** Druhy stromů se liší tvarem i podzimním listím. Voda pod Wilsonovým mostem proudí, na jezech se tvoří pěna a v noci lampy osvětlují okolí. [Snímky a měření E23](docs/E23.md)
 - **Kompletní síť PMDP.** Tramvaje, trolejbusy i denní a noční autobusy obsluhují 51 linek z vybraného
   jízdního řádu. V mapě najdeš jednotlivá stanoviště a u nich odjezdy s cílem spoje. Do vozu
   nastoupíš klávesou F u otevřených dveří. Tabule zohledňuje polohu viditelných vozů.
