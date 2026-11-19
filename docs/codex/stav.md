@@ -136,3 +136,9 @@ Prošlo 124 testů JavaScriptu, sestavení a pět cílených prohlížečových 
 ### Částice
 
 Jiskry při drhnutí kovu, střepy, prach a kouř z poškozeného motoru sdílejí jednu geometrii a rozpočet podle předvolby. Efekty lze vypnout v nastavení. Na WebGPU počítá polohy a velikosti výpočetní průchod TSL. Na WebGL 2 dělá stejný výpočet procesor. Prošlo 125 testů JavaScriptu a sestavení. Prohlížečová zkouška na obou vykreslovačích přečetla polohu a velikost střepu, ověřila jeho pohyb, zmenšování a zánik. Na WebGPU četla přímo výstup výpočetního průchodu. Výsledky jsou v `data-raw/e21/castice-{node,build,e2e}.log`.
+
+## E22 · Převod a inventura
+
+Samostatná pracovní větev začíná nad rozpracovanou E21. Oficiální archiv má otisk `825dc3e395044b1f5a47e27c812cc4189829e9134cc027865ffc8fcb3e7bb9ac`. Převod přečetl 614 záznamů, 602 ID a všech 12 315 ploch. Po sloučení totožných ploch uvnitř ID vytvořil 715 souvislých dílů. Z toho má 93 dílů totožnou geometrii jako jiný díl, jeden nemá použitelný trojúhelník a 621 čeká na prostorovou kontrolu. Každá zdrojová plocha je započtena.
+
+Dva úplné převody daly po bajtech shodné soubory `plochy.json`, `dily.json` a `inventura.tsv`. Výsledky jsou v `data-raw/structures/`. Na třech kontrolních bodech se převod do souřadnic hry shodl do pěti centimetrů s nezávislým výpočtem proj4js. Prošlo 128 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. Do běhu hry zatím měřené objekty nevstupují.
