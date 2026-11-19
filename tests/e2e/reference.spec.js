@@ -5,7 +5,7 @@ import { gameUrl } from './game-url.js';
 test.use({ viewport: reference.viewport, deviceScaleFactor: 1 });
 
 test('E15 – všech osm referenčních pohledů se vykreslí bez chyb', { tag: '@webgpu' }, async ({ page, baseURL }, info) => {
-  test.setTimeout(180_000);
+  test.setTimeout(Math.max(info.timeout, 180_000));
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => {
