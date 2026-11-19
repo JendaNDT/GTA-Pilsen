@@ -214,3 +214,11 @@ Třetí dávka přidává 142 zdí, osm pilířů a dvě protihlukové stěny. U
 Ve všech třech dávkách a pilotu hra načte 254 objektů v 59 dlaždicích. Základ má 811 308 bajtů. Dva převody i distribuované soubory jsou po bajtech shodné. Z celkem 715 zdrojových dílů má 257 stav „začleněn“ včetně tří půdorysů použitých při kalibraci Wilsonova mostu. Dalších 364 čeká na ověření, 93 sdílí geometrii a jeden postrádá použitelnou plochu.
 
 Prošlo 139 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. WebGPU ověřil načtení detailu a fyzickou horní hranu na dvou zdech ve třetím obvodu. Na WebGL 2 prošly také oddělené průjezdy Wilsonovým mostem v obou směrech bez poškození a oběma tubusy Valíku. Dvě zkoušky mimoúrovňových křížení ukončil časový limit při startu hry. [Zeď u ulice v obvodu Plzeň 3](../E22/obvod-3.jpg)
+
+### Porovnání mostů a první dvě lávky
+
+Kontrola prošla všech 42 městských dílů s mostní plochou. U 35 našla pět společných příčných řezů s alespoň jednou vyvýšenou herní cestou nebo kolejí. Kde se překrývá více cest, zpráva uchovává všechny možnosti. Sedm dílů nemá pět společných řezů. Šířka se měří pouze na souvislé ploše protínající zkoumanou osu. [Porovnání mostních ploch s herními trasami](../E22/mostni-rezy.tsv)
+
+U dvou přímých lávek je přiřazení jednoznačné. U herní cesty č. 1921 má deska po úpravě šířku 3,721 m, u cesty č. 1845 má 5,296 m. Obě se podle řezů posunuly příčně přibližně o 0,12 m. Viditelná konstrukce, okraje, herní výškový dotaz a kolize používají stejnou šířku a posun. Svislé rozdíly přibližně 1,6 m a 1,0 m zůstávají k ověření na navazujících pěších přístupech. U vstupů zůstává původní výška herního profilu.
+
+Ověření 26 krajních dílů proti průchozím objemům nenašlo průnik. Opakované sestavení i distribuovaná data se shodují po bajtech. Prošlo 141 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. Na WebGPU prošel hráč po obou lávkách v obou směrech u okrajů. Na konci každé trasy stál na mostovce. Na WebGL 2 prošel také opakovaný test úrovní v Bolevci a u Wenzigovy nad sestavením třetí dávky zdí.

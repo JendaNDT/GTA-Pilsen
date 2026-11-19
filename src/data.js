@@ -112,14 +112,19 @@ export async function loadStructureCore(search = globalThis.location?.search) {
     const roads = new Set();
     for (const bridge of index.bridges ?? []) {
       if (!Number.isSafeInteger(bridge.road) || bridge.road < 0 || roads.has(bridge.road) ||
-          ![bridge.halfWidth, bridge.railHeight].every(v => Number.isFinite(v) && v > 0) ||
-          ![bridge.shiftX, bridge.shiftZ, bridge.lift].every(Number.isFinite) ||
+          !Number.isFinite(bridge.halfWidth) || bridge.halfWidth <= 0 ||
+          ![bridge.shiftX, bridge.shiftZ, bridge.lift].every(Number.isFinite)) return null;
+      roads.add(bridge.road);
+      if (bridge.kind === 'plan') {
+        if (bridge.lift !== 0 || bridge.strips !== undefined || bridge.archStops !== undefined) return null;
+        continue;
+      }
+      if (bridge.kind !== undefined || !Number.isFinite(bridge.railHeight) || bridge.railHeight <= 0 ||
           !Array.isArray(bridge.archStops) || bridge.archStops.length !== 3 ||
           !bridge.archStops.every((v,i,a) => Number.isFinite(v) && v >= 0 && v <= 1 && (!i || v > a[i-1])) ||
           !Array.isArray(bridge.strips) || !bridge.strips.length ||
           !bridge.strips.every(s => Array.isArray(s) && s.length === 6 && s.every(Number.isFinite) &&
             s[3] > s[0] && s[2] >= s[1] && s[5] >= s[4])) return null;
-      roads.add(bridge.road);
     }
     const positions = checkedPositions(buffer, index.hash, index.version);
     if (!positions) return null;

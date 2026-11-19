@@ -87,3 +87,45 @@ test('E22 – kamera zaparkovaného vozu se u nízkého pohledu zastaví před k
   expect(result.near).toBeLessThan(1);
   expect(result.high).toBeGreaterThan(2);
 });
+
+test('E22 – dvě měřené lávky mají průchozí okraje a zachovávají výšku přístupů @webgpu', async ({page}) => {
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0'));
+  await page.waitForFunction(() => window.__ready);
+  const walks = await page.evaluate(() => {
+    const {world:w,player,colliders} = __game;
+    const walks = [];
+    for (const road of [1921,1845]) {
+      const model = w.deckCalibrations.get(road);
+      if (model?.kind !== 'plan') throw Error('Chybí půdorys lávky.');
+      const a = w.rOff[road], b = w.rOff[road+1]-1, dx = w.rpx[b]-w.rpx[a], dz = w.rpz[b]-w.rpz[a];
+      const length = Math.hypot(dx,dz), ux = dx/length, uz = dz/length;
+      const original = w.r.bridgeOff[road];
+      const ends = [Math.abs(w.rpy[a]-w.r.bridgeY[original]*0.02),Math.abs(w.rpy[b]-w.r.bridgeY[original+1]*0.02)];
+      for (const sign of [-1,1]) {
+        const offset = sign*(w.deckHalfWidth(road)-0.64);
+        const fraction = sign > 0 ? 1/length : 1-1/length;
+        const x = w.rpx[a]+fraction*dx+model.shiftX-offset*uz;
+        const z = w.rpz[a]+fraction*dz+model.shiftZ+offset*ux;
+        for (let n=0;n<25;n++) colliders.update(x,z);
+        player.place(x,z,w.rpy[a]+(w.rpy[b]-w.rpy[a])*fraction);
+        let progress = 0, drift = 0, swimming = false;
+        for (let n=0;n<60*length && progress<length-2;n++) {
+          player.update(1/60,sign*ux,sign*uz,false,false);
+          const rx = player.x-x, rz = player.z-z;
+          progress = sign*(rx*ux+rz*uz);
+          drift = Math.max(drift,Math.abs(rx*uz-rz*ux));
+          swimming ||= player.swimming;
+        }
+        walks.push({road,ends,progress,length,drift,swimming,grounded:player.grounded});
+      }
+    }
+    return walks;
+  });
+  for (const walk of walks) {
+    expect(Math.max(...walk.ends)).toBeLessThan(0.001);
+    expect(walk.progress,JSON.stringify(walk)).toBeGreaterThanOrEqual(walk.length-2);
+    expect(walk.drift).toBeLessThan(0.45);
+    expect(walk.swimming).toBe(false);
+    expect(walk.grounded).toBe(true);
+  }
+});

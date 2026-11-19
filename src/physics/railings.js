@@ -125,7 +125,7 @@ export function exteriorBridgeEdges(world, paths) {
     entries.push(edge);
   }
   for (const [index, entry] of paths.entries()) {
-    if (entry.survey) {
+    if (entry.survey?.strips) {
       measuredEdges(entry, put);
       continue;
     }

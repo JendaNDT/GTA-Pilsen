@@ -5,6 +5,8 @@ import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
 import { Vector3 } from 'three/webgpu';
 import { selectDistricts } from './district_structures.mjs';
 import { indexTriangles } from './static_structures.mjs';
+import { loadStructureMap } from './audit_structures.mjs';
+import { checkPlanEdges, planCalibration, surveyBridges } from './survey_bridges.mjs';
 import { calibrateBridge } from './calibrate_bridge.mjs';
 import { assetFingerprint, parsePack } from '../src/data.js';
 import { structureSurface } from './build_structures.mjs';
@@ -14,7 +16,7 @@ const [dir = 'data-raw/structures', output = 'data-raw/kandidat/detail/structure
 const json = file => JSON.parse(fs.readFileSync(file));
 const {parts, source} = json(path.join(dir, 'dily.json'));
 const {sources, reports} = json(path.join(dir, 'kontroly.json'));
-const {parts: overrides, bridges: choices, districts = []} = json('tools/structure-overrides.json');
+const {parts: overrides, bridges: choices, footbridges = [], districts = []} = json('tools/structure-overrides.json');
 const meta = json('public/data/meta.json');
 const tiles = new Map(), chunk = 256;
 const minX = Math.floor(meta.bounds.minX / chunk) * chunk, minZ = Math.floor(meta.bounds.minZ / chunk) * chunk;
@@ -59,6 +61,15 @@ const bridges = choices.map(choice => {
   for (const id of [choice.deck, ...choice.rails]) calibrationReasons.set(id, choice.reason);
   return calibrateBridge(choice, byId, roads);
 });
+if (footbridges.length) {
+  const {world} = await loadStructureMap('public/data');
+  const rows = await surveyBridges(parts,world);
+  for (const choice of footbridges) {
+    bridges.push(planCalibration(choice,rows,world));
+    calibrationReasons.set(choice.deck,choice.reason);
+  }
+  await checkPlanEdges(world,bridges,'public/data');
+}
 const excluded = new Set([...accepted,...calibrationReasons.keys()]);
 const districtData = await selectDistricts(parts, reportsById, {size:chunk,x:minX,z:minZ},
   json('public/detail/city/index.json').districts, districts, excluded, 'public/data', bridges);

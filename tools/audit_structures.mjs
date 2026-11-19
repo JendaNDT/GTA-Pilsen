@@ -47,7 +47,7 @@ function gridCells(minX, minZ, maxX, maxZ, visit) {
   }
 }
 
-async function gameData(dir, bridges) {
+export async function loadStructureMap(dir, bridges) {
   globalThis.window ??= {};
   globalThis.location ??= { search: '' };
   globalThis.matchMedia ??= () => ({ matches: false });
@@ -236,7 +236,7 @@ export function hullContainsCorridorCenter(triangles, inside, c) {
 }
 
 export async function audit(parts, mapDir, calibrations) {
-  const { world, sources, stops } = await gameData(mapDir, calibrations);
+  const { world, sources, stops } = await loadStructureMap(mapDir, calibrations);
   const { RC, RF, DRIVABLE_MAX } = await import('../src/config.js');
   const area = new Box3(),
     v = new Vector3(),
