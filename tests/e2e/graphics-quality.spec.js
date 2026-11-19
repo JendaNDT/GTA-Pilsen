@@ -14,7 +14,8 @@ test('E17 – volba v nastavení přepne grafiku ve stejné hře a uloží ji', 
   await page.evaluate(() => { window.originalGame = window.__game; });
   await page.getByRole('button', { name: 'Nastavení' }).click();
   await page.getByLabel('Kvalita grafiky').selectOption('low');
-  await expect(page.getByLabel('Kvalita grafiky')).toBeEnabled({ timeout: 30_000 });
+  await page.waitForFunction(() => !window.__game.graphicsBusy);
+  await expect(page.getByLabel('Kvalita grafiky')).toBeEnabled();
   await expect(page.getByLabel('Kvalita grafiky')).toHaveValue('low');
   expect(await page.evaluate(() => {
     const { __game: game } = window;
