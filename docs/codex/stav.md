@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Výsledky závěrečné kontroly Astrou
+
+Astra prošla zadání E13–E25 a našla dva problémy, které blokovaly ovládání nebo start, a jednu chybu diagnostiky. Opravy obnovily návrat z mapy po stisku O, spuštění s neodpovídajícími katalogy a měření času GPU na podporované záložní WebGL 2. Z rozbaleného webového ZIPu prošlo načtení a návrat do E12 i E25. Úplná sada má 356 prohlížečových případů, výsledky opakované jízdy a měření na autorových zařízeních jsou otevřené. [Jednotlivé nálezy, ověření a otisk webu](../E26.md)
+
 ## Jízdní povrch při návratu do Plzně
 
 Na trase centrum–Rokycany–Dobřív–centrum se po 45,62 km projevil nespojitý nájezd na horní vozovku. Opravený spoj používají vykreslení i kolize Joltu. Běžný průjezd přes místo a okolí v délce 1,195 km skončil bez vyprošťování s největším poklesem 0,109 m. Prošlo 180 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. Všechny tři podporované verze Node.js daly stejných 815 souborů. Pokračuje zkouška čtyř okruhů. [Jízda a porovnání před opravou](../E26.md)

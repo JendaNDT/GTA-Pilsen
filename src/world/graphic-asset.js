@@ -16,5 +16,5 @@ export async function fetchGraphicResponse(path, url, options) {
 }
 
 export async function graphicAsset(path, base = import.meta.env?.BASE_URL ?? '/') {
-  return (await fetchGraphicResponse(path, base + path)).blob();
+  return (await fetchGraphicResponse(path, base + path, { signal: AbortSignal.timeout(12000) })).blob();
 }

@@ -1,12 +1,17 @@
 import { devices, expect, test } from '@playwright/test';
 import { gameUrl } from './game-url.js';
+import { waitForGame } from './ready.js';
 
 test('E13 – měření práce snímku s pevnou kvalitou vykreslování', async ({ page }) => {
   await page.goto(gameUrl('/?debug&adapt=0&quality=low'));
-  await page.waitForFunction(() => window.__ready);
+  await waitForGame(page);
   expect(await page.evaluate(() => window.__perf.summary().frames)).toBe(0);
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
   await page.waitForFunction(() => window.__perf.summary().frames >= 4);
+  if (await page.evaluate(() => Boolean(window.__game.renderer.backend.disjoint))) {
+    await page.waitForFunction(() => window.__perf.summary().gpuSamples > 0);
+    expect(await page.evaluate(() => window.__perf.summary().gpuMs.median)).toBeGreaterThan(0);
+  }
   const { before, after } = await page.evaluate(() => {
     const before = window.__perf.summary();
     for (let i = 0; i < 120; i++) window.__game.adapt(0.05);
@@ -39,7 +44,7 @@ test('E13 – panel měření lze otevřít a zavřít na dotykové obrazovce', 
   try {
     const page = await context.newPage();
     await page.goto(gameUrl('/?debug&adapt=0'));
-    await page.waitForFunction(() => window.__ready);
+    await waitForGame(page);
     await page.getByRole('button', { name: 'Hrát', exact: true }).tap();
     await page.getByRole('button', { name: 'Měření', exact: true }).tap();
     const panel = page.getByRole('region', { name: 'Měření výkonu' });
@@ -55,7 +60,7 @@ test('E13 – panel měření lze otevřít a zavřít na dotykové obrazovce', 
 
 test('stejná síť terénu má pro každou dlaždici vlastní grafický atribut @webgpu', async ({page}) => {
   await page.goto(gameUrl('/?debug&quality=low&adapt=0'));
-  await page.waitForFunction(() => window.__ready);
+  await waitForGame(page);
   const result = await page.evaluate(() => {
     const {chunks} = __game;
     const indices = [...chunks.chunks.values()].flatMap(tile =>

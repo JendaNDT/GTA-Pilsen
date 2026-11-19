@@ -9,8 +9,8 @@ const TYPES = {
   i4: Int32Array, u4: Uint32Array, f4: Float32Array,
 };
 
-async function fetchBuffer(url, onBytes) {
-  const res = await fetch(url);
+async function fetchBuffer(url, onBytes, signal) {
+  const res = await fetch(url, { signal });
   if (!res.ok) throw new Error(`Nepodařilo se načíst ${url} (${res.status})`);
   if (!res.body || !onBytes) return res.arrayBuffer();
   const reader = res.body.getReader();
@@ -166,8 +166,10 @@ export async function loadAll(onProgress) {
   const base = import.meta.env?.BASE_URL || '/';
   const structureRequest = loadStructureCore();
   const results = await Promise.all(FILES.map(([name, url]) => {
-    const request = fetchBuffer(base + url, bump);
-    return ['landscape', 'soundPlaces', 'gradeSeparations', 'treeTypes', 'buildingMaterials', 'streetDetails', 'heritage', 'collisionRoofs'].includes(name) ? request.catch(() => null) : request;
+    const optional = ['landscape', 'soundPlaces', 'gradeSeparations', 'treeTypes', 'buildingMaterials',
+      'streetDetails', 'heritage', 'collisionRoofs'].includes(name);
+    const request = fetchBuffer(base + url, bump, optional ? AbortSignal.timeout(12000) : undefined);
+    return optional ? request.catch(() => null) : request;
   }));
   const out = {};
   FILES.forEach(([name, url], i) => {

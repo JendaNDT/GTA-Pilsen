@@ -104,3 +104,23 @@ test('E26 – odjezd během stahování ulice a návrat po pomalé odpovědi @we
     expect(errors).toEqual([]);
   } finally {release();}
 });
+
+test('E26 – při neodpovídajících katalozích a barevné tabulce lze začít hrát @webgpu', async ({ page }) => {
+  const pending = new Set();
+  await page.route(/\/(detail\/(city|streets)\/index\.json|luts\/den\.cube)$/, route => {
+    pending.add(new URL(route.request().url()).pathname);
+    // Úmyslně neposíláme odpověď. Požadavek ukončí až časový limit ve hře.
+  });
+  await page.setViewportSize({width: 420, height: 280});
+  await page.goto(gameUrl('/?debug&quality=medium&view=320&adapt=0'));
+  await waitForGame(page);
+  await page.getByRole('button', {name: 'Hrát', exact: true}).click();
+  const state = await page.evaluate(() => {
+    const g = window.__game;
+    return {playing: !g.paused, buildings: g.world.bCount, streets: !!g.world.streetDetails,
+      measured: g.chunks.heritage.cells.size, grade: !!g.postfx?.grade};
+  });
+  expect([...pending].sort()).toEqual(['/detail/city/index.json', '/detail/streets/index.json', '/luts/den.cube']);
+  expect(state).toMatchObject({playing: true, streets: false, measured: 0, grade: false});
+  expect(state.buildings).toBeGreaterThan(0);
+});
