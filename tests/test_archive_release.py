@@ -1,5 +1,6 @@
 import contextlib
 import io
+import hashlib
 import json
 import subprocess
 import sys
@@ -52,8 +53,26 @@ class ReleaseArchiveTest(unittest.TestCase):
                     self.assertEqual(set(bundle.namelist()), set(index["sources"]))
                 for file, record in index["archives"].items():
                     self.assertEqual(archive_release.digest(output / file), record["sha256"])
+                    entries = index["published" if file.endswith("-web.zip") else "sources"]
+                    with ZipFile(output / file) as bundle:
+                        actual = {name: hashlib.sha256(bundle.read(name)).hexdigest() for name in bundle.namelist()}
+                    self.assertEqual(actual, entries)
                 with self.assertRaises(SystemExit):
                     run("../chyba")
+
+                # Změna po zabalení webu nesmí vytvořit dva vzájemně odlišné archivy.
+                write_zip = archive_release.write_zip
+                def change_during_pack(archive, files, tree, *executable):
+                    hashes = write_zip(archive, files, tree, *executable)
+                    if tree == root / "dist":
+                        (root / "public/test.bin").write_text("nová dlaždice")
+                    return hashes
+
+                output = root / "zmenene"
+                with patch.object(archive_release, "write_zip", change_during_pack), self.assertRaises(SystemExit):
+                    run("0.2.0")
+                self.assertFalse(output.exists())
+                (root / "public/test.bin").write_text("dlaždice")
 
                 (root / "AGENTS.md").unlink()
                 with self.assertRaises(SystemExit):

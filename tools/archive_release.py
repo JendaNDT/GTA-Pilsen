@@ -4,7 +4,6 @@ import argparse
 import hashlib
 import json
 import re
-import shutil
 import stat
 import subprocess
 import tempfile
@@ -19,6 +18,7 @@ def digest(path):
 
 
 def write_zip(archive, files, root, executable=()):
+    hashes = {}
     with ZipFile(archive, "w", compression=ZIP_DEFLATED) as bundle:
         for name in files:
             path = root / name
@@ -27,8 +27,13 @@ def write_zip(archive, files, root, executable=()):
             mode = 0o755 if name in executable else 0o644
             info.external_attr = (stat.S_IFREG | mode) << 16
             info.compress_type = ZIP_DEFLATED
+            checksum = hashlib.sha256()
             with path.open("rb") as source, bundle.open(info, "w") as target:
-                shutil.copyfileobj(source, target)
+                while block := source.read(1024 * 1024):
+                    target.write(block)
+                    checksum.update(block)
+            hashes[name] = checksum.hexdigest()
+    return hashes
 
 
 def main():
@@ -65,18 +70,10 @@ def main():
             executable.add(name)
     paths.sort()
     published = sorted(path.relative_to(dist).as_posix() for path in dist.rglob("*") if path.is_file())
-    for name in paths:
-        if name.startswith("public/"):
-            output = dist / name.removeprefix("public/")
-            if not output.is_file() or digest(ROOT / name) != digest(output):
-                parser.error(f"Sestavení neodpovídá souboru {name}.")
-
     base = f"Plzen-naplno-{version}"
     manifest = {
         "version": version,
         "baseCommit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
-        "sources": {name: digest(ROOT / name) for name in paths},
-        "published": {name: digest(dist / name) for name in published},
     }
     output = args.output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -85,8 +82,11 @@ def main():
         stage.mkdir()
         web = stage / f"{base}-web.zip"
         sources = stage / f"{base}-zdroje.zip"
-        write_zip(web, published, dist)
-        write_zip(sources, paths, ROOT, executable)
+        manifest["published"] = write_zip(web, published, dist)
+        manifest["sources"] = write_zip(sources, paths, ROOT, executable)
+        for name, checksum in manifest["sources"].items():
+            if name.startswith("public/") and manifest["published"].get(name.removeprefix("public/")) != checksum:
+                parser.error(f"Sestavení neodpovídá souboru {name}.")
         manifest["archives"] = {path.name: {"bytes": path.stat().st_size, "sha256": digest(path)} for path in (web, sources)}
         (stage / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
         try:

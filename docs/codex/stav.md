@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Shoda manifestu s obsahem archivů
+
+Nástroj pro vydání zapisuje do manifestu otisky přesně těch dat, která prošla do obou ZIPů. Regresní zkouška změnila dlaždici mezi zabalením webu a zdrojů a ověřila odmítnutí neúplného vydání. Nezávislé čtení obou ZIPů kandidáta ověřilo 815 položek webu a 1 371 položek zdrojů. [Balení a uložení hry](../E26.md)
+
 ## Uložené hry na rozbaleném webu 0.2.0
 
 Chromium 159 na stejné adrese ověřilo přechod z vydání E12 i z posledního sestavení E25 do rozbaleného webového ZIPu a zpět. Po návratu obě starší verze načetly 4 085 Kč, dva objevy, sedm doručení a hatchback s upravenými brzdami a pneumatikami. E25 načetla také znečištění 0,5, poškození levých dveří 0,4 a jasné počasí. [Otisk webového ZIPu a postup obnovy](../E26.md)
