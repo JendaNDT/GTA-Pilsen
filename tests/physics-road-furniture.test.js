@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { WalkingCharacter } from '../src/physics/character.js';
 import { Breakables } from '../src/physics/breakables.js';
 import { PhysicsWorld, layers } from '../src/physics/world.js';
 import { loadJolt } from '../src/physics/jolt.js';
@@ -51,6 +52,14 @@ for (const [style, speed, broken] of [['stone', 50, false], ['open', 60, true], 
       manager.load(0);
       manager.step(3);
       assert.equal(registry.state(target.id) === 'intact', !broken);
+      if (broken && !isClosure) {
+        const player = { x: 0, y: 0, z: -2, vx: 0, vy: 0, vz: 4, grounded: true, fallStart: 0 };
+        const walker = new WalkingCharacter(physics, player);
+        try {
+          for (let i = 0; i < 90; i++) walker.move(1/60, player, false);
+          assert.ok(player.grounded && player.z > -0.6 && player.z < 0, JSON.stringify(player));
+        } finally { walker.dispose(); }
+      }
       manager.repair(registry.repairDue(28*3600));
       manager.step(28*3600);
       assert.equal(registry.state(target.id), 'intact');

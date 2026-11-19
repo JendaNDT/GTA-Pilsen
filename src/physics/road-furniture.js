@@ -17,6 +17,7 @@ export class RoadFurnitureBodies {
     this.debug = debug;
     this.tiles = new Set();
     this.rails = new Map();
+    this.footRails = new Map();
     this.byBody = new Map();
     this.loose = new Map();
     this.hits = new Map();
@@ -44,25 +45,36 @@ export class RoadFurnitureBodies {
 
   removeRailMesh(ci) {
     const rail = this.rails.get(ci);
-    if (!rail) return;
-    this.byBody.delete(bodyKey(rail.body));
-    this.destroyBody(rail.body);
-    this.debug?.discard(ci, rail.mesh);
-    this.rails.delete(ci);
+    if (rail) {
+      this.byBody.delete(bodyKey(rail.body));
+      this.destroyBody(rail.body);
+      this.debug?.discard(ci, rail.mesh);
+      this.rails.delete(ci);
+    }
+    const footRail = this.footRails.get(ci);
+    if (footRail) {
+      this.destroyBody(footRail);
+      this.footRails.delete(ci);
+    }
   }
 
   buildRailMesh(ci) {
     this.removeRailMesh(ci);
     const edges = this.world.bridgeEdges.get(ci);
     if (!edges || !this.tiles.has(ci)) return;
-    const positions = [], ids = [];
+    const positions = [], footPositions = [], ids = [];
     edges.forEach((edge, index) => {
-      if (this.registry.state(edge.id) !== 'intact') return;
+      const intact = this.registry.state(edge.id) === 'intact';
+      const target = intact ? positions : footPositions;
       railingFaces(edge, (a, b, c, d) => {
-        positions.push(...a, ...b, ...c, ...a, ...c, ...d);
-        ids.push(index, index);
+        target.push(...a, ...b, ...c, ...a, ...c, ...d);
+        if (intact) ids.push(index, index);
       });
     });
+    if (footPositions.length) {
+      const body = this.meshBody(this.physics, Float32Array.from(footPositions), layers.FOOT_RAIL);
+      this.footRails.set(ci, body);
+    }
     if (!ids.length) return;
     const vertices = Float32Array.from(positions);
     const body = this.meshBody(this.physics, vertices, layers.RAILING, ids);
@@ -196,8 +208,9 @@ export class RoadFurnitureBodies {
 
   step(now, budget = 20) {
     for (const [fixture, hit] of this.hits) {
-      // Jedno pohyblivé těleso a nejvýše dvě operace na společné síti dlaždice.
-      if (budget < 3 + this.dirty.size * 2 || this.physics.debris?.room(1) === false) break;
+      // Obě sítě jedné dlaždice mohou potřebovat zrušit i znovu vytvořit.
+      const tilesToRebuild = this.dirty.size + Number(!this.dirty.has(fixture.tile));
+      if (budget < 1 + tilesToRebuild * 4 || this.physics.debris?.room(1) === false) break;
       this.hits.delete(fixture);
       if (!this.tiles.has(fixture.tile) || !this.registry.damage(fixture.id, 'broken', now)) continue;
       this.createLoose(fixture, hit);
@@ -206,10 +219,10 @@ export class RoadFurnitureBodies {
       budget--;
     }
     for (const ci of this.dirty) {
-      if (budget < 2) break;
+      if (budget < 4) break;
       this.buildRailMesh(ci);
       this.dirty.delete(ci);
-      budget -= 2;
+      budget -= 4;
     }
     for (const fixture of this.pending) {
       if (budget < 2) break;

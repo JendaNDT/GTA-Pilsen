@@ -114,6 +114,7 @@ export class PlayerVehicle {
     this.callbacks.OnPostStepCallback = () => {};
     this.callbacks.SetVehicleConstraint(this.constraint);
     this.pose = new BodyPose(this.body);
+    this.spawnFragment = (car, mesh, center) => physics.onCarFragment(car, mesh, center, this.pose, this.spec.height);
     this.euler = new Euler(0, 0, 0, 'YXZ');
     this.rotation = new Quaternion();
     this.impactPoint = new Vector3();
@@ -175,7 +176,7 @@ export class PlayerVehicle {
   applyImpact() {
     const speed = this.impactSpeed;
     if (speed <= 3) return 0;
-    if (this.hasImpactPoint) dentCar(this.car, speed, this.impactPoint, this.impactNormal, this.physics.onCarFragment);
+    if (this.hasImpactPoint) dentCar(this.car, speed, this.impactPoint, this.impactNormal, this.physics.onCarFragment && this.spawnFragment);
     this.car.health = Math.max(0, this.car.health - (speed - 3) * 1.5);
     this.impactSpeed = 0;
     this.impactBody = null;

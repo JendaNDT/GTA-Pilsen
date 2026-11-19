@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { Vector3, Scene } from 'three/webgpu';
+import { Quaternion, Vector3, Scene } from 'three/webgpu';
 import { dentCar, enginePower, panelLevels, restorePanels, steeringPull } from '../src/entities/damage.js';
 import { loadJolt } from '../src/physics/jolt.js';
 import { layers, PhysicsWorld } from '../src/physics/world.js';
@@ -37,7 +37,18 @@ test('odpojené dveře žijí jako samostatný fyzikální díl i po opravě pů
   physics.debris = new DebrisBudget(() => 1, () => false);
   const fragments = new CarFragments(physics, new Scene());
   try {
-    dentCar(a, 31, side, inward, (...args) => fragments.queue(...args));
+    const pose = { position: new Vector3(5, 3, 7),
+      rotation: new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), Math.PI / 2) };
+    const height = 0.7;
+    a.mesh.position.copy(pose.position);
+    a.mesh.quaternion.copy(pose.rotation);
+    a.mesh.translateY(-height);
+    dentCar(a, 31, side, inward, (car, mesh, center) => {
+      const expected = a.mesh.localToWorld(center.clone());
+      fragments.queue(car, mesh, center, pose, height);
+      assert.ok(mesh.position.distanceTo(expected) < 1e-6);
+      assert.ok(mesh.quaternion.angleTo(pose.rotation) < 1e-6);
+    });
     assert.equal(a.damage.leftDoor, 1);
     const { leftDoor } = a.mesh.userData.panels;
     const pos = a.mesh.userData.batches.body.geometry.attributes.position;

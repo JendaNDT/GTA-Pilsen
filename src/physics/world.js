@@ -2,14 +2,14 @@ import { FixedStep } from './step.js';
 
 export const layers = Object.freeze({
   STATIC: 0, VEHICLE: 1, CHARACTER: 2, RAILING: 3,
-  BREAKABLE: 4, DEBRIS: 5, TRANSIT: 6, SENSOR: 7,
+  BREAKABLE: 4, DEBRIS: 5, TRANSIT: 6, SENSOR: 7, FOOT_RAIL: 8,
 });
 
-const { STATIC, VEHICLE, CHARACTER, RAILING, BREAKABLE, DEBRIS, TRANSIT, SENSOR } = layers;
+const { STATIC, VEHICLE, CHARACTER, RAILING, BREAKABLE, DEBRIS, TRANSIT, SENSOR, FOOT_RAIL } = layers;
 const partners = [
   [STATIC, VEHICLE, CHARACTER, DEBRIS],
   [VEHICLE, VEHICLE, CHARACTER, RAILING, BREAKABLE, DEBRIS, TRANSIT, SENSOR],
-  [CHARACTER, RAILING, BREAKABLE, DEBRIS, TRANSIT, SENSOR],
+  [CHARACTER, RAILING, BREAKABLE, DEBRIS, TRANSIT, SENSOR, FOOT_RAIL],
   [DEBRIS, DEBRIS, TRANSIT],
 ];
 
@@ -28,7 +28,7 @@ export class PhysicsWorld {
     const moving = new Jolt.BroadPhaseLayer(1);
     for (const layer of Object.values(layers)) {
       broad.MapObjectToBroadPhaseLayer(layer,
-        [STATIC, RAILING, BREAKABLE, SENSOR].includes(layer) ? stationary : moving);
+        [STATIC, RAILING, BREAKABLE, SENSOR, FOOT_RAIL].includes(layer) ? stationary : moving);
     }
     Jolt.destroy(stationary);
     Jolt.destroy(moving);

@@ -66,7 +66,7 @@ export class WalkingCharacter {
     let stepHeight = 0.35;
     for (let i = 0; i < contacts.size(); i++) {
       const hit = contacts.at(i);
-      if (hit.mUserData === layers.RAILING) { stepHeight = 0; break; }
+      if (hit.mUserData === layers.RAILING || hit.mUserData === layers.FOOT_RAIL) { stepHeight = 0; break; }
     }
     this.settings.mWalkStairsStepUp.Set(0, stepHeight, 0);
     character.ExtendedUpdate(dt, physics.system.GetGravity(), this.settings, ...this.filters, this.allocator);

@@ -1,4 +1,8 @@
-# Stav etapy E21
+# Stav etapy E22
+
+Ve větvi `etapa/E22` jsou hotové kroky 1 až 3. Následuje kalibrace Wilsonova mostu. [Zadání E22](E22.md) · [Výsledky převodu a pilotu](#e22--převod-a-inventura)
+
+## Výchozí etapa E21
 
 Větev `etapa/E21` navazuje na E20 sloučenou revizí `623e081`. [Zadání E21](E21.md) · [Protokol předchozí etapy](../E20.md)
 
@@ -8,10 +12,10 @@ Větev `etapa/E21` navazuje na E20 sloučenou revizí `623e081`. [Zadání E21](
 | 2. Lampy | Hotovo. Společné umístění pro grafiku a fyziku, sražení, zhasnutí, dvě části lampy, obnova po návratu a ranní oprava prošly ověřením. |
 | 3. Značky a semafory | Funkční kontroly včetně návratu po opravě a dopravní špičky prošly. Celková grafická kontrola na cílovém zařízení zůstává otevřená. |
 | 4. Mosty a uzavírky | Hotovo. Náraz, návrat a oprava ověřeny ve fyzice a průjezd autem na WebGL 2 i WebGPU. |
-| 5. Následky nárazu | Zbývá hledanost, zvuky a správa počtu úlomků. |
-| 6. Auta a garáž | Zbývají deformace, odpadlé díly, jízdní následky, uložení a oprava. |
-| 7. Částice | Zbývají obě vykreslovací cesty a rozpočet. |
-| 8. Závěrečné ověření | Zbývají zkoušky, výkon, snímky a protokol. |
+| 5. Následky nárazu | Hotovo. Hledanost, zvuky a společný limit úlomků jsou zapojené do hry. |
+| 6. Auta a garáž | Hotovo. Prošly deformace, odpadnutí dílu, načtení uloženého poškození a oprava v garáži. |
+| 7. Částice | Hotovo. Prošla kontrola výpočtu na WebGPU i náhradního výpočtu na WebGL 2. |
+| 8. Závěrečné ověření | Probíhají závěrečné prohlížečové zkoušky. Snímky a měření ze softwarového vykreslovače jsou v protokolu. Měření na autorově počítači je otevřené. |
 
 Astra před implementací prověřila návrh. U lamp bude potřeba jeden společný výběr pro fyziku i vzhled, nezávislý na pořadí načítání sousedů. Pro mosty jsou zdrojem již oříznuté úseky hran. Připojené fyzikální těleso a zobrazený objekt mohou mít odlišnou dobu života. Změny po nárazu je potřeba provést po fyzikálním kroku. Otevřené otázky pro autora nyní nejsou.
 
@@ -145,6 +149,14 @@ V testu deseti zkušebních lamp na softwarovém WebGPU se všech deset rozbilo.
 
 Závěrečný cílený běh zahrnuje 30 scénářů E21, rozvozů a provozu. Na něj naváže úplná sada. Záznamy jsou v `data-raw/e21/zaver-{cilene,uplna}.log`. Přijetí etapy zůstává otevřené do vyhodnocení prohlížečových zkoušek a měření na cílovém počítači.
 
+### Opravy po závěrečné kontrole
+
+Odpadlý panel se umístí podle tělesa auta včetně natočení. Po průrazu zůstává na hraně mostovky samostatná kolize pro pěší postavu. Rozpočet tvorby těles zahrnuje i tuto síť. Prošlo všech 126 testů JavaScriptu a produkční sestavení. Regresní zkoušky přímo porovnaly polohu panelu u vozu otočeného o 90 stupňů a pohyb pěší postavy směrem k mezeře po návratu na dlaždici.
+
+Na starší revizi `b14f83d` prošlo 18 z 30 závěrečných cílených případů, tři doběhly do časového limitu, jeden byl přerušen a osm se nespustilo. Běh byl ukončen po sestavení opravy. Na nové revizi prošel průjezd zkušební mezerou na obou vykreslovačích a zkouška garáže na WebGPU. Garáž na WebGL 2 poprvé vyčerpala 90 s při opětovném načítání stránky. Záznamy nové revize jsou v `data-raw/e21/revize-{node,build,e2e,garaz,uplna}.log`. Opakování a úplná sada mají v cloudu časový limit 240 s na případ. Funkční podmínky ani rozpočty jednotlivých kontrol se nemění.
+
+Garáž při opakování na WebGL 2 prošla včetně nového načtení a zaplacení opravy. Úplný prohlížečový běh nyní používá samostatné sestavení s oběma opravami z kontroly.
+
 ## E22 · Převod a inventura
 
 Samostatná pracovní větev začíná nad rozpracovanou E21. Oficiální archiv má otisk `825dc3e395044b1f5a47e27c812cc4189829e9134cc027865ffc8fcb3e7bb9ac`. Převod přečetl 614 záznamů, 602 ID a všech 12 315 ploch. Po sloučení totožných ploch uvnitř ID vytvořil 715 souvislých dílů. Z toho má 93 dílů totožnou geometrii jako jiný díl, jeden nemá použitelný trojúhelník a 621 čeká na prostorovou kontrolu. Každá zdrojová plocha je započtena.
@@ -166,3 +178,5 @@ Prošlo 131 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. Proh
 Následuje kalibrace Wilsonova mostu. První řezy horní městskou plochou v 20, 35, 50, 65 a 80 % herního rozpětí ukázaly příčný posun osy o 0,55 až 0,59 m. Průměr výšek obou vnějších okrajů byl v těchto řezech o 0,07 až 0,11 m výš než stávající jízdní profil. Šířka vnějšího obrysu ve středním řezu dosahuje 17,67 m, na ostatních řezech 15,67 až 15,75 m. Do třetího kroku patří pouze pilotní pilíř. Rozměry ani jízdní profil mostovky se v tomto kroku neupravují.
 
 Oporu a načtení detailní geometrie ověřil také WebGPU. Všech pět cílených prohlížečových případů dokončilo zkoušku.
+
+E22 převzala opravy E21 z revize `7398106`. Následná kontrola kódu potvrdila vypořádání obou nálezů. Po sloučení prošlo všech 131 testů JavaScriptu, produkční sestavení a zkouška pilíře na WebGL 2 i WebGPU.

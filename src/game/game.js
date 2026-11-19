@@ -140,7 +140,7 @@ export class Game {
     this.scene = new THREE.Scene();
     this.particles = new Particles(this.scene, renderer, () => QUALITY.particles);
     this.fragments = new CarFragments(physics, this.scene);
-    physics.onCarFragment = (car, mesh, center) => this.fragments.queue(car, mesh, center);
+    physics.onCarFragment = this.fragments.queue.bind(this.fragments);
     this.camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.4, QUALITY.view * 1.35);
     const view = new THREE.Frustum(), matrix = new THREE.Matrix4(), sphere = new THREE.Sphere();
     physics.debris = new DebrisBudget(() => QUALITY.debris, body => {
