@@ -71,7 +71,7 @@ for (const [label, road] of [
       expect(voyage.arrived, JSON.stringify(voyages)).toBe(true);
       expect(voyage.health).toBe(100);
       expect(voyage.worstDrop).toBeLessThan(0.5);
-      if (road !== null && process.env.PLZEN_TEST_PHYSICS !== 'old') {
+      if (road !== null) {
         expect(voyage.wheelSamples).toBeGreaterThan(100);
         expect(voyage.wheelError, JSON.stringify(voyages)).toBeLessThan(0.05);
       }
@@ -83,7 +83,6 @@ for (const [label, road] of [
 test('E18 – na zkušební rampě se všechna kola odlepí a po dopadu se pérování ustálí', async ({ page }) => {
   // Samostatná zkouška nového zavěšení. Původní řízení bere výšku přímo z terénu.
   const address = new URL(gameUrl('/?debug&quality=low&adapt=0&hour=10'));
-  address.searchParams.delete('physics');
   await page.goto(address.href);
   await page.waitForFunction(() => window.__ready);
   const jump = await page.evaluate(() => {

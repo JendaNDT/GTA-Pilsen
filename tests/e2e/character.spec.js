@@ -37,10 +37,12 @@ test('E19 – vystoupení na mostě, v tunelu a po přistání na střeše', { t
       if (w.bTop[i] - w.heightAt(x, z) < 6 || g.colliders.replaced.has(i)) continue;
       if (![0, 2.2, 5.2].every(offset => w.buildingAt(x + offset, z) === i)) continue;
       const h = g.helis[0];
+      for (let j = 0; j < 25; j++) g.colliders.update(x, z);
+      h.x = x; h.z = z; h.y = w.bTop[i] + 0.3; h.yaw = 0; h.vy = -1; h.landed = false;
       g._enterHeli(h);
       const seated = !player.character;
-      h.x = x; h.z = z; h.y = w.bTop[i] + 0.3; h.yaw = 0; h.vy = -1;
-      for (let j = 0; j < 120 && (j === 0 || !h.landed); j++) h.update(1 / 60, 0, 0, -1);
+      g.paused = false;
+      for (let j = 0; j < 120 && !h.landed; j++) g.update(1 / 60);
       g.doAction();
       results.push({ seated, landed: h.landed, expected: w.bTop[i], ...walk(1, 0) });
       break;

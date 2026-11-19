@@ -55,7 +55,6 @@ const plain = (text) => String(text).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '
 export class Game {
   constructor(renderer, data, physics) {
     this.physics = physics;
-    this.oldPhysics = PARAMS.get('physics') === 'old';
     this.steering = 'arcade';
     this.heliAssist = true;
     this.driver = null;
@@ -100,7 +99,7 @@ export class Game {
       const start = DEBUG ? performance.now() : 0;
       this.transitBodies.update(this.transit.vehicles, this.focus, dt);
       this.trafficBodies.drive(this, dt);
-      if (!this.oldPhysics) for (const h of this.helis) {
+      for (const h of this.helis) {
         if (!h.physical) continue;
         h.spinRotor(dt);
         const touchLift = IS_TOUCH && input.touchDrive;
@@ -223,7 +222,7 @@ export class Game {
     this.focus = this.player;
     this.money = 500; this.wanted = 0; this.cool = 0; this.bust = 0;
     this.stats = {};
-    this.time = 0; this.envTimer = 0; this.placeTimer = 0; this.promptTimer = 0; this.saveTimer = 20; this.waterTimer = 0;
+    this.time = 0; this.envTimer = 0; this.placeTimer = 0; this.promptTimer = 0; this.saveTimer = 20;
     this.camYaw = 2.4; this.camPitch = 0.3; this.zoom = 1; this.camDist = 6; this.lookIdle = 9; this.camMode = 0;
     this.shake = 0; this.crashCool = 0; this.wantedCool = 0;
     this.paused = true; this.mapOpen = false;
@@ -903,20 +902,18 @@ export class Game {
     env.time.value = this.time;
 
     if (this.driver && (this.mode !== 'car' || this.car !== this.driver.car)) {
-      if (!this.oldPhysics && this.vehicles.cars.includes(this.driver.car)) this.trafficBodies.keepCar(this.driver);
+      if (this.vehicles.cars.includes(this.driver.car)) this.trafficBodies.keepCar(this.driver);
       else this.driver.dispose();
       this.driver = null;
     }
-    if (!this.oldPhysics || this.mode === 'foot') this.colliders.update(this.focus.x, this.focus.z);
+    this.colliders.update(this.focus.x, this.focus.z);
     this.player.setWalking(this.mode === 'foot' && !this.falls.active.has(this.player));
-    if (!this.oldPhysics) {
-      if (this.mode === 'car' && !this.driver) this.driver = this.trafficBodies.takeCar(this.car) ?? new PlayerVehicle(this.physics, this.car);
-      if (this.car?.physicsTeleport && this.driver) {
-        this.driver.teleport();
-        this.car.physicsTeleport = false;
-      }
+    if (this.mode === 'car' && !this.driver) this.driver = this.trafficBodies.takeCar(this.car) ?? new PlayerVehicle(this.physics, this.car);
+    if (this.car?.physicsTeleport && this.driver) {
+      this.driver.teleport();
+      this.car.physicsTeleport = false;
     }
-    if (!this.oldPhysics) for (const h of this.helis) {
+    for (const h of this.helis) {
       const near = h === this.heli || Math.hypot(h.x - this.focus.x, h.z - this.focus.z) <= 150;
       if (near && this.colliders.tiles.has(this.world.chunkIndex(h.x, h.z))) {
         if (!h.physical) h.physical = new HelicopterBody(this.physics, h);
@@ -958,26 +955,7 @@ export class Game {
     } else if (this.mode === 'car') {
       const car = this.car;
       car.reverseTime = car.speed < -1 ? (car.reverseTime || 0) + dt : 0;
-      if (this.oldPhysics) this.vehicles.stepDynamic(car, dt, input.moveY, input.moveX, input.handbrake);
-      this.waterTimer -= dt;
-      if (this.oldPhysics && this.waterTimer <= 0) {
-        this.waterTimer = 0.3;
-        const w = this.world;
-        if (car.y < w.heightAt(car.x, car.z) + 0.8 && !car.air && w.isWater(car.x, car.z) && !w.onRoad(car.x, car.z, 2.5)) {
-          this.hud.toast('Auto skončilo ve vodě.', 'bad');
-          const x = car.x, z = car.z;
-          if (car === this.garage.active) car.health = 0;
-          this.car = null; this.vehicles.remove(car);
-          this.audio.splash({ x, z, y: car.y });
-          this.mode = 'foot'; this.focus = p; p.place(x, z); p.mesh.visible = true;
-        }
-      }
-    } else if (this.mode === 'heli' && this.oldPhysics) {
-      const lift = (input.handbrake ? 1 : 0) - (input.down ? 1 : 0) + (IS_TOUCH && input.touchDrive ? input.moveY : 0);
-      const impact = this.heli.update(dt, IS_TOUCH && input.touchDrive ? 0 : input.moveY, input.moveX, clamp(lift, -1, 1));
-      if (impact > 0) { this.audio.crash(impact, this.heli); this._hurt(impact * 3); }
     }
-    if (this.oldPhysics) for (const h of this.helis) if (h !== this.heli) h.update(dt, 0, 0, 0);
 
     // svět
     const onFoot = this.mode === 'foot';

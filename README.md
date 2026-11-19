@@ -59,7 +59,9 @@ otevřených dat. Běží na počítači i na mobilu, bez instalace.
 | O | fotorežim, uložit snímek lze i přes menu na telefonu |
 | J | vzít rychlý rozvoz jídla nebo zrušit rozpracovanou zakázku |
 | M | velká mapa (vyhledej místo nebo kliknutím nastav cíl) |
-| C · H · R | kamera · klakson · vrátit na silnici |
+| C · H · L · R | kamera · klakson · dálková světla · vrátit na silnici |
+| O | otevřít nebo zavřít fotorežim |
+| F8 · F9 | v režimu `?debug` zobrazit kolize nebo otevřít měření výkonu |
 | N · Esc | posunout čas o 3 hodiny · menu se zakázkami, garáží a směnami MHD |
 
 Na dotykové obrazovce se objeví páčka a tlačítka. Telefon automaticky použije nižší grafickou
@@ -135,8 +137,7 @@ volba **Automaticky** přizpůsobí kvalitu zařízení podle prvních deseti se
 [E18 přidává odpružení, pneumatiky a automatickou převodovku auta](docs/E18.md).
 V **Nastavení → Řízení** si zvolíš arkádový nebo realistický režim. Klávesa **R**
 vrátí auto na nejbližší silnici. Pokud hru uložíš za volantem, při návratu
-najdeš stojící auto na uloženém místě. Původní jízdu můžeš porovnat přidáním
-`?physics=old` k adrese hry. V režimu `?debug` zobrazí **F8** povrchy pro
+najdeš stojící auto na uloženém místě. V režimu `?debug` zobrazí **F8** povrchy pro
 fyziku a **F9** měření včetně otáček a prokluzu jednotlivých kol.
 
 [E19 přidává fyzikální chůzi a pády postav](docs/E19.md). Pěšky vyjdeš schod,
@@ -183,8 +184,7 @@ kompatibility spusť na Node.js 20.19, 22.12 a 24 příkazy `npm ci`, `npm test`
 `npm run test:python`, `python3 -m py_compile tools/*.py`,
 `npm audit --audit-level=moderate` a `npm run build`. Testy JavaScriptu zahrnují
 i odkazy v dokumentaci. Prohlížečové testy spusť na Node.js 24 podle postupu výše.
-V E18 ověř na Macu také původní fyziku příkazem
-`PLZEN_TEST_PHYSICS=old npm run test:e2e -- --trace off`. Snímky při selhání najdeš
+Snímky při selhání najdeš
 v místní složce `test-results/`.
 
 ## Odkud jsou data a jak je obnovit

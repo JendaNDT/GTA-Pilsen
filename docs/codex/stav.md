@@ -1,5 +1,11 @@
 # Stav etapy E26
 
+## Řízení vozidel a návrat uložené hry
+
+Jolt nyní řídí hráčův vůz a vrtulník při každém spuštění. Lehký výpočet pohybu aut ve vzdáleném provozu má stále aktivní volající a zůstává zachován. Při zkoušce letu se po odebrání starého řízení projevil chybějící odkaz vrtulníku na svět. Po jeho obnovení prošlo vynuceným WebGL 2 přistání na střeše a vystoupení z vozidla na mostě i v tunelu. Na softwarovém WebGPU dokončil skutečný vůz opraveného sestavení prvních 20 simulovaných minut průjezdu. Další okruhy pokračují.
+
+Na stejné adrese prošel přenos uložené hry z E12 do novějšího sestavení, druhé načtení a návrat do E12 se stejným výsledkem. Podrobnosti o penězích, autě, úpravách a objevech uvádí protokol. Na první revizi katalogů prošlo 172 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. Při simulovaném výpadku katalogu města se ukázala závislost na seznamu čtvrtí a měřených střech. Oprava a závěrečná regresní sada se ověřují samostatně. [Protokol E26](../E26.md)
+
 ## Příprava archivu
 
 Nástroj přijímá označení vydání přes `--version`. Před vytvořením ZIPů zkontroluje shodu distribuovaných dat se sestavením. Zdrojový archiv zahrnuje také místní závislost `vendor/picomatch`. Manifest uvádí otisky všech zdrojů, webových souborů a obou archivů. Nové vydání se zveřejní najednou v samostatné složce. Při opakování se zachová totožný výsledek i starší vydání.

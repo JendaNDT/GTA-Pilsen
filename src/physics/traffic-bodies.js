@@ -58,7 +58,7 @@ export class TrafficBodies {
     const { focus, vehicles, world, colliders } = game;
     const cap = this.quality.name === 'low' ? 10 : this.quality.name === 'medium' ? 20 : 40;
     const distance = (car) => (car.x - focus.x) ** 2 + (car.z - focus.z) ** 2;
-    const eligible = (car) => !game.oldPhysics && !car.dead && car !== game.driver?.car &&
+    const eligible = (car) => !car.dead && car !== game.driver?.car &&
       (car.mode === 'ai' || car.mode === 'police' || car.mode === 'parked' || car.mode === 'loose') &&
       colliders.tiles.has(world.chunkIndex(car.x, car.z));
     const candidates = vehicles.cars.filter((car) => eligible(car) && distance(car) <= (car.physical ? 220 : 150) ** 2);

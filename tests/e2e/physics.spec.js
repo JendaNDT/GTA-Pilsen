@@ -69,17 +69,14 @@ test('E18 – volba řízení se uloží a skutečný motor rozjede hráčovo au
     g.paused = false;
     window.__setInput(0, 1);
     window.__step(1 / 60, 140);
-    return { old: g.oldPhysics, driving: g.driver?.car === car, steering: g.steering, rpm: car.rpm, speed: car.speed, gear: car.gear };
+    return { driving: g.driver?.car === car, steering: g.steering, rpm: car.rpm, speed: car.speed, gear: car.gear };
   });
-  expect(result.old).toBe(process.env.PLZEN_TEST_PHYSICS === 'old');
-  expect(result.driving).toBe(!result.old);
+  expect(result.driving).toBe(true);
   expect(result.steering).toBe('realistic');
 
   expect(result.speed).toBeGreaterThan(1);
-  if (!result.old) {
-    expect(result.rpm).toBeGreaterThan(1000);
-    expect(result.gear).toBeGreaterThan(0);
-  }
+  expect(result.rpm).toBeGreaterThan(1000);
+  expect(result.gear).toBeGreaterThan(0);
 });
 
 test('E18 – vlastní auto po návratu na silnici a načtení zachová místo, stav a úpravy', async ({ page }) => {
@@ -117,7 +114,7 @@ test('E18 – vlastní auto po návratu na silnici a načtení zachová místo, 
     g.update(1 / 60);
     const car = g.car;
     const result = { atLoad, x: car.x, z: car.z, yaw: car.yaw, health: car.health, owned: car === g.garage.active,
-      upgrades: car.upgrades, speed: car.speed, driving: g.oldPhysics || g.driver?.car === car };
+      upgrades: car.upgrades, speed: car.speed, driving: g.driver?.car === car };
     g._exitCar();
     g.update(1 / 60);
     return { ...result, exited: g.mode === 'foot' && !g.driver };
@@ -137,7 +134,5 @@ test('E18 – panel měření ukazuje čas kroku, počet těles a při jízdě o
   await page.keyboard.press('F9');
   const output = page.getByRole('textbox', { name: 'Výsledky měření výkonu' });
   await expect(output).toHaveValue(/Krok fyziky [\d,]+ ms · tělesa \d+/);
-  if (process.env.PLZEN_TEST_PHYSICS !== 'old') {
-    await expect(output).toHaveValue(/Motor \d+ ot\/min · stupeň -?\d+ · podélný prokluz kol/);
-  }
+  await expect(output).toHaveValue(/Motor \d+ ot\/min · stupeň -?\d+ · podélný prokluz kol/);
 });
