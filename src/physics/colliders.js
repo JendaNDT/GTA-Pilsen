@@ -108,6 +108,8 @@ export class TileColliders {
       for (let k = 0; k < indices.length; k += 3) roof(emit, vertex(indices[k]), vertex(indices[k + 1]), vertex(indices[k + 2]));
     }
     this.structures.emit(ci, emit);
+    const measured = w.structures?.positionsFor(ci);
+    if (measured) for (const coordinate of measured) triangles.push(coordinate);
     const positions = Float32Array.from(triangles);
     const body = staticMeshBody(this.physics, positions);
     const bodies = [body];

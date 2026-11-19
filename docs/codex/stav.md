@@ -156,3 +156,13 @@ Dva úplné převody daly po bajtech shodné soubory `plochy.json`, `dily.json` 
 Kontrola porovnává trojúhelníky městských ploch s průchozími objemy herních cest včetně sklonu a různých výškových úrovní. Zahrnuje vozovky, parkovací prostor provozu, koleje, pěší cesty a přechody, zastávky, cíle, start, garáž a výchozí okolí heliportů. Ze 715 dílů zasahuje 289 alespoň do jednoho kontrolovaného objemu. Tento průnik je podnětem k posouzení před zařazením. Porovnání výšek u mostních ploch a pilířů obsahuje 91 řádků. Zprávy jsou v `data-raw/structures/strety.tsv`, `vysky.tsv` a `kontroly.json`.
 
 Větev převzala změny E21 včetně sloupků a protokolu z `b14f83d`. Prošlo 130 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. Dalším krokem E22 je volitelný balík herních modelů, kontrola jeho otisků a zkouška statického pilotního objektu.
+
+### Volitelný model pilíře
+
+Třetí krok přidává měřený pilíř Wilsonova mostu. Základní soubor má 2 956 bajtů a slouží zároveň pro vzhled v dálce a kolizi Jolt. Při přiblížení se načte soubor s městskými plochami (2 272 bajtů). Při odjezdu se podrobná geometrie uvolní. Dva převody daly stejné tři soubory a distribuované soubory souhlasí s ověřeným kandidátem. Inventura po zabalení uvádí jeden začleněný díl a 620 dosud čekajících dílů.
+
+Prošlo 131 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. Prohlížeč na WebGL 2 ověřil střet paprsku s horní plochou pilíře, přepnutí na detail a tři způsoby spuštění původní hry: parametr `?structures=0` bez požadavků na vrstvu, odpověď 404 při načítání základu a nesoulad s otiskem silnic. Výpadek detailu a pozdní odpověď po vyložení dlaždice pokrývá také zkouška v Node. Běhy jsou v `data-raw/structures/pilot-{node,python,build,e2e}.log`.
+
+Následuje kalibrace Wilsonova mostu. První řezy horní městskou plochou v 20, 35, 50, 65 a 80 % herního rozpětí ukázaly příčný posun osy o 0,55 až 0,59 m. Průměr výšek obou vnějších okrajů byl v těchto řezech o 0,07 až 0,11 m výš než stávající jízdní profil. Šířka vnějšího obrysu ve středním řezu dosahuje 17,67 m, na ostatních řezech 15,67 až 15,75 m. Do třetího kroku patří pouze pilotní pilíř. Rozměry ani jízdní profil mostovky se v tomto kroku neupravují.
+
+Oporu a načtení detailní geometrie ověřil také WebGPU. Všech pět cílených prohlížečových případů dokončilo zkoušku.

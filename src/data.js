@@ -71,11 +71,61 @@ export async function loadCityTile(file, signal) {
   return parsePack(await response.arrayBuffer());
 }
 
+const structuresPath = (import.meta.env?.BASE_URL || '/') + 'detail/structures/';
+
+function checkedPositions(buffer, hash) {
+  if (assetFingerprint(buffer) !== hash) return null;
+  const {header, p} = parsePack(buffer);
+  return header.version === 1 && p instanceof Float32Array && p.length % 9 === 0 &&
+    p.every(Number.isFinite) ? p : null;
+}
+
+export async function loadStructureDetail(tile, signal) {
+  try {
+    const response = await fetch(structuresPath + tile.file, {signal});
+    if (!response.ok) return null;
+    const positions = checkedPositions(await response.arrayBuffer(), tile.hash);
+    const last = tile.objects.at(-1);
+    return positions?.length === 3 * (last.dStart + last.dCount) ? positions : null;
+  } catch { return null; }
+}
+
+export async function loadStructureCore(search = globalThis.location?.search) {
+  if (new URLSearchParams(search).get('structures') === '0') return null;
+  try {
+    const signal = AbortSignal.timeout(12000);
+    const [manifest, core] = await Promise.all(['index.json', 'core.bin'].map(file =>
+      fetch(structuresPath + file, { signal })));
+    if (!manifest.ok || !core.ok) return null;
+    const index = await manifest.json(), buffer = await core.arrayBuffer();
+    if (index.version !== 1 || buffer.byteLength > 2 * 1024 * 1024 || !Array.isArray(index.tiles)) return null;
+    const positions = checkedPositions(buffer, index.hash);
+    if (!positions) return null;
+    const visited = new Set();
+    let end = 0;
+    for (const tile of index.tiles) {
+      if (![tile.cx, tile.cz].every(v => Number.isSafeInteger(v) && v >= 0) ||
+          tile.file !== tile.cx + '_' + tile.cz + '.bin' || visited.has(tile.file) ||
+          !Array.isArray(tile.objects) || !tile.objects.length) return null;
+      visited.add(tile.file);
+      let detailEnd = 0;
+      for (const part of tile.objects) {
+        if (part.start !== end || part.dStart !== detailEnd ||
+          ![part.count, part.dCount].every(v => Number.isSafeInteger(v) && v > 0 && v % 3 === 0)) return null;
+        end += part.count;
+        detailEnd += part.dCount;
+      }
+    }
+    return end * 3 === positions.length ? {index, positions} : null;
+  } catch { return null; }
+}
+
 export async function loadAll(onProgress) {
   const totalSize = FILES.reduce((s, f) => s + f[2], 0);
   let loaded = 0;
   const bump = (n) => { loaded += n; onProgress(Math.min(1, loaded / totalSize)); };
   const base = import.meta.env?.BASE_URL || '/';
+  const structureRequest = loadStructureCore();
   const results = await Promise.all(FILES.map(([name, url]) => {
     const request = fetchBuffer(base + url, bump);
     return ['landscape', 'soundPlaces', 'gradeSeparations'].includes(name) ? request.catch(() => null) : request;
@@ -103,6 +153,12 @@ export async function loadAll(onProgress) {
     out.landscape.header.sources?.[name] === fingerprint(name))) delete out.landscape;
   if (out.gradeSeparations && (!out.landscape || !['terrain', 'roads', 'rails', 'landscape'].every((name) =>
     out.gradeSeparations.sources?.[name] === fingerprint(name)))) delete out.gradeSeparations;
+  const structures = await structureRequest;
+  if (structures && out.gradeSeparations && out.landscape &&
+    ['terrain', 'roads', 'rails', 'landscape', 'buildings', 'trees', 'grade-separations'].every(key =>
+      structures.index.sources?.[key] === fingerprint(key === 'grade-separations' ? 'gradeSeparations' : key))) {
+    out.structures = structures;
+  }
   out.orthophotoSources = { terrain: fingerprint('terrain'), land: fingerprint('land') };
   out.soundPlaces = out.soundPlaces && out.soundPlaces.osm === out.meta.osmTimestamp ? out.soundPlaces.weirs : [];
   return out;

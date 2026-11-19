@@ -1557,6 +1557,7 @@ export class ChunkManager {
       m.receiveShadow = true; m.renderOrder = 5;
       add(m, geo);
     } else if (ch.stage === 1) {
+      ch.structure = w.structures?.build(ci, ch.group, this.solidMat);
       ch.heritage = this.heritage.build(ci, ch);
       this._buildBuildings(ci, ch);
     } else if (ch.stage === 2) {
@@ -1589,6 +1590,7 @@ export class ChunkManager {
   }
 
   _dispose(ch) {
+    if (ch.structure) this.world.structures.dispose(ch.structure);
     this.scene.remove(ch.group);
     this.heritage.dispose(ch);
     ch.regularBuildings?.geometry.dispose();
@@ -1650,6 +1652,7 @@ export class ChunkManager {
     for (const [ci, ch] of this.chunks) {
       const d = Math.hypot(ch.cx - x, ch.cz - z);
       ch.dist = d;
+      if (ch.structure) w.structures.setNear(ch.structure, d < 420);
       if (orthoRequests && ch.orthoTile) {
         const key = ch.orthoTile.key;
         if (d < (orthoRequests.get(key) ?? Infinity)) orthoRequests.set(key, d);

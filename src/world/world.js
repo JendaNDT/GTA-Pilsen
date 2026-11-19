@@ -1,6 +1,7 @@
 import { breakableId, Breakables } from '../physics/breakables.js';
 // Herní svět: dekódování dat, prostorové indexy, kolize, silniční graf.
 import { CHUNK, COLL_CELL, DRIVABLE_MAX, RF, RC, LC, BF } from '../config.js';
+import { Structures } from './structures.js';
 import { Tunnel, TUNNEL_HEIGHT } from './tunnels.js';
 import { TurnRules } from './turns.js';
 import { Traffic } from '../game/traffic.js';
@@ -32,6 +33,7 @@ export class World {
     this.playMinX = b.minX; this.playMaxX = b.maxX; this.playMinZ = b.minZ; this.playMaxZ = b.maxZ;
     this.cols = Math.ceil((this.maxX - this.minX) / CHUNK);
     this.rows = Math.ceil((this.maxZ - this.minZ) / CHUNK);
+    this.structures = data.structures ? new Structures(data.structures, this.cols, this.rows) : null;
     this.gcols = Math.ceil((this.maxX - this.minX) / COLL_CELL) + 1;
     this.grows = Math.ceil((this.maxZ - this.minZ) / COLL_CELL) + 1;
     this.roadNames = data.meta.roadNames;

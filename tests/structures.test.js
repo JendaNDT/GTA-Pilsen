@@ -42,3 +42,41 @@ test('kontrola průjezdu respektuje výšku podjezdu, šířku i podélný sklon
   assert.ok(!intersectsCorridor(triangle(5,-1,0),c));
   assert.ok(!intersectsCorridor(triangle(5,3,2),c));
 });
+
+test('základní model sdílí vrcholy s kolizí a přežije chybějící detail i pozdní odpověď', async t => {
+  const { readFile } = await import('node:fs/promises');
+  const { Group, MeshBasicMaterial } = await import('three/webgpu');
+  const { loadStructureCore } = await import('../src/data.js');
+  const { Structures } = await import('../src/world/structures.js');
+  const directory = new URL('../public/detail/structures/', import.meta.url);
+  let fetchDetail, corrupt = false;
+  const request = t.mock.method(globalThis, 'fetch', async url => {
+    const file = url.split('/').at(-1);
+    if (file === 'core.bin' && corrupt) return new Response('neplatná data');
+    if (file === 'index.json' || file === 'core.bin') return new Response(await readFile(new URL(file, directory)));
+    return new Promise(resolve => { fetchDetail = resolve; });
+  });
+  assert.equal(await loadStructureCore('?structures=0'), null);
+  assert.equal(request.mock.callCount(), 0);
+  const layer = await loadStructureCore('');
+  const tile = layer.index.tiles[0], cols = 100, ci = tile.cz * cols + tile.cx;
+  const models = new Structures(layer, cols, 100);
+  const group = new Group(), material = new MeshBasicMaterial();
+  const item = models.build(ci, group, material);
+  assert.deepEqual(item.mesh.geometry.attributes.position.array, models.positionsFor(ci));
+  models.setNear(item, true);
+  fetchDetail(new Response(null, {status:404}));
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(item.mesh.geometry, item.core);
+  models.setNear(item, false);
+  models.setNear(item, true);
+  const late = fetchDetail;
+  models.dispose(item);
+  late(new Response(await readFile(new URL(tile.file, directory))));
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(item.mesh.geometry, item.core);
+  assert.equal(group.children.length, 0);
+  corrupt = true;
+  assert.equal(await loadStructureCore(''), null);
+  material.dispose();
+});
