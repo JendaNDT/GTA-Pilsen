@@ -60,3 +60,45 @@ test('E21 – auto ulomí lampu, po návratu chybí i světlo a ve čtyři se op
   expect(result).toEqual({ before: intact, broken, pieces: 2, unloaded: true, returned: broken,
     early: broken, repaired: intact });
 });
+
+test('E21 – při poškození a opravě značky a semaforu se společně skryjí a vrátí všechny díly @webgpu', async ({ page }) => {
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0&date=2026-11-09&hour=22'));
+  await page.waitForFunction(() => window.__ready);
+  await page.getByRole('button', { name: 'Hrát', exact: true }).click();
+  const result = await page.evaluate(() => {
+    __freeze(true);
+    const { chunks, world, focus, clock } = __game, registry = world.breakables;
+    for (let i = 0; i < 18; i++) chunks.update(focus.x, focus.z, 620, 100);
+    const check = (type, select) => {
+      const fixture = [...world.traffic.chunks.entries()].find(([ci, entries]) =>
+        chunks.chunks.get(ci)?.traffic && select(entries));
+      if (!fixture) throw new Error('V okolí chybí vybavení typu ' + type);
+      const [ci, entries] = fixture, id = select(entries).breakableId;
+      const meshes = chunks.chunks.get(ci).traffic.group.children;
+      const snapshot = () => meshes.map(mesh => Array.from(mesh.instanceMatrix.array));
+      const before = snapshot();
+      registry.damage(id, 'broken', clock.now);
+      const damaged = snapshot();
+      let hidden = 0, moved = 0;
+      for (const [i, shown] of before.entries()) {
+        for (let offset = 0; offset < shown.length; offset += 16) {
+          const a = shown.slice(offset, offset + 16), b = damaged[i].slice(offset, offset + 16);
+          if (a.every((n, j) => n === b[j])) continue;
+          if (b.slice(0, 12).every(n => n === 0)) hidden++;
+          if (b.slice(12).some((n, j) => n !== a[12 + j])) moved++;
+        }
+      }
+      registry.repairDue(clock.now + 30 * 3600);
+      const restored = snapshot().every((matrices, i) => matrices.every((n, j) => n === before[i][j]));
+      return { hidden, moved, restored };
+    };
+    return {
+      sign: check('značka', entries => entries.signs[0]),
+      signal: check('semafor', entries => entries.heads.find(head => head.kind === 'signal')),
+    };
+  });
+  expect(result).toEqual({
+    sign: { hidden: 2, moved: 0, restored: true },
+    signal: { hidden: 5, moved: 0, restored: true },
+  });
+});

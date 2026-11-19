@@ -23,7 +23,7 @@ export class Breakables {
 
   detach(visual) {
     if (!visual || this.visuals.get(visual.id) !== visual) return;
-    visual.remove();
+    visual.remove?.();
     this.visuals.delete(visual.id);
   }
 
