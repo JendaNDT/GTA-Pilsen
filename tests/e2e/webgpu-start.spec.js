@@ -1,3 +1,4 @@
+import { waitForGame } from './ready.js';
 import { expect, test } from '@playwright/test';
 import { gameUrl } from './game-url.js';
 
@@ -8,7 +9,7 @@ test('E15 – hra ve výchozím nastavení spustí WebGPU', { tag: ['@webgpu', '
     if (['warning', 'error'].includes(message.type())) errors.push(message.text());
   });
   await page.goto(gameUrl('/?debug&adapt=0&date=2026-11-17&hour=10', { defaultRenderer: true }));
-  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  await waitForGame(page);
   expect(await page.evaluate(() => window.__game.renderer.backend.isWebGPUBackend)).toBe(true);
   await page.getByRole('button', { name: 'O hře', exact: true }).click();
   await expect(page.locator('#panel-about')).toContainText('Aktuální vykreslování: WebGPU');

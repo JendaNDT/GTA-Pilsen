@@ -13,6 +13,10 @@ Větev `etapa/E21` navazuje na E20 sloučenou revizí `623e081`. [Zadání E21](
 | 7. Částice | Hotovo. Prošla kontrola výpočtu na WebGPU i náhradního výpočtu na WebGL 2. |
 | 8. Závěrečné ověření | Probíhají závěrečné prohlížečové zkoušky. Snímky a měření ze softwarového vykreslovače jsou v protokolu. Měření na autorově počítači je otevřené. |
 
+### Závěrečné prohlížečové zkoušky
+
+Na Chromiu 159 prošel výchozí start na WebGPU, zobrazení názvu vykreslovače v nabídce i získání prvních snímků bez varování. Prošly také všechny čtyři předvolby vyhlazování a stínů, pohyb dveří tramvaje v obrazu pro TRAA, měsíc po západu slunce a oba případy vztlaku. Z 37 znovu spuštěných případů prošlo 32. Pět zbývajících v tomto běhu používalo čtení barev plátna. Součet jednotlivých úspěšných zkoušek napříč opravami dosahuje 177 ze 183. Kromě pěti kontrol barev zbývá ověřit počet snímků během minuty hraní na WebGL 2. Původní mez nad 30 snímků zůstává součástí zkoušky.
+
 ### Hodiny po opětovném načtení hry
 
 Chromium 159 na WebGPU ověřilo změnu času na 09:15, přepočet jízdního řádu, opětovné načtení hry i návrat k aktuálnímu času v Plzni. Stejná zkouška už prošla na WebGL 2. Test při načítání nyní vypíše chybu startu hry a respektuje čas přidělený prohlížečové zkoušce. Prošlo 128 testů JavaScriptu a všech 741 souborů nového produkčního sestavení se po bajtech shodovalo s webem, nad kterým běží zkoušky. Při kontrole materiálů na WebGPU vrátilo kopírování prezentačního plátna černé pixely. Pokračuje ověření čtení přímo z vykreslené textury.
