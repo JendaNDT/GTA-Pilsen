@@ -4,7 +4,8 @@ import {saveStructurePhoto} from './structure-photo.js';
 
 // Stejné místo slouží k ověření kolize i fotografie městského modelu.
 const examples = [
-  {district:1, id:'00000002021000318-5660e9634c409441'}
+  {district:1, id:'00000002021000318-5660e9634c409441'},
+  {district:2, id:'00000000000002376-10459c601ca284c1'}
 ];
 
 for (const {district, id} of examples) {

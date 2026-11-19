@@ -200,3 +200,9 @@ Dva převody daly stejné soubory jako distribuovaná vrstva. Prošlo 139 testů
 Po kalibraci mostu prošlo 12 ze 13 cílených prohlížečových případů včetně kamery u kamenného okraje a pěších cest v obou vykreslovačích. Společná zkouška průjezdu Wilsonovým mostem a oběma tubusy Valíku přesáhla čtyři minuty. Nyní mají oba úseky samostatné výsledky při stejných požadavcích na dojezd, stav auta i kontakt kol.
 
 Dva snímky z téže kamery zachycují změnu u středového pilíře a obou oblouků. Oba vznikly na WebGL 2 v nízkém nastavení. [Před kalibrací](../E22/most-pred.jpg) · [Po kalibraci](../E22/most-po.jpg)
+
+### Zdi a pilíře v obvodu Plzeň 2
+
+Druhá dávka přidává 62 zdí a tři pilíře. Kontrola odložila 53 dalších dílů obvodu kvůli průniku s herní trasou. Celkem je nyní ve 26 dlaždicích 102 statických objektů a základ má 357 992 bajtů. Opakované sestavení kandidáta i distribuované soubory se shodují po bajtech.
+
+Na WebGPU s nízkým nastavením prošlo načtení detailu vybrané zdi a kontrola její výšky ve fyzice do 4 cm. Prošlo 139 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. [Měřená zeď v obvodu Plzeň 2](../E22/obvod-2.jpg)
