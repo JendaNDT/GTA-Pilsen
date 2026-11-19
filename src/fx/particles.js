@@ -6,8 +6,8 @@ import { Fn, attribute, instanceIndex, instancedArray, positionGeometry, uniform
 const effects = {
   sparks: { color: 0xffbc43, gravity: -10, size: 0.055, time: 0.45, spread: 4.0 },
   glass: { color: 0x9bdde9, gravity: -9.8, size: 0.09, time: 0.75, spread: 3.0 },
-  dust: { color: 0xbaaa91, gravity: 0.2, size: 0.23, time: 0.9, spread: 1.4 },
-  spray: { color: 0xc2dce2, gravity: -7, size: 0.075, time: 0.68, spread: 1.7 },
+  dust: { color: 0xbaaa91, drift: 0.60, gravity: 0.2, size: 0.23, time: 0.9, spread: 1.4 },
+  spray: { color: 0xc2dce2, drift: 0.16, gravity: -7, size: 0.075, time: 0.68, spread: 1.7 },
   smoke: { color: 0x5d6063, gravity: 0.5, size: 0.21, time: 1.55, spread: 0.55 },
 };
 const colors = Object.fromEntries(Object.entries(effects).map(([k, v]) => [k, new Color(v.color)]));
@@ -22,6 +22,8 @@ export class Particles {
     this.time = 0;
     this.last = -Infinity;
     this.nextSmoke = 0;
+    this.wheelElapsed = 0;
+    this.firstCar = 0;
     this.weirs = [];
     this.sprayCredit = 0;
     const geom = new InstancedBufferGeometry();
@@ -46,7 +48,7 @@ export class Particles {
         const s = start.element(instanceIndex), v = speed.element(instanceIndex), p = shape.element(instanceIndex);
         const age = this.clock.sub(s.w).max(0);
         const radius = p.x.mul(p.y.sub(age).div(p.y.max(0.001)).clamp(0, 1));
-        const center = s.xyz.add(v.xyz.mul(age)).add(vec3(0, v.w.mul(0.5).mul(age).mul(age), 0));
+        const center = s.xyz.add(v.xyz.mul(age)).add(vec3(p.z, v.w.mul(0.5), p.z.mul(0.25)).mul(age.pow2()));
         this.output.element(instanceIndex).assign(vec4(center, radius));
       })().compute(capacity);
       const state = this.output.toAttribute();
@@ -73,12 +75,37 @@ export class Particles {
       this.origin.set([x, y, z, this.time], i);
       this.velocity.set([(Math.random() - 0.5) * effect.spread * 2,
         (0.3 + Math.random()) * effect.spread, (Math.random() - 0.5) * effect.spread * 2, effect.gravity], i);
-      this.shape.set([effect.size * (0.7 + Math.random() * 0.6), life, 0, 0], i);
+      this.shape.set([effect.size * (0.7 + Math.random() * 0.6), life, effect.drift ?? 0, 0], i);
       this.tint.setXYZ(index, color.r, color.g, color.b);
       this.last = Math.max(this.last, this.time + life);
     }
     this.tint.needsUpdate = true;
     for (const input of this.inputs ?? []) input.value.needsUpdate = true;
+  }
+
+  wheelTrails(dt, cars, focus) {
+    this.wheelElapsed += Math.min(dt, 0.2);
+    if (this.wheelElapsed < 0.12 || !cars.length) return;
+    const elapsed = this.wheelElapsed;
+    this.wheelElapsed = 0;
+    let left = Math.min(24, Math.floor(this.limit() / 8));
+    for (let k = 0; k < cars.length && left > 0; k++) {
+      const car = cars[(this.firstCar + k) % cars.length];
+      const speed = Math.abs(car.speed);
+      if (car.air || speed < 2.5 || (car.x-focus.x)**2 + (car.z-focus.z)**2 > 75**2) continue;
+      const dx = Math.sin(car.yaw), dz = Math.cos(car.yaw);
+      const rear = car.type.len * 0.32;
+      for (const sign of [-1, 1]) {
+        const lateral = car.type.wid * 0.41 * sign;
+        const x = car.x - dx*rear + dz*lateral, z = car.z - dz*rear - dx*lateral;
+        const kind = this.wheelSurface(x, z, car.y);
+        if (!kind || left <= 0) continue;
+        const count = Math.min(left, 3, Math.max(1, Math.round(speed*elapsed)));
+        this.emit(kind, x, car.y+0.09, z, count);
+        left -= count;
+      }
+    }
+    this.firstCar = (this.firstCar + 1) % cars.length;
   }
 
   update(dt, cars, focus, waterDetail = false) {
@@ -92,6 +119,7 @@ export class Particles {
           car.z + Math.cos(car.yaw) * hood, 2);
       }
     }
+    if (this.enabled && waterDetail && this.wheelSurface) this.wheelTrails(dt, cars, focus);
     if (this.enabled && waterDetail && this.weirs.length) {
       this.sprayCredit += Math.min(dt, 0.2) * 15;
       const count = Math.floor(this.sprayCredit);
@@ -114,9 +142,10 @@ export class Particles {
     for (let i = 0; i < count; i++) {
       const j = i * 4, age = this.time - this.origin[j + 3], life = this.shape[j + 1];
       const radius = life > age ? this.shape[j] * (1 - age / life) : 0;
-      this.state.setXYZW(i, this.origin[j] + this.velocity[j] * age,
+      const drift = this.shape[j + 2] * age * age;
+      this.state.setXYZW(i, this.origin[j] + this.velocity[j] * age + drift,
         this.origin[j + 1] + this.velocity[j + 1] * age + 0.5 * this.velocity[j + 3] * age * age,
-        this.origin[j + 2] + this.velocity[j + 2] * age, radius);
+        this.origin[j + 2] + this.velocity[j + 2] * age + drift * 0.25, radius);
     }
     this.state.needsUpdate = true;
   }

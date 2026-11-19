@@ -1,4 +1,5 @@
-import {attribute, float, Fn, mix, positionWorld, smoothstep, struct, transformNormalToView, vec2, vec3, vec4} from 'three/tsl';
+import { puddleNode } from './puddles.js';
+import {attribute, float, Fn, mix, normalWorldGeometry, positionWorld, smoothstep, struct, transformNormalToView, vec2, vec3, vec4} from 'three/tsl';
 import {hash21,valueNoise} from './material-noise.js';
 
 const sampleType = struct({gain:'float', roughness:'float', normal:'vec3'});
@@ -30,10 +31,11 @@ export function asphaltNodes(color, wet, camera) {
     const dry = float(1).add(stone.mul(0.32),track.mul(-0.16),patch.mul(-0.21));
     const gain = mix(1,dry.mul(mix(1,0.77,wet)),near).mul(mix(1,float(0.52).sub(slots.mul(0.28)),grate.mul(near)));
     const rough = float(0.94).add(stone.mul(0.10),track.mul(-0.18),patch.mul(-0.12));
-    const roughness = mix(0.96,mix(rough,rough.mul(0.40),wet),near);
+    const pool = puddleNode(p, wet, normalWorldGeometry.y).mul(near);
+    const roughness = mix(mix(0.96,mix(rough,rough.mul(0.40),wet),near), 0.09, pool);
     const bump = near.mul(float(1).sub(track.mul(0.44)),float(1).sub(wet.mul(0.55)));
     const normal = vec3(stone.mul(bump,0.26),1,pores.mul(bump,0.26)).normalize();
-    return sampleType(gain,roughness,normal);
+    return sampleType(gain.mul(float(1).sub(pool.mul(0.16))),roughness,normal);
   })();
   return {colorNode:color.mul(vec4(vec3(sample.get('gain')),1)),roughnessNode:sample.get('roughness'),
     normalNode:transformNormalToView(sample.get('normal'))};

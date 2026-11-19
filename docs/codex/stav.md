@@ -40,6 +40,12 @@ Na náměstí a v okolních ulicích osvětlují blízké povrchy skutečná bod
 
 Prošlo 159 jednotkových testů a produkční sestavení. WebGL 2 i WebGPU vykreslily náměstí ve 22 hodin na vysoké předvolbě se 128 bodovými světly. V obou případech zhasla vybraná lampa a při návratu k poledni se skupina nočních světel vypnula.
 
+## G17 · Částice od kol a jezů
+
+Na suché polní cestě a v trávě se od zadních kol zvedá prach. Na mokré vozovce vzniká sprška tam, kde se při stejném sklonu a poloze vykresluje kaluž. Scénu lze vyzkoušet s parametrem `?wet=1`. Kola ve vzduchu nic nevypouštějí. Fyzika částic zahrnuje boční úlet a gravitaci. Počet efektů od kol je omezen i při souběhu více aut a spršky z jezu. Nízká předvolba používá dřívější efekty E21, v nastavení lze vypnout všechny částice.
+
+Prošlo 160 jednotkových testů a produkční sestavení. Oba vykreslovače ověřily vznik částic od kol, zastavení emise ve vzduchu i společný rozpočet. WebGPU přečetl výslednou polohu z výpočetního bufferu, WebGL 2 ověřil stejný výpočet na CPU. Závěrečné ověření E23 zahrnuje rozpočet všech předvoleb, referenční pohledy a měření výkonu.
+
 ## Výchozí etapa E22
 
 Ve větvi `etapa/E22` jsou převedené městské objekty, ověřený Wilsonův most i tři dávky zdí a pilířů. Hra používá další dvě lávky, silniční desku, dvě železniční mostovky a čtyři díly jezů. Vývoj a dostupné přejímací kontroly E22 jsou dokončené. Zůstává porovnání s autorovými fotografiemi a změření plynulosti na jeho zařízení. [Protokol E22](../E22.md). [Zadání E22](E22.md) · [Výsledky převodu a pilotu](#e22--převod-a-inventura)

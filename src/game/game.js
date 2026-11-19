@@ -1,3 +1,4 @@
+import { wheelTrail } from '../fx/wheel-trails.js';
 import { NightLights } from '../world/night-lights.js';
 import { Particles } from '../fx/particles.js';
 import { restorePanels } from '../entities/damage.js';
@@ -176,6 +177,8 @@ export class Game {
       }
     };
     this.world = new World(data);
+    const trailRoad = {};
+    this.particles.wheelSurface = (x, z, y) => wheelTrail(this.world, x, z, y, env.wetPaving.value, trailRoad);
     if (this.world.tunnels.length) {
       this.tunnelLight = new THREE.PointLight(0xffe0b0, 35, 22);
       this.tunnelLight.visible = false;
