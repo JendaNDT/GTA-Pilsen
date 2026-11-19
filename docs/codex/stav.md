@@ -40,6 +40,12 @@ Déšť i sníh se vykreslují na GPU v jednom poli kolem kamery. Tunel částic
 
 Produkční sestavení a všech 12 cílených jednotkových testů prošlo. WebGL 2 i WebGPU vykreslily náměstí za deště v 18:09 a lednové vločky. Test ověřil vodu, sníh, opakované využití stejného bufferu i skrytí částic po nastavení jasného počasí.
 
+## G24 · Objemová oblaka
+
+Na vysoké předvolbě a na ultra prochází každý paprsek deseti vzorky vrstvy oblaků. Její hustota se řídí počasím. Obraz má čtvrtinovou šířku i výšku a při pohybu kamery přebírá předchozí vzorek podle jeho původní projekce. Velký přesun, změna data i velikosti obrazu historii zahodí. Stejný široký vzor oblačnosti tlumí sluneční světlo na krajině. Na střední a nízké předvolbě zůstává původní výpočet oblohy.
+
+Produkční sestavení prošlo. WebGPU i WebGL 2 načetly skutečně vykreslené pixely z cílové textury, ověřily rozměry vůči plátnu, střídání obou textur, opětovné použití při malém pohybu i reset po přesunu o sto metrů.
+
 ## Výchozí etapa E23
 
 E23 vychází z dokončené větve E22 (`496a72d`). Prvním krokem je detail země při chůzi. Další pořadí tvoří povrchy silnic, voda, stromy, tráva, noční světla a částice. [Zadání E23](E23.md) · [Protokol E22](../E22.md)

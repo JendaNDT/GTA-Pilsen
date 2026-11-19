@@ -1,12 +1,13 @@
 import { windowSchedule } from './night-lights.js';
 import { updateTreeSeason } from './vegetation.js';
 // Obloha, světla, stíny a denní doba. (Terén a povrch země kreslí chunks.js.)
+import { CloudLayer, cloudShadow } from './cloud-layer.js';
 import { cloudCover, weatherFog } from './weather-surfaces.js';
 import * as THREE from 'three/webgpu';
 import { CSMShadowNode } from 'three/addons/csm/CSMShadowNode.js';
 import { SkyMesh } from 'three/addons/objects/SkyMesh.js';
 import {
-  Fn, float, Loop, mix, positionLocal, renderGroup, smoothstep, step, uniform, vec2, vec4,
+  Fn, float, Loop, mix, positionLocal, renderGroup, screenUV, smoothstep, step, uniform, vec2, vec4,
 } from 'three/tsl';
 import { QUALITY, PARAMS } from '../config.js';
 import { env, getPoolMaterial, makeSurfaceMaterial } from './materials.js';
@@ -21,7 +22,7 @@ export const GROUND_HEX = 0x9aa873;
 const MOON_DIR = new THREE.Vector3(-0.4, 0.75, 0.3).normalize();
 const DEFAULT_DAY = Date.UTC(2026, 10, 17) / 86400000;
 
-function makeSky(colors, atmosphere) {
+function makeSky(colors, atmosphere, volume) {
   const mesh = new SkyMesh();
   mesh.cloudCoverage.value = 0;
   const mat = mesh.material;
@@ -40,6 +41,11 @@ function makeSky(colors, atmosphere) {
     const starCell = d.xz.div(d.y.abs().add(0.4)).mul(180).floor();
     const star = step(0.9987, hash21(starCell)).mul(env.night, smoothstep(0.07, 0.35, d.y), 0.45);
     const moon = smoothstep(0.99992, 0.99997, d.dot(MOON_DIR)).mul(env.night, 0.72);
+
+    if (volume) {
+      const cloud = volume.image.sample(screenUV);
+      return vec4(mix(sky.add(star, moon), cloud.rgb, cloud.a), 1);
+    }
 
     // Vrstva mraků se promítá podle směru pohledu.
     const p = d.xz.div(d.y.add(0.16)).mul(1.15).add(vec2(env.time.mul(0.004), env.time.mul(0.0015))).toVar();
@@ -71,7 +77,8 @@ export class Environment {
       shade: uniform(new THREE.Color()).setGroup(renderGroup),
       atmosphere: uniform(0).setGroup(renderGroup),
     };
-    this.sky = makeSky(this.skyColors, atmosphere);
+    this.clouds = QUALITY.shadowCascades >= 3 && PARAMS.get('clouds') !== '0' ? new CloudLayer(renderer) : null;
+    this.sky = makeSky(this.skyColors, atmosphere, this.clouds);
     this.skyLight = atmosphere ? new SkyLight(renderer, scene) : null;
     scene.add(this.sky);
     this.hemi = new THREE.HemisphereLight(0xffffff, 0x777766, 1);
@@ -93,7 +100,7 @@ export class Environment {
       sh.bias = -0.00025; sh.normalBias = 0.16;
       this.csm = new CSMShadowNode(this.sun, { cascades: QUALITY.shadowCascades, maxFar: QUALITY.shadowFar, lightMargin: 170 });
       this.csm.fade = true;
-      sh.shadowNode = this.csm;
+      sh.shadowNode = this.clouds ? cloudShadow(this.csm) : this.csm;
     }
 
     // vzdálená zem za hranicí mapy (hluboko pod terénem)
@@ -197,6 +204,7 @@ export class Environment {
   dispose() {
     this.scene.remove(this.sky, this.hemi, this.sun, this.sun.target, this.moon, this.ground);
     this.scene.environment = null;
+    this.clouds?.dispose();
     this.skyLight?.dispose();
     this.sky.geometry.dispose();
     this.sky.material.dispose();

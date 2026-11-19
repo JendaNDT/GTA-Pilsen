@@ -267,6 +267,7 @@ export class Game {
     this.trafficFurniture.repair(repaired);
     this.colliders.roadFurniture.repair(repaired);
     if (reposition) {
+      if (this.env.clouds) this.env.clouds.valid = false;
       this.postfx?.resetHistory();
       if (this.ride) this._alight(true);
       this.audio.resetWorld();
@@ -1099,6 +1100,7 @@ export class Game {
     const cam = this.camera.position;
     this.precipitation.update(this.weather, QUALITY.particles, !this.particles.enabled ||
       ((this.weather.rain || this.weather.flakes) && this.world.tunnelAt(cam.x, cam.z, cam.y)?.inside));
+    this.env.clouds?.render(this.camera);
     this.env.updateSkyLight();
     this.nightLights?.update(this.camera, this.chunks.chunks, this.vehicles.cars, this.env.night, this.mode === 'car' ? this.car : null);
     if (this.postfx) this.postfx.render();
