@@ -6,7 +6,7 @@ test('E25 – v pilotním úseku Americké se vykreslí jediná přízemní vrst
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   page.on('console', m => {
-    if (/invalid shader module|validation error|error.*shader|shader.*error/i.test(m.text())) errors.push(m.text());
+    if (/THREE\.TSL:|invalid shader module|validation error|error.*shader|shader.*error/i.test(m.text())) errors.push(m.text());
   });
   await page.setViewportSize({width:480,height:320});
   await page.goto(gameUrl('/?debug&quality=medium&view=340&adapt=0&hour=10'));

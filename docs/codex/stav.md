@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Podmínky materiálu u výloh na Americké
+
+Při spuštění kandidáta `f6a1254` hlásil WebGL 2 čtyři návraty hodnot z podmínek uvnitř shaderu. Úprava z E25 mění barvu soklu a římsy přímo uvnitř podmínek. V obou vykreslovačích prošla stejná kontrola u Wilsonova mostu. Změřená stěna měla přiřazený materiál přízemí i vstup a kompilace proběhla bez varování TSL. Na tomto sestavení prošlo 181 jednotkových testů a produkční sestavení. Výsledky jsou v `data-raw/e26/sokl-e2e.log`. Výkon při minutové zkoušce dne a noci se měří samostatně.
+
 ## Uložená hra a panel měření
 
 Chromium 159 načetlo z E12 do archivovaného kandidáta `f6a1254` koupený vůz, brzdy, pneumatiky, sedm rozvozů a objevené místo. V kandidátovi přibylo 120 Kč a druhé místo. Po novém načtení i návratu do E12 zůstalo 4 085 Kč a oba objevy. U přenosu z E25 se v kandidátovi shodovaly také špína, poškození a nastavení počasí. První návrat do E25 vyčerpal pětiminutový limit načtení stránky. Při opakování celého postupu prošel i návrat. E25 načetla novou odměnu, druhý objev, špínu 0,5, poškození levých dveří 0,4 a jasné počasí. [Protokol návratu k archivovaným verzím](../E26.md)
