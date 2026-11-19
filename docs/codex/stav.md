@@ -1,5 +1,13 @@
 # Stav etapy E26
 
+## Uložená hra a panel měření
+
+Chromium 159 načetlo z E12 do archivovaného kandidáta `f6a1254` koupený vůz, brzdy, pneumatiky, sedm rozvozů a objevené místo. V kandidátovi přibylo 120 Kč a druhé místo. Po novém načtení i návratu do E12 zůstalo 4 085 Kč a oba objevy. U přenosu z E25 se v kandidátovi shodovaly také špína, poškození a nastavení počasí. Při závěrečném otevření E25 vypršel pětiminutový limit prohlížeče. Poslední část čeká na opakování. [Protokol návratu k archivovaným verzím](../E26.md)
+
+Při kontrole panelu F9 hra po nástupu zapojí řidičovo auto do fyziky v dalším kroku simulace. Zkouška nyní tento krok provede a zkontroluje spojení auta s řidičem ještě před otevřením panelu. Na softwarovém WebGPU prošlo zobrazení času fyziky, počtu těles, otáček, stupně a prokluzu kol. Prošlo také 181 jednotkových testů JavaScriptu a produkční sestavení.
+
+V hlavní části prohlížečových zkoušek WebGL 2 prošlo 40 případů. Jejich výsledky jsou uložené. Zbývajících 128 případů má vlastní seznam pro pokračování po uvolnění paměti. WebGPU a dlouhá jízda se vyhodnocují samostatně.
+
 ## Čtrnáct kontrol vzhledu kandidáta
 
 V Chromiu 159 prošlo všech sedm zkoušek materiálů na WebGPU a stejných sedm na WebGL 2 nad produkčním sestavením `f6a1254`. Kontroly porovnaly denní a noční oblohu, okna, vodu a lampy u náhonu, světlomety auta, hladinu pod Wilsonovým mostem, portály Valíku a dlažbu náměstí. Při porovnání s předlohami byla hra nastavena na jasné počasí. U řeky test podle G13 měří zvlášť světlou mělčinu a tmavší střed toku. Na obou místech vyžaduje převahu modré. WebGPU čte barvy z dokončeného snímku ve výstupní textuře.

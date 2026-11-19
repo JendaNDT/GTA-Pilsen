@@ -130,7 +130,13 @@ test('E18 – panel měření ukazuje čas kroku, počet těles a při jízdě o
   await page.goto(gameUrl('/?debug&quality=low&adapt=0&hour=10'));
   await page.waitForFunction(() => window.__ready);
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
-  await page.evaluate(() => window.__game._enterCar(window.__game.player.lastCar));
+  const driving = await page.evaluate(() => {
+    const game = window.__game, car = game.player.lastCar;
+    game._enterCar(car);
+    game.update(1 / 60);
+    return game.driver?.car === car;
+  });
+  expect(driving).toBe(true);
   await page.keyboard.press('F9');
   const output = page.getByRole('textbox', { name: 'Výsledky měření výkonu' });
   await expect(output).toHaveValue(/Krok fyziky [\d,]+ ms · tělesa \d+/);
