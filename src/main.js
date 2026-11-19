@@ -329,7 +329,10 @@ async function boot() {
       return;
     }
     if (!running) { input.pressed.clear(); return; }
-    if (input.pressed.has('photo')) { openPhoto(); return; }
+    if (input.pressed.delete('photo')) {
+      openPhoto();
+      if (photo.active) return;
+    }
     const elapsed = Math.max(0, (now - last) / 1000);
     const dt = Math.min(0.05, elapsed);
     last = now;
