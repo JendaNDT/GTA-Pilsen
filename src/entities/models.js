@@ -4,6 +4,7 @@ import { step, vertexColor } from 'three/tsl';
 import { env, getPoolMaterial, makeBatchedSurfaceMaterial, makeSurfaceMaterial } from '../world/materials.js';
 import { SURFACE } from '../world/material-table.js';
 import { parts as ragdollParts } from '../physics/ragdoll.js';
+import { carPaint, carLenses } from './car-appearance.js';
 import { QUALITY } from '../config.js';
 
 const _c = new THREE.Color();
@@ -180,10 +181,12 @@ function carGeometry(type) {
   }
   // světla, nárazníky, kola
   const fz = len / 2, lz = -len / 2;
+  const firstLamp = det.p.length / 3;
   det.box(0.34, 0.14, 0.06, wid * 0.33, ride + bodyH * 0.72, fz * 0.985, HEAD);
   det.box(0.34, 0.14, 0.06, -wid * 0.33, ride + bodyH * 0.72, fz * 0.985, HEAD);
   det.box(0.32, 0.13, 0.06, wid * 0.34, ride + bodyH * 0.74, lz * 0.985, TAIL);
   det.box(0.32, 0.13, 0.06, -wid * 0.34, ride + bodyH * 0.74, lz * 0.985, TAIL);
+  for (const side of [-1, 1]) det.box(0.09, 0.09, 0.07, side * wid * 0.22, ride + bodyH * 0.74, lz * 0.985, WHITE);
   panels.frontBumper = { batch: 'detail', start: det.p.length / 3, count: 36 };
   det.box(wid * 0.98, 0.14, 0.1, 0, ride + 0.09, fz * 0.99, DARK);
   panels.rearBumper = { batch: 'detail', start: det.p.length / 3, count: 36 };
@@ -202,6 +205,18 @@ function carGeometry(type) {
     hazards.box(0.14, 0.12, 0.08, side * wid * 0.42, ride + bodyH * 0.73, end * len * 0.495, [1, 0.38, 0.01]);
   }
   g = { panels, body: body.geometry(), detail: det.geometry(), hazards: hazards.geometry(), wheelR };
+  const lenses = new Float32Array(g.detail.attributes.position.count);
+  for (let i = 0; i < 3; i++) lenses.fill(i + 1, firstLamp + 72 * i, firstLamp + 72 * (i + 1));
+  g.detail.setAttribute('aLens', new THREE.BufferAttribute(lenses, 1));
+  g.body.setAttribute('aScratch', new THREE.BufferAttribute(new Float32Array(g.body.attributes.position.count), 1));
+  // Samostatné poloviny směrovek používají jeden společný geometrický buffer.
+  g.indicators = [-1, 1].map((side, i) => {
+    const geometry = new THREE.BufferGeometry();
+    for (const [name, attr] of Object.entries(g.hazards.attributes)) geometry.setAttribute(name, attr);
+    geometry.setDrawRange(i * 72, 72);
+    geometry.boundingSphere = g.hazards.boundingSphere;
+    return geometry;
+  });
   carGeo.set(type.id, g);
   return g;
 }
@@ -219,13 +234,21 @@ export function addCarLight(group, type) {
   group.userData.light = light;
 }
 
+export function setCarAppearanceQuality(group) {
+  const { body, detail } = group.userData.batches;
+  body.material = QUALITY.carLights ? carPaint(group.userData.paint) : getBodyMaterial(group.userData.paint);
+  detail.material = QUALITY.carLights ? carLenses() : getDetailMaterial();
+}
+
 /** Vytvoří 3D objekt auta. */
 export function makeCarMesh(typeId, colorHex) {
   const type = CAR_TYPES[typeId];
   const g = carGeometry(type);
   const group = new THREE.Group();
-  const body = new THREE.Mesh(g.body, getBodyMaterial(type.police ? 0xdfe3e6 : type.sign ? 0xe0b020 : colorHex));
+  group.userData.paint = type.police ? 0xdfe3e6 : type.sign ? 0xe0b020 : colorHex;
+  const body = new THREE.Mesh(g.body, getBodyMaterial(group.userData.paint));
   const detail = new THREE.Mesh(g.detail, getDetailMaterial());
+  detail.userData.carSignals = new THREE.Vector4();
   group.userData.panels = g.panels;
   group.userData.batches = { body, detail };
   body.castShadow = true; detail.castShadow = true;
@@ -233,6 +256,13 @@ export function makeCarMesh(typeId, colorHex) {
   hazards.visible = false;
   group.userData.hazards = hazards;
   group.add(body, detail, hazards);
+  group.userData.indicators = g.indicators.map(geometry => {
+    const lamp = new THREE.Mesh(geometry, getDetailMaterial());
+    lamp.visible = false;
+    group.add(lamp);
+    return lamp;
+  });
+  setCarAppearanceQuality(group);
   if (QUALITY.carLights) addCarLight(group, type);
   if (type.police) {
     if (!beaconGeo) beaconGeo = new THREE.BoxGeometry(0.34, 0.12, 0.24);

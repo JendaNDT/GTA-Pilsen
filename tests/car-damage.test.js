@@ -92,3 +92,31 @@ test('poškozený motor ztrácí výkon a řízení táhne ke zničeným dveří
   a.damage = {rightDoor: 1};
   assert.ok(steeringPull(a) < 0);
 });
+
+test('místní škrábance a špína z polní cesty zůstanou na jediném autě', async () => {
+  const { trackCarDirt } = await import('../src/entities/car-appearance.js');
+  const a = car(), b = car();
+  const world = { isSoft: () => true, onRoad: () => false, isWater: () => false };
+  a.x = 17;
+  trackCarDirt(a, world);
+  assert.equal(a.dirt, 0.02);
+  world.onRoad = () => true;
+  a.z = 8;
+  trackCarDirt(a, world);
+  assert.equal(a.dirt, 0.02);
+  world.onRoad = () => false;
+  a.x += 200;
+  trackCarDirt(a, world);
+  assert.equal(a.dirt, 0.02);
+  dentCar(a, 12, side, inward);
+  const attr = c => c.mesh.userData.batches.body.geometry.attributes.aScratch.array;
+  assert.ok(attr(a).some(v => v > 0) && attr(a).some(v => v === 0));
+  assert.ok(attr(b).every(v => v === 0));
+  restorePanels(a, {});
+  assert.ok(attr(a).every(v => v === 0));
+  const garage = new Garage({});
+  garage.load({ model:'hatch' });
+  assert.equal(garage.snapshot().dirt, 0);
+  garage.active = a;
+  assert.equal(garage.snapshot().dirt, 0.02);
+});

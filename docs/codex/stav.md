@@ -14,6 +14,12 @@ Osm vlastních variant bytu, kanceláře, obchodu a schodiště má v atlasu po 
 
 Prošlo 161 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. Kontrola porovnala všech 40 dlaždic s generátorem. WebGL 2 i WebGPU zaznamenaly změnu barev za stejným oknem po načtení atlasu a další změnu po posunu kamery.
 
+## G21 · Lak, špína a světla aut
+
+Na střední až ultra předvolbě má lak průhlednou vrchní vrstvu. Na spodní části karoserie přibývá špína podle ujetých metrů mimo asfalt. Promáčknutí zanechá stopu na konkrétním panelu daného vozu. Uložení a garáž zachovají špínu i po načtení. Brzdová světla čtou brzdu z fyziky, couvací reagují na směr jízdy a provoz má směrovky podle plánovaného odbočení. Dva světlomety hráče sledují natočení karoserie. Klávesa L přepíná v noci dálková světla.
+
+Prošlo 162 testů JavaScriptu a produkční sestavení. WebGPU odhalilo nepodporovaný jednokanálový osmibitový atribut. Po opravě formátu prošly dotčené jednotkové testy a v Chromiu na WebGL 2 i WebGPU prošla kontrola dvou kuželů, rozteče světel a změny jejich dosahu.
+
 ## Výchozí etapa E23
 
 E23 vychází z dokončené větve E22 (`496a72d`). Prvním krokem je detail země při chůzi. Další pořadí tvoří povrchy silnic, voda, stromy, tráva, noční světla a částice. [Zadání E23](E23.md) · [Protokol E22](../E22.md)

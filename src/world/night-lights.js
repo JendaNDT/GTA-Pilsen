@@ -48,12 +48,18 @@ export class NightLights {
       this.group.add(light, light.target);
       return light;
     });
+    this.playerBeams = Array.from({ length: 2 }, () => {
+      const light = new SpotLight(0xfff2d6, 0, 55, 0.4, 0.65, 2);
+      light.visible = false;
+      this.group.add(light, light.target);
+      return light;
+    });
     this.last = -Infinity;
     this.selected = [];
     this.lastX = Infinity;
     this.lastZ = Infinity;
   }
-  update(camera, chunks, cars, night) {
+  update(camera, chunks, cars, night, playerCar = null) {
     if (night < 0.035) {
       this.group.visible = false;
       this.renderer.lighting = this.standard;
@@ -84,7 +90,7 @@ export class NightLights {
     }
     const nearest = this.cars.length
       ? nearestLights(
-          cars.filter((c) => c.mode !== 'parked' && !c.noLights && c.mesh.visible),
+          cars.filter((c) => c !== playerCar && c.mode !== 'parked' && !c.noLights && c.mesh.visible),
           point,
           this.cars.length,
           145
@@ -103,12 +109,26 @@ export class NightLights {
       light.target.position.set(car.x + dx * 23, y - 0.95, car.z + dz * 23);
       light.intensity = night * 170;
     }
-    this.renderer.lighting = this.selected.length || nearest.length ? this.clustered : this.standard;
+    const playerLights = playerCar && !playerCar.noLights;
+    for (let i = 0; i < 2; i++) {
+      const light = this.playerBeams[i];
+      light.visible = Boolean(playerLights);
+      if (!playerLights) continue;
+      const x = (i ? 1 : -1) * playerCar.type.wid * 0.33;
+      const z = playerCar.type.len * 0.5;
+      const high = playerCar.highBeam;
+      playerCar.mesh.localToWorld(light.position.set(x, 0.7, z));
+      playerCar.mesh.localToWorld(light.target.position.set(x, high ? 0.5 : -0.15, z + 18));
+      light.distance = high ? 100 : 55;
+      light.angle = high ? 0.26 : 0.4;
+      light.intensity = night * (high ? 880 : 340);
+    }
+    this.renderer.lighting = this.selected.length || nearest.length || playerLights ? this.clustered : this.standard;
   }
   dispose() {
     this.renderer.lighting = this.standard;
     this.group.removeFromParent();
-    for (const light of [...this.lamps, ...this.cars]) light.dispose();
+    for (const light of [...this.lamps, ...this.cars, ...this.playerBeams]) light.dispose();
     this.clustered.dispose();
   }
 }

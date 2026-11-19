@@ -1,5 +1,6 @@
 // Auta: jízdní fyzika hráče, běžný provoz, zaparkovaná auta a policie.
 import { enginePower, steeringPull, releasePanels } from './damage.js';
+import { trackCarDirt } from './car-appearance.js';
 import { driveRoute } from '../game/ai-driver.js';
 import { opposingLeftTurns, laneTurn, oncomingDistance, pathClearance, turnDistance, turnPoint } from '../game/ai-turn.js';
 import * as THREE from 'three/webgpu';
@@ -25,6 +26,7 @@ export class Car {
     this.skid = 0;
     this.mode = 'parked';        // parked | ai | player | loose | police
     this.health = 100;
+    this.dirt = this.dirtX = this.dirtZ = 0;
     this.edge = -1; this.s = 0; this.next = -1; this.lane = 0; this.nextLane = 0; this.turnSlow = 99;
     this.exitPlan = [];
     this.blocked = 0; this.temper = 0.8 + Math.random() * 0.25;
@@ -43,6 +45,8 @@ export class Car {
 
   /** Postaví auto na místo; bez výšky na zem (hint = výška, ze které se hledá povrch, např. pro most). */
   place(x, z, yaw, hint = null) {
+    this.dirtX = x; this.dirtZ = z;
+    this.brakeLights = false; this.turnSignal = 0;
     this.enteredSignal = null;
     this.junctionMovement = null;
     this.nextDetourCheck = 0;
@@ -171,6 +175,7 @@ export class VehicleManager {
 
     // řízení
     const sp = Math.abs(vF);
+    car.brakeLights = handbrake || (throttle * vF < 0 && sp > 0.65);
     // čím rychleji auto jede, tím méně se dají stočit kola (omezení bočního přetížení)
     const wb = t.len * 0.62;
     const maxSteer = Math.min(0.62, Math.atan((wb * (handbrake ? 26 : 17)) / Math.max(1, sp * sp)));
@@ -631,6 +636,7 @@ export class VehicleManager {
         vmax = Math.min(vmax, Math.sqrt(move.slow ** 2 + 5 * Math.max(0, distance - 8)));
       }
     }
+    car.turnSignal = turn && arcDistance > -26 ? turn.sign : 0;
     if (remain < 24 && car.turnSlow < vmax) vmax = car.turnSlow + (vmax - car.turnSlow) * Math.max(0, (remain - 6) / 18);
     if (turn) vmax = Math.min(vmax, Math.sqrt(3 * turn.radius + 6 * Math.max(0, -arcDistance)));
     const pointAt = (look) => {
@@ -668,6 +674,7 @@ export class VehicleManager {
       physical.driveAI(physical.input, dt, this.game.tireSurface);
       return;
     }
+    car.brakeLights = limit + 0.25 < car.speed || (car.pathBlocked && car.speed < 1);
     limit *= enginePower(car);
     if (car.speed < limit) car.speed = Math.min(limit, car.speed + 2.6 * enginePower(car) * dt);
     else car.speed = Math.max(limit, car.speed - 8 * dt);
@@ -1100,7 +1107,17 @@ export class VehicleManager {
       } else if (c.mode === 'parked') {
         if (!c.crashed && d2 > 330 * 330 && c !== this.game.player?.lastCar && c !== this.game.garage?.active) { this.remove(c); continue; }
       }
-      if (c.mesh.userData.light) c.mesh.userData.light.visible = QUALITY.carLights && lightsOn && c.mode !== 'parked' && !c.noLights && d2 < 300 * 300;
+      if (c.mode !== 'parked') trackCarDirt(c, this.world);
+      c.mesh.userData.batches.body.userData.dirt = c.dirt;
+      const running = !c.noLights && c.mode !== 'parked';
+      c.mesh.userData.batches.detail.userData.carSignals.set(
+        running && lightsOn ? (c.highBeam && c.mode === 'player' ? 3 : 1.6) : 0,
+        running ? (c.brakeLights ? 3 : lightsOn ? 0.65 : 0) : 0,
+        running && (c.speed < -0.4 || (c.physical && c.gear < 0)) ? 2 : 0, 0);
+      const blink = Math.floor(this.game.time * 2.5) % 2 === 0;
+      for (let i = 0; i < 2; i++) c.mesh.userData.indicators[i].visible =
+        running && c.mode === 'ai' && blink && c.turnSignal === (i === 0 ? 1 : -1);
+      if (c.mesh.userData.light) c.mesh.userData.light.visible = c.mode !== 'player' && QUALITY.carLights && lightsOn && c.mode !== 'parked' && !c.noLights && d2 < 300 * 300;
       if (c.mesh.userData.beacons) {
         const on = c.mode === 'police';
         const ph = Math.floor(this.game.time / 0.16) % 2;

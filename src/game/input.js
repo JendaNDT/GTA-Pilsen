@@ -16,7 +16,7 @@ export const input = {
 const keys = new Set();
 const KEYMAP = {
   KeyF: 'action', KeyE: 'action', Enter: 'action',
-  KeyJ: 'job', KeyM: 'map', KeyC: 'camera', KeyH: 'horn', KeyR: 'reset',
+  KeyJ: 'job', KeyM: 'map', KeyC: 'camera', KeyH: 'horn', KeyL: 'beams', KeyR: 'reset',
   Escape: 'menu', KeyP: 'menu', KeyN: 'time',
 };
 

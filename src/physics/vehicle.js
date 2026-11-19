@@ -193,6 +193,7 @@ export class PlayerVehicle {
     this.friction = this.surface * (arcade ? 1.15 : 1) * spec.grip;
     const speed = car.speed;
     const braking = throttle * speed < 0 && Math.abs(speed) > 0.65;
+    car.brakeLights = braking || handbrake;
     const slip = this.wheels.reduce((max, w) => w.HasContact() ? Math.max(max, Math.abs(w.mLongitudinalSlip)) : max, 0);
     const abs = arcade && Math.abs(speed) > 3 && slip > 0.18;
     const traction = arcade && Math.abs(speed) > 1 && slip > 0.22 ? 0.65 : 1;
@@ -216,6 +217,7 @@ export class PlayerVehicle {
     }
     this.car.steer = Math.max(-1, Math.min(1, input.steer + steeringPull(this.car)));
     const c = this.car;
+    c.brakeLights = input.brake > 0.05;
     const holding = input.brake === 1 && !input.throttle && Math.hypot(c.vx, c.vz) < 0.45 && Math.abs(c.vy) < 0.35;
     this.controller.SetDriverInput(input.throttle * enginePower(c), c.steer, input.brake, holding ? 1 : 0);
     if (input.throttle) this.physics.bodies.ActivateBody(this.body.GetID());

@@ -1,4 +1,5 @@
 import { panelLevels, restorePanels } from '../entities/damage.js';
+import { dirtLevel } from '../entities/car-appearance.js';
 import { Car } from '../entities/vehicles.js';
 
 export const GARAGE = { x: 833, z: 254, yaw: -2.49, name: 'Garáž u hlavního nádraží' };
@@ -25,12 +26,13 @@ export class Garage {
       model: 'hatch',
       health: condition(saved.health),
       damage: panelLevels(saved.damage),
+      dirt: dirtLevel(saved.dirt),
       upgrades: { brakes: saved.upgrades?.brakes === true, tires: saved.upgrades?.tires === true },
     };
   }
 
   snapshot() {
-    return this.owned && { ...this.owned, damage: panelLevels(this.active ? this.active.damage : this.owned.damage),
+    return this.owned && { ...this.owned, dirt: dirtLevel(this.active?.dirt ?? this.owned.dirt), damage: panelLevels(this.active ? this.active.damage : this.owned.damage),
       health: condition(this.active?.health ?? this.owned.health) };
   }
 
@@ -68,6 +70,7 @@ export class Garage {
       }
       const car = new Car(owned.model, 0x397f70);
       car.health = owned.health;
+      car.dirt = dirtLevel(owned.dirt);
       restorePanels(car, owned.damage);
       car.upgrades = owned.upgrades;
       car.place(GARAGE.x, GARAGE.z, GARAGE.yaw);

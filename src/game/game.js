@@ -27,7 +27,8 @@ import { Environment } from '../world/scene.js';
 import { createPostFX } from '../world/postfx.js';
 import { env } from '../world/materials.js';
 import { VehicleManager, Car, wrapAngle } from '../entities/vehicles.js';
-import { addCarLight, CAR_TYPES } from '../entities/models.js';
+import { dirtLevel } from '../entities/car-appearance.js';
+import { addCarLight, CAR_TYPES, setCarAppearanceQuality } from '../entities/models.js';
 import { Player, PedManager } from '../entities/player.js';
 import { TRANSIT_NAME, TransitManager } from '../entities/transit.js';
 import { Heli } from '../entities/heli.js';
@@ -340,6 +341,7 @@ export class Game {
     if (saved.owned === true && owned?.model !== saved.model) return;
     const car = new Car(saved.model, Number.isInteger(saved.color) ? saved.color : 0xc8922e);
     car.place(saved.x, saved.z, saved.yaw, saved.y);
+    car.dirt = dirtLevel(owned?.dirt ?? saved.dirt);
     car.health = owned?.health ?? (Number.isFinite(saved.health) ? clamp(saved.health, 0, 100) : 100);
     if (owned) {
       restorePanels(car, owned.damage);
@@ -362,7 +364,7 @@ export class Game {
         particlesEnabled: this.particles.enabled, fallsEnabled: this.falls.enabled, graphics: this.graphics, steering: this.steering, heliAssist: this.heliAssist,
         car: this.mode === 'car' ? {
           model: f.typeId, color: f.color, x: f.x, z: f.z, y: f.y, yaw: f.yaw,
-          health: f.health, owned: f === this.garage.active,
+          health: f.health, dirt: f.dirt, owned: f === this.garage.active,
         } : null,
         stats: this.stats, x: Math.round(safe.x), z: Math.round(safe.z),
         found: this.jobs.landmarks.filter((l) => l.found).map((l) => l.name),
@@ -844,6 +846,7 @@ export class Game {
     if (input.pressed.has('job')) this.jobs.toggle();
     if (input.pressed.has('camera')) this.camMode = (this.camMode + 1) % 2;
     if (input.pressed.has('reset')) this.unstuck();
+    if (input.pressed.has('beams') && this.mode === 'car') this.car.highBeam = !this.car.highBeam;
     if (input.pressed.has('horn') && this.mode === 'car') this.audio.horn(this.car);
     if (input.pressed.has('horn') && this.shifts.active) {
       if (this.ride.isTram) this.audio.bell(this.ride); else this.audio.horn(this.ride);
@@ -1072,7 +1075,7 @@ export class Game {
   render() {
     this.renderer.info.reset();
     this.env.updateSkyLight();
-    this.nightLights?.update(this.camera, this.chunks.chunks, this.vehicles.cars, this.env.night);
+    this.nightLights?.update(this.camera, this.chunks.chunks, this.vehicles.cars, this.env.night, this.mode === 'car' ? this.car : null);
     if (this.postfx) this.postfx.render();
     else this.renderer.render(this.scene, this.camera);
   }
@@ -1150,6 +1153,7 @@ export class Game {
     this.setResolutionScale(1);
     this.chunks.applyQuality();
     for (const car of this.vehicles.cars) {
+      setCarAppearanceQuality(car.mesh);
       if (QUALITY.carLights) addCarLight(car.mesh, car.type);
       else if (car.mesh.userData.light) car.mesh.userData.light.visible = false;
     }

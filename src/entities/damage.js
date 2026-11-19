@@ -57,9 +57,11 @@ function deform(car, name, point, normal, amount, spawn) {
       if (falloff <= 0) continue;
       delta.fromBufferAttribute(positions, i).sub(vertex).addScaledVector(normal, amount * falloff);
       vertex.add(delta.clampLength(0, 0.25));
+      if (geom.attributes.aScratch) geom.attributes.aScratch.setX(i, Math.min(1, delta.length() * 5));
       positions.setXYZ(i, vertex.x, vertex.y, vertex.z);
     }
     positions.needsUpdate = true;
+    if (geom.attributes.aScratch) geom.attributes.aScratch.needsUpdate = true;
     geom.computeVertexNormals();
     geom.computeBoundingSphere();
   }
