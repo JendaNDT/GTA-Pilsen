@@ -8,6 +8,10 @@ Ve složce `data-raw/e26/vydani/` jsou webový a zdrojový ZIP revize `34458c8` 
 
 Astra prošla zadání E13–E25 a našla dva problémy, které blokovaly ovládání nebo start, a jednu chybu diagnostiky. Opravy obnovily návrat z mapy po stisku O, spuštění s neodpovídajícími katalogy a měření času GPU na podporované záložní WebGL 2. Z rozbaleného webového ZIPu prošlo načtení a návrat do E12 i E25. Úplná sada má 356 prohlížečových případů, výsledky opakované jízdy a měření na autorových zařízeních jsou otevřené. [Jednotlivé nálezy, ověření a otisk webu](../E26.md)
 
+## První návrat po opravě nájezdu
+
+Na kandidátu `34458c8` dojel zkušební vůz z centra přes Rokycany a Dobřív zpět do Plzně po 51,27 km a 6 088,83 sekundách simulace. Největší pokles pod jízdní povrch byl 0,235 m. Po dokončení vykreslení měl první návrat 72 textur, 229 geometrií, 886 těles Joltu a žádný úlomek. Stejný vůz pokračoval přes celkových 75 km. Pro posouzení růstu prostředků se porovnává až třetí a čtvrtý návrat.
+
 ## Jízdní povrch při návratu do Plzně
 
 Na trase centrum–Rokycany–Dobřív–centrum se po 45,62 km projevil nespojitý nájezd na horní vozovku. Opravený spoj používají vykreslení i kolize Joltu. Běžný průjezd přes místo a okolí v délce 1,195 km skončil bez vyprošťování s největším poklesem 0,109 m. Prošlo 180 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. Všechny tři podporované verze Node.js daly stejných 815 souborů. Pokračuje zkouška čtyř okruhů. [Jízda a porovnání před opravou](../E26.md)
