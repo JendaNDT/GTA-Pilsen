@@ -4,6 +4,7 @@ import {
   attribute, Discard, Fn, If, Loop, float, materialColor, materialReference, mix, positionLocal, positionWorld, reflect, renderGroup,
   smoothstep, struct, transformNormalToView, uniform, vec2, vec3, vec4, vertexColor,
 } from 'three/tsl';
+import { asphaltNodes } from './asphalt.js';
 import { terrainDetailNodes } from './terrain-detail.js';
 import { buildingNodes } from './building-nodes.js';
 import { SURFACE } from './material-table.js';
@@ -56,6 +57,12 @@ export function makeDecalMaterial(opts = {}, surface = SURFACE.asphalt) {
     colorNode: decalColor,
     normalNode: transformNormalToView(vec3(0, 1, 0)),
   });
+}
+
+export function makeAsphaltMaterial(detail) {
+  const material = makeDecalMaterial({polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-6});
+  if (detail) Object.assign(material, asphaltNodes(decalColor,env.wetPaving,env.cam));
+  return material;
 }
 
 // Zrnitost slábne s velikostí promítnutého pixelu.

@@ -8,7 +8,13 @@ Dva atlasy obsahují šest fotografických povrchů včetně normálových map z
 
 Otisky všech 12 zdrojových souborů jsou v převodním seznamu a dva převody se po bajtech shodují s distribuovanými atlasy o souhrnné velikosti přibližně 3,7 MiB. Licence je v README i v nabídce O hře. Prošlo 151 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. Na střední předvolbě byla nalezena rekurze při čtení normály upravovaného materiálu. Detail nyní používá výchozí normálu geometrie. Opakované vykreslení prošlo na WebGPU i WebGL 2 a na WebGPU prošla také nízká předvolba bez požadavků na nové textury.
 
-Rozdíl po přenosu atlasů zachycují dva snímky ze stejného místa a zastavené kamery. Dalším krokem je G12, povrch vozovky a mokrý asfalt. [Původní svah](../E23/teren-pred.jpg) · [Svah s detailem](../E23/teren-po.jpg)
+Rozdíl po přenosu atlasů zachycují dva snímky ze stejného místa a zastavené kamery. [Původní svah](../E23/teren-pred.jpg) · [Svah s detailem](../E23/teren-po.jpg)
+
+## G12 · Asfalt a mokrá vozovka
+
+Na střední až ultra předvolbě se četnost záplat a intenzita vyjetých stop řídí třídou silnice a týdenním průměrem naměřené dopravy. Stopy sledují jízdní pruhy. Záplaty a mříže u městských obrubníků navazují přes hranice dlaždic. Za mokra se mění drsnost asfaltu a odlesk v kolejích. Vodorovné značení si zachovává vlastní vykreslovací vrstvu. Nízká předvolba používá původní geometrii bez dalších atributů.
+
+Prošlo 153 jednotkových testů a produkční sestavení. Mokrou silnici na střední předvolbě vykreslily WebGL 2 i WebGPU. Obě prohlížečové kontroly ověřily provozní profil geometrie, šířky pruhů, pořadí značení a kompilaci materiálu. Měření plynulosti na autorově grafice zůstává otevřené.
 
 ## Výchozí etapa E22
 

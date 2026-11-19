@@ -36,6 +36,7 @@ import { Shifts } from './shift.js';
 import { GameAudio } from './audio.js';
 import { input, pollInput, endFrame } from './input.js';
 import { GameClock, HOUR_SECONDS, formatDay, parseDay } from './clock.js';
+import { roadWear } from '../world/road-surface.js';
 import { TrafficRhythm } from './traffic-rhythm.js';
 import { automaticQuality, PROFILES, resolutionScale, SAVE_KEY } from './graphics-quality.js';
 
@@ -195,6 +196,7 @@ export class Game {
     this.transit = new TransitManager(this.scene, this.world, this, data.timetable);
     this.clock = new GameClock();
     this.trafficRhythm = new TrafficRhythm(this.world, data.trafficProfiles, this.transit.timetable);
+    this.chunks.roadWear = roadWear(this.world, this.trafficRhythm.measured);
     this.clockVisible = true;
     this.orthophotoEnabled = true;
     this.player = new Player(this.scene, this.world, physics, this.colliders);

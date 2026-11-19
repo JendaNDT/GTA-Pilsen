@@ -1,5 +1,6 @@
 import { attachRoadFurniture } from './road-furniture.js';
 import { prazdrojThickness } from './prazdroj-bridge.js';
+import { roadStations } from './road-surface.js';
 import { BRIDGE_THICKNESS, densePath, offsetDeck, pathNormal } from './road-profile.js';
 // Stavba 3D geometrie po dlaždicích: budovy, silnice, koleje, stromy.
 import * as THREE from 'three/webgpu';
@@ -11,7 +12,7 @@ import { terrainMaskTexture } from './terrain-detail.js';
 import { terrainGridStep } from '../physics/terrain.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
 import { CHUNK, QUALITY, PARAMS, BK, BF, RC, RF, LC, DRIVABLE_MAX } from '../config.js';
-import { makeBuildingMaterial, makeDecalMaterial, makeSurfaceMaterial, makeTerrainMaterial, getPoolMaterial, env } from './materials.js';
+import { makeBuildingMaterial, makeDecalMaterial, makeAsphaltMaterial, makeSurfaceMaterial, makeTerrainMaterial, getPoolMaterial, env } from './materials.js';
 import { SURFACE } from './material-table.js';
 import { Parts, getDetailMaterial } from '../entities/models.js';
 import { SURF } from './world.js';
@@ -187,13 +188,14 @@ class DecalBuf {
   }
   quad(a, b, c, d) { this.i.push(a, b, c, a, c, d); }
   /** Kruhová výplň (spoje a konce pásů); yFn(x, z) vrací výšku bodu. */
-  disc(x, z, r, col, yFn, seg = 8) {
-    const c0 = this.v(x, yFn(x, z), z, col);
+  disc(x, z, r, col, yFn, seg = 8, road, along = 0, nx = 0, nz = 0) {
+    const c0 = this.v(x, yFn(x, z), z, col, along, 0, road);
     let first = -1, prev = -1;
     for (let s = 0; s < seg; s++) {
       const a = (s / seg) * Math.PI * 2;
       const vx = x + Math.cos(a) * r, vz = z + Math.sin(a) * r;
-      const v = this.v(vx, yFn(vx, vz), vz, col);
+      const dx = vx-x, dz = vz-z;
+      const v = this.v(vx, yFn(vx, vz), vz, col, along+dx*nz-dz*nx, dx*nx+dz*nz, road);
       if (s === 0) first = v; else this.i.push(c0, v, prev);
       prev = v;
     }
@@ -207,6 +209,24 @@ class DecalBuf {
     g.setIndex(this.vc > 65535 ? new THREE.BufferAttribute(new Uint32Array(this.i), 1) : new THREE.BufferAttribute(new Uint16Array(this.i), 1));
     g.computeBoundingSphere();
     return g;
+  }
+}
+
+// Stejné trojúhelníky jako běžný povrch. Metrické souřadnice přidává pouze podrobná předvolba.
+class RoadBuf extends DecalBuf {
+  constructor() { super(); this.meters = []; this.layout = []; }
+  v(x, y, z, col, along = 0, across = 0, road) {
+    this.meters.push(along, across);
+    this.layout.push(road?.lane ?? 1, road?.width ?? 0, road?.wear ?? 0);
+    return super.v(x,y,z,col);
+  }
+  geometry() {
+    const geometry = super.geometry();
+    if (geometry) {
+      geometry.setAttribute('roadMeters', new THREE.Float32BufferAttribute(this.meters,2));
+      geometry.setAttribute('roadLayout', new THREE.Float32BufferAttribute(this.layout,3));
+    }
+    return geometry;
   }
 }
 
@@ -514,24 +534,26 @@ function trimApproach(D, start, end) {
 
 
 /** Pás položený na terén (nebo na mostovku). center = přidat středovou řadu bodů (lépe kopíruje terén). */
-function ribbon(world, buf, D, hw, col, lateral, lift, capStart, capEnd, center) {
+function ribbon(world, buf, D, hw, col, lateral, lift, capStart, capEnd, center, road) {
   const n = D.n;
   let pL = -1, pC = -1, pR = -1;
+  let along = road?.start ?? 0;
   for (let k = 0; k < n; k++) {
     const yFn = D.y ? () => D.y[k] + lift : (x, z) => world.heightAt(x, z) + SURF + lift;
     const nr = pathNormal(D, k);
     const nx = nr.x, nz = nr.z, sc = nr.scale;
-    if (nr.dot < 0.93) buf.disc(D.x[k] + nx * lateral, D.z[k] + nz * lateral, hw, col, yFn);
+    if (road && k) along += Math.hypot(D.x[k]-D.x[k-1],D.z[k]-D.z[k-1]);
+    if (nr.dot < 0.93) buf.disc(D.x[k] + nx * lateral, D.z[k] + nz * lateral, hw, col, yFn, 8, road, along, nx, nz);
     const cx = D.x[k] + nx * lateral * sc, cz = D.z[k] + nz * lateral * sc;
     const lx = cx - nx * hw * sc, lz = cz - nz * hw * sc, rx = cx + nx * hw * sc, rz = cz + nz * hw * sc;
-    const L = buf.v(lx, yFn(lx, lz), lz, col), R = buf.v(rx, yFn(rx, rz), rz, col);
+    const L = buf.v(lx, yFn(lx, lz), lz, col, along, -hw, road), R = buf.v(rx, yFn(rx, rz), rz, col, along, hw, road);
     let C = -1;
-    if (center) C = buf.v(cx, yFn(cx, cz), cz, col);
+    if (center) C = buf.v(cx, yFn(cx, cz), cz, col, along, 0, road);
     if (pL >= 0) {
       if (center) { buf.quad(pL, pC, C, L); buf.quad(pC, pR, R, C); } else buf.quad(pL, pR, R, L);
     }
     pL = L; pC = C; pR = R;
-    if ((k === 0 && capStart) || (k === n - 1 && capEnd)) buf.disc(cx, cz, hw, col, yFn);
+    if ((k === 0 && capStart) || (k === n - 1 && capEnd)) buf.disc(cx, cz, hw, col, yFn, 8, road, along, nx, nz);
   }
 }
 
@@ -796,10 +818,10 @@ function buildTunnel(world, tunnel) {
   return { solid: solid.geometry(), lights: lights.geometry() };
 }
 
-function buildRoads(world, ci) {
+function buildRoads(world, ci, manager) {
   const pieces = world.rPieces[ci];
   const R = world.r, px = world.rpx, pz = world.rpz, py = world.rpy, off = world.rOff;
-  const asphalt = new DecalBuf(), marks = new DecalBuf(), solid = new SolidBuf();
+  const asphalt = QUALITY.roadDetail ? new RoadBuf() : new DecalBuf(), marks = new DecalBuf(), solid = new SolidBuf();
   const surfaceStep = world.gradeTerrain.has(ci) ? world.gradeStep : 4;
   if (pieces) {
     for (let q = 0; q < pieces.length; q += 3) {
@@ -820,7 +842,13 @@ function buildRoads(world, ci) {
       if ((start || end) && !trimApproach(D, start, end)) continue;
       const col = ring ? COL.asphalt : bridge && cls <= DRIVABLE_MAX ? COL.bridge : roadColor(cls);
       const surfaceWidth = measured === undefined ? hw : measured - (ring ? 0.16 : 0.12);
-      ribbon(world, asphalt, D, surfaceWidth, col, 0, 0, s === a && !start, e === b && !end, hw > 2.2 && !raised);
+      const curb = manager.roadVerge[i] && !raised && cls !== RC.PRIMARY_LINK && cls !== RC.SECONDARY_LINK;
+      const road = QUALITY.roadDetail && cls <= DRIVABLE_MAX ? {
+        start: manager.roadStations[s] + Math.hypot(D.x[0]-px[s],D.z[0]-pz[s]),
+        lane: 2 * surfaceWidth / Math.max(1,R.lanes[i]), width: curb ? surfaceWidth : -surfaceWidth,
+        wear: manager.roadWear[i]
+      } : null;
+      ribbon(world, asphalt, D, surfaceWidth, col, 0, 0, s === a && !start, e === b && !end, hw > 2.2 && !raised, road);
       if (bridge) {
         const arches = world.archedBridges.get(i);
         const calibration = world.deckCalibrations.get(i);
@@ -1471,7 +1499,8 @@ export class ChunkManager {
     this.paintedBuildings = QUALITY.heritageDetail ? makeBuildingMaterial({ textures: true }) : this.buildingMat;
     this.districts = new Districts(heritage.districts);
     this.heritage = new Heritage(world, heritage);
-    this.asphaltMat = makeDecalMaterial({ polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -6 });
+    this.asphaltMat = makeAsphaltMaterial(QUALITY.roadDetail);
+    this.roadStations = QUALITY.roadDetail ? roadStations(world) : null;
     this.marksMat = makeDecalMaterial({ polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -14 }, SURFACE.roadPaint);
     this.solidMat = makeSurfaceMaterial(SURFACE.concrete, { vertexColors: true, side: THREE.DoubleSide });
     if (world.tunnels.length) {
@@ -1513,6 +1542,9 @@ export class ChunkManager {
   applyQuality() {
     for (const chunk of this.chunks.values()) this._dispose(chunk);
     this.chunks.clear();
+    this.asphaltMat.dispose();
+    this.asphaltMat = makeAsphaltMaterial(QUALITY.roadDetail);
+    this.roadStations = QUALITY.roadDetail ? (this.roadStations ?? roadStations(this.world)) : null;
     this.lastCenter = -1;
     this.texNear = QUALITY.groundTex;
     this.texFar = QUALITY.groundTexFar;
@@ -1578,7 +1610,7 @@ export class ChunkManager {
       ch.heritage = this.heritage.build(ci, ch);
       this._buildBuildings(ci, ch);
     } else if (ch.stage === 2) {
-      const roads = buildRoads(w, ci);
+      const roads = buildRoads(w, ci, this);
       if (roads.solid) { const m = new THREE.Mesh(roads.solid, this.solidMat); m.castShadow = true; m.receiveShadow = true; add(m, roads.solid); }
       if (roads.furniture.length) ch.roadFurniture = attachRoadFurniture(w.breakables, ch.group,
         roads.solid, this.solidMat, roads.furniture);
