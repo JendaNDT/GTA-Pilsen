@@ -178,3 +178,9 @@ Při uvolňování dlaždic v navazujícím měření WebGPU došlo k chybě př
 Všech šest kontrol materiálů a obě samostatné kontroly dlažby na náměstí a chybějícího ortofota prošly. Pět ze šesti cílených dopravních zkoušek prošlo po úpravě čekání na spuštění hry. Šestá zkouška se dostala až k jízdě. Dodávka zůstala stát 7,82 m od začátku cílové hrany. Při opakování s diagnostikou dojela a ve scéně zůstaly údaje o MHD z okamžiku zmrazení. Tyto výsledky samy neurčují přesnou příčinu původního zastavení.
 
 Zkouška ostrého zatáčení nyní před jízdou uvolní rezervace přechodů a seznam překážek těch účastníků, jejichž pohyb během ní nepokračuje. Semafory, geometrie, požadovaná dojezdová vzdálenost i zákaz vyjetí z vozovky zůstávají součástí zkoušky. Tři nezávislá spuštění projela obě odbočky a všech šest jízd zůstalo na vozovce. Prošlo také 128 jednotkových testů a produkční sestavení. Úplná prohlížečová sada na dřívějším sestavení dál běží. [Zadání E21](E21.md)
+
+### Referenční pohledy po opravě načítání
+
+Na WebGPU prošla zkouška všech osmi referenčních kamer. Při přípravě kolem nové kamery se sleduje postup načítání geometrie a leteckých podkladů. Během dokončování mapy osvětlení stačí vykreslit další strany oblohy. Celé město se kreslí až s hotovým světlem. V odděleném opakování prošly také čtyři scénáře MHD, pádu a lamp. Prošly jednotkové testy, všech 23 testů Pythonu a produkční sestavení.
+
+Na WebGL 2 prošlo vynucení vykreslovače i automatický přechod při chybějícím WebGPU. Při minutové zkoušce dne a noci vykázal sdílený softwarový adaptér 11 snímků proti požadavku na více než 30. Tato výkonnostní kontrola je otevřená. Celková regresní sada se eviduje samostatně.

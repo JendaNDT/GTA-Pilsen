@@ -27,8 +27,7 @@ export async function renderReferenceView(page, view) {
     const [x, z] = view.focus;
     game.player.place(x, z);
     window.__setClock(date, view.hour);
-    const start = performance.now();
-    let lastProgress = start, previousState;
+    let lastProgress = performance.now(), previousState;
     for (;;) {
       const built = chunks.update(x, z, game.camera.far / 1.35, 40, view.camera[1]);
       if (!built && !chunks.pending && !chunks.heritage.fetching && !chunks.orthophotoPending) break;
@@ -42,7 +41,7 @@ export async function renderReferenceView(page, view) {
       const state = [chunks.pending, chunks.heritage.fetching, ortho?.revision, ortho?.requests, unpainted].join('/');
       if (built || state !== previousState) lastProgress = now;
       previousState = state;
-      if (now - lastProgress > 45_000 || now - start > 600_000) {
+      if (now - lastProgress > 45_000) {
         throw new Error(`${view.name}: okolí se nestihlo dostavět (zbývá ${chunks.pending} kroků, ` +
           `budovy ${chunks.heritage.fetching}, ortofoto ${Boolean(chunks.orthophotoPending)}, nezakresleno ${unpainted}).`);
       }
@@ -56,7 +55,8 @@ export async function renderReferenceView(page, view) {
     if (game.env.skyLight?.face >= 0) {
       for (let i = 0; i < 6 && game.env.skyLight.face >= 0; i++) {
         await new Promise(requestAnimationFrame);
-        game.render();
+        // Mezi pohledy stačí vykreslit jednotlivé stěny sondy oblohy.
+        game.env.updateSkyLight();
       }
       // Odečti ustálený pohled po dokončení aktualizace světla.
       game.render();
