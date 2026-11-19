@@ -3,7 +3,7 @@ import { gameUrl } from './game-url.js';
 
 async function boot(page) {
   await page.goto(gameUrl('/?debug&view=620&shadows=0'));
-  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  await page.waitForFunction(() => window.__ready);
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
   await page.evaluate(() => window.__freeze(true));
 }
@@ -150,7 +150,7 @@ test('tramvaj lze použít a uložený postup přežije opětovné načtení', a
     return { x: Math.round(g.player.x), z: Math.round(g.player.z) };
   });
   await page.reload();
-  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  await page.waitForFunction(() => window.__ready);
   expect(await page.evaluate(() => ({ money: __game.money, deliveries: __game.stats.deliveries, found: __game.jobs.landmarks[0].found, mode: __game.mode })))
     .toEqual({ money: 1234, deliveries: 3, found: true, mode: 'foot' });
   expect(await page.evaluate((p) => Math.hypot(__game.player.x - p.x, __game.player.z - p.z), saved)).toBeLessThan(60);
@@ -172,7 +172,7 @@ test('uložení verze 1 a kontrolní trasy E01', async ({ page }) => {
     localStorage.setItem('plzen-naplno-v1', JSON.stringify({ v: 1, ...save }));
   }, save);
   await page.goto(gameUrl('/?debug&view=620&shadows=0'));
-  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  await page.waitForFunction(() => window.__ready);
   const restored = await page.evaluate(() => {
     const g = window.__game;
     return { x: g.player.x, z: g.player.z, hour: g.hour, money: g.money, stats: g.stats,

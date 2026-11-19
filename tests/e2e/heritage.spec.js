@@ -11,7 +11,7 @@ test('E05 – pilotní památky se vykreslí, přepnou detail a uvolní dlaždic
   expect(data.sha256).toBe("825dc3e395044b1f5a47e27c812cc4189829e9134cc027865ffc8fcb3e7bb9ac");
   expect(data.buildings).toBe(5697);
   expect(data.tiles).toHaveLength(93);
-  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  await page.waitForFunction(() => window.__ready);
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
   await page.evaluate(() => window.__freeze(true));
   await page.waitForFunction(() => {
@@ -79,7 +79,7 @@ test('měřené budovy se stahují podle polohy a po selhání zůstane vidět p
     localStorage.setItem('plzen-naplno-v1', JSON.stringify({ v: 1, x: -1100, z: -2650, hour: 10 }));
   });
   await page.goto(gameUrl('/?debug&view=620&shadows=0'));
-  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  await page.waitForFunction(() => window.__ready);
   expect(requests).toBe(0);
   await page.getByRole('button', { name: 'Pokračovat', exact: true }).click();
   await page.evaluate(() => window.__freeze(true));
