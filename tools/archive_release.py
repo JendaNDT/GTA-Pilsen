@@ -18,13 +18,14 @@ def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def write_zip(archive, files, root):
+def write_zip(archive, files, root, executable=()):
     with ZipFile(archive, "w", compression=ZIP_DEFLATED) as bundle:
         for name in files:
             path = root / name
             info = ZipInfo(name)
             info.create_system = 3
-            info.external_attr = (stat.S_IFREG | stat.S_IMODE(path.stat().st_mode)) << 16
+            mode = 0o755 if name in executable else 0o644
+            info.external_attr = (stat.S_IFREG | mode) << 16
             info.compress_type = ZIP_DEFLATED
             with path.open("rb") as source, bundle.open(info, "w") as target:
                 shutil.copyfileobj(source, target)
@@ -43,16 +44,28 @@ def main():
     if not (dist / "index.html").is_file():
         parser.error("Výstup musí obsahovat sestavené index.html.")
     source = subprocess.check_output(
-        ["git", "ls-files", "--cached", "-z",
+        ["git", "ls-files", "--stage", "-z",
          "--", "AGENTS.md", "vendor", ".github", ".gitignore", ".nvmrc", "README.md", "Spustit hru.command", "docs",
          "index.html", "package.json", "package-lock.json", "playwright.config.js", "public", "src", "tests", "tools", "vite.config.js"],
         cwd=ROOT,
     )
-    paths = sorted({name for name in source.decode().split("\0") if name and (ROOT / name).is_file()})
+    executable = set()
+    paths = []
+    for row in source.decode().split("\0"):
+        if not row:
+            continue
+        metadata, name = row.split("\t", 1)
+        mode, _, stage = metadata.split()
+        if stage != "0" or mode not in {"100644", "100755"}:
+            parser.error(f"Neuzavřený nebo nepodporovaný zdrojový soubor {name}.")
+        if not (ROOT / name).is_file() or (ROOT / name).is_symlink():
+            parser.error(f"V pracovní kopii chybí běžný sledovaný soubor {name}.")
+        paths.append(name)
+        if mode == "100755":
+            executable.add(name)
+    paths.sort()
     published = sorted(path.relative_to(dist).as_posix() for path in dist.rglob("*") if path.is_file())
     for name in paths:
-        if (ROOT / name).is_symlink():
-            parser.error(f"Zdrojový archiv nepřijímá symbolický odkaz {name}.")
         if name.startswith("public/"):
             output = dist / name.removeprefix("public/")
             if not output.is_file() or digest(ROOT / name) != digest(output):
@@ -73,7 +86,7 @@ def main():
         web = stage / f"{base}-web.zip"
         sources = stage / f"{base}-zdroje.zip"
         write_zip(web, published, dist)
-        write_zip(sources, paths, ROOT)
+        write_zip(sources, paths, ROOT, executable)
         manifest["archives"] = {path.name: {"bytes": path.stat().st_size, "sha256": digest(path)} for path in (web, sources)}
         (stage / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
         try:

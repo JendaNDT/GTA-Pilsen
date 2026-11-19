@@ -6,6 +6,10 @@ Manifest obsahuje 785 souborů a chrání také seznam střech používaný fyzi
 
 Chromium ověřilo skutečné uložení z E25, načtení a pokračování v E26 i návrat do E25. Při všech načteních zůstalo na hatchbacku poškození levých dveří 0,4 a špína 0,5. Zachovalo se i jasné počasí, dvě zakoupená vylepšení, zakázky, peníze a objevy. Pokračuje zkouška pomalého načítání, dlouhá jízda a skládání konečného vydání. [Výsledky a postup návratu](../E26.md)
 
+### Opakovatelnost archivů
+
+Zdrojový ZIP přebírá spustitelnost souborů z Gitu a webový ZIP používá běžná práva pro čtení. Kontrolní součty tak odpovídají po změně místních přístupových práv. Zkouška navíc ověřila zachování spouštěcího skriptu pro macOS a odmítnutí archivu, ve kterém chybí sledovaný soubor. Prošlo 27 testů Pythonu, na stejném herním kódu 176 testů JavaScriptu a produkční sestavení.
+
 ## Řízení vozidel a návrat uložené hry
 
 Jolt nyní řídí hráčův vůz a vrtulník při každém spuštění. Lehký výpočet pohybu aut ve vzdáleném provozu má stále aktivní volající a zůstává zachován. Při zkoušce letu se po odebrání starého řízení projevil chybějící odkaz vrtulníku na svět. Po jeho obnovení prošlo vynuceným WebGL 2 přistání na střeše a vystoupení z vozidla na mostě i v tunelu. Na softwarovém WebGPU dokončil skutečný vůz opraveného sestavení prvních 20 simulovaných minut průjezdu. Další okruhy pokračují.

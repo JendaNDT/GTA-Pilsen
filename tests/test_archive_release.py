@@ -23,6 +23,8 @@ class ReleaseArchiveTest(unittest.TestCase):
                 target = root / path
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_text(contents)
+            (root / "Spustit hru.command").write_text("#!/bin/sh\n")
+            (root / "Spustit hru.command").chmod(0o755)
             subprocess.run(["git", "add", "."], cwd=root, check=True)
             subprocess.run(["git", "-c", "user.name=test", "-c", "user.email=test@example.invalid",
                             "commit", "-qm", "Připravit vzorek"], cwd=root, check=True)
@@ -35,6 +37,9 @@ class ReleaseArchiveTest(unittest.TestCase):
             with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
                 run("0.1.0-E12")
                 manifest = (output / "manifest.json").read_bytes()
+                (root / "dist/index.html").chmod(0o600)
+                (root / "Spustit hru.command").chmod(0o600)
+                (root / "AGENTS.md").chmod(0o640)
                 run("0.1.0-E12")
                 with self.assertRaises(SystemExit):
                     run("0.2.0")
@@ -42,8 +47,14 @@ class ReleaseArchiveTest(unittest.TestCase):
                 index = json.loads(manifest)
                 with ZipFile(output / "Plzen-naplno-0.1.0-E12-zdroje.zip") as bundle:
                     self.assertIn("vendor/picomatch/index.js", bundle.namelist())
+                    self.assertEqual(bundle.getinfo("Spustit hru.command").external_attr >> 16, 0o100755)
+                    self.assertEqual(bundle.getinfo("AGENTS.md").external_attr >> 16, 0o100644)
                     self.assertEqual(set(bundle.namelist()), set(index["sources"]))
                 for file, record in index["archives"].items():
                     self.assertEqual(archive_release.digest(output / file), record["sha256"])
                 with self.assertRaises(SystemExit):
                     run("../chyba")
+
+                (root / "AGENTS.md").unlink()
+                with self.assertRaises(SystemExit):
+                    run("0.1.0-E12")
