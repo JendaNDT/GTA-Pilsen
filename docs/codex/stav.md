@@ -10,7 +10,7 @@ Astra prošla zadání E13–E25 a našla dva problémy, které blokovaly ovlád
 
 ## První návrat po opravě nájezdu
 
-Na kandidátu `34458c8` dojel zkušební vůz z centra přes Rokycany a Dobřív zpět do Plzně po 51,27 km a 6 088,83 sekundách simulace. Největší pokles pod jízdní povrch byl 0,235 m. Po dokončení vykreslení měl první návrat 72 textur, 229 geometrií, 886 těles Joltu a žádný úlomek. Stejný vůz pokračoval přes celkových 75 km. Pro posouzení růstu prostředků se porovnává až třetí a čtvrtý návrat.
+Na kandidátu `34458c8` dojel zkušební vůz z centra přes Rokycany a Dobřív zpět do Plzně po 51,27 km a 6 088,83 sekundách simulace. Největší pokles pod jízdní povrch byl 0,235 m. Po dokončení vykreslení měl první návrat 72 textur, 229 geometrií, 886 těles Joltu a žádný úlomek. Druhý okruh skončil po celkových 100,47 km odchylkou od trasy při stavu vozu 2,73 ze 100. Další zkouška sleduje stav vozu po celou jízdu a před křižovatkami zpomaluje. Prvních 5,18 km projela se stavem 94,04 ze 100 a bez vyprošťování. Prošlo 180 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. Pro posouzení růstu prostředků se porovnává až třetí a čtvrtý návrat.
 
 ## Jízdní povrch při návratu do Plzně
 

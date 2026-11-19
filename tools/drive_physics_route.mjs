@@ -40,6 +40,7 @@ try {
     const ends = [], samples = [];
     if (loops) window.__freeze(true);
     const points = [];
+    const cruise = loops ? 7.5 : 14;
     const legs = nodes.length - 1;
     let incoming = -1;
     for (let leg = 0; leg < (loops ? 4 : 1) * legs; leg++) {
@@ -51,6 +52,10 @@ try {
         const lane = loops ? Math.min(0.6, game.vehicles._laneFor(edge, 1)) : 0;
         for (let d = 0; d < world.eLen[edge]; d += 2) {
           const p = world.edgePoint(edge, d, lane, {});
+          // U odboček nech místnímu provozu prostor a brzdi už před křižovatkou.
+          const junction = loops && ((d < 12 && world.junctionArms[world.eFrom[edge]] > 2)
+            || (world.eLen[edge] - d < 12 && world.junctionArms[world.eTo[edge]] > 2));
+          p.limit = junction ? 4 : cruise;
           if (!points.length || Math.hypot(p.x - points.at(-1).x, p.z - points.at(-1).z) > 0.8) points.push(p);
         }
       }
@@ -58,14 +63,13 @@ try {
     }
     if (points.length < 2) throw new Error('Plánovač nenašel trasu pro zkušební jízdu.');
     const end = points.at(-1);
-    const cruise = loops ? 10 : 14;
     end.safeSpeed = 0;
     for (let i = points.length - 2; i >= 0; i--) {
       const p = points[i], next = points[i + 1];
       const length = Math.hypot(p.x - next.x, p.z - next.z);
       const turn = Math.acos(Math.max(-1, Math.min(1, p.tx * next.tx + p.tz * next.tz)));
-      p.safeSpeed = Math.min(cruise, Math.sqrt(next.safeSpeed ** 2 + (loops ? 3 : 5) * length),
-        Math.sqrt(2.5 * Math.max(0.4, length) / Math.max(0.001, turn)));
+      p.safeSpeed = Math.min(p.limit, Math.sqrt(next.safeSpeed ** 2 + (loops ? 3 : 5) * length),
+        Math.sqrt((loops ? 1.8 : 2.5) * Math.max(0.4, length) / Math.max(0.001, turn)));
     }
 
     const start = points[0];
@@ -147,14 +151,14 @@ try {
         throw new Error(JSON.stringify({ seconds, distance, maxDrop, x: car.x, z: car.z, best, attempts, index, aim, angle, speed: car.speed, desired: speed, steer, health: car.health, target: [points[aim].x, points[aim].z] }));
       }
       if (loops && tick % 3600 === 0) {
-        await window.recordDrive({ kind: 'prujezd', seconds, distance, maxDrop, index, attempts });
+        await window.recordDrive({ kind: 'prujezd', seconds, distance, maxDrop, index, attempts, health: car.health });
       }
       if (loops && index >= ends[samples.length] - 2) {
         game.render();
         await game.renderer.backend.device?.queue.onSubmittedWorkDone();
         const { textures, geometries } = window.__perf.renderStats();
         const sample = {
-          kind: 'navrat', lap: samples.length + 1, seconds, distance, maxDrop, textures, geometries,
+          kind: 'navrat', lap: samples.length + 1, seconds, distance, maxDrop, health: car.health, textures, geometries,
           bodies: game.physics.system.GetNumBodies(), debris: game.physics.debris.items.size,
         };
         samples.push(sample);
