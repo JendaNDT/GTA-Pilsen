@@ -28,7 +28,10 @@ function makeSky(colors, atmosphere, volume) {
   mesh.cloudCoverage.value = 0;
   const mat = mesh.material;
   const scattering = mat.colorNode;
-  mat.depthTest = false;
+  // SkyMesh posílá oblohu do největší hloubky. Na nízké předvolbě už domy
+  // a terén vyplnily hloubku, takže mraky počítáme jen pro viditelné pozadí.
+  const skyLast = QUALITY.shadowCascades === 0;
+  mat.depthTest = skyLast;
   mat.colorNode = Fn(() => {
     const d = positionLocal.normalize().toVar();
     const t = d.y.clamp(0, 1).sqrt();
@@ -62,7 +65,7 @@ function makeSky(colors, atmosphere, volume) {
     const cloudColor = mix(colors.cloud, colors.shade, thick).add(colors.sun.mul(sunlight.pow(6), 0.25));
     return vec4(mix(sky.add(star, moon), cloudColor, cover), 1);
   })();
-  mesh.renderOrder = -10;
+  mesh.renderOrder = skyLast ? 10 : -10;
   mesh.frustumCulled = false;
   return mesh;
 }

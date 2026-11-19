@@ -54,7 +54,7 @@ Prošlo 166 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. Ve W
 
 ## Snímky a měření
 
-Stejná kamera zachytila déšť i sníh na vysoké předvolbě. Ve čtyřech předvolbách prošel rozpočet ve třech referenčních pohledech. Na softwarovém adaptéru jsme zaznamenali také pět snímků za deště i sněhu v každé předvolbě. První postupné srovnání suché scény E23 a E24 ukázalo delší čas vykreslení při souběžných testech. Probíhá střídavé měření obou verzí za stejných podmínek. [Protokol a snímky](../E24.md)
+Stejná kamera zachytila déšť i sníh na vysoké předvolbě. Ve čtyřech předvolbách prošel rozpočet ve třech referenčních pohledech. Na softwarovém adaptéru jsme zaznamenali také pět snímků za deště i sněhu v každé předvolbě. První postupné srovnání suché scény E23 a E24 ukázalo delší čas vykreslení při souběžných testech. Při prvním střídavém měření byl Wilsonův most o 1 % rychlejší, náměstí o 15 % pomalejší v čase do dokončení snímku. Nízká předvolba nyní kreslí oblohu až za neprůhledné povrchy. V obou vykreslovačích prošlo porovnání obrazu starého a nového pořadí. [Protokol a snímky](../E24.md)
 
 ## Výchozí etapa E23
 
