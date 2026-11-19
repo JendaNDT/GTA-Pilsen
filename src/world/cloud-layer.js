@@ -48,7 +48,8 @@ export class CloudLayer {
     const mat = new NodeMaterial();
     mat.depthTest = false;
     mat.depthWrite = false;
-    mat.colorNode = Fn(() => {
+    // Čtvrtý kanál nese krytí oblaků i u neprůhledného výpočetního průchodu.
+    mat.fragmentNode = Fn(() => {
       const ray = this.world.mul(vec4(getViewPosition(uv(), .5, this.inverse).normalize(),0)).xyz.normalize().toVar();
       const result = vec4(0).toVar();
       If(ray.y.greaterThan(.03), () => {

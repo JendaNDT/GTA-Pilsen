@@ -2,6 +2,10 @@
 
 E24 navazuje na G17 ve větvi E23 (`fe30ef0`). [Zadání E24](E24.md)
 
+## Průhlednost objemových oblaků
+
+Ve vysoké předvolbě se u nádraží objevila černá obloha. Na stejném místě po opravě zmizely černé plochy a mezi oblaky je vidět modrá obloha. Oprava zachovává krytí vypočtené pro každý paprsek i při přebírání předchozího snímku. WebGL 2 i WebGPU našly částečně průhledné vzorky mezi oblaky a ověřily nulové krytí při pohledu přímo dolů. Prošlo 166 jednotkových testů JavaScriptu a produkční sestavení. [Porovnání obrazu](../E24.md)
+
 ## G18 a G20 · Fasády a střechy
 
 Na střední až ultra předvolbě se sedm fotografických fasád řídí typem budovy a paletou čtvrti. Okna, sokl a ostění sdílejí souřadnice. Pět střešních vrstev rozlišuje tašky, plech, měď, lepenku a vláknocement. Měděná patina na katedrále začíná až na věži. Převod spároval materiálové údaje OSM s 138 budovami projektu. Ostatní plochy používají výběr podle stylu a barvy.
