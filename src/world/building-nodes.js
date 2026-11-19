@@ -191,7 +191,7 @@ function addSurfaceDetail(color, facadePoint, cell, code) {
   });
 }
 
-export function buildingNodes(night, schedule, camera, sky, textures, heritage) {
+export function buildingNodes(night, schedule, camera, sky, textures, heritage, street = false) {
   const rooms = textures ? roomAtlas() : null;
   const surface = Fn(() => {
     const cell = windowData.xy.toVar();
@@ -201,8 +201,24 @@ export function buildingNodes(night, schedule, camera, sky, textures, heritage) 
     const color = wallColor.toVar();
     const illumination = float(0).toVar();
     const glazing = float(0).toVar();
-    If(code.greaterThan(0).and(style.greaterThan(0.5)), () => {
+    const front = street ? attribute('aStreet', 'vec4') : null;
+    const isFront = front && front.z.greaterThan(0).and(front.y.lessThan(front.w.min(3.5)));
+    const regular = code.greaterThan(0).and(style.greaterThan(0.5));
+    If(isFront ? regular.and(isFront.not()) : regular, () => {
       facade(color, illumination, glazing, cell, code, style, width, night, schedule, heritage, rooms, camera, sky);
+    });
+    if (isFront) If(isFront, () => {
+      // Členění přízemí je vlastní neutrální kresba, rozměry stěny pocházejí z měření.
+      const height = front.w.min(3.5);
+      const bays = front.z.div(3).round().max(1);
+      const edge = front.x.div(front.z).mul(bays).fract().sub(.5).abs();
+      const glass = edge.lessThan(.40).and(front.y.greaterThan(.48), front.y.lessThan(height.sub(.48)),
+        front.z.greaterThan(1.8));
+      color.assign(mix(color, vec3(.10,.16,.18), glass.select(.85,0)));
+      glazing.assign(glass.select(.9,0));
+      illumination.assign(glass.select(night.mul(.19),0));
+      If(front.y.lessThan(.38), () => color.mulAssign(.68));
+      If(front.y.sub(height.sub(.25)).abs().lessThan(.065), () => color.mulAssign(1.18));
     });
     if (textures) addSurfaceDetail(color, positionWorld, cell, code);
     return buildingSurface(color, illumination, glazing);

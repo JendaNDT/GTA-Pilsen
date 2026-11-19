@@ -34,6 +34,7 @@ export class World {
     this.playMinX = b.minX; this.playMaxX = b.maxX; this.playMinZ = b.minZ; this.playMaxZ = b.maxZ;
     this.cols = Math.ceil((this.maxX - this.minX) / CHUNK);
     this.rows = Math.ceil((this.maxZ - this.minZ) / CHUNK);
+    this.streetDetails = data.streetDetails;
     this.structures = data.structures ? new Structures(data.structures, this.cols, this.rows) : null;
     this.gcols = Math.ceil((this.maxX - this.minX) / COLL_CELL) + 1;
     this.grows = Math.ceil((this.maxZ - this.minZ) / COLL_CELL) + 1;
