@@ -1,3 +1,11 @@
+# Stav etapy E26
+
+## Příprava archivu
+
+Nástroj přijímá označení vydání přes `--version`. Před vytvořením ZIPů zkontroluje shodu distribuovaných dat se sestavením. Zdrojový archiv zahrnuje také místní závislost `vendor/picomatch`. Manifest uvádí otisky všech zdrojů, webových souborů a obou archivů. Nové vydání se zveřejní najednou v samostatné složce. Při opakování se zachová totožný výsledek i starší vydání.
+
+Na malém zkušebním repozitáři prošlo dvojí zabalení, porovnání obou archivů s manifestem a odmítnutí zápisu jiné verze do stejné složky. Prošlo 166 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. Finální ZIPy počkají na úplný obsah E25 a zkoušky vydání.
+
 # Stav etapy E25
 
 ## Vymezení pilotu

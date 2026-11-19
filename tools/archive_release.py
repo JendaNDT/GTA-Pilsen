@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import re
 import shutil
 import stat
 import subprocess
@@ -31,15 +32,19 @@ def write_zip(archive, files, root):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--version", help="Označení vydání, výchozí je verze z package.json.")
     parser.add_argument("--dist", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    version = args.version or json.loads((ROOT / "package.json").read_text())["version"]
+    if not re.fullmatch(r"[0-9]+(?:[.][0-9]+){2}(?:[-+][a-zA-Z0-9.-]+)?", version):
+        parser.error("Neplatné označení verze.")
     dist = args.dist.resolve()
     if not (dist / "index.html").is_file():
         parser.error("Výstup musí obsahovat sestavené index.html.")
     source = subprocess.check_output(
-        ["git", "ls-files", "--cached", "--others", "--exclude-standard", "-z",
-         "--", ".github", ".gitignore", ".nvmrc", "README.md", "Spustit hru.command", "docs",
+        ["git", "ls-files", "--cached", "-z",
+         "--", "AGENTS.md", "vendor", ".github", ".gitignore", ".nvmrc", "README.md", "Spustit hru.command", "docs",
          "index.html", "package.json", "package-lock.json", "playwright.config.js", "public", "src", "tests", "tools", "vite.config.js"],
         cwd=ROOT,
     )
@@ -53,24 +58,31 @@ def main():
             if not output.is_file() or digest(ROOT / name) != digest(output):
                 parser.error(f"Sestavení neodpovídá souboru {name}.")
 
-    version = json.loads((ROOT / "package.json").read_text())["version"] + "-E12"
     base = f"Plzen-naplno-{version}"
     manifest = {
         "version": version,
         "baseCommit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
+        "sources": {name: digest(ROOT / name) for name in paths},
         "published": {name: digest(dist / name) for name in published},
     }
-    args.output.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(dir=args.output) as folder:
-        stage = Path(folder)
+    output = args.output.resolve()
+    output.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=output.parent) as folder:
+        stage = Path(folder) / "vydani"
+        stage.mkdir()
         web = stage / f"{base}-web.zip"
         sources = stage / f"{base}-zdroje.zip"
         write_zip(web, published, dist)
         write_zip(sources, paths, ROOT)
         manifest["archives"] = {path.name: {"bytes": path.stat().st_size, "sha256": digest(path)} for path in (web, sources)}
         (stage / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
-        for path in sorted(stage.iterdir()):
-            path.replace(args.output / path.name)
+        try:
+            stage.replace(output)
+        except OSError:
+            if not output.is_dir():
+                raise
+            if any(not (output / p.name).is_file() or digest(p) != digest(output / p.name) for p in stage.iterdir()):
+                parser.error(f"Ve složce {output} je jiné vydání. Vyber pro novou verzi vlastní složku.")
     print(f"{version} · {len(published)} souborů ve webu · {len(paths)} souborů ve zdrojích")
 
 
