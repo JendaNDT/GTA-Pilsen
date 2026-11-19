@@ -1,3 +1,4 @@
+import { roomAtlas, roomView } from './window-interiors.js';
 import { facadeDetail } from './facade-detail.js';
 import {
   Fn, If, attribute, float, mix, positionWorld, select, smoothstep, step, struct, vec2, vec3, vec4,
@@ -16,7 +17,7 @@ const surfaceProperties = attribute('aSurface', 'vec2');
 const wallColor = vertexColor().rgb;
 const buildingSurface = struct({ color: 'vec3', illumination: 'float', glass: 'float' });
 
-function facade(color, illumination, glazing, cell, code, style, width, night, schedule, heritage) {
+function facade(color, illumination, glazing, cell, code, style, width, night, schedule, heritage, rooms, camera, sky) {
   const uv = cell.fract().toVar(), id = cell.floor().toVar();
   const detail = smoothstep(0.25, 0.8, width.x.max(width.y)).oneMinus().toVar();
   const ground = step(id.y, 0.5).toVar();
@@ -132,6 +133,13 @@ function facade(color, illumination, glazing, cell, code, style, width, night, s
   const litColor = mix(vec3(1, 0.78, 0.44), vec3(0.70, 0.82, 1), step(0.86, h1))
     .mul(h1.mul(0.38).add(0.62), glassHeight.mul(0.2).add(0.8));
   glass.assign(mix(glass, litColor, lit));
+  if (rooms) {
+    const near = smoothstep(35, 88, camera.sub(positionWorld).length()).oneMinus().mul(detail);
+    If(near.greaterThan(0.001).and(window.greaterThan(0.01)), () => {
+      const opening = uv.sub(rect.xz).div(vec2(rect.y.sub(rect.x),yTop.sub(rect.z)).max(0.001)).saturate();
+      glass.assign(mix(glass, roomView(rooms, opening, style, shop, h1, h2, night, lit, camera, sky), near));
+    });
+  }
   const crossX = smoothstep(0.008, width.x.add(0.012), uv.x.sub(rect.x.add(rect.y).mul(0.5)).abs()).oneMinus();
   const crossY = smoothstep(0.008, width.y.add(0.012), uv.y.sub(mix(rect.z, yTop, 0.68)).abs()).oneMinus();
   const bars = crossX.mul(vertical).max(crossY.mul(horizontal)).mul(detail).toVar();
@@ -182,7 +190,8 @@ function addSurfaceDetail(color, facadePoint, cell, code) {
   });
 }
 
-export function buildingNodes(night, schedule, camera, textures, heritage) {
+export function buildingNodes(night, schedule, camera, sky, textures, heritage) {
+  const rooms = textures ? roomAtlas() : null;
   const surface = Fn(() => {
     const cell = windowData.xy.toVar();
     const code = windowData.z.add(0.5).floor().toVar();
@@ -192,7 +201,7 @@ export function buildingNodes(night, schedule, camera, textures, heritage) {
     const illumination = float(0).toVar();
     const glazing = float(0).toVar();
     If(code.greaterThan(0).and(style.greaterThan(0.5)), () => {
-      facade(color, illumination, glazing, cell, code, style, width, night, schedule, heritage);
+      facade(color, illumination, glazing, cell, code, style, width, night, schedule, heritage, rooms, camera, sky);
     });
     if (textures) addSurfaceDetail(color, positionWorld, cell, code);
     return buildingSurface(color, illumination, glazing);

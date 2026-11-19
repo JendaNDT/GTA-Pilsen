@@ -298,7 +298,7 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
   Pro další ulice a pro chodce hra používá odhad. [Dopravní detektory](https://opendata.plzen.eu/public/opendata/detail/160) ·
   [Hodinové profily PoliVisu](https://polivisuapi.plzen.eu/api/)
 
-- Fotografické materiály fasád poskytla knihovna Poly Haven (CC0). Normály, drsnost a barva stěn se balí do atlasů spolu s pěti vlastními vzory střech. [Sedm materiálů a otisky](tools/facade-textures.json) · [Licence Poly Haven](https://polyhaven.com/license)
+- Fotografické materiály fasád poskytla knihovna Poly Haven (CC0). Normály, drsnost a barva stěn se balí do atlasů spolu s pěti vlastními vzory střech. Projekt vytvořil také osm variant interiérů za okny. [Sedm materiálů a otisky](tools/facade-textures.json) · [Licence Poly Haven](https://polyhaven.com/license)
 - Čtyři modely stromů a atlas jejich sezónních pohledů vznikají přímo z geometrie projektu. Druh olistění vychází ze značek OpenStreetMap pod licencí ODbL. [Převod značek](tools/build_tree_types.py) · [Vykreslení atlasu](tools/build_impostors.mjs)
 - Detail trávy, hlíny, štěrku, brázd, písku a lesního listí používá fotografie a normálové mapy z knihovny Poly Haven pod licencí CC0. [Šest použitých materiálů a jejich otisky](tools/terrain-textures.json) · [Licence Poly Haven](https://polyhaven.com/license)
 - Měřené budovy centra, stavební objekty včetně mostů a jezů a profil lávky U Prazdroje vycházejí z dat města Plzně z roku 2024 od GEOREAL – Vybíral. Plochy jsou

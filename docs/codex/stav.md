@@ -8,6 +8,12 @@ Na střední až ultra předvolbě se sedm fotografických fasád řídí typem 
 
 U 21 fotografických podkladů CC0 prošla kontrola velikosti a zdrojového otisku. Oba převody vytvořily shodné atlasy. Prošlo 161 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. WebGL 2 i WebGPU načetly atlasy a vykreslily měřené i běžné budovy.
 
+## G19 · Místnosti za okny
+
+Osm vlastních variant bytu, kanceláře, obchodu a schodiště má v atlasu po pěti stěnách. Při chůzi kolem budovy se podle směru pohledu odkrývá jiná část místnosti. Závěsy a žaluzie si každé okno drží na místě a večer se rozsvěcí podle rozvrhu E23. Nízká předvolba si ponechává původní okna.
+
+Prošlo 161 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. Kontrola porovnala všech 40 dlaždic s generátorem. WebGL 2 i WebGPU zaznamenaly změnu barev za stejným oknem po načtení atlasu a další změnu po posunu kamery.
+
 ## Výchozí etapa E23
 
 E23 vychází z dokončené větve E22 (`496a72d`). Prvním krokem je detail země při chůzi. Další pořadí tvoří povrchy silnic, voda, stromy, tráva, noční světla a částice. [Zadání E23](E23.md) · [Protokol E22](../E22.md)

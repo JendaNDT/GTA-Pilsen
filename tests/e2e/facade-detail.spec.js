@@ -14,7 +14,7 @@ test('E24 – detailní povrchy budov se načtou a vykreslí na střední předv
     () =>
       performance
         .getEntriesByType('resource')
-        .filter((r) => r.name.includes('/textures/facades/') && r.responseEnd).length === 2
+        .filter((r) => /\/textures\/facades\/(barva|povrch)\.webp/.test(r.name) && r.responseEnd).length === 2
   );
   const data = await page.evaluate(async () => {
     const g = __game;
