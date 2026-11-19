@@ -56,7 +56,7 @@ async function approach(page, id, station, date = '2026-11-09') {
 }
 
 test('E08 – přestup z tramvaje na autobus po skutečné jízdě a výstupu', async ({ page }, info) => {
-  test.setTimeout(150_000);
+  test.setTimeout(Math.max(test.info().timeout,150_000));
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await boot(page);
@@ -166,7 +166,7 @@ test('E08 – trolejbus 49, výstup v zastávce a použití jízdního řádu', 
 });
 
 test('E08 – víkendový noční autobus N12 s výstupem před hranicí mapy', async ({ page }, info) => {
-  test.setTimeout(110_000);
+  test.setTimeout(Math.max(test.info().timeout,110_000));
   await boot(page);
   expect(await approach(page, '689753', 'Mrakodrap', '2026-11-14')).toEqual({ ref: 'N12', doorOpen: true, boardable: true });
   await expect(page.locator('#stop-departures')).toContainText('Stod');
