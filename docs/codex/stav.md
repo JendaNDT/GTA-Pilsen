@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Kandidát se vstupy ve výšce chodníku
+
+Po opravě E25 se mezi 785 chráněnými soubory změnily tři uliční úseky a jejich katalog. Produkční web měl na Node.js 20.19.0, 22.12.0 a 24.22.1 všech 815 souborů shodných po bajtech. Prošlo 179 testů JavaScriptu a 27 testů Pythonu. Při rozbalení webového ZIPu prošlo porovnání každého souboru s tímto sestavením. Úplná prohlížečová sada začala na produkčním náhledu a obsahuje 352 případů včetně fiktivní zkušebny vybavení na obou vykreslovačích. Dlouhá jízda, výsledky celé sady a měření na cílových zařízeních jsou otevřené. [Protokol E26](../E26.md)
+
 ## Verze v menu a sestavení na třech verzích Node.js
 
 Kandidát 0.2.0 zobrazuje verzi v nabídce O hře a popisuje fotorežim a diagnostiku v ovládání. Na WebGPU prošla jízda tramvají, uložení a obnovení postupu i kontrola obou nabídek. Na Node.js 20.19.0, 22.12.0 a 24.22.1 vzniklo 815 shodných souborů. Prošlo 178 testů JavaScriptu a 27 testů Pythonu. Úplná sada pro oba vykreslovače obsahuje 350 scénářů. Výsledky jednotlivých jízd a zbývajících prohlížečových zkoušek se doplňují.

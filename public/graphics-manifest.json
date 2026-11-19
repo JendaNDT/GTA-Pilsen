@@ -3558,23 +3558,23 @@
     },
     "detail/streets/americka.bin": {
       "bytes": 4144,
-      "fingerprint": "175a54a9",
-      "sha256": "a6d06088edc5c38b1604bf1e1db05d12006cc803542869148e6a22d6c6a07539"
+      "fingerprint": "bfa2027e",
+      "sha256": "dffbce00b0d3c1a6c370ae48afe6d4d2a04739580dc02650377a396a10f1d2af"
     },
     "detail/streets/drevena.bin": {
       "bytes": 4396,
-      "fingerprint": "721c371c",
-      "sha256": "fddc489a5e6d0fdb92f65a68ff090cdc31794a81d52e165f9d4728ef49c33a3b"
+      "fingerprint": "c494ab3e",
+      "sha256": "1628d4fb3900e0c4de7ddd81f2ddd3c93a2692f5bcf63d8e2ec23b1221116b1f"
     },
     "detail/streets/index.json": {
       "bytes": 458,
-      "fingerprint": "087b7c15",
-      "sha256": "7295ce3fcd15d6f09f22b784f5b6af05c3d0af104ad990f0df334df0242bcf65"
+      "fingerprint": "4037b5ab",
+      "sha256": "8727f859a4fada7fca6275b469c65622bb44d0538a7a6b2304b97b94e6612517"
     },
     "detail/streets/nadrazi.bin": {
       "bytes": 1828,
-      "fingerprint": "5e7ada90",
-      "sha256": "c68dbba8de2c864f7cdf15e5beee773340e2718041c23d3fa8de4942afcbbb49"
+      "fingerprint": "e74ad427",
+      "sha256": "d2d4745b3114af3d78f41b38628189afdfe786996a14bce12341ec5c0d79fbfa"
     },
     "detail/structures/29_47.bin": {
       "bytes": 508,

@@ -17,7 +17,6 @@ export default defineConfig({
     { name: 'webgl2', grepInvert: /@jen-webgpu\b/, use: { launchOptions: { executablePath, args: webglFlags } } },
     {
       name: 'webgpu',
-      grep: /@webgpu\b/,
       use: { channel: 'chromium', launchOptions: { executablePath, args: webgpuFlags } },
     },
   ],
