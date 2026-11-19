@@ -1,4 +1,14 @@
-# Stav etapy E22
+# Stav etapy E23
+
+E23 vychází z dokončené větve E22 (`496a72d`). Prvním krokem je detail země při chůzi. Další pořadí tvoří povrchy silnic, voda, stromy, tráva, noční světla a částice. [Zadání E23](E23.md) · [Protokol E22](../E22.md)
+
+## G11 · Detail terénu
+
+První commit přidává dva atlasy se šesti povrchy. Rozpracovaný herní materiál v pracovní kopii používá masku po čtyřech metrech, přechod mezi 80 a 120 m a tři projekce na svazích nad 35°. Nízká předvolba na WebGPU prošla. Při ověření střední předvolby hlásil WebGPU chybu kompilace materiálu. Dokončení a ověření vykreslení pokračuje v této větvi.
+
+Všechny zdrojové fotografie i normálové mapy mají ověřený otisk. Dva převody a distribuované soubory se shodují po bajtech. Zdrojové odkazy jsou v převodním seznamu, licence CC0 je v README i v nabídce O hře. Výsledkem jsou dva soubory WebP o souhrnné velikosti přibližně 3,7 MiB. Prošlo místní produkční sestavení a 25 testů Pythonu.
+
+## Výchozí etapa E22
 
 Ve větvi `etapa/E22` jsou převedené městské objekty, ověřený Wilsonův most i tři dávky zdí a pilířů. Hra používá další dvě lávky, silniční desku, dvě železniční mostovky a čtyři díly jezů. Vývoj a dostupné přejímací kontroly E22 jsou dokončené. Zůstává porovnání s autorovými fotografiemi a změření plynulosti na jeho zařízení. [Protokol E22](../E22.md). [Zadání E22](E22.md) · [Výsledky převodu a pilotu](#e22--převod-a-inventura)
 
