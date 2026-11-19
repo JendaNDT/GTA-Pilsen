@@ -5,8 +5,8 @@ Větev `etapa/E21` navazuje na E20 sloučenou revizí `623e081`. [Zadání E21](
 | Krok | Stav |
 | --- | --- |
 | 1. Registr a stálé identifikátory | Hotovo. Každý svět má vlastní registr. Značky a hlavy semaforů dostávají identitu ve zdrojovém pořadí své dlaždice před seskupením podle materiálu. |
-| 2. Lampy | Rozpracováno. Společné umístění pro grafiku a fyziku, sražení, oprava a obě části lampy jsou zapojené. Probíhá ověření. |
-| 3. Značky a semafory | Zbývá ohnutí, zlomení a pravidla přednosti. |
+| 2. Lampy | Hotovo. Společné umístění pro grafiku a fyziku, sražení, zhasnutí, dvě části lampy, obnova po návratu a ranní oprava prošly ověřením. |
+| 3. Značky a semafory | Navazuje ohnutí, zlomení a pravidla přednosti. |
 | 4. Mosty a uzavírky | Zbývá rozbití jednotlivých úseků a odtlačení zábrany. Historické mosty mají vlastní kamenné ohrazení. |
 | 5. Následky nárazu | Zbývá hledanost, zvuky a správa počtu úlomků. |
 | 6. Auta a garáž | Zbývají deformace, odpadlé díly, jízdní následky, uložení a oprava. |
@@ -66,3 +66,5 @@ Ze stejné kamery na WebGPU byly pořízeny snímky před ulomením lampy a po n
 Ve stejné úplné sadě po probuzení prošly obě desetiminutové zkoušky provozu. Nejdelší stání bylo 71,5 s na Klatovské a 50,5 s u hlavního nádraží. V obou případech byla všechna sledovaná auta při jízdě pod plynem na vozovce. Prošel i nový cílený průjezd dvou aut přes zúžení u Tylovy. Úplný běh pokračuje.
 
 Před uložením průběžného stavu znovu prošlo 106 testů JavaScriptu a standardní produkční sestavení. Hlavní soubor je totožný se sestavením v úplném běhu (SHA-256 `01a7241f165f27634443d196fe16f9d7f9d556b8c8023c7cf6c2c5c65200210a`).
+
+Krok 2 je uzavřen. Úplný běh dokončil 162 ze 168 zkoušek. Šest zkoušek přerušených uspáním Macu při samostatném opakování prošlo na stejném sestavení. Dohromady prošlo všech 168 různých zkoušek. Bez vynechání, změny očekávání nebo úpravy časových limitů. Hlavní přehled je v `data-raw/e21/soubeh-uplna.json`, opakování v `po-probuzeni.json`, porovnání konkrétních případů v `soubeh-soucet.py`.
