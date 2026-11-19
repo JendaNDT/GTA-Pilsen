@@ -43,6 +43,28 @@ class Route {
       if (i) this.cum[i] = this.cum[i - 1] + Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]);
     }
     this.length = this.cum[n - 1];
+    this.laneNormals = new Float32Array(2 * n);
+    // Posunuté sousední úseky sdílejí jeden vrchol i v zatáčce. Každá náprava
+    // tak dojede na začátek dalšího úseku bez bočního skoku.
+    let nx = 0, nz = 0, previous = 0;
+    for (let i = 1; i < n; i++) {
+      const length = this.cum[i] - this.cum[previous];
+      if (!length) continue;
+      const x = -(this.pts[2 * i + 1] - this.pts[2 * previous + 1]) / length;
+      const z = (this.pts[2 * i] - this.pts[2 * previous]) / length;
+      if (!previous) { nx = x; nz = z; }
+      const scale = 1 / Math.max(0.5, 1 + nx * x + nz * z);
+      for (let j = previous; j < i; j++) {
+        this.laneNormals[2 * j] = (nx + x) * scale;
+        this.laneNormals[2 * j + 1] = (nz + z) * scale;
+      }
+      previous = i;
+      nx = x; nz = z;
+    }
+    for (let j = previous; j < n; j++) {
+      this.laneNormals[2 * j] = nx;
+      this.laneNormals[2 * j + 1] = nz;
+    }
   }
 
   posAt(s, side, out) {
@@ -59,8 +81,9 @@ class Route {
     const length = cum[hi] - cum[lo] || 1;
     const along = (s - cum[lo]) / length;
     const tx = dx / length, tz = dz / length;
-    out.x = x + dx * along - tz * side;
-    out.z = z + dz * along + tx * side;
+    const normals = this.laneNormals;
+    out.x = x + dx * along + side * (normals[lo * 2] + along * (normals[hi * 2] - normals[lo * 2]));
+    out.z = z + dz * along + side * (normals[lo * 2 + 1] + along * (normals[hi * 2 + 1] - normals[lo * 2 + 1]));
     out.tx = tx;
     out.tz = tz;
     return out;

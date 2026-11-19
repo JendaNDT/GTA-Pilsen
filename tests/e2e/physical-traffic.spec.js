@@ -1,12 +1,88 @@
 import { expect, test } from '@playwright/test';
 import { gameUrl } from './game-url.js';
 
+test('E20 – při odbočení linky 41 z Klatovské do Husovy zůstává dráha v pruhu spojitá', async ({ page }) => {
+  await start(page, '&date=2026-11-09&hour=7.5');
+  const jump = await page.evaluate(() => {
+    const route = __game.transit.routes.find(r => {
+      if (r.ref !== '41') return false;
+      const p = r.posAt(4123, 2.5, {});
+      return Math.hypot(p.x + 365, p.z - 259) < 5;
+    });
+    let largest = 0;
+    for (const s of route.cum) {
+      if (Math.abs(s - 4123) > 10) continue;
+      const a = route.posAt(s - 0.01, 2.5, {});
+      const b = route.posAt(s + 0.01, 2.5, {});
+      largest = Math.max(largest, Math.hypot(a.x - b.x, a.z - b.z));
+    }
+    return largest;
+  });
+  expect(jump).toBeGreaterThan(0);
+  expect(jump).toBeLessThan(0.05);
+});
+
 async function start(page, options = '') {
   await page.goto(gameUrl('/?debug&quality=low' + options));
   await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
   await page.evaluate(() => __freeze(true));
 }
+
+test('E20 – kombi projede kolem odbočující linky 41 na Husově bez střetu', async ({ page }) => {
+  await start(page, '&date=2026-11-09&hour=7.5');
+  const result = await page.evaluate(() => {
+    const g = __game, { world, transit, vehicles } = g;
+    const bus = transit.vehicles.find(v => {
+      const p = v.route.posAt(4107, 2.5, {});
+      return v.route.ref === '41' && Math.hypot(p.x + 360, p.z - 248) < 5;
+    });
+    const Car = g.player.lastCar.constructor;
+    for (const c of [...vehicles.cars]) vehicles.remove(c);
+    const edge = 28439, lane = vehicles._laneFor(edge, -1), s = 26.14;
+    const p = world.edgePoint(edge, s, lane, {});
+    const car = vehicles.add(new Car('kombi', 0x778899));
+    car.place(p.x, p.z, Math.atan2(p.tx, p.tz));
+    Object.assign(car, { mode: 'ai', edge, s, lane, temper: 1 });
+    let from = edge;
+    for (const to of [1423, 1421, 12147]) {
+      car.exitPlan.push({ from, to, lane: vehicles._laneFor(to, -1), slow: 5 });
+      from = to;
+    }
+    vehicles._pickNext(car);
+    g.player.place(-380, 255);
+    for (let i = 0; i < 25; i++) g.colliders.update(g.player.x, g.player.z);
+    g.trafficBodies.selectCars(g);
+    const head = world.traffic.controls.find(c => c.id === 3073913700);
+    while (world.traffic.light(head) !== 'green') world.traffic.tick(0.1);
+    transit.vehicles = [bus];
+    transit._show(bus, true);
+    bus.followSchedule({ s: 4107, index: 0, wait: 0 });
+    bus.side = bus.lane = 2.5;
+    bus.v = 4.1;
+    world.traffic.enterJunction(bus, head);
+    let closest = Infinity;
+    for (let i = 0; i < 1800; i++) {
+      world.traffic.tick(1 / 60);
+      transit.update(1 / 60, g.player, vehicles.cars, false);
+      vehicles.obstacles = transit.obstacles;
+      g.physics.step(1 / 60);
+      const body = bus.footprints[0];
+      const gap = axis => {
+        const extent = (object, width) => object.halfLen * Math.abs(Math.cos(object.yaw - axis)) +
+          width * Math.abs(Math.sin(object.yaw - axis));
+        return Math.abs((body.x - car.x) * Math.sin(axis) + (body.z - car.z) * Math.cos(axis)) -
+          extent(car, car.type.wid / 2) - extent(body, 1.25);
+      };
+      closest = Math.min(closest, Math.max(gap(car.yaw), gap(car.yaw + Math.PI / 2),
+        gap(body.yaw), gap(body.yaw + Math.PI / 2)));
+      if (car.edge === 12147 && car.s > 5 && bus.s > 4140) break;
+    }
+    return { closest, crashed: !!car.crashed, passed: car.edge === 12147 && car.s > 5 && bus.s > 4140 };
+  });
+  expect(result, JSON.stringify(result)).toMatchObject({ crashed: false, passed: true });
+  expect(result.closest).toBeGreaterThan(0);
+});
 
 test('E20 – fyzikální auto zastaví na Doudlevecké a po přednosti pokračuje', async ({ page }) => {
   await start(page);

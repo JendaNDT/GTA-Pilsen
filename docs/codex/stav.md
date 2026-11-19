@@ -14,6 +14,8 @@ Větev `etapa/E20` vychází ze sloučené etapy E19 na revizi `10832b4`. [Zadá
 
 ## Otevřené otázky
 
+Aktuálně nejsou potřeba další podklady ani rozhodnutí.
+
 Autor schválil rozumný odhad podvodního profilu. Využije obrys vodní plochy a výšku vykreslené hladiny.
 Kontrolním údajem je kóta dna u Wilsonova mostu v městské tabulce. Poppler 26.11.0 z ní přečetl profil R19 v říčním km 1,372 s kótou 299,30 m n. m. Hloubku určuje rozdíl od hladiny.
 Měřené příčné profily nebudou potřeba. [Tabulka města](https://gis.plzen.eu/foto/pov_model/profily/PM_Psany_PP.pdf)
@@ -220,3 +222,9 @@ Původní měření začínalo čekat na hustý provoz ještě před načtením 
 Běh úplné sady zahájený na předchozím sestavení byl ukončen po 35 úspěšných zkouškách a jedné chybě. Při zkoušce rozvozu se přerušilo stažení leteckého snímku `8_11.webp`. Při samostatném zopakování na sestavení s objížďkou stejná zkouška prošla včetně kontroly načtených souborů (`data-raw/e20/objizdka-rozvoz.log`). Úplné ověření výsledného sestavení zbývá.
 
 **Navázání v E20, krok 7.** Příčinu fronty lze hledat před příjezdem taxi. V čase 254,33 s fyzika zaznamenala nehodu kombi při vjezdu z 28439 na 1423. V tom okamžiku jelo kombi 8,0 m/s a na jeho levé straně byl autobus 41 jedoucí rychlostí 6,3 m/s. Havarované kombi pak stálo 5,1 m od čela autobusu, který už vjel do křižovatky. Autobus měl zavřené dveře. Záznam nárazu a následného stání je v `data-raw/e20/smetanovy-nehoda-Klatovská.json` a `smetanovy-linka41-Klatovská.json`. V další zkoušce od obou vstupních čar zjistit, kdo vjel na zelenou první, a ověřit bezpečný průjezd autobusu 41 a kombi bez dotyku. Zachovat pravidla pro červenou, přednost i odklízení vraku. Potom zopakovat obě desetiminutové zkoušky, měření při 40 autech a úplnou sadu. Zbývá protokol `docs/E20.md` se snímky, záznam v README a katalogu a žádost o sloučení do `main` přes připojený GitHub. Další rozhodnutí ani podklady od autora nejsou potřeba.
+
+#### Průjezd linky 41 po revizi `58d7544`
+
+Kombi i autobus vjely ze stejné strany na zelenou u světla 3073913700. Autobus byl v křižovatce první. Druhý vůz stejné linky stál v Husově na červenou. Na původní trase se při posunu čela o dva centimetry přes vrchol zatáčky poloha v pruhu změnila o 3,43 m. Sousední úseky nyní sdílejí bod posunutý do jízdního pruhu. V prohlížeči prošla kontrola plynulosti i přehrání rozjezdu kombi vedle odbočujícího autobusu s kontrolou mezery mezi karoseriemi v každém kroku.
+
+Při desetiminutovém pozorování bylo nejdelší stání 64,5 s na Klatovské (131 různých aut) a 79 s u nádraží (89 aut). Obě místa měla špičku 40 fyzikálních aut. Nebylo zaznamenáno vyjetí pod plynem. Samostatné měření při 40 autech zachytilo 604 kroků fyziky, z toho 95 % do 2,1 ms. Prošlo 100 testů JavaScriptu, 23 testů Pythonu a produkční sestavení. Záznamy jsou v `data-raw/e20/linka41-*`. Zbývá uzavřít úplnou kontrolu, protokol, přehled etap a žádost o sloučení.
