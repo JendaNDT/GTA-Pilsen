@@ -18,7 +18,8 @@ export function bridgeEdges(world, path, halfWidth, style, add) {
       const offset = side * Math.min(1.5, normal.scale);
       const point = (width) => [path.x[k] + normal.x * offset * width, path.y[k],
         path.z[k] + normal.z * offset * width];
-      const end = point(halfWidth), inside = point(halfWidth - thickness);
+      const width = path.widths?.[k] ?? halfWidth;
+      const end = point(width), inside = point(width - thickness);
       if (outer) {
         const length = Math.hypot(end[0] - outer[0], end[2] - outer[2]);
         const count = Math.ceil(length / 2.5);
@@ -90,13 +91,13 @@ function eachCell(points, visit) {
   }
 }
 
-export function exteriorBridgeEdges(world, paths) {
+export function exteriorBridgeEdges(world, paths, visit) {
   const tiles = new Map(), cells = new Map();
   for (const [order, entry] of paths.entries()) {
     const { path, width } = entry;
     let left, right;
     for (let k = 0; k < path.n; k++) {
-      const n = pathNormal(path, k), offset = width * Math.min(1.5, n.scale);
+      const n = pathNormal(path, k), offset = (path.widths?.[k] ?? width) * Math.min(1.5, n.scale);
       const x = path.x[k], y = path.y[k], z = path.z[k];
       const lo = [x - n.x * offset, y, z - n.z * offset], hi = [x + n.x * offset, y, z + n.z * offset];
       if (k) {
@@ -113,6 +114,7 @@ export function exteriorBridgeEdges(world, paths) {
       left = lo; right = hi;
     }
   }
+  let owner;
   function put(edge) {
     const [a, b] = edge.corners;
     const ci = world.chunkIndex((a[0] + b[0]) / 2, (a[2] + b[2]) / 2);
@@ -123,8 +125,10 @@ export function exteriorBridgeEdges(world, paths) {
     Object.assign(edge, { id: breakableId('railing', ci, entries.length), tile: ci,
       x: center[0], y: center[1] + edge.height / 2, z: center[2] });
     entries.push(edge);
+    visit?.(owner,edge);
   }
   for (const [index, entry] of paths.entries()) {
+    owner = entry;
     if (entry.survey?.strips) {
       measuredEdges(entry, put);
       continue;
@@ -163,7 +167,7 @@ export function exteriorBridgeEdges(world, paths) {
   return tiles;
 }
 
-export function indexBridgeEdges(world) {
+export function indexBridgeEdges(world, visit) {
   const paths = [];
   for (let i = 0; i < world.rCount; i++) {
     const flags = world.r.flags[i], measured = world.rondel?.elevated.has(i);
@@ -172,15 +176,15 @@ export function indexBridgeEdges(world) {
     const path = densePath(world.rpx, world.rpz, world.rpy, a, b, a, b, Infinity);
     const style = world.archedBridges.has(i) ? 'stone' : measured || world.gradeRoads.has(i) ? 'open' : 'solid';
     const survey = world.deckCalibrations.get(i);
-    paths.push({ path:offsetDeck(path, survey), original:path, survey, width: world.deckHalfWidth(i), style, thickness: i === world.prazdrojRoad ? prazdrojThickness : BRIDGE_THICKNESS });
+    paths.push({ road:i, path:offsetDeck(path, survey), original:path, survey, width: world.deckHalfWidth(i), style, thickness: i === world.prazdrojRoad ? prazdrojThickness : BRIDGE_THICKNESS });
   }
   for (const [i, rail] of world.rails.entries()) {
     if (!rail.y) continue;
     const x = [], z = [];
     for (let k = 0; k < rail.pts.length; k += 2) { x.push(rail.pts[k]); z.push(rail.pts[k + 1]); }
     const b = x.length - 1;
-    paths.push({ path: densePath(x, z, rail.y, 0, b, 0, b, Infinity),
+    paths.push({ rail:i, path: rail.deck ?? densePath(x, z, rail.y, 0, b, 0, b, Infinity),
       width: rail.cls === 1 ? 2.4 : 1.7, style: world.gradeRails.has(i) ? 'open' : 'solid' });
   }
-  return exteriorBridgeEdges(world, paths);
+  return exteriorBridgeEdges(world, paths, visit);
 }

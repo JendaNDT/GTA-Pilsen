@@ -47,7 +47,7 @@ function gridCells(minX, minZ, maxX, maxZ, visit) {
   }
 }
 
-export async function loadStructureMap(dir, bridges) {
+export async function loadStructureMap(dir, bridges, railDecks) {
   globalThis.window ??= {};
   globalThis.location ??= { search: '' };
   globalThis.matchMedia ??= () => ({ matches: false });
@@ -70,7 +70,7 @@ export async function loadStructureMap(dir, bridges) {
   for (const [key, fingerprint] of Object.entries(data.gradeSeparations.sources)) {
     if (sources[key] !== fingerprint) throw Error('Výškové profily neodpovídají vrstvě ' + key);
   }
-  if (bridges) data.structures = {index:{tiles:[], bridges}, positions:new Float32Array()};
+  if (bridges) data.structures = {index:{tiles:[], bridges, railDecks}, positions:new Float32Array()};
   return { world: new GeometryWorld(data), sources, stops: (await json('timetable.json')).stops };
 }
 
@@ -235,8 +235,8 @@ export function hullContainsCorridorCenter(triangles, inside, c) {
   return true;
 }
 
-export async function audit(parts, mapDir, calibrations) {
-  const { world, sources, stops } = await loadStructureMap(mapDir, calibrations);
+export async function audit(parts, mapDir, calibrations, railDecks) {
+  const { world, sources, stops } = await loadStructureMap(mapDir, calibrations, railDecks);
   const { RC, RF, DRIVABLE_MAX } = await import('../src/config.js');
   const area = new Box3(),
     v = new Vector3(),

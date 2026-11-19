@@ -1,6 +1,7 @@
 import { breakableId, Breakables } from '../physics/breakables.js';
 // Herní svět: dekódování dat, prostorové indexy, kolize, silniční graf.
 import { CHUNK, COLL_CELL, DRIVABLE_MAX, RF, RC, LC, BF } from '../config.js';
+import {measuredRailDeck, segmentHalfWidth} from './rail-deck.js';
 import { Structures } from './structures.js';
 import { Tunnel, TUNNEL_HEIGHT } from './tunnels.js';
 import { TurnRules } from './turns.js';
@@ -88,6 +89,10 @@ export class World {
       return [[p[0], p[1], p[p.length - 2], p[p.length - 1]], rail.y];
     });
     this.gradeRailAbutments = new Set((grades?.railAbutments ?? []).filter((i) => this.gradeRails.has(i)));
+    for (const model of data.structures?.index.railDecks ?? []) {
+      const rail = this.rails[model.rail];
+      if (rail?.y && !this.gradeRails.has(model.rail)) rail.deck = measuredRailDeck(rail,model.sections);
+    }
     this._initBridges();
     this.bridgeEdges = indexBridgeEdges(this);
     this.trees = data.trees;
@@ -275,8 +280,17 @@ export class World {
         seg.push(px[k]+dx, pz[k]+dz, py[k], px[k+1]+dx, pz[k+1]+dz, py[k+1], hw, cls <= DRIVABLE_MAX ? 0 : 3);
       }
     }
+    this.bridgeEndWidths = new Map();
     for (const rail of this.rails) {
       if (!rail.y) continue;
+      if (rail.deck) {
+        const d = rail.deck;
+        for (let k=0; k<d.n-1; k++) {
+          this.bridgeEndWidths.set(seg.length,d.widths[k+1]);
+          seg.push(d.x[k],d.z[k],d.y[k],d.x[k+1],d.z[k+1],d.y[k+1],d.widths[k],rail.cls===0 ? 1 : 2);
+        }
+        continue;
+      }
       const hw = rail.cls === 1 ? 2.4 : 1.7;
       for (let k = 0, n = rail.pts.length / 2 - 1; k < n; k++) {
         seg.push(rail.pts[k * 2], rail.pts[k * 2 + 1], rail.y[k], rail.pts[k * 2 + 2], rail.pts[k * 2 + 3], rail.y[k + 1], hw, rail.cls === 0 ? 1 : 2);
@@ -285,7 +299,7 @@ export class World {
     this.bridgeSeg = Float32Array.from(seg);
     const grid = new Map();
     for (let s = 0; s < seg.length; s += 8) {
-      const hw = seg[s + 6];
+      const hw = Math.max(seg[s+6],this.bridgeEndWidths.get(s) ?? 0);
       const cx0 = Math.floor((Math.min(seg[s], seg[s + 3]) - hw) / COLL_CELL), cx1 = Math.floor((Math.max(seg[s], seg[s + 3]) + hw) / COLL_CELL);
       const cz0 = Math.floor((Math.min(seg[s + 1], seg[s + 4]) - hw) / COLL_CELL), cz1 = Math.floor((Math.max(seg[s + 1], seg[s + 4]) + hw) / COLL_CELL);
       for (let cz = cz0; cz <= cz1; cz++) for (let cx = cx0; cx <= cx1; cx++) {
@@ -326,7 +340,7 @@ export class World {
       const l2 = dx * dx + dz * dz;
       let t = l2 > 0 ? ((x - x1) * dx + (z - z1) * dz) / l2 : 0;
       if (t < 0) t = 0; else if (t > 1) t = 1;
-      const qx = x1 + dx * t - x, qz = z1 + dz * t - z, hw = sg[s + 6];
+      const qx = x1 + dx * t - x, qz = z1 + dz * t - z, hw = segmentHalfWidth(this,s,t);
       if (qx * qx + qz * qz > hw * hw) continue;
       const y = sg[s + 2] + (sg[s + 5] - sg[s + 2]) * t;
       if (y <= yMax && y > best) best = y;

@@ -236,3 +236,11 @@ E22 převzala ověřování referenčních pohledů z E21 (`2123df2`). Příprav
 Na silničním úseku 1831 má konstrukce podle pěti řezů šířku 8,005 m a příčný posun 0,06 m. Převod ověřuje všechny vrcholy souběžné pěší trasy 28147 včetně její šířky. Oba konce této trasy leží uvnitř rozpětí a jejich výška se od silničního profilu liší nejvýše o 0,023 m. Herní výšky u obou napojení zůstávají původní. Rozdíl proti středu městské desky činí přibližně 1,29 m.
 
 Kontrola přijatých krajních dílů proti herním trasám i dva opakované převody prošly. U dalších tří zvažovaných silničních mostů zasáhl navržený okraj do pěší cesty. Jejich úprava čeká na posouzení skutečného konce ohrazení. Prošlo 143 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. Na WebGL 2 projelo auto po úseku 1831 v obou směrech bez poškození. Kontakty kol se od profilu odchýlily o méně než 5 cm. Samostatná zkouška Rondelu prošla nad sestavením třetí dávky zdí.
+
+### Železniční mostovky
+
+U dvou železničních konstrukcí (herní tratě 8 a 21) nyní pět městských řezů určuje proměnnou šířku a boční polohu desky. Na koncích se plynule vrací k dosavadní šířce. Poloha kolejnic, jízdní profil a jejich výška se zachovaly. Stejné části desky používají kresba, Jolt i výškové dotazy hry. Pata nebo profil přístupu by vyžadovaly další ověření, než by šlo převzít městské výšky.
+
+Převod nyní kontroluje výsledné okraje po oříznutí sousedními mostovkami. Trať 6 zůstala v původní podobě, protože by nový okraj zasáhl do pěší cesty i do prostoru kolejí. Důvod je také v inventuře. Dvě sestavení a distribuovaná data se shodují po bajtech. Základ vrstvy má dál 811 308 bajtů.
+
+Prošlo 145 testů JavaScriptu, 25 testů Pythonu i produkční sestavení. Na WebGPU se u obou mostů a na obou okrajích ověřila poloha viditelného vrcholu do 1 cm. Fyzická opora i výškový dotaz uvnitř okraje odpovídaly hernímu profilu do 9 cm. Další práci v E22 tvoří posouzení dosud nezařazených samostatných zábradlí, vodních a ostatních objektů, přístupů k mostům a závěrečný protokol.

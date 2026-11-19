@@ -5,7 +5,7 @@ import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { structureSurface } from './build_structures.mjs';
 import { audit, loadStructureMap } from './audit_structures.mjs';
-import { densePath, offsetDeck } from '../src/world/road-profile.js';
+import { validRailSections } from '../src/world/rail-deck.js';
 const median = (values) => values.toSorted((a, b) => a - b)[Math.floor(values.length / 2)];
 
 async function elevatedRoutes(world) {
@@ -188,15 +188,23 @@ if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) 
 
 // Chodník zaznamenaný jako druhá cesta musí skutečně ležet na zvolené silniční desce.
 function sameDeck(world, road, walkway, m) {
-  const a = world.rOff[road], b = world.rOff[road+1]-1;
-  const dx = world.rpx[b]-world.rpx[a], dz = world.rpz[b]-world.rpz[a];
-  const length = Math.hypot(dx,dz);
-  for (let k=world.rOff[walkway];k<world.rOff[walkway+1];k++) {
-    const x = world.rpx[k]-world.rpx[a], z = world.rpz[k]-world.rpz[a];
-    const t = (x*dx+z*dz)/(length*length);
-    const offset = (z*dx-x*dz)/length-m.offset;
-    const y = world.rpy[a]+t*(world.rpy[b]-world.rpy[a]);
-    if (t<0 || t>1 || Math.abs(offset)+world.r.w[walkway]/2>m.width/2 || Math.abs(world.rpy[k]-y)>0.1)
+  const a = world.rOff[road],
+    b = world.rOff[road + 1] - 1;
+  const dx = world.rpx[b] - world.rpx[a],
+    dz = world.rpz[b] - world.rpz[a];
+  const length = Math.hypot(dx, dz);
+  for (let k = world.rOff[walkway]; k < world.rOff[walkway + 1]; k++) {
+    const x = world.rpx[k] - world.rpx[a],
+      z = world.rpz[k] - world.rpz[a];
+    const t = (x * dx + z * dz) / (length * length);
+    const offset = (z * dx - x * dz) / length - m.offset;
+    const y = world.rpy[a] + t * (world.rpy[b] - world.rpy[a]);
+    if (
+      t < 0 ||
+      t > 1 ||
+      Math.abs(offset) + world.r.w[walkway] / 2 > m.width / 2 ||
+      Math.abs(world.rpy[k] - y) > 0.1
+    )
       return false;
   }
   return true;
@@ -212,9 +220,10 @@ export function planCalibration(choice, rows, world) {
     !reason ||
     m.samples.length !== 5 ||
     matches.length !== (choice.walkway === undefined ? 1 : 2) ||
-    (choice.walkway !== undefined && (type !== 'silnice' ||
-      !matches.some(s => s.type === 'lávka' && s.id === choice.walkway) ||
-      !sameDeck(world,road,choice.walkway,m))) ||
+    (choice.walkway !== undefined &&
+      (type !== 'silnice' ||
+        !matches.some((s) => s.type === 'lávka' && s.id === choice.walkway) ||
+        !sameDeck(world, road, choice.walkway, m))) ||
     m.from > m.routeLength * 0.1 ||
     m.to < m.routeLength * 0.9
   )
@@ -230,22 +239,50 @@ export function planCalibration(choice, rows, world) {
   return { kind: 'plan', road, halfWidth: m.width / 2, shiftX: m.shiftX, shiftZ: m.shiftZ, lift: 0 };
 }
 
-export async function checkPlanEdges(world, models, directory) {
-  const { bridgeEdges, railingFaces } = await import('../src/physics/railings.js');
+export async function checkPlanEdges(models, directory, railDecks) {
+  const { world } = await loadStructureMap(directory, models, railDecks);
+  const { indexBridgeEdges, railingFaces } = await import('../src/physics/railings.js');
+  const roads = new Set(models.filter((m) => m.kind === 'plan').map((m) => m.road));
+  const rails = new Set(railDecks.map((m) => m.rail));
   const shells = [];
-  for (const m of models.filter((m) => m.kind === 'plan')) {
-    const a = world.rOff[m.road],
-      b = world.rOff[m.road + 1] - 1;
-    const path = offsetDeck(densePath(world.rpx, world.rpz, world.rpy, a, b, a, b, Infinity), m);
-    bridgeEdges(world, path, m.halfWidth, 'solid', (edge) => {
-      const faces = [['Okraj', edge.corners.flat()]];
-      railingFaces(edge, (...quad) => faces.push(['Okraj', quad.flat()]));
-      shells.push({ id: m.road + '/' + shells.length, faces, convex: true });
-    });
-  }
+  // Kontrolují se přesně díly vykreslené hrou po oříznutí na společných mostovkách.
+  indexBridgeEdges(world, (owner, edge) => {
+    if (!roads.has(owner.road) && !rails.has(owner.rail)) return;
+    const faces = [['Okraj', edge.corners.flat()]];
+    railingFaces(edge, (...quad) => faces.push(['Okraj', quad.flat()]));
+    const id = owner.road === undefined ? 'kolej-' + owner.rail : 'silnice-' + owner.road;
+    shells.push({ id: id + '/' + shells.length, faces, convex: true });
+  });
   if (!shells.length) return;
-  const { reports } = await audit(shells, directory, models);
-  for (const r of reports)
-    if (r.categories.length)
-      throw Error('Posunutý okraj kříží herní trasu ' + r.id + ' (' + r.categories.join(', ') + ').');
+  const { reports } = await audit(shells, directory, models, railDecks);
+  const blocked = reports
+    .filter((r) => r.categories.length)
+    .map((r) => r.id + ' (' + r.categories.join(', ') + ')');
+  if (blocked.length) throw Error('Posunuté okraje kříží herní trasy: ' + blocked.join(', '));
+}
+
+export function railCalibration(choice, rows, world) {
+  const matches = rows.find((row) => row.id === choice.deck)?.matches;
+  const m = matches?.find((m) => m.type === 'koleje' && m.id === choice.rail);
+  const rail = world.rails[choice.rail];
+  if (
+    !m ||
+    matches.length !== 1 ||
+    !choice.reason ||
+    !rail?.y ||
+    world.gradeRails.has(choice.rail) ||
+    (m.to - m.from) / m.routeLength < 0.75 ||
+    m.samples.some((s) => s.width / 2 - Math.abs(s.offset) < 1.7)
+  )
+    throw Error('Nejednoznačná nebo překrytá železniční konstrukce ' + choice.deck);
+  const base = rail.cls === 1 ? 4.8 : 3.4,
+    sections = [[0, base, 0]];
+  const fraction = (u) => Math.round((u / m.routeLength) * 1e6) / 1e6;
+  // Mimo srovnaný díl navazuje běžná šířka, na vjezdu a výjezdu zůstává osa koleje.
+  if (fraction(m.from) > 0) sections.push([fraction(m.from), base, 0]);
+  for (const s of m.samples) sections.push([fraction(s.u), s.width, s.offset]);
+  if (fraction(m.to) < 1) sections.push([fraction(m.to), base, 0]);
+  sections.push([1, base, 0]);
+  if (!validRailSections(sections)) throw Error('Neplatné řezy kolejí ' + choice.deck);
+  return { rail: choice.rail, sections };
 }

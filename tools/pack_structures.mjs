@@ -6,7 +6,7 @@ import { Vector3 } from 'three/webgpu';
 import { selectDistricts } from './district_structures.mjs';
 import { indexTriangles } from './static_structures.mjs';
 import { loadStructureMap } from './audit_structures.mjs';
-import { checkPlanEdges, planCalibration, surveyBridges } from './survey_bridges.mjs';
+import { checkPlanEdges, planCalibration, railCalibration, surveyBridges } from './survey_bridges.mjs';
 import { calibrateBridge } from './calibrate_bridge.mjs';
 import { assetFingerprint, parsePack } from '../src/data.js';
 import { structureSurface } from './build_structures.mjs';
@@ -16,7 +16,7 @@ const [dir = 'data-raw/structures', output = 'data-raw/kandidat/detail/structure
 const json = file => JSON.parse(fs.readFileSync(file));
 const {parts, source} = json(path.join(dir, 'dily.json'));
 const {sources, reports} = json(path.join(dir, 'kontroly.json'));
-const {parts: overrides, bridges: choices, footbridges = [], roadBridges = [], districts = []} = json('tools/structure-overrides.json');
+const {parts: overrides, bridges: choices, footbridges = [], roadBridges = [], railBridges = [], pending = {}, districts = []} = json('tools/structure-overrides.json');
 const meta = json('public/data/meta.json');
 const tiles = new Map(), chunk = 256;
 const minX = Math.floor(meta.bounds.minX / chunk) * chunk, minZ = Math.floor(meta.bounds.minZ / chunk) * chunk;
@@ -53,6 +53,9 @@ const roadBytes = fs.readFileSync('public/data/roads.bin');
 if (assetFingerprint(roadBytes) !== sources.roads) throw Error('Kalibrace a inventura používají různé silnice.');
 const roads = parsePack(roadBytes.buffer.slice(roadBytes.byteOffset, roadBytes.byteOffset + roadBytes.byteLength));
 const byId = new Map(parts.map(part => [part.id, part]));
+for (const [id,reason] of Object.entries(pending)) {
+  if (byId.get(id)?.status !== 'čeká na ověření' || !reason) throw Error('Neznámý odložený díl ' + id);
+}
 const calibrationReasons = new Map();
 const bridges = choices.map(choice => {
   for (const id of choice.rails) {
@@ -62,18 +65,23 @@ const bridges = choices.map(choice => {
   return calibrateBridge(choice, byId, roads);
 });
 const planChoices = [...footbridges,...roadBridges];
-if (planChoices.length) {
+const railDecks = [];
+if (planChoices.length || railBridges.length) {
   const {world} = await loadStructureMap('public/data');
   const rows = await surveyBridges(parts,world);
   for (const choice of planChoices) {
     bridges.push(planCalibration(choice,rows,world));
     calibrationReasons.set(choice.deck,choice.reason);
   }
-  await checkPlanEdges(world,bridges,'public/data');
+  for (const choice of railBridges) {
+    railDecks.push(railCalibration(choice,rows,world));
+    calibrationReasons.set(choice.deck,choice.reason);
+  }
+  await checkPlanEdges(bridges,'public/data',railDecks);
 }
 const excluded = new Set([...accepted,...calibrationReasons.keys()]);
 const districtData = await selectDistricts(parts, reportsById, {size:chunk,x:minX,z:minZ},
-  json('public/detail/city/index.json').districts, districts, excluded, 'public/data', bridges);
+  json('public/detail/city/index.json').districts, districts, excluded, 'public/data', bridges, railDecks);
 const districtReasons = districtData.reasons;
 for (const part of districtData.accepted) {
   for (const tile of part.meshes) {
@@ -102,13 +110,13 @@ const file = path.join(output,'core.bin');
 writePack(file,{version:2},indexTriangles(all));
 const bytes = fs.readFileSync(file);
 if (bytes.length > 2 * 1024 * 1024) throw Error('Základní balík přesahuje 2 MiB.');
-const index = {version:2, bridges, source, sources, hash:assetFingerprint(bytes), tiles:entries};
+const index = {version:2, bridges, railDecks, source, sources, hash:assetFingerprint(bytes), tiles:entries};
 fs.writeFileSync(path.join(output,'index.json'), JSON.stringify(index) + '\n');
 const rows = [['díl', 'zdrojové ID', 'ploch v SHP', 'unikátních ploch', 'stav', 'důvod']];
 for (const part of parts) {
   const chosen = accepted.has(part.id) || calibrationReasons.has(part.id);
   rows.push([part.id, part.uid, part.records, part.faces.length,
-    chosen ? 'začleněn' : part.status, districtReasons.get(part.id) ?? calibrationReasons.get(part.id) ?? overrides[part.id]?.reason ?? part.reason]);
+    chosen ? 'začleněn' : part.status, districtReasons.get(part.id) ?? calibrationReasons.get(part.id) ?? overrides[part.id]?.reason ?? pending[part.id] ?? part.reason]);
 }
 fs.writeFileSync(path.join(dir, 'inventura.tsv'), rows.map(row => row.join('\t')).join('\n') + '\n');
 console.log(accepted.size + ' objektů, ' + bytes.length + ' bajtů v základní vrstvě.');

@@ -129,3 +129,47 @@ test('E22 – dvě měřené lávky mají průchozí okraje a zachovávají vý�
     expect(walk.grounded).toBe(true);
   }
 });
+
+test('E22 – šířka dvou železničních mostovek souhlasí s kresbou a fyzikou @webgpu', async ({page}) => {
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0'));
+  await page.waitForFunction(() => window.__ready);
+  const checks = await page.evaluate(() => {
+    const {world:w,colliders,chunks} = __game;
+    const checks = [];
+    for (const index of [8,21]) {
+      const rail=w.rails[index], p=rail.deck;
+      if (!p?.widths) throw Error('Chybí měřená železniční deska ' + index);
+      const k=Math.floor(p.n/2), x=p.x[k], z=p.z[k], y=p.y[k];
+      const dx0=x-p.x[k-1], dz0=z-p.z[k-1], dx1=p.x[k+1]-x, dz1=p.z[k+1]-z;
+      const l0=Math.hypot(dx0,dz0), l1=Math.hypot(dx1,dz1);
+      let nx=-dz0/l0-dz1/l1, nz=dx0/l0+dx1/l1;
+      const len=Math.hypot(nx,nz);
+      nx/=len; nz/=len;
+      const scale=Math.min(1.5,1/Math.max(0.55,nx*(-dz1/l1)+nz*dx1/l1));
+      for (let n=0;n<25;n++) colliders.update(x,z);
+      for (let n=0;n<12;n++) chunks.update(x,z,450,80,y);
+      const ci=w.railChunks.findIndex(ids=>ids?.includes(index)), chunk=chunks.chunks.get(ci);
+      if (!chunk) throw Error('Chybí vykreslená dlaždice kolejí.');
+      const geometries=chunk.group.children.filter(m=>m.isMesh && m.material===chunks.solidMat)
+        .map(m=>m.geometry.getAttribute('position'));
+      for (const sign of [-1,1]) {
+        const outer=sign*p.widths[k]*scale, edgeX=x+outer*nx, edgeZ=z+outer*nz;
+        let visual=Infinity;
+        for (const a of geometries) for (let j=0;j<a.count;j++) {
+          visual=Math.min(visual,Math.hypot(a.getX(j)-edgeX,a.getY(j)-(y-0.04),a.getZ(j)-edgeZ));
+        }
+        const walk=outer-sign*0.32, px=x+walk*nx, pz=z+walk*nz;
+        const floor=colliders.exitHeight(px,pz,y-0.55);
+        checks.push({index,sign,visual,physics:Math.abs(floor-y),
+          profile:Math.abs(w.deckAt(px,pz,y+0.25,rail.cls===0?1:2)-y)});
+      }
+    }
+    return checks;
+  });
+  expect(checks).toHaveLength(4);
+  for (const c of checks) {
+    expect(c.visual,JSON.stringify(c)).toBeLessThan(0.01);
+    expect(c.physics,JSON.stringify(c)).toBeLessThan(0.09);
+    expect(c.profile,JSON.stringify(c)).toBeLessThan(0.09);
+  }
+});

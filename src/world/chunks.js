@@ -571,8 +571,9 @@ function bridgeSlab(world, solid, D, hw, topCol, supports = true, depth = BRIDGE
   for (let k = 0; k < n; k++) {
     const nr = pathNormal(D, k);
     const sc = Math.min(nr.scale, 1.5);
-    L.push([D.x[k] - nr.x * hw * sc, D.z[k] - nr.z * hw * sc]);
-    R.push([D.x[k] + nr.x * hw * sc, D.z[k] + nr.z * hw * sc]);
+    const width = D.widths?.[k] ?? hw;
+    L.push([D.x[k] - nr.x * width * sc, D.z[k] - nr.z * width * sc]);
+    R.push([D.x[k] + nr.x * width * sc, D.z[k] + nr.z * width * sc]);
   }
   let acc = 13;
   for (let k = 0; k < n - 1; k++) {
@@ -887,7 +888,7 @@ function buildRoads(world, ci) {
       ribbon(world, marks, D, 0.07, COL.rail, -0.7175, LIFT_RAIL);
       if (rail.y) {
         const halfWidth = rail.cls === 1 ? 2.4 : 1.7;
-        bridgeSlab(world, solid, D, halfWidth, COL.concrete);
+        bridgeSlab(world, solid, rail.deck ?? D, halfWidth, COL.concrete);
         if (world.gradeRailAbutments.has(ri)) railAbutments(world, solid, D, halfWidth);
       }
     }

@@ -11,7 +11,7 @@ const roles = new Map([
   ['Pilir_Sloup', 'pillar']
 ]);
 
-async function blockedMeshes(candidates, mapDir, bridges) {
+async function blockedMeshes(candidates, mapDir, bridges, railDecks) {
   const checks = [];
   for (const part of candidates)
     for (const tile of part.meshes) {
@@ -22,7 +22,7 @@ async function blockedMeshes(candidates, mapDir, bridges) {
       }
     }
   if (!checks.length) return new Map();
-  const { reports } = await audit(checks, mapDir, bridges);
+  const { reports } = await audit(checks, mapDir, bridges, railDecks);
   const blocked = new Map();
   for (const report of reports)
     if (report.categories.length) {
@@ -33,7 +33,7 @@ async function blockedMeshes(candidates, mapDir, bridges) {
   return blocked;
 }
 
-export async function selectDistricts(parts, reports, grid, districts, enabled, excluded, mapDir, bridges) {
+export async function selectDistricts(parts, reports, grid, districts, enabled, excluded, mapDir, bridges, railDecks) {
   const boundaries = new Districts(districts);
   const candidates = [],
     reasons = new Map();
@@ -70,14 +70,14 @@ export async function selectDistricts(parts, reports, grid, districts, enabled, 
     }
     candidates.push({ id: part.id, role: roles.get(part.faces[0][0]), district, meshes, surfaces });
   }
-  const blocked = await blockedMeshes(candidates, mapDir, bridges);
+  const blocked = await blockedMeshes(candidates, mapDir, bridges, railDecks);
   const refined = candidates.filter((p) => blocked.has(p.id));
   for (const part of refined) {
     part.meshes = districtMeshes(part.surfaces, grid, true);
     if (!part.meshes.length || part.meshes.some((tile) => !tile.shells.length))
       reasons.set(part.id, 'Po zpřesnění chybí kolizní objem.');
   }
-  const stillBlocked = await blockedMeshes(refined, mapDir, bridges);
+  const stillBlocked = await blockedMeshes(refined, mapDir, bridges, railDecks);
   for (const [id, kinds] of stillBlocked)
     reasons.set(id, 'Také těsný kolizní obal zasahuje do herní trasy: ' + [...kinds].sort().join(', ') + '.');
   return { accepted: candidates.filter((p) => !reasons.has(p.id)), reasons };

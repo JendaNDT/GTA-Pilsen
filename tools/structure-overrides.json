@@ -46,5 +46,20 @@
       "walkway": 28147,
       "reason": "Deska nese jednu vozovku a v souběhu pěší trasu. Pět řezů měří šířku kolem osmi metrů. Pěší trasa zůstává napojená. Výšku zachovat, dokud nebude ověřen rozdíl přes jeden metr u nájezdů."
     }
-  ]
+  ],
+  "railBridges": [
+    {
+      "rail": 8,
+      "deck": "00000002021000444-8c69f1b223a3f330",
+      "reason": "Pět městských řezů určuje šířku a osu konstrukce pod jedinou herní tratí. Na krajích měřené oblasti navazuje dosavadní deska. Koleje a výškový profil se zachovávají."
+    },
+    {
+      "rail": 21,
+      "deck": "00000002021000447-50a7a9ac656d667d",
+      "reason": "Pět městských řezů určuje šířku a osu konstrukce pod jedinou herní tratí. Na krajích měřené oblasti navazuje dosavadní deska. Koleje a výškový profil se zachovávají."
+    }
+  ],
+  "pending": {
+    "00000002021000451-5f749d9b2f6f5db5": "Navržený půdorys trati 6 zasahuje okrajem do průchozího profilu pěší cesty a kolejí. Ponechat dosavadní mostovku."
+  }
 }

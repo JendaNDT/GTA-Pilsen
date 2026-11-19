@@ -1,3 +1,4 @@
+import {validRailSections} from './world/rail-deck.js';
 // Načítání herních dat (binární balíčky vyrobené skriptem tools/build_data.py).
 
 const TYPES = {
@@ -109,6 +110,12 @@ export async function loadStructureCore(search = globalThis.location?.search) {
     if (!manifest.ok || !core.ok) return null;
     const index = await manifest.json(), buffer = await core.arrayBuffer();
     if (![1,2].includes(index.version) || buffer.byteLength > 2 * 1024 * 1024 || !Array.isArray(index.tiles)) return null;
+    const rails = new Set();
+    for (const model of index.railDecks ?? []) {
+      if (!Number.isSafeInteger(model.rail) || model.rail < 0 || rails.has(model.rail) ||
+          !validRailSections(model.sections)) return null;
+      rails.add(model.rail);
+    }
     const roads = new Set();
     for (const bridge of index.bridges ?? []) {
       if (!Number.isSafeInteger(bridge.road) || bridge.road < 0 || roads.has(bridge.road) ||
