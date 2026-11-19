@@ -206,3 +206,11 @@ Dva snímky z téže kamery zachycují změnu u středového pilíře a obou obl
 Druhá dávka přidává 62 zdí a tři pilíře. Kontrola odložila 53 dalších dílů obvodu kvůli průniku s herní trasou. Celkem je nyní ve 26 dlaždicích 102 statických objektů a základ má 357 992 bajtů. Opakované sestavení kandidáta i distribuované soubory se shodují po bajtech.
 
 Na WebGPU s nízkým nastavením prošlo načtení detailu vybrané zdi a kontrola její výšky ve fyzice do 4 cm. Prošlo 139 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. [Měřená zeď v obvodu Plzeň 2](../E22/obvod-2.jpg)
+
+### Zdi, pilíře a protihlukové stěny v obvodu Plzeň 3
+
+Třetí dávka přidává 142 zdí, osm pilířů a dvě protihlukové stěny. U 153 dalších dílů kontrola našla průnik původních ploch s herní trasou. U jednoho dílu přetrval průnik i po zpřesnění kolizního obalu. Jeden další pilíř čeká kvůli výšce paty. V datech pro ostatních sedm obvodů inventura nenašla samostatné zdi, pilíře ani protihlukové stěny k dávkovému zařazení.
+
+Ve všech třech dávkách a pilotu hra načte 254 objektů v 59 dlaždicích. Základ má 811 308 bajtů. Dva převody i distribuované soubory jsou po bajtech shodné. Z celkem 715 zdrojových dílů má 257 stav „začleněn“ včetně tří půdorysů použitých při kalibraci Wilsonova mostu. Dalších 364 čeká na ověření, 93 sdílí geometrii a jeden postrádá použitelnou plochu.
+
+Prošlo 139 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. WebGPU ověřil načtení detailu a fyzickou horní hranu na dvou zdech ve třetím obvodu. Na WebGL 2 prošly také oddělené průjezdy Wilsonovým mostem v obou směrech bez poškození a oběma tubusy Valíku. Dvě zkoušky mimoúrovňových křížení ukončil časový limit při startu hry. [Zeď u ulice v obvodu Plzeň 3](../E22/obvod-3.jpg)
