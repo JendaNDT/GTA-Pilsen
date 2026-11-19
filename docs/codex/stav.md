@@ -120,3 +120,9 @@ Na revizi `243735c` prošlo všech sedm prohlížečových scénářů v `breaka
 Každý díl zábradlí má vlastní identitu uvnitř společné kolizní sítě dlaždice. Rozbití dílu otevře mezeru a uvolní pohyblivý kus. Ostatní úseky dál drží chodce i vozidla. Zábrany uzavírek se dají odtlačit, pamatují si polohu po návratu do oblasti a při ranní opravě se vrátí na původní místo. Změna očekávání ve starší zkoušce E19 odpovídá nové kolizi auta se zábradlím. Všech sto pěších náběhů zůstalo součástí testu.
 
 Prošlo 119 testů JavaScriptu a sestavení. Ve fyzice se ověřilo chování tří typů zábradlí, odtlačení zábrany i obnova. V prohlížeči auto na WebGL 2 i WebGPU projelo vzniklou mezerou. První zvolená trajektorie na složitém napojení křížila jinou pevnou konstrukci. Zkouška nyní vybírá úsek s volným kolmým příjezdem po vozovce. Kontroluje skutečný pohyb auta, vznik dílu, stav po návratu a opravu. Výstup je v `data-raw/e21/mosty-prujezd.log`.
+
+### Hledanost, zvuky a úlomky
+
+Škodu na veřejném majetku připisuje hra řidiči vozidla, které se objektu skutečně dotklo. Kov, sklo a kámen mají odlišný zvuk. Lampy, značky a zábradlí sdílejí rozpočet 40, 100 nebo 200 pohyblivých úlomků podle předvolby. Při plném rozpočtu dostanou při úklidu přednost spící díly mimo pohled.
+
+Prošlo 120 testů JavaScriptu, produkční sestavení a všech devět prohlížečových zkoušek vybavení. Závěrečný test mostu používá samostatnou zkušební mostovku nad mapou. Hráčovo vozidlo projede vzniklou mezerou a po návratu i opravě se kontroluje stav úseku. Tato zkouška a připsání škody po sražení lampy prošly na obou vykreslovačích. Výsledky jsou v `data-raw/e21/ulomky-{node,build,e2e,final}.log`.

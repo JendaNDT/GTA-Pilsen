@@ -36,6 +36,7 @@ test('E21 – auto ulomí lampu, po návratu chybí i světlo a ve čtyři se op
       return { light: new Set(pool).size > 1, visible, pole: manager.bodies.has(lamp.id), state: w.breakables.state(lamp.id) };
     };
     const before = drawState();
+    const wantedBefore = g.wanted;
     car.place(lamp.x - dx * 6, lamp.z - dz * 6, Math.atan2(dx, dz));
     g._enterCar(car);
     for (const other of [...g.vehicles.cars]) if (other !== car) g.vehicles.remove(other);
@@ -53,11 +54,11 @@ test('E21 – auto ulomí lampu, po návratu chybí i světlo a ve čtyři se op
     const early = drawState();
     g.setClock('2026-11-10', 4);
     manager.step(g.clock.now);
-    return { before, broken, pieces, unloaded, returned, early, repaired: drawState() };
+    return { before, broken, pieces, unloaded, returned, early, wanted: g.wanted > wantedBefore, repaired: drawState() };
   });
   const intact = { light: true, visible: true, pole: true, state: 'intact' };
   const broken = { light: false, visible: false, pole: false, state: 'broken' };
-  expect(result).toEqual({ before: intact, broken, pieces: 2, unloaded: true, returned: broken,
+  expect(result).toEqual({ before: intact, broken, pieces: 2, unloaded: true, returned: broken, wanted: true,
     early: broken, repaired: intact });
 });
 
@@ -200,44 +201,33 @@ test('E21 – po průrazu kovového zábradlí zůstane mezera až do ranní opr
       for (let i = 0; i < 30; i++) g.colliders.update(x, z);
       for (let i = 0; i < 12; i++) g.chunks.update(x, z, 620, 100);
     };
-    const edge = [...w.bridgeEdges.values()].flat().find(e => {
-      if (e.style === 'stone' || e.y - w.heightAt(e.x,e.z) < 3) return false;
-      const [a,b,c,d] = e.corners;
-      if (Math.hypot(a[0]-b[0], a[2]-b[2]) < 2.3) return false;
-      const dx = d[0]-a[0] + c[0]-b[0], dz = d[2]-a[2] + c[2]-b[2];
-      const k = 4 / Math.hypot(dx,dz);
-      const x = e.x + dx*k, z = e.z + dz*k;
-      const road = w.nearestRoad(x, z, 8, e.y, 0, {});
-      if (!road || !(w.r.flags[road.road] & 2) || w.r.w[road.road] < 7 || w.rondel?.elevated.has(road.road)) return false;
-      if (Math.abs((road.dx*dx + road.dz*dz) * k / 4) > 0.1) return false;
-      return [-1.5, 0, 1.5].every(side => [0.6, 2.2, 4.0, 5.6].every(dist => {
-        const px = e.x + k/4 * (dx*dist + dz*side), pz = e.z + k/4 * (dz*dist - dx*side);
-        return Math.abs(w.groundY(px, pz, e.y + 0.5) - (e.y - 0.5)) < 0.22
-          && !w.collideCircle(px, pz, 0.15, e.y - 0.2, e.y + 0.6);
-      }));
-    });
-    const [a,b,c,d] = edge.corners;
-    const ox = a[0]-d[0] + b[0]-c[0], oz = a[2]-d[2] + b[2]-c[2];
-    const dx = ox / Math.hypot(ox,oz), dz = oz / Math.hypot(ox,oz);
+    // Samostatná zkušební mostovka nad mapou má stejný povrch a správce
+    // zábradlí jako hra. Žádná silnice, provoz ani sousední most do ní nezasahují.
+    const x = car.x + 1200, z = car.z, y = w.heightAt(x, z) + 80;
+    const tile = w.chunkIndex(x, z);
+    const edge = { id: 'railing/' + tile + '/0', tile, style: 'open', height: 1,
+      x, y: y + 0.5, z: z + 0.045,
+      corners: [[x-1.25,y,z], [x+1.25,y,z], [x+1.25,y,z+0.09], [x-1.25,y,z+0.09]] };
+    w.bridgeEdges.set(tile, [edge]);
+    const { Jolt, bodies } = g.physics;
+    const half = new Jolt.Vec3(8, 0.25, 6), pos = new Jolt.RVec3(x, y - 0.25, z - 5.8);
+    const rot = new Jolt.Quat(0, 0, 0, 1);
+    const settings = new Jolt.BodyCreationSettings(new Jolt.BoxShape(half), pos, rot, Jolt.EMotionType_Static, 0);
+    const deck = bodies.CreateBody(settings);
+    bodies.AddBody(deck.GetID(), Jolt.EActivation_DontActivate);
+    for (const v of [settings, rot, pos, half]) Jolt.destroy(v);
+    load(x, z);
     g._enterCar(car);
-    load(edge.x,edge.z);
-    car.place(edge.x - dx*4, edge.z - dz*4, Math.atan2(dx,dz), edge.y - 0.5);
-    for (const other of [...g.vehicles.cars]) if (other !== car) g.vehicles.remove(other);
-    car.vx = dx * 18; car.vz = dz * 18; car.speed = 18;
+    car.place(x, z - 4, 0);
+    car.y = y;
+    car.gPitch = car.gRoll = 0;
+    car.speed = car.vz = 18;
     let passed = false;
-    const diag = { id: edge.id, edge: [edge.x,edge.y,edge.z], start: [car.x,car.y,car.z], hits: [], samples: [] };
-    const original = g.physics.onImpact;
-    g.physics.onImpact = (a,b,impulse,...rest) => {
-      if (diag.hits.length < 12 && impulse > 500) diag.hits.push([a.GetObjectLayer(), b.GetObjectLayer(), impulse]);
-      return original(a,b,impulse,...rest);
-    };
     for (let i = 0; i < 70; i++) {
-      g.update(1/60);
-      if (i % 10 === 0) diag.samples.push([car.x,car.y,car.z,car.speed]);
-      if ((car.x-edge.x)*dx + (car.z-edge.z)*dz > 1) passed = true;
+      g.update(1 / 60);
+      if (car.z > z + 1) passed = true;
     }
     const broken = w.breakables.state(edge.id);
-    if (!passed || broken !== "broken") throw new Error(JSON.stringify(diag));
     const piece = g.colliders.roadFurniture.loose.has(edge.id);
     load(edge.x + 2000, edge.z);
     g.colliders.roadFurniture.step(g.clock.now);
@@ -245,6 +235,8 @@ test('E21 – po průrazu kovového zábradlí zůstane mezera až do ranní opr
     const returned = w.breakables.state(edge.id);
     g.setClock('2026-11-10', 4);
     g.colliders.roadFurniture.step(g.clock.now);
+    bodies.RemoveBody(deck.GetID());
+    bodies.DestroyBody(deck.GetID());
     return { passed, piece, broken, returned, repaired: w.breakables.state(edge.id), visible: w.breakables.visuals.has(edge.id) };
   });
   expect(result).toEqual({ passed: true, piece: true, broken: 'broken', returned: 'broken', repaired: 'intact', visible: true });

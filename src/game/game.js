@@ -1,3 +1,4 @@
+import { DebrisBudget } from '../physics/debris.js';
 import { streetLamps } from '../world/lamps.js';
 import { LampBodies } from '../physics/lamp-bodies.js';
 import { TrafficFurnitureBodies } from '../physics/traffic-furniture.js';
@@ -68,6 +69,7 @@ export class Game {
       if (ped && car) this.queuePedHit(ped, car, vehicle.GetLinearVelocity());
     };
     physics.onImpact = (first, second, impulse) => {
+      this.colliders.roadFurniture.bump(first, second, impulse);
       this.lampBodies.contact(first, second, impulse);
       this.trafficFurniture.contact(first, second, impulse);
       this.driver?.recordImpact(first, second, impulse);
@@ -111,7 +113,8 @@ export class Game {
         if (this.water.step(vehicle, this.world, dt)) this.audio.splash(car);
       }
       physics.engine.Step(dt, 1);
-      const roadBudget = this.colliders.roadFurniture.step(this.clock.now);
+      const budget = physics.debris.step(20);
+      const roadBudget = this.colliders.roadFurniture.step(this.clock.now, budget);
       const remaining = this.trafficFurniture.step(this.clock.now, roadBudget);
       this.lampBodies.step(this.clock.now, remaining);
       this.driver?.read();
@@ -132,6 +135,28 @@ export class Game {
     this.renderer = renderer;
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.4, QUALITY.view * 1.35);
+    const view = new THREE.Frustum(), matrix = new THREE.Matrix4(), sphere = new THREE.Sphere();
+    physics.debris = new DebrisBudget(() => QUALITY.debris, body => {
+      matrix.multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
+      view.setFromProjectionMatrix(matrix, this.camera.coordinateSystem, this.camera.reversedDepth);
+      const p = body.GetPosition();
+      sphere.center.set(p.GetX(), p.GetY(), p.GetZ());
+      sphere.radius = body.GetShape().GetInnerRadius() + 3;
+      return view.intersectsSphere(sphere);
+    });
+    this.propertyHits = new Set();
+    this.lastPropertyHit = -Infinity;
+    physics.onFurnitureDamage = (fixture, hit, material) => {
+      this.audio.crash(Math.max(4, hit.impulse / 900), fixture, material);
+      if (hit.car !== this.driver?.body.GetID().GetIndexAndSequenceNumber()) return;
+      if (this.time - this.lastPropertyHit > 5) this.propertyHits.clear();
+      this.lastPropertyHit = this.time;
+      if (this.propertyHits.has(fixture.id)) return;
+      this.propertyHits.add(fixture.id);
+      if (this.propertyHits.size === 1 || this.propertyHits.size % 3 === 0) {
+        this.addWanted(1, 'Poškození veřejného majetku', true);
+      }
+    };
     this.world = new World(data);
     if (this.world.tunnels.length) {
       this.tunnelLight = new THREE.PointLight(0xffe0b0, 35, 22);
@@ -407,8 +432,8 @@ export class Game {
   // -------------------------------------------------------------- akce ----
   addMoney(n) { this.money = Math.max(0, this.money + n); this.hud.money(this.money); }
 
-  addWanted(n, reason) {
-    if (this.wantedCool > 0) return;
+  addWanted(n, reason, separateEvent = false) {
+    if (this.wantedCool > 0 && !separateEvent) return;
     this.wantedCool = 2.5;
     const before = this.wanted;
     this.wanted = Math.min(5, this.wanted + n);

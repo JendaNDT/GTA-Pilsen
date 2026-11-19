@@ -73,7 +73,7 @@ export class TrafficFurnitureBodies {
     if (!breaks && (fixture.type !== 'sign' || impulse < 2500 || record.state !== 'intact')) return;
     if ((this.hits.get(fixture.id)?.impulse ?? 0) >= impulse) return;
     const v = vehicle.GetLinearVelocity();
-    this.hits.set(fixture.id, { impulse, breaks, vx: v.GetX(), vz: v.GetZ() });
+    this.hits.set(fixture.id, { impulse, breaks, car: bodyKey(vehicle), vx: v.GetX(), vz: v.GetZ() });
   }
 
   body(fixture, parts, dynamic, pose = null) {
@@ -162,7 +162,15 @@ export class TrafficFurnitureBodies {
       this.physics.bodies.SetLinearVelocity(body.GetID(), this.offset);
       this.offset.Set(hit.vz * 0.15, 0, -hit.vx * 0.15);
       this.physics.bodies.SetAngularVelocity(body.GetID(), this.offset);
-      pieces.push({ body, mesh });
+      const piece = { body, mesh };
+      pieces.push(piece);
+      this.physics.debris?.add(body, () => {
+        const id = body.GetID();
+        this.physics.bodies.RemoveBody(id);
+        this.physics.bodies.DestroyBody(id);
+        mesh?.removeFromParent();
+        pieces.splice(pieces.indexOf(piece), 1);
+      });
     }
     this.addRecord({ fixture, state: 'broken', pieces });
   }
@@ -179,6 +187,7 @@ export class TrafficFurnitureBodies {
     const { system, bodies } = this.physics;
     let count = 0;
     const remove = bodyToRemove => {
+      this.physics.debris?.forget(bodyToRemove);
       const id = bodyToRemove.GetID();
       bodies.RemoveBody(id);
       bodies.DestroyBody(id);
@@ -205,12 +214,13 @@ export class TrafficFurnitureBodies {
 
   step(now, budget = 20) {
     for (const [id, hit] of this.hits) {
-      if (budget < 3) break;
+      if (budget < 3 || (hit.breaks && this.physics.debris?.room(2) === false)) break;
       this.hits.delete(id);
       const record = this.records.get(id);
       if (!record?.body || !this.nearby.has(id)) continue;
       const state = hit.breaks ? 'broken' : 'bent';
       if (record.state !== this.registry.state(id) || !this.registry.damage(id, state, now)) continue;
+      this.physics.onFurnitureDamage?.(record.fixture, hit, record.fixture.type === 'signal' ? 'glass' : 'metal');
       const pose = record.state === 'bent' ? readPose(record.body) : null;
       budget -= this.removeRecord(record);
       if (hit.breaks) {

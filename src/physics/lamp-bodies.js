@@ -44,7 +44,7 @@ export class LampBodies {
     const lamp = this.byBody.get(pole.GetID().GetIndexAndSequenceNumber());
     if (!lamp || (this.hits.get(lamp.id)?.impulse ?? 0) >= impulse) return;
     const v = vehicle.GetLinearVelocity();
-    this.hits.set(lamp.id, { impulse, vx: v.GetX(), vz: v.GetZ() });
+    this.hits.set(lamp.id, { impulse, car: vehicle.GetID().GetIndexAndSequenceNumber(), vx: v.GetX(), vz: v.GetZ() });
   }
 
   create(lamp, head, loose) {
@@ -77,12 +77,19 @@ export class LampBodies {
       this.physics.bodies.SetLinearVelocity(body.GetID(), this.vector);
       this.vector.Set(-hit.vz / lamp.height, 0, hit.vx / lamp.height);
       this.physics.bodies.SetAngularVelocity(body.GetID(), this.vector);
-      pieces.push({ body, mesh });
+      const piece = { body, mesh };
+      pieces.push(piece);
+      this.physics.debris?.add(body, () => {
+        this.remove(body);
+        mesh.removeFromParent();
+        pieces.splice(pieces.indexOf(piece), 1);
+      });
     }
     this.debris.set(lamp.id, pieces);
   }
 
   remove(body) {
+    this.physics.debris?.forget(body);
     const id = body.GetID();
     this.physics.bodies.RemoveBody(id);
     this.physics.bodies.DestroyBody(id);
@@ -105,7 +112,7 @@ export class LampBodies {
 
   step(now, budget = 20) {
     for (const [id, hit] of this.hits) {
-      if (budget < 3) break;
+      if (budget < 3 || this.physics.debris?.room(2) === false) break;
       this.hits.delete(id);
       const lamp = this.nearby.get(id), body = this.bodies.get(id);
       if (!lamp || !body || !this.registry.damage(id, 'broken', now)) continue;
@@ -113,6 +120,7 @@ export class LampBodies {
       this.remove(body);
       this.bodies.delete(id);
       this.scatter(lamp, hit);
+      this.physics.onFurnitureDamage?.(lamp, hit, 'metal');
       budget -= 3;
     }
     for (const id of this.pending) {

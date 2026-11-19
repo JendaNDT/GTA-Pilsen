@@ -22,6 +22,7 @@ export class RoadFurnitureBodies {
     this.hits = new Map();
     this.dirty = new Set();
     this.closures = new Map();
+    this.closureBodies = new Map();
     this.moved = new Map();
     for (const fixtures of world.closureChunks.values()) {
       for (const fixture of fixtures) this.closures.set(fixture.id, fixture);
@@ -34,6 +35,8 @@ export class RoadFurnitureBodies {
   }
 
   destroyBody(body) {
+    this.physics.debris?.forget(body);
+    this.closureBodies.delete(bodyKey(body));
     const id = body.GetID();
     this.physics.bodies.RemoveBody(id);
     this.physics.bodies.DestroyBody(id);
@@ -90,8 +93,15 @@ export class RoadFurnitureBodies {
     if (this.hits.has(fixture)) return true;
     if (impulse < (fixture.style === 'stone' ? 30000 : 12000)) return false;
     const v = car.GetLinearVelocity();
-    this.hits.set(fixture, { vx: v.GetX(), vz: v.GetZ(), car: bodyKey(car) });
+    this.hits.set(fixture, { impulse, vx: v.GetX(), vz: v.GetZ(), car: bodyKey(car) });
     return true;
+  }
+
+  bump(first, second, impulse) {
+    const vehicle = first.GetObjectLayer() === layers.VEHICLE ? first : second;
+    if (vehicle.GetObjectLayer() !== layers.VEHICLE) return;
+    const item = this.closureBodies.get(bodyKey(vehicle === first ? second : first));
+    if (item) item.hit = { car: bodyKey(vehicle), impulse };
   }
 
   createLoose(fixture, hit) {
@@ -129,7 +139,14 @@ export class RoadFurnitureBodies {
       const body = bodies.CreateBody(settings);
       Jolt.destroy(settings);
       bodies.AddBody(body.GetID(), hit ? Jolt.EActivation_Activate : Jolt.EActivation_DontActivate);
-      this.loose.set(fixture.id, { body, fixture, active: !!hit });
+      const item = { body, fixture, active: !!hit };
+      this.loose.set(fixture.id, item);
+      if (fixture.closure) this.closureBodies.set(bodyKey(body), item);
+      else this.physics.debris?.add(body, () => {
+        this.destroyBody(body);
+        this.loose.delete(fixture.id);
+        this.registry.setPose(fixture.id, null);
+      });
       if (hit) {
         this.vector.Set(hit.vx * 0.7, 1, hit.vz * 0.7);
         bodies.SetLinearVelocity(body.GetID(), this.vector);
@@ -180,10 +197,11 @@ export class RoadFurnitureBodies {
   step(now, budget = 20) {
     for (const [fixture, hit] of this.hits) {
       // Jedno pohyblivé těleso a nejvýše dvě operace na společné síti dlaždice.
-      if (budget < 3 + this.dirty.size * 2) break;
+      if (budget < 3 + this.dirty.size * 2 || this.physics.debris?.room(1) === false) break;
       this.hits.delete(fixture);
       if (!this.tiles.has(fixture.tile) || !this.registry.damage(fixture.id, 'broken', now)) continue;
       this.createLoose(fixture, hit);
+      this.physics.onFurnitureDamage?.(fixture, hit, fixture.style === 'stone' ? 'stone' : 'metal');
       this.dirty.add(fixture.tile);
       budget--;
     }
@@ -217,6 +235,7 @@ export class RoadFurnitureBodies {
         if (this.registry.state(fixture.id) === 'intact') {
           if (Math.hypot(pose.x-fixture.x, pose.y-fixture.y, pose.z-fixture.z) < 0.015 && Math.abs(pose.qw) > 0.9999) continue;
           this.registry.damage(fixture.id, 'moved', now);
+          if (item.hit) this.physics.onFurnitureDamage?.(fixture, item.hit, 'metal');
         }
         this.updateObstacles(fixture, pose);
       }
