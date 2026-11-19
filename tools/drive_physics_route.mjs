@@ -84,14 +84,22 @@ try {
     const vehicle = game.driver;
     const input = (value) => Math.max(-1, Math.min(1, value));
     let index = 0, distance = 0, maxDrop = 0, lastAdvance = 0, reverseTurn = 0, backing = 0, attempts = 0;
-    let recoveryStart = 0, repeatedAttempts = 0;
+    let recoveryStart = 0, repeatedAttempts = 0, recoveryDistance = 0;
+    const recent = [];
     for (let tick = 0; tick < (loops ? 8 * 300000 : 300000); tick++) {
       let nearest = index, best = Infinity;
       for (let k = index; k < Math.min(index + 16, points.length); k++) {
         const d = Math.hypot(points[k].x - car.x, points[k].z - car.z);
         if (d < best) { best = d; nearest = k; }
       }
-      if (nearest !== index) lastAdvance = tick;
+      if (nearest !== index) {
+        lastAdvance = tick;
+        recoveryDistance = 0;
+      } else if (loops && !backing && recoveryDistance - best >= 0.5) {
+        // Po couvání se vůz nejprve vrací k poslednímu bodu. I to je měřitelný postup.
+        lastAdvance = tick;
+        recoveryDistance = best;
+      }
       index = nearest;
       let aim = index;
       const look = 3.5 + Math.max(0, car.speed) * 0.32;
@@ -125,6 +133,7 @@ try {
       // Rozjetí vzad potřebuje několik kroků i s volantem blízko přímého směru.
       if (backing && best < 7 && (loops || Math.abs(angle) > 0.35)) {
         backing--;
+        if (loops) recoveryDistance = best;
         throttle = input((-3.5 - car.speed) * 0.8);
         steer = loops ? input(angle) : Math.sign(angle);
       } else backing = 0;
@@ -147,8 +156,15 @@ try {
       maxDrop = Math.max(maxDrop, world.groundY(car.x, car.z, car.y + 1) - car.y);
       distance += Math.hypot(car.x - x, car.z - z);
       const seconds = (tick + 1) / 60;
+      if (loops && tick % 60 === 0) {
+        recent.push({ index, offset: best, speed: car.speed, desired: speed, backing });
+        if (recent.length > 8) recent.shift();
+      }
       if (game.car !== car || tick - lastAdvance > 360 || (loops ? repeatedAttempts : attempts) > 25 || best > 12 || maxDrop > 1) {
-        throw new Error(JSON.stringify({ seconds, distance, maxDrop, x: car.x, z: car.z, best, attempts, index, aim, angle, speed: car.speed, desired: speed, steer, health: car.health, target: [points[aim].x, points[aim].z] }));
+        throw new Error(JSON.stringify({ seconds, distance, maxDrop, x: car.x, z: car.z, best, attempts, index, aim, angle,
+          speed: car.speed, desired: speed, steer, health: car.health, target: [points[aim].x, points[aim].z],
+          driving: game.car === car, mode: game.mode, floodTime: car.floodTime, ticksSinceAdvance: tick - lastAdvance,
+          repeatedAttempts, recent }));
       }
       if (loops && tick % 3600 === 0) {
         await window.recordDrive({ kind: 'prujezd', seconds, distance, maxDrop, index, attempts, health: car.health });
