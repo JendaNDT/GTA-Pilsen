@@ -20,41 +20,51 @@ try {
     if (log) await appendFile(log, line);
     else process.stdout.write(line);
   });
+  if (loops) await page.addInitScript(() => {
+    let seed = 1729;
+    Math.random = () => ((seed = (Math.imul(1664525, seed) + 1013904223) >>> 0) / 2 ** 32);
+  });
   await page.goto(target.href);
   await page.waitForFunction(() => window.__ready);
   const report = await page.evaluate(async ({reverse,loops}) => {
     const game = window.__game, world = game.world, car = game.player.lastCar;
-    const locations = [[game.player.x, game.player.z], world.meta.places.find((p) => p[2] === 'Klabava'),
-      world.meta.landmarks.find((p) => p[2] === 'Masarykovo náměstí (Rokycany)'),
-      world.meta.places.find((p) => p[2] === 'Hrádek'), world.meta.walkingApproaches['Vodní hamr Dobřív']];
+    const city = [game.player.x, game.player.z];
+    const place = (name) => world.meta.places.find(p => p[2] === name);
+    // Dva průjezdní body v Dobřívě dovolují objet blok a vrátit se bez otáčení na místě.
+    const locations = loops
+      ? [city, place('Rokycany'), [22462.5, 3546.4], [22336.9, 3448.8], city]
+      : [city, place('Klabava'), world.meta.landmarks.find(p => p[2] === 'Masarykovo náměstí (Rokycany)'),
+        place('Hrádek'), world.meta.walkingApproaches['Vodní hamr Dobřív']];
     if (reverse) locations.reverse();
     const nodes = locations.map(([x, z]) => world.nearestNode(x, z, 250));
     const ends = [], samples = [];
-    if (loops) {
-      const round = [...nodes, ...nodes.slice(0, -1).reverse()];
-      nodes.length = 0;
-      nodes.push(round[0]);
-      for (let lap = 0; lap < 4; lap++) nodes.push(...round.slice(1));
-      window.__freeze(true);
-    }
+    if (loops) window.__freeze(true);
     const points = [];
-    for (let leg = 1; leg < nodes.length; leg++) {
-      for (const edge of world.findPath(nodes[leg - 1], nodes[leg], 12000)) {
+    const legs = nodes.length - 1;
+    let incoming = -1;
+    for (let leg = 0; leg < (loops ? 4 : 1) * legs; leg++) {
+      const i = leg % legs;
+      const route = world.findPath(nodes[i], nodes[i + 1], 30000, loops ? incoming : -1);
+      if (!route?.length) throw new Error('Plánovač nenašel úsek ' + (i + 1));
+      incoming = route.at(-1);
+      for (const edge of route) {
+        const lane = loops ? Math.min(0.6, game.vehicles._laneFor(edge, 1)) : 0;
         for (let d = 0; d < world.eLen[edge]; d += 2) {
-          const p = world.edgePoint(edge, d, 0, {});
+          const p = world.edgePoint(edge, d, lane, {});
           if (!points.length || Math.hypot(p.x - points.at(-1).x, p.z - points.at(-1).z) > 0.8) points.push(p);
         }
       }
-      if (loops && leg % (2 * (locations.length - 1)) === 0) ends.push(points.length - 1);
+      if (loops && (leg + 1) % legs === 0) ends.push(points.length - 1);
     }
     if (points.length < 2) throw new Error('Plánovač nenašel trasu pro zkušební jízdu.');
     const end = points.at(-1);
+    const cruise = loops ? 10 : 14;
     end.safeSpeed = 0;
     for (let i = points.length - 2; i >= 0; i--) {
       const p = points[i], next = points[i + 1];
       const length = Math.hypot(p.x - next.x, p.z - next.z);
       const turn = Math.acos(Math.max(-1, Math.min(1, p.tx * next.tx + p.tz * next.tz)));
-      p.safeSpeed = Math.min(14, Math.sqrt(next.safeSpeed ** 2 + 5 * length),
+      p.safeSpeed = Math.min(cruise, Math.sqrt(next.safeSpeed ** 2 + (loops ? 3 : 5) * length),
         Math.sqrt(2.5 * Math.max(0.4, length) / Math.max(0.001, turn)));
     }
 
@@ -98,11 +108,11 @@ try {
       let steer = input(-Math.atan2(2 * vehicle.spec.wheelbase * Math.sin(angle), Math.hypot(dx, dz)) / (0.62 * limit));
       const ahead = points[Math.min(points.length - 1, index + 8)];
       const bend = Math.abs(relativeAngle(Math.atan2(ahead.tx, ahead.tz)));
-      const speed = Math.min(points[index].safeSpeed, 14 / (1 + 3 * bend), loops && best > 2.5 ? 3.5 : Infinity);
+      const speed = Math.min(points[index].safeSpeed, cruise / (1 + 3 * bend), loops && best > 2.5 ? 2.5 : Infinity);
       let throttle = input((speed - car.speed) * 0.6);
-      if (!reverseTurn && Math.abs(angle) > 2.55) reverseTurn = Math.sign(angle);
+      if (!reverseTurn && Math.abs(angle) > (loops ? 2.1 : 2.55)) reverseTurn = Math.sign(angle);
       if (reverseTurn && Math.abs(angle) < 1.65) reverseTurn = 0;
-      if (reverseTurn && best < 7) { steer = reverseTurn; throttle = input((-2.5 - car.speed) * 0.85); }
+      if (reverseTurn && (loops || best < 7)) { steer = reverseTurn; throttle = input((-2.5 - car.speed) * 0.85); }
       if (tick - lastAdvance > 100 && Math.abs(car.speed) < 0.45 && !backing) {
         backing = 100; lastAdvance = tick; attempts++;
         if (index - recoveryStart > 20) { recoveryStart = index; repeatedAttempts = 0; }

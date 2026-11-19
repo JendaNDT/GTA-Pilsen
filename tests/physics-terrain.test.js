@@ -98,6 +98,20 @@ test('Jolt protne Wilsonův most, Rondel i vozovky a stropy Valíku ve výšce p
     }
   };
   try {
+    const apron = w.roadApproach;
+    assert.ok(apron, 'Chybí napojení vozovky na měřený horní pás.');
+    const path = apron.path;
+    for (let i = 0; i < path.n - 1; i++) {
+      label = ['napojení horní vozovky', i];
+      // Paprsky míří do plochy trojúhelníku, včetně bezprostředního okolí spoje.
+      for (const fraction of [0.02, 0.5, 0.98]) {
+        const mix = values => values[i] + fraction * (values[i + 1] - values[i]);
+        const t = 1 - (1 - apron.startT) * (i + fraction) / (path.n - 1);
+        assert.ok(w.roadSurfaceY(apron.road, apron.seg, t, mix(path.x), mix(path.z)) >= mix(path.y) - 0.05);
+        check(mix(path.x), mix(path.z), mix(path.y));
+      }
+    }
+    assert.ok(w.heightAt(path.x.at(-1), path.z.at(-1)) >= path.y.at(-1));
     const wilson = [...w.archedBridges.keys()].find((i) => w.roadNames[w.r.name[i]] === 'Wilsonův most');
     assert.ok(Number.isInteger(wilson));
     for (const road of [wilson, ...w.rondel.elevated.keys(), ...w.gradeRoads]) {

@@ -51,3 +51,26 @@ export function offsetDeck(path, calibration) {
   return {...path, x:path.x.map(x => x + shiftX), z:path.z.map(z => z + shiftZ),
     px:path.px + shiftX, pz:path.pz + shiftZ, nx:path.nx + shiftX, nz:path.nz + shiftZ};
 }
+
+// Na krátkém přechodu k měřené mostovce může terén patřit spodní cestě.
+// Horní jízdní pás zůstává samostatný, aby pod ním zůstal průchod.
+export function bridgeApproach(world, bridge, road) {
+  if (!world.gradeRoads.has(bridge)) return null;
+  const start = world.rOff[bridge], end = world.rOff[road + 1] - 1;
+  const { rpx: x, rpz: z, rpy: y } = world;
+  if (x[start] !== x[end] || z[start] !== z[end]) return null;
+  const dx = x[end - 1] - x[end], dz = z[end - 1] - z[end];
+  const segmentLength = Math.hypot(dx, dz);
+  const bridgeLength = Math.hypot(x[start + 1] - x[start], z[start + 1] - z[start]);
+  if (!segmentLength || !bridgeLength || y[start] - world.heightAt(x[end], z[end]) < 0.75) return null;
+  const slope = (y[start] - y[start + 1]) / bridgeLength;
+  for (let reach = 2; reach <= Math.min(segmentLength, 16); reach += 2) {
+    const t = reach / segmentLength, bx = x[end] + dx * t, bz = z[end] + dz * t;
+    const top = y[start] + reach * slope;
+    if (world.heightAt(bx, bz) < top) continue;
+    const path = densePath([x[end], bx], [z[end], bz], [y[start], top], 0, 1, 0, 1, 2);
+    return { road, seg: end - 1, startT: 1 - t, path, halfWidth: world.r.w[road] / 2,
+      tile: world.chunkIndex((x[end] + bx) / 2, (z[end] + bz) / 2) };
+  }
+  return null;
+}

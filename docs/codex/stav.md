@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Jízdní povrch při návratu do Plzně
+
+Na trase centrum–Rokycany–Dobřív–centrum se po 45,62 km projevil nespojitý nájezd na horní vozovku. Opravený spoj používají vykreslení i kolize Joltu. Běžný průjezd přes místo a okolí v délce 1,195 km skončil bez vyprošťování s největším poklesem 0,109 m. Prošlo 180 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. Všechny tři podporované verze Node.js daly stejných 815 souborů. Pokračuje zkouška čtyř okruhů. [Jízda a porovnání před opravou](../E26.md)
+
 ## Shoda manifestu s obsahem archivů
 
 Nástroj pro vydání zapisuje do manifestu otisky přesně těch dat, která prošla do obou ZIPů. Regresní zkouška změnila dlaždici mezi zabalením webu a zdrojů a ověřila odmítnutí neúplného vydání. Nezávislé čtení obou ZIPů kandidáta ověřilo 815 položek webu a 1 371 položek zdrojů. [Balení a uložení hry](../E26.md)

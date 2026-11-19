@@ -1,3 +1,4 @@
+import { bridgeApproach } from './road-profile.js';
 import { streetLamps } from './lamps.js';
 import { breakableId, Breakables } from '../physics/breakables.js';
 // Herní svět: dekódování dat, prostorové indexy, kolize, silniční graf.
@@ -98,6 +99,8 @@ export class World {
       const rail = this.rails[model.rail];
       if (rail?.y && !this.gradeRails.has(model.rail)) rail.deck = measuredRailDeck(rail,model.sections);
     }
+    // V tomto výřezu končí nájezd 2725 u měřeného horního pásu 64.
+    this.roadApproach = bridgeApproach(this, 64, 2725);
     this._initBridges();
     this.bridgeEdges = indexBridgeEdges(this);
     this.treeTypes = new Map(data.treeTypes?.trees);
@@ -288,6 +291,10 @@ export class World {
       for (let k = this.rOff[i], ke = this.rOff[i + 1] - 1; k < ke; k++) {
         seg.push(px[k]+dx, pz[k]+dz, py[k], px[k+1]+dx, pz[k+1]+dz, py[k+1], hw, cls <= DRIVABLE_MAX ? 0 : 3);
       }
+    }
+    if (this.roadApproach) {
+      const { path, halfWidth } = this.roadApproach;
+      seg.push(path.x[0], path.z[0], path.y[0], path.x.at(-1), path.z.at(-1), path.y.at(-1), halfWidth, 0);
     }
     this.bridgeEndWidths = new Map();
     for (const rail of this.rails) {
@@ -789,7 +796,13 @@ export class World {
     if (this.r.flags[road] & RF.BRIDGE || this.rondel?.elevated.has(road) || this.tunnelRoads?.has(road)) {
       return this.rpy[seg] + (this.rpy[seg + 1] - this.rpy[seg]) * t;
     }
-    return this.heightAt(x, z) + SURF;
+    const terrain = this.heightAt(x, z) + SURF;
+    const apron = this.roadApproach;
+    if (apron?.road === road && apron.seg === seg && t >= apron.startT) {
+      const y = apron.path.y;
+      return Math.max(terrain, y[0] + (y.at(-1) - y[0]) * (1 - t) / (1 - apron.startT));
+    }
+    return terrain;
   }
 
   /** Zahrnuje celou šířku všech překrývajících se vozovek v téže výšce. */

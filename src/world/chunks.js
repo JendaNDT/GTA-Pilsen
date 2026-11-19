@@ -863,6 +863,10 @@ function buildRoads(world, ci, manager) {
       }
     }
   }
+  const apron = world.roadApproach;
+  if (apron?.tile === ci) {
+    ribbon(world, asphalt, apron.path, apron.halfWidth, roadColor(R.cls[apron.road]), 0, 0, false, false, false);
+  }
   const furniture = [];
   for (const edge of world.bridgeEdges.get(ci) ?? []) {
     const start = solid.p.length;

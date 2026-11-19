@@ -16,6 +16,7 @@ export class RoadStructures {
       this.strip(offsetDeck(path, world.deckCalibrations.get(i)), world.deckHalfWidth(i),
         null, i === world.prazdrojRoad ? prazdrojThickness : undefined);
     }
+    if (world.roadApproach) this.strip(world.roadApproach.path, world.roadApproach.halfWidth, null);
     for (const rail of world.rails) if (rail.y) {
       const xs = [], zs = [];
       for (let i = 0; i < rail.pts.length; i += 2) { xs.push(rail.pts[i]); zs.push(rail.pts[i + 1]); }
