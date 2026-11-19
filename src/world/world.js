@@ -97,6 +97,12 @@ export class World {
       entries.push({ id: breakableId('closure', ci, entries.length), tile: ci, closure, obstacles,
         x, y: this.heightAt(x, z) + 0.44, z });
       this.addObstacles(obstacles);
+      // Dva herní vymezovací sloupky po stranách dočasné uzavírky.
+      for (const side of [-1, 1]) {
+        const distance = side * (width / 2 + 1);
+        const px = x - dz * distance, pz = z + dx * distance;
+        this.traffic.addVisual(px, pz, 'posts', { x: px, z: pz, tx: dx, tz: dz });
+      }
     }
   }
 

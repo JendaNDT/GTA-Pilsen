@@ -46,6 +46,13 @@ export function trafficFurniture(world, entry, type) {
   if (existing?.world === world && existing.fixture.type === type) return existing.fixture;
   const { tx, tz, kind, breakableId: id } = entry;
   const base = fixtureBase(world, entry.x, entry.z);
+  if (type === 'bollard') {
+    const fixture = { id, type, entry, ...base, pole: {
+      x: 0, y: 0.43, z: 0, yaw: 0, width: 0.16, height: 0.86, depth: 0.16,
+    } };
+    layouts.set(entry, { world, fixture });
+    return fixture;
+  }
   const yaw = Math.atan2(-tx, -tz);
   const pedestrian = kind === 'pedestrian';
   const sign = type === 'sign';

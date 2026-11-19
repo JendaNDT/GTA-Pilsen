@@ -316,3 +316,32 @@ test('E21 – garáž po nárazu uloží poškozený díl, načte jej a opraví 
   expect(repair.paid).toBe(repair.price);
   expect(repair.price).toBeGreaterThan(0);
 });
+
+test('E21 – vymezovací sloupky uzavírek sdílejí polohu s fyzikou a mají vlastní stav', async ({ page }) => {
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0'));
+  await page.waitForFunction(() => window.__ready);
+  const result = await page.evaluate(() => {
+    __freeze(true);
+    const g = __game, w = g.world;
+    const tiles = [...w.traffic.chunks].filter(([,entries]) => entries.posts?.length);
+    const [tile, entries] = tiles[0], post = entries.posts[0];
+    for (let i = 0; i < 28; i++) g.colliders.update(post.x, post.z);
+    for (let i = 0; i < 20; i++) g.chunks.update(post.x, post.z, 620, 100);
+    while (g.trafficFurniture.pending.size) g.trafficFurniture.step(g.clock.now);
+    const record = g.trafficFurniture.records.get(post.breakableId);
+    const mesh = g.chunks.chunks.get(tile).traffic.group.children.find(m => {
+      if (!m.isInstancedMesh) return false;
+      const matrix = m.instanceMatrix.array;
+      return Math.abs(matrix[12] - record.fixture.x) < 0.002 && Math.abs(matrix[14] - record.fixture.z) < 0.002;
+    });
+    const p = record.body.GetPosition();
+    const aligned = Math.abs(record.fixture.x - p.GetX()) < 0.002 && Math.abs(record.fixture.z - p.GetZ()) < 0.002;
+    w.breakables.damage(post.breakableId, 'broken', g.clock.now);
+    const hidden = mesh.instanceMatrix.array[0] === 0;
+    return {count: tiles.reduce((n, [,entry]) => n + entry.posts.length, 0), expected: w.roadClosures.length * 2,
+      aligned, hidden, attached: w.breakables.visuals.has(post.breakableId)};
+  });
+  expect(result.count).toBeGreaterThan(0);
+  expect(result.count).toBe(result.expected);
+  expect(result).toMatchObject({aligned: true, hidden: true, attached: true});
+});

@@ -37,6 +37,7 @@ export class TrafficFurnitureBodies {
     const entries = this.world.traffic.chunks.get(ci);
     if (!entries) return;
     const fixtures = [
+      ...(entries.posts ?? []).map(post => trafficFurniture(this.world, post, 'bollard')),
       ...entries.signs.map(sign => trafficFurniture(this.world, sign, 'sign')),
       ...entries.heads.map(head => trafficFurniture(this.world, head, 'signal')),
     ];
@@ -69,7 +70,7 @@ export class TrafficFurnitureBodies {
       // Kloub drží patu ve světě. Pro práh zlomení počítáme s oporou v zemi.
       impulse *= 1 + record.body.GetMotionProperties().GetInverseMass() / vehicle.GetMotionProperties().GetInverseMass();
     }
-    const breaks = impulse >= (fixture.type === 'sign' ? 9000 : 15000);
+    const breaks = impulse >= { bollard: 8000, sign: 9000, signal: 15000 }[fixture.type];
     if (!breaks && (fixture.type !== 'sign' || impulse < 2500 || record.state !== 'intact')) return;
     if ((this.hits.get(fixture.id)?.impulse ?? 0) >= impulse) return;
     const v = vehicle.GetLinearVelocity();
@@ -146,7 +147,7 @@ export class TrafficFurnitureBodies {
 
   scatter(fixture, hit, pose) {
     const pieces = [];
-    for (const name of ['pole', 'panel']) {
+    for (const name of fixture.panel ? ['pole', 'panel'] : ['pole']) {
       const body = this.body(fixture, [name], true, pose);
       let mesh;
       if (this.scene) {
@@ -208,16 +209,20 @@ export class TrafficFurnitureBodies {
   }
 
   place(fixture, state, pose = null) {
-    const body = this.body(fixture, ['pole', 'panel'], false, pose);
+    const body = this.body(fixture, fixture.panel ? ['pole', 'panel'] : ['pole'], false, pose);
     this.addRecord({ fixture, state, body });
   }
 
   step(now, budget = 20) {
     for (const [id, hit] of this.hits) {
-      if (budget < 3 || (hit.breaks && this.physics.debris?.room(2) === false)) break;
-      this.hits.delete(id);
       const record = this.records.get(id);
-      if (!record?.body || !this.nearby.has(id)) continue;
+      if (!record?.body || !this.nearby.has(id)) {
+        this.hits.delete(id);
+        continue;
+      }
+      const parts = hit.breaks && record.fixture.panel ? 2 : 1;
+      if (budget < 1 + parts || (hit.breaks && this.physics.debris?.room(parts) === false)) break;
+      this.hits.delete(id);
       const state = hit.breaks ? 'broken' : 'bent';
       if (record.state !== this.registry.state(id) || !this.registry.damage(id, state, now)) continue;
       this.physics.onFurnitureDamage?.(record.fixture, hit, record.fixture.type === 'signal' ? 'glass' : 'metal');
@@ -225,7 +230,7 @@ export class TrafficFurnitureBodies {
       budget -= this.removeRecord(record);
       if (hit.breaks) {
         this.scatter(record.fixture, hit, pose);
-        budget -= 2;
+        budget -= parts;
       } else {
         this.bend(record.fixture, hit);
         budget--;

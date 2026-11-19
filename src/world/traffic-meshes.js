@@ -96,7 +96,7 @@ export function trafficFragment(fixture, name) {
 
 export function buildTrafficMeshes(world, entries) {
   const group = new THREE.Group();
-  const poles = new THREE.InstancedMesh(BOX, PROPS, entries.signs.length + entries.heads.length * 2);
+  const poles = new THREE.InstancedMesh(BOX, PROPS, entries.signs.length + entries.heads.length * 2 + (entries.posts?.length ?? 0));
   let pole = 0;
   const bySign = new Map();
   const visuals = [];
@@ -145,6 +145,12 @@ export function buildTrafficMeshes(world, entries) {
     furnitureInstance(poles, pole, fixture, fixture.pole);
     poles.setColorAt(pole++, steel);
   };
+  for (const entry of entries.posts ?? []) {
+    const fixture = trafficFurniture(world, entry, 'bollard');
+    const i = pole;
+    setPole(fixture);
+    remember(fixture, [[poles, i]]);
+  }
   for (const [mat, signs] of bySign) {
     const faces = new THREE.InstancedMesh(FACE, mat, signs.length);
     signs.forEach((sign, i) => {
