@@ -2,6 +2,12 @@
 
 E24 navazuje na G17 ve větvi E23 (`fe30ef0`). [Zadání E24](E24.md)
 
+## Vypnutí počasí a práce vykreslovače
+
+Při volbě **Vždy jasno** se i na vysoké a ultra předvolbě vrací původní obloha z E23. Výpočet objemové vrstvy stojí a krajinu nestíní její maska. Po návratu k proměnlivému počasí se první snímek vytvoří bez zastaralé historie. Za sucha materiály přeskočí výpočet sněhové pokrývky. Pod horizontem se vynechá výpočet procedurálních mraků, kde mají nulové krytí. Noční osvětlení používá společný zdroj pozic lamp z E21.
+
+Na obou vykreslovačích prošla kontrola zastavení a obnovení objemové vrstvy, deště a sněhu i porovnání obrazu kolem městské zástavby na nízké předvolbě. Po převzetí E21 prošlo 166 testů JavaScriptu a produkční sestavení. Výkon softwarového adaptéru měří samostatná série. [Ověření E24](../E24.md)
+
 ## Průhlednost objemových oblaků
 
 Ve vysoké předvolbě se u nádraží objevila černá obloha. Na stejném místě po opravě zmizely černé plochy a mezi oblaky je vidět modrá obloha. Oprava zachovává krytí vypočtené pro každý paprsek i při přebírání předchozího snímku. WebGL 2 i WebGPU našly částečně průhledné vzorky mezi oblaky a ověřily nulové krytí při pohledu přímo dolů. Prošlo 166 jednotkových testů JavaScriptu a produkční sestavení. [Porovnání obrazu](../E24.md)
