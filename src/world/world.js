@@ -1,3 +1,4 @@
+import { streetLamps } from './lamps.js';
 import { breakableId, Breakables } from '../physics/breakables.js';
 // Herní svět: dekódování dat, prostorové indexy, kolize, silniční graf.
 import { CHUNK, COLL_CELL, DRIVABLE_MAX, RF, RC, LC, BF } from '../config.js';
@@ -136,6 +137,8 @@ export class World {
     const origin = this.meta.origin;
     return { lat: origin.lat - z / origin.ky, lon: origin.lon + x / origin.kx };
   }
+
+  lampsInTile(ci) { return streetLamps(this, ci); }
 
   chunkIndex(x, z) {
     const cx = Math.floor((x - this.minX) / CHUNK);

@@ -13,14 +13,20 @@ test('E21 – auto ulomí lampu, po návratu chybí i světlo a ve čtyři se op
       for (let i = 0; i < 8; i++) g.chunks.update(x, z, 620, 100);
       while (manager.pending.size) manager.step(g.clock.now);
     };
-    load(car.x, car.z);
-    const candidates = [...manager.nearby.values()].sort((a, b) =>
-      Math.hypot(a.x - car.x, a.z - car.z) - Math.hypot(b.x - car.x, b.z - car.z));
-    const lamp = candidates.find(l => w.breakables.visuals.has(l.id) && Math.hypot(l.x - l.lightX, l.z - l.lightZ) > 2);
-    if (!lamp) throw new Error('U výchozího místa chybí lampa u hlavní ulice.');
-    const road = w.nearestRoad(lamp.x, lamp.z, 20, undefined, 0, {});
-    const d = Math.hypot(lamp.x - road.x, lamp.z - road.z);
-    const dx = (lamp.x - road.x) / d, dz = (lamp.z - road.z) / d;
+    // Zkušební podlaha a jediný vlastní sloup jsou nad herním terénem.
+    const x = car.x + 1800, z = car.z, y = w.heightAt(x, z) + 100;
+    const tileId = w.chunkIndex(x, z);
+    const lamp = { id: 'lamp/' + tileId + '/zkusebna', x, y, z, height: 6.2, head: 0.5,
+      lightX: x + 3, lightZ: z, radius: 10 };
+    w.lampsInTile = ci => ci === tileId ? [{ ...lamp }] : [];
+    const { Jolt, bodies } = g.physics;
+    const half = new Jolt.Vec3(8, .25, 12), position = new Jolt.RVec3(x, y - .25, z);
+    const rotation = new Jolt.Quat(0, 0, 0, 1);
+    const settings = new Jolt.BodyCreationSettings(new Jolt.BoxShape(half), position, rotation, Jolt.EMotionType_Static, 0);
+    const floor = bodies.CreateBody(settings);
+    bodies.AddBody(floor.GetID(), Jolt.EActivation_DontActivate);
+    for (const value of [settings, rotation, position, half]) Jolt.destroy(value);
+    load(x, z);
     const drawState = () => {
       const tile = g.chunks.chunks.get(Number(lamp.id.split('/')[1]));
       const index = tile.lamps.visuals.findIndex(v => v.id === lamp.id);
@@ -37,13 +43,15 @@ test('E21 – auto ulomí lampu, po návratu chybí i světlo a ve čtyři se op
     };
     const before = drawState();
     const wantedBefore = g.wanted;
-    car.place(lamp.x - dx * 6, lamp.z - dz * 6, Math.atan2(dx, dz));
     g._enterCar(car);
+    car.place(x, z - 6, 0);
+    car.y = y;
+    car.gPitch = car.gRoll = 0;
     for (const other of [...g.vehicles.cars]) if (other !== car) g.vehicles.remove(other);
     g.vehicles.spawnTimer = g.peds.timer = Infinity;
     car.speed = 30 / 3.6;
-    car.vx = dx * car.speed;
-    car.vz = dz * car.speed;
+    car.vx = 0;
+    car.vz = car.speed;
     for (let i = 0; i < 120; i++) g.update(1 / 60);
     const broken = drawState(), pieces = manager.debris.get(lamp.id)?.length ?? 0;
     load(lamp.x + 2200, lamp.z);
@@ -54,6 +62,8 @@ test('E21 – auto ulomí lampu, po návratu chybí i světlo a ve čtyři se op
     const early = drawState();
     g.setClock('2026-11-10', 4);
     manager.step(g.clock.now);
+    bodies.RemoveBody(floor.GetID());
+    bodies.DestroyBody(floor.GetID());
     return { before, broken, pieces, unloaded, returned, early, wanted: g.wanted > wantedBefore, repaired: drawState() };
   });
   const intact = { light: true, visible: true, pole: true, state: 'intact' };
@@ -110,21 +120,17 @@ test('E21 – náraz ohne značku, vyřadí řízení semaforů a v noci se vyba
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
   const result = await page.evaluate(() => {
     __freeze(true);
-    const g = __game, { world, focus, colliders, trafficFurniture: furniture, physics } = g;
+    const g = __game, { world, trafficFurniture: furniture, physics } = g;
     const { Jolt, bodies } = physics;
-    for (let i = 0; i < 28; i++) colliders.update(focus.x, focus.z);
-    for (let i = 0; i < 18; i++) g.chunks.update(focus.x, focus.z, 620, 100);
+    const group = { fixtures: ['signal/zkusebna/0'], crossings: [], greenTime: 20, timeOffset: 0, clearance: 2 };
+    const signs = [{ x: -6, z: 0, tx: 0, tz: 1, kind: 'stop', breakableId: 'sign/zkusebna/0' }];
+    const heads = [{ x: 6, z: 0, tx: 0, tz: 1, kind: 'signal', group, breakableId: group.fixtures[0] }];
+    // Samostatný vstup správce vybavení. Poloha ani skupina nepocházejí z mapy.
+    const tile = -1;
+    furniture.world = { groundY: () => 900, traffic: { chunks: new Map([[tile, { signs, heads }]]) } };
+    furniture.load(tile);
     while (furniture.pending.size) furniture.step(g.clock.now);
-    for (const car of [...g.vehicles.cars]) g.vehicles.remove(car);
-    const fixtures = [...furniture.nearby.values()];
-    const find = type => fixtures.find(fixture => fixture.type === type &&
-      (type !== 'signal' || fixture.entry.group.fixtures?.includes(fixture.id)) &&
-      world.breakables.visuals.has(fixture.id) &&
-      [0, 0.26, 0.52].every(distance =>
-        !world.collideCircle(fixture.x, fixture.z - distance, 0.31, fixture.y + 0.6, fixture.y + 1.4, true)) &&
-      fixtures.every(other => other === fixture || Math.hypot(other.x - fixture.x, other.z - fixture.z) > 1.5));
-    const sign = find('sign'), signal = find('signal');
-    if (!sign || !signal) throw new Error('V okolí chybí samostatná značka nebo semafor.');
+    const sign = furniture.nearby.get(signs[0].breakableId), signal = furniture.nearby.get(heads[0].breakableId);
     const advance = ticks => {
       for (let i = 0; i < ticks; i++) physics.step(1 / 60);
     };
