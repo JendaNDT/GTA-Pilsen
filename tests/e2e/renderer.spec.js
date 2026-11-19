@@ -4,7 +4,7 @@ import { PCFShadowMap } from 'three/webgpu';
 
 test('E15 – hra ukazuje vynucené vykreslování přes WebGL 2 v menu i v měření', { tag: '@webgpu' }, async ({ page }) => {
   await page.goto(gameUrl('/?debug&quality=low&renderer=webgl', { defaultRenderer: true }));
-  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  await page.waitForFunction(() => window.__ready);
   await page.getByRole('button', { name: 'O hře', exact: true }).click();
   await expect(page.locator('#panel-about')).toContainText('Aktuální vykreslování: WebGL 2');
   expect(await page.evaluate(() => window.__game.renderer.backend.isWebGLBackend)).toBe(true);
@@ -16,21 +16,21 @@ test('E15 – hra ukazuje vynucené vykreslování přes WebGL 2 v menu i v mě�
 test('E15 – hra bez WebGPU automaticky spustí WebGL 2', async ({ page }) => {
   await page.addInitScript(() => Object.defineProperty(navigator, 'gpu', { value: undefined }));
   await page.goto(gameUrl('/?debug&quality=low', { defaultRenderer: true }));
-  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  await page.waitForFunction(() => window.__ready);
   expect(await page.evaluate(() => window.__game.renderer.backend.isWebGLBackend)).toBe(true);
   await page.getByRole('button', { name: 'O hře', exact: true }).click();
   await expect(page.locator('#panel-about')).toContainText('Aktuální vykreslování: WebGL 2');
 });
 
 test('E14 – start a minuta hraní ve dne i v noci bez varování vykreslovače', async ({ page }) => {
-  test.setTimeout(150_000);
+  test.setTimeout(Math.max(test.info().timeout, 150_000));
   const messages = [];
   page.on('console', (message) => {
     if (['warning', 'error'].includes(message.type())) messages.push(message.text());
   });
   page.on('pageerror', (error) => messages.push(error.message));
   await page.goto(gameUrl('/?debug&adapt=0&date=2026-11-17&hour=10&renderer=webgl', { defaultRenderer: true }));
-  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  await page.waitForFunction(() => window.__ready);
   expect(messages).toEqual([]);
   expect(await page.evaluate(() => window.__game.renderer.shadowMap.type)).toBe(PCFShadowMap);
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();

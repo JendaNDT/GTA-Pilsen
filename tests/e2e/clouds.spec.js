@@ -37,11 +37,19 @@ test('E24 – vysoká předvolba přeprojektuje čtvrtinový obraz oblaků @webg
     for (let i=3; i<below.length; i+=4) if (below[i] !== 0) belowClouds++;
     cam.position.x += 100; g.render();
     const size = g.renderer.getDrawingBufferSize(cloud.size);
-    return {reuse, swapped: first !== image, reset: cloud.weight.value, partial, belowClouds,
+    const reset = cloud.weight.value, frame = cloud.frame;
+    g.setWeatherMode('clear');
+    g.render();
+    const bypass = !cloud.enabled.value && !cloud.valid && cloud.frame === frame;
+    g.setWeatherMode('variable');
+    g.render();
+    const resumed = cloud.enabled.value && cloud.frame === frame + 1 && cloud.weight.value === 0;
+    return {reuse, swapped: first !== image, reset, partial, belowClouds, bypass, resumed,
       dimensions: target.width === Math.ceil(size.x/4) && target.height === Math.ceil(size.y/4)};
   });
   expect(result.reuse).toBeGreaterThan(0);
   expect(result.reset).toBe(0);
+  expect(result.bypass && result.resumed).toBe(true);
   expect(result.partial).toBeGreaterThan(0);
   expect(result.belowClouds).toBe(0);
   expect(result.swapped && result.dimensions).toBe(true);

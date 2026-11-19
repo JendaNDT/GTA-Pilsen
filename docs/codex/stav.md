@@ -30,9 +30,17 @@ V Chromiu na WebGL 2 i WebGPU prošel rozvoz na adresy ve všech třech úsecíc
 
 E24 navazuje na G17 ve větvi E23 (`fe30ef0`). [Zadání E24](E24.md)
 
+## Vypnutí počasí a práce vykreslovače
+
+Při volbě **Vždy jasno** se i na vysoké a ultra předvolbě vrací původní obloha z E23. Výpočet objemové vrstvy stojí a krajinu nestíní její maska. Po návratu k proměnlivému počasí se první snímek vytvoří bez zastaralé historie. Za sucha materiály přeskočí výpočet sněhové pokrývky. Pod horizontem se vynechá výpočet procedurálních mraků, kde mají nulové krytí. Noční osvětlení používá společný zdroj pozic lamp z E21.
+
+Na obou vykreslovačích prošla kontrola zastavení a obnovení objemové vrstvy, deště a sněhu i porovnání obrazu kolem městské zástavby na nízké předvolbě. Po převzetí E21 prošlo 166 testů JavaScriptu a produkční sestavení. Výkon softwarového adaptéru měří samostatná série. [Ověření E24](../E24.md)
+
 ## Průhlednost objemových oblaků
 
 Ve vysoké předvolbě se u nádraží objevila černá obloha. Na stejném místě po opravě zmizely černé plochy a mezi oblaky je vidět modrá obloha. Oprava zachovává krytí vypočtené pro každý paprsek i při přebírání předchozího snímku. WebGL 2 i WebGPU našly částečně průhledné vzorky mezi oblaky a ověřily nulové krytí při pohledu přímo dolů. Prošlo 166 jednotkových testů JavaScriptu a produkční sestavení. [Porovnání obrazu](../E24.md)
+
+Snímky náměstí v protokolu nyní pocházejí z opraveného vykreslování. V dešti v 18:09 zůstaly viditelné večerní osvětlení a srážky, v lednovém sněhu se pokryly střechy i dlažba náměstí. Obě scény mají shodnou kameru.
 
 ## G18 a G20 · Fasády a střechy
 
@@ -160,6 +168,14 @@ Větev `etapa/E21` navazuje na E20 sloučenou revizí `623e081`. [Zadání E21](
 | 6. Auta a garáž | Hotovo. Prošly deformace, odpadnutí dílu, načtení uloženého poškození a oprava v garáži. |
 | 7. Částice | Hotovo. Prošla kontrola výpočtu na WebGPU i náhradního výpočtu na WebGL 2. |
 | 8. Závěrečné ověření | Probíhají závěrečné prohlížečové zkoušky. Snímky a měření ze softwarového vykreslovače jsou v protokolu. Měření na autorově počítači je otevřené. |
+
+### Oddělená zkušební plocha
+
+Lampa pro fyzikální zkoušku vzniká na vlastní plošině nad herním terénem. Vykreslení i fyzika si vyžádají stejný seznam lamp v dlaždici. Také zkušební značka a světelný signál pocházejí ze samostatného testovacího vstupu s vlastní skupinou. Prošla ztráta a obnova světla po návratu, změna stavu a oprava u všech tří předmětů. V Chromiu uspěly dva scénáře na WebGL 2 a tytéž dva na WebGPU. Prošlo všech 128 testů JavaScriptu a produkční sestavení. Regrese dřívějších etap pokračují.
+
+### Směny a spuštění vykreslovače
+
+Na softwarovém adaptéru první sestavení scény někdy přesáhlo pevnou minutu. Zkoušky směn a vykreslovače nyní čekají na připravenou hru v rámci času určeného pro celý test. V Chromiu prošlo všech pět scénářů směn včetně výplaty, zrušení a opětovného načtení. Prošlo ruční i automatické spuštění WebGL 2. V minutové zkoušce na vysoké předvolbě adaptér zvládl jen 11 snímků, požadavek přes 30 zůstává otevřený. Prošlo 128 testů JavaScriptu a produkční sestavení. Regrese dopravy a starších grafických scén pokračují.
 
 Astra před implementací prověřila návrh. U lamp bude potřeba jeden společný výběr pro fyziku i vzhled, nezávislý na pořadí načítání sousedů. Pro mosty jsou zdrojem již oříznuté úseky hran. Připojené fyzikální těleso a zobrazený objekt mohou mít odlišnou dobu života. Změny po nárazu je potřeba provést po fyzikálním kroku. Otevřené otázky pro autora nyní nejsou.
 

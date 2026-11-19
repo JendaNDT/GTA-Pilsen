@@ -12,10 +12,10 @@ function broadDensity(xz) {
   return valueNoise(p).mul(.72).add(valueNoise(p.mul(2.17).add(17)).mul(.28));
 }
 
-export function cloudShadow(shadow) {
+export function cloudShadow(shadow, enabled) {
   return Fn(() => {
     const direct = shadow.toVar();
-    If(cloudCover.greaterThan(.12).and(env.sunDir.y.greaterThan(.025)), () => {
+    If(enabled.and(cloudCover.greaterThan(.12), env.sunDir.y.greaterThan(.025)), () => {
       const p = cloudShadowPosition();
       const mask = smoothstep(.45,.67,broadDensity(p).add(cloudCover.sub(.45).mul(.6)));
       direct.mulAssign(mask.mul(-.35).add(1));
@@ -30,6 +30,7 @@ function cloudShadowPosition() {
 export class CloudLayer {
   constructor(renderer) {
     this.renderer = renderer;
+    this.enabled = uniform(true, 'bool');
     this.targets = [0, 1].map(() => new RenderTarget(1, 1, {type:HalfFloatType, depthBuffer:false}));
     this.targetIndex = 0;
     this.previous = texture(this.targets[1].texture);
@@ -86,6 +87,10 @@ export class CloudLayer {
   }
 
   render(camera) {
+    if (!this.enabled.value) {
+      this.valid = false;
+      return;
+    }
     const r = this.renderer;
     r.getDrawingBufferSize(this.size);
     const w = Math.max(1, Math.ceil(this.size.x / 4)), h = Math.max(1, Math.ceil(this.size.y / 4));

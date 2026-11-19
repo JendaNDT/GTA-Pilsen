@@ -4,7 +4,6 @@ import { Particles } from '../fx/particles.js';
 import { restorePanels } from '../entities/damage.js';
 import { CarFragments } from '../physics/car-fragments.js';
 import { DebrisBudget } from '../physics/debris.js';
-import { streetLamps } from '../world/lamps.js';
 import { LampBodies } from '../physics/lamp-bodies.js';
 import { TrafficFurnitureBodies } from '../physics/traffic-furniture.js';
 import { Water } from '../physics/water.js';
@@ -295,13 +294,16 @@ export class Game {
     this.weather.update(this.clock.now);
     snowDepth.value = this.weather.snow;
     weatherFog.value = this.weather.fog;
-    cloudCover.value = this.weather.mode === 'clear' ? .41 : this.weather.cloud;
+    const variable = this.weather.mode !== 'clear';
+    cloudCover.value = variable ? this.weather.cloud : .41;
+    if (this.env.clouds) this.env.clouds.enabled.value = variable;
     env.wetPaving.value = PARAMS.get('wet') === '1' ? 1 : this.weather.wet;
   }
 
   setWeatherMode(mode) {
     this.weather.mode = mode === 'clear' ? 'clear' : 'variable';
     this.updateWeather();
+    this.env.setHour(this.hour, this.clock.day);
     this.save();
   }
 
@@ -462,7 +464,7 @@ export class Game {
     // Vůz se parkuje dřív, než se do scény načtou stožáry z okolních dlaždic.
     for (let j = Math.max(0, row - 1); j <= Math.min(w.rows - 1, row + 1); j++) {
       for (let i = Math.max(0, col - 1); i <= Math.min(w.cols - 1, col + 1); i++) {
-        lamps.push(...streetLamps(w, j * w.cols + i));
+        lamps.push(...w.lampsInTile(j * w.cols + i));
       }
     }
     const off = w.r.w[r.road] / 2 + 0.8;
