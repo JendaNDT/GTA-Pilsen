@@ -1,3 +1,4 @@
+import { breakableId } from '../physics/breakables.js';
 import { COLL_CELL, RF } from '../config.js';
 
 const cell = (x, z) => Math.floor(x / COLL_CELL) * 8192 + Math.floor(z / COLL_CELL);
@@ -207,7 +208,13 @@ export class Traffic {
     const ci = this.world.chunkIndex(x, z);
     if (ci < 0) return;
     if (!this.chunks.has(ci)) this.chunks.set(ci, { signs: [], heads: [], crossings: [], lines: [] });
-    this.chunks.get(ci)[kind].push(entry);
+    const list = this.chunks.get(ci)[kind];
+    if (kind === 'heads' || kind === 'signs') {
+      const type = kind === 'heads' ? 'signal' : 'sign';
+      list.push({ ...entry, breakableId: breakableId(type, ci, list.length) });
+    } else {
+      list.push(entry);
+    }
   }
 
   addControl(control) {

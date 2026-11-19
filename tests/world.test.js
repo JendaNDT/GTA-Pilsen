@@ -251,3 +251,35 @@ test('před levým odbočením řidič nechá projet rozjetý protisměr a vedle
   leader.junctionMovement = null;
   assert.equal(waiting(opposite, 1.8, true), undefined);
 });
+
+test('po obnovení dlaždice má každý semafor a značka stejné vlastní ID a zachová poškození', async () => {
+  const { Breakables } = await import('../src/physics/breakables.js');
+  const registry = new Breakables();
+  const rebuild = (tiles) => {
+    const traffic = Object.create(Traffic.prototype);
+    traffic.world = { chunkIndex: x => x };
+    traffic.chunks = new Map();
+    for (const tile of tiles) {
+      for (const kind of ['signs', 'heads', 'signs']) {
+        traffic.addVisual(tile, 0, kind, { x: tile + 1, z: 0 });
+      }
+    }
+    return traffic.chunks;
+  };
+  const ids = tile => [...tile.signs, ...tile.heads].map(entry => entry.breakableId);
+  const initial = rebuild([7, 8]);
+  const [first, second, head] = ids(initial.get(7));
+  assert.equal(new Set([...ids(initial.get(7)), ...ids(initial.get(8))]).size, 6);
+  const hour = 3600;
+  assert.equal(registry.damage(first, 'bent', 2 * hour), true);
+  assert.equal(registry.damage(first, 'broken', 3 * hour), true);
+  assert.equal(registry.damage(first, 'bent', 4 * hour), false);
+  assert.equal(registry.damage(first, 'broken', 27 * hour), false);
+  const restored = ids(rebuild([8, 7]).get(7));
+  assert.deepEqual(restored, [first, second, head]);
+  assert.deepEqual(restored.map(id => registry.state(id)), ['broken', 'intact', 'intact']);
+  assert.deepEqual(registry.repairDue(28 * hour - 1), []);
+  assert.deepEqual(registry.repairDue(28 * hour), [first]);
+  assert.equal(registry.state(first), 'intact');
+  assert.deepEqual(registry.repairDue(29 * hour), []);
+});

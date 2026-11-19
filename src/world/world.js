@@ -1,3 +1,4 @@
+import { Breakables } from '../physics/breakables.js';
 // Herní svět: dekódování dat, prostorové indexy, kolize, silniční graf.
 import { CHUNK, COLL_CELL, DRIVABLE_MAX, RF, RC, LC, BF } from '../config.js';
 import { Tunnel, TUNNEL_HEIGHT } from './tunnels.js';
@@ -65,6 +66,7 @@ export class World {
     this._initGraph();
     this.busContraflow = new Set(data.meta.traffic?.busContraflow);
     this.turns = new TurnRules(this, data.meta.traffic?.restrictions);
+    this.breakables = new Breakables();
     this.traffic = new Traffic(this, data.meta.traffic);
     this._initLand(data.land);
     this._initRails(data.rails);
