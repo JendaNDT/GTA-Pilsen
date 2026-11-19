@@ -162,6 +162,7 @@ export class PedManager {
   remove(i) {
     this.game.falls.finish(this.peds[i]);
     this.world.traffic.users.delete(this.peds[i]);
+    this.peds[i].mesh.skeleton.dispose();
     this.scene.remove(this.peds[i].mesh);
     this.peds.splice(i, 1);
   }

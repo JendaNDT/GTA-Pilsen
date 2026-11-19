@@ -4,6 +4,8 @@ import { step, vertexColor } from 'three/tsl';
 import { env, getPoolMaterial, makeBatchedSurfaceMaterial, makeSurfaceMaterial } from '../world/materials.js';
 import { SURFACE } from '../world/material-table.js';
 import { parts as ragdollParts } from '../physics/ragdoll.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { transitMaterial } from './transit-material.js';
 import { carPaint, carLenses } from './car-appearance.js';
 import { QUALITY } from '../config.js';
 
@@ -297,7 +299,7 @@ export function makeTrolleybus() {
     p.box(0.9, 0.5, 0.5, 0, 3.2, 1.2, DARK);
     trolleyGeo = p.geometry();
   }
-  const mesh = new THREE.Mesh(trolleyGeo, getDetailMaterial());
+  const mesh = new THREE.Mesh(trolleyGeo, transitMaterial);
   mesh.castShadow = true;
   return mesh;
 }
@@ -309,53 +311,66 @@ const PANTS = [0x2b3a55, 0x3a3a3a, 0x5a4a3a, 0x1f2933, 0x6a6f75].map(lin);
 let pedMat = null;
 const pedGeoCache = new Map();
 
-/** Postava ze čtyř dílů (tělo s hlavou a rukama, dvě nohy) – nohy se při chůzi kývou. */
-export function makePedMesh(variant, hero = false) {
-  pedMat = pedMat || new THREE.MeshLambertMaterial({ vertexColors: true });
+const joints = ragdollParts.map(part => part.joint ?? [part.x, part.y]);
+const jointIndex = new Map(ragdollParts.map((part, i) => [part.name, i]));
+
+function pedestrianShape(variant, hero) {
   const key = hero ? 'hero' : variant % 40;
-  let geo = pedGeoCache.get(key);
-  if (!geo) {
-    const shirt = hero ? lin(0xf2b632) : SHIRTS[variant % SHIRTS.length];
-    const pants = hero ? lin(0x26323c) : PANTS[(variant >> 2) % PANTS.length];
-    const skin = SKIN[variant % SKIN.length];
-    const hair = hero ? lin(0x3a2a1e) : [lin(0x2a2018), lin(0x6b4a2f), lin(0xb8a070), lin(0x8a8a8a)][(variant >> 1) % 4];
-    const body = new Parts();
-    body.box(0.46, 0.62, 0.26, 0, 1.14, 0, shirt, 0.95, 1);
-    body.box(0.24, 0.26, 0.24, 0, 1.6, 0, skin);
-    body.box(0.26, 0.09, 0.26, 0, 1.76, -0.01, hair);
-    const arm = new Parts();
-    arm.box(0.12, 0.56, 0.14, 0, -0.26, 0, shirt);
-    arm.box(0.1, 0.1, 0.12, 0, -0.58, 0, skin);
-    const leg = new Parts();
-    leg.box(0.17, 0.78, 0.19, 0, -0.39, 0, pants);
-    leg.box(0.17, 0.08, 0.26, 0, -0.8, 0.04, lin(0x1a1a1a));
-    geo = { body: body.geometry(), arm: arm.geometry(), leg: leg.geometry(), colors: { shirt, pants, skin, hair } };
-    pedGeoCache.set(key, geo);
-  }
-  const g = new THREE.Group();
-  const body = new THREE.Mesh(geo.body, pedMat);
-  const legL = new THREE.Mesh(geo.leg, pedMat), legR = new THREE.Mesh(geo.leg, pedMat);
-  legL.position.set(0.12, 0.84, 0); legR.position.set(-0.12, 0.84, 0);
-  const armL = new THREE.Mesh(geo.arm, pedMat), armR = new THREE.Mesh(geo.arm, pedMat);
-  armL.position.set(0.3, 1.42, 0); armR.position.set(-0.3, 1.42, 0);
-  g.add(body, legL, legR, armL, armR);
-  for (const m of g.children) m.castShadow = true;
-  g.userData = { legL, legR, armL, armR, body, geo };
-  return g;
+  if (pedGeoCache.has(key)) return pedGeoCache.get(key);
+  const skin = SKIN[variant % SKIN.length], hair = lin([0x30251e, 0x725237, 0xc6ac7d, 0x908a89][(variant >> 1) % 4]);
+  const colors = { shirt: hero ? lin(0xf2b632) : SHIRTS[variant % SHIRTS.length],
+    pants: hero ? lin(0x26323c) : PANTS[(variant >> 2) % PANTS.length], skin };
+  const style = hero ? 1 : variant % 4;
+  const fallen = ragdollParts.map(part => {
+    const p = new Parts(), name = part.name;
+    const shortSleeve = style === 0 && name.startsWith('predlokti');
+    p.box(...part.size, 0, 0, 0, shortSleeve ? skin : colors[part.color]);
+    if (name === 'hlava') {
+      p.box(0.26, 0.09, 0.26, 0, 0.14, -0.01, hair);
+      if (style === 3) p.box(0.28, 0.11, 0.31, 0, 0.18, 0.015, colors.shirt);
+    } else if (name === 'hrudnik') {
+      if (style === 1) p.box(0.14, 0.4, 0.016, 0, 0.01, 0.135, lin(0xddd6c7));
+      if (style === 2) p.box(0.4, 0.36, 0.16, 0, -0.01, -0.17, lin(0x34464a));
+    } else if (name.startsWith('predlokti')) p.box(0.1, 0.1, 0.12, 0, -0.15, 0, skin);
+    else if (name.startsWith('lytko')) p.box(0.17, 0.08, 0.26, 0, -0.19, 0.04, lin(0x1a1a1a));
+    return p.geometry();
+  });
+  const walking = fallen.map((geometry, i) => {
+    const part = ragdollParts[i], g = geometry.clone().translate(part.x, part.y, 0);
+    const n = g.attributes.position.count;
+    const indices = new Uint16Array(n * 4), weights = new Float32Array(n * 4);
+    for (let v = 0; v < n * 4; v += 4) { indices[v] = i; weights[v] = 1; }
+    g.setAttribute('skinIndex', new THREE.BufferAttribute(indices, 4));
+    g.setAttribute('skinWeight', new THREE.BufferAttribute(weights, 4));
+    return g;
+  });
+  const geo = { body: mergeGeometries(walking), fallen };
+  pedGeoCache.set(key, geo);
+  return geo;
+}
+
+export function makePedMesh(variant, hero = false) {
+  pedMat ??= new THREE.MeshLambertMaterial({ vertexColors: true });
+  const geo = pedestrianShape(variant, hero);
+  const mesh = new THREE.SkinnedMesh(geo.body, pedMat);
+  const bones = ragdollParts.map(() => new THREE.Bone());
+  ragdollParts.forEach(({ name, parent }, i) => {
+    const start = joints[i], base = joints[parent] ?? [0, 0];
+    bones[i].name = name;
+    bones[i].position.set(start[0] - base[0], start[1] - base[1], 0);
+    (bones[parent] ?? mesh).add(bones[i]);
+  });
+  mesh.bind(new THREE.Skeleton(bones));
+  mesh.castShadow = true;
+  // Sdílená mez zahrnuje krajní polohy rukou, nohou i čepice.
+  mesh.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0.91, 0), 1.14);
+  mesh.userData.geo = geo;
+  return mesh;
 }
 
 export function makeFallenMesh(walkingMesh) {
-  const geo = walkingMesh.userData.geo;
-  geo.fallen ??= ragdollParts.map(part => {
-    const p = new Parts();
-    p.box(...part.size, 0, 0, 0, geo.colors[part.color]);
-    if (part.name === 'hlava') p.box(0.26, 0.09, 0.26, 0, 0.14, -0.01, geo.colors.hair);
-    if (part.name.startsWith('predlokti')) p.box(0.1, 0.1, 0.12, 0, -0.15, 0, geo.colors.skin);
-    if (part.name.startsWith('lytko')) p.box(0.17, 0.08, 0.26, 0, -0.19, 0.04, lin(0x1a1a1a));
-    return p.geometry();
-  });
   const group = new THREE.Group();
-  for (const geometry of geo.fallen) {
+  for (const geometry of walkingMesh.userData.geo.fallen) {
     const limb = new THREE.Mesh(geometry, pedMat);
     limb.castShadow = true;
     group.add(limb);
@@ -364,10 +379,15 @@ export function makeFallenMesh(walkingMesh) {
 }
 
 export function animatePed(mesh, phase, amount) {
-  const u = mesh.userData;
-  const s = Math.sin(phase) * amount;
-  u.legL.rotation.x = s * 0.75; u.legR.rotation.x = -s * 0.75;
-  u.armL.rotation.x = -s * 0.6; u.armR.rotation.x = s * 0.6;
+  const bones = mesh.skeleton.bones, swing = Math.sin(phase) * amount;
+  for (const side of [1, -1]) {
+    const s = swing * side;
+    bones[jointIndex.get('stehno' + side)].rotation.x = s * 0.65;
+    bones[jointIndex.get('lytko' + side)].rotation.x = Math.max(0, -s) * 0.66;
+    bones[jointIndex.get('paze' + side)].rotation.x = -s * 0.58;
+    bones[jointIndex.get('predlokti' + side)].rotation.x = -Math.max(0, s) * 0.32;
+  }
+  bones[0].position.y = joints[0][1] + Math.abs(swing) * 0.025;
 }
 
 // ------------------------------------------------------------- vrtulník ----

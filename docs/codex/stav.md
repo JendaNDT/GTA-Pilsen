@@ -20,6 +20,12 @@ Na střední až ultra předvolbě má lak průhlednou vrchní vrstvu. Na spodn�
 
 Prošlo 162 testů JavaScriptu a produkční sestavení. WebGPU odhalilo nepodporovaný jednokanálový osmibitový atribut. Po opravě formátu prošly dotčené jednotkové testy a v Chromiu na WebGL 2 i WebGPU prošla kontrola dvou kuželů, rozteče světel a změny jejich dosahu.
 
+## G22 · MHD a postavy
+
+Karoserie tramvají, autobusů a trolejbusů rozlišují lak, sklo, kov a gumu. V noci se rozsvěcují boční okna včetně siluet sedadel a zůstávají čitelné linkové cedule. Chodci mají čtyři střihy oděvu v různých barvách. Jedenáct kostí ovládá chůzi a stejné díly s totožným oblečením používá i pád postavy. Dvě postavy mohou sdílet geometrii a přitom udělat krok každá jinou nohou.
+
+Prošlo 163 testů JavaScriptu a produkční sestavení. WebGL 2 i WebGPU vykreslily noční soupravu a postavu s jedenácti kostmi. Kontrola porovnala označení kostí, geometrii a samostatný pohyb dvou postav.
+
 ## Výchozí etapa E23
 
 E23 vychází z dokončené větve E22 (`496a72d`). Prvním krokem je detail země při chůzi. Další pořadí tvoří povrchy silnic, voda, stromy, tráva, noční světla a částice. [Zadání E23](E23.md) · [Protokol E22](../E22.md)

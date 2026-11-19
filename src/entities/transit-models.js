@@ -1,7 +1,8 @@
 // Ručně modelované karoserie podle plzeňských vozů. Souřadnice jsou v metrech, +z je vpřed.
 import * as THREE from 'three/webgpu';
 import { Parts } from './models.js';
-import { makeBatchedSurfaceMaterial, makeSurfaceMaterial } from '../world/materials.js';
+import { transitMaterial as shellMat } from './transit-material.js';
+import { makeSurfaceMaterial } from '../world/materials.js';
 import { SURFACE } from '../world/material-table.js';
 
 const color = (hex) => new THREE.Color(hex).toArray();
@@ -42,7 +43,6 @@ const transitSurfaces = new Map([
   [TRAM_GLASS, SURFACE.glass], [BUS_GLASS, SURFACE.glass], [REFLECTION, SURFACE.glass],
   [METAL, SURFACE.transitMetal], [RUBBER, SURFACE.rubber], [DARK, SURFACE.rubber],
 ]);
-const shellMat = makeBatchedSurfaceMaterial();
 const lampMat = new THREE.MeshBasicMaterial({ vertexColors: true });
 const geometry = new Map();
 const leafGeometry = new Map();
