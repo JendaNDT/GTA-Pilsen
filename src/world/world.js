@@ -1143,12 +1143,6 @@ export class World {
     for (let i = 0; i < n; i++) {
       const cnt = R.start[i + 1] - R.start[i] + 1;
       const pts = new Float32Array(cnt * 2);
-      if (i === this.prazdrojRoad) {
-        for (const [x, z] of prazdrojDeck) {
-          px[o] = x; pz[o] = z; roadOfPt[o++] = i;
-        }
-        continue;
-      }
       let x = R.x0[i], z = R.z0[i];
       pts[0] = x * 0.1; pts[1] = z * 0.1;
       let o = 2;

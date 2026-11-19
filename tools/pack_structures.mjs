@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
 import { Vector3 } from 'three/webgpu';
+import { bridgeApproaches } from './bridge_approaches.mjs';
 import { reviewRailings } from './review_railings.mjs';
 import { reviewWaterParts } from './review_water_structures.mjs';
 import { selectDistricts } from './district_structures.mjs';
@@ -69,14 +70,14 @@ const bridges = choices.map(choice => {
 const planChoices = [...footbridges,...roadBridges];
 const railDecks = [];
 const {world} = await loadStructureMap('public/data');
+const rowsByBridge = await surveyBridges(parts,world);
 if (planChoices.length || railBridges.length) {
-  const rows = await surveyBridges(parts,world);
   for (const choice of planChoices) {
-    bridges.push(planCalibration(choice,rows,world));
+    bridges.push(planCalibration(choice,rowsByBridge,world));
     calibrationReasons.set(choice.deck,choice.reason);
   }
   for (const choice of railBridges) {
-    railDecks.push(railCalibration(choice,rows,world));
+    railDecks.push(railCalibration(choice,rowsByBridge,world));
     calibrationReasons.set(choice.deck,choice.reason);
   }
 }
@@ -117,12 +118,22 @@ const bytes = fs.readFileSync(file);
 if (bytes.length > 2 * 1024 * 1024) throw Error('Základní balík přesahuje 2 MiB.');
 const index = {version:2, bridges, railDecks, source, sources, hash:assetFingerprint(bytes), tiles:entries};
 fs.writeFileSync(path.join(output,'index.json'), JSON.stringify(index) + '\n');
+const bridgeReasons = new Map(rowsByBridge.map(({id,matches}) => {
+  if (!matches.length) return [id,'Městský díl nemá pět společných řezů s jedinou vyvýšenou herní osou.'];
+  if (matches.length > 1) return [id,'Městské řezy protínají více herních tras. Rozdělit nebo přiřadit společnou desku před změnou profilu.'];
+  const m = matches[0];
+  const coverage = Math.round(100 * m.span / m.routeLength);
+  return [id,'Pět společných řezů s trasou ' + m.id + ', pokrytí délky trasy ' + coverage +
+    ' %. Ověřit změny obrysu a napojení před převzetím profilu.'];
+}));
 const rows = [['díl', 'zdrojové ID', 'ploch v SHP', 'unikátních ploch', 'stav', 'důvod']];
 for (const part of parts) {
   const chosen = accepted.has(part.id) || calibrationReasons.has(part.id);
   rows.push([part.id, part.uid, part.records, part.faces.length,
-    chosen ? 'začleněn' : (water.decisions.get(part.id)?.status ?? part.status), districtReasons.get(part.id) ?? calibrationReasons.get(part.id) ?? overrides[part.id]?.reason ?? pending[part.id] ?? water.decisions.get(part.id)?.reason ?? railings.reasons.get(part.id) ?? part.reason]);
+    chosen ? 'začleněn' : (water.decisions.get(part.id)?.status ?? part.status), districtReasons.get(part.id) ?? calibrationReasons.get(part.id) ?? overrides[part.id]?.reason ?? pending[part.id] ?? water.decisions.get(part.id)?.reason ?? railings.reasons.get(part.id) ?? bridgeReasons.get(part.id) ?? part.reason]);
 }
+const approachRows = bridgeApproaches(byId,[...planChoices,...railBridges],world);
+fs.writeFileSync(path.join(dir, 'pristupy-mostu.tsv'), approachRows.map(row => row.join('\t')).join('\n') + '\n');
 const railingRows = [['díl','střet s trasou','vzorky paty','vzorky s oporou do 0,5 m','vzorky nad mostovkou','blízké herní dílce','posouzení'], ...railings.rows];
 fs.writeFileSync(path.join(dir, 'samostatna-zabradli.tsv'), railingRows.map(row => row.join('\t')).join('\n') + '\n');
 const waterRows = [['díl','druh','vzorky','vzorky ve vodě','vzorky v budovách','nejnižší vrchol vůči povrchu (m)','nejvyšší vrchol vůči povrchu (m)','vzdálenost ke zvuku jezu (m)','střet s trasou','posouzení'], ...water.rows];

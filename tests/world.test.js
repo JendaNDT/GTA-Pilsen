@@ -346,3 +346,14 @@ test('zničení pěšího semaforu vypne jen jeho křižovatku až do ranní opr
   assert.equal(traffic.light(road), 'green');
   assert.equal(traffic.light(crossing), 'red');
 });
+
+test('dráha se stejným pořadovým číslem jako silniční lávka použije své vlastní body', () => {
+  const sample = {cols:1,rows:1,prazdrojRoad:0,chunkIndex:()=>0};
+  World.prototype._initRails.call(sample,{
+    header:{count:1},start:[0,1],x0:[100],z0:[200],dx:[30],dz:[40],
+    cls:[1],flags:[0],bridgeOff:[0],bridgeY:[100,125]
+  });
+  assert.deepEqual([...sample.rails[0].pts],[10,20,13,24]);
+  assert.deepEqual([...sample.rails[0].y],[2,2.5]);
+  assert.deepEqual(sample.railChunks[0],[0]);
+});

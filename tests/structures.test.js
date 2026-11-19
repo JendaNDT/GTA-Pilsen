@@ -202,3 +202,13 @@ test('při kontrole samostatného zábradlí odliší pata terén, mostovku a ji
   assert.match(reviewRailings([panel],reports,new Set(),world).reasons.get('zkusebni'),/herní trasy/);
   assert.deepEqual(reviewRailings([panel],reports,new Set(['zkusebni']),world).rows,[]);
 });
+
+test('řez u přístupu porovná výšku v místě sklonu a rozpozná chybějící městský konec', async () => {
+  const {approachSection} = await import('../tools/bridge_approaches.mjs');
+  const {structureSurface} = await import('../tools/build_structures.mjs');
+  const triangles = structureSurface(floor(0,3,-2,10,4)).triangles.map(t=>t.tri);
+  const cut = approachSection([0,2,0],[10,4,0],triangles);
+  assert.ok(Math.abs(cut.lift-0.95) < 1e-6);
+  assert.equal(cut.width,4);
+  assert.equal(approachSection([-2,2,0],[8,4,0],triangles),null);
+});

@@ -270,3 +270,9 @@ E22 převzala opravu načítání ortofota a čekání na sestavení herních sc
 Kromě dvou městských obrysů převzatých pro Wilsonův most zbývalo prověřit 77 modelů zábradlí. U 15 vedla měřenými plochami průchozí trasa. U dalších 50 leží spodní část v blízkosti jednoho nebo více dílců stávajícího herního ohrazení. U zbývajících 12 nemá alespoň jeden vzorek spodní části oporu do půl metru od herního terénu ani mostovky. Žádný z těchto modelů proto nepřidává samostatnou překážku. Při dalších úpravách příslušné mostovky lze rozhodnutí přezkoumat podle jednotlivých dílů. [Porovnání všech 77 dílů](../E22/samostatna-zabradli.tsv)
 
 Převod doplňuje každý důvod také do inventury a dává po bajtech stejné herní soubory jako ověřený balík s jezy. Prošlo 148 testů JavaScriptu, 25 testů Pythonu i produkční sestavení. Rozlišení opory, trasy a již přítomného ohrazení má jednotkový test s fiktivním modelem.
+
+### Návaznost výšek u dalších pěti mostovek
+
+Deset konců má poblíž vrchol navazující herní cesty téhož dopravního druhu. U dvou lávek a silničního mostu se nejbližší výška liší nejvýše o 1 cm. U železnice je odchylka nejvýše 9 cm. Šest městských řezů čtvrt metru od konce leží o 0,615 až 1,582 m nad průchozím profilem. U čtyř konců chybí souvislý městský řez v ose. Původní výšky tak zachovávají návaznost v místech, kde by plošný posun desky vytvořil schod. [Všech deset kontrol](../E22/pristupy-mostu.tsv)
+
+Kontrola načítání kolejí navíc odhalila záměnu pořadových čísel dráhy a silniční lávky. Na současných datech se tato čísla neshodovala. Zkouška s fiktivními čísly nyní ověřuje, že železniční model při každém pořadí načte vlastní body a výšky. Prošlo 150 testů JavaScriptu, 25 testů Pythonu, produkční sestavení i zkouška obou železničních mostovek na WebGPU. Převod vyrobil přesně stejnou herní geometrii jako publikovaný balík.
