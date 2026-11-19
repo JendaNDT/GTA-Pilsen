@@ -123,7 +123,9 @@ export class PlayerVehicle {
   teleport() {
     const { car, physics } = this;
     this.pos.Set(car.x, car.y + this.spec.height, car.z);
-    const q = this.rotation.setFromEuler(this.euler.set(car.gPitch || 0, car.yaw, car.gRoll || 0, 'YXZ'));
+    const pitch = (car.gPitch || 0) + (car.mode === 'loose' ? car.pitch || 0 : 0);
+    const roll = (car.gRoll || 0) + (car.mode === 'loose' ? car.roll || 0 : 0);
+    const q = this.rotation.setFromEuler(this.euler.set(pitch, car.yaw, roll, 'YXZ'));
     this.quat.Set(q.x, q.y, q.z, q.w);
     this.velocity.Set(car.vx || 0, car.vy || 0, car.vz || 0);
     const id = this.body.GetID();

@@ -29,6 +29,24 @@ async function start(page, options = '') {
   await page.evaluate(() => __freeze(true));
 }
 
+test('E20 – po vystoupení z převráceného auta zůstane vůz na střeše', async ({ page }) => {
+  await start(page);
+  const result = await page.evaluate(() => {
+    const g = __game, car = g.player.lastCar;
+    g._enterCar(car);
+    g.update(1 / 60);
+    const driver = g.driver;
+    driver.quat.Set(0, 0, 1, 0);
+    g.physics.bodies.SetRotation(driver.body.GetID(), driver.quat, g.physics.Jolt.EActivation_Activate);
+    driver.read();
+    g._exitCar();
+    g.update(1 / 60);
+    return { onFoot: g.mode === 'foot', sameBody: car.physical === driver,
+      inverted: Math.cos(car.pitch) * Math.cos(car.roll) < -0.9 };
+  });
+  expect(result).toEqual({ onFoot: true, sameBody: true, inverted: true });
+});
+
 test('E20 – kombi projede kolem odbočující linky 41 na Husově bez střetu', async ({ page }) => {
   await start(page, '&date=2026-11-09&hour=7.5');
   const result = await page.evaluate(() => {
@@ -50,21 +68,21 @@ test('E20 – kombi projede kolem odbočující linky 41 na Husově bez střetu'
       from = to;
     }
     vehicles._pickNext(car);
-    g.player.place(-380, 255);
+    // Pozorovatel stojí mimo jízdní pruh linky 41 i mimo křižovatku.
+    g.player.place(-380, 242);
     for (let i = 0; i < 25; i++) g.colliders.update(g.player.x, g.player.z);
     g.trafficBodies.selectCars(g);
     const head = world.traffic.controls.find(c => c.id === 3073913700);
     while (world.traffic.light(head) !== 'green') world.traffic.tick(0.1);
     transit.vehicles = [bus];
     transit._show(bus, true);
-    bus.followSchedule({ s: 4107, index: 0, wait: 0 });
+    bus.followSchedule({ s: 4107, index: bus.stops.findIndex(stop => stop[0] >= 4107), wait: 0 });
     bus.side = bus.lane = 2.5;
     bus.v = 4.1;
     world.traffic.enterJunction(bus, head);
-    let closest = Infinity;
+    let closest = Infinity, carPassed = false, busPassed = false;
     for (let i = 0; i < 1800; i++) {
       world.traffic.tick(1 / 60);
-      transit.update(1 / 60, g.player, vehicles.cars, false);
       vehicles.obstacles = transit.obstacles;
       g.physics.step(1 / 60);
       const body = bus.footprints[0];
@@ -76,9 +94,11 @@ test('E20 – kombi projede kolem odbočující linky 41 na Husově bez střetu'
       };
       closest = Math.min(closest, Math.max(gap(car.yaw), gap(car.yaw + Math.PI / 2),
         gap(body.yaw), gap(body.yaw + Math.PI / 2)));
-      if (car.edge === 12147 && car.s > 5 && bus.s > 4140) break;
+      carPassed ||= car.edge === 12147 && car.s > 5;
+      busPassed ||= bus.s > 4140;
+      if (carPassed && busPassed) break;
     }
-    return { closest, crashed: !!car.crashed, passed: car.edge === 12147 && car.s > 5 && bus.s > 4140 };
+    return { closest, crashed: !!car.crashed, passed: carPassed && busPassed };
   });
   expect(result, JSON.stringify(result)).toMatchObject({ crashed: false, passed: true });
   expect(result.closest).toBeGreaterThan(0);

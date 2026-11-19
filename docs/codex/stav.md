@@ -14,7 +14,7 @@ Větev `etapa/E20` vychází ze sloučené etapy E19 na revizi `10832b4`. [Zadá
 
 ## Otevřené otázky
 
-Čekáme na rozhodnutí autora o původní zkušební jízdě do Radbuzy. Po přesném oddělení břehu od dna zůstává v této stopě část střechy nad hladinou. Navržená kontrola mělčiny a samostatná zkouška úplného potopení jsou popsané na konci souboru.
+Autor schválil samostatné zkoušky mělčiny a úplného potopení a plynulý postup dalšími etapami. Po úspěšných kontrolách lze sloučit větev do `main` a začít další etapu. Otevřená rozhodnutí nyní nejsou.
 
 Autor schválil rozumný odhad podvodního profilu. Využije obrys vodní plochy a výšku vykreslené hladiny.
 Kontrolním údajem je kóta dna u Wilsonova mostu v městské tabulce. Poppler 26.11.0 z ní přečetl profil R19 v říčním km 1,372 s kótou 299,30 m n. m. Hloubku určuje rozdíl od hladiny.
@@ -238,3 +238,11 @@ Na tomto sestavení prošlo 101 testů JavaScriptu a produkční sestavení. Z �
 Autor dostal na výběr ponechat původní jízdu jako kontrolu mělčiny a ověřit úplné potopení samostatnou jízdou do hlubší části, nebo ověřit skutečnou hloubku v původní stopě. Další úpravy vody závisejí na odpovědi. Zbývá závěrečné ověření, protokol, odkazy v katalozích a žádost o sloučení. Pracovní protokol a snímky před a po jsou připravené v `data-raw/e20/navrh-protokolu/`.
 
 Po opravě břehu se při 40 autech vešlo 95 % z 605 kroků fyziky do 2,0 ms při rozpočtu 4 ms (`data-raw/e20/breh-vykon.json`). Jízda na nízké kvalitě urazila 61 m a let nad centrem 250 m (`breh-trasy.json`).
+
+#### Mělčina, hlubší voda a nezávislá kontrola
+
+V obou vykreslovačích sjelo malé auto u Wilsonova mostu na mělčinu. Po vystoupení hráče mělo čtyři kola na dně a střecha zůstala přibližně 22 cm nad hladinou. Když hráč odešel přes 220 m a vrátil se, rozdíl výšky auta byl 1,6 mm. Na Radbuze v nádrži České údolí při jízdě od východního břehu stejné auto nejdřív plavalo, hráč vyplaval a doplaval na břeh. Vůz zmizel až s celou střechou pod hladinou 6,67 s od prvního kontaktu s vodou. Platí původní rozmezí 6–12 s.
+
+Kontrola modelem Astra s úrovní Medium našla tři vady. Po vystoupení na suchu teď vůz předá stejné fyzikální těleso také okolnímu provozu. Převrácený vůz při vystoupení zůstal na střeše. Zaplavený vůz mimo okruh fyziky drží polohu, dokud se k němu hráč nevrátí. Zkouška linky 41 používá jediný běžný krok pohybu MHD a pozorovatel stojí mimo vozovku. Při této kontrole projely kombi i autobus bez střetu. Prošlo 101 zkoušek JavaScriptu, 23 zkoušek Pythonu, produkční sestavení a cílené zkoušky všech tří oprav. Záznamy jsou v `data-raw/e20/uzavreni-{node,python,build,kontrola,autobus}.log`.
+
+Úplná prohlížečová sada běží nad výsledným sestavením. Při navázání nejdříve ověřit `data-raw/e20/uzavreni-uplna.log` a `uzavreni-uplna.json`. Zbývá vyřešit případné nálezy, ověřit závěrečný výkon, doplnit skutečné hodnoty a obě místa zkoušky vody do pracovního protokolu v `data-raw/e20/navrh-protokolu/`, převzít protokol, snímky a odkazy do dokumentace, otevřít PR přes připojený GitHub, sloučit jej a navázat další etapou.

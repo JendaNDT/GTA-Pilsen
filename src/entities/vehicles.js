@@ -1047,7 +1047,7 @@ export class VehicleManager {
         else if (!c.physical) this.stepPolice(c, dt, player);
         if (d2 > 520 * 520) { this.remove(c); continue; }
       } else if (c.mode === 'loose') {
-        if (!c.physical) {
+        if (!c.physical && !c.floodTime) {
           this.stepDynamic(c, dt, 0, 0, Math.abs(c.speed) < 4);
           c.vx *= Math.exp(-1.2 * dt); c.vz *= Math.exp(-1.2 * dt);
         }

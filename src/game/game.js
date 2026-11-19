@@ -768,7 +768,7 @@ export class Game {
     env.time.value = this.time;
 
     if (this.driver && (this.mode !== 'car' || this.car !== this.driver.car)) {
-      if (this.driver.car.floodTime && this.vehicles.cars.includes(this.driver.car)) this.trafficBodies.keepCar(this.driver);
+      if (!this.oldPhysics && this.vehicles.cars.includes(this.driver.car)) this.trafficBodies.keepCar(this.driver);
       else this.driver.dispose();
       this.driver = null;
     }
