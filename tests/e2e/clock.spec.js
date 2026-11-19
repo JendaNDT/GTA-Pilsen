@@ -1,3 +1,4 @@
+import { waitForGame } from './ready.js';
 import { expect, test } from '@playwright/test';
 import { gameUrl } from './game-url.js';
 
@@ -5,7 +6,7 @@ test('E06 – půlnoc, odjezdy, pauza a uložené nastavení hodin', async ({ pa
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto(gameUrl('/?debug&view=620&shadows=0'));
-  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  await waitForGame(page);
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
   await page.evaluate(() => window.__freeze(true));
   const transition = await page.evaluate(() => {
@@ -62,7 +63,7 @@ test('E06 – půlnoc, odjezdy, pauza a uložené nastavení hodin', async ({ pa
   const setting = page.getByRole('checkbox', { name: 'Zobrazovat herní hodiny' });
   await setting.uncheck();
   await page.reload();
-  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  await waitForGame(page);
   await page.getByRole('button', { name: 'Nastavení' }).click();
   await expect(setting).not.toBeChecked();
   await page.getByRole('button', { name: 'Pokračovat' }).click();
@@ -78,7 +79,7 @@ test('E06 – půlnoc, odjezdy, pauza a uložené nastavení hodin', async ({ pa
 test('hodiny ukážou čas v Plzni, uloží ruční volbu a přepočítají spoje', { tag: '@webgpu' }, async ({ page }) => {
   await page.clock.setFixedTime(new Date('2026-11-18T17:45:00Z'));
   await page.goto(gameUrl('/?debug&quality=low&adapt=0'));
-  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  await waitForGame(page);
   await page.getByRole('button', { name: 'Nastavení' }).click();
   const field = page.locator('#clock-settings').getByLabel('Herní čas', { exact: true });
   await expect(field).toHaveValue('18:45');
@@ -104,7 +105,7 @@ test('hodiny ukážou čas v Plzni, uloží ruční volbu a přepočítají spoj
   await page.locator('#btn-menu').click();
   await page.clock.setFixedTime(new Date('2026-11-18T20:34:00Z'));
   await page.reload();
-  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  await waitForGame(page);
   await page.getByRole('button', { name: 'Nastavení' }).click();
   await expect(field).toHaveValue('09:15');
   await page.getByRole('button', { name: 'Použít aktuální čas v Plzni' }).click();

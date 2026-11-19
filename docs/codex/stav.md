@@ -2,9 +2,11 @@
 
 ## Uložená hra a panel měření
 
-Chromium 159 načetlo z E12 do archivovaného kandidáta `f6a1254` koupený vůz, brzdy, pneumatiky, sedm rozvozů a objevené místo. V kandidátovi přibylo 120 Kč a druhé místo. Po novém načtení i návratu do E12 zůstalo 4 085 Kč a oba objevy. U přenosu z E25 se v kandidátovi shodovaly také špína, poškození a nastavení počasí. Při závěrečném otevření E25 vypršel pětiminutový limit prohlížeče. Poslední část čeká na opakování. [Protokol návratu k archivovaným verzím](../E26.md)
+Chromium 159 načetlo z E12 do archivovaného kandidáta `f6a1254` koupený vůz, brzdy, pneumatiky, sedm rozvozů a objevené místo. V kandidátovi přibylo 120 Kč a druhé místo. Po novém načtení i návratu do E12 zůstalo 4 085 Kč a oba objevy. U přenosu z E25 se v kandidátovi shodovaly také špína, poškození a nastavení počasí. První návrat do E25 vyčerpal pětiminutový limit načtení stránky. Při opakování celého postupu prošel i návrat. E25 načetla novou odměnu, druhý objev, špínu 0,5, poškození levých dveří 0,4 a jasné počasí. [Protokol návratu k archivovaným verzím](../E26.md)
 
 Při kontrole panelu F9 hra po nástupu zapojí řidičovo auto do fyziky v dalším kroku simulace. Zkouška nyní tento krok provede a zkontroluje spojení auta s řidičem ještě před otevřením panelu. Na softwarovém WebGPU prošlo zobrazení času fyziky, počtu těles, otáček, stupně a prokluzu kol. Prošlo také 181 jednotkových testů JavaScriptu a produkční sestavení.
+
+Při zkouškách hodin a návratu ke garáži se po načtení stránky čeká na signál připravenosti hry. Dva případy ve WebGL 2 ověřily přechod přes půlnoc, odjezdy spojů, převod času v Plzni a uchování nastavení po načtení. Na WebGPU prošla na sestavení `f6a1254` zkouška Krkavce, pokuty a nákupu u garáže s nízkým zůstatkem.
 
 V hlavní části prohlížečových zkoušek WebGL 2 prošlo 40 případů. Jejich výsledky jsou uložené. Zbývajících 128 případů má vlastní seznam pro pokračování po uvolnění paměti. WebGPU a dlouhá jízda se vyhodnocují samostatně.
 
