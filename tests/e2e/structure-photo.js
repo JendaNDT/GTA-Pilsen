@@ -33,5 +33,7 @@ export async function saveStructurePhoto(page, file) {
     if (colors.size < 32) throw Error('Na snímku chybí vykreslená scéna (' + colors.size + ' barev).');
     return copy.toDataURL('image/jpeg',0.85).split(',')[1];
   });
-  await writeFile(file,Buffer.from(data,'base64'));
+  const jpeg = Buffer.from(data,'base64');
+  await writeFile(file,jpeg);
+  return jpeg.length;
 }

@@ -30,7 +30,7 @@ Po opravě E25 se mezi 785 chráněnými soubory změnily tři uliční úseky a
 
 ## Referenční kamery E13 a E26
 
-Všech osm stanovišť se na kandidátu s opravenými uličními prahy vykreslilo při 1 280 × 720 na vysoké předvolbě. Protokol obsahuje dvojice původních a nových snímků. U každé kamery jsou uvedena vykreslovací volání a trojúhelníky. [Srovnání osmi pohledů](../E26.md)
+Na produkčním webu kandidáta `34458c8` vzniklo osm snímků ze stejných kamer a časů jako v E13. Ve hře byla nastavená volba **Vždy jasno**. Chromium 159 na WebGPU uložilo všechny pohledy v rozlišení 1 280 × 720 do 250 kB na snímek. Kontrola dvojic ověřila záběry a čitelnost scény ve dne i v noci. Nástroj ukládá přímo dokončený obraz a vypisuje počty volání a trojúhelníků. Prošlo 180 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. [Snímky a příkaz pro zopakování](../E26.md)
 
 ## První návrat z Dobříva
 
