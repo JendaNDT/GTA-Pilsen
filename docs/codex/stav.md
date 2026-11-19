@@ -16,6 +16,10 @@ Ve čtyřech městských dlaždicích se podařilo přiřadit všech 66 vymezen�
 
 Prošlo 173 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. Ve všech šesti prohlížečových zkouškách prošel pilot a chůze ve třech úsecích na nízké i vysoké předvolbě za dne, soumraku a noci ve WebGL 2 i WebGPU. Zbývají samostatné zkoušky nástupu u nádraží, doručení na místní adresy a snímky před a po. Věrnost přízemí a přístřešku vyžaduje fotografie autora. [Protokol úseků](../E25.md)
 
+## Rozvoz a nastoupení u nádraží
+
+V Chromiu na WebGL 2 i WebGPU prošel rozvoz na adresy ve všech třech úsecích. Na posledních metrech šel hráč pěšky a po doručení dostal odměnu. U hlavního nádraží byla před nástupem načtená nová uliční vrstva. Hráč nastoupil do linky 49, dojel do Pařížské a vystoupil. Všechny čtyři scénáře prošly. Produkční sestavení, 175 jednotkových testů a 26 testů Pythonu prošlo i s připravovanou úpravou vstupů.
+
 # Stav etapy E24
 
 E24 navazuje na G17 ve větvi E23 (`fe30ef0`). [Zadání E24](E24.md)

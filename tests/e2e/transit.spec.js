@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test';
 import { gameUrl } from './game-url.js';
+import { waitForGame } from './ready.js';
 
 async function boot(page) {
   await page.goto(gameUrl('/?debug&view=620&shadows=0'));
-  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  await waitForGame(page);
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
   await page.evaluate(() => {
     window.__freeze(true);
@@ -129,8 +130,16 @@ test('E08 – přestup z tramvaje na autobus po skutečné jízdě a výstupu', 
   expect(errors).toEqual([]);
 });
 
-test('E08 – trolejbus 49, výstup v zastávce a použití jízdního řádu', async ({ page }) => {
+test('E08 – trolejbus 49, výstup v zastávce a použití jízdního řádu', {tag:'@webgpu'}, async ({ page }) => {
   await boot(page);
+  await page.evaluate(async () => {
+    const g = window.__game;
+    g.player.place(710, 341);
+    while (![...g.chunks.heritage.streetSections.keys()].some(key => key.startsWith('nadrazi/'))) {
+      g.chunks.update(710, 341, 340, 40, g.player.y);
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+  });
   expect(await approach(page, '692183', 'Hlavní nádraží')).toEqual({ ref: '49', doorOpen: true, boardable: true });
   await action(page);
   await expect(page.locator('#vehname')).toContainText('trolejbus 49 → Areál FN');
