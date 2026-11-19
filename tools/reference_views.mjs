@@ -17,7 +17,7 @@ export async function openReferenceGame(page, address) {
     Math.random = () => ((seed = (Math.imul(1664525, seed) + 1013904223) >>> 0) / 2 ** 32);
   });
   await page.goto(url.href);
-  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  await page.waitForFunction(() => window.__ready);
 }
 
 export async function renderReferenceView(page, view) {
@@ -27,12 +27,27 @@ export async function renderReferenceView(page, view) {
     const [x, z] = view.focus;
     game.player.place(x, z);
     window.__setClock(date, view.hour);
-    const deadline = performance.now() + 45_000;
+    const start = performance.now();
+    let lastProgress = start, previousState;
     for (;;) {
       const built = chunks.update(x, z, game.camera.far / 1.35, 40, view.camera[1]);
-      if (!built && !chunks.pending && !chunks.heritage.fetching && !chunks.orthophotoPending && !game.world.structures?.loading) break;
-      if (performance.now() > deadline) throw new Error(`${view.name}: okolí se nestihlo dostavět.`);
-      await new Promise(requestAnimationFrame);
+      if (!built && !chunks.pending && !chunks.heritage.fetching && !chunks.orthophotoPending && !game.world?.structures?.loading) break;
+      const now = performance.now();
+      // Ortofoto se překresluje po jedné dlaždici i potom, co je hotová geometrie.
+      const ortho = chunks.orthophoto;
+      let unpainted = 0;
+      if (ortho && chunks.orthophotoPending) for (const ch of chunks.chunks.values()) {
+        if (ch.tex && ch.orthoTile && (ortho.cache.get(ch.orthoTile.key) ?? null) !== ch.orthoBitmap) unpainted++;
+      }
+      const state = [chunks.pending, chunks.heritage.fetching, ortho?.revision, ortho?.requests, unpainted, game.world?.structures?.loading].join('/');
+      if (built || state !== previousState) lastProgress = now;
+      previousState = state;
+      if (now - lastProgress > 45_000 || now - start > 600_000) {
+        throw new Error(`${view.name}: okolí se nestihlo dostavět (zbývá ${chunks.pending} kroků, ` +
+          `budovy ${chunks.heritage.fetching}, ortofoto ${Boolean(chunks.orthophotoPending)}, nezakresleno ${unpainted}).`);
+      }
+      // Příprava geometrie a síťové požadavky pokračují i mezi snímky vykreslovače.
+      await new Promise(resolve => setTimeout(resolve, 0));
     }
     const missing = [...chunks.chunks.values()].find((tile) => tile.cityRequest && !tile.heritage?.city);
     if (missing) throw new Error(`${view.name}: chybí dlaždice měřených budov ${missing.ci}.`);
@@ -57,6 +72,7 @@ async function capture(address, output) {
   });
   try {
     const page = await browser.newPage({ viewport: reference.viewport, deviceScaleFactor: 1 });
+    page.setDefaultTimeout(90_000);
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await openReferenceGame(page, address);

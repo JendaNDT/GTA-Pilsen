@@ -157,6 +157,12 @@ Na starší revizi `b14f83d` prošlo 18 z 30 závěrečných cílených případ
 
 Garáž při opakování na WebGL 2 prošla včetně nového načtení a zaplacení opravy. Úplný prohlížečový běh nyní používá samostatné sestavení s oběma opravami z kontroly.
 
+### Návazné ověření referenčních scén
+
+Při kontrole na softwarovém vykreslovači se dřívější časový limit přípravy pohledu na Valík vyčerpal i při pokračujícím načítání. Kontrola nyní sleduje počet kroků geometrie, dokončené přenosy i postupné překreslování ortofota. Po skutečném zastavení vypíše stav dlaždic. Odečet expozice čeká na nový vykreslený snímek a dokončení předchozího čtení pixelů. Prahy pro jas a rychlost přizpůsobení oka se zachovaly.
+
+Prošlo 127 testů JavaScriptu, 23 testů Pythonu a produkční sestavení. Změnu jasu při vjezdu do tunelu a výjezdu na denní světlo potvrdil WebGPU i WebGL 2. Celý případ na WebGL 2 trval na sdíleném softwarovém vykreslovači 12,6 minuty. Jedná se o délku prohlížečového testu včetně přípravy scény. Úplná sada dalších herních scén pokračuje. Otevřené zůstává měření dopadu deseti fiktivních testovacích objektů na cílovém zařízení autora.
+
 ## E22 · Převod a inventura
 
 Samostatná pracovní větev začíná nad rozpracovanou E21. Oficiální archiv má otisk `825dc3e395044b1f5a47e27c812cc4189829e9134cc027865ffc8fcb3e7bb9ac`. Převod přečetl 614 záznamů, 602 ID a všech 12 315 ploch. Po sloučení totožných ploch uvnitř ID vytvořil 715 souvislých dílů. Z toho má 93 dílů totožnou geometrii jako jiný díl, jeden nemá použitelný trojúhelník a 621 čeká na prostorovou kontrolu. Každá zdrojová plocha je započtena.
@@ -222,3 +228,5 @@ Kontrola prošla všech 42 městských dílů s mostní plochou. U 35 našla pě
 U dvou přímých lávek je přiřazení jednoznačné. U herní cesty č. 1921 má deska po úpravě šířku 3,721 m, u cesty č. 1845 má 5,296 m. Obě se podle řezů posunuly příčně přibližně o 0,12 m. Viditelná konstrukce, okraje, herní výškový dotaz a kolize používají stejnou šířku a posun. Svislé rozdíly přibližně 1,6 m a 1,0 m zůstávají k ověření na navazujících pěších přístupech. U vstupů zůstává původní výška herního profilu.
 
 Ověření 26 krajních dílů proti průchozím objemům nenašlo průnik. Opakované sestavení i distribuovaná data se shodují po bajtech. Prošlo 141 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. Na WebGPU prošel hráč po obou lávkách v obou směrech u okrajů. Na konci každé trasy stál na mostovce. Na WebGL 2 prošel také opakovaný test úrovní v Bolevci a u Wenzigovy nad sestavením třetí dávky zdí.
+
+E22 převzala ověřování referenčních pohledů z E21 (`2123df2`). Příprava pohledu zde sleduje také přenos okolních měřených objektů. Po sloučení prošlo 142 testů JavaScriptu, 25 testů Pythonu, produkční sestavení a cílené zkoušky expozice i měřeného pilíře na WebGPU. Druhá prohlížečová zkouška mimoúrovňových křížení včetně D5 také prošla nad sestavením třetí dávky zdí.
