@@ -1,3 +1,4 @@
+import { PhotoMode } from './game/photo-mode.js';
 import { loadJolt } from './physics/jolt.js';
 import { PhysicsWorld } from './physics/world.js';
 // Start hry: načtení dat, menu a hlavní smyčka.
@@ -40,6 +41,7 @@ const HELP_HTML = IS_TOUCH ? `
     <tr><td>J</td><td>vzít rychlý rozvoz jídla nebo zrušit aktivní zakázku</td></tr>
     <tr><td>M</td><td>velká mapa (vyhledej místo nebo kliknutím nastav cíl)</td></tr>
     <tr><td>Myš</td><td>tažením otáčíš kameru, kolečkem přibližuješ</td></tr>
+    <tr><td>O</td><td>fotorežim · pohyb WASD, nahoru E, dolů Q, otáčení tažením</td></tr>
     <tr><td>C · H · L · R</td><td>kamera · klakson · dálková světla · vrátit na silnici</td></tr>
     <tr><td>N · Esc</td><td>posunout čas o 3 hodiny · menu se zakázkami, garáží a směnami MHD</td></tr>
   </table>`;
@@ -207,6 +209,30 @@ async function boot() {
       }
     }
   };
+  let photoFromPlay = false;
+  const photo = new PhotoMode(game, canvas, () => {
+    photo.close();
+    if (photoFromPlay) play(); else openMenu();
+  });
+  const openPhoto = () => {
+    if (game.graphicsBusy || game.mapOpen) return;
+    photoFromPlay = running;
+    running = false; input.enabled = false; game.paused = true;
+    input.pressed.clear();
+    game.audio.suspend();
+    game.hud.show(false); menu.classList.add('hidden');
+    photo.open(); last = performance.now();
+  };
+  $('btn-photo').addEventListener('click', openPhoto);
+  for (const [id, setting] of [['sun-flare','flareEnabled'], ['motion-blur','motionEnabled']]) {
+    const control = $(id);
+    control.checked = game[setting];
+    control.addEventListener('change', () => {
+      game[setting] = control.checked;
+      game.applyOptics(); game.save();
+      if (!running && !game.graphicsBusy) game.render();
+    });
+  }
   $('btn-play').addEventListener('click', play);
   const updateWork = initWorkUI(game, play);
   updateWork();
@@ -296,7 +322,13 @@ async function boot() {
   addEventListener('pagehide', () => game.save());
 
   const loop = (now) => {
+    if (photo.active) {
+      photo.update(Math.min(.05, Math.max(0,(now - last) / 1000)));
+      last = now;
+      return;
+    }
     if (!running) { input.pressed.clear(); return; }
+    if (input.pressed.has('photo')) { openPhoto(); return; }
     const elapsed = Math.max(0, (now - last) / 1000);
     const dt = Math.min(0.05, elapsed);
     last = now;

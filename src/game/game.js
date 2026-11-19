@@ -193,7 +193,7 @@ export class Game {
     this.nightLights = QUALITY.pointLights ? new NightLights(renderer, this.scene, QUALITY.pointLights, QUALITY.headLights) : null;
     this.precipitation = new Precipitation(this.scene);
     this.env = new Environment(this.scene, renderer);
-    this.postfx = createPostFX(renderer, this.scene, this.camera, this.world);
+    this.postfx = createPostFX(renderer, this.scene, this.camera, this.world, this.env);
     this.chunks = new ChunkManager(this.scene, this.world, renderer, data.heritage, data.orthophotoSources, data.soundPlaces);
     this.lampBodies = new LampBodies(physics, this.world.breakables, this.scene);
     this.trafficFurniture = new TrafficFurnitureBodies(physics, this.world, this.scene);
@@ -212,6 +212,7 @@ export class Game {
     this.chunks.roadWear = roadWear(this.world, this.trafficRhythm.measured);
     this.clockVisible = true;
     this.orthophotoEnabled = true;
+    this.flareEnabled = this.motionEnabled = false;
     this.player = new Player(this.scene, this.world, physics, this.colliders);
     // vrtulníky: heliporty z mapy (FN Lochotín, pivovar, Bory) a jeden na náměstí Republiky
     this.helis = [[106, -1596], [984, -396], [-266, 1314], [48, 52]].map(([x, z], i) => {
@@ -237,6 +238,7 @@ export class Game {
     this.jobs = new Jobs(this);
     this.shifts = new Shifts(this);
     this._load();
+    this.applyOptics();
     this.chunks.setOrthophotoEnabled(this.orthophotoEnabled);
     this.player.yaw = this.camYaw;
     if (!this.car) this._spawnStarterCar();
@@ -282,6 +284,11 @@ export class Game {
     this.hud.clock(this.clock, this.clockVisible);
     this.updateDepartures();
     this.envTimer = 0.4;
+  }
+
+  applyOptics() {
+    this.env.setFlare(this.flareEnabled);
+    if (this.postfx) this.postfx.motion.value = this.motionEnabled;
   }
 
   updateWeather() {
@@ -331,6 +338,8 @@ export class Game {
       if (day !== null && Number.isFinite(s.hour) && s.hour >= 0 && s.hour < 24) this.clock.set(day, s.hour);
       this.clockVisible = s.v === 1 || s.clockVisible !== false;
       this.particles.enabled = s.particlesEnabled !== false;
+      this.flareEnabled = s.flareEnabled === true;
+      this.motionEnabled = s.motionEnabled === true;
       this.falls.enabled = s.fallsEnabled !== false;
       this.weather.mode = s.weatherMode === 'clear' ? 'clear' : 'variable';
       this.orthophotoEnabled = s.orthophotoEnabled !== false;
@@ -384,7 +393,7 @@ export class Game {
         v: 2, money: this.money, date: formatDay(this.clock.day), hour: this.hour, clockVisible: this.clockVisible,
         clockMode: this.clock.followsPrague ? 'prague' : 'manual',
         soundEnabled: !this.audio.muted, orthophotoEnabled: this.orthophotoEnabled,
-        weatherMode: this.weather.mode, particlesEnabled: this.particles.enabled, fallsEnabled: this.falls.enabled, graphics: this.graphics, steering: this.steering, heliAssist: this.heliAssist,
+        flareEnabled: this.flareEnabled, motionEnabled: this.motionEnabled, weatherMode: this.weather.mode, particlesEnabled: this.particles.enabled, fallsEnabled: this.falls.enabled, graphics: this.graphics, steering: this.steering, heliAssist: this.heliAssist,
         car: this.mode === 'car' ? {
           model: f.typeId, color: f.color, x: f.x, z: f.z, y: f.y, yaw: f.yaw,
           health: f.health, dirt: f.dirt, owned: f === this.garage.active,
@@ -1100,6 +1109,7 @@ export class Game {
     const cam = this.camera.position;
     this.precipitation.update(this.weather, QUALITY.particles, !this.particles.enabled ||
       ((this.weather.rain || this.weather.flakes) && this.world.tunnelAt(cam.x, cam.z, cam.y)?.inside));
+    if (this.postfx) this.postfx.motion.value = this.motionEnabled;
     this.env.clouds?.render(this.camera);
     this.env.updateSkyLight();
     this.nightLights?.update(this.camera, this.chunks.chunks, this.vehicles.cars, this.env.night, this.mode === 'car' ? this.car : null);
@@ -1185,10 +1195,11 @@ export class Game {
       else if (car.mesh.userData.light) car.mesh.userData.light.visible = false;
     }
     this.env = new Environment(this.scene, this.renderer);
+    this.env.setFlare(this.flareEnabled);
     this.updateWeather();
     this.env.setHour(this.hour, this.clock.day);
     this.env.update(this.camera);
-    this.postfx = createPostFX(this.renderer, this.scene, this.camera, this.world);
+    this.postfx = createPostFX(this.renderer, this.scene, this.camera, this.world, this.env);
     const { x, y, z } = this.focus;
     this.chunks.update(x, z, QUALITY.view, 0, y);
     while (this.chunks.pendingStart > 0) {
