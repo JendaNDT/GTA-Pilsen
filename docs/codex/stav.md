@@ -16,6 +16,10 @@ Ve čtyřech městských dlaždicích se podařilo přiřadit všech 66 vymezen�
 
 Prošlo 173 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. Ve všech šesti prohlížečových zkouškách prošel pilot a chůze ve třech úsecích na nízké i vysoké předvolbě za dne, soumraku a noci ve WebGL 2 i WebGPU. Zbývají samostatné zkoušky nástupu u nádraží, doručení na místní adresy a snímky před a po. Věrnost přízemí a přístřešku vyžaduje fotografie autora. [Protokol úseků](../E25.md)
 
+## Průchod ulicemi a zkušebna vybavení
+
+Se vstupy prošlo všech šest prohlížečových zkoušek pilotu a chůze třemi úseky. Na vysoké i nízké předvolbě se hráč pohyboval při 10:00, 18:09 a 22:00 ve WebGL 2 i WebGPU. Na oddělené fiktivní ploše v Joltu projel herní vůz vlastní lavičkou a skleněnou výplní zkušebního přístřešku. Stojky i střecha zůstaly celé. Stav přetrval po odpojení a opětovném připojení vybavení, v ranním termínu se vše opravilo. Oba vykreslovače prošly. Probíhá závěrečné snímkování a měření tří úseků. Porovnání se skutečnými průčelími čeká na fotografie autora.
+
 ## Vstupy z ulice
 
 U 21 průčelí dostaly výlohy samostatné prosklené dveře. V popisu je poloha středu v metrech podél konkrétní měřené zdi. Osm vstupů připadá na Americkou, devět na Dřevěnou a čtyři na nádraží. Polohy jsou předběžné do porovnání s autorovými fotografiemi. Na nízké předvolbě má lavička a koš méně ploch, kolizní tvar zůstává společný pro všechny předvolby. Přidání vybavení vyvolá jedinou aktualizaci kolizí příslušné dlaždice.
