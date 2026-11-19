@@ -5,7 +5,7 @@ const SAVE_KEY = 'plzen-naplno-v1';
 
 async function boot(page) {
   await page.goto(gameUrl('/?debug&quality=low'));
-  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  await page.waitForFunction(() => window.__ready);
 }
 
 async function panel(page) {
