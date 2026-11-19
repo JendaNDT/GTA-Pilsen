@@ -26,6 +26,14 @@ Karoserie tramvají, autobusů a trolejbusů rozlišují lak, sklo, kov a gumu. 
 
 Prošlo 163 testů JavaScriptu a produkční sestavení. WebGL 2 i WebGPU vykreslily noční soupravu a postavu s jedenácti kostmi. Kontrola porovnala označení kostí, geometrii a samostatný pohyb dvou postav.
 
+## G23 · Počasí a přilnavost
+
+Před implementací prošel návrh kontrolou Astra High. Sedm typů počasí vychází z deterministické volby podle data, měsíčních herních vah a teploty. Přechod trvá 10 až 30 herních minut. Z předchozích srážek se při obnově hry i při přeskočení času odvodí vlhkost a sněhová pokrývka. Nastavení „Vždy jasno“ vrací suchý povrch. Volba se ukládá i ve stávajícím formátu pozice.
+
+Na úplně mokrém povrchu klesá přilnavost na 70 % suché hodnoty a na souvislém sněhu na 35 %. Hráč i fyzicky řízená auta čtou stejný dotaz, vzdálený provoz sníží cílovou rychlost a původní jízdní režim upraví brzdění a boční přilnavost. Na stejné fiktivní rovné dráze z 16 m/s potřeboval vůz v dešti delší dráhu než za sucha a na sněhu delší než v dešti.
+
+Prošlo 166 testů JavaScriptu a produkční sestavení. Oba vykreslovače ověřily lednový povrch, změnu počasí v nastavení i obnovení této volby po načtení.
+
 ## Výchozí etapa E23
 
 E23 vychází z dokončené větve E22 (`496a72d`). Prvním krokem je detail země při chůzi. Další pořadí tvoří povrchy silnic, voda, stromy, tráva, noční světla a částice. [Zadání E23](E23.md) · [Protokol E22](../E22.md)

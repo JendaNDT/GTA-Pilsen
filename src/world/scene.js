@@ -108,7 +108,6 @@ export class Environment {
     this.hour = 10;
     this.tint = new THREE.Color();
     this.sunDir = new THREE.Vector3(0, 1, 0);
-    env.wetPaving.value = QUALITY.heritageDetail && PARAMS.get("wet") === "1" ? 1 : 0;
     this.setHour(this.hour);
   }
 

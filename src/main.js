@@ -226,6 +226,8 @@ async function boot() {
       if (open && name === 'settings') showClock();
     });
   }
+  $('weather-mode').value = game.weather.mode;
+  $('weather-mode').addEventListener('change', event => game.setWeatherMode(event.target.value));
   $('show-clock').checked = game.clockVisible;
   $('show-clock').addEventListener('change', (event) => game.setClockVisible(event.target.checked));
   showClock();

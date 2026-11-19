@@ -12,7 +12,7 @@ const { VehicleManager } = await import('../src/entities/vehicles.js');
 const Jolt = await loadJolt();
 const asphalt = () => 1;
 
-function track(type, angle = 0) {
+function track(type, angle = 0, surface = asphalt) {
   const physics = new PhysicsWorld(Jolt);
   const addBox = (x, y, z, halfSizes, tilt = 0) => {
     const half = new Jolt.Vec3(...halfSizes), pos = new Jolt.RVec3(x, y, z);
@@ -26,7 +26,7 @@ function track(type, angle = 0) {
     vx: 0, vy: 0, vz: 0, speed: 0, steer: 0, health: 100 };
   const vehicle = new PlayerVehicle(physics, car);
   const tick = (throttle = 0, steer = 0, brake = false, arcade = true) => {
-    vehicle.drive(1 / 60, throttle, steer, brake, arcade, asphalt);
+    vehicle.drive(1 / 60, throttle, steer, brake, arcade, surface);
     physics.engine.Step(1 / 60, 1);
     vehicle.read();
   };
@@ -277,4 +277,25 @@ test('u stojícího vraku se při uspání a odjezdu vynuluje rychlost, pohybuj�
       physics.dispose();
     }
   }
+});
+
+
+test('na stejné smyšlené rovině vůz při dešti a sněhu potřebuje delší brzdnou dráhu', async () => {
+  const { Weather } = await import('../src/world/weather.js');
+  const distances = [];
+  for (const kind of ['clear', 'rain', 'snow']) {
+    const weather = new Weather(kind);
+    weather.update(Date.UTC(2026, 0, 15) / 1000);
+    const { car, vehicle, tick, close } = track('hatch', 0, (x, z) => weather.surfaceGrip(x, z));
+    try {
+      car.vz = car.speed = 16;
+      vehicle.teleport();
+      const start = car.z;
+      for (let i = 0; i < 900 && car.speed > .7; i++) tick(-1);
+      assert.ok(car.speed <= .7);
+      distances.push(car.z - start);
+    } finally { close(); }
+  }
+  assert.ok(distances[1] > distances[0] * 1.05 && distances[2] > distances[1] * 1.1,
+    'Brzdné dráhy pro sucho, déšť a sníh: ' + distances.map(n => n.toFixed(2)).join(', '));
 });

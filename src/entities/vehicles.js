@@ -190,7 +190,8 @@ export class VehicleManager {
     let vL = car.vx * lx + car.vz * lz;
 
     // motor a brzdy
-    const brake = car.upgrades?.brakes ? 21 : 16;
+    const surfaceGrip = this.game.weather?.surfaceGrip(car.x, car.z) ?? 1;
+    const brake = (car.upgrades?.brakes ? 21 : 16) * surfaceGrip;
     if (throttle > 0) {
       if (vF < -0.6) vF = Math.min(0, vF + brake * dt * throttle);
       else if (damage) vF += t.accel * throttle * damage * Math.max(0, 1 - Math.pow(Math.max(0, vF) / maxSpeed, 1.6)) * dt;
@@ -203,8 +204,8 @@ export class VehicleManager {
     }
     vF -= vF * (0.06 + 0.0028 * Math.abs(vF) + (car.offroad ? 0.5 : 0)) * dt;
     if (vF > maxSpeed) vF -= (vF - maxSpeed) * Math.min(1, dt * 2);
-    if (handbrake) { const dec = 9 * dt; vF = Math.abs(vF) < dec ? 0 : vF - Math.sign(vF) * dec; }
-    const grip = (handbrake ? 1.6 : t.grip * (car.upgrades?.tires ? 1.25 : 1)) * (car.offroad ? 0.6 : 1);
+    if (handbrake) { const dec = 9 * dt * surfaceGrip; vF = Math.abs(vF) < dec ? 0 : vF - Math.sign(vF) * dec; }
+    const grip = (handbrake ? 1.6 : t.grip * (car.upgrades?.tires ? 1.25 : 1)) * (car.offroad ? 0.6 : 1) * surfaceGrip;
     const slip = Math.abs(vL);
     vL *= Math.exp(-grip * dt);
     car.skid = slip > 3.5 && sp > 5 ? Math.min(1, slip / 9) : 0;
@@ -656,6 +657,7 @@ export class VehicleManager {
         ? w.edgePoint(car.edge, Math.min(len, car.s + look), car.lane, _pt)
         : w.edgePoint(car.next, car.s + look - len, car.nextLane, _pt);
     };
+    vmax *= Math.sqrt(this.game.weather?.surfaceGrip(car.x, car.z) ?? 1);
     let limit = this._obstacleLimit(car, vmax, null, pointAt);
     car.pathBlocked = limit < 0.4;
     const upcomingLeft = leftTurn ?? (turn?.sign < 0 ? turn : null);
@@ -802,6 +804,7 @@ export class VehicleManager {
     vmax = 7 + (vmax - 7) * Math.max(0, Math.cos(diff)) ** 2;
     if (!target.isCar) vmax = Math.min(vmax, Math.sqrt(2 * 8 * Math.max(0, dist - 7)));   // chodce nepřejíždět: včas dobrzdit a zastavit u něj
     else if (dist < 14) vmax = Math.min(vmax, Math.max(4, Math.hypot(target.vx || 0, target.vz || 0) + dist * 0.6));
+    vmax *= Math.sqrt(this.game.weather?.surfaceGrip(car.x, car.z) ?? 1);
     let limit = this._obstacleLimit(car, vmax, target);
     if (car.blocked > 1.2) limit = Math.max(limit, 4);
     car.policeDist = dist;

@@ -27,6 +27,7 @@ import { Environment } from '../world/scene.js';
 import { createPostFX } from '../world/postfx.js';
 import { env } from '../world/materials.js';
 import { VehicleManager, Car, wrapAngle } from '../entities/vehicles.js';
+import { Weather } from '../world/weather.js';
 import { dirtLevel } from '../entities/car-appearance.js';
 import { addCarLight, CAR_TYPES, setCarAppearanceQuality } from '../entities/models.js';
 import { Player, PedManager } from '../entities/player.js';
@@ -60,11 +61,13 @@ export class Game {
     this.water = new Water(physics);
     this.trafficBodies = new TrafficBodies(physics, QUALITY);
     this.transitBodies = new TransitBodies(physics);
+    this.weather = new Weather(DEBUG ? PARAMS.get('weather') : null);
     this.tireSurface = (x, z) => {
-      if (x > -66 && x < 75 && z > -60 && z < 68) return 0.9;
+      const grip = this.weather.surfaceGrip(x, z);
+      if (x > -66 && x < 75 && z > -60 && z < 68) return .9 * grip;
       const w = this.world;
-      if (w.onRoad(x, z)) return w.r.cls[w._tmpRoad.road] >= RC.TRACK ? 0.6 : 1;
-      return w.isSoft(x, z) ? 0.5 : 0.6;
+      if (w.onRoad(x, z)) return (w.r.cls[w._tmpRoad.road] >= RC.TRACK ? .6 : 1) * grip;
+      return (w.isSoft(x, z) ? .5 : .6) * grip;
     };
     this.pedHits = new Map();
     physics.onPedContact = (walker, vehicle) => {
@@ -270,10 +273,22 @@ export class Game {
       this.peds.timer = 0;
     }
     this.chunks.heritage.updateForge(this.hour, 0);
+    this.updateWeather();
     this.env.setHour(this.hour, this.clock.day);
     this.hud.clock(this.clock, this.clockVisible);
     this.updateDepartures();
     this.envTimer = 0.4;
+  }
+
+  updateWeather() {
+    this.weather.update(this.clock.now);
+    env.wetPaving.value = PARAMS.get('wet') === '1' ? 1 : this.weather.wet;
+  }
+
+  setWeatherMode(mode) {
+    this.weather.mode = mode === 'clear' ? 'clear' : 'variable';
+    this.updateWeather();
+    this.save();
   }
 
   setClockVisible(visible) {
@@ -310,6 +325,7 @@ export class Game {
       this.clockVisible = s.v === 1 || s.clockVisible !== false;
       this.particles.enabled = s.particlesEnabled !== false;
       this.falls.enabled = s.fallsEnabled !== false;
+      this.weather.mode = s.weatherMode === 'clear' ? 'clear' : 'variable';
       this.orthophotoEnabled = s.orthophotoEnabled !== false;
       this.audio.setMuted(s.soundEnabled === false);
       const w = this.world;
@@ -361,7 +377,7 @@ export class Game {
         v: 2, money: this.money, date: formatDay(this.clock.day), hour: this.hour, clockVisible: this.clockVisible,
         clockMode: this.clock.followsPrague ? 'prague' : 'manual',
         soundEnabled: !this.audio.muted, orthophotoEnabled: this.orthophotoEnabled,
-        particlesEnabled: this.particles.enabled, fallsEnabled: this.falls.enabled, graphics: this.graphics, steering: this.steering, heliAssist: this.heliAssist,
+        weatherMode: this.weather.mode, particlesEnabled: this.particles.enabled, fallsEnabled: this.falls.enabled, graphics: this.graphics, steering: this.steering, heliAssist: this.heliAssist,
         car: this.mode === 'car' ? {
           model: f.typeId, color: f.color, x: f.x, z: f.z, y: f.y, yaw: f.yaw,
           health: f.health, dirt: f.dirt, owned: f === this.garage.active,
@@ -1158,6 +1174,7 @@ export class Game {
       else if (car.mesh.userData.light) car.mesh.userData.light.visible = false;
     }
     this.env = new Environment(this.scene, this.renderer);
+    this.updateWeather();
     this.env.setHour(this.hour, this.clock.day);
     this.env.update(this.camera);
     this.postfx = createPostFX(this.renderer, this.scene, this.camera, this.world);
