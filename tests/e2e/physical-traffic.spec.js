@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { prepareCollisionLab } from './collision-lab.js';
 import { gameUrl } from './game-url.js';
 
 test('E20 – při odbočení linky 41 z Klatovské do Husovy zůstává dráha v pruhu spojitá', async ({ page }) => {
@@ -141,6 +142,7 @@ test('E20 – fyzikální auto zastaví na Doudlevecké a po přednosti pokraču
 
 test('E20 – zaparkované auto spí a po střetu s jedoucím autem se rozjede', async ({ page }) => {
   await start(page);
+  await prepareCollisionLab(page);
   const sample = await page.evaluate(() => {
     const g = __game, car = g.player.lastCar;
     for (const c of [...g.vehicles.cars]) if (c !== car) g.vehicles.remove(c);
@@ -200,13 +202,21 @@ test('E20 – fyzikální policejní vůz dojede k chodci a zastaví před ním'
 });
 
 test('E20 – tramvaj brzdí a při náhlé překážce odstrčí auto na kolejích', async ({ page }) => {
-  await start(page, '&date=2026-11-09&hour=7.5');
-  const result = await page.evaluate(() => {
+  await start(page, "&hour=10");
+  // Třída vozidla má stejnou fyziku i na vlastní přímé koleji.
+  const vehicleType = await page.evaluateHandle(() => __game.transit.vehicles[0].constructor);
+  await prepareCollisionLab(page);
+  const result = await page.evaluate(TransitVehicle => {
     const g = __game, { transit, transitBodies, physics } = g;
-    const tram = transit.vehicles.find((v) => v.route.ref === '4' && v.route.from === 'Univerzita');
+    const Route = transit.routes[0].constructor;
+    const route = new Route({type:'tram', ref:'Z', from:'Zkušebna', to:'Konec', path:[[0,-100],[0,100]], stops:[]});
+    const trip = {id:1, route, destination:'Konec', stops:[], times:[], endS:route.length};
+    const start = 90;
+    const tram = new TransitVehicle({trip, end:Infinity}, {s:start, index:0, wait:0});
+    g.world.traffic.transitLimit = (_car, _front, _ahead, _dt, speed) => speed;
     const car = g.player.lastCar;
     for (const c of [...g.vehicles.cars]) if (c !== car) g.vehicles.remove(c);
-    const start = 3430, p = tram.route.posAt(start + 5, tram.side, {});
+    const p = tram.route.posAt(start + 5, tram.side, {});
     car.place(p.x, p.z, Math.atan2(p.tx, p.tz) + Math.PI / 2);
     g.player.place(p.x + p.tz * 16, p.z - p.tx * 16);
     for (let i = 0; i < 20; i++) g.colliders.update(p.x, p.z);
@@ -238,7 +248,8 @@ test('E20 – tramvaj brzdí a při náhlé překážce odstrčí auto na kolej�
     transitBodies.update([], g.focus, 1 / 60);
     return { sections, expected: tram.sections.length, reset, removed: !transitBodies.sections.size,
       peak, distance, braked, advance: tram.s - start };
-  });
+  }, vehicleType);
+  await vehicleType.dispose();
   expect(result.sections).toBe(result.expected);
   expect(result.sections).toBeGreaterThan(1);
   expect(result.braked, JSON.stringify(result)).toBe(true);
@@ -322,10 +333,18 @@ test('E20 – dodávka udrží vozovku při ostrém odbočení na Americkou i na
 
 test('E20 – náraz do jedoucího auta provozu změní rychlost obou aut', async ({ page }) => {
   await start(page);
+  await prepareCollisionLab(page);
   const result = await page.evaluate(() => {
     const g = __game, w = g.world, car = g.player.lastCar;
     for (const other of [...g.vehicles.cars]) if (other !== car) g.vehicles.remove(other);
-    const edge = 36764;
+    // Jeden přímý pruh uvnitř zkušebny, s vlastním povrchem a bez křižovatek.
+    const edge = 0;
+    w.eLen = [160];
+    w.eRoad = w.eA = [0];
+    w.eB = [1];
+    w.roadSpeed = () => 40;
+    w.edgePoint = (_edge, distance, lane, out) => Object.assign(out, {x:lane, z:distance-80, tx:0, tz:1});
+    w.traffic.drivingLimit = (_car, _dt, limit) => limit;
     const put = (c, distance, speed) => {
       const p = w.edgePoint(edge, distance, 0, {});
       c.place(p.x, p.z, Math.atan2(p.tx, p.tz));
@@ -334,7 +353,7 @@ test('E20 – náraz do jedoucího auta provozu změní rychlost obou aut', asyn
     const lead = g.vehicles.add(new car.constructor('sedan', 0x888888));
     put(lead, 40, 5);
     Object.assign(lead, { mode: 'ai', edge, s: 40, lane: 0 });
-    g.vehicles._pickNext(lead);
+
     put(car, 28, 22);
     g._enterCar(car);
     g.vehicles.spawnTimer = Infinity;
@@ -348,14 +367,14 @@ test('E20 – náraz do jedoucího auta provozu změní rychlost obou aut', asyn
         break;
       }
     }
-    return contact;
+    return {contact, positions: [car, lead].map(c => [c.x, c.y, c.z, c.speed, c.mode, !!c.physical])};
   });
-  expect(result).toBeTruthy();
-  expect(result.before[1]).toBeGreaterThan(2);
-  expect(result.before[0] - result.after[0]).toBeGreaterThan(2);
-  expect(result.after[1] - result.before[1]).toBeGreaterThan(2);
-  expect(result.mode).toBe('loose');
-  expect(Math.max(...result.health)).toBeLessThan(100);
+  expect(result.contact, JSON.stringify(result.positions)).toBeTruthy();
+  expect(result.contact.before[1]).toBeGreaterThan(2);
+  expect(result.contact.before[0] - result.contact.after[0]).toBeGreaterThan(2);
+  expect(result.contact.after[1] - result.contact.before[1]).toBeGreaterThan(2);
+  expect(result.contact.mode).toBe('loose');
+  expect(Math.max(...result.contact.health)).toBeLessThan(100);
 });
 
 test('E20 – hra odklidí stojící cizí vrak až po minutě mimo záběr a zachová oba hráčovy vozy', async ({ page }) => {
