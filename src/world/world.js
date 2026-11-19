@@ -44,6 +44,7 @@ export class World {
     this._initTerrain(data.terrain);
     this._initTerrainDetail(data.landscape);
     this._initGradeTerrain(grades);
+    this.buildingMaterials = new Map(data.buildingMaterials?.surfaces.map(([i,wall,roof])=>[i,[wall,roof]]));
     this._initBuildings(data.buildings);
     this._initRoads(data.roads);
     this.gradeRoads = this._applyGradeProfiles(grades?.roads, (road) => {

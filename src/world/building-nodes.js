@@ -1,3 +1,4 @@
+import { facadeDetail } from './facade-detail.js';
 import {
   Fn, If, attribute, float, mix, positionWorld, select, smoothstep, step, struct, vec2, vec3, vec4,
   vertexColor,
@@ -181,7 +182,7 @@ function addSurfaceDetail(color, facadePoint, cell, code) {
   });
 }
 
-export function buildingNodes(night, schedule, textures, heritage) {
+export function buildingNodes(night, schedule, camera, textures, heritage) {
   const surface = Fn(() => {
     const cell = windowData.xy.toVar();
     const code = windowData.z.add(0.5).floor().toVar();
@@ -197,7 +198,8 @@ export function buildingNodes(night, schedule, textures, heritage) {
     return buildingSurface(color, illumination, glazing);
   })().toVar();
 
-  const colorNode = vec4(surface.get('color'), 1);
+  const close = textures ? facadeDetail(windowData.z.add(0.5).floor(), windowData.xy, camera, heritage, surface.get('glass')) : null;
+  const colorNode = vec4(close ? surface.get('color').mul(close.gain) : surface.get('color'), 1);
   const emissiveNode = Fn(() => {
     const emission = vec3(1, 0.78, 0.42).mul(surface.get('illumination'), 0.90).toVar();
     if (heritage) {
@@ -220,7 +222,8 @@ export function buildingNodes(night, schedule, textures, heritage) {
         select(code.equal(-4), SURFACE.timber.roughness,
           select(code.equal(-5), SURFACE.glass.roughness, SURFACE.plaster.roughness))));
   }
+  if (close) roughness = roughness.add(close.rough.sub(.84)).clamp(.12,.99);
   const roughnessNode = mix(roughness, SURFACE.glass.roughness, surface.get('glass'));
   const metalnessNode = heritage ? null : surfaceProperties.y.mul(surface.get('glass').oneMinus());
-  return { colorNode, emissiveNode, roughnessNode, metalnessNode };
+  return { colorNode, emissiveNode, roughnessNode, metalnessNode, ...(close && {normalNode:close.normal}) };
 }

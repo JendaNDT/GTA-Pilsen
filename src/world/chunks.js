@@ -1,3 +1,4 @@
+import { buildingLayers } from './facade-surfaces.js';
 import { attachRoadFurniture } from './road-furniture.js';
 import { prazdrojThickness } from './prazdroj-bridge.js';
 import { roadStations } from './road-surface.js';
@@ -140,17 +141,19 @@ function styleFor(world, i, district) {
   if (rcol) { _c.setHex(rcol & 0xffffff); roof = [_c.r, _c.g, _c.b]; }
   // jemná odchylka jasu, ať nejsou sousední domy stejné
   const k = 0.9 + r3 * 0.18;
-  return { wall: [wall[0] * k, wall[1] * k, wall[2] * k], roof, wallSurface, roofSurface, style, bay, floorH };
+  const layers = buildingLayers(style, district, wallSurface, roofSurface, rcol, world.buildingMaterials?.get(i));
+  return { ...layers, wall: [wall[0] * k, wall[1] * k, wall[2] * k], roof, wallSurface, roofSurface, style, bay, floorH };
 }
 
 // ------------------------------------------------------------ pomocníci ----
 class Buf {
-  constructor() { this.p = []; this.n = []; this.c = []; this.w = []; this.s = []; this.i = []; this.vc = 0; }
+  constructor() { this.p = []; this.n = []; this.c = []; this.w = []; this.s = []; this.layers = []; this.i = []; this.vc = 0; }
   v(x, y, z, nx, ny, nz, col, k, wu, wv, ws) {
     this.p.push(x, y, z);
     this.n.push(nx * 127, ny * 127, nz * 127);
     this.c.push(col[0] * k * 255, col[1] * k * 255, col[2] * k * 255);
     this.w.push(wu, wv, ws);
+    if (QUALITY.heritageDetail) this.layers.push(this.layer);
     this.s.push(Math.round(this.surface.roughness * 255), Math.round(this.surface.metalness * 255));
     return this.vc++;
   }
@@ -177,6 +180,7 @@ class Buf {
     g.setAttribute('color', new THREE.BufferAttribute(new Uint8Array(this.c.map((v) => Math.min(255, v))), 3, true));
     g.setAttribute('aWin', new THREE.BufferAttribute(new Float32Array(this.w), 3));
     g.setAttribute('aSurface', new THREE.BufferAttribute(new Uint8Array(this.s), 2, true));
+    if (this.layers.length) g.setAttribute('buildingLayer', new THREE.Uint8BufferAttribute(this.layers, 1));
     g.setIndex(this.vc > 65535 ? new THREE.BufferAttribute(new Uint32Array(this.i), 1) : new THREE.BufferAttribute(new Uint16Array(this.i), 1));
     g.computeBoundingSphere();
     return g;
@@ -326,7 +330,7 @@ function buildBuildings(world, list, replaced, district) {
     const floors = Math.max(1, Math.round((wallTop - ground) / st.floorH));
     const vBase = ((base - ground) / Math.max(0.5, wallTop - ground)) * floors;
     // zdi
-    buf.surface = st.wallSurface;
+    buf.surface = st.wallSurface; buf.layer = st.wallLayer;
     for (let rg = r0; rg < r1; rg++) {
       const v0 = B.ringStart[rg], v1 = B.ringStart[rg + 1];
       let j = v1 - 1;
@@ -350,7 +354,7 @@ function buildBuildings(world, list, replaced, district) {
       }
     }
     // střecha
-    buf.surface = st.roofSurface;
+    buf.surface = st.roofSurface; buf.layer = st.roofLayer;
     const nOuter = B.ringStart[r0 + 1] - B.ringStart[r0];
     if (gable && nOuter === 4 && r1 - r0 === 1) {
       const s = B.ringStart[r0];
@@ -367,7 +371,7 @@ function buildBuildings(world, list, replaced, district) {
       buf.face(X[Cq], y, Z[Cq], X[D], y, Z[D], m2x, top, m2z, 0, 1, 0, st.roof, 0.86);
       buf.face(X[Cq], y, Z[Cq], m2x, top, m2z, m1x, top, m1z, 0, 1, 0, st.roof, 0.86);
       // štíty
-      buf.surface = st.wallSurface;
+      buf.surface = st.wallSurface; buf.layer = st.wallLayer;
       const cxm = (X[0] + X[1] + X[2] + X[3]) / 4, czm = (Z[0] + Z[1] + Z[2] + Z[3]) / 4;
       buf.face(X[Bq], y, Z[Bq], X[Cq], y, Z[Cq], m1x, top, m1z, m1x - cxm, 0, m1z - czm, st.wall, 1);
       buf.face(X[D], y, Z[D], X[A], y, Z[A], m2x, top, m2z, m2x - cxm, 0, m2z - czm, st.wall, 1);

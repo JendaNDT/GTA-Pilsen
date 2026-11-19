@@ -49,6 +49,7 @@ const FILES = [
   ['terrain', 'data/terrain.bin', 10_475_000],
   ['rails', 'data/rails.bin', 96_000],
   ['trees', 'data/trees.bin', 161_000],
+  ['buildingMaterials', 'data/building-materials.json', 2_000],
   ['treeTypes', 'data/tree-types.json', 108_000],
   ['meta', 'data/meta.json', 2_082_000],
   ['timetable', 'data/timetable.json', 3_513_000],
@@ -163,11 +164,11 @@ export async function loadAll(onProgress) {
   const structureRequest = loadStructureCore();
   const results = await Promise.all(FILES.map(([name, url]) => {
     const request = fetchBuffer(base + url, bump);
-    return ['landscape', 'soundPlaces', 'gradeSeparations', 'treeTypes'].includes(name) ? request.catch(() => null) : request;
+    return ['landscape', 'soundPlaces', 'gradeSeparations', 'treeTypes', 'buildingMaterials'].includes(name) ? request.catch(() => null) : request;
   }));
   const out = {};
   FILES.forEach(([name, url], i) => {
-    if ((['soundPlaces','gradeSeparations','treeTypes'].includes(name)) && !results[i]) return;
+    if ((['soundPlaces','gradeSeparations','treeTypes','buildingMaterials'].includes(name)) && !results[i]) return;
     if (name === 'landscape') {
       if (results[i]?.byteLength > 8) {
         try { out.landscape = parsePack(results[i]); } catch { /* základní síť stačí k hraní */ }
@@ -190,6 +191,8 @@ export async function loadAll(onProgress) {
     out.gradeSeparations.sources?.[name] === fingerprint(name)))) delete out.gradeSeparations;
   if (out.treeTypes && (out.treeTypes.osm !== out.meta.osmTimestamp ||
     !['trees','land'].every(name => out.treeTypes.sources?.[name] === fingerprint(name)))) delete out.treeTypes;
+  if (out.buildingMaterials && (out.buildingMaterials.osm !== out.meta.osmTimestamp ||
+    out.buildingMaterials.buildings !== fingerprint('buildings'))) delete out.buildingMaterials;
   const structures = await structureRequest;
   if (structures && out.gradeSeparations && out.landscape &&
     ['terrain', 'roads', 'rails', 'landscape', 'buildings', 'trees', 'grade-separations'].every(key =>

@@ -78,6 +78,7 @@ const ABOUT_HTML = (meta, rendering) => `
   <a href="https://opendata.plzen.eu/public/opendata/detail/160" target="_blank" rel="noopener">měření dopravních smyček města Plzně</a>
   a z <a href="https://polivisuapi.plzen.eu/api/" target="_blank" rel="noopener">hodinových profilů PoliVisu</a>.
   Pro ostatní ulice a pro chodce hra používá odhad.</p>
+  <p>Sedm fotografických povrchů fasád poskytla knihovna <a href="https://polyhaven.com/license" target="_blank" rel="noopener">Poly Haven (CC0)</a>. Vzory střech vytvořil projekt Plzeň naplno.</p>
   <p>Modely stromů a jejich sezónní vzhled vytvořil projekt Plzeň naplno. Druh olistění vychází z dat přispěvatelů OpenStreetMap (ODbL).</p>
   <p>Detail povrchu terénu používá šest materiálů knihovny <a href="https://polyhaven.com/license" target="_blank" rel="noopener">Poly Haven (CC0)</a>.</p>
   <p>Čtyři mapové listy centra používají otevřená data

@@ -12,7 +12,7 @@ TILE = 512
 LAYERS = ('grass_ground', 'brown_mud', 'gravel', 'farm_furrows', 'damp_beach_sand', 'leaves_forest_ground')
 
 
-def source(asset, channel, row, cache):
+def source(asset, channel, row, cache, side=TILE):
     path = cache / f'{asset}-{channel}.jpg'
     if not path.is_file():
         request = Request(row['url'], headers={'User-Agent': 'Plzen-naplno/1.0 (github.com/JendaNDT/GTA-Pilsen)'})
@@ -25,7 +25,7 @@ def source(asset, channel, row, cache):
     if not path.is_file():
         path.write_bytes(data)
     with Image.open(path) as image:
-        return np.asarray(image.convert('RGB').resize((TILE, TILE), Image.Resampling.LANCZOS))
+        return np.asarray(image.convert('RGB').resize((side, side), Image.Resampling.LANCZOS))
 
 
 def build(manifest, cache, output):

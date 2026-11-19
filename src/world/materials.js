@@ -42,7 +42,7 @@ export function makeBatchedSurfaceMaterial(opts = {}) {
  */
 export function makeBuildingMaterial({ textures = false, heritage = false } = {}) {
   const key = `${textures}/${heritage}`;
-  if (!facadeNodes.has(key)) facadeNodes.set(key, buildingNodes(env.night, env.windows, textures, heritage));
+  if (!facadeNodes.has(key)) facadeNodes.set(key, buildingNodes(env.night, env.windows, env.cam, textures, heritage));
   return makeSurfaceMaterial(SURFACE.plaster, facadeNodes.get(key));
 }
 

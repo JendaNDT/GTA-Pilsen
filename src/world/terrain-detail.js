@@ -1,3 +1,4 @@
+import { layerAtlas } from './layer-atlas.js';
 import * as THREE from 'three/webgpu';
 import {
   Fn,
@@ -14,60 +15,15 @@ import {
   vec3
 } from 'three/tsl';
 
-const layers = 6,
-  side = 512;
+const layers = 6;
 let atlases;
-
-function neutralTexture(r, g, b) {
-  const bytes = new Uint8Array(4 * layers);
-  for (let i = 0; i < layers; i++) bytes.set([r, g, b, 255], i * 4);
-  const result = new THREE.DataArrayTexture(bytes, 1, 1, layers);
-  result.wrapS = result.wrapT = THREE.RepeatWrapping;
-  result.magFilter = THREE.LinearFilter;
-  result.minFilter = THREE.LinearMipmapLinearFilter;
-  result.generateMipmaps = true;
-  result.needsUpdate = true;
-  return result;
-}
-
-async function readLayers(name) {
-  const response = await fetch('textures/terrain/' + name + '.webp');
-  if (!response.ok) throw Error('Chybí atlas terénu ' + name);
-  const bitmap = await createImageBitmap(await response.blob());
-  try {
-    if (bitmap.width !== 3 * side || bitmap.height !== 2 * side) throw Error('Neplatný rozměr atlasu terénu.');
-    const canvas = document.createElement('canvas');
-    canvas.width = canvas.height = side;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    const bytes = new Uint8Array(layers * side * side * 4);
-    for (let layer = 0; layer < layers; layer++) {
-      ctx.drawImage(bitmap, (layer % 3) * side, Math.floor(layer / 3) * side, side, side, 0, 0, side, side);
-      bytes.set(ctx.getImageData(0, 0, side, side).data, layer * side * side * 4);
-    }
-    return bytes;
-  } finally {
-    bitmap.close();
-  }
-}
-
 function textures() {
-  if (atlases) return atlases;
-  const maps = { color: neutralTexture(128, 128, 128), normal: neutralTexture(128, 128, 255) };
-  atlases = maps;
-  Promise.all([readLayers('barva'), readLayers('normaly')])
-    .then(([color, normal]) => {
-      for (const [texture, data] of [
-        [maps.color, color],
-        [maps.normal, normal]
-      ]) {
-        // GPU vyžaduje novou alokaci při přechodu z neutrálního texelu na plné rozlišení.
-        texture.dispose();
-        texture.image = { data, width: side, height: side, depth: layers };
-        texture.needsUpdate = true;
-      }
-    })
-    .catch(() => {}); // Při nedostupné sadě dál funguje původní barva i osvětlení.
-  return maps;
+  if (!atlases) {
+    const maps = layerAtlas({directory:'terrain',columns:3,rows:2,layers,sourceSide:512},
+      {barva:[128,128,128],normaly:[128,128,255]});
+    atlases = {color:maps.barva,normal:maps.normaly};
+  }
+  return atlases;
 }
 
 const sampleType = struct({ gain: 'vec3', normal: 'vec3' });

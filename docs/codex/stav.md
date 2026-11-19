@@ -1,4 +1,14 @@
-# Stav etapy E23
+# Stav etapy E24
+
+E24 navazuje na G17 ve větvi E23 (`fe30ef0`). [Zadání E24](E24.md)
+
+## G18 a G20 · Fasády a střechy
+
+Na střední až ultra předvolbě se sedm fotografických fasád řídí typem budovy a paletou čtvrti. Okna, sokl a ostění sdílejí souřadnice. Pět střešních vrstev rozlišuje tašky, plech, měď, lepenku a vláknocement. Měděná patina na katedrále začíná až na věži. Převod spároval materiálové údaje OSM s 138 budovami projektu. Ostatní plochy používají výběr podle stylu a barvy.
+
+U 21 fotografických podkladů CC0 prošla kontrola velikosti a zdrojového otisku. Oba převody vytvořily shodné atlasy. Prošlo 161 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. WebGL 2 i WebGPU načetly atlasy a vykreslily měřené i běžné budovy.
+
+## Výchozí etapa E23
 
 E23 vychází z dokončené větve E22 (`496a72d`). Prvním krokem je detail země při chůzi. Další pořadí tvoří povrchy silnic, voda, stromy, tráva, noční světla a částice. [Zadání E23](E23.md) · [Protokol E22](../E22.md)
 
