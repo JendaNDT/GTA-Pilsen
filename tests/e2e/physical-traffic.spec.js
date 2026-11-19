@@ -24,7 +24,7 @@ test('E20 – při odbočení linky 41 z Klatovské do Husovy zůstává dráha 
 
 async function start(page, options = '') {
   await page.goto(gameUrl('/?debug&quality=low' + options));
-  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  await page.waitForFunction(() => window.__ready);
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
   await page.evaluate(() => __freeze(true));
 }
@@ -282,6 +282,10 @@ test('E20 – dodávka udrží vozovku při ostrém odbočení na Americkou i na
   const runs = await page.evaluate(() => {
     const g = __game, w = g.world, vm = g.vehicles, Car = g.player.lastCar.constructor;
     for (const other of [...vm.cars]) vm.remove(other);
+    // V této jízdě krokujeme jen dodávku. MHD a chodci z úvodní scény
+    // by po zastavení jejich simulace mohli trvale blokovat výjezd nebo přechod.
+    vm.obstacles.length = 0;
+    w.traffic.users.clear();
     const results = [];
     for (const [edge, next] of [[28371, 19522], [28768, 20738]]) {
       const car = vm.add(new Car('van', 0x557799));
