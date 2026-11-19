@@ -256,6 +256,12 @@ async function boot() {
     if (!applied) qualityStatus.textContent = 'Předvolbu grafiky se nepodařilo použít.';
     qualitySelect.disabled = false;
   });
+  $('particles-enabled').checked = game.particles.enabled;
+  $('particles-enabled').addEventListener('change', event => {
+    game.particles.enabled = event.target.checked;
+    game.particles.mesh.visible = false;
+    game.save();
+  });
   $('falls-enabled').checked = game.falls.enabled;
   $('falls-enabled').addEventListener('change', event => {
     game.falls.enabled = event.target.checked;

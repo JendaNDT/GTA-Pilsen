@@ -60,6 +60,16 @@ export class PhysicsWorld {
       if ((la === VEHICLE || la === TRANSIT) && (lb === VEHICLE || lb === TRANSIT)) {
         this.onVehicleContact?.(first, second);
       }
+      if (!added && this.onMetalScrape && la === VEHICLE && lb === VEHICLE) {
+        const manifold = Jolt.wrapPointer(contact, Jolt.ContactManifold);
+        const n = manifold.mWorldSpaceNormal, v = first.GetLinearVelocity(), w = second.GetLinearVelocity();
+        const dx = v.GetX() - w.GetX(), dy = v.GetY() - w.GetY(), dz = v.GetZ() - w.GetZ();
+        const along = dx * n.GetX() + dy * n.GetY() + dz * n.GetZ();
+        if (dx * dx + dy * dy + dz * dz - along * along > 16 && !manifold.mRelativeContactPointsOn1.empty()) {
+          const base = manifold.mBaseOffset, point = manifold.mRelativeContactPointsOn1.at(0);
+          this.onMetalScrape(base.GetX() + point.GetX(), base.GetY() + point.GetY(), base.GetZ() + point.GetZ());
+        }
+      }
       if (!added || !this.onImpact) return;
       const inverseMass = (first.IsDynamic() ? first.GetMotionProperties().GetInverseMass() : 0)
         + (second.IsDynamic() ? second.GetMotionProperties().GetInverseMass() : 0);
@@ -79,7 +89,7 @@ export class PhysicsWorld {
     };
     this.listener.OnContactAdded = (a, b, contact, settings) => contactEvent(a, b, contact, settings, true);
     this.listener.OnContactPersisted = (a, b, contact, settings) => {
-      if (this.onPedContact || this.onVehicleContact) contactEvent(a, b, contact, settings, false);
+      if (this.onPedContact || this.onVehicleContact || this.onMetalScrape) contactEvent(a, b, contact, settings, false);
     };
     this.system.SetContactListener(this.listener);
   }

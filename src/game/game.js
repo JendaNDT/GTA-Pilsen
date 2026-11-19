@@ -1,3 +1,4 @@
+import { Particles } from '../fx/particles.js';
 import { restorePanels } from '../entities/damage.js';
 import { CarFragments } from '../physics/car-fragments.js';
 import { DebrisBudget } from '../physics/debris.js';
@@ -137,6 +138,7 @@ export class Game {
     };
     this.renderer = renderer;
     this.scene = new THREE.Scene();
+    this.particles = new Particles(this.scene, renderer, () => QUALITY.particles);
     this.fragments = new CarFragments(physics, this.scene);
     physics.onCarFragment = (car, mesh, center) => this.fragments.queue(car, mesh, center);
     this.camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.4, QUALITY.view * 1.35);
@@ -149,9 +151,17 @@ export class Game {
       sphere.radius = body.GetShape().GetInnerRadius() + 3;
       return view.intersectsSphere(sphere);
     });
+    let nextSparks = 0;
+    physics.onMetalScrape = (x, y, z) => {
+      if (this.time < nextSparks || Math.hypot(x - this.focus.x, z - this.focus.z) > 90) return;
+      nextSparks = this.time + 0.08;
+      this.particles.emit('sparks', x, y, z, 4);
+    };
     this.propertyHits = new Set();
     this.lastPropertyHit = -Infinity;
     physics.onFurnitureDamage = (fixture, hit, material) => {
+      this.particles.emit(material === 'metal' ? 'sparks' : material === 'stone' ? 'dust' : 'glass',
+        fixture.x, fixture.y + 0.6, fixture.z, 12);
       this.audio.crash(Math.max(4, hit.impulse / 900), fixture, material);
       if (hit.car !== this.driver?.body.GetID().GetIndexAndSequenceNumber()) return;
       if (this.time - this.lastPropertyHit > 5) this.propertyHits.clear();
@@ -288,6 +298,7 @@ export class Game {
       const day = s.clockMode === 'manual' ? parseDay(s.date) : null;
       if (day !== null && Number.isFinite(s.hour) && s.hour >= 0 && s.hour < 24) this.clock.set(day, s.hour);
       this.clockVisible = s.v === 1 || s.clockVisible !== false;
+      this.particles.enabled = s.particlesEnabled !== false;
       this.falls.enabled = s.fallsEnabled !== false;
       this.orthophotoEnabled = s.orthophotoEnabled !== false;
       this.audio.setMuted(s.soundEnabled === false);
@@ -339,7 +350,7 @@ export class Game {
         v: 2, money: this.money, date: formatDay(this.clock.day), hour: this.hour, clockVisible: this.clockVisible,
         clockMode: this.clock.followsPrague ? 'prague' : 'manual',
         soundEnabled: !this.audio.muted, orthophotoEnabled: this.orthophotoEnabled,
-        fallsEnabled: this.falls.enabled, graphics: this.graphics, steering: this.steering, heliAssist: this.heliAssist,
+        particlesEnabled: this.particles.enabled, fallsEnabled: this.falls.enabled, graphics: this.graphics, steering: this.steering, heliAssist: this.heliAssist,
         car: this.mode === 'car' ? {
           model: f.typeId, color: f.color, x: f.x, z: f.z, y: f.y, yaw: f.yaw,
           health: f.health, owned: f === this.garage.active,
@@ -595,6 +606,7 @@ export class Game {
     const mine = !!this.car && (car === this.car || other === this.car);
     const f = this.focus;
     if ((car.x - f.x) ** 2 + (car.z - f.z) ** 2 < 70 * 70 && this.crashCool <= 0) {
+      this.particles.emit('sparks', car.x, car.y + 0.35, car.z, 6);
       this.audio.crash(impact * (mine ? 1 : 0.5), car);
       this.crashCool = 0.18;
     }
@@ -936,6 +948,7 @@ export class Game {
     this._updateWanted(dt);
     this._updateCamera(dt);
     this.chunks.heritage.updateForge(this.hour, dt);
+    this.particles.update(dt, this.vehicles.cars, this.focus);
     this.audio.update(dt, input.moveY);
     this.env.update(this.camera);
     const fast = Math.hypot(this.focus.vx || 0, this.focus.vz || 0) > 18;

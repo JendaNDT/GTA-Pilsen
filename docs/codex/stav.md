@@ -132,3 +132,7 @@ Prošlo 120 testů JavaScriptu, produkční sestavení a všech devět prohlíž
 Fyzika zaznamená místo kontaktu na každém zúčastněném voze. Karoserie se promáčkne nejvýše o čtvrt metru a při větším poškození může přijít o kapotu, dveře nebo nárazník. Oddělené díly mají vlastní fyziku a společný rozpočet s ostatními úlomky. Poškozenému autu slábne motor, boční poškození ovlivní řízení. Garáž ukládá stav dílů a opraví ho společně se zdravím auta. Starší uložení načte s původním zdravím.
 
 Prošlo 124 testů JavaScriptu, sestavení a pět cílených prohlížečových zkoušek. Test na obou vykreslovačích vrazil vlastním autem do samostatné zkušební stěny, ověřil pohyblivý díl, návrat chybějící části po načtení jako stále poškozené a obnovu po zaplacení v garáži. Výsledky jsou v `data-raw/e21/panely-{node,build,e2e}.log`. Kouř z motoru navazuje v kroku 7.
+
+### Částice
+
+Jiskry při drhnutí kovu, střepy, prach a kouř z poškozeného motoru sdílejí jednu geometrii a rozpočet podle předvolby. Efekty lze vypnout v nastavení. Na WebGPU počítá polohy a velikosti výpočetní průchod TSL. Na WebGL 2 dělá stejný výpočet procesor. Prošlo 125 testů JavaScriptu a sestavení. Prohlížečová zkouška na obou vykreslovačích přečetla polohu a velikost střepu, ověřila jeho pohyb, zmenšování a zánik. Na WebGPU četla přímo výstup výpočetního průchodu. Výsledky jsou v `data-raw/e21/castice-{node,build,e2e}.log`.
