@@ -34,6 +34,12 @@ Na úplně mokrém povrchu klesá přilnavost na 70 % suché hodnoty a na souvis
 
 Prošlo 166 testů JavaScriptu a produkční sestavení. Oba vykreslovače ověřily lednový povrch, změnu počasí v nastavení i obnovení této volby po načtení.
 
+### Déšť, sníh a mlha
+
+Déšť i sníh se vykreslují na GPU v jednom poli kolem kamery. Tunel částice skryje a utlumí déšť. Jeho zvuk se řídí intenzitou srážek, vypnutím zvuku i pozastavením hry. Země za mokra tmavne a vlhne i mimo původní dvě ukázková místa. Sníh zůstává hlavně na vodorovných plochách terénu, střech a korun, u silnic prosvítají stopy jízdních pruhů. Mlha mění dohled a podle výšky se rozptyluje.
+
+Produkční sestavení a všech 12 cílených jednotkových testů prošlo. WebGL 2 i WebGPU vykreslily náměstí za deště v 18:09 a lednové vločky. Test ověřil vodu, sníh, opakované využití stejného bufferu i skrytí částic po nastavení jasného počasí.
+
 ## Výchozí etapa E23
 
 E23 vychází z dokončené větve E22 (`496a72d`). Prvním krokem je detail země při chůzi. Další pořadí tvoří povrchy silnic, voda, stromy, tráva, noční světla a částice. [Zadání E23](E23.md) · [Protokol E22](../E22.md)

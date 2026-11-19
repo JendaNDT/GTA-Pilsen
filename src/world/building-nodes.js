@@ -1,3 +1,4 @@
+import { snowColor } from './weather-surfaces.js';
 import { roomAtlas, roomView } from './window-interiors.js';
 import { facadeDetail } from './facade-detail.js';
 import {
@@ -208,7 +209,7 @@ export function buildingNodes(night, schedule, camera, sky, textures, heritage) 
   })().toVar();
 
   const close = textures ? facadeDetail(windowData.z.add(0.5).floor(), windowData.xy, camera, heritage, surface.get('glass')) : null;
-  const colorNode = vec4(close ? surface.get('color').mul(close.gain) : surface.get('color'), 1);
+  const colorNode = vec4(snowColor(close ? surface.get('color').mul(close.gain) : surface.get('color'), surface.get('glass').oneMinus()), 1);
   const emissiveNode = Fn(() => {
     const emission = vec3(1, 0.78, 0.42).mul(surface.get('illumination'), 0.90).toVar();
     if (heritage) {

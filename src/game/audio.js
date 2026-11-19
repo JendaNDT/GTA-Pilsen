@@ -120,6 +120,13 @@ export class GameAudio {
   }
 
   resetWorld() {
+    if (this.rainVoice) {
+      this.rainVoice.source.stop();
+      this.rainVoice.source.disconnect();
+      this.rainVoice.filter.disconnect();
+      this.rainVoice.gain.disconnect();
+      this.rainVoice = null;
+    }
     for (const voice of this.loops.values()) voice.dispose();
     this.loops.clear();
     for (const effect of this.effects) this.stopEffect(effect);
@@ -153,6 +160,31 @@ export class GameAudio {
     const elapsed = Math.max(0.07, 0.075 - this.timer);
     this.timer = 0.075;
     const g = this.game, listener = soundListener(g), t = this.ctx.currentTime;
+    const rain = g.weather?.rain ?? 0;
+    if (rain > .01 && !this.rainVoice) {
+      const source = this.ctx.createBufferSource();
+      source.buffer = this.buffers.noise;
+      source.loop = true;
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 1700;
+      filter.Q.value = .45;
+      const gain = this.ctx.createGain();
+      gain.gain.value = 0;
+      source.connect(filter).connect(gain).connect(this.master);
+      source.start();
+      this.rainVoice = { source, filter, gain };
+    }
+    if (this.rainVoice) {
+      this.rainVoice.gain.gain.setTargetAtTime(rain * (g.tunnelLight?.visible ? .013 : .12), t, .25);
+      if (rain === 0 && this.rainVoice.gain.gain.value < .0001) {
+        this.rainVoice.source.stop();
+        this.rainVoice.source.disconnect();
+        this.rainVoice.filter.disconnect();
+        this.rainVoice.gain.disconnect();
+        this.rainVoice = null;
+      }
+    }
     const candidates = [];
     const add = (source, kind, range, state, priority = 0) => {
       const distance = Math.hypot(source.x - listener.x, source.y - listener.y, source.z - listener.z);

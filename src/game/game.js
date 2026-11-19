@@ -27,6 +27,8 @@ import { Environment } from '../world/scene.js';
 import { createPostFX } from '../world/postfx.js';
 import { env } from '../world/materials.js';
 import { VehicleManager, Car, wrapAngle } from '../entities/vehicles.js';
+import { snowDepth, weatherFog, cloudCover } from '../world/weather-surfaces.js';
+import { Precipitation } from '../fx/precipitation.js';
 import { Weather } from '../world/weather.js';
 import { dirtLevel } from '../entities/car-appearance.js';
 import { addCarLight, CAR_TYPES, setCarAppearanceQuality } from '../entities/models.js';
@@ -189,6 +191,7 @@ export class Game {
       this.scene.add(this.tunnelLight);
     }
     this.nightLights = QUALITY.pointLights ? new NightLights(renderer, this.scene, QUALITY.pointLights, QUALITY.headLights) : null;
+    this.precipitation = new Precipitation(this.scene);
     this.env = new Environment(this.scene, renderer);
     this.postfx = createPostFX(renderer, this.scene, this.camera, this.world);
     this.chunks = new ChunkManager(this.scene, this.world, renderer, data.heritage, data.orthophotoSources, data.soundPlaces);
@@ -282,6 +285,9 @@ export class Game {
 
   updateWeather() {
     this.weather.update(this.clock.now);
+    snowDepth.value = this.weather.snow;
+    weatherFog.value = this.weather.fog;
+    cloudCover.value = this.weather.mode === 'clear' ? .41 : this.weather.cloud;
     env.wetPaving.value = PARAMS.get('wet') === '1' ? 1 : this.weather.wet;
   }
 
@@ -1090,6 +1096,9 @@ export class Game {
 
   render() {
     this.renderer.info.reset();
+    const cam = this.camera.position;
+    this.precipitation.update(this.weather, QUALITY.particles, !this.particles.enabled ||
+      ((this.weather.rain || this.weather.flakes) && this.world.tunnelAt(cam.x, cam.z, cam.y)?.inside));
     this.env.updateSkyLight();
     this.nightLights?.update(this.camera, this.chunks.chunks, this.vehicles.cars, this.env.night, this.mode === 'car' ? this.car : null);
     if (this.postfx) this.postfx.render();

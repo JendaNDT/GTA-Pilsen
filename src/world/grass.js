@@ -2,6 +2,7 @@ import * as THREE from 'three/webgpu';
 import { attribute, cameraPosition, mix, positionGeometry, smoothstep, vec3 } from 'three/tsl';
 import { CHUNK, LC } from '../config.js';
 import { hash } from './hash.js';
+import { snowDepth } from './weather-surfaces.js';
 import { env, makeSurfaceMaterial } from './materials.js';
 import { SURFACE } from './material-table.js';
 
@@ -105,7 +106,7 @@ export class Grass {
     const material = makeSurfaceMaterial(SURFACE.grass, {
       side: THREE.DoubleSide,
       positionNode: root.xyz.add(pos.add(vec3(wave, 0, wave.mul(0.27))).mul(root.w, fade)),
-      colorNode: mix(vec3(0.055, 0.103, 0.023), vec3(0.25, 0.38, 0.095), tip.mul(2.3).min(1))
+      colorNode: mix(mix(vec3(0.055, 0.103, 0.023), vec3(0.25, 0.38, 0.095), tip.mul(2.3).min(1)), vec3(.76,.82,.87), snowDepth.mul(tip))
     });
     this.mesh = new THREE.Mesh(geo, material);
     this.mesh.frustumCulled = false;

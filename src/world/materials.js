@@ -4,6 +4,7 @@ import {
   attribute, Discard, Fn, If, Loop, float, materialColor, materialReference, mix, normalViewGeometry, positionLocal, positionWorld, reflect, renderGroup,
   smoothstep, struct, transformNormalToView, uniform, vec2, vec3, vec4, vertexColor,
 } from 'three/tsl';
+import { snowColor } from './weather-surfaces.js';
 import { asphaltNodes } from './asphalt.js';
 import { terrainDetailNodes } from './terrain-detail.js';
 import { buildingNodes } from './building-nodes.js';
@@ -63,6 +64,7 @@ export function makeDecalMaterial(opts = {}, surface = SURFACE.asphalt) {
 export function makeAsphaltMaterial(detail) {
   const material = makeDecalMaterial({polygonOffset:true, polygonOffsetFactor:-2, polygonOffsetUnits:-6});
   if (detail) Object.assign(material, asphaltNodes(decalColor,env.wetPaving,env.cam));
+  else material.colorNode = vec4(snowColor(decalColor.rgb), 1);
   return material;
 }
 
@@ -156,6 +158,8 @@ function getTerrainNodes(paving, detail, portalCount, terrainDetail, waterDetail
       const coverage = addPaving(landColor, profile, pavingLocal(point, profile), positionWorld, noise, detail);
       roughness.assign(mix(roughness, mix(SURFACE.paving.roughness, 0.34, env.wetPaving), coverage));
     }
+    landColor.assign(snowColor(landColor.mul(env.wetPaving.mul(-.14).add(1))));
+    roughness.mulAssign(env.wetPaving.mul(-.38).add(1));
     const waterMask = smoothstep(0.35, 0.65, land).oneMinus().toVar();
     roughness.assign(mix(roughness, SURFACE.water.roughness, waterMask));
     const color = landColor.toVar();

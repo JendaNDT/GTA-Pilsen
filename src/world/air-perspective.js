@@ -1,5 +1,6 @@
 import { DataTexture, LinearFilter } from 'three/webgpu';
 import { Fn, getViewPosition, isBackgroundDepth, mix, smoothstep, texture, uniform, uv, vec2, vec4 } from 'three/tsl';
+import { weatherFog } from './weather-surfaces.js';
 import { env } from './materials.js';
 
 const MIN_WATER_Y = -128;
@@ -56,7 +57,7 @@ export function makeAirPerspective(camera, world, view) {
     const waterY = water.y.mul(WATER_HEIGHT_RANGE).add(MIN_WATER_Y);
     const lowAir = worldPosition.y.sub(waterY).max(0).div(-18).exp();
     const riverMist = water.x.mul(lowAir, env.morningFog, smoothstep(15, 470, distance), 0.72);
-    const amount = isBackgroundDepth(distanceDepth).select(0, haze.max(riverMist));
+    const amount = isBackgroundDepth(distanceDepth).select(0, haze.max(riverMist).max(weatherFog.mul(smoothstep(6, 240, distance), airHeight.div(-110).exp())));
     return vec4(mix(image.rgb, env.sky, amount), image.a);
   })();
   return { color, field };

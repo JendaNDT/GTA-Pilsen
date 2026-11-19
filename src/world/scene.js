@@ -1,6 +1,7 @@
 import { windowSchedule } from './night-lights.js';
 import { updateTreeSeason } from './vegetation.js';
 // Obloha, světla, stíny a denní doba. (Terén a povrch země kreslí chunks.js.)
+import { cloudCover, weatherFog } from './weather-surfaces.js';
 import * as THREE from 'three/webgpu';
 import { CSMShadowNode } from 'three/addons/csm/CSMShadowNode.js';
 import { SkyMesh } from 'three/addons/objects/SkyMesh.js';
@@ -49,7 +50,7 @@ function makeSky(colors, atmosphere) {
       p.assign(p.mul(2.03).add(17));
       weight.mulAssign(0.5);
     });
-    const cover = smoothstep(0.50, 0.74, cloud).mul(smoothstep(0.02, 0.22, d.y), 0.92);
+    const cover = smoothstep(0.50, 0.74, cloud.add(cloudCover.sub(.41).mul(.58))).mul(smoothstep(0.02, 0.22, d.y), 0.92);
     const thick = smoothstep(0.55, 0.9, cloud).mul(0.75);
     const cloudColor = mix(colors.cloud, colors.shade, thick).add(colors.sun.mul(sunlight.pow(6), 0.25));
     return vec4(mix(sky.add(star, moon), cloudColor, cover), 1);
@@ -136,12 +137,18 @@ export class Environment {
     sun.value.setHex(0xfff4e0).lerp(new THREE.Color(0xff9a4a), dusk).multiplyScalar(elev > -0.05 ? 1 : 0.22);
     cloud.value.setHex(0xffffff).lerp(new THREE.Color(0xffc089), dusk * 0.8).lerp(new THREE.Color(0x1b2338), 1 - day);
     shade.value.setHex(0xaab6c6).lerp(new THREE.Color(0x8f6f6a), dusk * 0.7).lerp(new THREE.Color(0x0c1120), 1 - day);
-    this.scene.fog?.color.copy(hor);
+    const overcast = Math.max(0, cloudCover.value - .41);
+    hor.lerp(new THREE.Color(day > .5 ? 0x9babb3 : 0x202733), overcast * .72);
+    if (this.scene.fog) {
+      this.scene.fog.color.copy(hor);
+      this.scene.fog.near = QUALITY.view * .4 * (1 - .96 * weatherFog.value);
+      this.scene.fog.far = QUALITY.view * (1 - .83 * weatherFog.value);
+    }
     env.sky.value.copy(hor);
     env.sunDir.value.copy(dir);
 
     this.sun.color.setHex(0xfff0d8).lerp(new THREE.Color(0xffa05a), dusk);
-    this.sun.intensity = 1.85 * THREE.MathUtils.smoothstep(elev, -0.06, 0.19);
+    this.sun.intensity = 1.85 * (1 - overcast * 1.2) * THREE.MathUtils.smoothstep(elev, -0.06, 0.19);
     this.sun.position.copy(dir).multiplyScalar(700);
     this.moon.intensity = 0.62 * night;
     const shadowIntensity = 0.43 + 0.48 * day * (1 - dusk * 0.50);

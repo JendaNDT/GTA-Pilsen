@@ -10,12 +10,14 @@ import {
   transformNormalToView,
   uniform,
   uv,
+  vertexColor,
   varying,
   vec2,
   vec3,
   vec4
 } from 'three/tsl';
 import { SEASON_TINT, TREE_FRAME, TREE_PIVOT, TREE_TYPES, treeModel, treeSeason } from './tree-models.js';
+import { snowColor, snowDepth } from './weather-surfaces.js';
 import { env, makeSurfaceMaterial } from './materials.js';
 import { SURFACE } from './material-table.js';
 
@@ -37,11 +39,10 @@ function resources() {
   if (assets) return assets;
   const leaf = attribute('foliage', 'float');
   const position = positionLocal.add(wind(positionLocal, positionGeometry.y));
-  const green = makeSurfaceMaterial(SURFACE.grass, { vertexColors: true, positionNode: position });
+  const green = makeSurfaceMaterial(SURFACE.grass, { colorNode: vec4(snowColor(vertexColor().rgb), 1), positionNode: position });
   const deciduous = makeSurfaceMaterial(SURFACE.grass, {
-    vertexColors: true,
     positionNode: position,
-    colorNode: vec4(mix(vec3(1), seasonTint, leaf), 1),
+    colorNode: vec4(snowColor(vertexColor().rgb.mul(mix(vec3(1), seasonTint, leaf))), 1),
     opacityNode: season.equal(3).select(leaf.oneMinus(), 1),
     alphaTest: 0.5
   });
@@ -94,7 +95,7 @@ function resources() {
   const far = makeSurfaceMaterial(SURFACE.grass, {
     positionNode: point,
     normalNode: transformNormalToView(vec3(0, 1, 0)),
-    colorNode: sample,
+    colorNode: vec4(mix(sample.rgb, vec3(.78,.83,.87), snowDepth.mul(uv().y, .74)), sample.a),
     alphaTest: 0.4,
     side: THREE.DoubleSide
   });
