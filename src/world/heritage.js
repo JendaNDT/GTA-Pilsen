@@ -28,7 +28,10 @@ function cityMesh(pack, prefix) {
   geometry.setAttribute('normal', new THREE.BufferAttribute(pack[prefix + 'n'], 3, true));
   geometry.setAttribute('color', new THREE.BufferAttribute(pack[prefix + 'c'], 3, true));
   if (!prefix) {
-    if (pack.street) geometry.setAttribute('aStreet', new THREE.BufferAttribute(pack.street, 4));
+    if (pack.street) {
+      geometry.setAttribute('aStreet', new THREE.BufferAttribute(pack.street, 4));
+      geometry.setAttribute('aEntrance', new THREE.BufferAttribute(pack.entrances, 1));
+    }
     const win = Float32Array.from(pack.win, (v, i) => i % 3 === 2 ? v : v / 32);
     geometry.setAttribute('aWin', new THREE.BufferAttribute(win, 3));
   }
@@ -119,7 +122,8 @@ export class Heritage {
             && pack.i?.length && pack.i.length % 3 === 0 && pack.roof?.length % 3 === 0) {
           if (hasStreet) {
             pack.scenery = [];
-            pack.street = await this.streets.forTile(tile.name, pack.fileHash, n / 3, pack.scenery);
+            pack.entrances = new Float32Array(n / 3);
+            pack.street = await this.streets.forTile(tile.name, pack.fileHash, n / 3, pack.scenery, pack.entrances);
           }
           if (!controller.signal.aborted) ch.cityData = pack;
         }
@@ -167,18 +171,20 @@ export class Heritage {
         if (!fixtures) {
           fixtures = section.items.flatMap(item => streetFixtures(item, this.world));
           this.streetSections.set(section.id, fixtures);
+          const touched = new Set();
           for (const fixture of fixtures) {
             const tiles = this.world.streetFixtures;
             if (!tiles.has(fixture.tile)) tiles.set(fixture.tile, []);
             tiles.get(fixture.tile).push(fixture);
-            this.world.refreshStreetCollision?.(fixture.tile);
+            touched.add(fixture.tile);
           }
+          for (const tile of touched) this.world.refreshStreetCollision?.(tile);
           installStreetPaving(this.world, section.paving);
         }
         for (const fixture of fixtures) {
           const {solid,ranges} = layers[fixture.piece === 'sklo' ? 1 : 0];
           const start = solid.p.length;
-          drawStreetFixture(solid, fixture);
+          drawStreetFixture(solid, fixture, QUALITY.heritageDetail);
           ranges.push({fixture, start, end:solid.p.length});
         }
       }

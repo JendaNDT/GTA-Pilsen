@@ -37,6 +37,11 @@ export function verifiedFronts(section, source) {
     for (const [type,...rings] of faces) if(type===1) available.set(faceHash(uid,rings),rings[0]);
   }
   for(const f of section.fronts) {
+    if (f.entrance !== undefined) {
+      const [[ax,az],[bx,bz]] = f.edge;
+      if (!Number.isFinite(f.entrance) || f.entrance < .55 || f.entrance > Math.hypot(bx-ax,bz-az)-.55)
+        throw Error(section.id + ' – dveře leží mimo přiřazenou stěnu ' + f.building);
+    }
     const ring=available.get(f.sha256);
     if(!ring) throw new Error(section.id+' – přiřaď znovu stěnu '+f.building+' '+f.sha256);
     const coordinates = [];
@@ -64,7 +69,7 @@ function matchTile(pack, fronts, elevation, matched) {
       const coords=ids.map(id=>faceCoordinates(cx+pack.p[id*3]*.02,pack.p[id*3+1]*.02,cz+pack.p[id*3+2]*.02,front,elevation));
       if(coords.every(Boolean)) {
         matched.add(front.sha256);
-        ids.forEach((id,j)=>matches.set(id,coords[j]));
+        ids.forEach((id,j)=>matches.set(id,{uv:coords[j],entrance:front.entrance ?? 0}));
         break;
       }
     }
@@ -86,14 +91,14 @@ export async function buildStreets(sourcePath, descriptions='tools/street-detail
     const fronts = verifiedFronts(section,source);
     const bounds=[Math.min(...section.outline.map(p=>p[0])),Math.min(...section.outline.map(p=>p[1])),
       Math.max(...section.outline.map(p=>p[0])),Math.max(...section.outline.map(p=>p[1]))];
-    const tiles=[], indices=[], uv=[], matched=new Set();
+    const tiles=[], indices=[], uv=[], entrances=[], matched=new Set();
     for(const [,,name,[x0,z0,x1,z1]] of city.tiles) {
       if (x1<bounds[0] || x0>bounds[2] || z1<bounds[1] || z0>bounds[3]) continue;
       const input=bytes(join('public/detail/city',name));
       const map=matchTile(parsePack(input), fronts, elevation, matched);
       if (!map.size) continue;
       tiles.push({name,hash:assetFingerprint(input),start:indices.length,count:map.size});
-      for(const [id,coord] of map) {indices.push(id);uv.push(...coord);}
+      for(const [id,coord] of map) {indices.push(id);uv.push(...coord.uv);entrances.push(coord.entrance);}
     }
     const missing = fronts.filter(front => !matched.has(front.sha256));
     if (missing.length) throw new Error(section.id + ' – chybí v herních dlaždicích: ' +
@@ -125,7 +130,7 @@ export async function buildStreets(sourcePath, descriptions='tools/street-detail
       (tile.paving ??= []).push(patch);
     }
     const name=section.id+'.bin', dest=join(output,name);
-    writePack(dest,{version:1,tiles}, {vertex:['u4',Uint32Array.from(indices)],front:['f4',Float32Array.from(uv)]});
+    writePack(dest,{version:1,tiles}, {vertex:['u4',Uint32Array.from(indices)],front:['f4',Float32Array.from(uv)],entrance:['f4',Float32Array.from(entrances)]});
     sections.push({id:section.id,name,bounds,tiles:tiles.map(t=>t.name),hash:assetFingerprint(bytes(dest))});
   }
   const manifest={version:1,city:city.sha256,structures:assetFingerprint(bytes('public/detail/structures/index.json')),sections};

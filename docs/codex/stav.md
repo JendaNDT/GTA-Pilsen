@@ -40,6 +40,12 @@ Ve čtyřech městských dlaždicích se podařilo přiřadit všech 66 vymezen�
 
 Prošlo 173 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. Ve všech šesti prohlížečových zkouškách prošel pilot a chůze ve třech úsecích na nízké i vysoké předvolbě za dne, soumraku a noci ve WebGL 2 i WebGPU. Zbývají samostatné zkoušky nástupu u nádraží, doručení na místní adresy a snímky před a po. Věrnost přízemí a přístřešku vyžaduje fotografie autora. [Protokol úseků](../E25.md)
 
+## Vstupy z ulice
+
+U 21 průčelí dostaly výlohy samostatné prosklené dveře. V popisu je poloha středu v metrech podél konkrétní měřené zdi. Osm vstupů připadá na Americkou, devět na Dřevěnou a čtyři na nádraží. Polohy jsou předběžné do porovnání s autorovými fotografiemi. Na nízké předvolbě má lavička a koš méně ploch, kolizní tvar zůstává společný pro všechny předvolby. Přidání vybavení vyvolá jedinou aktualizaci kolizí příslušné dlaždice.
+
+Prošlo 175 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. WebGL 2 na střední předvolbě ověřilo, že se samostatné dveře v pilotu dostanou až do geometrie vykresleného průčelí. Probíhá kontrola zbývajících pohledů a samostatné fiktivní zkušebny.
+
 ## Rozvoz a nastoupení u nádraží
 
 V Chromiu na WebGL 2 i WebGPU prošel rozvoz na adresy ve všech třech úsecích. Na posledních metrech šel hráč pěšky a po doručení dostal odměnu. U hlavního nádraží byla před nástupem načtená nová uliční vrstva. Hráč nastoupil do linky 49, dojel do Pařížské a vystoupil. Všechny čtyři scénáře prošly. Produkční sestavení, 175 jednotkových testů a 26 testů Pythonu prošlo i s připravovanou úpravou vstupů.

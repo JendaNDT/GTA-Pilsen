@@ -26,3 +26,15 @@ test('fiktivní lavička, koš a přístřešek sdílejí stabilní díly při k
     assert.ok(faces>=5);
   }
 });
+
+test('nízká předvolba kreslí jednodušší lavičku a koš při stejných kolizích', () => {
+  for (const kind of ['bench','bin']) {
+    const [fixture] = streetFixtures({id:'vzorek',kind,x:0,z:0,yaw:0},scene);
+    const faces = detailed => {
+      let count = 0;
+      drawStreetFixture({quad(){count++;}},fixture,detailed);
+      return count;
+    };
+    assert.ok(faces(false) > 0 && faces(false) < faces(true));
+  }
+});

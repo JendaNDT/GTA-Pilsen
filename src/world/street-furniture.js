@@ -32,7 +32,7 @@ export function streetFixtures(item, world) {
 }
 
 const wood=[.39,.205,.084], metal=[.17,.19,.20], glass=[.46,.64,.68];
-export function drawStreetFixture(solid, f) {
+export function drawStreetFixture(solid, f, detailed = true) {
   const part = (across, along, width, depth, y0, height, color) => {
     const dx=Math.cos(f.yaw), dz=Math.sin(f.yaw);
     const base=streetCorners(f.x + dx*across-dz*along, f.y+y0, f.z+dz*across+dx*along, f.yaw,width,depth);
@@ -45,13 +45,14 @@ export function drawStreetFixture(solid, f) {
   };
   if(f.kind==='bench') {
     for(const offset of [-.60,.60]) part(offset,0,.11,.48,0,.42,metal);
-    for(const offset of [-.20,0,.20]) part(0,offset,1.65,.16,.42,.07,wood);
-    for(const offset of [-.64,.64]) part(offset,.24,.055,.055,.46,.39,metal);
+    if (!detailed) part(0,0,1.65,.55,.42,.07,wood);
+    else for(const offset of [-.20,0,.20]) part(0,offset,1.65,.16,.42,.07,wood);
+    if (detailed) for(const offset of [-.64,.64]) part(offset,.24,.055,.055,.46,.39,metal);
     part(0,.24,1.65,.07,.65,.21,wood);
   } else if(f.kind==='rack') {
     for(const offset of [-.37,.37]) part(offset,0,.07,.08,0,.84,metal);
     part(0,0,.82,.08,.77,.07,metal);
-  } else if(f.kind==='bin') {
+  } else if(f.kind==='bin' && detailed) {
     part(0,0,.36,.36,0,.17,metal);
     part(0,0,.48,.48,.17,.61,[.18,.25,.23]);
     part(0,0,.48,.48,.85,.03,metal);

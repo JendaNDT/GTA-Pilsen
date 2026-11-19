@@ -69,7 +69,8 @@
       ],
       "bottom": 310.16,
       "top": 325.34,
-      "sha256": "f74a3f5570b05e4d0282d903429500c11d29509dd2d642799df6080bdc3d9242"
+      "sha256": "f74a3f5570b05e4d0282d903429500c11d29509dd2d642799df6080bdc3d9242",
+      "entrance": 2.23
     },
     {
       "building": "00000000000100740",
@@ -133,7 +134,8 @@
       ],
       "bottom": 309.87,
       "top": 331.11,
-      "sha256": "996dc15ee59c660b1ddc4505e82a4170e2685e989164c4cb4ee09dcfb62a98e8"
+      "sha256": "996dc15ee59c660b1ddc4505e82a4170e2685e989164c4cb4ee09dcfb62a98e8",
+      "entrance": 1.45
     },
     {
       "building": "00000000000100741",
@@ -229,7 +231,8 @@
       ],
       "bottom": 309.44,
       "top": 322.65,
-      "sha256": "2a9326b5e8ce6391190e6fc666c6a1e0163c3df60f4a4a05306d4509cd8f55cc"
+      "sha256": "2a9326b5e8ce6391190e6fc666c6a1e0163c3df60f4a4a05306d4509cd8f55cc",
+      "entrance": 1.25
     },
     {
       "building": "00000000000100743",
@@ -245,7 +248,8 @@
       ],
       "bottom": 309.12,
       "top": 322.72,
-      "sha256": "74f2fd0a16fd32634c86b4ba0d09c8933bd66fbaf189ed338083eec51795d238"
+      "sha256": "74f2fd0a16fd32634c86b4ba0d09c8933bd66fbaf189ed338083eec51795d238",
+      "entrance": 0.85
     },
     {
       "building": "00000000000100744",
@@ -261,7 +265,8 @@
       ],
       "bottom": 308.25,
       "top": 323.5,
-      "sha256": "3a627c80da41b65e97d4fe2d9b16cd333b58065a427efbbb650df3bc2584948e"
+      "sha256": "3a627c80da41b65e97d4fe2d9b16cd333b58065a427efbbb650df3bc2584948e",
+      "entrance": 4.38
     },
     {
       "building": "00000000000100744",
@@ -373,7 +378,8 @@
       ],
       "bottom": 309.62,
       "top": 329.46,
-      "sha256": "ec230e6ce43434bcc0d096999a2f65ef35a4bd4936862276ff7afc8aad34a8bf"
+      "sha256": "ec230e6ce43434bcc0d096999a2f65ef35a4bd4936862276ff7afc8aad34a8bf",
+      "entrance": 3.95
     },
     {
       "building": "00000000000100762",
@@ -405,7 +411,8 @@
       ],
       "bottom": 309.34,
       "top": 321.61,
-      "sha256": "2e4acefd1fc92eb9c8f6a621af23c1b7bd639160482f0c81f8181ee429babfb4"
+      "sha256": "2e4acefd1fc92eb9c8f6a621af23c1b7bd639160482f0c81f8181ee429babfb4",
+      "entrance": 1.14
     },
     {
       "building": "00000000000100762",
@@ -469,7 +476,8 @@
       ],
       "bottom": 308.89,
       "top": 327.32,
-      "sha256": "50b01ac72138051c9a4d2fb48d8fdd1b4002bd8b4e4213a714dde30ca8052669"
+      "sha256": "50b01ac72138051c9a4d2fb48d8fdd1b4002bd8b4e4213a714dde30ca8052669",
+      "entrance": 1.66
     },
     {
       "building": "00000000000100763",
@@ -533,7 +541,8 @@
       ],
       "bottom": 308.53,
       "top": 327.1,
-      "sha256": "91e9b6021d6b070e9518951b71ba9c4a94976fc7fae8dd500f4fec43c41e48bc"
+      "sha256": "91e9b6021d6b070e9518951b71ba9c4a94976fc7fae8dd500f4fec43c41e48bc",
+      "entrance": 1.59
     },
     {
       "building": "00000000000100764",
@@ -623,6 +632,7 @@
   "source": {
     "furniture": "OpenStreetMap",
     "date": "2026-11-15T01:07:22Z",
-    "paving": "Pracovní obrys herního chodníku k ověření podle fotek."
+    "paving": "Pracovní obrys herního chodníku k ověření podle fotek.",
+    "entrances": "Pracovní poloha dveří na vybraném průčelí. Ověřit z autorovy fotografie."
   }
 }
