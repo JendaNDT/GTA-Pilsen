@@ -1,6 +1,9 @@
 // Měřené městské dlaždice a vlastní model vodního hamru.
 import * as THREE from 'three/webgpu';
 import { CHUNK, QUALITY } from '../config.js';
+import { SolidBuf } from './solid-buffer.js';
+import { attachRoadFurniture } from './road-furniture.js';
+import { drawStreetFixture, installStreetPaving, streetFixtures } from './street-furniture.js';
 import { StreetDetails } from './street-details.js';
 import { loadCityTile } from '../data.js';
 import { HeritageRoofs } from './heritage-geometry.js';
@@ -43,6 +46,7 @@ export class Heritage {
     this.replaced = new Set();
     this.buildingLists = new Map();
     this.fetching = 0;
+    this.streetSections = new Map();
     for (const [x, z, name, bounds, replacements] of manifest.tiles) {
       const ci = world.chunkIndex(x, z);
       if (ci >= 0) this.cells.set(ci, { name, x, z, bounds, replacements });
@@ -72,6 +76,8 @@ export class Heritage {
     if (forge >= 0) this.replaced.add(forge);
     this.forgeChunk = world.chunkIndex(FORGE.x, FORGE.z);
     this.far = makeSurfaceMaterial(SURFACE.timber, { vertexColors: true });
+    this.streetGlass = makeSurfaceMaterial(SURFACE.glass, {vertexColors:true, transparent:true,
+      opacity:.30, depthWrite:false, side:THREE.DoubleSide});
     this.cityFar = makeSurfaceMaterial(SURFACE.plaster, { vertexColors: true, side: THREE.DoubleSide });
     this.applyQuality();
   }
@@ -111,7 +117,10 @@ export class Heritage {
         if (version === 1 && cx === tile.x && cz === tile.z && n && n % 3 === 0
             && pack.n?.length === n && pack.c?.length === n && pack.win?.length === n
             && pack.i?.length && pack.i.length % 3 === 0 && pack.roof?.length % 3 === 0) {
-          if (hasStreet) pack.street = await this.streets.forTile(tile.name, pack.fileHash, n / 3);
+          if (hasStreet) {
+            pack.scenery = [];
+            pack.street = await this.streets.forTile(tile.name, pack.fileHash, n / 3, pack.scenery);
+          }
           if (!controller.signal.aborted) ch.cityData = pack;
         }
       }).catch(() => {
@@ -151,6 +160,35 @@ export class Heritage {
     if (city) {
       const pack = owner.cityData;
       const geometry = cityMesh(pack, '');
+      const layers = [{ solid:new SolidBuf(), ranges:[], material:this.cityFar },
+        { solid:new SolidBuf(), ranges:[], material:this.streetGlass }];
+      for (const section of pack.scenery ?? []) {
+        let fixtures = this.streetSections.get(section.id);
+        if (!fixtures) {
+          fixtures = section.items.flatMap(item => streetFixtures(item, this.world));
+          this.streetSections.set(section.id, fixtures);
+          for (const fixture of fixtures) {
+            const tiles = this.world.streetFixtures;
+            if (!tiles.has(fixture.tile)) tiles.set(fixture.tile, []);
+            tiles.get(fixture.tile).push(fixture);
+            this.world.refreshStreetCollision?.(fixture.tile);
+          }
+          installStreetPaving(this.world, section.paving);
+        }
+        for (const fixture of fixtures) {
+          const {solid,ranges} = layers[fixture.piece === 'sklo' ? 1 : 0];
+          const start = solid.p.length;
+          drawStreetFixture(solid, fixture);
+          ranges.push({fixture, start, end:solid.p.length});
+        }
+      }
+      owner.streetVisuals = [];
+      for (const {solid,ranges,material} of layers) {
+        if (!ranges.length) continue;
+        const props = solid.geometry();
+        add(props, material, detail);
+        owner.streetVisuals.push(...attachRoadFurniture(this.world.breakables, group, props, material, ranges));
+      }
       add(geometry, pack.street ? this.streetClose : this.cityClose, base);
       add(cityMesh(pack, 'd'), this.cityFar, detail);
       roofs = new HeritageRoofs();
@@ -177,6 +215,7 @@ export class Heritage {
 
   dispose(ch) {
     ch.cityRequest?.abort();
+    for (const visual of ch.streetVisuals ?? []) this.world.breakables.detach(visual);
     if (!ch.heritage?.city) return;
     for (const key of ch.heritage.roofChunks) {
       const cell = this.roofCells.get(key);

@@ -209,7 +209,7 @@ export async function loadAll(onProgress) {
     out.structures = structures;
   }
   const streets = out.streetDetails;
-  if (!streets || streets.version !== 1 || streets.city !== out.heritage.sha256 ||
+  if (new URLSearchParams(globalThis.location?.search).get('streets') === '0' || !streets || streets.version !== 1 || streets.city !== out.heritage.sha256 ||
       streets.structures !== out.structures?.manifestHash || !Array.isArray(streets.sections) ||
       !streets.sections.every(s => s && typeof s.id === 'string' && /^[a-z0-9-]+$/.test(s.id) &&
         s.name === s.id + '.bin' && Array.isArray(s.tiles))) delete out.streetDetails;

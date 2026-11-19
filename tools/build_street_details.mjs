@@ -4,6 +4,7 @@ import { readFileSync, readdirSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { assetFingerprint, parsePack } from '../src/data.js';
+import { streetClearance } from './street_clearance.mjs';
 import { writePack } from './write_pack.mjs';
 
 const bytes = path => Uint8Array.from(readFileSync(path)).buffer;
@@ -71,13 +72,18 @@ function matchTile(pack, fronts, elevation, matched) {
   return matches;
 }
 
-export function buildStreets(sourcePath, descriptions='tools/street-details', output='public/detail/streets') {
+export async function buildStreets(sourcePath, descriptions='tools/street-details', output='public/detail/streets') {
   const source=json(sourcePath), city=json('public/detail/city/index.json');
   const elevation=json('public/data/meta.json').baseElevation;
-  const sections=[];
+  const descriptionsList = readdirSync(descriptions).filter(f => f.endsWith('.json')).sort()
+    .map(file => json(join(descriptions,file)));
+  const structureFile = 'public/detail/structures/index.json';
+  const check = await streetClearance(json(structureFile), descriptionsList);
+  const centers = new Map(city.tiles.map(([x,z,name]) => [name,[x,z]]));
+  const sections = [], ids = new Set();
   mkdirSync(output,{recursive:true});
-  for(const file of readdirSync(descriptions).filter(f=>f.endsWith('.json')).sort()) {
-    const section=json(join(descriptions,file)), fronts=verifiedFronts(section,source);
+  for (const section of descriptionsList) {
+    const fronts = verifiedFronts(section,source);
     const bounds=[Math.min(...section.outline.map(p=>p[0])),Math.min(...section.outline.map(p=>p[1])),
       Math.max(...section.outline.map(p=>p[0])),Math.max(...section.outline.map(p=>p[1]))];
     const tiles=[], indices=[], uv=[], matched=new Set();
@@ -93,6 +99,31 @@ export function buildStreets(sourcePath, descriptions='tools/street-details', ou
     if (missing.length) throw new Error(section.id + ' – chybí v herních dlaždicích: ' +
       missing.map(front => front.building + '/' + front.sha256).join(', '));
     if(!tiles.length) throw new Error(section.id+' – žádné přiřazení v distribuovaném modelu.');
+    const owner = (x,z) => {
+      let closest, distance = Infinity;
+      for (const tile of tiles) {
+        const [cx,cz] = centers.get(tile.name), d = Math.hypot(x-cx,z-cz);
+        if (d < distance) { closest = tile; distance = d; }
+      }
+      return closest;
+    };
+    for (const item of section.furniture ?? []) {
+      if (ids.has(item.id)) throw Error('Opakované ID vybavení ' + item.id);
+      ids.add(item.id);
+      const reason = check(item);
+      if (reason) throw Error(section.id + ' – překážka v trase ' + reason + ' u ' + item.id);
+      const tile = owner(item.x,item.z);
+      (tile.furniture ??= []).push(item);
+    }
+    for (const patch of section.paving ?? []) {
+      const points = patch.outline;
+      if (!Array.isArray(points) || points.length < 3 || !points.every(p => p.length === 2 &&
+          p.every(Number.isFinite) && p[0]>=bounds[0] && p[0]<=bounds[2] && p[1]>=bounds[1] && p[1]<=bounds[3])) {
+        throw Error(section.id + ' – neplatná plocha dlažby');
+      }
+      const tile = owner(...points[0]);
+      (tile.paving ??= []).push(patch);
+    }
     const name=section.id+'.bin', dest=join(output,name);
     writePack(dest,{version:1,tiles}, {vertex:['u4',Uint32Array.from(indices)],front:['f4',Float32Array.from(uv)]});
     sections.push({id:section.id,name,bounds,tiles:tiles.map(t=>t.name),hash:assetFingerprint(bytes(dest))});
@@ -102,5 +133,5 @@ export function buildStreets(sourcePath, descriptions='tools/street-details', ou
   return manifest;
 }
 if(process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  buildStreets(process.argv[2] ?? 'data-raw/e25/plochy.json',process.argv[3],process.argv[4]);
+  await buildStreets(process.argv[2] ?? 'data-raw/e25/plochy.json',process.argv[3],process.argv[4]);
 }

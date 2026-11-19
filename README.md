@@ -14,6 +14,9 @@ otevřených dat. Běží na počítači i na mobilu, bez instalace.
   tubusy tunelu Valík. Auta se naklánějí podle svahu, do kopce zpomalují. Pěšího hráče u okraje mostu zastaví zábradlí nebo historická kamenná zídka.
 - **Krajina mezi obcemi.** Na vybraných svazích a v údolích má terén hustší výškovou síť.
   Po celé mapě se střídají povrchy polí, luk, lesů, břehů a obcí podle mapových ploch.
+- **Počasí a fotorežim.** Déšť prodlužuje brzdnou dráhu, sníh pokrývá střechy a dlažbu. Počasí můžeš v nastavení přepnout na vždy jasno. Fotorežim zastaví čas a uloží vlastní snímek PNG. [Ovládání a ověření E24](docs/E24.md)
+
+- **Tři úseky města při chůzi.** Na Americké, v Dřevěné a u hlavního nádraží mají vybraná průčelí vlastní přízemí. Dlažba a městský mobiliář respektují prostor pro dopravu a pěší. [Rozsah a předlohy E25](docs/E25.md)
 - **Roční období a noční město.** Druhy stromů se liší tvarem i podzimním listím. Voda pod Wilsonovým mostem proudí, na jezech se tvoří pěna a v noci lampy osvětlují okolí. [Snímky a měření E23](docs/E23.md)
 - **Kompletní síť PMDP.** Tramvaje, trolejbusy i denní a noční autobusy obsluhují 51 linek z vybraného
   jízdního řádu. V mapě najdeš jednotlivá stanoviště a u nich odjezdy s cílem spoje. Do vozu
@@ -52,6 +55,8 @@ otevřených dat. Běží na počítači i na mobilu, bez instalace.
 | Shift | běh (ve vrtulníku klesání) |
 | Mezerník | ruční brzda, skok, ve vrtulníku stoupání |
 | F nebo E | nastoupit / vystoupit, ve směně MHD dveře |
+| L | přepnout v autě dálková světla |
+| O | fotorežim, uložit snímek lze i přes menu na telefonu |
 | J | vzít rychlý rozvoz jídla nebo zrušit rozpracovanou zakázku |
 | M | velká mapa (vyhledej místo nebo kliknutím nastav cíl) |
 | C · H · R | kamera · klakson · vrátit na silnici |

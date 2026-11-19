@@ -18,6 +18,12 @@ Všech 26 ploch našlo protějšek ve skutečně distribuované dlaždici. Přev
 
 Prošlo 168 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. Ve WebGL 2 i WebGPU se po přesunu do pilotu načetl samostatný balík a vykreslil se správný materiál. Při změně otisku zůstalo při jednotkové zkoušce původní průčelí. Opakovaný převod dal stejných 3,1 kB dat pilotu.
 
+## Vybavení, dlažba a tři úseky
+
+Ve čtyřech městských dlaždicích se podařilo přiřadit všech 66 vymezených stěn. Patnáct jednotlivých prvků vybavení a jeden zastávkový přístřešek prošly kontrolou odstupů od komunikací, dveří vozidel MHD a cílů zakázek. Sklo a konstrukce se zobrazují a reagují na herní fyziku samostatně. Při jednotkové zkoušce na fiktivním místě zůstal po rozbití skla celý rám, po návratu přetrval poškozený stav a po ranní opravě se výplň obnovila.
+
+Prošlo 173 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. Ve všech šesti prohlížečových zkouškách prošel pilot a chůze ve třech úsecích na nízké i vysoké předvolbě za dne, soumraku a noci ve WebGL 2 i WebGPU. Zbývají samostatné zkoušky nástupu u nádraží, doručení na místní adresy a snímky před a po. Věrnost přízemí a přístřešku vyžaduje fotografie autora. [Protokol úseků](../E25.md)
+
 # Stav etapy E24
 
 E24 navazuje na G17 ve větvi E23 (`fe30ef0`). [Zadání E24](E24.md)
@@ -72,9 +78,15 @@ Na ultra procházejí sluneční paprsky stínem vzdálené sluneční kaskády.
 
 Prošlo 166 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. Ve WebGL 2 i WebGPU prošly čtyři prohlížečové zkoušky. Ověřily zastavení času, návrat kamery, stažení souboru PNG a zapojení paprsků, odlesku i pohybových vektorů na ultra.
 
+## Snímky a měření
+
+Stejná kamera zachytila déšť i sníh na vysoké předvolbě. Ve čtyřech předvolbách prošel rozpočet ve třech referenčních pohledech. Na softwarovém adaptéru jsme zaznamenali také pět snímků za deště i sněhu v každé předvolbě. První postupné srovnání suché scény E23 a E24 ukázalo delší čas vykreslení při souběžných testech. Probíhá střídavé měření obou verzí za stejných podmínek. [Protokol a snímky](../E24.md)
+
 ## Výchozí etapa E23
 
 E23 vychází z dokončené větve E22 (`496a72d`). Prvním krokem je detail země při chůzi. Další pořadí tvoří povrchy silnic, voda, stromy, tráva, noční světla a částice. [Zadání E23](E23.md) · [Protokol E22](../E22.md)
+
+Dodatečně doběhla úplná sada Full HD na softwarovém WebGPU. Pro každý profil uvádí protokol skutečný počet snímků i čas CPU. V tak malé sadě vzorků zůstává plynulost jízdy a letu na autorově zařízení otevřená. [Naměřené hodnoty](../E23.md#pokus-ve-full-hd-při-jízdě-a-letu)
 
 ## G11 · Detail terénu
 
@@ -302,6 +314,18 @@ Prohlížečové kontroly křížení, Rondelu a památek nyní čekají na stej
 ### Samostatné grafické indexy terénních dlaždic
 
 Při uvolňování dlaždic v navazujícím měření WebGPU došlo k chybě při likvidaci grafického atributu. Kontrola zjistila, že různé geometrie sdílely tentýž atribut indexů a každá jej při svém zániku uvolnila. Dlaždice nyní sdílejí pouze čísla vrcholů v paměti a každá vlastní svůj samostatně uvolnitelný atribut. Prošlo 128 testů JavaScriptu, produkční sestavení i nová prohlížečová zkouška vlastnictví atributů na WebGPU. V měření se samostatně vyskytlo také odmítnutí alokace grafického bufferu v softwarovém adaptéru. Dopad na celý měřený průjezd ještě není ověřen.
+
+### Opakování zkoušek na softwarovém vykreslovači
+
+Všech šest kontrol materiálů a obě samostatné kontroly dlažby na náměstí a chybějícího ortofota prošly. Pět ze šesti cílených dopravních zkoušek prošlo po úpravě čekání na spuštění hry. Šestá zkouška se dostala až k jízdě. Dodávka zůstala stát 7,82 m od začátku cílové hrany. Při opakování s diagnostikou dojela a ve scéně zůstaly údaje o MHD z okamžiku zmrazení. Tyto výsledky samy neurčují přesnou příčinu původního zastavení.
+
+Zkouška ostrého zatáčení nyní před jízdou uvolní rezervace přechodů a seznam překážek těch účastníků, jejichž pohyb během ní nepokračuje. Semafory, geometrie, požadovaná dojezdová vzdálenost i zákaz vyjetí z vozovky zůstávají součástí zkoušky. Tři nezávislá spuštění projela obě odbočky a všech šest jízd zůstalo na vozovce. Prošlo také 128 jednotkových testů a produkční sestavení. Úplná prohlížečová sada na dřívějším sestavení dál běží. [Zadání E21](E21.md)
+
+### Referenční pohledy po opravě načítání
+
+Na WebGPU prošla zkouška všech osmi referenčních kamer. Při přípravě kolem nové kamery se sleduje postup načítání geometrie a leteckých podkladů. Během dokončování mapy osvětlení stačí vykreslit další strany oblohy. Celé město se kreslí až s hotovým světlem. V odděleném opakování prošly také čtyři scénáře MHD, pádu a lamp. Prošly jednotkové testy, všech 23 testů Pythonu a produkční sestavení.
+
+Na WebGL 2 prošlo vynucení vykreslovače i automatický přechod při chybějícím WebGPU. Při minutové zkoušce dne a noci vykázal sdílený softwarový adaptér 11 snímků proti požadavku na více než 30. Tato výkonnostní kontrola je otevřená. Celková regresní sada se eviduje samostatně.
 
 ## E22 · Převod a inventura
 

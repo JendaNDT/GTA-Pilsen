@@ -1,3 +1,5 @@
+import { SolidBuf } from './solid-buffer.js';
+import { paintStreetPaving } from './street-furniture.js';
 import { buildingLayers } from './facade-surfaces.js';
 import { attachRoadFurniture } from './road-furniture.js';
 import { prazdrojThickness } from './prazdroj-bridge.js';
@@ -235,35 +237,6 @@ class RoadBuf extends DecalBuf {
       geometry.setAttribute('roadLayout', new THREE.Float32BufferAttribute(this.layout,3));
     }
     return geometry;
-  }
-}
-
-/** Jednoduché plné díly s barvou po ploškách (mostovky, pilíře). */
-class SolidBuf {
-  constructor() { this.p = []; this.n = []; this.c = []; }
-  quad(a, b, c, d, col, k = 1) {
-    let nx = (b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]);
-    let ny = (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]);
-    let nz = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
-    const l = Math.hypot(nx, ny, nz) || 1;
-    nx /= l; ny /= l; nz /= l;
-    for (const q of [a, b, c, a, c, d]) {
-      this.p.push(q[0], q[1], q[2]); this.n.push(nx, ny, nz); this.c.push(col[0] * k, col[1] * k, col[2] * k);
-    }
-  }
-  box(x, y0, y1, z, hw, col) {
-    const a = [x - hw, y0, z - hw], b = [x + hw, y0, z - hw], c = [x + hw, y0, z + hw], d = [x - hw, y0, z + hw];
-    const e = [x - hw, y1, z - hw], f = [x + hw, y1, z - hw], g = [x + hw, y1, z + hw], h = [x - hw, y1, z + hw];
-    this.quad(a, e, f, b, col, 0.8); this.quad(b, f, g, c, col, 0.9); this.quad(c, g, h, d, col, 0.8); this.quad(d, h, e, a, col, 0.9);
-  }
-  geometry() {
-    if (!this.p.length) return null;
-    const g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.Float32BufferAttribute(this.p, 3));
-    g.setAttribute('normal', new THREE.Float32BufferAttribute(this.n, 3));
-    g.setAttribute('color', new THREE.Float32BufferAttribute(this.c, 3));
-    g.computeBoundingSphere();
-    return g;
   }
 }
 
@@ -1288,7 +1261,9 @@ function drawGround(mgr, ci, S, tile, bitmap) {
       }
     }
   };
-  stroke(0); stroke(1); stroke(2);
+  stroke(0);
+  paintStreetPaving(g, world.streetPaving?.get(ci));
+  stroke(1); stroke(2);
   // voda = průhledná místa (hladinu dokreslí shader terénu)
   if (polys) {
     g.globalCompositeOperation = 'destination-out';
@@ -1527,6 +1502,13 @@ export class ChunkManager {
     this.paintedBuildings = QUALITY.heritageDetail ? makeBuildingMaterial({ textures: true }) : this.buildingMat;
     this.districts = new Districts(heritage.districts);
     this.heritage = new Heritage(world, heritage);
+    world.refreshStreetGround = ci => {
+      const ch = this.chunks.get(ci);
+      if (!ch?.tex) return;
+      drawGround(this, ci, ch.texSize, ch.orthoTile, ch.orthoBitmap);
+      ch.tex.needsUpdate = true;
+      this.renderer.initTexture(ch.tex);
+    };
     this.asphaltMat = makeAsphaltMaterial(QUALITY.roadDetail);
     this.roadStations = QUALITY.roadDetail ? roadStations(world) : null;
     this.marksMat = makeDecalMaterial({ polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -14 }, SURFACE.roadPaint);

@@ -41,7 +41,7 @@ export class StreetDetails {
     return pack;
   }
 
-  async forTile(name, hash, count) {
+  async forTile(name, hash, count, scenery) {
     let attribute = null;
     for (const section of this.tiles.get(name) ?? []) {
       if (!this.cache.has(section.id)) {
@@ -51,7 +51,14 @@ export class StreetDetails {
         }));
       }
       const pack = await this.cache.get(section.id);
-      if (pack) attribute = applyFronts(pack, name, hash, count, attribute);
+      if (pack) {
+        const tile = pack.header.tiles.find(t => t.name === name && t.hash === hash);
+        if (!tile) continue;
+        const next = applyFronts(pack, name, hash, count, attribute);
+        if (next && scenery) scenery.push({ id: section.id + '/' + name,
+          items: tile.furniture ?? [], paving: tile.paving ?? [] });
+        attribute = next;
+      }
     }
     return attribute;
   }
