@@ -1,13 +1,15 @@
 import { expect, test } from '@playwright/test';
+import { prepareCollisionLab } from './collision-lab.js';
 import { gameUrl } from './game-url.js';
 
 test('E19 – skutečný náraz hráčova auta do chodce ohlásí jedinou nehodu', { tag: '@webgpu' }, async ({ page }) => {
   await page.goto(gameUrl('/?debug&quality=low&adapt=0'));
   await page.waitForFunction(() => window.__ready);
+  await prepareCollisionLab(page);
   const result = await page.evaluate(() => {
     const g = window.__game, car = g.player.lastCar;
     g.peds.timer = g.vehicles.spawnTimer = Infinity;
-    const { x, z, dx, dz } = g.world.nearestRoad(657, 162, 5, 13, 0, {});
+    const x = 0, z = 0, dx = 0, dz = 1;
     car.place(x - 6 * dx, z - 6 * dz, Math.atan2(dx, dz));
     g._enterCar(car);
     car.speed = 10; car.vx = dx * 10; car.vz = dz * 10;
@@ -29,10 +31,11 @@ test('E19 – skutečný náraz hráčova auta do chodce ohlásí jedinou nehodu
 test('E19 – jedoucí auto srazí pěšího hráče', { tag: '@webgpu' }, async ({ page }) => {
   await page.goto(gameUrl('/?debug&quality=low&adapt=0'));
   await page.waitForFunction(() => window.__ready);
+  await prepareCollisionLab(page);
   const result = await page.evaluate(() => {
     const g = window.__game, p = g.player, car = p.lastCar;
     g.peds.timer = g.vehicles.spawnTimer = Infinity;
-    const { x, z, dx, dz } = g.world.nearestRoad(657, 162, 5, 13, 0, {});
+    const x = 0, z = 0, dx = 0, dz = 1;
     car.place(x - 6 * dx, z - 6 * dz, Math.atan2(dx, dz));
     car.mode = 'loose'; car.speed = 10; car.vx = dx * 10; car.vz = dz * 10;
     p.place(x, z);
@@ -65,11 +68,12 @@ test('E19 – jedoucí auto srazí pěšího hráče', { tag: '@webgpu' }, async
 test('E19 – pád z výšky zraní jednou a omezení počtu uklidí nejstarší postavu', { tag: '@webgpu' }, async ({ page }) => {
   await page.goto(gameUrl('/?debug&quality=low&adapt=0'));
   await page.waitForFunction(() => window.__ready);
+  await prepareCollisionLab(page);
   const result = await page.evaluate(() => {
     const g = __game, p = g.player;
     g.peds.timer = g.vehicles.spawnTimer = Infinity;
     g.paused = false;
-    const { x, z } = g.world.nearestRoad(657, 162, 5, 13, 0, {});
+    const x = 0, z = 0;
     const y = g.world.heightAt(x, z);
     p.place(x, z, y);
     const first = g.peds.spawnAt(x + 14, z, 0);

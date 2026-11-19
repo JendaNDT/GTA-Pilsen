@@ -13,6 +13,10 @@ Větev `etapa/E21` navazuje na E20 sloučenou revizí `623e081`. [Zadání E21](
 | 7. Částice | Hotovo. Prošla kontrola výpočtu na WebGPU i náhradního výpočtu na WebGL 2. |
 | 8. Závěrečné ověření | Probíhají závěrečné prohlížečové zkoušky. Snímky a měření ze softwarového vykreslovače jsou v protokolu. Měření na autorově počítači je otevřené. |
 
+### Zkoušky s herní figurínou
+
+Tři regresní scénáře nyní používají vlastní rovnou desku v Joltu a herní figuríny mimo městskou geometrii, bez jízdního řádu a běžného provozu. Na WebGL 2 prošla registrace jediné události při kontaktu, sledování kamery a návrat pěšího hráče do chůze i omezení souběžných pádů. Prošlo 128 testů JavaScriptu a produkční sestavení. Samostatně prošla ve WebGL 2 příprava střední předvolby stínů a stereo tramvaje. Průchod všech osmi referenčních kamer na softwarovém WebGL 2 překročil při souběžném ověřování dvacetiminutový limit. Kontrola klaksonu se opakuje s odečtem při skutečném vzniku zvuku.
+
 ### Oddělená zkušební plocha
 
 Lampa pro fyzikální zkoušku vzniká na vlastní plošině nad herním terénem. Vykreslení i fyzika si vyžádají stejný seznam lamp v dlaždici. Také zkušební značka a světelný signál pocházejí ze samostatného testovacího vstupu s vlastní skupinou. Prošla ztráta a obnova světla po návratu, změna stavu a oprava u všech tří předmětů. V Chromiu uspěly dva scénáře na WebGL 2 a tytéž dva na WebGPU. Prošlo všech 128 testů JavaScriptu a produkční sestavení. Regrese dřívějších etap pokračují.
