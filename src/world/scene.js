@@ -8,7 +8,7 @@ import * as THREE from 'three/webgpu';
 import { CSMShadowNode } from 'three/addons/csm/CSMShadowNode.js';
 import { SkyMesh } from 'three/addons/objects/SkyMesh.js';
 import {
-  Fn, float, Loop, mix, positionLocal, renderGroup, screenUV, smoothstep, step, uniform, vec2, vec4,
+  Fn, If, float, Loop, mix, positionLocal, renderGroup, screenUV, smoothstep, step, uniform, vec2, vec4,
 } from 'three/tsl';
 import { QUALITY, PARAMS } from '../config.js';
 import { env, getPoolMaterial, makeSurfaceMaterial } from './materials.js';
@@ -46,24 +46,34 @@ function makeSky(colors, atmosphere, volume) {
     const star = step(0.9987, hash21(starCell)).mul(env.night, smoothstep(0.07, 0.35, d.y), 0.45);
     const moon = smoothstep(0.99992, 0.99997, d.dot(MOON_DIR)).mul(env.night, 0.72);
 
+    const color = sky.add(star, moon).toVar();
+    const procedural = () => {
+      // Pod horizontem má procedurální vrstva nulové krytí i při zatažené obloze.
+      If(d.y.greaterThan(.02), () => {
+        // Vrstva mraků se promítá podle směru pohledu.
+        const p = d.xz.div(d.y.add(0.16)).mul(1.15).add(vec2(env.time.mul(0.004), env.time.mul(0.0015))).toVar();
+        const weight = float(0.5).toVar();
+        const cloud = float(0).toVar();
+        Loop(QUALITY.clouds, () => {
+          cloud.addAssign(weight.mul(valueNoise(p)));
+          p.assign(p.mul(2.03).add(17));
+          weight.mulAssign(0.5);
+        });
+        const cover = smoothstep(0.50, 0.74, cloud.add(cloudCover.sub(.41).mul(.58))).mul(smoothstep(0.02, 0.22, d.y), 0.92);
+        const thick = smoothstep(0.55, 0.9, cloud).mul(0.75);
+        const cloudColor = mix(colors.cloud, colors.shade, thick).add(colors.sun.mul(sunlight.pow(6), 0.25));
+        color.assign(mix(color, cloudColor, cover));
+      });
+    };
     if (volume) {
-      const cloud = volume.image.sample(screenUV);
-      return vec4(mix(sky.add(star, moon), cloud.rgb, cloud.a), 1);
+      If(volume.enabled, () => {
+        const sample = volume.image.sample(screenUV).level(0);
+        color.assign(mix(color, sample.rgb, sample.a));
+      }).Else(procedural);
+    } else {
+      procedural();
     }
-
-    // Vrstva mraků se promítá podle směru pohledu.
-    const p = d.xz.div(d.y.add(0.16)).mul(1.15).add(vec2(env.time.mul(0.004), env.time.mul(0.0015))).toVar();
-    const weight = float(0.5).toVar();
-    const cloud = float(0).toVar();
-    Loop(QUALITY.clouds, () => {
-      cloud.addAssign(weight.mul(valueNoise(p)));
-      p.assign(p.mul(2.03).add(17));
-      weight.mulAssign(0.5);
-    });
-    const cover = smoothstep(0.50, 0.74, cloud.add(cloudCover.sub(.41).mul(.58))).mul(smoothstep(0.02, 0.22, d.y), 0.92);
-    const thick = smoothstep(0.55, 0.9, cloud).mul(0.75);
-    const cloudColor = mix(colors.cloud, colors.shade, thick).add(colors.sun.mul(sunlight.pow(6), 0.25));
-    return vec4(mix(sky.add(star, moon), cloudColor, cover), 1);
+    return vec4(color, 1);
   })();
   mesh.renderOrder = skyLast ? 10 : -10;
   mesh.frustumCulled = false;
@@ -104,7 +114,7 @@ export class Environment {
       sh.bias = -0.00025; sh.normalBias = 0.16;
       this.csm = new CSMShadowNode(this.sun, { cascades: QUALITY.shadowCascades, maxFar: QUALITY.shadowFar, lightMargin: 170 });
       this.csm.fade = true;
-      sh.shadowNode = this.clouds ? cloudShadow(this.csm) : this.csm;
+      sh.shadowNode = this.clouds ? cloudShadow(this.csm, this.clouds.enabled) : this.csm;
     }
 
     // vzdálená zem za hranicí mapy (hluboko pod terénem)

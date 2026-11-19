@@ -1,4 +1,3 @@
-import { streetLamps } from '../world/lamps.js';
 import { RoadFurnitureBodies } from './road-furniture.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
 import { CHUNK } from '../config.js';
@@ -116,7 +115,7 @@ export class TileColliders {
     const bodies = [body];
     this.tiles.set(ci, bodies);
     if (this.lamps) {
-      const lamps = streetLamps(w, ci);
+      const lamps = w.lampsInTile(ci);
       this.lampTiles.set(ci, lamps);
       this.lamps.load(lamps);
     }
