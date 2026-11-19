@@ -239,8 +239,8 @@ export function planCalibration(choice, rows, world) {
   return { kind: 'plan', road, halfWidth: m.width / 2, shiftX: m.shiftX, shiftZ: m.shiftZ, lift: 0 };
 }
 
-export async function checkPlanEdges(models, directory, railDecks) {
-  const { world } = await loadStructureMap(directory, models, railDecks);
+export async function checkPlanEdges(models, directory, railDecks, world) {
+  world ??= (await loadStructureMap(directory, models, railDecks)).world;
   const { indexBridgeEdges, railingFaces } = await import('../src/physics/railings.js');
   const roads = new Set(models.filter((m) => m.kind === 'plan').map((m) => m.road));
   const rails = new Set(railDecks.map((m) => m.rail));

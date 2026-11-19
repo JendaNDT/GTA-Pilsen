@@ -1,6 +1,6 @@
 # Stav etapy E22
 
-Ve větvi `etapa/E22` jsou hotové kroky 1 až 3. Ve čtvrtém kroku se ověřuje kalibrovaný Wilsonův most. [Zadání E22](E22.md) · [Výsledky převodu a pilotu](#e22--převod-a-inventura)
+Ve větvi `etapa/E22` jsou převedené městské objekty, ověřený Wilsonův most i tři dávky zdí a pilířů. Hra používá další dvě lávky, silniční desku, dvě železniční mostovky a čtyři díly jezů. Probíhá kontrola zbývajících návazností a závěrečné srovnání výkonu. [Zadání E22](E22.md) · [Výsledky převodu a pilotu](#e22--převod-a-inventura)
 
 ## Výchozí etapa E21
 
@@ -264,3 +264,9 @@ Dva z osmi dalších dílů jsou pro tento model terénu nevhodné. Jedna nádr�
 Dva samostatné převody se shodují po bajtech s distribuovanými daty. Prošlo 146 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. Na WebGPU při nízké kvalitě se všechna čtyři tělesa načetla v podrobných dlaždicích. U každého test ověřil polohu ve vodním polygonu a vrcholy nad hladinou i pod ní.
 
 E22 převzala opravu načítání ortofota a čekání na sestavení herních scén z E21 (`cf543a2`). Po sloučení prošlo 147 testů JavaScriptu, 25 testů Pythonu i produkční sestavení. Na WebGPU se pozdě načtené ortofoto promítlo do hotové dlaždice a čtyři měřené díly jezů se vykreslily u hladiny.
+
+### Samostatná zábradlí
+
+Kromě dvou městských obrysů převzatých pro Wilsonův most zbývalo prověřit 77 modelů zábradlí. U 15 vedla měřenými plochami průchozí trasa. U dalších 50 leží spodní část v blízkosti jednoho nebo více dílců stávajícího herního ohrazení. U zbývajících 12 nemá alespoň jeden vzorek spodní části oporu do půl metru od herního terénu ani mostovky. Žádný z těchto modelů proto nepřidává samostatnou překážku. Při dalších úpravách příslušné mostovky lze rozhodnutí přezkoumat podle jednotlivých dílů. [Porovnání všech 77 dílů](../E22/samostatna-zabradli.tsv)
+
+Převod doplňuje každý důvod také do inventury a dává po bajtech stejné herní soubory jako ověřený balík s jezy. Prošlo 148 testů JavaScriptu, 25 testů Pythonu i produkční sestavení. Rozlišení opory, trasy a již přítomného ohrazení má jednotkový test s fiktivním modelem.

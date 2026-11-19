@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
 import { Vector3 } from 'three/webgpu';
+import { reviewRailings } from './review_railings.mjs';
 import { reviewWaterParts } from './review_water_structures.mjs';
 import { selectDistricts } from './district_structures.mjs';
 import { indexTriangles } from './static_structures.mjs';
@@ -78,9 +79,11 @@ if (planChoices.length || railBridges.length) {
     railDecks.push(railCalibration(choice,rows,world));
     calibrationReasons.set(choice.deck,choice.reason);
   }
-  await checkPlanEdges(bridges,'public/data',railDecks);
 }
+const {world: calibrated} = await loadStructureMap('public/data',bridges,railDecks);
+await checkPlanEdges(bridges,'public/data',railDecks,calibrated);
 const excluded = new Set([...accepted,...calibrationReasons.keys()]);
+const railings = reviewRailings(parts,reportsById,excluded,calibrated);
 const water = await reviewWaterParts(parts,reportsById,waterParts,'public/data',world);
 const districtData = await selectDistricts(parts, reportsById, {size:chunk,x:minX,z:minZ},
   json('public/detail/city/index.json').districts, districts, excluded, 'public/data', bridges, railDecks, water.decisions);
@@ -118,8 +121,10 @@ const rows = [['díl', 'zdrojové ID', 'ploch v SHP', 'unikátních ploch', 'sta
 for (const part of parts) {
   const chosen = accepted.has(part.id) || calibrationReasons.has(part.id);
   rows.push([part.id, part.uid, part.records, part.faces.length,
-    chosen ? 'začleněn' : (water.decisions.get(part.id)?.status ?? part.status), districtReasons.get(part.id) ?? calibrationReasons.get(part.id) ?? overrides[part.id]?.reason ?? pending[part.id] ?? water.decisions.get(part.id)?.reason ?? part.reason]);
+    chosen ? 'začleněn' : (water.decisions.get(part.id)?.status ?? part.status), districtReasons.get(part.id) ?? calibrationReasons.get(part.id) ?? overrides[part.id]?.reason ?? pending[part.id] ?? water.decisions.get(part.id)?.reason ?? railings.reasons.get(part.id) ?? part.reason]);
 }
+const railingRows = [['díl','střet s trasou','vzorky paty','vzorky s oporou do 0,5 m','vzorky nad mostovkou','blízké herní dílce','posouzení'], ...railings.rows];
+fs.writeFileSync(path.join(dir, 'samostatna-zabradli.tsv'), railingRows.map(row => row.join('\t')).join('\n') + '\n');
 const waterRows = [['díl','druh','vzorky','vzorky ve vodě','vzorky v budovách','nejnižší vrchol vůči povrchu (m)','nejvyšší vrchol vůči povrchu (m)','vzdálenost ke zvuku jezu (m)','střet s trasou','posouzení'], ...water.rows];
 fs.writeFileSync(path.join(dir, 'vodni-objekty.tsv'), waterRows.map(row => row.join('\t')).join('\n') + '\n');
 fs.writeFileSync(path.join(dir, 'inventura.tsv'), rows.map(row => row.join('\t')).join('\n') + '\n');

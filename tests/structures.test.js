@@ -187,3 +187,18 @@ test('u vodního dílu změří podíl vzorků ve vodě a výšku každého vrch
   const result = sampleWaterPart(part,world,[9],[[1,5]]);
   assert.deepEqual(result,{samples:5,wet:3,buildings:1,min:-1,max:1,nearest:4});
 });
+
+test('při kontrole samostatného zábradlí odliší pata terén, mostovku a již přítomný okraj', async () => {
+  const {railingSupport, reviewRailings} = await import('../tools/review_railings.mjs');
+  const panel = {id:'zkusebni',status:'čeká na ověření',
+    faces:[['Zabradli',[0,0,0, 3,0,0, 3,1,0, 0,1,0]]]};
+  const world = {
+    chunkIndex: x => x < 0 ? 0 : 1, heightAt: () => -3,
+    deckAt: x => x === 0 ? 0.25 : -1e9,
+    bridgeEdges: new Map([[0,[{id:'maketa',corners:[[0,0,2],[3,0,2],[3,0,0.8],[0,0,0.8]]}]]])
+  };
+  assert.deepEqual(railingSupport(panel,world),{samples:2,supported:1,decks:1,edges:1});
+  const reports = new Map([['zkusebni',{categories:['pěší cesta']}]]);
+  assert.match(reviewRailings([panel],reports,new Set(),world).reasons.get('zkusebni'),/herní trasy/);
+  assert.deepEqual(reviewRailings([panel],reports,new Set(['zkusebni']),world).rows,[]);
+});
