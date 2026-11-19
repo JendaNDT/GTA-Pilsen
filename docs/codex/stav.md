@@ -158,3 +158,9 @@ Garáž při opakování na WebGL 2 prošla včetně nového načtení a zaplace
 Při kontrole na softwarovém vykreslovači se dřívější časový limit přípravy pohledu na Valík vyčerpal i při pokračujícím načítání. Kontrola nyní sleduje počet kroků geometrie, dokončené přenosy i postupné překreslování ortofota. Po skutečném zastavení vypíše stav dlaždic. Odečet expozice čeká na nový vykreslený snímek a dokončení předchozího čtení pixelů. Prahy pro jas a rychlost přizpůsobení oka se zachovaly.
 
 Prošlo 127 testů JavaScriptu, 23 testů Pythonu a produkční sestavení. Změnu jasu při vjezdu do tunelu a výjezdu na denní světlo potvrdil WebGPU i WebGL 2. Celý případ na WebGL 2 trval na sdíleném softwarovém vykreslovači 12,6 minuty. Jedná se o délku prohlížečového testu včetně přípravy scény. Úplná sada dalších herních scén pokračuje. Otevřené zůstává měření dopadu deseti fiktivních testovacích objektů na cílovém zařízení autora.
+
+### Letecké snímky během celého průchodu hrou
+
+Při jízdě a následném přesunu k vrtulníku na softwarovém WebGL 2 vypršelo osm sekund na načtení dostupného bloku ortofota. Rozvoz skončil, ale prohlížeč ohlásil přerušený požadavek. Pro jednotlivý snímek je nyní na přenos minuta. Jestli přenos vyprší a snímek je ještě v dohledu, hra ho vyžádá podruhé. Po druhém vypršení uvolní místo dalším snímkům. Při návratu do oblasti může přenos začít znovu. Odpověď 404 se znovu nezkouší.
+
+Po změně prošlo 128 testů JavaScriptu a produkční sestavení. WebGL 2 dokončil chůzi, navigaci, jízdu autem, let vrtulníkem, přistání i placený rozvoz. Během celého případu prošly také původní kontroly chyb konzole, síťových odpovědí a skutečného načtení vybraného leteckého snímku. Ověření je v `data-raw/e21/ortofoto-pruchod.log`.
