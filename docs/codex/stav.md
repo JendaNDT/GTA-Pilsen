@@ -52,6 +52,10 @@ Na ultra procházejí sluneční paprsky stínem vzdálené sluneční kaskády.
 
 Prošlo 166 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. Ve WebGL 2 i WebGPU prošly čtyři prohlížečové zkoušky. Ověřily zastavení času, návrat kamery, stažení souboru PNG a zapojení paprsků, odlesku i pohybových vektorů na ultra.
 
+## Snímky a měření
+
+Stejná kamera zachytila déšť i sníh na vysoké předvolbě. Ve čtyřech předvolbách prošel rozpočet ve třech referenčních pohledech. Na softwarovém adaptéru jsme zaznamenali také pět snímků za deště i sněhu v každé předvolbě. První postupné srovnání suché scény E23 a E24 ukázalo delší čas vykreslení při souběžných testech. Probíhá střídavé měření obou verzí za stejných podmínek. [Protokol a snímky](../E24.md)
+
 ## Výchozí etapa E23
 
 E23 vychází z dokončené větve E22 (`496a72d`). Prvním krokem je detail země při chůzi. Další pořadí tvoří povrchy silnic, voda, stromy, tráva, noční světla a částice. [Zadání E23](E23.md) · [Protokol E22](../E22.md)
