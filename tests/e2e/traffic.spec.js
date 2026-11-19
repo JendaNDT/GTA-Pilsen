@@ -1,9 +1,10 @@
+import { waitForGame } from './ready.js';
 import { expect, test } from '@playwright/test';
 import { gameUrl } from './game-url.js';
 
 async function boot(page, options = '') {
   await page.goto(gameUrl(`/?debug&view=620&shadows=0${options}`));
-  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  await waitForGame(page);
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
   await page.evaluate(() => __freeze(true));
 }

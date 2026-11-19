@@ -13,6 +13,10 @@ Větev `etapa/E21` navazuje na E20 sloučenou revizí `623e081`. [Zadání E21](
 | 7. Částice | Hotovo. Prošla kontrola výpočtu na WebGPU i náhradního výpočtu na WebGL 2. |
 | 8. Závěrečné ověření | Probíhají závěrečné prohlížečové zkoušky. Snímky a měření ze softwarového vykreslovače jsou v protokolu. Měření na autorově počítači je otevřené. |
 
+### Doprava, směny a doručování
+
+Na WebGL 2 prošla kolona na Tylově, změna provozu ve špičce, přestup z tramvaje na autobus, trolejbus 49 i víkendová noční linka. Prošly také čtyři zkoušky zakázek včetně rozvozu s pěším předáním a přestupu s doručením. Při minutě hraní na softwarovém WebGL 2 vykázal Mesa llvmpipe 19 dokončených snímků v měřicím okně při požadavku více než 30. Starší běh se SwiftShaderem vykázal 11. Sada zachovává původní mez. Zbývající zkoušky běží na WebGPU.
+
 ### Provoz na fiktivní silnici a kolejích
 
 Na WebGL 2 i WebGPU prošlo všech šest scénářů s figurínami, testovacími auty a tramvají na samostatné desce Joltu. Testovací tramvaj má vlastní přímou trať a dvě smyšlené zastávky. Po zařazení desky mezi aktivní dlaždice šlo ověřit také vznik běžných fyzikálních těles vozidel. U zaparkovaného vozu test potvrdil probuzení po dotyku, u dvou jedoucích aut změnu rychlosti a u tramvaje brzdění před překážkou. Veškerých osm referenčních pohledů prošlo na WebGL 2 s Mesa llvmpipe za 10,9 minuty. Na WebGPU byly ověřeny již dříve.
