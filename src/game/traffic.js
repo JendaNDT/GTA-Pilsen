@@ -128,8 +128,7 @@ export class Traffic {
       const { x, z, tx, tz, kind, group, axis } = control;
       if (kind === 'signal') {
         const [hx, hz] = control.head ?? [x, z];
-        const head = this.addVisual(hx, hz, 'heads', { x: hx - tz * hw, z: hz + tx * hw, tx, tz, axis, group, kind });
-        if (head) (group.fixtures ??= []).push(head.breakableId);
+        this.addVisual(hx, hz, 'heads', { x: hx - tz * hw, z: hz + tx * hw, tx, tz, axis, group, kind });
       } else if (!signsByRoad.get(control.road)?.some((sign) => sign.kind === kind
         && sign.direction === control.direction && Math.hypot(sign.x - x, sign.z - z) < 15)) {
         this.addVisual(x, z, 'signs', { x: x - tz * hw, z: z + tx * hw, tx, tz, kind });
@@ -213,6 +212,7 @@ export class Traffic {
     if (kind === 'heads' || kind === 'signs') {
       const type = kind === 'heads' ? 'signal' : 'sign';
       const visual = { ...entry, breakableId: breakableId(type, ci, list.length) };
+      if (kind === 'heads' && entry.group) (entry.group.fixtures ??= []).push(visual.breakableId);
       list.push(visual);
       return visual;
     } else {

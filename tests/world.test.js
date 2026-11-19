@@ -328,3 +328,21 @@ test('po zhasnutí semaforů řidič zpomalí a dá přednost zprava až do opra
   assert.equal(solve(fromRight), 12);
   assert.equal(traffic.light(approach), 'green');
 });
+
+test('zničení pěšího semaforu vypne jen jeho křižovatku až do ranní opravy', async () => {
+  const { Breakables } = await import('../src/physics/breakables.js');
+  const registry = new Breakables();
+  const traffic = new Traffic({ chunkIndex: x => x, rpx: [], edgeCount: 0, breakables: registry });
+  const group = () => ({ timeOffset: 0, greenTime: 15, crossings: [], clearance: 0 });
+  const junction = group();
+  const road = traffic.addVisual(1, 0, 'heads', { kind: 'signal', group: junction });
+  const crossing = traffic.addVisual(2, 0, 'heads', { kind: 'pedestrian', group: junction });
+  const adjacent = traffic.addVisual(2, 0, 'heads', { kind: 'signal', group: group() });
+  registry.damage(crossing.breakableId, 'broken', 0);
+  assert.equal(traffic.light(road), 'off');
+  assert.equal(traffic.light(crossing), 'off');
+  assert.equal(traffic.light(adjacent), 'green');
+  registry.repairDue(28 * 3600);
+  assert.equal(traffic.light(road), 'green');
+  assert.equal(traffic.light(crossing), 'red');
+});

@@ -167,7 +167,7 @@ test('E21 – náraz ohne značku, vyřadí řízení semaforů a v noci se vyba
   expect(result.signTilt).toBeGreaterThan(0.1);
 });
 
-test('E21 – semafor pro chodce u Americké má patu vedle jízdního pruhu', async ({ page }) => {
+test('E21 – semafor pro chodce u Americké stojí mimo pruh a jeho výpadek zhasne křižovatku', async ({ page }) => {
   await page.goto(gameUrl('/?debug&quality=low&adapt=0'));
   await page.waitForFunction(() => window.__ready);
   const result = await page.evaluate(() => {
@@ -178,11 +178,13 @@ test('E21 – semafor pro chodce u Americké má patu vedle jízdního pruhu', a
     const fixture = trafficFurniture.nearby.get('signal/5797/20');
     const { x, y, z, entry } = fixture;
     g.chunks.update(x, z, 620, 100);
-    return { oldInRoad: world.onCarriageway(entry.x, entry.z, world.groundY(entry.x, entry.z)),
+    const control = world.traffic.controls.find(c => c.kind === 'signal' && c.group === entry.group);
+    world.breakables.damage(fixture.id, 'broken', g.clock.now);
+    return { light: world.traffic.light(control), oldInRoad: world.onCarriageway(entry.x, entry.z, world.groundY(entry.x, entry.z)),
       obstructsRoad: world.onCarriageway(x, z, y, 0.25), distance: Math.hypot(x - entry.x, z - entry.z),
       physical: trafficFurniture.records.get(fixture.id).body.IsStatic() };
   });
-  expect(result).toMatchObject({ oldInRoad: true, obstructsRoad: false, physical: true });
+  expect(result).toMatchObject({ oldInRoad: true, obstructsRoad: false, physical: true, light: 'off' });
   expect(result.distance).toBeGreaterThan(0);
   expect(result.distance).toBeLessThan(5);
 });
