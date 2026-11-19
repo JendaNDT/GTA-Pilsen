@@ -34,6 +34,12 @@ V parcích, na loukách a v travních plochách se kolem hráče vytvářejí tr
 
 Prošlo 157 jednotkových testů a produkční sestavení. Zkoušky na WebGL 2 a WebGPU našly skutečný městský park, vykreslily jeho trsy a prověřily polohu každého trsu vůči cestám a budovám. Po přesunu pohledu 100 m nad terén tráva zmizela. Rozpočet vykreslování se změří společně s ostatními efekty na konci etapy.
 
+## G16 · Noční osvětlení
+
+Na náměstí a v okolních ulicích osvětlují blízké povrchy skutečná bodová světla. Střední předvolba vybírá až 48 nejbližších lamp, vysoká 128 a ultra 256. Odlehlejší lampy používají původní světelné skvrny. Zhasnutá nebo odstraněná lampa přestane osvětlovat okolí. Vysoká a ultra předvolba mají navíc kuželové světlomety nejvýše osmi nejbližších jedoucích vozů. Přes den hra přepne zpět na běžné osvětlení. Okna domácností se postupně rozsvěcují večer, kanceláře ve dne a výlohy zhasnou ve 20 hodin.
+
+Prošlo 159 jednotkových testů a produkční sestavení. WebGL 2 i WebGPU vykreslily náměstí ve 22 hodin na vysoké předvolbě se 128 bodovými světly. V obou případech zhasla vybraná lampa a při návratu k poledni se skupina nočních světel vypnula.
+
 ## Výchozí etapa E22
 
 Ve větvi `etapa/E22` jsou převedené městské objekty, ověřený Wilsonův most i tři dávky zdí a pilířů. Hra používá další dvě lávky, silniční desku, dvě železniční mostovky a čtyři díly jezů. Vývoj a dostupné přejímací kontroly E22 jsou dokončené. Zůstává porovnání s autorovými fotografiemi a změření plynulosti na jeho zařízení. [Protokol E22](../E22.md). [Zadání E22](E22.md) · [Výsledky převodu a pilotu](#e22--převod-a-inventura)

@@ -12,6 +12,7 @@ import { hash21, valueNoise } from './material-noise.js';
 import { TUNNEL_HEIGHT, TUNNEL_PORTAL_CUT } from './tunnels.js';
 
 export const env = {
+  windows: uniform(new THREE.Vector4()).setGroup(renderGroup),
   night: uniform(0).setGroup(renderGroup), // 0 = den, 1 = noc
   time: uniform(0).setGroup(renderGroup),
   sky: uniform(new THREE.Color(0xbdd9ee)).setGroup(renderGroup), // obzor a odrazy ve vodě
@@ -41,7 +42,7 @@ export function makeBatchedSurfaceMaterial(opts = {}) {
  */
 export function makeBuildingMaterial({ textures = false, heritage = false } = {}) {
   const key = `${textures}/${heritage}`;
-  if (!facadeNodes.has(key)) facadeNodes.set(key, buildingNodes(env.night, textures, heritage));
+  if (!facadeNodes.has(key)) facadeNodes.set(key, buildingNodes(env.night, env.windows, textures, heritage));
   return makeSurfaceMaterial(SURFACE.plaster, facadeNodes.get(key));
 }
 

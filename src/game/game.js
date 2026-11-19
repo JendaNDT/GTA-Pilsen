@@ -1,3 +1,4 @@
+import { NightLights } from '../world/night-lights.js';
 import { Particles } from '../fx/particles.js';
 import { restorePanels } from '../entities/damage.js';
 import { CarFragments } from '../physics/car-fragments.js';
@@ -180,6 +181,7 @@ export class Game {
       this.tunnelLight.visible = false;
       this.scene.add(this.tunnelLight);
     }
+    this.nightLights = QUALITY.pointLights ? new NightLights(renderer, this.scene, QUALITY.pointLights, QUALITY.headLights) : null;
     this.env = new Environment(this.scene, renderer);
     this.postfx = createPostFX(renderer, this.scene, this.camera, this.world);
     this.chunks = new ChunkManager(this.scene, this.world, renderer, data.heritage, data.orthophotoSources, data.soundPlaces);
@@ -1067,6 +1069,7 @@ export class Game {
   render() {
     this.renderer.info.reset();
     this.env.updateSkyLight();
+    this.nightLights?.update(this.camera, this.chunks.chunks, this.vehicles.cars, this.env.night);
     if (this.postfx) this.postfx.render();
     else this.renderer.render(this.scene, this.camera);
   }
@@ -1134,7 +1137,9 @@ export class Game {
     this.postfx?.dispose();
     this.postfx = null;
     this.env.dispose();
+    this.nightLights?.dispose();
     applyQualityProfile(profile);
+    this.nightLights = QUALITY.pointLights ? new NightLights(this.renderer, this.scene, QUALITY.pointLights, QUALITY.headLights) : null;
     this.falls.limit(QUALITY.ragdolls);
     this.renderer.shadowMap.enabled = QUALITY.shadows;
     this.camera.far = QUALITY.view * 1.35;

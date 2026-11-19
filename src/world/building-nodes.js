@@ -15,7 +15,7 @@ const surfaceProperties = attribute('aSurface', 'vec2');
 const wallColor = vertexColor().rgb;
 const buildingSurface = struct({ color: 'vec3', illumination: 'float', glass: 'float' });
 
-function facade(color, illumination, glazing, cell, code, style, width, night, heritage) {
+function facade(color, illumination, glazing, cell, code, style, width, night, schedule, heritage) {
   const uv = cell.fract().toVar(), id = cell.floor().toVar();
   const detail = smoothstep(0.25, 0.8, width.x.max(width.y)).oneMinus().toVar();
   const ground = step(id.y, 0.5).toVar();
@@ -122,8 +122,12 @@ function facade(color, illumination, glazing, cell, code, style, width, night, h
     glass.assign(mix(glass, wall.mul(0.6), bars.mul(detail)));
   });
 
-  const lit = step(night.mul(0.5).oneMinus(), h2).mul(night).max(shop.mul(step(0.35, h1), night))
+  const previousLit = step(night.mul(0.5).oneMinus(), h2).mul(night).max(shop.mul(step(0.35, h1), night))
     .mul(mix(1, 0.2, step(4.5, style).mul(step(style, 5.5))), door.oneMinus()).toVar();
+  const offices = style.greaterThan(3.5).and(style.lessThan(5.5));
+  const chance = mix(offices.select(schedule.y, schedule.x), schedule.z, shop);
+  const active = smoothstep(h2.sub(0.035), h2.add(0.035), chance).mul(step(0.001, chance));
+  const lit = mix(previousLit, active.mul(night.mul(0.80).add(0.20), door.oneMinus()), schedule.w);
   const litColor = mix(vec3(1, 0.78, 0.44), vec3(0.70, 0.82, 1), step(0.86, h1))
     .mul(h1.mul(0.38).add(0.62), glassHeight.mul(0.2).add(0.8));
   glass.assign(mix(glass, litColor, lit));
@@ -177,7 +181,7 @@ function addSurfaceDetail(color, facadePoint, cell, code) {
   });
 }
 
-export function buildingNodes(night, textures, heritage) {
+export function buildingNodes(night, schedule, textures, heritage) {
   const surface = Fn(() => {
     const cell = windowData.xy.toVar();
     const code = windowData.z.add(0.5).floor().toVar();
@@ -187,7 +191,7 @@ export function buildingNodes(night, textures, heritage) {
     const illumination = float(0).toVar();
     const glazing = float(0).toVar();
     If(code.greaterThan(0).and(style.greaterThan(0.5)), () => {
-      facade(color, illumination, glazing, cell, code, style, width, night, heritage);
+      facade(color, illumination, glazing, cell, code, style, width, night, schedule, heritage);
     });
     if (textures) addSurfaceDetail(color, positionWorld, cell, code);
     return buildingSurface(color, illumination, glazing);

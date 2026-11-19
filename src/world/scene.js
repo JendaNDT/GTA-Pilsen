@@ -1,3 +1,4 @@
+import { windowSchedule } from './night-lights.js';
 import { updateTreeSeason } from './vegetation.js';
 // Obloha, světla, stíny a denní doba. (Terén a povrch země kreslí chunks.js.)
 import * as THREE from 'three/webgpu';
@@ -117,6 +118,7 @@ export class Environment {
     if (this.date !== date) this.utcOffset = pragueOffset(date);
     this.date = date;
     updateTreeSeason(date);
+    env.windows.value.set(...windowSchedule(h), QUALITY.pointLights ? 1 : 0);
     const dir = this.sunDir.fromArray(solarDirection(date, h, this.utcOffset));
     const elev = dir.y;
     const day = THREE.MathUtils.smoothstep(elev, -0.16, 0.19);

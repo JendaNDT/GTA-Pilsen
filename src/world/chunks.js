@@ -1483,6 +1483,7 @@ function buildLamps(world, ci) {
     const obstacle = [lamp.x, lamp.z, 0.14];
     let shown = false;
     return { id: lamp.id, show(intact) {
+      lamp.intact = intact;
       const batch = instances.get(lamp.height);
       batch.setMatrixAt(lamp.instance, intact ? lampMatrix.makeTranslation(lamp.x, lamp.y, lamp.z) : hiddenLamp);
       batch.instanceMatrix.needsUpdate = true;
@@ -1494,7 +1495,7 @@ function buildLamps(world, ci) {
       shown = intact;
     }, remove() { if (shown) world.removeObstacles(obstacle); } };
   });
-  return { poles, pools, visuals, dispose() {
+  return { poles, pools, visuals, entries, dispose() {
     for (const batch of instances.values()) batch.dispose();
     pg.dispose();
   } };
