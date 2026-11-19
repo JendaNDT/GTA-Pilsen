@@ -1,6 +1,6 @@
 # Stav etapy E22
 
-Ve větvi `etapa/E22` jsou převedené městské objekty, ověřený Wilsonův most i tři dávky zdí a pilířů. Hra používá další dvě lávky, silniční desku, dvě železniční mostovky a čtyři díly jezů. Probíhá kontrola zbývajících návazností a závěrečné srovnání výkonu. [Zadání E22](E22.md) · [Výsledky převodu a pilotu](#e22--převod-a-inventura)
+Ve větvi `etapa/E22` jsou převedené městské objekty, ověřený Wilsonův most i tři dávky zdí a pilířů. Hra používá další dvě lávky, silniční desku, dvě železniční mostovky a čtyři díly jezů. Vývoj a dostupné přejímací kontroly E22 jsou dokončené. Zůstává porovnání s autorovými fotografiemi a změření plynulosti na jeho zařízení. [Protokol E22](../E22.md). [Zadání E22](E22.md) · [Výsledky převodu a pilotu](#e22--převod-a-inventura)
 
 ## Výchozí etapa E21
 
@@ -282,3 +282,7 @@ Deset konců má poblíž vrchol navazující herní cesty téhož dopravního d
 Kontrola načítání kolejí navíc odhalila záměnu pořadových čísel dráhy a silniční lávky. Na současných datech se tato čísla neshodovala. Zkouška s fiktivními čísly nyní ověřuje, že železniční model při každém pořadí načte vlastní body a výšky. Prošlo 150 testů JavaScriptu, 25 testů Pythonu, produkční sestavení i zkouška obou železničních mostovek na WebGPU. Převod vyrobil přesně stejnou herní geometrii jako publikovaný balík.
 
 Při měření se projevila chyba vlastnictví společných indexů terénních dlaždic. E22 převzala opravu z E21 (`81395df`). Po sloučení prošlo 150 testů JavaScriptu, 25 testů Pythonu, produkční sestavení a dvě zkoušky WebGPU na sdílená čísla vrcholů a na detail jezů. Na WebGL 2 prošel na sestavení s opravou řazení drah také start hry při chybějícím `core.bin`.
+
+### Uzavření E22
+
+Protokol vychází z herního kódu `d7290c3`. Obsahuje všech 715 inventurních řádků, srovnávací snímky a porovnání stejné kamery s vrstvou i bez ní. U Wilsonova mostu přibylo 8,3 % volání vykreslovače a 2,7 % trojúhelníků. Na náměstí ve dne přibylo 6,9 % volání a 4,4 % trojúhelníků. Úplná dvojice snímkových časů jízdy a letu na softwarovém adaptéru chybí. Podrobnosti a omezení jsou v protokolu. Kontrola autorových fotografií a výkonu na jeho zařízení zůstává otevřená. Další vývoj pokračuje krokem G11 v E23.

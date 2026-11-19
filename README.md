@@ -143,6 +143,8 @@ V E20 můžeš autem odstrčit zaparkovaný vůz nebo pocítit náraz tramvaje. 
 
 Na vývojové větvi E21 reagují na náraz také lampy, dopravní značky, semafory a zábradlí. Auto se promáčkne v místě nárazu a může ztratit díl. Garáž si pamatuje poškození vlastního vozu a umí ho opravit. [Protokol E21 a snímky](docs/E21.md).
 
+Na větvi E22 mají Wilsonův most a vybrané lávky a železniční mosty půdorys podle městského měření. Na nábřeží a ve svazích přibyly zdi, pilíře a protihlukové stěny. U vody se vykreslují čtyři části jezů. Měřenou vrstvu lze vypnout parametrem `?structures=0`. [Srovnávací snímky, inventura a ověření E22](docs/E22.md).
+
 Regresní testy kolizí, terénu, silničního grafu a distribuovaných dat:
 
 ```bash
@@ -296,7 +298,7 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
   Pro další ulice a pro chodce hra používá odhad. [Dopravní detektory](https://opendata.plzen.eu/public/opendata/detail/160) ·
   [Hodinové profily PoliVisu](https://polivisuapi.plzen.eu/api/)
 
-- Měřené budovy centra, geometrie Wilsonova mostu a profil lávky U Prazdroje vycházejí z dat města Plzně z roku 2024 od GEOREAL – Vybíral. Plochy jsou
+- Měřené budovy centra, stavební objekty včetně mostů a jezů a profil lávky U Prazdroje vycházejí z dat města Plzně z roku 2024 od GEOREAL – Vybíral. Plochy jsou
   převedené do herních souřadnic a doplněné vlastními materiály. Hranice městských částí určují
   místní palety. [3D budovy centra Plzně](https://opendata.plzen.eu/public/opendata/detail/37) ·
   [Městské části](https://opendata.plzen.eu/public/opendata/detail/108)

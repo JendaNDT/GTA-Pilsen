@@ -55,7 +55,8 @@ try {
       requestAnimationFrame(ready);
     });
     await page.goto(url.href);
-    await page.waitForFunction(() => window.readyAt, null, { timeout: 60_000 });
+    // I pomalý první start je výsledek měření. Doba přípravy nepatří do desetisekundového vzorku jízdy.
+    await page.waitForFunction(() => window.readyAt, null, { timeout: 300_000 });
     const startup = await page.evaluate(async () => {
       const webgpu = window.__game.renderer.backend?.isWebGPUBackend === true;
       const adapter = webgpu ? await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' }) : null;
