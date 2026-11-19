@@ -1,4 +1,4 @@
-import { Euler, Vector3 } from 'three/webgpu';
+import { Vector3 } from 'three/webgpu';
 import { layers } from './world.js';
 
 export class CarFragments {
@@ -13,10 +13,11 @@ export class CarFragments {
     this.vector = new Jolt.Vec3(0, 0, 0);
   }
 
-  queue(car, mesh, center) {
-    mesh.quaternion.setFromEuler(new Euler(car.gPitch + car.pitch, car.yaw, car.gRoll + car.roll, 'YXZ'));
-    mesh.position.copy(center).applyQuaternion(mesh.quaternion);
-    mesh.position.add(new Vector3(car.x, car.y, car.z));
+  queue(car, mesh, center, pose, height) {
+    mesh.quaternion.copy(pose.rotation);
+    mesh.position.copy(center);
+    mesh.position.y -= height;
+    mesh.position.applyQuaternion(mesh.quaternion).add(pose.position);
     this.pending.push({mesh, vx: car.vx, vy: car.vy, vz: car.vz});
   }
 

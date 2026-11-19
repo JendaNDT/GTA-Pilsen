@@ -8,10 +8,10 @@ Větev `etapa/E21` navazuje na E20 sloučenou revizí `623e081`. [Zadání E21](
 | 2. Lampy | Hotovo. Společné umístění pro grafiku a fyziku, sražení, zhasnutí, dvě části lampy, obnova po návratu a ranní oprava prošly ověřením. |
 | 3. Značky a semafory | Funkční kontroly včetně návratu po opravě a dopravní špičky prošly. Celková grafická kontrola na cílovém zařízení zůstává otevřená. |
 | 4. Mosty a uzavírky | Hotovo. Náraz, návrat a oprava ověřeny ve fyzice a průjezd autem na WebGL 2 i WebGPU. |
-| 5. Následky nárazu | Zbývá hledanost, zvuky a správa počtu úlomků. |
-| 6. Auta a garáž | Zbývají deformace, odpadlé díly, jízdní následky, uložení a oprava. |
-| 7. Částice | Zbývají obě vykreslovací cesty a rozpočet. |
-| 8. Závěrečné ověření | Zbývají zkoušky, výkon, snímky a protokol. |
+| 5. Následky nárazu | Hotovo. Hledanost, zvuky a společný limit úlomků jsou zapojené do hry. |
+| 6. Auta a garáž | Hotovo. Prošly deformace, odpadnutí dílu, načtení uloženého poškození a oprava v garáži. |
+| 7. Částice | Hotovo. Prošla kontrola výpočtu na WebGPU i náhradního výpočtu na WebGL 2. |
+| 8. Závěrečné ověření | Probíhají závěrečné prohlížečové zkoušky. Snímky a měření ze softwarového vykreslovače jsou v protokolu. Měření na autorově počítači je otevřené. |
 
 Astra před implementací prověřila návrh. U lamp bude potřeba jeden společný výběr pro fyziku i vzhled, nezávislý na pořadí načítání sousedů. Pro mosty jsou zdrojem již oříznuté úseky hran. Připojené fyzikální těleso a zobrazený objekt mohou mít odlišnou dobu života. Změny po nárazu je potřeba provést po fyzikálním kroku. Otevřené otázky pro autora nyní nejsou.
 
@@ -144,3 +144,11 @@ Uzavírky dostaly 302 samostatných herních sloupků. Jejich zobrazení a fyzik
 V testu deseti zkušebních lamp na softwarovém WebGPU se všech deset rozbilo. Maximum času do dokončení celého snímku bylo 7 508,2 ms, maximum práce procesoru 107,2 ms. Rozpočet 50 ms na počítači autora čeká na měření. Dva snímky ze stejné kamery ukazují deformaci přídě a ztrátu předního nárazníku. [Protokol E21](../E21.md).
 
 Závěrečný cílený běh zahrnuje 30 scénářů E21, rozvozů a provozu. Na něj naváže úplná sada. Záznamy jsou v `data-raw/e21/zaver-{cilene,uplna}.log`. Přijetí etapy zůstává otevřené do vyhodnocení prohlížečových zkoušek a měření na cílovém počítači.
+
+### Opravy po závěrečné kontrole
+
+Odpadlý panel se umístí podle tělesa auta včetně natočení. Po průrazu zůstává na hraně mostovky samostatná kolize pro pěší postavu. Rozpočet tvorby těles zahrnuje i tuto síť. Prošlo všech 126 testů JavaScriptu a produkční sestavení. Regresní zkoušky přímo porovnaly polohu panelu u vozu otočeného o 90 stupňů a pohyb pěší postavy směrem k mezeře po návratu na dlaždici.
+
+Na starší revizi `b14f83d` prošlo 18 z 30 závěrečných cílených případů, tři doběhly do časového limitu, jeden byl přerušen a osm se nespustilo. Běh byl ukončen po sestavení opravy. Na nové revizi prošel průjezd zkušební mezerou na obou vykreslovačích a zkouška garáže na WebGPU. Garáž na WebGL 2 poprvé vyčerpala 90 s při opětovném načítání stránky. Záznamy nové revize jsou v `data-raw/e21/revize-{node,build,e2e,garaz,uplna}.log`. Opakování a úplná sada mají v cloudu časový limit 240 s na případ. Funkční podmínky ani rozpočty jednotlivých kontrol se nemění.
+
+Garáž při opakování na WebGL 2 prošla včetně nového načtení a zaplacení opravy. Úplný prohlížečový běh nyní používá samostatné sestavení s oběma opravami z kontroly.
