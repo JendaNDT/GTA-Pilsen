@@ -16,7 +16,7 @@ const [dir = 'data-raw/structures', output = 'data-raw/kandidat/detail/structure
 const json = file => JSON.parse(fs.readFileSync(file));
 const {parts, source} = json(path.join(dir, 'dily.json'));
 const {sources, reports} = json(path.join(dir, 'kontroly.json'));
-const {parts: overrides, bridges: choices, footbridges = [], districts = []} = json('tools/structure-overrides.json');
+const {parts: overrides, bridges: choices, footbridges = [], roadBridges = [], districts = []} = json('tools/structure-overrides.json');
 const meta = json('public/data/meta.json');
 const tiles = new Map(), chunk = 256;
 const minX = Math.floor(meta.bounds.minX / chunk) * chunk, minZ = Math.floor(meta.bounds.minZ / chunk) * chunk;
@@ -61,10 +61,11 @@ const bridges = choices.map(choice => {
   for (const id of [choice.deck, ...choice.rails]) calibrationReasons.set(id, choice.reason);
   return calibrateBridge(choice, byId, roads);
 });
-if (footbridges.length) {
+const planChoices = [...footbridges,...roadBridges];
+if (planChoices.length) {
   const {world} = await loadStructureMap('public/data');
   const rows = await surveyBridges(parts,world);
-  for (const choice of footbridges) {
+  for (const choice of planChoices) {
     bridges.push(planCalibration(choice,rows,world));
     calibrationReasons.set(choice.deck,choice.reason);
   }

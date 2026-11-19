@@ -28,3 +28,18 @@ test('půdorys vyžaduje shodu jednoho mostu, pěti řezů a průběžné šíř
   rows[0].matches.push({...match,id:1});
   assert.throws(()=>planCalibration(choice,rows,world),/Nejednoznačný/);
 });
+
+test('pěší osa druhé vrstvy se přijme jen uvnitř šířky a ve výšce silniční mostovky', () => {
+  const world={rOff:[0,2,4],rpx:[0,20,0,20],rpz:[0,0,1,1],rpy:[0,0,0.02,0.02],
+    r:{w:[2,1]},gradeRoads:new Set()};
+  const choice={road:0,walkway:1,deck:'zkouška',type:'silnice',reason:'Dvě cesty sdílejí desku.'};
+  const m={id:0,type:'silnice',from:0,to:20,routeLength:20,width:4,offset:0,shiftX:0,shiftZ:0,
+    samples:Array.from({length:5},()=>({width:4,offset:0}))};
+  const rows=[{id:choice.deck,matches:[m,{id:1,type:'lávka'}]}];
+  assert.equal(planCalibration(choice,rows,world).halfWidth,2);
+  world.rpy[3]=3;
+  assert.throws(()=>planCalibration(choice,rows,world),/Nejednoznačný/);
+  world.rpy[3]=0.02;
+  world.rpz[3]=2.2;
+  assert.throws(()=>planCalibration(choice,rows,world),/Nejednoznačný/);
+});

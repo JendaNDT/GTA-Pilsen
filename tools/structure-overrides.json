@@ -37,5 +37,14 @@
       "deck": "00000002021000459-54e6ac2bfe4ad324",
       "reason": "Stálá šířka a osa mezi městskými hranami v pěti řezech. Herní výškový profil zatím zachovat včetně obou napojení. Rozdíl činí přibližně jeden metr."
     }
+  ],
+  "roadBridges": [
+    {
+      "road": 1831,
+      "type": "silnice",
+      "deck": "00000002021000457-5ffadeeea50de31b",
+      "walkway": 28147,
+      "reason": "Deska nese jednu vozovku a v souběhu pěší trasu. Pět řezů měří šířku kolem osmi metrů. Pěší trasa zůstává napojená. Výšku zachovat, dokud nebude ověřen rozdíl přes jeden metr u nájezdů."
+    }
   ]
 }

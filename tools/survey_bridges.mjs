@@ -186,6 +186,22 @@ if (process.argv[1] && pathToFileURL(process.argv[1]).href === import.meta.url) 
   await writeFile(path.join(dir, 'mostni-rezy.tsv'), table.map((r) => r.join('\t')).join('\n') + '\n');
 }
 
+// Chodník zaznamenaný jako druhá cesta musí skutečně ležet na zvolené silniční desce.
+function sameDeck(world, road, walkway, m) {
+  const a = world.rOff[road], b = world.rOff[road+1]-1;
+  const dx = world.rpx[b]-world.rpx[a], dz = world.rpz[b]-world.rpz[a];
+  const length = Math.hypot(dx,dz);
+  for (let k=world.rOff[walkway];k<world.rOff[walkway+1];k++) {
+    const x = world.rpx[k]-world.rpx[a], z = world.rpz[k]-world.rpz[a];
+    const t = (x*dx+z*dz)/(length*length);
+    const offset = (z*dx-x*dz)/length-m.offset;
+    const y = world.rpy[a]+t*(world.rpy[b]-world.rpy[a]);
+    if (t<0 || t>1 || Math.abs(offset)+world.r.w[walkway]/2>m.width/2 || Math.abs(world.rpy[k]-y)>0.1)
+      return false;
+  }
+  return true;
+}
+
 // Jednotný posun a šířka patří jen přímé mostovce s konzistentními řezy napříč rozpětím.
 export function planCalibration(choice, rows, world) {
   const { road, deck, type, reason } = choice;
@@ -195,7 +211,10 @@ export function planCalibration(choice, rows, world) {
     !m ||
     !reason ||
     m.samples.length !== 5 ||
-    matches.length !== 1 ||
+    matches.length !== (choice.walkway === undefined ? 1 : 2) ||
+    (choice.walkway !== undefined && (type !== 'silnice' ||
+      !matches.some(s => s.type === 'lávka' && s.id === choice.walkway) ||
+      !sameDeck(world,road,choice.walkway,m))) ||
     m.from > m.routeLength * 0.1 ||
     m.to < m.routeLength * 0.9
   )

@@ -230,3 +230,9 @@ U dvou přímých lávek je přiřazení jednoznačné. U herní cesty č. 1921 
 Ověření 26 krajních dílů proti průchozím objemům nenašlo průnik. Opakované sestavení i distribuovaná data se shodují po bajtech. Prošlo 141 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. Na WebGPU prošel hráč po obou lávkách v obou směrech u okrajů. Na konci každé trasy stál na mostovce. Na WebGL 2 prošel také opakovaný test úrovní v Bolevci a u Wenzigovy nad sestavením třetí dávky zdí.
 
 E22 převzala ověřování referenčních pohledů z E21 (`2123df2`). Příprava pohledu zde sleduje také přenos okolních měřených objektů. Po sloučení prošlo 142 testů JavaScriptu, 25 testů Pythonu, produkční sestavení a cílené zkoušky expozice i měřeného pilíře na WebGPU. Druhá prohlížečová zkouška mimoúrovňových křížení včetně D5 také prošla nad sestavením třetí dávky zdí.
+
+### Silniční deska se souběžnou pěší trasou
+
+Na silničním úseku 1831 má konstrukce podle pěti řezů šířku 8,005 m a příčný posun 0,06 m. Převod ověřuje všechny vrcholy souběžné pěší trasy 28147 včetně její šířky. Oba konce této trasy leží uvnitř rozpětí a jejich výška se od silničního profilu liší nejvýše o 0,023 m. Herní výšky u obou napojení zůstávají původní. Rozdíl proti středu městské desky činí přibližně 1,29 m.
+
+Kontrola přijatých krajních dílů proti herním trasám i dva opakované převody prošly. U dalších tří zvažovaných silničních mostů zasáhl navržený okraj do pěší cesty. Jejich úprava čeká na posouzení skutečného konce ohrazení. Prošlo 143 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. Na WebGL 2 projelo auto po úseku 1831 v obou směrech bez poškození. Kontakty kol se od profilu odchýlily o méně než 5 cm. Samostatná zkouška Rondelu prošla nad sestavením třetí dávky zdí.

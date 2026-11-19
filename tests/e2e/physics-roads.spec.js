@@ -1,17 +1,20 @@
 import { expect, test } from '@playwright/test';
 import { gameUrl } from './game-url.js';
 
-for (const [label, bridgeOnly] of [
-  ['E18 – kola unesou auto přes Wilsonův most v obou směrech', true],
-  ['E18 – kola unesou auto oběma tubusy Valíku', false]
+for (const [label, road] of [
+  ['E18 – kola unesou auto přes Wilsonův most v obou směrech', 'wilson'],
+  ['E22 – auto projede měřenou silniční deskou sdílenou s pěší trasou', 1831],
+  ['E18 – kola unesou auto oběma tubusy Valíku', null]
 ]) {
   test(label, async ({ page }, info) => {
     await page.goto(gameUrl('/?debug&quality=low&adapt=0&hour=10'));
     await page.waitForFunction(() => window.__ready);
-    const voyages = await page.evaluate(bridgeOnly => {
+    const voyages = await page.evaluate(road => {
+      const bridgeOnly = road !== null;
       const g = window.__game, w = g.world, car = g.player.lastCar;
-      const id = [...w.archedBridges.keys()].find((r) => w.roadNames[w.r.name[r]] === 'Wilsonův most');
-      const bridge = Array.from({ length: w.rOff[id + 1] - w.rOff[id] }, (_, i) => {
+      const id = road === 'wilson' ? [...w.archedBridges.keys()].find((r) => w.roadNames[w.r.name[r]] === 'Wilsonův most') : road;
+      if (road === 1831 && w.deckCalibrations.get(road)?.kind !== 'plan') throw Error('Chybí měřená silniční deska.');
+      const bridge = !bridgeOnly ? [] : Array.from({ length: w.rOff[id + 1] - w.rOff[id] }, (_, i) => {
         const k = w.rOff[id] + i;
         return { x: w.rpx[k], z: w.rpz[k], y: w.rpy[k] };
       });
@@ -38,7 +41,7 @@ for (const [label, bridgeOnly] of [
             for (const wheel of g.driver.wheels) {
               if (!wheel.HasContact()) continue;
               const contact = wheel.GetContactPosition();
-              // Wilsonův most je přímý úsek. Za čelem desky už kolo stojí na nábřežní silnici.
+              // Kontrolované mosty jsou přímé. Za čelem desky už kolo stojí na navazující silnici.
               const fraction = ((contact.GetX() - a.x) * dx + (contact.GetZ() - a.z) * dz) / (length * length);
               // Souřadnice kontaktu i vrcholů přicházejí z fyziky jako float32.
               const inside = fraction * length >= -0.001 && (fraction - 1) * length <= 0.001;
@@ -61,18 +64,18 @@ for (const [label, bridgeOnly] of [
           health: car.health, worstDrop, maxCover, wheelSamples, wheelError, worstWheel });
       }
       return results;
-    }, bridgeOnly);
+    }, road);
     await info.attach('Průjezdy', { body: JSON.stringify(voyages), contentType: 'application/json' });
     expect(voyages).toHaveLength(2);
     for (const voyage of voyages) {
       expect(voyage.arrived, JSON.stringify(voyages)).toBe(true);
       expect(voyage.health).toBe(100);
       expect(voyage.worstDrop).toBeLessThan(0.5);
-      if (bridgeOnly && process.env.PLZEN_TEST_PHYSICS !== 'old') {
+      if (road !== null && process.env.PLZEN_TEST_PHYSICS !== 'old') {
         expect(voyage.wheelSamples).toBeGreaterThan(100);
         expect(voyage.wheelError, JSON.stringify(voyages)).toBeLessThan(0.05);
       }
-      if (!bridgeOnly) expect(voyage.maxCover).toBeGreaterThan(20);
+      if (road === null) expect(voyage.maxCover).toBeGreaterThan(20);
     }
   });
 }
