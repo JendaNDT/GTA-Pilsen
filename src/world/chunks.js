@@ -965,13 +965,14 @@ function buildTerrain(world, ci, cx0, cz0) {
       const v00 = j * n1 + i, v10 = v00 + 1, v01 = v00 + n1, v11 = v01 + 1;
       idx.push(v00, v01, v10, v10, v01, v11);      // úhlopříčka 10–01, stejně jako world.heightAt
     }
-    terrainIndices.set(N, new THREE.BufferAttribute(new Uint16Array(idx), 1));
+    terrainIndices.set(N, new Uint16Array(idx));
   }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
   g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
-  g.setIndex(terrainIndices.get(N));
+  // Dlaždice sdílejí čísla vrcholů v paměti. Každá ale uvolňuje vlastní atribut ve vykreslovači.
+  g.setIndex(new THREE.BufferAttribute(terrainIndices.get(N), 1));
   g.computeBoundingSphere();
   return g;
 }

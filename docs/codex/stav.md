@@ -173,6 +173,10 @@ Po změně prošlo 128 testů JavaScriptu a produkční sestavení. WebGL 2 doko
 
 Prohlížečové kontroly křížení, Rondelu a památek nyní čekají na stejný signál připravenosti jako hra. Zkouška změny kvality sleduje také dokončení výměny grafických zdrojů. Na sdíleném WebGL 2 prošly obě zkoušky památek, přepnutí grafiky, terén u Klabavy a průjezdy u D5. Opakování nad navazujícím sestavením E22 ověřilo také Rondel a úrovně v Bolevci. U kompletního herního průchodu ve stejné sérii selhal přenos snímku na starém sestavení. Po opravě `0e12604` prošel celý tento případ. Výsledky posledního jednotkového a produkčního sestavení jsou uvedené výše. Úplná prohlížečová regrese a samostatné opakování materiálových scén na softwarovém vykreslovači stále běží.
 
+### Samostatné grafické indexy terénních dlaždic
+
+Při uvolňování dlaždic v navazujícím měření WebGPU došlo k chybě při likvidaci grafického atributu. Kontrola zjistila, že různé geometrie sdílely tentýž atribut indexů a každá jej při svém zániku uvolnila. Dlaždice nyní sdílejí pouze čísla vrcholů v paměti a každá vlastní svůj samostatně uvolnitelný atribut. Prošlo 128 testů JavaScriptu, produkční sestavení i nová prohlížečová zkouška vlastnictví atributů na WebGPU. V měření se samostatně vyskytlo také odmítnutí alokace grafického bufferu v softwarovém adaptéru. Dopad na celý měřený průjezd ještě není ověřen.
+
 ## E22 · Převod a inventura
 
 Samostatná pracovní větev začíná nad rozpracovanou E21. Oficiální archiv má otisk `825dc3e395044b1f5a47e27c812cc4189829e9134cc027865ffc8fcb3e7bb9ac`. Převod přečetl 614 záznamů, 602 ID a všech 12 315 ploch. Po sloučení totožných ploch uvnitř ID vytvořil 715 souvislých dílů. Z toho má 93 dílů totožnou geometrii jako jiný díl, jeden nemá použitelný trojúhelník a 621 čeká na prostorovou kontrolu. Každá zdrojová plocha je započtena.
@@ -276,3 +280,5 @@ Převod doplňuje každý důvod také do inventury a dává po bajtech stejné 
 Deset konců má poblíž vrchol navazující herní cesty téhož dopravního druhu. U dvou lávek a silničního mostu se nejbližší výška liší nejvýše o 1 cm. U železnice je odchylka nejvýše 9 cm. Šest městských řezů čtvrt metru od konce leží o 0,615 až 1,582 m nad průchozím profilem. U čtyř konců chybí souvislý městský řez v ose. Původní výšky tak zachovávají návaznost v místech, kde by plošný posun desky vytvořil schod. [Všech deset kontrol](../E22/pristupy-mostu.tsv)
 
 Kontrola načítání kolejí navíc odhalila záměnu pořadových čísel dráhy a silniční lávky. Na současných datech se tato čísla neshodovala. Zkouška s fiktivními čísly nyní ověřuje, že železniční model při každém pořadí načte vlastní body a výšky. Prošlo 150 testů JavaScriptu, 25 testů Pythonu, produkční sestavení i zkouška obou železničních mostovek na WebGPU. Převod vyrobil přesně stejnou herní geometrii jako publikovaný balík.
+
+Při měření se projevila chyba vlastnictví společných indexů terénních dlaždic. E22 převzala opravu z E21 (`81395df`). Po sloučení prošlo 150 testů JavaScriptu, 25 testů Pythonu, produkční sestavení a dvě zkoušky WebGPU na sdílená čísla vrcholů a na detail jezů. Na WebGL 2 prošel na sestavení s opravou řazení drah také start hry při chybějícím `core.bin`.
