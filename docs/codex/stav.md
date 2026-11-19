@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Verze v menu a sestavení na třech verzích Node.js
+
+Kandidát 0.2.0 zobrazuje verzi v nabídce O hře a popisuje fotorežim a diagnostiku v ovládání. Na WebGPU prošla jízda tramvají, uložení a obnovení postupu i kontrola obou nabídek. Na Node.js 20.19.0, 22.12.0 a 24.22.1 vzniklo 815 shodných souborů. Prošlo 178 testů JavaScriptu a 27 testů Pythonu. Úplná sada pro oba vykreslovače obsahuje 350 scénářů. Výsledky jednotlivých jízd a zbývajících prohlížečových zkoušek se doplňují.
+
 ## Sestavení z archivu po přidání vstupů
 
 S údaji o vstupech z E25 se změnily otisky tří úseků a jejich společného katalogu. Generátor vydání dal po opakování totožný manifest. Prošlo 178 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. Z předběžného zdrojového ZIPu se podařilo pomocí místní mezipaměti npm sestavit celý web znovu. Všech 815 souborů má stejný SHA-256 jako v předběžném webovém ZIPu. Návrat k nádraží po pozdrženém požadavku a odjezdu prošel na WebGL 2 i WebGPU. Konečné archivy a celkový výsledek zkoušek zůstávají otevřené. [Protokol E26](../E26.md)

@@ -1,4 +1,5 @@
 import { expect, test, devices } from '@playwright/test';
+import packageInfo from '../../package.json' with { type: 'json' };
 import { gameUrl } from './game-url.js';
 
 async function boot(page) {
@@ -155,10 +156,14 @@ test('tramvaj lze použít a uložený postup přežije opětovné načtení', a
     .toEqual({ money: 1234, deliveries: 3, found: true, mode: 'foot' });
   expect(await page.evaluate((p) => Math.hypot(__game.player.x - p.x, __game.player.z - p.z), saved)).toBeLessThan(60);
   await page.getByRole('button', { name: 'O hře', exact: true }).click();
+  await expect(page.locator('#panel-about')).toContainText('verze ' + packageInfo.version);
   await expect(page.locator('#panel-about')).toContainText('Datum mapových dat OpenStreetMap:');
   if (await page.evaluate(() => __game.world.meta.osmTimestamp === null)) {
     await expect(page.locator('#panel-about')).toContainText('u této starší datové sady není doloženo');
   }
+  await page.getByRole('button', { name: 'Ovládání', exact: true }).click();
+  await expect(page.locator('#panel-help')).toContainText('F8 · F9');
+  await expect(page.locator('#panel-help')).toContainText('fotorežim');
   expect(errors).toEqual([]);
 });
 
@@ -209,7 +214,7 @@ test('uložení verze 1 a kontrolní trasy E01', async ({ page }) => {
 });
 
 test('silniční trasy spojují Plzeň, Rokycany, Hrádek a Dobřív v obou směrech', async ({ page }, testInfo) => {
-  test.setTimeout(210_000);
+  test.setTimeout(Math.max(test.info().timeout, 210_000));
   await boot(page);
   await action(page, 'KeyM');
   const query = page.getByRole('searchbox', { name: 'Najít obec, památku nebo zastávku' });

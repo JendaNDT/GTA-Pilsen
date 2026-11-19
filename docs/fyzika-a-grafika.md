@@ -31,7 +31,7 @@ Vrstva se načítá za běhu a je samostatně vypínatelná. [Protokol E16](E16.
 sleduje datum a čas v Plzni. Čtyři předvolby určují kvalitu stínů, záře a vyhlazování.
 [Protokol a měření E17](E17.md).
 
-## Stav po E17 (ověřeno v kódu)
+## Výchozí stav po E17
 
 - **Fyzika:** auto se otáčí podle natočení kol a boční skluz se tlumí. Nemá hmotnost,
   zavěšení ani pneumatiky (`stepDynamic()` ve `vehicles.js`). Náklony jsou vizuální,
@@ -59,25 +59,24 @@ vlastní metriky v plánu.
 ## Fyzika
 
 E18 zavádí F01–F05 a F14 pro hráčovo auto. Má automatickou převodovku, čtyři
-suché povrchy a dvě volby řízení. Mokro a sníh přidá E24. Fyzika chodců
-a ničitelné vybavení mají vlastní etapy. [Výsledky jízd a měření](E18.md)
+suché povrchy a dvě volby řízení. Mokro a sníh doplnila E24. Chůzi a pády postav popisuje E19, ničitelné vybavení E21 a E25. [Výsledky jízd a měření](E18.md)
 
-| ID | Vylepšení | Co hráč pozná | Jak | Etapa |
-| --- | --- | --- | --- | --- |
-| F01 | Pevný krok a interpolace | plynulý a stejný pohyb při 30 i 144 FPS | střádač času, krok 1/60 s, nejvýš 4 kroky za snímek, interpolace polohy a natočení pro vykreslení | E18 |
-| F02 | Fyzikální okruh | svět je pevný kolem hráče a výkon nezávisí na velikosti mapy | statické kolize dlaždic do 384 m: terén ze stejných trojúhelníků jako vykreslení (s otvory u portálů), budovy jako hranoly se střechami podle `roofAt()`, mostovky z profilů, tunely Valíku | E18 |
-| F03 | Vrstvy kolizí | zábradlí drží chodce; úlomky nezastaví postavu | tabulka vrstev v plánu (část 3.2) | E18 |
-| F04 | Auto hráče | váha, přenos hmotnosti, smyk, pérování, převodovka, zvuk podle otáček | `WheeledVehicleController`: křivka motoru, automatická převodovka (volitelně ruční), diferenciál, stabilizátory, tření podle povrchu (asfalt 1,0; dlažba 0,9; mokro 0,7; štěrk 0,6; tráva 0,5; sníh 0,35) | E18 |
-| F05 | Typy aut a asistence | každý typ jezdí jinak; volba „arkádové“ nebo „realistické“ řízení | parametry pro osm typů z `CAR_TYPES` (hmotnost, točivý moment, pohon přední/zadní/4×4, převody podle `maxSpeed`). Arkádový režim přidává ABS, kontrolu trakce, stabilizaci a vyšší přilnavost. Úpravy z garáže mění brzdy a pneumatiky. | E18 |
-| F06 | Postava | chůze po schodech, svazích a střechách; zábradlí drží; postava odstrčí lehké předměty | Kapsle s omezenou silou. Společné viditelné a fyzické hrany, na historických mostech kamenné zídky. | [E19](E19.md) |
-| F07 | Ragdolly | sražený chodec i hráč padá podle nárazu a pak vstane | 11 částí, deset kloubů, vstávání po uklidnění. Současně 1 / 2 / 4 postavy podle kvality. | [E19](E19.md) |
-| F08 | Provoz ve fyzice | srážky s auty provozu jsou skutečné; vozy se po nárazu odhodí a otočí | auta do 150 m přejdou na fyziku, nad 220 m zpět. Řidič AI dává plyn, brzdu a řízení podle trasy a pravidel; zaparkovaná auta spí a jdou odtlačit. | [E20](E20.md) |
-| F09 | MHD a policie | tramvaj auto odstrčí; policie honí fyzikálním autem | tramvaje a autobusy jako těžká kinematická tělesa na trase; směny MHD dál s jednorozměrným modelem adheze; policejní vozy ve fyzice | [E20](E20.md) |
-| F10 | Vrtulník | let s váhou a setrvačností, přistání na střeše, tvrdý dopad | těleso s tahem rotoru, kolektivem, cyklikou, ocasním rotorem a přízemním efektem; asistence vyrovnání a držení výšky (výchozí zapnuto) | [E20](E20.md) |
-| F11 | Voda | auto v řece plave, nabírá vodu a potopí se; postava plave ke břehu | `ApplyBuoyancyImpulse` nad vodními plochami, výška hladiny ze stejného zdroje jako vykreslení vody | [E20](E20.md) |
-| F12 | Ničitelné vybavení | lampy, značky, semafory, sloupky, zábradlí a zábrany se ulomí, ohnou nebo převrhnou | celek je statické těleso. Při nárazu nad prahem ho nahradí dynamické díly (stožár, hlava lampy, úsek zábradlí); značky se ohnou na pružném kloubu. Zničený semafor přestane řídit křižovatku. Poškození veřejného majetku zvyšuje hledanost. Opraví se v 4:00 dalšího herního dne. | E21 |
-| F13 | Poškození aut | promáčknutí v místě nárazu, odpadlé díly, kouř, slabší motor, tah řízení | deformace vrcholů karoserie, odpadávající nárazníky, kapota a dveře jako úlomky, mechanické následky podle zdraví, oprava v garáži | E21 |
-| F14 | Diagnostika | autor může zobrazit kolize a výkon fyziky | `?debug` přidá drátový pohled na kolize a panel s časem kroku a počty těles | E18 |
+| ID | Vylepšení | Co hráč pozná | Jak | Etapa | Stav ve větvi vydání |
+| --- | --- | --- | --- | --- | --- |
+| F01 | Pevný krok a interpolace | plynulý a stejný pohyb při 30 i 144 FPS | střádač času, krok 1/60 s, nejvýš 4 kroky za snímek, interpolace polohy a natočení pro vykreslení | [E18](E18.md) | Implementováno |
+| F02 | Fyzikální okruh | svět je pevný kolem hráče a výkon nezávisí na velikosti mapy | statické kolize dlaždic do 384 m: terén ze stejných trojúhelníků jako vykreslení (s otvory u portálů), budovy jako hranoly se střechami podle `roofAt()`, mostovky z profilů, tunely Valíku | [E18](E18.md) | Implementováno |
+| F03 | Vrstvy kolizí | zábradlí drží chodce; úlomky nezastaví postavu | tabulka vrstev v plánu (část 3.2) | [E18](E18.md) | Implementováno |
+| F04 | Auto hráče | váha, přenos hmotnosti, smyk, pérování, převodovka, zvuk podle otáček | `WheeledVehicleController`: křivka motoru, automatická převodovka (volitelně ruční), diferenciál, stabilizátory, tření podle povrchu (asfalt 1,0; dlažba 0,9; mokro 0,7; štěrk 0,6; tráva 0,5; sníh 0,35) | [E18](E18.md) | Implementováno |
+| F05 | Typy aut a asistence | každý typ jezdí jinak; volba „arkádové“ nebo „realistické“ řízení | parametry pro osm typů z `CAR_TYPES` (hmotnost, točivý moment, pohon přední/zadní/4×4, převody podle `maxSpeed`). Arkádový režim přidává ABS, kontrolu trakce, stabilizaci a vyšší přilnavost. Úpravy z garáže mění brzdy a pneumatiky. | [E18](E18.md) | Implementováno |
+| F06 | Postava | chůze po schodech, svazích a střechách; zábradlí drží; postava odstrčí lehké předměty | Kapsle s omezenou silou. Společné viditelné a fyzické hrany, na historických mostech kamenné zídky. | [E19](E19.md) | Implementováno |
+| F07 | Ragdolly | sražený chodec i hráč padá podle nárazu a pak vstane | 11 částí, deset kloubů, vstávání po uklidnění. Současně 1 / 2 / 4 postavy podle kvality. | [E19](E19.md) | Implementováno |
+| F08 | Provoz ve fyzice | srážky s auty provozu jsou skutečné; vozy se po nárazu odhodí a otočí | auta do 150 m přejdou na fyziku, nad 220 m zpět. Řidič AI dává plyn, brzdu a řízení podle trasy a pravidel; zaparkovaná auta spí a jdou odtlačit. | [E20](E20.md) | Implementováno |
+| F09 | MHD a policie | tramvaj auto odstrčí; policie honí fyzikálním autem | tramvaje a autobusy jako těžká kinematická tělesa na trase; směny MHD dál s jednorozměrným modelem adheze; policejní vozy ve fyzice | [E20](E20.md) | Implementováno |
+| F10 | Vrtulník | let s váhou a setrvačností, přistání na střeše, tvrdý dopad | těleso s tahem rotoru, kolektivem, cyklikou, ocasním rotorem a přízemním efektem; asistence vyrovnání a držení výšky (výchozí zapnuto) | [E20](E20.md) | Implementováno |
+| F11 | Voda | auto v řece plave, nabírá vodu a potopí se; postava plave ke břehu | `ApplyBuoyancyImpulse` nad vodními plochami, výška hladiny ze stejného zdroje jako vykreslení vody | [E20](E20.md) | Implementováno |
+| F12 | Ničitelné vybavení | lampy, značky, semafory, sloupky, zábradlí a zábrany se ulomí, ohnou nebo převrhnou | celek je statické těleso. Při nárazu nad prahem ho nahradí dynamické díly (stožár, hlava lampy, úsek zábradlí); značky se ohnou na pružném kloubu. Zničený semafor přestane řídit křižovatku. Poškození veřejného majetku zvyšuje hledanost. Opraví se v 4:00 dalšího herního dne. | [E21](E21.md) | Implementováno |
+| F13 | Poškození aut | promáčknutí v místě nárazu, odpadlé díly, kouř, slabší motor, tah řízení | deformace vrcholů karoserie, odpadávající nárazníky, kapota a dveře jako úlomky, mechanické následky podle zdraví, oprava v garáži | [E21](E21.md) | Implementováno |
+| F14 | Diagnostika | autor může zobrazit kolize a výkon fyziky | `?debug` přidá drátový pohled na kolize a panel s časem kroku a počty těles | [E18](E18.md) | Implementováno |
 
 **Výchozí prahy zlomení (F12)** jsou impulz v N·s, odhadnutý z redukované hmotnosti a
 rychlosti nárazu. Ladí se v E21.
@@ -119,35 +118,34 @@ ověřené v three.js 0.187.
 
 ### Krajina, voda a noc (E23)
 
-| ID | Vylepšení | Co bude vidět | Jak | Předvolby |
-| --- | --- | --- | --- | --- |
-| G11 | Terén zblízka | tráva, hlína, štěrk a brázdy polí zblízka, ne jen barva | opakované detailní textury podle třídy plochy (maska z plátna dlaždice), normálové mapy, trojrozměrné mapování na prudkých svazích | U V S |
-| G12 | Silnice a chodníky | asfalt se strukturou, vyjeté koleje, záplaty, kanály, ostré čáry | PBR asfalt s normálou a drsností, opotřebení podle tříd silnic, navázání na mokro | U V S N |
-| G13 | Řeky a rybníky | tekoucí voda ve směru toku, odrazy břehů a mostů, pěna u jezů | vodní uzlový materiál s normálovými vlnami podle směru toku z OSM, Fresnel, `SSRNode` (U), odraz prostředí (V, S); pěna a sprška u jezů ze `sound-places.json` | U V S N |
-| G14 | Stromy | různé druhy, vítr, podzimní barvy podle data ve hře | modely blízko a impostory v dálce, kývání ve větru, sezónní barva a opad podle herního kalendáře | U V S N |
-| G15 | Tráva | louky a parky s trávou u kamery | instancovaná stébla do U 80 m, V 50 m, S 30 m, s větrem | U V S |
-| G16 | Noční město | lampy opravdu svítí na ulici a auta, okna se rozsvěcují podle času | `ClusteredLighting`: U 256, V 128, S 48 světel u kamery, dál zůstávají světelné skvrny; rozvrh oken podle hodiny | U V S |
-| G17 | Částice | prach z polí, jiskry při drhnutí, kouř z rozbitých aut, střepy, šplouchnutí | částice na GPU (výpočet v TSL) se společným rozpočtem; na záložním WebGL 2 jednodušší instancované částice | U V S N |
+| ID | Vylepšení | Co bude vidět | Jak | Předvolby | Stav ve větvi vydání |
+| --- | --- | --- | --- | --- | --- |
+| G11 | Terén zblízka | tráva, hlína, štěrk a brázdy polí zblízka, ne jen barva | opakované detailní textury podle třídy plochy (maska z plátna dlaždice), normálové mapy, trojrozměrné mapování na prudkých svazích | U V S | Implementováno · [E23](E23.md) |
+| G12 | Silnice a chodníky | asfalt se strukturou, vyjeté koleje, záplaty, kanály, ostré čáry | PBR asfalt s normálou a drsností, opotřebení podle tříd silnic, navázání na mokro | U V S N | Implementováno · [E23](E23.md) |
+| G13 | Řeky a rybníky | tekoucí voda ve směru toku, odrazy břehů a mostů, pěna u jezů | vodní uzlový materiál s normálovými vlnami podle směru toku z OSM, Fresnel, `SSRNode` (U), odraz prostředí (V, S); pěna a sprška u jezů ze `sound-places.json` | U V S N | Implementováno · [E23](E23.md) |
+| G14 | Stromy | různé druhy, vítr, podzimní barvy podle data ve hře | modely blízko a impostory v dálce, kývání ve větru, sezónní barva a opad podle herního kalendáře | U V S N | Implementováno · [E23](E23.md) |
+| G15 | Tráva | louky a parky s trávou u kamery | instancovaná stébla do U 80 m, V 50 m, S 30 m, s větrem | U V S | Implementováno · [E23](E23.md) |
+| G16 | Noční město | lampy opravdu svítí na ulici a auta, okna se rozsvěcují podle času | `ClusteredLighting`: U 256, V 128, S 48 světel u kamery, dál zůstávají světelné skvrny; rozvrh oken podle hodiny | U V S | Implementováno · [E23](E23.md) |
+| G17 | Částice | prach z polí, jiskry při drhnutí, kouř z rozbitých aut, střepy, šplouchnutí | částice na GPU (výpočet v TSL) se společným rozpočtem; na záložním WebGL 2 jednodušší instancované částice | U V S N | Implementováno · [E23](E23.md) |
 
 ### Budovy, vozidla a počasí (E24)
 
-| ID | Vylepšení | Co bude vidět | Jak | Předvolby |
-| --- | --- | --- | --- | --- |
-| G18 | Fasády podle čtvrtí | omítky, cihla, panel a kámen podle typu zástavby, sokly a rámy oken | atlas textur CC0 navázaný na `styleFor()` a `Districts`, normálové mapy, zarovnání na mřížku oken (`wu`, `wv`) | U V S N |
-| G19 | Okna s interiéry | za okny jsou vidět pokoje, kanceláře a obchody, v noci se rozsvěcují | interior mapping (paralaxa místností) s několika variantami a závěsy | U V S |
-| G20 | Střechy | tašky, plech, měď a lepenka s plastickou strukturou | materiály podle materiálu střechy z mapy, normálové mapy | U V S N |
-| G21 | Auta | metalický lak, odrazy, chrom, světla, brzdová a couvací světla, špína a promáčknutí | `MeshPhysicalNodeMaterial` s clearcoatem, vyzařující světla navázaná na fyziku (brzda, couvání), světlomety jako bodová světla pro hráče a nejbližší auta | U V S N |
-| G22 | MHD a postavy | materiály tramvají a autobusů, rozsvícené interiéry a cedule, pestřejší chodci | uzlové materiály, vyzařující panely, varianty oblečení | U V S N |
-| G23 | Počasí | déšť, mokré ulice s kalužemi, sníh v zimě, mlha; počasí mění přilnavost aut | stav počasí podle data a náhody; déšť jako částice; dynamická vlhkost (rozšíření `?wet=1`) se schnutím; sněhová pokrývka podle sezóny; tření pneumatik podle F04 | U V S N |
-| G24 | Oblaka | objemová oblaka a jejich stíny na krajině | raymarching v nižším rozlišení s časovou reprojekcí; N a S zůstávají u dnešních mraků | U V |
-| G25 | Sluneční paprsky a odlesky | paprsky mezi domy a stromy, odlesk slunce | `GodraysNode` (U), `LensflareMesh` (volitelně v nastavení) | U |
-| G26 | Fotorežim | volná kamera, hloubka ostrosti, skrytí HUD, uložení snímku | `DepthOfFieldNode`, zastavení času | U V S |
-| G27 | Pohybové rozmazání | pocit rychlosti při jízdě a letu (výchozí vypnuto) | `MotionBlur` z vektorů pohybu, které vytváří TRAA | U V |
+| ID | Vylepšení | Co bude vidět | Jak | Předvolby | Stav ve větvi vydání |
+| --- | --- | --- | --- | --- | --- |
+| G18 | Fasády podle čtvrtí | omítky, cihla, panel a kámen podle typu zástavby, sokly a rámy oken | atlas textur CC0 navázaný na `styleFor()` a `Districts`, normálové mapy, zarovnání na mřížku oken (`wu`, `wv`) | U V S N | Implementováno · [E24](E24.md) |
+| G19 | Okna s interiéry | za okny jsou vidět pokoje, kanceláře a obchody, v noci se rozsvěcují | interior mapping (paralaxa místností) s několika variantami a závěsy | U V S | Implementováno · [E24](E24.md) |
+| G20 | Střechy | tašky, plech, měď a lepenka s plastickou strukturou | materiály podle materiálu střechy z mapy, normálové mapy | U V S N | Implementováno · [E24](E24.md) |
+| G21 | Auta | metalický lak, odrazy, chrom, světla, brzdová a couvací světla, špína a promáčknutí | `MeshPhysicalNodeMaterial` s clearcoatem, vyzařující světla navázaná na fyziku (brzda, couvání), světlomety jako bodová světla pro hráče a nejbližší auta | U V S N | Implementováno · [E24](E24.md) |
+| G22 | MHD a postavy | materiály tramvají a autobusů, rozsvícené interiéry a cedule, pestřejší chodci | uzlové materiály, vyzařující panely, varianty oblečení | U V S N | Implementováno · [E24](E24.md) |
+| G23 | Počasí | déšť, mokré ulice s kalužemi, sníh v zimě, mlha; počasí mění přilnavost aut | stav počasí podle data a náhody; déšť jako částice; dynamická vlhkost (rozšíření `?wet=1`) se schnutím; sněhová pokrývka podle sezóny; tření pneumatik podle F04 | U V S N | Implementováno · [E24](E24.md) |
+| G24 | Oblaka | objemová oblaka a jejich stíny na krajině | raymarching v nižším rozlišení s časovou reprojekcí; N a S zůstávají u dnešních mraků | U V | Implementováno · [E24](E24.md) |
+| G25 | Sluneční paprsky a odlesky | paprsky mezi domy a stromy, odlesk slunce | `GodraysNode` (U), `LensflareMesh` (volitelně v nastavení) | U | Implementováno · [E24](E24.md) |
+| G26 | Fotorežim | volná kamera, hloubka ostrosti, skrytí HUD, uložení snímku | `DepthOfFieldNode`, zastavení času | U V S | Implementováno · [E24](E24.md) |
+| G27 | Pohybové rozmazání | pocit rychlosti při jízdě a letu (výchozí vypnuto) | `MotionBlur` z vektorů pohybu, které vytváří TRAA | U V | Implementováno · [E24](E24.md) |
 
 ### Ulice (E25)
 
-Tři úseky z plánu (Americká, Dřevěná a náměstí, okolí nádraží) využijí G01, G18–G20 a
-ničitelné vybavení F12: lavičky, koše, přístřešky se sklem a stojany.
+Tři úseky z plánu (Americká, Dřevěná a náměstí, okolí nádraží) využívají G01, G18–G20 a vybavení F12. Přiřazeno je 66 měřených stěn. Přesné členění výloh a poloha přístřešku čekají na autorovy fotografie. [Stav tří ulic](E25.md)
 
 ## Licence podkladů
 

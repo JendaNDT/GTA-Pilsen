@@ -1,3 +1,4 @@
+import packageInfo from '../package.json' with {type:'json'};
 import { PhotoMode } from './game/photo-mode.js';
 import { loadJolt } from './physics/jolt.js';
 import { PhysicsWorld } from './physics/world.js';
@@ -41,6 +42,7 @@ const HELP_HTML = IS_TOUCH ? `
     <tr><td>J</td><td>vzít rychlý rozvoz jídla nebo zrušit aktivní zakázku</td></tr>
     <tr><td>M</td><td>velká mapa (vyhledej místo nebo kliknutím nastav cíl)</td></tr>
     <tr><td>Myš</td><td>tažením otáčíš kameru, kolečkem přibližuješ</td></tr>
+    ${DEBUG ? '<tr><td>F8 · F9</td><td>kolizní povrchy · panel měření výkonu</td></tr>' : ''}
     <tr><td>O</td><td>fotorežim · pohyb WASD, nahoru E, dolů Q, otáčení tažením</td></tr>
     <tr><td>C · H · L · R</td><td>kamera · klakson · dálková světla · vrátit na silnici</td></tr>
     <tr><td>N · Esc</td><td>posunout čas o 3 hodiny · menu se zakázkami, garáží a směnami MHD</td></tr>
@@ -48,6 +50,7 @@ const HELP_HTML = IS_TOUCH ? `
 
 const ABOUT_HTML = (meta, rendering) => `
   <h3>O hře</h3>
+  <p>Plzeň naplno · verze ${packageInfo.version}</p>
   <p>Otevřený svět postavený ze skutečných dat od Plzně přes Rokycany až do Dobříva. Najdeš v něm kopce a údolí řek,
   půdorysy a výšky budov, silnice a mosty, linky MHD, parky, restaurace i adresy.</p>
   <p>Co se dá dělat: chodit, půjčovat si auta, vozit se tramvají, trolejbusem i autobusem, létat vrtulníkem,

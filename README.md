@@ -47,6 +47,8 @@ otevřených dat. Běží na počítači i na mobilu, bez instalace.
   uzavírky na okraji mapy. Hra střídá den a noc, ukazuje den v týdnu a ukládá datum i postup.
   Hodiny u minimapy lze skrýt v nastavení.
 
+Větev vydání 0.2.0 obsahuje společnou fyziku vozidel v Joltu, kontrolu stažených mapových podkladů a možnost obnovit předchozí vydání se stejným uloženým postupem. [Ověření kandidáta a postup návratu](docs/E26.md)
+
 ## Ovládání
 
 | Klávesa | Co dělá |
