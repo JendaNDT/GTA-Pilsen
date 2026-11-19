@@ -21,13 +21,13 @@ const jointFront = new Vector3();
 const jointRear = new Vector3();
 const jointAxis = new Vector3();
 const TROLLEY_SECTION = { length: TROLLEY_LEN, doors: [3.9, -1.5] };
-const SECTIONS = { tram: TRAM_SECTIONS, bus: [BUS_SECTION], trolleybus: [TROLLEY_SECTION] };
+export const SECTIONS = { tram: TRAM_SECTIONS, bus: [BUS_SECTION], trolleybus: [TROLLEY_SECTION] };
 const VIEW_DISTANCE = 520;
 const DOOR_SPEED = 3;
 const ARRIVE_DISTANCE = 0.55;
 const SPAWN_GRACE_SECONDS = 80;
 
-class Route {
+export class Route {
   constructor({ type, ref, from, to, path, stops }) {
     this.type = type;
     this.ref = ref;

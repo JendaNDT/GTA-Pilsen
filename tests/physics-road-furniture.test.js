@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { streetFixtures } from '../src/world/street-furniture.js';
 import { WalkingCharacter } from '../src/physics/character.js';
 import { Breakables } from '../src/physics/breakables.js';
 import { PhysicsWorld, layers } from '../src/physics/world.js';
@@ -12,16 +13,21 @@ const { RoadFurnitureBodies } = await import('../src/physics/road-furniture.js')
 const { staticMeshBody } = await import('../src/physics/colliders.js');
 const Jolt = await loadJolt();
 
-for (const [style, speed, broken] of [['stone', 50, false], ['open', 60, true], ['solid', 10, false], ['closure', 20, true]]) {
+for (const [style, speed, broken] of [['stone', 50, false], ['open', 60, true], ['solid', 10, false], ['closure', 20, true],
+  ['bench', 18, true], ['bin', 14, true], ['shelter', 18, true]]) {
   test(`překážka ${style} při herním nárazu ${speed} km/h`, () => {
     const physics = new PhysicsWorld(Jolt), registry = new Breakables();
     const rail = (x, id) => ({ id: 'railing/0/' + id, style, tile: 0, x, y: 0.5, z: 0.05, height: 1,
       corners: [[x-1.25,0,0], [x+1.25,0,0], [x+1.25,0,0.1], [x-1.25,0,0.1]] });
     const closure = { id: 'closure/0/0', tile: 0, x: 0, y: 0.44, z: 0, closure: [0,0,0,1,4], obstacles: [0,0,0.66] };
-    const isClosure = style === 'closure', target = isClosure ? closure : rail(0, 0);
+    const isClosure = style === 'closure', isStreet = ['bench','bin','shelter'].includes(style);
+    const street = streetFixtures({id:'fiktivni-vzorek',kind:style,x:0,z:0,yaw:0},
+      {heightAt:() => 0, chunkIndex:() => 0});
+    const target = isStreet ? street.find(f => Number.isFinite(f.impulse)) : isClosure ? closure : rail(0,0);
     const edge = rail(2.5, 1), obstacles = new Set([closure.obstacles]);
     const world = { breakables: registry, heightAt: () => 0,
-      bridgeEdges: new Map([[0, isClosure ? [] : [target, edge]]]),
+      bridgeEdges: new Map([[0, isClosure || isStreet ? [] : [target, edge]]]),
+      streetFixtures: new Map([[0,street]]),
       closureChunks: new Map([[0, isClosure ? [closure] : []]]),
       addObstacles: list => obstacles.add(list), removeObstacles: list => obstacles.delete(list) };
     const manager = new RoadFurnitureBodies(physics, world, staticMeshBody);
@@ -45,6 +51,7 @@ for (const [style, speed, broken] of [['stone', 50, false], ['open', 60, true], 
       }
       assert.equal(registry.state(target.id), broken ? isClosure ? 'moved' : 'broken' : 'intact');
       assert.equal(registry.state(edge.id), 'intact');
+      for (const frame of street.filter(f => !Number.isFinite(f.impulse))) assert.equal(registry.state(frame.id),'intact');
       if (broken) assert.ok(car.GetPosition().GetZ() > 0);
       if (isClosure) assert.ok(!obstacles.has(closure.obstacles));
       manager.unload(0);
@@ -52,7 +59,7 @@ for (const [style, speed, broken] of [['stone', 50, false], ['open', 60, true], 
       manager.load(0);
       manager.step(3);
       assert.equal(registry.state(target.id) === 'intact', !broken);
-      if (broken && !isClosure) {
+      if (broken && !isClosure && !isStreet) {
         const player = { x: 0, y: 0, z: -2, vx: 0, vy: 0, vz: 4, grounded: true, fallStart: 0 };
         const walker = new WalkingCharacter(physics, player);
         try {

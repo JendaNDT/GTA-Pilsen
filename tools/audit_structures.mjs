@@ -74,7 +74,7 @@ export async function loadStructureMap(dir, bridges, railDecks) {
   return { world: new GeometryWorld(data), sources, stops: (await json('timetable.json')).stops };
 }
 
-function indexRoutes(world, stops, area, RC, RF, drivable) {
+export function indexRoutes(world, stops, area, RC, RF, drivable) {
   const cells = new Map(),
     bridges = [];
   const nearby = (x, z, bx, bz, r) =>

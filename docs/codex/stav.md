@@ -10,6 +10,12 @@ Všech 26 ploch našlo protějšek ve skutečně distribuované dlaždici. Přev
 
 Prošlo 168 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. Ve WebGL 2 i WebGPU se po přesunu do pilotu načetl samostatný balík a vykreslil se správný materiál. Při změně otisku zůstalo při jednotkové zkoušce původní průčelí. Opakovaný převod dal stejných 3,1 kB dat pilotu.
 
+## Vybavení, dlažba a tři úseky
+
+Ve čtyřech městských dlaždicích se podařilo přiřadit všech 66 vymezených stěn. Patnáct jednotlivých prvků vybavení a jeden zastávkový přístřešek prošly kontrolou odstupů od komunikací, dveří vozidel MHD a cílů zakázek. Sklo a konstrukce se zobrazují a reagují na herní fyziku samostatně. Při jednotkové zkoušce na fiktivním místě zůstal po rozbití skla celý rám, po návratu přetrval poškozený stav a po ranní opravě se výplň obnovila.
+
+Prošlo 173 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. Ve všech šesti prohlížečových zkouškách prošel pilot a chůze ve třech úsecích na nízké i vysoké předvolbě za dne, soumraku a noci ve WebGL 2 i WebGPU. Zbývají samostatné zkoušky nástupu u nádraží, doručení na místní adresy a snímky před a po. Věrnost přízemí a přístřešku vyžaduje fotografie autora. [Protokol úseků](../E25.md)
+
 # Stav etapy E24
 
 E24 navazuje na G17 ve větvi E23 (`fe30ef0`). [Zadání E24](E24.md)

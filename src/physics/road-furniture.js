@@ -17,6 +17,7 @@ export class RoadFurnitureBodies {
     this.debug = debug;
     this.tiles = new Set();
     this.rails = new Map();
+    world.refreshStreetCollision = ci => { if (this.tiles.has(ci)) this.dirty.add(ci); };
     this.footRails = new Map();
     this.byBody = new Map();
     this.loose = new Map();
@@ -60,11 +61,13 @@ export class RoadFurnitureBodies {
 
   buildRailMesh(ci) {
     this.removeRailMesh(ci);
-    const edges = this.world.bridgeEdges.get(ci);
-    if (!edges || !this.tiles.has(ci)) return;
+    if (!this.tiles.has(ci)) return;
+    const edges = [...(this.world.bridgeEdges.get(ci) ?? []), ...(this.world.streetFixtures?.get(ci) ?? [])];
+    if (!edges.length) return;
     const positions = [], footPositions = [], ids = [];
     edges.forEach((edge, index) => {
       const intact = this.registry.state(edge.id) === 'intact';
+      if (!intact && edge.kind) return;
       const target = intact ? positions : footPositions;
       railingFaces(edge, (a, b, c, d) => {
         target.push(...a, ...b, ...c, ...a, ...c, ...d);
@@ -103,7 +106,7 @@ export class RoadFurnitureBodies {
     const fixture = edges[index];
     if (!fixture) return false;
     if (this.hits.has(fixture)) return true;
-    if (impulse < (fixture.style === 'stone' ? 30000 : 12000)) return false;
+    if (impulse < (fixture.impulse ?? (fixture.style === 'stone' ? 30000 : 12000))) return false;
     const v = car.GetLinearVelocity();
     this.hits.set(fixture, { impulse, vx: v.GetX(), vz: v.GetZ(), car: bodyKey(car) });
     return true;
@@ -177,7 +180,7 @@ export class RoadFurnitureBodies {
       if (closure) {
         this.pending.add(closure);
         this.updateObstacles(closure, null);
-      } else if (id.startsWith('railing/')) {
+      } else if (id.startsWith('railing/') || id.startsWith('street/')) {
         const ci = Number(id.split('/')[1]);
         if (this.tiles.has(ci)) this.dirty.add(ci);
         const piece = this.loose.get(id);
@@ -213,8 +216,8 @@ export class RoadFurnitureBodies {
       if (budget < 1 + tilesToRebuild * 4 || this.physics.debris?.room(1) === false) break;
       this.hits.delete(fixture);
       if (!this.tiles.has(fixture.tile) || !this.registry.damage(fixture.id, 'broken', now)) continue;
-      this.createLoose(fixture, hit);
-      this.physics.onFurnitureDamage?.(fixture, hit, fixture.style === 'stone' ? 'stone' : 'metal');
+      if (fixture.piece !== 'sklo') this.createLoose(fixture, hit);
+      this.physics.onFurnitureDamage?.(fixture, hit, fixture.piece === 'sklo' ? 'glass' : fixture.style === 'stone' ? 'stone' : 'metal');
       this.dirty.add(fixture.tile);
       budget--;
     }
