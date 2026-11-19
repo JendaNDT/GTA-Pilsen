@@ -102,3 +102,87 @@ test('E21 – při poškození a opravě značky a semaforu se společně skryj�
     signal: { hidden: 5, moved: 0, restored: true },
   });
 });
+
+test('E21 – náraz ohne značku, vyřadí řízení semaforů a v noci se vybavení vrátí @webgpu', async ({ page }) => {
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0&date=2026-11-09&hour=22'));
+  await page.waitForFunction(() => window.__ready);
+  await page.getByRole('button', { name: 'Hrát', exact: true }).click();
+  const result = await page.evaluate(() => {
+    __freeze(true);
+    const g = __game, { world, focus, colliders, trafficFurniture: furniture, physics } = g;
+    const { Jolt, bodies } = physics;
+    for (let i = 0; i < 28; i++) colliders.update(focus.x, focus.z);
+    for (let i = 0; i < 18; i++) g.chunks.update(focus.x, focus.z, 620, 100);
+    while (furniture.pending.size) furniture.step(g.clock.now);
+    for (const car of [...g.vehicles.cars]) g.vehicles.remove(car);
+    const fixtures = [...furniture.nearby.values()];
+    const find = type => fixtures.find(fixture => fixture.type === type &&
+      (type !== 'signal' || fixture.entry.group.fixtures?.includes(fixture.id)) &&
+      world.breakables.visuals.has(fixture.id) &&
+      [0, 0.26, 0.52].every(distance =>
+        !world.collideCircle(fixture.x, fixture.z - distance, 0.31, fixture.y + 0.6, fixture.y + 1.4, true)) &&
+      fixtures.every(other => other === fixture || Math.hypot(other.x - fixture.x, other.z - fixture.z) > 1.5));
+    const sign = find('sign'), signal = find('signal');
+    if (!sign || !signal) throw new Error('V okolí chybí samostatná značka nebo semafor.');
+    const advance = ticks => {
+      for (let i = 0; i < ticks; i++) physics.step(1 / 60);
+    };
+    const collide = (fixture, speed) => {
+      const position = new Jolt.RVec3(fixture.x, fixture.y + 1, fixture.z - 0.52);
+      const rotation = new Jolt.Quat(0, 0, 0, 1);
+      const half = new Jolt.Vec3(0.18, 0.21, 0.22);
+      const velocity = new Jolt.Vec3(0, 0, speed);
+      const setup = new Jolt.BodyCreationSettings(new Jolt.BoxShape(half), position, rotation, Jolt.EMotionType_Dynamic, 1);
+      setup.mOverrideMassProperties = Jolt.EOverrideMassProperties_CalculateInertia;
+      setup.mMassPropertiesOverride.mMass = 1000;
+      const body = bodies.CreateBody(setup), id = body.GetID();
+      bodies.AddBody(id, Jolt.EActivation_Activate);
+      bodies.SetLinearVelocity(id, velocity);
+      try {
+        for (let i = 0; i < 18; i++) {
+          advance(1);
+          if (world.breakables.state(fixture.id) !== 'intact') break;
+        }
+      } finally {
+        bodies.RemoveBody(id);
+        bodies.DestroyBody(id);
+        for (const value of [position, rotation, half, velocity, setup]) Jolt.destroy(value);
+      }
+    };
+    const before = world.traffic.light(signal.entry);
+    collide(sign, 5.7);
+    advance(360);
+    const signTilt = world.breakables.damaged.get(sign.id)?.pose?.qx ?? 0;
+    const settled = furniture.records.get(sign.id).body.IsStatic();
+    collide(signal, 21);
+    const blackout = world.traffic.light(signal.entry);
+    const parts = furniture.records.get(signal.id).pieces?.length ?? 0;
+    g.setClock('2026-11-10', 4);
+    furniture.step(g.clock.now);
+    return { ready: before !== 'off', signTilt, settled, blackout, parts,
+      restored: world.traffic.light(signal.entry) !== 'off',
+      standing: [sign, signal].every(f => furniture.records.get(f.id).state === 'intact') };
+  });
+  expect(result).toMatchObject({ ready: true, settled: true, blackout: 'off', parts: 2, restored: true, standing: true });
+  expect(result.signTilt).toBeGreaterThan(0.1);
+});
+
+test('E21 – semafor pro chodce u Americké má patu vedle jízdního pruhu', async ({ page }) => {
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0'));
+  await page.waitForFunction(() => window.__ready);
+  const result = await page.evaluate(() => {
+    const g = __game, { world, colliders, trafficFurniture } = g;
+    __freeze(true);
+    for (let i = 0; i < 25; i++) colliders.update(-358.16, 364.15);
+    while (trafficFurniture.pending.size) trafficFurniture.step(g.clock.now);
+    const fixture = trafficFurniture.nearby.get('signal/5797/20');
+    const { x, y, z, entry } = fixture;
+    g.chunks.update(x, z, 620, 100);
+    return { oldInRoad: world.onCarriageway(entry.x, entry.z, world.groundY(entry.x, entry.z)),
+      obstructsRoad: world.onCarriageway(x, z, y, 0.25), distance: Math.hypot(x - entry.x, z - entry.z),
+      physical: trafficFurniture.records.get(fixture.id).body.IsStatic() };
+  });
+  expect(result).toMatchObject({ oldInRoad: true, obstructsRoad: false, physical: true });
+  expect(result.distance).toBeGreaterThan(0);
+  expect(result.distance).toBeLessThan(5);
+});

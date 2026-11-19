@@ -69,6 +69,7 @@ for (const site of ['Klatovská', 'hlavní nádraží']) {
                 neighbours: g.vehicles.cars.filter(near).map(describe),
                 obstacles: g.vehicles.obstacles.filter(near).map(describe),
                 lamps: [...g.lampBodies.nearby.values()].filter(near).map(l => [l.id, l.x, l.z]),
+                fixtures: [...g.trafficFurniture.nearby.values()].filter(near).map(f => [f.id, f.x, f.z]),
               });
             }
             distance += moved;

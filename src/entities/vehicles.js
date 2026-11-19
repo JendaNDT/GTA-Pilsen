@@ -83,6 +83,7 @@ export class VehicleManager {
     this.cars = [];
     this.spawnTimer = 0;
     this.obstacles = [];       // další překážky pro provoz (tramvaje, hráč pěšky): {x, y, z, vx, vz, halfLen, radius}
+    this.downhillGrades = new Map();
     this.crashPoints = 0;
     this.view = new THREE.Frustum();
     this.viewMatrix = new THREE.Matrix4();
@@ -528,6 +529,32 @@ export class VehicleManager {
     return Math.max(0, room);
   }
 
+  _downhillLimit(edge, progress, limit) {
+    const w = this.world, length = w.eLen[edge], road = w.eRoad[edge];
+    let grades = this.downhillGrades.get(edge);
+    if (!grades) {
+      grades = [];
+      this.downhillGrades.set(edge, grades);
+    }
+    const height = s => {
+      const p = w.edgePoint(edge, s, 0, _pt2);
+      return w.roadSurfaceY(road, p.seg, p.t, p.x, p.z);
+    };
+    // Odebíráme vzorky jen tak daleko, kam se ještě promítne brzdění.
+    const reach = progress + limit ** 2 / 6 + 2;
+    for (let i = Math.max(0, Math.floor((progress - 2) / 3)); i * 3 < Math.min(reach, length); i++) {
+      const start = i * 3, end = Math.min(start + 3, length);
+      if (progress > end + 2) continue;
+      if (grades[i] === undefined) {
+        const grade = (height(start) - height(end)) / Math.max(1, end - start);
+        grades[i] = grade > 0.22 ? Math.max(3.5, 7.3 - 10 * (grade - 0.22)) : Infinity;
+      }
+      // Na ostrém sjezdu přibrzdíme ještě s koly na rovině.
+      limit = Math.min(limit, Math.sqrt(grades[i] ** 2 + 6 * Math.max(0, start - progress - 2)));
+    }
+    return limit;
+  }
+
   stepAI(car, dt, physical = null) {
     const w = this.world;
     if (car.blocked > 2 && Math.abs(car.speed) < 0.3) this._detourAroundWreck(car);
@@ -573,11 +600,13 @@ export class VehicleManager {
     const roadLimit = w.roadSpeed(road, w.eA[car.edge] < w.eB[car.edge]) / 3.6;
     let vmax = Math.min(roadLimit, Math.min(roadLimit, 15) * car.temper);
     const remain = len - car.s;
+    if (physical) vmax = this._downhillLimit(car.edge, car.s, vmax);
     let leftTurn = turn?.sign < 0 && arcDistance < turn.radius * 0.3 ? turn : null;
     let leftDistance = -arcDistance;
     if (car.next >= 0) {
       const nextLimit = w.roadSpeed(w.eRoad[car.next], w.eA[car.next] < w.eB[car.next]) / 3.6;
       vmax = Math.min(vmax, Math.sqrt(nextLimit ** 2 + 8 * Math.max(0, remain)));
+      if (physical && remain < 35) vmax = this._downhillLimit(car.next, -remain, vmax);
       // Dřívější plán může končit uprostřed dělené křižovatky. Před stopčárou
       // doplníme i následné odbočení, aby protisměr znal celý zamýšlený průjezd.
       const lastMove = car.exitPlan.at(-1);

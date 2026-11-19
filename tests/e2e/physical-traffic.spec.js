@@ -776,3 +776,35 @@ test('E21 – dvě auta z Klatovské se za Tylovou zařadí do jediného pruhu b
   expect(result, JSON.stringify(result)).toMatchObject({ passed: true, crashed: false });
   expect(result.closest).toBeGreaterThan(0);
 });
+
+test('E21 – pickup zpomalí před prudkým sjezdem od nádraží a dojede dolů bez nárazu', async ({ page }) => {
+  await start(page, '&date=2026-11-09&hour=3');
+  const result = await page.evaluate(() => {
+    const g = __game, { world, vehicles, trafficBodies } = g, traffic = world.traffic;
+    const Car = g.player.lastCar.constructor, car = vehicles.add(new Car('pickup', 0x8899aa));
+    for (const other of [...vehicles.cars]) if (other !== car) vehicles.remove(other);
+    const edge = 519, exit = 517, s = 19, point = world.edgePoint(edge, s, 0, {});
+    car.place(point.x, point.z, Math.atan2(point.tx, point.tz));
+    Object.assign(car, { mode: 'ai', edge, s, lane: 0, temper: 1, speed: 10, vx: 10 * point.tx, vz: 10 * point.tz });
+    car.exitPlan.push({ from: edge, to: exit, lane: vehicles._laneFor(exit), slow: 6 });
+    vehicles._pickNext(car);
+    const signal = traffic.byEdge.get(edge).find(c => c.kind === 'signal');
+    while (traffic.light(signal) !== 'green') traffic.tick(0.25);
+    g.player.place(663, 596);
+    for (let i = 0; i < 28; i++) g.colliders.update(g.player.x, g.player.z);
+    while (g.trafficFurniture.pending.size) g.trafficFurniture.step(g.clock.now);
+    while (g.lampBodies.pending.size) g.lampBodies.step(g.clock.now);
+    trafficBodies.selectCars(g);
+    let speed = 100, passed = false;
+    for (let i = 0; i < 900; i++) {
+      g.physics.step(1 / 60);
+      if (car.x >= 634 && car.x <= 636) speed = Math.min(speed, car.speed);
+      if (car.edge === exit) { passed = true; break; }
+      if (car.crashed) break;
+    }
+    return { passed, crashed: !!car.crashed, speed };
+  });
+  expect(result).toMatchObject({ passed: true, crashed: false });
+  expect(result.speed).toBeGreaterThan(0);
+  expect(result.speed).toBeLessThan(8.5);
+});

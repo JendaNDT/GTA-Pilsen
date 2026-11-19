@@ -98,13 +98,12 @@ export class LampBodies {
   }
 
   repair(now) {
-    if (this.registry.damaged.size) {
-      for (const id of this.registry.repairDue(now)) this.pending.add(id);
-    }
+    const repaired = this.registry.repairDue(now);
+    for (const id of repaired) if (this.nearby.has(id) || this.debris.has(id)) this.pending.add(id);
+    return repaired;
   }
 
-  step(now) {
-    let budget = 20;
+  step(now, budget = 20) {
     for (const [id, hit] of this.hits) {
       if (budget < 3) break;
       this.hits.delete(id);
@@ -148,5 +147,6 @@ export class LampBodies {
       mesh.position.set(p.GetX(), p.GetY(), p.GetZ());
       mesh.quaternion.set(q.GetX(), q.GetY(), q.GetZ(), q.GetW());
     }
+    return budget;
   }
 }

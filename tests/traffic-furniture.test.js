@@ -27,3 +27,32 @@ test('semafor pro chodce a pro auta mají odlišnou výšku i velikost tělesa',
   assert.equal(pedestrian.panel.height, 0.54);
   assert.equal(vehicle.panel.depth, pedestrian.panel.depth);
 });
+
+test('sloupek uvnitř vozovky dostane nejbližší místo mimo vozovku a budovy', () => {
+  const street = {
+    groundY: () => 0,
+    onCarriageway: (_x, z, _y, padding) => Math.abs(z) <= 2 + padding,
+    buildingAt: (_x, z) => z > 2 ? 0 : -1,
+    isWater: () => false,
+    maxRoadHalfWidth: 4,
+  };
+  const head = { x: 0, z: 1.5, tx: 0, tz: -1, kind: 'pedestrian', breakableId: 'signal/3/14' };
+  const moved = trafficFurniture(street, head, 'signal');
+  assert.equal(moved.id, head.breakableId);
+  assert.ok(moved.z < -2.25 && moved.z >= -2.5);
+  assert.equal(trafficFurniture(street, head, 'signal'), moved);
+  assert.equal(head.z, 1.5);
+});
+
+test('mezi překážkami se najde i úzké místo mimo vozovku', () => {
+  const street = {
+    groundY: () => 0,
+    onCarriageway: (x, z) => Math.abs(x + 1.25) > 0.1 || Math.abs(z - 6) > 0.1,
+    buildingAt: () => -1,
+    isWater: () => false,
+    maxRoadHalfWidth: 8.55,
+  };
+  const entry = { x: 0, z: 0, tx: 0, tz: -1, kind: 'noEntry', breakableId: 'sign/3/2' };
+  const fixture = trafficFurniture(street, entry, 'sign');
+  assert.deepEqual([fixture.x, fixture.z], [-1.25, 6]);
+});

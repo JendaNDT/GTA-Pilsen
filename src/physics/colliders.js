@@ -69,11 +69,12 @@ export function staticMeshBody(physics, triangles, layer = layers.STATIC) {
 }
 
 export class TileColliders {
-  constructor(physics, world, data, debug, lamps) {
+  constructor(physics, world, data, debug, lamps, trafficFurniture) {
     this.physics = physics;
     this.world = world;
     this.debug = debug;
     this.lamps = lamps;
+    this.trafficFurniture = trafficFurniture;
     this.lampTiles = new Map();
     this.tiles = new Map();
     this.structures = new RoadStructures(world);
@@ -113,6 +114,7 @@ export class TileColliders {
       this.lampTiles.set(ci, lamps);
       this.lamps.load(lamps);
     }
+    this.trafficFurniture?.load(ci);
     const edges = w.bridgeEdges.get(ci);
     if (edges?.length) {
       const rails = [];
@@ -168,6 +170,7 @@ export class TileColliders {
         this.lamps.unload(this.lampTiles.get(ci));
         this.lampTiles.delete(ci);
       }
+      this.trafficFurniture?.unload(ci);
       this.tiles.delete(ci);
       this.debug?.remove(ci);
     }

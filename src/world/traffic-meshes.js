@@ -11,7 +11,16 @@ const LIGHTS = new THREE.MeshBasicMaterial({ toneMapped: false });
 const materials = new Map();
 const transform = new THREE.Object3D();
 const hiddenScale = new THREE.Vector3(0, 0, 0);
+const unitScale = new THREE.Vector3(1, 1, 1);
+const bendPosition = new THREE.Vector3();
+const bendRotation = new THREE.Quaternion();
+const bendMatrix = new THREE.Matrix4();
 const instanceMatrix = new THREE.Matrix4();
+const steel = new THREE.Color(0x73787a), housing = new THREE.Color(0x25272a);
+const poleMaterial = PROPS.clone();
+const housingMaterial = PROPS.clone();
+poleMaterial.color.copy(steel);
+housingMaterial.color.copy(housing);
 
 function signMaterial(kind, speed) {
   const key = kind + (speed ?? '');
@@ -75,26 +84,51 @@ function furnitureInstance(mesh, index, fixture, part) {
     part.yaw, part.width, part.height, part.depth);
 }
 
+export function trafficFragment(fixture, name) {
+  const part = fixture[name];
+  const face = name === 'panel' && fixture.type === 'sign';
+  const { kind, speed } = fixture.entry;
+  const material = face ? signMaterial(kind, speed) : name === 'pole' ? poleMaterial : housingMaterial;
+  const mesh = new THREE.Mesh(face ? FACE : BOX, material);
+  mesh.scale.set(part.width, part.height, part.depth);
+  return mesh;
+}
+
 export function buildTrafficMeshes(world, entries) {
   const group = new THREE.Group();
   const poles = new THREE.InstancedMesh(BOX, PROPS, entries.signs.length + entries.heads.length * 2);
   let pole = 0;
   const bySign = new Map();
   const visuals = [];
-  const remember = (id, instances) => {
+  const remember = (fixture, instances) => {
+    const { id, x, y, z } = fixture;
+    const toOrigin = new THREE.Matrix4().makeTranslation(-x, -y, -z);
     const originals = instances.map(([mesh, i]) => {
       const matrix = new THREE.Matrix4();
       mesh.getMatrixAt(i, matrix);
       return matrix;
     });
-    let visible = true;
+    let intact = true;
     const visual = {
       id,
       show(show) {
-        if (visible === show) return;
-        visible = show;
+        if (intact && show) return;
+        intact = show;
+        const pose = world.breakables.damaged.get(id)?.pose;
+        if (pose) {
+          bendPosition.set(pose.x, pose.y, pose.z);
+          bendRotation.set(pose.qx, pose.qy, pose.qz, pose.qw);
+          bendMatrix.compose(bendPosition, bendRotation, unitScale).multiply(toOrigin);
+        }
         instances.forEach(([mesh, i], j) => {
-          mesh.setMatrixAt(i, show ? originals[j] : instanceMatrix.copy(originals[j]).scale(hiddenScale));
+          const source = originals[j];
+          if (show) mesh.setMatrixAt(i, source);
+          else {
+            instanceMatrix.copy(source);
+            if (pose) instanceMatrix.premultiply(bendMatrix);
+            else instanceMatrix.scale(hiddenScale);
+            mesh.setMatrixAt(i, instanceMatrix);
+          }
           mesh.instanceMatrix.needsUpdate = true;
         });
       },
@@ -107,7 +141,6 @@ export function buildTrafficMeshes(world, entries) {
     if (!bySign.has(material)) bySign.set(material, []);
     bySign.get(material).push(sign);
   }
-  const steel = new THREE.Color(0x73787a), housing = new THREE.Color(0x25272a);
   const setPole = (fixture) => {
     furnitureInstance(poles, pole, fixture, fixture.pole);
     poles.setColorAt(pole++, steel);
@@ -119,7 +152,7 @@ export function buildTrafficMeshes(world, entries) {
       const from = pole;
       setPole(fixture);
       furnitureInstance(faces, i, fixture, fixture.panel);
-      remember(fixture.id, [[poles, from], [faces, i]]);
+      remember(fixture, [[poles, from], [faces, i]]);
     });
     group.add(faces);
   }
@@ -143,7 +176,7 @@ export function buildTrafficMeshes(world, entries) {
       instances.push([bulbs, lens]);
       instance(bulbs, lens++, x - tx * 0.208, y + panel.y + dy, z - tz * 0.208, panel.yaw, radius, radius, 1);
     }
-    remember(fixture.id, instances);
+    remember(fixture, instances);
   }
   if (pole) group.add(poles);
   if (lens) group.add(bulbs);

@@ -128,7 +128,8 @@ export class Traffic {
       const { x, z, tx, tz, kind, group, axis } = control;
       if (kind === 'signal') {
         const [hx, hz] = control.head ?? [x, z];
-        this.addVisual(hx, hz, 'heads', { x: hx - tz * hw, z: hz + tx * hw, tx, tz, axis, group, kind });
+        const head = this.addVisual(hx, hz, 'heads', { x: hx - tz * hw, z: hz + tx * hw, tx, tz, axis, group, kind });
+        if (head) (group.fixtures ??= []).push(head.breakableId);
       } else if (!signsByRoad.get(control.road)?.some((sign) => sign.kind === kind
         && sign.direction === control.direction && Math.hypot(sign.x - x, sign.z - z) < 15)) {
         this.addVisual(x, z, 'signs', { x: x - tz * hw, z: z + tx * hw, tx, tz, kind });
@@ -211,7 +212,9 @@ export class Traffic {
     const list = this.chunks.get(ci)[kind];
     if (kind === 'heads' || kind === 'signs') {
       const type = kind === 'heads' ? 'signal' : 'sign';
-      list.push({ ...entry, breakableId: breakableId(type, ci, list.length) });
+      const visual = { ...entry, breakableId: breakableId(type, ci, list.length) };
+      list.push(visual);
+      return visual;
     } else {
       list.push(entry);
     }
@@ -324,12 +327,18 @@ export class Traffic {
   }
 
   light(head) {
+    if (this.signalsOff(head.group)) return 'off';
     const phase = this.phase(head.group);
     if (head.kind === 'pedestrian') return phase === 'walk' ? 'green' : 'red';
     const axis = head.axis ?? 0;
     if (this.groupOccupied(head.group)) return 'red';
     if (phase === 'green' + axis) return 'green';
     return phase === 'amber' + axis ? 'amber' : 'red';
+  }
+
+  signalsOff(group) {
+    const registry = this.world?.breakables;
+    return !!registry?.damaged.size && !!group?.fixtures?.some(id => registry.state(id) === 'broken');
   }
 
   tick(dt, player = null) {
@@ -354,7 +363,7 @@ export class Traffic {
   }
 
   canWalk(crossing, cars = []) {
-    if (crossing.group) return this.phase(crossing.group) === 'walk';
+    if (crossing.group && !this.signalsOff(crossing.group)) return this.phase(crossing.group) === 'walk';
     const { x, z, dx, dz } = crossing;
     return !cars.some((car) => {
       if (car.mode === 'parked') return false;
@@ -374,7 +383,14 @@ export class Traffic {
     let stop;
     if (signal) {
       const color = this.light(control);
-      stop = color === 'red' || (color === 'amber' && speed ** 2 < 11 * Math.max(0, distance));
+      if (color === 'off') {
+        if (state.ready === Infinity && distance < 4) state.ready = this.time;
+        stop = distance < 22 && this.yieldAtBlackout(car, control, others, extra);
+        limit = Math.min(limit, Math.sqrt(5.5 ** 2 + 6 * Math.max(0, distance - 8)));
+      } else {
+        state.rightBlocker = null;
+        stop = color === 'red' || (color === 'amber' && speed ** 2 < 11 * Math.max(0, distance));
+      }
       if (checkExit && control.directedHead && distance < 22 && state.movement === undefined) {
         state.movement = this.junctionMovement(car, control);
       }
@@ -399,6 +415,47 @@ export class Traffic {
       this.enterJunction(car, control);
     }
     return stop ? Math.min(limit, stopDistance(distance, dt)) : limit;
+  }
+
+  yieldAtBlackout(car, control, others, extra) {
+    const { x, z } = control.group, { tx, tz } = control;
+    const state = car.trafficStop;
+    state.rightBlocker = null;
+    const near = other => other !== car && other.mode !== 'parked' &&
+      Math.abs((other.y ?? car.y) - car.y) <= 3;
+    const inside = other => {
+      if (!near(other)) return false;
+      const movement = other.junctionMovement;
+      if (movement?.control.group === control.group && Math.abs(other.s - movement.control.s) > other.halfLen + 1) return true;
+      const dx = other.x - x, dz = other.z - z;
+      const across = dx * tz - dz * tx;
+      return Math.abs(across) < (other.halfLen ?? 1) + 2 && Math.abs(dx * tx + dz * tz) < 3.5;
+    };
+    if (others.some(inside) || extra.some(inside)) return true;
+    const fromRight = other => {
+      if (!near(other)) return false;
+      const dx = other.x - x, dz = other.z - z, distance = Math.hypot(dx, dz);
+      if (distance < 1 || distance > 36 || dz * tx - dx * tz < 0.55 * distance) return false;
+      const waiting = other.trafficStop;
+      if (waiting?.rule.group === control.group && waiting.ready < Infinity) return true;
+      const approaching = -(dx * (other.vx || 0) + dz * (other.vz || 0)) / distance;
+      return approaching > 0.35 && distance < 5 + 3 * approaching;
+    };
+    const blocker = others.find(fromRight) ?? extra.find(fromRight);
+    if (!blocker) return false;
+    state.rightBlocker = blocker;
+
+    // Při úplném patu projede dříve příchozí. Mimo řetězec mají auta zprava přednost.
+    let next = blocker, earliest = state;
+    for (let remaining = others.length; next && next !== car && remaining > 0; remaining--) {
+      const wait = next.trafficStop;
+      if (!wait || wait.rule.group !== control.group || wait.ready === Infinity || Math.abs(next.speed ?? next.v) > 0.3) {
+        return true;
+      }
+      if (wait.ready < earliest.ready || wait.ready === earliest.ready && wait.rule.edge < earliest.rule.edge) earliest = wait;
+      next = wait.rightBlocker;
+    }
+    return next !== car || earliest !== state;
   }
 
   junctionMovement(car, control) {

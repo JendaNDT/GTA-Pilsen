@@ -37,6 +37,13 @@ export class Breakables {
     return true;
   }
 
+  bendPose(id, pose) {
+    const damage = this.damaged.get(id);
+    if (damage?.state !== 'bent') return;
+    damage.pose = pose;
+    this.visuals.get(id)?.show(false);
+  }
+
   repairDue(now) {
     const repaired = [];
     for (const [id, item] of this.damaged) {

@@ -302,3 +302,29 @@ test('po obnovení dlaždice má každý semafor a značka stejné vlastní ID a
   assert.equal(registry.state(first), 'intact');
   assert.deepEqual(registry.repairDue(29 * hour), []);
 });
+
+test('po zhasnutí semaforů řidič zpomalí a dá přednost zprava až do opravy', async () => {
+  const { Breakables } = await import('../src/physics/breakables.js');
+  const registry = new Breakables(), traffic = Object.create(Traffic.prototype);
+  Object.assign(traffic, { time: 3, users: new Map(), world: { breakables: registry }, exitBlocked: () => false });
+  const group = { x: 0, z: 0, greenTime: 15, hasSecond: true, crossings: [], clearance: 0, timeOffset: 0,
+    fixtures: ['signal/1/0', 'signal/1/1'] };
+  const approach = { kind: 'signal', group, axis: 0, tx: 0, tz: -1, edge: 1 };
+  const rightHead = { kind: 'signal', group, axis: 1 };
+  const driver = { x: 0, y: 0, z: 12, speed: 0 };
+  const fromRight = { x: 10, y: 0, z: 0, vx: -4, vz: 0 };
+  const fromLeft = { x: -10, y: 0, z: 0, vx: 4, vz: 0 };
+  const solve = other => traffic.drivingRule(driver, approach, 0, 1 / 60, 12, [other]);
+  assert.equal(solve(fromRight), 12);
+  assert.equal(traffic.light(rightHead), 'red');
+  registry.damage('signal/1/1', 'broken', 0);
+  assert.equal(traffic.light(approach), 'off');
+  assert.equal(traffic.light(rightHead), 'off');
+  assert.equal(solve(fromRight), 0);
+  assert.equal(solve({ ...fromRight, vx: 4 }), 5.5);
+  assert.equal(solve(fromLeft), 5.5);
+  assert.equal(solve({ ...fromLeft, x: -1 }), 0);
+  registry.repairDue(28 * 3600);
+  assert.equal(solve(fromRight), 12);
+  assert.equal(traffic.light(approach), 'green');
+});

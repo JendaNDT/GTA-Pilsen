@@ -1,5 +1,6 @@
 import { streetLamps } from '../world/lamps.js';
 import { LampBodies } from '../physics/lamp-bodies.js';
+import { TrafficFurnitureBodies } from '../physics/traffic-furniture.js';
 import { Water } from '../physics/water.js';
 import { Falls } from './falls.js';
 import { HelicopterBody } from '../physics/heli.js';
@@ -68,6 +69,7 @@ export class Game {
     };
     physics.onImpact = (first, second, impulse) => {
       this.lampBodies.contact(first, second, impulse);
+      this.trafficFurniture.contact(first, second, impulse);
       this.driver?.recordImpact(first, second, impulse);
       this.trafficBodies.recordImpact(first, second, impulse);
       const flight = this.heli?.physical;
@@ -109,7 +111,8 @@ export class Game {
         if (this.water.step(vehicle, this.world, dt)) this.audio.splash(car);
       }
       physics.engine.Step(dt, 1);
-      this.lampBodies.step(this.clock.now);
+      const remaining = this.trafficFurniture.step(this.clock.now);
+      this.lampBodies.step(this.clock.now, remaining);
       this.driver?.read();
       this.trafficBodies.read(this);
       for (const h of this.helis) if (h.physical) {
@@ -138,7 +141,9 @@ export class Game {
     this.postfx = createPostFX(renderer, this.scene, this.camera, this.world);
     this.chunks = new ChunkManager(this.scene, this.world, renderer, data.heritage, data.orthophotoSources);
     this.lampBodies = new LampBodies(physics, this.world.breakables, this.scene);
-    this.colliders = new TileColliders(physics, this.world, data, DEBUG ? new CollisionView(this.scene) : null, this.lampBodies);
+    this.trafficFurniture = new TrafficFurnitureBodies(physics, this.world, this.scene);
+    this.colliders = new TileColliders(physics, this.world, data, DEBUG ? new CollisionView(this.scene) : null,
+      this.lampBodies, this.trafficFurniture);
     this.hud = new Hud(this.world);
     this.soundPlaces = data.soundPlaces;
     this.audio = new GameAudio(this);
@@ -200,7 +205,7 @@ export class Game {
   }
 
   syncClock(reposition = false) {
-    this.lampBodies.repair(this.clock.now);
+    this.trafficFurniture.repair(this.lampBodies.repair(this.clock.now));
     if (reposition) {
       this.postfx?.resetHistory();
       if (this.ride) this._alight(true);

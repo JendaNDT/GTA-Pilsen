@@ -745,8 +745,8 @@ export class World {
   }
 
   /** Zahrnuje celou šířku všech překrývajících se vozovek v téže výšce. */
-  onCarriageway(x, z, y) {
-    const range = this.maxRoadHalfWidth;
+  onCarriageway(x, z, y, padding = 0) {
+    const range = this.maxRoadHalfWidth + padding;
     const minCol = Math.max(0, Math.floor((x - range - this.minX) / COLL_CELL));
     const maxCol = Math.min(this.gcols - 1, Math.floor((x + range - this.minX) / COLL_CELL));
     const minRow = Math.max(0, Math.floor((z - range - this.minZ) / COLL_CELL));
@@ -760,7 +760,7 @@ export class World {
         const length2 = dx * dx + dz * dz;
         const t = length2 ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / length2)) : 0;
         const px = ax + t * dx, pz = az + t * dz;
-        if ((px - x) ** 2 + (pz - z) ** 2 <= (this.r.w[road] / 2) ** 2 &&
+        if ((px - x) ** 2 + (pz - z) ** 2 <= (this.r.w[road] / 2 + padding) ** 2 &&
             Math.abs(this.roadSurfaceY(road, k, t, px, pz) - y) < 2.5) return true;
       }
     }
