@@ -1,9 +1,10 @@
+import { waitForGame } from './ready.js';
 import { expect, test } from '@playwright/test';
 import { gameUrl } from './game-url.js';
 
 test('E12 – Krkavec, policejní pokuta a nákup s nízkým zůstatkem přímo u garáže', async ({ page }, info) => {
   await page.goto(gameUrl('/?debug&quality=low'));
-  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  await waitForGame(page);
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
   const krkavec = await page.evaluate(() => {
     window.__freeze(true);

@@ -13,6 +13,10 @@ Větev `etapa/E21` navazuje na E20 sloučenou revizí `623e081`. [Zadání E21](
 | 7. Částice | Hotovo. Prošla kontrola výpočtu na WebGPU i náhradního výpočtu na WebGL 2. |
 | 8. Závěrečné ověření | Probíhají závěrečné prohlížečové zkoušky. Snímky a měření ze softwarového vykreslovače jsou v protokolu. Měření na autorově počítači je otevřené. |
 
+### Opakování ranní špičky na WebGL 2
+
+Tři opakované zkoušky nad produkčním sestavením dokončily start hry. Prošla návštěva Krkavce s pokutou a nákupem u garáže. Během deseti simulovaných minut u hlavního nádraží trvalo nejdelší stání vozu 60 sekund. Na Klatovské třídě dosáhlo 381 sekund při požadavku méně než 120. V každé z deseti minut se část provozu pohybovala a test u žádného sledovaného vozu nezaznamenal výjezd z vozovky. Dřívějších 182 úspěchů ze 183 případů je součet napříč běhy. Otevřená zůstává také regrese ranní špičky. Prošlo 128 testů JavaScriptu a produkční sestavení.
+
 ### Barvy na WebGPU a minutová zkouška WebGL 2
 
 Po opravě čtení výsledné textury prošlo všech pět barevných kontrol na WebGPU. Stejné původní meze ověřily denní a noční oblohu, sousední světlá a tmavá okna, vodu u Wilsonova mostu, oba portály se značením a dlažbu náměstí. Na WebGL 2 prošlo sedm zkoušek materiálů včetně pohybu náhonu, světel auta a osvětlení pod lampou. Napříč běhy má úspěšný výsledek 182 ze 183 případů. Při opakování zbývající minuty dne a noci vykázal softwarový WebGL 2 v Chromiu 159 s Mesa llvmpipe 20 snímků při souběžné práci. Mez je více než 30. Výsledek izolovaného běhu a měření na skutečné grafické kartě zůstávají otevřené.
