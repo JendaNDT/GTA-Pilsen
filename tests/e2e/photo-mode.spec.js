@@ -31,6 +31,26 @@ test('E24 – fotorežim z menu pozastaví čas a stáhne vlastní PNG @webgpu',
   expect(errors).toEqual([]);
 });
 
+test('E24 – klávesa fotorežimu v mapě ponechá funkční návrat do hry @webgpu', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.setViewportSize({width: 420, height: 280});
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0'));
+  await waitForGame(page);
+  await page.getByRole('button', { name: 'Hrát', exact: true }).click();
+  await page.keyboard.press('m');
+  await expect(page.locator('#bigmap')).toBeVisible({timeout: 30000});
+  await page.keyboard.press('o');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#bigmap')).toBeHidden({timeout: 30000});
+  await expect(page.locator('#photo-controls')).toBeHidden({timeout: 30000});
+  await page.keyboard.press('o');
+  await expect(page.locator('#photo-controls')).toBeVisible({timeout: 30000});
+  await page.locator('#photo-exit').click();
+  await expect(page.locator('#hud')).toBeVisible({timeout: 30000});
+  expect(errors).toEqual([]);
+});
+
 test('E24 – ultra spojuje sluneční paprsky, volitelný odlesk a vektory pohybu @webgpu', async ({page}) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
