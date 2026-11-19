@@ -139,6 +139,8 @@ i Wilsonově mostě tě zastaví kamenná zídka. Při sražení autem postava p
 ve směru nárazu a zase vstane. Volba **Nastavení → Fyzikální pády postav**
 se zachová i při dalším spuštění hry.
 
+V E20 můžeš autem odstrčit zaparkovaný vůz nebo pocítit náraz tramvaje. Vrtulník při dlouhém přímém letu dosáhne přibližně 300 km/h. Když sjedeš autem do Radbuzy u Wilsonova mostu, vůz chvíli plave, nabere vodu a dosedne na mělčinu. Můžeš vystoupit a doplavat ke břehu. [Protokol E20, snímky a zkoušky ve hře](docs/E20.md).
+
 Regresní testy kolizí, terénu, silničního grafu a distribuovaných dat:
 
 ```bash

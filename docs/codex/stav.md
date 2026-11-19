@@ -10,7 +10,7 @@ Větev `etapa/E20` vychází ze sloučené etapy E19 na revizi `10832b4`. [Zadá
 | 4. MHD a směny | Hotovo. Články vozidel, odstrčení auta, rozjezdy a brzdění ve směnách. |
 | 5. Vrtulník | Hotovo. Let s asistencí, přistání na střeše a na heliportu. |
 | 6. Voda | Hotovo. Vztlak a odpor vody, pozvolné potopení auta a plavání ke břehu. |
-| 7. Závěrečné scénáře, výkon a protokol | Rozpracováno. Na revizi `63aa4e5` prošlo všech 164 prohlížečových zkoušek. Po úpravě výkonu probíhá závěrečné měření a ověření. |
+| 7. Závěrečné scénáře, výkon a protokol | Hotovo. Ověřena revize `ad2231e`. [Výsledky, měření a snímky](../E20.md). |
 
 ## Otevřené otázky
 
@@ -255,4 +255,4 @@ Ve třech samostatných zkouškách na Klatovské s 40 fyzikálními auty trvalo
 
 Na nízké kvalitě auto za deset sekund ujelo 61 m (práce procesoru v 95 % snímků do 1,3 ms), vrtulník uletěl 248 m (do 1,5 ms). Čerstvý snímek u Wilsonova mostu a výsledky výkonu již obsahuje pracovní protokol v `data-raw/e20/navrh-protokolu/`.
 
-Nyní běží 164 prohlížečových kontrol nad stejným sestavením (jeden pracovní proces). Při navázání zkontrolovat `data-raw/e20/geometrie-uplna.log` a po dokončení `geometrie-uplna.json`. Po úspěšném výsledku doplnit do pracovního protokolu revizi a ověřené výsledky, převzít protokol, snímky a odkazy, otevřít žádost přes připojený GitHub a po kontrole ji sloučit. Poté navázat E21.
+Na revizi `ad2231e` prošlo všech 164 prohlížečových zkoušek za 45,7 minuty bez vynechání či opakování. Pozorování opět zachytilo 129 různých aut na Klatovské a 89 u nádraží, nejdelší stání 70 a 79 s a žádné vyjetí pod plynem mimo silnici. Prošlo také 101 testů JavaScriptu, 23 testů Pythonu v projektovém prostředí a produkční sestavení. Výsledky jsou v `data-raw/e20/geometrie-uplna.json`, `geometrie-python-venv.log` a v [protokolu E20](../E20.md). Zbývá sloučení na GitHubu a následné zahájení E21.
