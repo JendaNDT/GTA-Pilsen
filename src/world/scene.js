@@ -1,6 +1,7 @@
 import { windowSchedule } from './night-lights.js';
 import { updateTreeSeason } from './vegetation.js';
 // Obloha, světla, stíny a denní doba. (Terén a povrch země kreslí chunks.js.)
+import { makeSunFlare } from './sun-flare.js';
 import { CloudLayer, cloudShadow } from './cloud-layer.js';
 import { cloudCover, weatherFog } from './weather-surfaces.js';
 import * as THREE from 'three/webgpu';
@@ -195,7 +196,20 @@ export class Environment {
     }
   }
 
+  setFlare(enabled) {
+    if (enabled && !this.flare) {
+      this.flare = makeSunFlare();
+      this.scene.add(this.flare);
+    }
+    this.showFlare = enabled;
+    if (this.flare) this.flare.visible = enabled && this.sunDir.y > .02;
+  }
+
   update(cam) {
+    if (this.flare) {
+      this.flare.visible = this.showFlare && this.sunDir.y > .02;
+      this.flare.position.copy(cam.position).addScaledVector(this.sunDir, cam.far * .85);
+    }
     this.sky.position.copy(cam.position);
     this.sky.scale.setScalar(cam.far * 0.9);
     env.cam.value.copy(cam.position);
@@ -204,6 +218,10 @@ export class Environment {
   dispose() {
     this.scene.remove(this.sky, this.hemi, this.sun, this.sun.target, this.moon, this.ground);
     this.scene.environment = null;
+    if (this.flare) {
+      this.flare.removeFromParent();
+      this.flare.dispose();
+    }
     this.clouds?.dispose();
     this.skyLight?.dispose();
     this.sky.geometry.dispose();

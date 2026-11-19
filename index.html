@@ -27,6 +27,11 @@
 <body>
   <canvas id="game"></canvas>
 
+  <div id="photo-controls" aria-label="Fotorežim" hidden>
+    <label>Zaostření <input id="photo-focus" type="range" min="2" max="150" value="32" aria-label="Vzdálenost zaostření v metrech"></label>
+    <button id="photo-forward">Vpřed</button><button id="photo-back">Vzad</button>
+    <button id="photo-save">Uložit PNG</button><button id="photo-exit">Zpět</button>
+  </div>
   <div id="hud" class="hidden">
     <div id="topleft">
       <div id="money">0 Kč</div>
@@ -85,6 +90,7 @@
         <div id="loadtext">Načítám město…</div>
       </div>
       <div id="menu-buttons" class="hidden">
+        <button id="btn-photo">Fotorežim</button>
         <button id="btn-play" class="primary">Hrát</button>
         <button id="btn-jobs" aria-controls="panel-jobs" aria-expanded="false">Zakázky</button>
         <button id="btn-garage" aria-controls="panel-garage" aria-expanded="false">Garáž</button>
@@ -175,6 +181,8 @@
           </select>
         </label>
         <p id="graphics-status" role="status"></p>
+        <label class="setting"><input id="sun-flare" type="checkbox"> Odlesk slunce v objektivu</label>
+        <label class="setting"><input id="motion-blur" type="checkbox"> Pohybové rozmazání (s časovým vyhlazováním)</label>
         <label class="setting">Počasí <select id="weather-mode"><option value="variable">Proměnlivé</option><option value="clear">Vždy jasno</option></select></label>
         <label class="setting"><input id="show-clock" type="checkbox" checked /> Zobrazovat herní hodiny</label>
         <form id="clock-settings">
