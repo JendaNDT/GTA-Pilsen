@@ -2,6 +2,8 @@
 
 E23 vychází z dokončené větve E22 (`496a72d`). Prvním krokem je detail země při chůzi. Další pořadí tvoří povrchy silnic, voda, stromy, tráva, noční světla a částice. [Zadání E23](E23.md) · [Protokol E22](../E22.md)
 
+Dodatečně doběhla úplná sada Full HD na softwarovém WebGPU. Pro každý profil uvádí protokol skutečný počet snímků i čas CPU. V tak malé sadě vzorků zůstává plynulost jízdy a letu na autorově zařízení otevřená. [Naměřené hodnoty](../E23.md#pokus-ve-full-hd-při-jízdě-a-letu)
+
 ## G11 · Detail terénu
 
 Dva atlasy obsahují šest fotografických povrchů včetně normálových map z Poly Haven (CC0). Na střední až ultra předvolbě se mísí s původní barvou země. Čtyřmetrová maska respektuje otvory v polygonech, vodu i pořadí překrývajících se tříd. Detail slábne od 80 do 120 m od kamery. Svahy nad 35° používají tři projekce. Nízká předvolba používá původní materiál a atlasy nestahuje.
