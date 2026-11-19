@@ -12,6 +12,12 @@ Na malém zkušebním repozitáři prošlo dvojí zabalení, porovnání obou ar
 
 Americká mezi západním koncem Wilsonova mostu a kruhovou křižovatkou zahrnuje obě strany ulice i nároží u nábřeží. Ze všech 205 452 ploch městského archivu 2024 se podařilo určit 26 stěn osmi budov pro fotografické porovnání. Výběr vychází z průsečíků s paprsky z osy ulice a z předmostí v úrovni parteru. Všechny konce hran leží ve vymezeném obrysu a otisky ploch jsou jedinečné. Zbývá fotograficky ověřit podobu a členění provozoven i vybavení. [Návod k focení a soupis](../E25/navod-foceni.md)
 
+## Převod a načítání pilotu
+
+Všech 26 ploch našlo protějšek ve skutečně distribuované dlaždici. Převod kontroluje zdroj městského měření, otisk a rozměry jednotlivých stěn. Hra ověřuje verzi městského modelu a stavebních konstrukcí a otisk staženého úseku i příslušné dlaždice. Vybrané přízemí získá vlastní materiál až při přiblížení. Ostatní průčelí a vyšší patra zachovávají původní okna. Členění přízemí je zatím neutrální kresba k ověření podle fotografií.
+
+Prošlo 168 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. Ve WebGL 2 i WebGPU se po přesunu do pilotu načetl samostatný balík a vykreslil se správný materiál. Při změně otisku zůstalo při jednotkové zkoušce původní průčelí. Opakovaný převod dal stejných 3,1 kB dat pilotu.
+
 # Stav etapy E24
 
 E24 navazuje na G17 ve větvi E23 (`fe30ef0`). [Zadání E24](E24.md)

@@ -41,9 +41,9 @@ export function makeBatchedSurfaceMaterial(opts = {}) {
  * Fasády: atribut aWin = (pozice v polích oken, pozice v patrech, styl + 8 × počet pater).
  * Styly: 1 rodinný dům, 2 panelový dům, 3 činžovní dům s obchody, 4 kanceláře, 5 hala, 6 kostel.
  */
-export function makeBuildingMaterial({ textures = false, heritage = false } = {}) {
-  const key = `${textures}/${heritage}`;
-  if (!facadeNodes.has(key)) facadeNodes.set(key, buildingNodes(env.night, env.windows, env.cam, env.sky, textures, heritage));
+export function makeBuildingMaterial({ textures = false, heritage = false, street = false } = {}) {
+  const key = `${textures}/${heritage}/${street}`;
+  if (!facadeNodes.has(key)) facadeNodes.set(key, buildingNodes(env.night, env.windows, env.cam, env.sky, textures, heritage, street));
   return makeSurfaceMaterial(SURFACE.plaster, facadeNodes.get(key));
 }
 

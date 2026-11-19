@@ -57,6 +57,7 @@ const FILES = [
   ['landscape', 'data/landscape.bin', 1_354_000],
   ['gradeSeparations', 'data/grade-separations.json', 460_000],
   ['soundPlaces', 'data/sound-places.json', 2_000],
+  ['streetDetails', 'detail/streets/index.json', 600],
   ['heritage', 'detail/city/index.json', 75_000],
 ];
 
@@ -67,11 +68,14 @@ export function assetFingerprint(buffer) {
   return (hash >>> 0).toString(16).padStart(8, '0');
 }
 
-export async function loadCityTile(file, signal) {
+export async function loadCityTile(file, signal, fingerprint = false) {
   const base = import.meta.env?.BASE_URL || '/';
   const response = await fetch(`${base}detail/city/${file}`, { signal, cache: 'no-cache' });
   if (!response.ok) throw new Error(`Dlaždice centra ${file} (${response.status})`);
-  return parsePack(await response.arrayBuffer());
+  const buffer = await response.arrayBuffer();
+  const pack = parsePack(buffer);
+  if (fingerprint) pack.fileHash = assetFingerprint(buffer);
+  return pack;
 }
 
 const structuresPath = (import.meta.env?.BASE_URL || '/') + 'detail/structures/';
@@ -110,7 +114,8 @@ export async function loadStructureCore(search = globalThis.location?.search) {
     const [manifest, core] = await Promise.all(['index.json', 'core.bin'].map(file =>
       fetch(structuresPath + file, { signal })));
     if (!manifest.ok || !core.ok) return null;
-    const index = await manifest.json(), buffer = await core.arrayBuffer();
+    const manifestBytes = await manifest.arrayBuffer(), buffer = await core.arrayBuffer();
+    const index = JSON.parse(new TextDecoder().decode(manifestBytes));
     if (![1,2].includes(index.version) || buffer.byteLength > 2 * 1024 * 1024 || !Array.isArray(index.tiles)) return null;
     const rails = new Set();
     for (const model of index.railDecks ?? []) {
@@ -152,7 +157,7 @@ export async function loadStructureCore(search = globalThis.location?.search) {
         detailEnd += part.dCount;
       }
     }
-    return end * 3 === positions.length ? {index, positions} : null;
+    return end * 3 === positions.length ? {index, positions, manifestHash: assetFingerprint(manifestBytes)} : null;
   } catch { return null; }
 }
 
@@ -164,11 +169,15 @@ export async function loadAll(onProgress) {
   const structureRequest = loadStructureCore();
   const results = await Promise.all(FILES.map(([name, url]) => {
     const request = fetchBuffer(base + url, bump);
-    return ['landscape', 'soundPlaces', 'gradeSeparations', 'treeTypes', 'buildingMaterials'].includes(name) ? request.catch(() => null) : request;
+    return ['landscape', 'soundPlaces', 'gradeSeparations', 'treeTypes', 'buildingMaterials', 'streetDetails'].includes(name) ? request.catch(() => null) : request;
   }));
   const out = {};
   FILES.forEach(([name, url], i) => {
     if ((['soundPlaces','gradeSeparations','treeTypes','buildingMaterials'].includes(name)) && !results[i]) return;
+    if (name === 'streetDetails') {
+      try { out.streetDetails = JSON.parse(new TextDecoder().decode(results[i])); } catch { /* základní fasády zůstanou viditelné */ }
+      return;
+    }
     if (name === 'landscape') {
       if (results[i]?.byteLength > 8) {
         try { out.landscape = parsePack(results[i]); } catch { /* základní síť stačí k hraní */ }
@@ -199,6 +208,11 @@ export async function loadAll(onProgress) {
       structures.index.sources?.[key] === fingerprint(key === 'grade-separations' ? 'gradeSeparations' : key))) {
     out.structures = structures;
   }
+  const streets = out.streetDetails;
+  if (!streets || streets.version !== 1 || streets.city !== out.heritage.sha256 ||
+      streets.structures !== out.structures?.manifestHash || !Array.isArray(streets.sections) ||
+      !streets.sections.every(s => s && typeof s.id === 'string' && /^[a-z0-9-]+$/.test(s.id) &&
+        s.name === s.id + '.bin' && Array.isArray(s.tiles))) delete out.streetDetails;
   out.orthophotoSources = { terrain: fingerprint('terrain'), land: fingerprint('land') };
   out.soundPlaces = out.soundPlaces && out.soundPlaces.osm === out.meta.osmTimestamp ? out.soundPlaces.weirs : [];
   return out;
