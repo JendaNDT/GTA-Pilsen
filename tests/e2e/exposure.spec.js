@@ -15,11 +15,12 @@ test('E17 – expozice reaguje na jas uvnitř a venku u Valíku', { tag: '@webgp
     const read = async () => {
       // Odečet měří nový snímek až po dokončení předchozího pohledu a jeho stínů.
       await queue?.onSubmittedWorkDone();
+      while (eye.pending) await afterFrame();
       eye.update(0.20);
       game.render();
-      const finish = performance.now() + 10_000;
-      while (eye.pending && performance.now() < finish) await afterFrame();
-      if (eye.pending || eye.brightness === null) throw new Error('Chybí odečet průměrného jasu.');
+      if (!eye.pending) throw new Error('Odečet nového pohledu se nespustil.');
+      while (eye.pending) await afterFrame();
+      if (eye.disposed || eye.brightness === null) throw new Error('Chybí odečet průměrného jasu.');
       return eye.brightness;
     };
     const outside = await read();
