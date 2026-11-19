@@ -53,20 +53,49 @@ export function terrainTriangles(world, ci, x0, z0, size, emit) {
   const bed = riverBed(world, x0, z0, size);
   const step = Math.min(terrainGridStep(world, ci), bed ? 4 : Infinity);
   const holes = world.tunnels.flatMap((t) => t.portalCuts(x0, z0, size)).flatMap(portalPlanes);
-  const vertex = (x, z) => [x, world.heightAt(x, z) - (bed ? bed(x, z) : 0), z];
+  const vertex = (x, z) => {
+    const depth = bed ? bed(x, z) : 0;
+    const p = [x, world.heightAt(x, z) - depth, z];
+    p.wet = depth > 0;
+    return p;
+  };
   const triangle = holes.length ? (a, b, c) => {
     let pieces = [[a, b, c]];
     for (const planes of holes) pieces = pieces.flatMap((p) => subtract(p, planes));
     for (const poly of pieces) for (let i = 2; i < poly.length; i++) emit(poly[0], poly[i - 1], poly[i]);
   } : emit;
+  // Na rozhraní vody a souše musí mít oba povrchy společnou hranu.
+  // Jinak se pokles nejbližšího podvodního vrcholu přenese i pod suchou vozovku.
+  const shore = (dry, wet) => {
+    let lo = 0, hi = 1;
+    const dx = wet[0] - dry[0], dz = wet[2] - dry[2];
+    for (let i = 0; i < 12; i++) {
+      const t = (lo + hi) / 2;
+      if (bed(dry[0] + t * dx, dry[2] + t * dz) > 0) hi = t;
+      else lo = t;
+    }
+    const x = dry[0] + lo * dx, z = dry[2] + lo * dz;
+    return [x, world.heightAt(x, z), z];
+  };
+  const surface = (a, b, c) => {
+    if (a.wet === b.wet && a.wet === c.wet) return triangle(a, b, c);
+    // První vrchol leží sám na jedné straně břehu. Zachováme pořadí vrcholů.
+    if (a.wet === b.wet) [a, b, c] = [c, a, b];
+    else if (a.wet === c.wet) [a, b, c] = [b, c, a];
+    const p = a.wet ? shore(b, a) : shore(a, b);
+    const q = a.wet ? shore(c, a) : shore(a, c);
+    triangle(a, p, q);
+    triangle(p, b, c);
+    triangle(p, c, q);
+  };
   const row = [];
   for (let x = x0; x <= x0 + size; x += step) row.push(vertex(x, z0));
   for (let z = z0 + step; z <= z0 + size; z += step) {
     let lowerLeft = vertex(x0, z);
     for (let i = 0; i + 1 < row.length; i++) {
       const lowerRight = vertex(x0 + (i + 1) * step, z);
-      triangle(row[i], lowerLeft, row[i + 1]);
-      triangle(row[i + 1], lowerLeft, lowerRight);
+      surface(row[i], lowerLeft, row[i + 1]);
+      surface(row[i + 1], lowerLeft, lowerRight);
       row[i] = lowerLeft;
       lowerLeft = lowerRight;
     }

@@ -4,6 +4,25 @@ import { loadJolt } from '../src/physics/jolt.js';
 import { PhysicsWorld } from '../src/physics/world.js';
 import { PlayerVehicle } from '../src/physics/vehicle.js';
 import { riverBed, Water } from '../src/physics/water.js';
+import { terrainTriangles } from '../src/physics/terrain.js';
+
+test('dno na kraji řeky navazuje na suchou vozovku v původní výšce', () => {
+  const world = { water: [{ i: 0, x0: 2, z0: -4, x1: 18, z1: 12 }],
+    l: { pRing: [0, 1], ringStart: [0, 4], vx: [20, 180, 180, 20], vz: [-40, -40, 120, 120] },
+    tG: 4, terrainDetail: new Map(), gradeTerrain: new Map(), tunnels: [], heightAt: () => 7 };
+  let bankVertices = 0, bottom = 7;
+  terrainTriangles(world, 0, 0, 0, 8, (...vertices) => {
+    if (vertices.some(p => p[0] < 1.999)) {
+      for (const p of vertices) assert.equal(p[1], 7);
+    }
+    for (const [x, y] of vertices) {
+      if (Math.abs(x - 2) < 0.002) { assert.equal(y, 7); bankVertices++; }
+      bottom = Math.min(bottom, y);
+    }
+  });
+  assert.ok(bankVertices > 0);
+  assert.ok(bottom < 6.5);
+});
 
 test('odhad dna navazuje na břeh a ostrov, uprostřed široké plochy má omezenou hloubku', () => {
   const polygon = { water: [{ i: 0, x0: 0, z0: 0, x1: 160, z1: 160 }],

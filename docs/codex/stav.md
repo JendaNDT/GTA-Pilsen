@@ -14,7 +14,7 @@ Větev `etapa/E20` vychází ze sloučené etapy E19 na revizi `10832b4`. [Zadá
 
 ## Otevřené otázky
 
-Aktuálně nejsou potřeba další podklady ani rozhodnutí.
+Čekáme na rozhodnutí autora o původní zkušební jízdě do Radbuzy. Po přesném oddělení břehu od dna zůstává v této stopě část střechy nad hladinou. Navržená kontrola mělčiny a samostatná zkouška úplného potopení jsou popsané na konci souboru.
 
 Autor schválil rozumný odhad podvodního profilu. Využije obrys vodní plochy a výšku vykreslené hladiny.
 Kontrolním údajem je kóta dna u Wilsonova mostu v městské tabulce. Poppler 26.11.0 z ní přečetl profil R19 v říčním km 1,372 s kótou 299,30 m n. m. Hloubku určuje rozdíl od hladiny.
@@ -228,3 +228,13 @@ Běh úplné sady zahájený na předchozím sestavení byl ukončen po 35 úsp�
 Kombi i autobus vjely ze stejné strany na zelenou u světla 3073913700. Autobus byl v křižovatce první. Druhý vůz stejné linky stál v Husově na červenou. Na původní trase se při posunu čela o dva centimetry přes vrchol zatáčky poloha v pruhu změnila o 3,43 m. Sousední úseky nyní sdílejí bod posunutý do jízdního pruhu. V prohlížeči prošla kontrola plynulosti i přehrání rozjezdu kombi vedle odbočujícího autobusu s kontrolou mezery mezi karoseriemi v každém kroku.
 
 Při desetiminutovém pozorování bylo nejdelší stání 64,5 s na Klatovské (131 různých aut) a 79 s u nádraží (89 aut). Obě místa měla špičku 40 fyzikálních aut. Nebylo zaznamenáno vyjetí pod plynem. Samostatné měření při 40 autech zachytilo 604 kroků fyziky, z toho 95 % do 2,1 ms. Prošlo 100 testů JavaScriptu, 23 testů Pythonu a produkční sestavení. Záznamy jsou v `data-raw/e20/linka41-*`. Zbývá uzavřít úplnou kontrolu, protokol, přehled etap a žádost o sloučení.
+
+#### Břeh u Wilsonova mostu po revizi `8a5fcf1`
+
+Při úplném běhu prošlo 77 kontrol. Zkouška průjezdu Wilsonovým mostem selhala na zpáteční jízdě a běh byl poté ukončen. Kontakt kola 32 cm za východním koncem mostu byl o 11,03 cm níže než suchá silnice. Hra vytvořila jeden trojúhelník se dvěma vrcholy na suchu a třetím v korytě. Nyní rozdělí přechodové trojúhelníky podél břehu a udrží původní výšku silnice. Obě jízdy přes most prošly s největší odchylkou pod 0,02 mm. Ověření obou tubusů Valíku i zkušební rampy prošlo také. Nová samostatná zkouška hlídá výšku suché silnice a zachování hloubky za břehem.
+
+Na tomto sestavení prošlo 101 testů JavaScriptu a produkční sestavení. Z šesti cílených zkoušek v prohlížeči prošly čtyři. Nejdelší stání za deset minut bylo 70 s na Klatovské a 79 s u nádraží. V obou místech zůstala všechna sledovaná auta na vozovce. U vody v obou vykreslovačích auto šplouchlo, chvíli plavalo, hráč vyplaval a dostal se na břeh. Auto ovšem dosedlo koly na dno asi 1,3 m pod hladinou a vršek karoserie byl na konci 22 cm nad vodou. Původní požadavek na vyřazení ponořeného auta za 6–12 s se na tomto místě nesplnil. Požadavky ani místo zkoušky se dosud nezměnily. Podrobný průběh je v `data-raw/e20/breh-ponor.json`, výchozí a opravené kontakty na mostě v `most-kontakt.json` a `most-pobrezi.json`.
+
+Autor dostal na výběr ponechat původní jízdu jako kontrolu mělčiny a ověřit úplné potopení samostatnou jízdou do hlubší části, nebo ověřit skutečnou hloubku v původní stopě. Další úpravy vody závisejí na odpovědi. Zbývá závěrečné ověření, protokol, odkazy v katalozích a žádost o sloučení. Pracovní protokol a snímky před a po jsou připravené v `data-raw/e20/navrh-protokolu/`.
+
+Po opravě břehu se při 40 autech vešlo 95 % z 605 kroků fyziky do 2,0 ms při rozpočtu 4 ms (`data-raw/e20/breh-vykon.json`). Jízda na nízké kvalitě urazila 61 m a let nad centrem 250 m (`breh-trasy.json`).
