@@ -1,3 +1,9 @@
+# Stav etapy E25
+
+## Vymezení pilotu
+
+Americká mezi západním koncem Wilsonova mostu a kruhovou křižovatkou zahrnuje obě strany ulice i nároží u nábřeží. Ze všech 205 452 ploch městského archivu 2024 se podařilo určit 26 stěn osmi budov pro fotografické porovnání. Výběr vychází z průsečíků s paprsky z osy ulice a z předmostí v úrovni parteru. Všechny konce hran leží ve vymezeném obrysu a otisky ploch jsou jedinečné. Zbývá fotograficky ověřit podobu a členění provozoven i vybavení. [Návod k focení a soupis](../E25/navod-foceni.md)
+
 # Stav etapy E24
 
 E24 navazuje na G17 ve větvi E23 (`fe30ef0`). [Zadání E24](E24.md)
