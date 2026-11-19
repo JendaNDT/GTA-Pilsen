@@ -182,7 +182,7 @@ export class Game {
     }
     this.env = new Environment(this.scene, renderer);
     this.postfx = createPostFX(renderer, this.scene, this.camera, this.world);
-    this.chunks = new ChunkManager(this.scene, this.world, renderer, data.heritage, data.orthophotoSources);
+    this.chunks = new ChunkManager(this.scene, this.world, renderer, data.heritage, data.orthophotoSources, data.soundPlaces);
     this.lampBodies = new LampBodies(physics, this.world.breakables, this.scene);
     this.trafficFurniture = new TrafficFurnitureBodies(physics, this.world, this.scene);
     this.colliders = new TileColliders(physics, this.world, data, DEBUG ? new CollisionView(this.scene) : null,
@@ -190,6 +190,7 @@ export class Game {
     physics.onRailingHit = (rail, car, subshape, impulse) => this.colliders.roadFurniture.contact(rail, car, subshape, impulse);
     this.hud = new Hud(this.world);
     this.soundPlaces = data.soundPlaces;
+    this.particles.weirs = data.soundPlaces.map(([x, z]) => [x, this.world.heightAt(x, z), z]);
     this.audio = new GameAudio(this);
     this.vehicles = new VehicleManager(this.scene, this.world, this);
     this.peds = new PedManager(this.scene, this.world, this);
@@ -960,7 +961,7 @@ export class Game {
     this._updateWanted(dt);
     this._updateCamera(dt);
     this.chunks.heritage.updateForge(this.hour, dt);
-    this.particles.update(dt, this.vehicles.cars, this.focus);
+    this.particles.update(dt, this.vehicles.cars, this.focus, QUALITY.waterDetail);
     this.audio.update(dt, input.moveY);
     this.env.update(this.camera);
     const fast = Math.hypot(this.focus.vx || 0, this.focus.vz || 0) > 18;

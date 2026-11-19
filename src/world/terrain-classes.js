@@ -25,31 +25,35 @@ export function terrainClassMask(land, polygons, groups, x, z, size, pixels = 64
     for (const id of polygons) {
       const cls = land.cls[id];
       if ((cls === LC.WATER ? 3 : groups[cls]) !== order) continue;
-      const rows = new Map();
-      for (let ring = land.pRing[id]; ring < land.pRing[id + 1]; ring++) {
-        const first = land.ringStart[ring],
-          end = land.ringStart[ring + 1];
-        for (let v = first, last = end - 1; v < end; last = v++) {
-          const ax = land.vx[last] * 0.1,
-            az = land.vz[last] * 0.1,
-            bx = land.vx[v] * 0.1,
-            bz = land.vz[v] * 0.1;
-          const start = Math.max(0, Math.ceil((Math.min(az, bz) - z) / step - 0.5));
-          const stop = Math.min(pixels, Math.ceil((Math.max(az, bz) - z) / step - 0.5));
-          for (let row = start; row < stop; row++) {
-            if (!rows.has(row)) rows.set(row, []);
-            rows.get(row).push(ax + ((bx - ax) * (z + (row + 0.5) * step - az)) / (bz - az));
-          }
-        }
-      }
-      for (const [row, cuts] of rows) {
-        cuts.sort((a, b) => a - b);
-        for (let p = 0; p + 1 < cuts.length; p += 2) {
-          const start = Math.max(0, Math.ceil((cuts[p] - x) / step - 0.5));
-          const stop = Math.min(pixels, Math.ceil((cuts[p + 1] - x) / step - 0.5));
-          if (stop > start) mask.fill(types.get(cls) ?? 0, row * pixels + start, row * pixels + stop);
-        }
-      }
+      fillLandPolygon(land, id, x, z, step, pixels, mask, types.get(cls) ?? 0);
     }
   return mask.some(Boolean) ? mask : null;
+}
+
+export function fillLandPolygon(land, id, x, z, step, pixels, mask, value) {
+  const rows = new Map();
+  for (let ring = land.pRing[id]; ring < land.pRing[id + 1]; ring++) {
+    const first = land.ringStart[ring],
+      end = land.ringStart[ring + 1];
+    for (let v = first, last = end - 1; v < end; last = v++) {
+      const ax = land.vx[last] * 0.1,
+        az = land.vz[last] * 0.1,
+        bx = land.vx[v] * 0.1,
+        bz = land.vz[v] * 0.1;
+      const start = Math.max(0, Math.ceil((Math.min(az, bz) - z) / step - 0.5));
+      const stop = Math.min(pixels, Math.ceil((Math.max(az, bz) - z) / step - 0.5));
+      for (let row = start; row < stop; row++) {
+        if (!rows.has(row)) rows.set(row, []);
+        rows.get(row).push(ax + ((bx - ax) * (z + (row + 0.5) * step - az)) / (bz - az));
+      }
+    }
+  }
+  for (const [row, cuts] of rows) {
+    cuts.sort((a, b) => a - b);
+    for (let p = 0; p + 1 < cuts.length; p += 2) {
+      const start = Math.max(0, Math.ceil((cuts[p] - x) / step - 0.5));
+      const stop = Math.min(pixels, Math.ceil((cuts[p + 1] - x) / step - 0.5));
+      if (stop > start) mask.fill(value, row * pixels + start, row * pixels + stop);
+    }
+  }
 }

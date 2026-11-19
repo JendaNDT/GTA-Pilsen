@@ -1,4 +1,4 @@
-// Všechny čtyři efekty používají společné místo v jedné instancované geometrii.
+// Všechny efekty používají společné místo v jedné instancované geometrii.
 import { Color, DynamicDrawUsage, InstancedBufferAttribute, InstancedBufferGeometry,
   Mesh, MeshBasicNodeMaterial, OctahedronGeometry } from 'three/webgpu';
 import { Fn, attribute, instanceIndex, instancedArray, positionGeometry, uniform, vec3, vec4 } from 'three/tsl';
@@ -7,6 +7,7 @@ const effects = {
   sparks: { color: 0xffbc43, gravity: -10, size: 0.055, time: 0.45, spread: 4.0 },
   glass: { color: 0x9bdde9, gravity: -9.8, size: 0.09, time: 0.75, spread: 3.0 },
   dust: { color: 0xbaaa91, gravity: 0.2, size: 0.23, time: 0.9, spread: 1.4 },
+  spray: { color: 0xc2dce2, gravity: -7, size: 0.075, time: 0.68, spread: 1.7 },
   smoke: { color: 0x5d6063, gravity: 0.5, size: 0.21, time: 1.55, spread: 0.55 },
 };
 const colors = Object.fromEntries(Object.entries(effects).map(([k, v]) => [k, new Color(v.color)]));
@@ -21,6 +22,8 @@ export class Particles {
     this.time = 0;
     this.last = -Infinity;
     this.nextSmoke = 0;
+    this.weirs = [];
+    this.sprayCredit = 0;
     const geom = new InstancedBufferGeometry();
     const shard = new OctahedronGeometry(1);
     geom.index = shard.index;
@@ -78,7 +81,7 @@ export class Particles {
     for (const input of this.inputs ?? []) input.value.needsUpdate = true;
   }
 
-  update(dt, cars, focus) {
+  update(dt, cars, focus, waterDetail = false) {
     this.time += dt;
     if (this.enabled && this.time >= this.nextSmoke) {
       this.nextSmoke = this.time + 0.15;
@@ -87,6 +90,16 @@ export class Particles {
         const hood = car.type.len * 0.32;
         this.emit('smoke', car.x + Math.sin(car.yaw) * hood, car.y + car.type.h * 0.72,
           car.z + Math.cos(car.yaw) * hood, 2);
+      }
+    }
+    if (this.enabled && waterDetail && this.weirs.length) {
+      this.sprayCredit += Math.min(dt, 0.2) * 15;
+      const count = Math.floor(this.sprayCredit);
+      if (count) {
+        this.sprayCredit -= count;
+        for (const [x, y, z] of this.weirs) {
+          if ((x - focus.x) ** 2 + (z - focus.z) ** 2 < 75 ** 2) this.emit('spray', x, y + 0.12, z, count);
+        }
       }
     }
     this.mesh.visible = this.enabled && this.time < this.last;

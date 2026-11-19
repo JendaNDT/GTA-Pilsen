@@ -7,6 +7,7 @@ import * as THREE from 'three/webgpu';
 import { hash } from './hash.js';
 import { streetLamps } from './lamps.js';
 import { railingFaces } from '../physics/railings.js';
+import { waterTile } from './water.js';
 import { terrainClassMask } from './terrain-classes.js';
 import { terrainMaskTexture } from './terrain-detail.js';
 import { terrainGridStep } from '../physics/terrain.js';
@@ -1482,7 +1483,8 @@ function buildLamps(world, ci) {
 const STAGES = 4;       // 0 terén, 1 budovy, 2 silnice a mosty, 3 stromy a lampy
 
 export class ChunkManager {
-  constructor(scene, world, renderer, heritage, orthophotoSources) {
+  constructor(scene, world, renderer, heritage, orthophotoSources, weirs = []) {
+    this.weirs = weirs;
     this.scene = scene;
     this.world = world;
     this.renderer = renderer;
@@ -1601,7 +1603,9 @@ export class ChunkManager {
       const classes = QUALITY.terrainDetail && terrainClassMask(w.l, this.landIndex.polys[ci], LAND_GROUP, x0, z0, CHUNK);
       const mask = classes ? terrainMaskTexture(classes) : null;
       if (mask) ch.disposables.push(mask);
-      ch.terrainMat = makeTerrainMaterial(ch.tex, portals, pavingChunk(x0, z0), QUALITY.heritageDetail, mask);
+      const water = QUALITY.waterDetail && waterTile(this, ci, x0, z0, CHUNK);
+      if (water) ch.disposables.push(water);
+      ch.terrainMat = makeTerrainMaterial(ch.tex, portals, pavingChunk(x0, z0), QUALITY.heritageDetail, mask, water);
       const m = new THREE.Mesh(geo, ch.terrainMat);
       m.receiveShadow = true; m.renderOrder = 5;
       add(m, geo);

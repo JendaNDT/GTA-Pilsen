@@ -1,5 +1,6 @@
 import * as THREE from 'three/webgpu';
-import { convertToTexture, materialReference, mix, mrt, normalView, output, pass, renderOutput, texture3D, vec4, velocity } from 'three/tsl';
+import { Fn, float, smoothstep, convertToTexture, materialReference, mix, mrt, normalView, output, pass, renderOutput, texture3D, vec4, velocity } from 'three/tsl';
+import { ssr } from 'three/addons/tsl/display/SSRNode.js';
 import { fxaa } from 'three/addons/tsl/display/FXAANode.js';
 import { ao } from 'three/addons/tsl/display/GTAONode.js';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
@@ -12,11 +13,13 @@ import { blendLutData, loadColorLuts, lutTexture } from './color-luts.js';
 import { makeAirPerspective } from './air-perspective.js';
 import { EyeAdaptation } from './exposure.js';
 
-function buffers() {
+function buffers(waterReflections) {
   // Průhledné lampy a značky se přimíchají pouze do barvy. Normála a pohyb
   // mají odpovídat ploše, která zapsala do hloubky.
   const alpha = materialReference('depthWrite', 'bool').select(1, 0);
-  const targets = mrt({ output, normal: vec4(normalView.mul(alpha), alpha), velocity: vec4(velocity.mul(alpha), 0, alpha) });
+  const water = waterReflections ? Fn(builder => builder.material.waterField
+    ? smoothstep(0.35, 0.65, materialReference('map', 'texture').a).oneMinus() : float(0))() : 0;
+  const targets = mrt({ output, normal: vec4(normalView.mul(alpha), alpha), velocity: vec4(velocity.mul(alpha), water, alpha) });
   const retainSurface = new THREE.BlendMode(THREE.NormalBlending);
   targets.setBlendMode('normal', retainSurface);
   targets.setBlendMode('velocity', retainSurface);
@@ -51,7 +54,8 @@ export class PostFX {
 
     let image = this.color;
     if (QUALITY.shadowCascades >= 3 && independentBlending) {
-      this.scenePass.setMRT(buffers());
+      const reflectWater = QUALITY.name === 'ultra' && PARAMS.get('ssr') !== '0';
+      this.scenePass.setMRT(buffers(reflectWater));
       this.normal = this.scenePass.getTextureNode('normal');
       this.velocity = this.scenePass.getTextureNode('velocity');
       let lit = this.color;
@@ -66,6 +70,17 @@ export class PostFX {
         const indirect = mix(1, occlusion.getTextureNode().r, 0.55);
         lit = vec4(this.color.rgb.mul(indirect), this.color.a);
         this.effects.push(occlusion);
+      }
+      if (reflectWater) {
+        const mask = this.velocity.b;
+        const reflection = ssr(this.color, this.depth, this.normal, {camera, metalnessNode: mask});
+        reflection.resolutionScale = 0.5;
+        reflection.maxDistance.value = 85;
+        reflection.thickness.value = 0.8;
+        reflection.intensity.value = 0.55;
+        this.waterReflection = reflection;
+        this.effects.push(reflection);
+        lit = vec4(lit.rgb.add(reflection.rgb.mul(mask)), lit.a);
       }
       if (this.air) lit = this.air.color(lit, this.depth);
       if (lit !== this.color) {

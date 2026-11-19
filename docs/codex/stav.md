@@ -16,6 +16,12 @@ Na střední až ultra předvolbě se četnost záplat a intenzita vyjetých sto
 
 Prošlo 153 jednotkových testů a produkční sestavení. Mokrou silnici na střední předvolbě vykreslily WebGL 2 i WebGPU. Obě prohlížečové kontroly ověřily provozní profil geometrie, šířky pruhů, pořadí značení a kompilaci materiálu. Měření plynulosti na autorově grafice zůstává otevřené.
 
+## G13 · Řeky a jezy
+
+Dvě vrstvy vln postupují po směru střednice toku z OSM. Samostatné rybníky mají klidný povrch. Vzdálenost od břehu mění odstín vody, úhel pohledu její odlesk. Mapa prostředí osvětluje hladinu na střední a vyšší předvolbě. Ultra na podporovaném vykreslovači přidává odraz viditelných předmětů přes SSR v polovičním rozlišení. Pěna a sprška používají souřadnice jezů ze zvukové mapy. Sprška sdílí rozpočet s ostatními částicemi.
+
+Prošlo 154 jednotkových testů a produkční sestavení. Syntetická řeka ověřila obrácení proudu, mělký břeh, samostatný rybník a návaznost dlaždic. Čtyři prohlížečové zkoušky vykreslily nejbližší jez na střední a ultra předvolbě ve WebGL 2 a WebGPU. Ověřily tok, pěnu, vznik částic i připojení mapy prostředí. Na WebGPU prošla také opakovaná kontrola ultra s odečtem masky odrazů na podporovaném adaptéru.
+
 ## Výchozí etapa E22
 
 Ve větvi `etapa/E22` jsou převedené městské objekty, ověřený Wilsonův most i tři dávky zdí a pilířů. Hra používá další dvě lávky, silniční desku, dvě železniční mostovky a čtyři díly jezů. Vývoj a dostupné přejímací kontroly E22 jsou dokončené. Zůstává porovnání s autorovými fotografiemi a změření plynulosti na jeho zařízení. [Protokol E22](../E22.md). [Zadání E22](E22.md) · [Výsledky převodu a pilotu](#e22--převod-a-inventura)
