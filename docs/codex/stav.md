@@ -46,9 +46,9 @@ Na suché polní cestě a v trávě se od zadních kol zvedá prach. Na mokré v
 
 Prošlo 160 jednotkových testů a produkční sestavení. Oba vykreslovače ověřily vznik částic od kol, zastavení emise ve vzduchu i společný rozpočet. WebGPU přečetl výslednou polohu z výpočetního bufferu, WebGL 2 ověřil stejný výpočet na CPU. Závěrečné ověření E23 zahrnuje rozpočet všech předvoleb, referenční pohledy a měření výkonu.
 
-## Měření po G17
+## Uzavření E23
 
-Všechny čtyři předvolby dokončily pět vykreslení u Wilsonova mostu ve dne a na náměstí v noci. Protokol obsahuje mediány, počty volání a trojúhelníků a dva snímky vysoké předvolby. Na konečném kódu prošlo všech 25 testů Pythonu včetně městského archivu. Úplný test rozpočtu běží odděleně v rozlišení 1280 × 720. Na ultra překročilo vyhodnocení referenčního pohledu 25 minut na sdíleném softwarovém adaptéru. Ostatní výsledky ještě nejsou uzavřeny. [Protokol E23](../E23.md)
+G11 až G17 jsou implementované a prošly funkčními zkouškami. Závěrečné sestavení prošlo se 160 testy JavaScriptu a 25 testy Pythonu. Ve WebGPU prošly všechny čtyři předvolby ve třech referenčních pohledech při 1280 × 720. Nízká předvolba na náměstí má ověřený přírůstek deseti volání za měřené konstrukce E22. Protokol obsahuje kontrolní měření s těmito konstrukcemi i bez nich, osm měření ze dvou pevných kamer a snímky ze hry. Na cílovém zařízení zbývá ověřit 60 FPS při jízdě a letu. [Protokol E23](../E23.md)
 
 ## Výchozí etapa E22
 
