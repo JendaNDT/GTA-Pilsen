@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Čtrnáct kontrol vzhledu kandidáta
+
+V Chromiu 159 prošlo všech sedm zkoušek materiálů na WebGPU a stejných sedm na WebGL 2 nad produkčním sestavením `f6a1254`. Kontroly porovnaly denní a noční oblohu, okna, vodu a lampy u náhonu, světlomety auta, hladinu pod Wilsonovým mostem, portály Valíku a dlažbu náměstí. Při porovnání s předlohami byla hra nastavena na jasné počasí. U řeky test podle G13 měří zvlášť světlou mělčinu a tmavší střed toku. Na obou místech vyžaduje převahu modré. WebGPU čte barvy z dokončeného snímku ve výstupní textuře.
+
 ## Kontrola vstupu do archivované hry
 
 Balicí nástroj ověřuje v hotovém ZIPu místní skripty a styly odkazované z úvodní stránky. Zkouška odmítla balík s chybějícím JavaScriptem, s chybějícím CSS i s cestou od kořene serveru, která by se při nasazení z podsložky otevřela mimo hru. Prošlo 181 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. U kandidáta `f6a1254` souhlasí s manifestem všech 815 webových a 1 371 zdrojových položek. Dlouhá jízda stejného kandidáta dokončila druhý okruh po celkových 102,62 km. Při návratu bylo načteno 75 textur, 239 geometrií, 886 fyzikálních těles a žádný úlomek. Porovnání třetího a čtvrtého okruhu pokračuje. [Archivy kandidáta](../E26.md)

@@ -4,14 +4,36 @@ import { gameUrl } from './game-url.js';
 
 test.use({ viewport: reference.viewport, deviceScaleFactor: 1 });
 
+async function openMaterialGame(page, baseURL) {
+  await openReferenceGame(page, gameUrl(baseURL));
+  // Stejné světlo a procedurální obloha jako při pořízení předloh materiálů E15.
+  await page.evaluate(() => window.__game.setWeatherMode('clear'));
+}
+
 async function averageRegion(page, clip) {
-  return page.evaluate(({ x, y, width, height }) => {
+  return page.evaluate(async ({ x, y, width, height }) => {
     const game = window.__game;
-    const ctx = new OffscreenCanvas(width, height).getContext('2d');
-    // Přečti skutečné plátno hned po vykreslení, ještě v téže úloze prohlížeče.
-    game.render();
-    ctx.drawImage(game.renderer.domElement, x, y, width, height, 0, 0, width, height);
-    const { data } = ctx.getImageData(0, 0, width, height);
+    const { renderer } = game;
+    let data;
+    if (renderer.backend.isWebGPUBackend) {
+      // Čtení výstupní textury počká na dokončení obrazu i na WebGPU.
+      const Target = game.postfx.scenePass.renderTarget.constructor;
+      const target = new Target(renderer.domElement.width, renderer.domElement.height);
+      const previous = renderer.getRenderTarget();
+      try {
+        renderer.setRenderTarget(target);
+        game.render();
+        data = await renderer.readRenderTargetPixelsAsync(target, x, y, width, height);
+      } finally {
+        renderer.setRenderTarget(previous);
+        target.dispose();
+      }
+    } else {
+      const ctx = new OffscreenCanvas(width, height).getContext('2d');
+      game.render();
+      ctx.drawImage(renderer.domElement, x, y, width, height, 0, 0, width, height);
+      data = ctx.getImageData(0, 0, width, height).data;
+    }
     const rgb = [0, 0, 0];
     for (let i = 0; i < data.length; i += 4) {
       rgb[0] += data[i];
@@ -23,7 +45,7 @@ async function averageRegion(page, clip) {
 }
 
 test('E15 – obloha má ve dne mraky a v noci ztmavne', { tag: '@webgpu' }, async ({ page, baseURL }) => {
-  await openReferenceGame(page, gameUrl(baseURL));
+  await openMaterialGame(page, baseURL);
   const [day, night] = reference.views;
   const sky = { x: 48, y: 24, width: 32, height: 32 };
   const cloud = { ...sky, x: 624 };
@@ -39,7 +61,7 @@ test('E15 – obloha má ve dne mraky a v noci ztmavne', { tag: '@webgpu' }, asy
 });
 
 test('E15 – některá okna na náměstí v noci svítí a sousední zůstávají tmavá', { tag: '@webgpu' }, async ({ page, baseURL }) => {
-  await openReferenceGame(page, gameUrl(baseURL));
+  await openMaterialGame(page, baseURL);
   await renderReferenceView(page, reference.views.find((view) => view.id === 'namesti-noc'));
   const [litRed, , litBlue] = await averageRegion(page, { x: 40, y: 331, width: 8, height: 8 });
   const [darkRed] = await averageRegion(page, { x: 52, y: 333, width: 8, height: 8 });
@@ -48,7 +70,7 @@ test('E15 – některá okna na náměstí v noci svítí a sousední zůstávaj
 });
 
 test('E15 – proudění náhonu mění odlesk a lampy osvětlují povrch', async ({ page, baseURL }) => {
-  await openReferenceGame(page, gameUrl(baseURL));
+  await openMaterialGame(page, baseURL);
   const forge = reference.views.find((view) => view.id === 'dobriv-hamr');
   const canal = { x: 805, y: 430, width: 8, height: 8 };
   await renderReferenceView(page, forge);
@@ -70,19 +92,28 @@ test('E15 – proudění náhonu mění odlesk a lampy osvětlují povrch', asyn
   await renderReferenceView(page, square);
   const [lit] = await averageRegion(page, underLamp);
   await page.evaluate(() => {
-    window.__game.env.poolMat.visible = false;
-    window.__game.render();
+    const game = window.__game;
+    game.env.poolMat.visible = false;
+    // Na vysoké předvolbě dopadá na stejnou dlažbu také světlo skutečných bodových lamp.
+    for (const lamp of game.nightLights?.lamps ?? []) lamp.removeFromParent();
+    game.postfx?.resetHistory();
   });
   const [unlit] = await averageRegion(page, underLamp);
-  expect(lit - unlit).toBeGreaterThan(30);
+  expect(lit - unlit, JSON.stringify({ lit, unlit })).toBeGreaterThan(30);
 });
 
 test('E15 – světlomety auta zůstávají v noci jasné', async ({ page, baseURL }) => {
-  await openReferenceGame(page, gameUrl(baseURL));
+  await openMaterialGame(page, baseURL);
+  await page.getByRole('button', { name: 'Hrát', exact: true }).click();
   await page.evaluate((date) => {
-    const { x, y, z, yaw } = window.__game.player.lastCar;
-    const dx = Math.sin(yaw), dz = Math.cos(yaw);
+    window.__freeze(true);
+    const game = window.__game, car = game.player.lastCar;
     window.__setClock(date, 22);
+    game._enterCar(car);
+    // První jízdní krok rozsvítí potkávací světla nastartovaného auta.
+    window.__step(1 / 60);
+    const { x, y, z, yaw } = car;
+    const dx = Math.sin(yaw), dz = Math.cos(yaw);
     window.__view(x + dx * 4, y + 1.15, z + dz * 4, x + dx * 1.5, y + 0.75, z + dz * 1.5);
   }, reference.date);
   const [headlight] = await averageRegion(page, { x: 470, y: 380, width: 16, height: 16 });
@@ -92,15 +123,19 @@ test('E15 – světlomety auta zůstávají v noci jasné', async ({ page, baseU
 });
 
 test('E15 – voda pod Wilsonovým mostem zůstává modrá', { tag: '@webgpu' }, async ({ page, baseURL }) => {
-  await openReferenceGame(page, gameUrl(baseURL));
+  await openMaterialGame(page, baseURL);
   await renderReferenceView(page, reference.views.find((view) => view.id === 'wilson'));
   const [riverRed, , riverBlue] = await averageRegion(page, { x: 460, y: 610, width: 32, height: 32 });
-  expect(riverBlue).toBeGreaterThan(125);
+  const [bankRed, , bankBlue] = await averageRegion(page, { x: 160, y: 525, width: 32, height: 32 });
+  // G13 rozlišuje světlejší mělčinu u břehu a tmavší střed toku.
+  expect(bankBlue).toBeGreaterThan(125);
+  expect(bankBlue - bankRed).toBeGreaterThan(25);
   expect(riverBlue - riverRed).toBeGreaterThan(25);
+  expect(bankBlue - riverBlue).toBeGreaterThan(10);
 });
 
 test('E15 – portály a značení u Valíku jsou vidět', { tag: '@webgpu' }, async ({ page, baseURL }) => {
-  await openReferenceGame(page, gameUrl(baseURL));
+  await openMaterialGame(page, baseURL);
   await renderReferenceView(page, reference.views.find((view) => view.id === 'valik-zapad'));
   const region = (x, y) => ({ x, y, width: 16, height: 16 });
   const [, left] = await averageRegion(page, region(534, 315));
@@ -113,7 +148,7 @@ test('E15 – portály a značení u Valíku jsou vidět', { tag: '@webgpu' }, a
 });
 
 test('E15 – dlažba náměstí Republiky je vidět', { tag: '@webgpu' }, async ({ page, baseURL }) => {
-  await openReferenceGame(page, gameUrl(baseURL));
+  await openMaterialGame(page, baseURL);
   await renderReferenceView(page, reference.views.find((view) => view.id === 'namesti-den'));
   const [brickRed, brickGreen, brickBlue] = await averageRegion(page, { x: 600, y: 665, width: 32, height: 32 });
   expect(brickRed).toBeGreaterThan(170);
