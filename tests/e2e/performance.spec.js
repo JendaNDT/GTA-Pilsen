@@ -52,3 +52,17 @@ test('E13 – panel měření lze otevřít a zavřít na dotykové obrazovce', 
     await context.close();
   }
 });
+
+test('stejná síť terénu má pro každou dlaždici vlastní grafický atribut @webgpu', async ({page}) => {
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0'));
+  await page.waitForFunction(() => window.__ready);
+  const result = await page.evaluate(() => {
+    const {chunks} = __game;
+    const indices = [...chunks.chunks.values()].flatMap(tile =>
+      tile.group.children.filter(mesh => mesh.material === tile.terrainMat && mesh.geometry?.index)
+        .map(mesh => mesh.geometry.index));
+    const pair = indices.flatMap((a,i) => indices.slice(i+1).filter(b => a.array === b.array).map(b=>[a,b]))[0];
+    return {sharedData: !!pair, independent:pair && pair[0] !== pair[1]};
+  });
+  expect(result).toEqual({sharedData:true,independent:true});
+});

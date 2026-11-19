@@ -168,3 +168,7 @@ Po změně prošlo 128 testů JavaScriptu a produkční sestavení. WebGL 2 doko
 ### Start hry a výměna grafických zdrojů
 
 Prohlížečové kontroly křížení, Rondelu a památek nyní čekají na stejný signál připravenosti jako hra. Zkouška změny kvality sleduje také dokončení výměny grafických zdrojů. Na sdíleném WebGL 2 prošly obě zkoušky památek, přepnutí grafiky, terén u Klabavy a průjezdy u D5. Opakování nad navazujícím sestavením E22 ověřilo také Rondel a úrovně v Bolevci. U kompletního herního průchodu ve stejné sérii selhal přenos snímku na starém sestavení. Po opravě `0e12604` prošel celý tento případ. Výsledky posledního jednotkového a produkčního sestavení jsou uvedené výše. Úplná prohlížečová regrese a samostatné opakování materiálových scén na softwarovém vykreslovači stále běží.
+
+### Samostatné grafické indexy terénních dlaždic
+
+Při uvolňování dlaždic v navazujícím měření WebGPU došlo k chybě při likvidaci grafického atributu. Kontrola zjistila, že různé geometrie sdílely tentýž atribut indexů a každá jej při svém zániku uvolnila. Dlaždice nyní sdílejí pouze čísla vrcholů v paměti a každá vlastní svůj samostatně uvolnitelný atribut. Prošlo 128 testů JavaScriptu, produkční sestavení i nová prohlížečová zkouška vlastnictví atributů na WebGPU. V měření se samostatně vyskytlo také odmítnutí alokace grafického bufferu v softwarovém adaptéru. Dopad na celý měřený průjezd ještě není ověřen.
