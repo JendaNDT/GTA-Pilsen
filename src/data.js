@@ -1,3 +1,6 @@
+import { assetFingerprint } from './fingerprint.js';
+import { matchesGraphicAsset } from './world/graphic-asset.js';
+export { assetFingerprint } from './fingerprint.js';
 import {validRailSections} from './world/rail-deck.js';
 // Načítání herních dat (binární balíčky vyrobené skriptem tools/build_data.py).
 
@@ -61,18 +64,12 @@ const FILES = [
   ['heritage', 'detail/city/index.json', 75_000],
 ];
 
-export function assetFingerprint(buffer) {
-  let hash = 2166136261;
-  const bytes = new Uint8Array(buffer);
-  for (let i = 0; i < bytes.length; i++) hash = Math.imul(hash ^ bytes[i], 16777619);
-  return (hash >>> 0).toString(16).padStart(8, '0');
-}
-
 export async function loadCityTile(file, signal, fingerprint = false) {
   const base = import.meta.env?.BASE_URL || '/';
   const response = await fetch(`${base}detail/city/${file}`, { signal, cache: 'no-cache' });
   if (!response.ok) throw new Error(`Dlaždice centra ${file} (${response.status})`);
   const buffer = await response.arrayBuffer();
+  if (!matchesGraphicAsset('detail/city/' + file, buffer)) throw Error('Nesouhlasí otisk městské dlaždice '+file);
   const pack = parsePack(buffer);
   if (fingerprint) pack.fileHash = assetFingerprint(buffer);
   return pack;
@@ -107,7 +104,7 @@ export async function loadStructureDetail(tile, signal) {
   } catch { return null; }
 }
 
-export async function loadStructureCore(search = globalThis.location?.search) {
+export async function loadStructureCore(search = globalThis.location?.search, verifyIndex = matchesGraphicAsset) {
   if (new URLSearchParams(search).get('structures') === '0') return null;
   try {
     const signal = AbortSignal.timeout(12000);
@@ -115,6 +112,7 @@ export async function loadStructureCore(search = globalThis.location?.search) {
       fetch(structuresPath + file, { signal })));
     if (!manifest.ok || !core.ok) return null;
     const manifestBytes = await manifest.arrayBuffer(), buffer = await core.arrayBuffer();
+    if (!verifyIndex('detail/structures/index.json', manifestBytes)) return null;
     const index = JSON.parse(new TextDecoder().decode(manifestBytes));
     if (![1,2].includes(index.version) || buffer.byteLength > 2 * 1024 * 1024 || !Array.isArray(index.tiles)) return null;
     const rails = new Set();
@@ -169,13 +167,13 @@ export async function loadAll(onProgress) {
   const structureRequest = loadStructureCore();
   const results = await Promise.all(FILES.map(([name, url]) => {
     const request = fetchBuffer(base + url, bump);
-    return ['landscape', 'soundPlaces', 'gradeSeparations', 'treeTypes', 'buildingMaterials', 'streetDetails'].includes(name) ? request.catch(() => null) : request;
+    return ['landscape', 'soundPlaces', 'gradeSeparations', 'treeTypes', 'buildingMaterials', 'streetDetails', 'heritage', 'collisionRoofs'].includes(name) ? request.catch(() => null) : request;
   }));
   const out = {};
   FILES.forEach(([name, url], i) => {
     if ((['soundPlaces','gradeSeparations','treeTypes','buildingMaterials'].includes(name)) && !results[i]) return;
-    if (name === 'streetDetails') {
-      try { out.streetDetails = JSON.parse(new TextDecoder().decode(results[i])); } catch { /* základní fasády zůstanou viditelné */ }
+    if (['heritage','streetDetails','collisionRoofs'].includes(name)) {
+      if (matchesGraphicAsset(url, results[i])) out[name] = JSON.parse(new TextDecoder().decode(results[i]));
       return;
     }
     if (name === 'landscape') {
@@ -193,7 +191,10 @@ export async function loadAll(onProgress) {
     if (!fingerprints.has(name)) fingerprints.set(name, assetFingerprint(results[FILES.findIndex(([key]) => key === name)]));
     return fingerprints.get(name);
   };
-  if (fingerprint('buildings') !== out.heritage.osm || fingerprint('terrain') !== out.heritage.terrain) out.heritage.tiles = [];
+  out.heritage ??= {tiles:[], districts:[]};
+  out.collisionRoofs ??= {tiles:[]};
+  if (fingerprint('buildings') !== out.heritage.osm || fingerprint('terrain') !== out.heritage.terrain ||
+      out.heritage.sha256 !== out.collisionRoofs.source) out.heritage.tiles = [];
   if (out.landscape && !['terrain', 'roads', 'rails', 'buildings', 'land'].every((name) =>
     out.landscape.header.sources?.[name] === fingerprint(name))) delete out.landscape;
   if (out.gradeSeparations && (!out.landscape || !['terrain', 'roads', 'rails', 'landscape'].every((name) =>
@@ -209,7 +210,7 @@ export async function loadAll(onProgress) {
     out.structures = structures;
   }
   const streets = out.streetDetails;
-  if (new URLSearchParams(globalThis.location?.search).get('streets') === '0' || !streets || streets.version !== 1 || streets.city !== out.heritage.sha256 ||
+  if (new URLSearchParams(globalThis.location?.search).get('streets') === '0' || !out.heritage.tiles.length || !streets || streets.version !== 1 || streets.city !== out.heritage.sha256 ||
       streets.structures !== out.structures?.manifestHash || !Array.isArray(streets.sections) ||
       !streets.sections.every(s => s && typeof s.id === 'string' && /^[a-z0-9-]+$/.test(s.id) &&
         s.name === s.id + '.bin' && Array.isArray(s.tiles))) delete out.streetDetails;

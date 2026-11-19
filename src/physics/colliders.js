@@ -83,7 +83,8 @@ export class TileColliders {
     this.structures = new RoadStructures(world);
     this.roofs = new Map();
     this.replaced = new Set();
-    if (data.heritage.sha256 !== data.collisionRoofs.source) throw new Error('Nesouhlasí verze měřených střech.');
+    // Pokud chybí odpovídající sada, běžné budovy včetně střech zůstanou fyzicky pevné.
+    if (!data.heritage.tiles.length || data.heritage.sha256 !== data.collisionRoofs.source) return;
     const valid = new Map(data.heritage.tiles.map(([x, z, , , ids]) => [world.chunkIndex(x, z), ids]));
     for (const tile of data.collisionRoofs.tiles) {
       const ci = world.chunkIndex(tile[0], tile[1]);

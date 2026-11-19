@@ -1,3 +1,4 @@
+import { graphicAsset } from './graphic-asset.js';
 import * as THREE from 'three/webgpu';
 import {
   attribute,
@@ -46,12 +47,14 @@ function resources() {
     opacityNode: season.equal(3).select(leaf.oneMinus(), 1),
     alphaTest: 0.5
   });
-  const atlas = new THREE.TextureLoader().load(
-    import.meta.env.BASE_URL + 'models/vegetation/stromy.png',
-    () => {
+  const atlas = new THREE.Texture();
+  graphicAsset('models/vegetation/stromy.png').then(blob => createImageBitmap(blob, {imageOrientation:'flipY'}))
+    .then(bitmap => {
+      atlas.image = bitmap;
+      atlas.flipY = false;
+      atlas.needsUpdate = true;
       assets.ready = true;
-    }
-  );
+    }).catch(() => {}); // Do načtení zůstávají v dálce jednoduché koruny.
   atlas.colorSpace = THREE.SRGBColorSpace;
   atlas.minFilter = THREE.LinearMipMapLinearFilter;
   const root = attribute('treeRoot', 'vec4'),

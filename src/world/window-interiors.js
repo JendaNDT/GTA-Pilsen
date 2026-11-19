@@ -1,3 +1,4 @@
+import { graphicAsset } from './graphic-asset.js';
 import { DataTexture, LinearFilter, LinearMipmapLinearFilter, SRGBColorSpace } from 'three/webgpu';
 import {
   Fn,
@@ -21,11 +22,7 @@ export function roomAtlas() {
   atlas.minFilter = LinearMipmapLinearFilter;
   atlas.generateMipmaps = true;
   atlas.needsUpdate = true;
-  fetch((import.meta.env?.BASE_URL ?? '/') + 'textures/facades/interiery.webp')
-    .then((r) => {
-      if (!r.ok) throw Error('Chybí atlas interiérů.');
-      return r.blob();
-    })
+  graphicAsset('textures/facades/interiery.webp')
     .then((blob) => createImageBitmap(blob))
     .then((bitmap) => {
       try {

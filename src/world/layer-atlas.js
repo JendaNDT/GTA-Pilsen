@@ -1,3 +1,4 @@
+import { graphicAsset } from './graphic-asset.js';
 import { DataArrayTexture, LinearFilter, LinearMipmapLinearFilter, RepeatWrapping } from 'three/webgpu';
 
 // Každá vrstva má vlastní mipmapy a opakuje se bez prosakování sousední knihovní textury.
@@ -15,11 +16,7 @@ export function layerAtlas({ directory, columns, rows, layers, sourceSide, side 
     maps[name] = tex;
   }
   async function read(name) {
-    const response = await fetch(
-      (import.meta.env?.BASE_URL ?? '/') + 'textures/' + directory + '/' + name + '.webp'
-    );
-    if (!response.ok) throw Error('Chybí atlas ' + directory + '/' + name);
-    const bitmap = await createImageBitmap(await response.blob());
+    const bitmap = await createImageBitmap(await graphicAsset('textures/' + directory + '/' + name + '.webp'));
     try {
       if (bitmap.width !== columns * sourceSide || bitmap.height !== rows * sourceSide)
         throw Error('Neplatný rozměr atlasu ' + directory);

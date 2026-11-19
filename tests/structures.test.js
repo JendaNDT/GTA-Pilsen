@@ -159,18 +159,22 @@ test('základ načte i první verzi a odmítne index trojúhelníku mimo vrcholy
   const file = join(dir,'core.bin');
   const p = Float32Array.of(0,1,0, 1,1,0, 0,1,1);
   let version = 1;
+  let manifestHash;
+  const verifyFixture = (_,bytes) => assetFingerprint(bytes) === manifestHash;
   const tile = {cx:0, cz:0, file:'0_0.bin', objects:[{start:0,dStart:0,count:3,dCount:3}]};
   t.mock.method(globalThis,'fetch',async url => {
     const bytes = await readFile(file);
-    return url.endsWith('core.bin') ? new Response(bytes) :
-      Response.json({version,tiles:[tile],hash:assetFingerprint(bytes)});
+    if (url.endsWith('core.bin')) return new Response(bytes);
+    const encoded = new TextEncoder().encode(JSON.stringify({version,tiles:[tile],hash:assetFingerprint(bytes)}));
+    manifestHash = assetFingerprint(encoded);
+    return new Response(encoded);
   });
   writePack(file,{version},{p:['f4',p]});
-  assert.deepEqual((await loadStructureCore('')).positions,p);
+  assert.deepEqual((await loadStructureCore('', verifyFixture)).positions,p);
   version = 2;
   for (const [index,valid] of [[2,true],[3,false]]) {
     writePack(file,{version},{p:['f4',p],i:['u2',Uint16Array.of(0,1,index)]});
-    const layer = await loadStructureCore('');
+    const layer = await loadStructureCore('', verifyFixture);
     if (valid) assert.deepEqual(layer.positions,p);
     else assert.equal(layer,null);
   }

@@ -1,3 +1,4 @@
+import { fetchGraphicResponse } from './graphic-asset.js';
 // Mapové bloky se slaďují se stejným počátkem a stejnými podklady jako terén.
 const CHUNKS_PER_BLOCK = 4;
 const METERS_PER_PIXEL = 2;
@@ -37,7 +38,7 @@ export function orthophotoBlocks(manifest, { origin, chunk, cols, rows, fingerpr
 export class Orthophoto {
   constructor(grid, capacity, {
     base = `${import.meta.env?.BASE_URL || '/'}detail/orthophoto/`,
-    fetchFile = (url, options) => fetch(url, options),
+    fetchFile = (url, options) => fetchGraphicResponse('detail/orthophoto/' + url.slice(base.length), url, options),
     decode = (blob) => createImageBitmap(blob),
     availableRequests = () => REQUEST_LIMIT,
   } = {}) {
