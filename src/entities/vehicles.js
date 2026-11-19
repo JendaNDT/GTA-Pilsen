@@ -1,4 +1,5 @@
 // Auta: jízdní fyzika hráče, běžný provoz, zaparkovaná auta a policie.
+import { enginePower, steeringPull, releasePanels } from './damage.js';
 import { driveRoute } from '../game/ai-driver.js';
 import { opposingLeftTurns, laneTurn, oncomingDistance, pathClearance, turnDistance, turnPoint } from '../game/ai-turn.js';
 import * as THREE from 'three/webgpu';
@@ -147,6 +148,7 @@ export class VehicleManager {
     this.game.garage?.onRemove(car);
     this.game.audio.remove(car);
     this.scene.remove(car.mesh);
+    releasePanels(car);
     if (car.mesh.userData.beacons) for (const b of car.mesh.userData.beacons) b.material.dispose();
   }
 
@@ -162,7 +164,7 @@ export class VehicleManager {
       car.offroadCheck = 0.25;
       car.offroad = w.isSoft(car.x, car.z) && !w.onRoad(car.x, car.z, 1.0);
     }
-    const damage = car.health < 30 ? 0.55 + car.health / 66 : 1;
+    const damage = enginePower(car);
     const maxSpeed = t.maxSpeed * (car.offroad ? 0.5 : 1) * damage;
     let fx = Math.sin(car.yaw), fz = Math.cos(car.yaw);
     let vF = car.vx * fx + car.vz * fz;
@@ -172,7 +174,7 @@ export class VehicleManager {
     // čím rychleji auto jede, tím méně se dají stočit kola (omezení bočního přetížení)
     const wb = t.len * 0.62;
     const maxSteer = Math.min(0.62, Math.atan((wb * (handbrake ? 26 : 17)) / Math.max(1, sp * sp)));
-    const target = steerIn * maxSteer;
+    const target = clamp(steerIn + steeringPull(car), -1, 1) * maxSteer;
     car.steer += (target - car.steer) * Math.min(1, dt * (Math.abs(target) > Math.abs(car.steer) ? 7 : 11));
     const wheelbase = t.len * 0.62;
     const yawRate = (vF / wheelbase) * Math.tan(car.steer) * (handbrake && sp > 6 ? 1.35 : 1);
@@ -186,10 +188,10 @@ export class VehicleManager {
     const brake = car.upgrades?.brakes ? 21 : 16;
     if (throttle > 0) {
       if (vF < -0.6) vF = Math.min(0, vF + brake * dt * throttle);
-      else vF += t.accel * throttle * Math.max(0, 1 - Math.pow(Math.max(0, vF) / maxSpeed, 1.6)) * dt;
+      else if (damage) vF += t.accel * throttle * damage * Math.max(0, 1 - Math.pow(Math.max(0, vF) / maxSpeed, 1.6)) * dt;
     } else if (throttle < 0) {
       if (vF > 0.6) vF = Math.max(0, vF + brake * dt * throttle);
-      else if (vF > -9) vF += t.accel * 0.7 * throttle * dt;
+      else if (vF > -9) vF += t.accel * damage * 0.7 * throttle * dt;
     } else {
       const dec = 1.1 * dt;
       vF = Math.abs(vF) < dec ? 0 : vF - Math.sign(vF) * dec;
@@ -666,7 +668,8 @@ export class VehicleManager {
       physical.driveAI(physical.input, dt, this.game.tireSurface);
       return;
     }
-    if (car.speed < limit) car.speed = Math.min(limit, car.speed + 2.6 * dt);
+    limit *= enginePower(car);
+    if (car.speed < limit) car.speed = Math.min(limit, car.speed + 2.6 * enginePower(car) * dt);
     else car.speed = Math.max(limit, car.speed - 8 * dt);
     let stopGap = Infinity;
     car.speed = w.traffic.drivingLimit(car, dt, car.speed, this.cars, this.obstacles,
@@ -808,7 +811,8 @@ export class VehicleManager {
       car.blocked = car.speed < 0.5 ? car.blocked + dt : 0;
       return;
     }
-    if (car.speed < limit) car.speed = Math.min(limit, car.speed + car.type.accel * 0.8 * dt);
+    limit *= enginePower(car);
+    if (car.speed < limit) car.speed = Math.min(limit, car.speed + car.type.accel * enginePower(car) * 0.8 * dt);
     else car.speed = Math.max(limit, car.speed - 17 * dt);
     car.blocked = car.speed < 0.5 ? car.blocked + dt : 0;
     const maxTurn = 2.9 * dt * Math.min(1, car.speed / 3 + 0.15);

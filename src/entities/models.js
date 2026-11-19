@@ -123,6 +123,28 @@ for (const [k, t] of Object.entries(CAR_TYPES)) {
 
 export const CAR_COLORS = [0xd9dadb, 0x9da3a8, 0x2b2e33, 0x1f3a5f, 0x8f1d1d, 0xb8b0a0, 0x3d6b4f, 0x5b7fa6, 0xc8922e, 0x6b4a2f, 0xf2f2ef, 0x4a4d52];
 
+function shellPanels(body, type, ride, height, parts) {
+  const { wid, len, hood } = type;
+  const front = len / 2, rear = -front;
+  const cuts = [rear, rear + Math.max(0.45, type.trunk), front - hood, front];
+  const p = (side, z, top) => [side * wid / 2 * (top ? 0.96 : 1),
+    ride + (top ? height : 0), z * (top ? 0.985 : 1)];
+  const quad = (points, normal, name) => {
+    const start = body.p.length / 3;
+    for (const i of [0, 1, 2, 0, 2, 3]) body.vertex(...points[i], ...normal, WHITE);
+    if (name) parts[name] = { batch: 'body', start, count: 6 };
+  };
+  for (let i = 1; i < cuts.length; i++) {
+    const a = cuts[i-1], b = cuts[i];
+    quad([p(-1,a,1), p(-1,b,1), p(1,b,1), p(1,a,1)], [0,1,0], i === 3 ? 'hood' : null);
+    quad([p(1,a,0), p(1,a,1), p(1,b,1), p(1,b,0)], [1,0,0], i === 2 ? 'rightDoor' : null);
+    quad([p(-1,b,0), p(-1,b,1), p(-1,a,1), p(-1,a,0)], [-1,0,0], i === 2 ? 'leftDoor' : null);
+  }
+  quad([p(-1,rear,0), p(1,rear,0), p(1,front,0), p(-1,front,0)], [0,-1,0]);
+  quad([p(-1,front,0), p(1,front,0), p(1,front,1), p(-1,front,1)], [0,0,1]);
+  quad([p(1,rear,0), p(-1,rear,0), p(-1,rear,1), p(1,rear,1)], [0,0,-1]);
+}
+
 const carGeo = new Map();
 function carGeometry(type) {
   let g = carGeo.get(type.id);
@@ -133,7 +155,8 @@ function carGeometry(type) {
   const body = new Parts(), det = new Parts(SURFACE.rubber, carSurfaces);
   const wheelR = type.id === 'van' || type.ride > 0.1 ? 0.37 : 0.32;
   // karoserie
-  body.box(wid, bodyH, len, 0, ride + bodyH / 2, 0, WHITE, 0.96, 0.985);
+  const panels = {};
+  shellPanels(body, type, ride, bodyH, panels);
   const cabL = len - hood - trunk - 0.25;
   const cabZ = (trunk - hood) / 2 * -1 + 0;      // posun kabiny: kapota vpředu (+z)
   const cabY = ride + bodyH;
@@ -161,7 +184,9 @@ function carGeometry(type) {
   det.box(0.34, 0.14, 0.06, -wid * 0.33, ride + bodyH * 0.72, fz * 0.985, HEAD);
   det.box(0.32, 0.13, 0.06, wid * 0.34, ride + bodyH * 0.74, lz * 0.985, TAIL);
   det.box(0.32, 0.13, 0.06, -wid * 0.34, ride + bodyH * 0.74, lz * 0.985, TAIL);
+  panels.frontBumper = { batch: 'detail', start: det.p.length / 3, count: 36 };
   det.box(wid * 0.98, 0.14, 0.1, 0, ride + 0.09, fz * 0.99, DARK);
+  panels.rearBumper = { batch: 'detail', start: det.p.length / 3, count: 36 };
   det.box(wid * 0.98, 0.14, 0.1, 0, ride + 0.09, lz * 0.99, DARK);
   det.box(wid * 0.5, 0.12, 0.05, 0, ride + bodyH * 0.45, fz * 0.99, DARK);
   const wx = wid / 2 - 0.12, wz = len / 2 - 0.82;
@@ -176,7 +201,7 @@ function carGeometry(type) {
   for (const side of [-1, 1]) for (const end of [-1, 1]) {
     hazards.box(0.14, 0.12, 0.08, side * wid * 0.42, ride + bodyH * 0.73, end * len * 0.495, [1, 0.38, 0.01]);
   }
-  g = { body: body.geometry(), detail: det.geometry(), hazards: hazards.geometry(), wheelR };
+  g = { panels, body: body.geometry(), detail: det.geometry(), hazards: hazards.geometry(), wheelR };
   carGeo.set(type.id, g);
   return g;
 }
@@ -201,6 +226,8 @@ export function makeCarMesh(typeId, colorHex) {
   const group = new THREE.Group();
   const body = new THREE.Mesh(g.body, getBodyMaterial(type.police ? 0xdfe3e6 : type.sign ? 0xe0b020 : colorHex));
   const detail = new THREE.Mesh(g.detail, getDetailMaterial());
+  group.userData.panels = g.panels;
+  group.userData.batches = { body, detail };
   body.castShadow = true; detail.castShadow = true;
   const hazards = new THREE.Mesh(g.hazards, getDetailMaterial());
   hazards.visible = false;

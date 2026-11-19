@@ -107,10 +107,10 @@ export class TrafficBodies {
     }
   }
 
-  recordImpact(a, b, impulse) {
+  recordImpact(a, b, impulse, manifold) {
     for (const body of [a, b]) {
       const car = this.owners.get(body.GetID().GetIndexAndSequenceNumber());
-      car?.physical?.recordImpact(a, b, impulse);
+      car?.physical?.recordImpact(a, b, impulse, manifold);
     }
   }
 

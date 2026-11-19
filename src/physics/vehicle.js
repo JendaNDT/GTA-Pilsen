@@ -1,4 +1,5 @@
-import { Euler, Quaternion } from 'three/webgpu';
+import { dentCar, enginePower, steeringPull } from '../entities/damage.js';
+import { Euler, Quaternion, Vector3 } from 'three/webgpu';
 import { BodyPose } from './step.js';
 import { layers } from './world.js';
 
@@ -115,6 +116,8 @@ export class PlayerVehicle {
     this.pose = new BodyPose(this.body);
     this.euler = new Euler(0, 0, 0, 'YXZ');
     this.rotation = new Quaternion();
+    this.impactPoint = new Vector3();
+    this.impactNormal = new Vector3();
     this.surface = 1;
     this.surfaceTimer = 0;
     this.teleport();
@@ -139,7 +142,7 @@ export class PlayerVehicle {
     this.pose.reset(this.body);
   }
 
-  recordImpact(first, second, impulse) {
+  recordImpact(first, second, impulse, manifold) {
     const bodyID = this.body.GetID().GetIndexAndSequenceNumber();
     const a = first.GetID().GetIndexAndSequenceNumber(), b = second.GetID().GetIndexAndSequenceNumber();
     if (a !== bodyID && b !== bodyID) return;
@@ -147,10 +150,32 @@ export class PlayerVehicle {
     if (speed <= 3 || speed <= this.impactSpeed) return;
     this.impactSpeed = speed;
     this.impactBody = a === bodyID ? b : a;
+    const points = a === bodyID ? manifold?.mRelativeContactPointsOn1 : manifold?.mRelativeContactPointsOn2;
+    this.hasImpactPoint = !!points?.size();
+    if (!this.hasImpactPoint) return;
+    const origin = manifold.mBaseOffset, p = this.body.GetPosition(), q = this.body.GetRotation();
+    const rotation = this.rotation.set(q.GetX(), q.GetY(), q.GetZ(), q.GetW()).invert();
+    // Střed kontaktní plochy omezuje náhodný výběr levého nebo pravého rohu.
+    this.impactPoint.set(0, 0, 0);
+    for (let i = 0; i < points.size(); i++) {
+      const v = points.at(i);
+      this.impactPoint.x += v.GetX();
+      this.impactPoint.y += v.GetY();
+      this.impactPoint.z += v.GetZ();
+    }
+    this.impactPoint.multiplyScalar(1 / points.size());
+    this.impactPoint.x += origin.GetX() - p.GetX();
+    this.impactPoint.y += origin.GetY() - p.GetY();
+    this.impactPoint.z += origin.GetZ() - p.GetZ();
+    this.impactPoint.applyQuaternion(rotation).y += this.spec.height;
+    const n = manifold.mWorldSpaceNormal;
+    this.impactNormal.set(n.GetX(), n.GetY(), n.GetZ()).applyQuaternion(rotation).multiplyScalar(a === bodyID ? -1 : 1);
   }
 
   applyImpact() {
     const speed = this.impactSpeed;
+    if (speed <= 3) return 0;
+    if (this.hasImpactPoint) dentCar(this.car, speed, this.impactPoint, this.impactNormal, this.physics.onCarFragment);
     this.car.health = Math.max(0, this.car.health - (speed - 3) * 1.5);
     this.impactSpeed = 0;
     this.impactBody = null;
@@ -171,8 +196,8 @@ export class PlayerVehicle {
     const abs = arcade && Math.abs(speed) > 3 && slip > 0.18;
     const traction = arcade && Math.abs(speed) > 1 && slip > 0.22 ? 0.65 : 1;
     const limit = Math.min(1, 0.13 + 32 / (32 + speed * speed));
-    car.steer += (steer * limit - car.steer) * Math.min(1, dt * 8);
-    this.controller.SetDriverInput(braking ? 0 : throttle * traction * Math.min(1, 0.55 + car.health / 66),
+    car.steer += (Math.max(-1, Math.min(1, steer + steeringPull(car))) * limit - car.steer) * Math.min(1, dt * 8);
+    this.controller.SetDriverInput(braking ? 0 : throttle * traction * enginePower(car),
       car.steer, braking ? (abs ? 0.68 : 1) : 0, handbrake ? 1 : 0);
     if (throttle || handbrake || steer) this.physics.bodies.ActivateBody(this.body.GetID());
     if (arcade && !handbrake && !steer && Math.abs(speed) > 4) {
@@ -188,10 +213,10 @@ export class PlayerVehicle {
       this.surfaceTimer = 0.25;
       this.friction = surface(this.car.x, this.car.z) * this.spec.grip;
     }
-    this.car.steer = input.steer;
+    this.car.steer = Math.max(-1, Math.min(1, input.steer + steeringPull(this.car)));
     const c = this.car;
     const holding = input.brake === 1 && !input.throttle && Math.hypot(c.vx, c.vz) < 0.45 && Math.abs(c.vy) < 0.35;
-    this.controller.SetDriverInput(input.throttle, input.steer, input.brake, holding ? 1 : 0);
+    this.controller.SetDriverInput(input.throttle * enginePower(c), c.steer, input.brake, holding ? 1 : 0);
     if (input.throttle) this.physics.bodies.ActivateBody(this.body.GetID());
     // Na příčném svahu zabrzděné pneumatiky v klidu drží. Náraz nebo rozjezd
     // spící dynamické auto opět probudí stejně jako zaparkovaný vůz.

@@ -241,3 +241,78 @@ test('E21 – po průrazu kovového zábradlí zůstane mezera až do ranní opr
   });
   expect(result).toEqual({ passed: true, piece: true, broken: 'broken', returned: 'broken', repaired: 'intact', visible: true });
 });
+
+test('E21 – garáž po nárazu uloží poškozený díl, načte jej a opraví @webgpu', async ({ page }) => {
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0'));
+  await page.waitForFunction(() => window.__ready);
+  const damaged = await page.evaluate(() => {
+    __freeze(true);
+    const g = __game;
+    g.paused = false;
+    g.vehicles.spawnTimer = g.peds.timer = Infinity;
+    g.money = 5000;
+    g.garage.navigate();
+    const {x, z} = g.jobs.waypoint;
+    g.player.place(x + 8, z);
+    for (const c of [...g.vehicles.cars]) g.vehicles.remove(c);
+    g.garage.perform('buy');
+    g.garage.perform('retrieve');
+    const car = g.garage.active;
+    g._enterCar(car);
+    const y = car.y + 30;
+    car.place(x, z, 0);
+    car.y = y;
+    car.gPitch = car.gRoll = 0;
+    car.vz = car.speed = 32;
+    const { Jolt, bodies } = g.physics;
+    const half = new Jolt.Vec3(4, 2, 0.25), pos = new Jolt.RVec3(x, y + 1, z + 4);
+    const q = new Jolt.Quat(0, 0, 0, 1);
+    const settings = new Jolt.BodyCreationSettings(new Jolt.BoxShape(half), pos, q, Jolt.EMotionType_Static, 0);
+    const wall = bodies.CreateBody(settings);
+    bodies.AddBody(wall.GetID(), Jolt.EActivation_DontActivate);
+    for (const v of [settings, half, pos, q]) Jolt.destroy(v);
+    for (let i = 0; i < 22; i++) g.update(1 / 60);
+    const levels = g.garage.snapshot().damage, pieces = g.fragments.active.size;
+    bodies.RemoveBody(wall.GetID());
+    bodies.DestroyBody(wall.GetID());
+    car.place(x + 6, z, 0);
+    g.update(1 / 60);
+    g._exitCar();
+    g.player.place(x + 8, z);
+    g.garage.perform('store');
+    return { levels, pieces, health: g.garage.owned.health, stored: !g.garage.active };
+  });
+  expect(damaged.stored).toBe(true);
+  expect(Object.values(damaged.levels)).toContain(1);
+  expect(damaged.pieces).toBeGreaterThan(0);
+  expect(damaged.health).toBeLessThan(100);
+  await page.reload();
+  await page.waitForFunction(() => window.__ready);
+  const repair = await page.evaluate(() => {
+    __freeze(true);
+    const g = __game;
+    g.garage.navigate();
+    const {x, z} = g.jobs.waypoint;
+    g.player.place(x + 8, z);
+    for (const c of [...g.vehicles.cars]) g.vehicles.remove(c);
+    g.garage.perform('retrieve');
+    const restored = g.garage.active;
+    const levels = {...restored.damage};
+    const hidden = Object.entries(levels).filter(([,v]) => v === 1).every(([name]) => {
+      const {batch, start, count} = restored.mesh.userData.panels[name];
+      const positions = restored.mesh.userData.batches[batch].geometry.attributes.position.array;
+      return positions.slice(start * 3, (start + count) * 3).every(v => v === 0);
+    });
+    g.garage.perform('store');
+    const before = g.money, price = g.garage.repairPrice;
+    g.garage.perform('repair');
+    g.garage.perform('retrieve');
+    const repaired = g.garage.active;
+    return { levels, hidden, health: repaired.health, paid: before - g.money, price,
+      clean: Object.keys(repaired.damage).length === 0 && !repaired.mesh.userData.batches.body.userData.undamaged };
+  });
+  expect(repair.levels).toEqual(damaged.levels);
+  expect(repair).toMatchObject({hidden: true, health: 100, clean: true});
+  expect(repair.paid).toBe(repair.price);
+  expect(repair.price).toBeGreaterThan(0);
+});

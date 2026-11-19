@@ -1,3 +1,5 @@
+import { restorePanels } from '../entities/damage.js';
+import { CarFragments } from '../physics/car-fragments.js';
 import { DebrisBudget } from '../physics/debris.js';
 import { streetLamps } from '../world/lamps.js';
 import { LampBodies } from '../physics/lamp-bodies.js';
@@ -68,12 +70,12 @@ export class Game {
         ? this.car : this.trafficBodies.carForBody(carID);
       if (ped && car) this.queuePedHit(ped, car, vehicle.GetLinearVelocity());
     };
-    physics.onImpact = (first, second, impulse) => {
+    physics.onImpact = (first, second, impulse, manifold) => {
       this.colliders.roadFurniture.bump(first, second, impulse);
       this.lampBodies.contact(first, second, impulse);
       this.trafficFurniture.contact(first, second, impulse);
-      this.driver?.recordImpact(first, second, impulse);
-      this.trafficBodies.recordImpact(first, second, impulse);
+      this.driver?.recordImpact(first, second, impulse, manifold);
+      this.trafficBodies.recordImpact(first, second, impulse, manifold);
       const flight = this.heli?.physical;
       if (flight) {
         const id = flight.body.GetID().GetIndexAndSequenceNumber();
@@ -116,7 +118,8 @@ export class Game {
       const budget = physics.debris.step(20);
       const roadBudget = this.colliders.roadFurniture.step(this.clock.now, budget);
       const remaining = this.trafficFurniture.step(this.clock.now, roadBudget);
-      this.lampBodies.step(this.clock.now, remaining);
+      const panelBudget = this.lampBodies.step(this.clock.now, remaining);
+      this.fragments.step(panelBudget, this.focus);
       this.driver?.read();
       this.trafficBodies.read(this);
       for (const h of this.helis) if (h.physical) {
@@ -134,6 +137,8 @@ export class Game {
     };
     this.renderer = renderer;
     this.scene = new THREE.Scene();
+    this.fragments = new CarFragments(physics, this.scene);
+    physics.onCarFragment = (car, mesh, center) => this.fragments.queue(car, mesh, center);
     this.camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.4, QUALITY.view * 1.35);
     const view = new THREE.Frustum(), matrix = new THREE.Matrix4(), sphere = new THREE.Sphere();
     physics.debris = new DebrisBudget(() => QUALITY.debris, body => {
@@ -317,6 +322,7 @@ export class Game {
     car.place(saved.x, saved.z, saved.yaw, saved.y);
     car.health = owned?.health ?? (Number.isFinite(saved.health) ? clamp(saved.health, 0, 100) : 100);
     if (owned) {
+      restorePanels(car, owned.damage);
       car.upgrades = owned.upgrades;
       this.garage.active = car;
     }
