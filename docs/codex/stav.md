@@ -150,3 +150,9 @@ Závěrečný cílený běh zahrnuje 30 scénářů E21, rozvozů a provozu. Na 
 Samostatná pracovní větev začíná nad rozpracovanou E21. Oficiální archiv má otisk `825dc3e395044b1f5a47e27c812cc4189829e9134cc027865ffc8fcb3e7bb9ac`. Převod přečetl 614 záznamů, 602 ID a všech 12 315 ploch. Po sloučení totožných ploch uvnitř ID vytvořil 715 souvislých dílů. Z toho má 93 dílů totožnou geometrii jako jiný díl, jeden nemá použitelný trojúhelník a 621 čeká na prostorovou kontrolu. Každá zdrojová plocha je započtena.
 
 Dva úplné převody daly po bajtech shodné soubory `plochy.json`, `dily.json` a `inventura.tsv`. Výsledky jsou v `data-raw/structures/`. Na třech kontrolních bodech se převod do souřadnic hry shodl do pěti centimetrů s nezávislým výpočtem proj4js. Prošlo 128 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. Do běhu hry zatím měřené objekty nevstupují.
+
+### Průchodnost a výšky
+
+Kontrola porovnává trojúhelníky městských ploch s průchozími objemy herních cest včetně sklonu a různých výškových úrovní. Zahrnuje vozovky, parkovací prostor provozu, koleje, pěší cesty a přechody, zastávky, cíle, start, garáž a výchozí okolí heliportů. Ze 715 dílů zasahuje 289 alespoň do jednoho kontrolovaného objemu. Tento průnik je podnětem k posouzení před zařazením. Porovnání výšek u mostních ploch a pilířů obsahuje 91 řádků. Zprávy jsou v `data-raw/structures/strety.tsv`, `vysky.tsv` a `kontroly.json`.
+
+Větev převzala změny E21 včetně sloupků a protokolu z `b14f83d`. Prošlo 130 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. Dalším krokem E22 je volitelný balík herních modelů, kontrola jeho otisků a zkouška statického pilotního objektu.

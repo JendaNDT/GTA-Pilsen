@@ -31,3 +31,14 @@ test('svislá stěna protínající vnitřek vodorovné plochy tvoří jeden dí
   const wall = ['Zed_OpernaZed', [2,-1,3, 3,-1,3, 3,1,3, 2,1,3]];
   assert.equal(inventory(source(floor(0,0,0,6,6),wall)).length, 1);
 });
+
+test('kontrola průjezdu respektuje výšku podjezdu, šířku i podélný sklon', async () => {
+  const { Triangle, Vector3 } = await import('three/webgpu');
+  const { corridor, intersectsCorridor } = await import('../tools/audit_structures.mjs');
+  const c = corridor('zkouška',0,0,1,10,0,3,1.5,3);
+  const triangle = (x,y,z) => new Triangle(new Vector3(x,y,z),new Vector3(x,y+1,z),new Vector3(x+0.4,y,z+0.1));
+  assert.ok(intersectsCorridor(triangle(5,2.5,1.4),c));
+  assert.ok(!intersectsCorridor(triangle(5,6,0),c));
+  assert.ok(!intersectsCorridor(triangle(5,-1,0),c));
+  assert.ok(!intersectsCorridor(triangle(5,3,2),c));
+});

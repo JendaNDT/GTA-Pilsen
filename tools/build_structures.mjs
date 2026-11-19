@@ -24,7 +24,7 @@ function ringKey(ring) {
   return candidates.sort()[0];
 }
 
-function geometry(face) {
+export function structureSurface(face) {
   const [, ...rings] = face;
   const mesh = new HeritageMesh();
   if (rings.length) mesh.polygon(rings, white);
@@ -112,7 +112,7 @@ export function inventory(source) {
   for (const [uid, , records] of [...source.objects].sort((a, b) => compare(a[0], b[0]))) {
     const unique = new Map();
     for (const face of records) {
-      const entry = geometry(face);
+      const entry = structureSurface(face);
       const existing = unique.get(entry.key);
       if (existing) {
         existing.records++;
