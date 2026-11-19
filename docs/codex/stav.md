@@ -22,6 +22,12 @@ Dvě vrstvy vln postupují po směru střednice toku z OSM. Samostatné rybníky
 
 Prošlo 154 jednotkových testů a produkční sestavení. Syntetická řeka ověřila obrácení proudu, mělký břeh, samostatný rybník a návaznost dlaždic. Čtyři prohlížečové zkoušky vykreslily nejbližší jez na střední a ultra předvolbě ve WebGL 2 a WebGPU. Ověřily tok, pěnu, vznik částic i připojení mapy prostředí. Na WebGPU prošla také opakovaná kontrola ultra s odečtem masky odrazů na podporovaném adaptéru.
 
+## G14 · Stromy a roční období
+
+Čtyři vlastní modely představují listnatý a jehličnatý strom, keř a ovocný strom. Z historického dotazu na datum mapy získala hra druh olistění pro 11 379 stromů a 118 ploch. Jednotlivé stromy jsou přiřazené podle polohy, lesní plochy podle vrcholů obvodu. Tam, kde druh chybí, rozhoduje typ plochy. Na střední až ultra předvolbě se blízké koruny pohybují ve větru. Ve vzdálenosti kolem 150 m přebírá obraz atlas s 25 směry pohledu pro každý model a období. Opadavým stromům v zimě zůstávají kmen a větve. Nízká předvolba zachovává původní modely.
+
+Sestavení atlasu a převod mapových značek se po opakování shodovaly po bajtech. Atlas má 96 KiB a mapa olistění 106 KiB. Prošlo 156 jednotkových testů JavaScriptu, produkční sestavení a 24 z 25 zkoušek Pythonu. Jedna kontrola vyžaduje úplný archiv městských objektů. Ve WebGL 2 i WebGPU prošlo vykreslení lesa poblíž Dobříva, výměna obou úrovní detailu a zachování polohy překážek při změně data na leden.
+
 ## Výchozí etapa E22
 
 Ve větvi `etapa/E22` jsou převedené městské objekty, ověřený Wilsonův most i tři dávky zdí a pilířů. Hra používá další dvě lávky, silniční desku, dvě železniční mostovky a čtyři díly jezů. Vývoj a dostupné přejímací kontroly E22 jsou dokončené. Zůstává porovnání s autorovými fotografiemi a změření plynulosti na jeho zařízení. [Protokol E22](../E22.md). [Zadání E22](E22.md) · [Výsledky převodu a pilotu](#e22--převod-a-inventura)

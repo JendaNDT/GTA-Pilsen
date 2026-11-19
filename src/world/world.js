@@ -95,6 +95,8 @@ export class World {
     }
     this._initBridges();
     this.bridgeEdges = indexBridgeEdges(this);
+    this.treeTypes = new Map(data.treeTypes?.trees);
+    this.forestTypes = new Map(data.treeTypes?.land);
     this.trees = data.trees;
     this._initTrees(data.trees);
     this.roadClosures = data.meta.roadClosures ?? [];

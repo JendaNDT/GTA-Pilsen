@@ -1,3 +1,4 @@
+import { updateTreeSeason } from './vegetation.js';
 // Obloha, světla, stíny a denní doba. (Terén a povrch země kreslí chunks.js.)
 import * as THREE from 'three/webgpu';
 import { CSMShadowNode } from 'three/addons/csm/CSMShadowNode.js';
@@ -115,6 +116,7 @@ export class Environment {
     this.hour = h;
     if (this.date !== date) this.utcOffset = pragueOffset(date);
     this.date = date;
+    updateTreeSeason(date);
     const dir = this.sunDir.fromArray(solarDirection(date, h, this.utcOffset));
     const elev = dir.y;
     const day = THREE.MathUtils.smoothstep(elev, -0.16, 0.19);

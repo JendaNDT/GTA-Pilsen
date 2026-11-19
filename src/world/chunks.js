@@ -7,6 +7,8 @@ import * as THREE from 'three/webgpu';
 import { hash } from './hash.js';
 import { streetLamps } from './lamps.js';
 import { railingFaces } from '../physics/railings.js';
+import { vegetationBatch } from './vegetation.js';
+import { treeType } from './tree-models.js';
 import { waterTile } from './water.js';
 import { terrainClassMask } from './terrain-classes.js';
 import { terrainMaskTexture } from './terrain-detail.js';
@@ -1347,8 +1349,10 @@ function treeAssets() {
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(), _p = new THREE.Vector3();
 const _up = new THREE.Vector3(0, 1, 0);
 
-function buildTrees(world, ci, cx0, cz0, forest) {
-  treeAssets();
+function buildTrees(world, ci, cx0, cz0, forest, cover) {
+  const detailed = QUALITY.treeDetail;
+  if (!detailed) treeAssets();
+  const rows = [];
   const A = [], Bc = [];
   const obstacles = [];
   const list = world.treeChunks[ci];
@@ -1360,7 +1364,15 @@ function buildTrees(world, ci, cx0, cz0, forest) {
       if (world.buildingAt(x, z) >= 0 || world.isWater(x, z)) continue;
       const road = world.nearestRoad(x, z, 12, DRIVABLE_MAX, 0, nearby);
       if (road && road.dist < world.r.w[road.road] / 2 - 0.2) continue;
-      A.push(x, z, 0.8 + hash(t, 5) * 0.6, hash(t, 6));
+      const size = 0.8 + hash(t, 5) * 0.6, rotation = hash(t, 6);
+      if (detailed) {
+        const polygon = cover.findLast(id => world.landContains(id, x, z));
+        const cls = world.l.cls[polygon];
+        const area = cls === LC.SCRUB ? 'scrub' : cls === LC.GARDEN || cls === LC.ALLOTMENTS ? 'garden' :
+          cls === LC.FOREST ? 'forest' : 'street';
+        const type = treeType(world.treeTypes.get(t) ?? world.forestTypes.get(polygon), area, rotation);
+        rows.push({x, z, y:world.heightAt(x,z), size, rotation, type});
+      } else A.push(x, z, size, rotation);
       obstacles.push(x, z, 0.28);
     }
   }
@@ -1373,13 +1385,21 @@ function buildTrees(world, ci, cx0, cz0, forest) {
     for (let k = 0; k < N; k++) {
       const x = cx0 + rnd() * CHUNK, z = cz0 + rnd() * CHUNK;
       const s = 0.82 + rnd() * 1.15, r = rnd(), conifer = rnd() < coniferShare;
-      if (!forest.some((poly) => world.landContains(poly, x, z))) continue;
+      const polygon = forest.find((poly) => world.landContains(poly, x, z));
+      if (polygon === undefined) continue;
       if (world.buildingAt(x, z) >= 0 || world.isWater(x, z)) continue;
       const road = world.nearestRoad(x, z, 12, 99, 0, nearby);
       if (road && road.dist < world.r.w[road.road] / 2 + 1.5) continue;
-      (conifer ? Bc : A).push(x, z, s, r);
+      if (detailed) {
+        const type = treeType(world.forestTypes.get(polygon), 'forest', conifer ? 0 : 1);
+        rows.push({x, z, y:world.heightAt(x,z), size:s, rotation:r, type});
+      } else (conifer ? Bc : A).push(x, z, s, r);
       if (k % 2 === 0) obstacles.push(x, z, 0.3);
     }
+  }
+  if (detailed) {
+    const batch = vegetationBatch(rows);
+    return {batch, meshes:batch?.meshes ?? [], obstacles};
   }
   const meshes = [];
   for (const [arr, geo] of [[A, treeGeoA], [Bc, treeGeoB]]) {
@@ -1590,7 +1610,7 @@ export class ChunkManager {
   }
 
   /** Provede další krok stavby dlaždice. */
-  _step(ci, ch) {
+  _step(ci, ch, focusX, focusZ) {
     const w = this.world;
     const cx = ci % w.cols, cz = Math.floor(ci / w.cols);
     const x0 = w.minX + cx * CHUNK, z0 = w.minZ + cz * CHUNK;
@@ -1627,7 +1647,10 @@ export class ChunkManager {
       }
     } else {
       const forest = this.landIndex.polys[ci]?.filter((i) => w.l.cls[i] === LC.FOREST) ?? [];
-      const trees = buildTrees(w, ci, x0, z0, forest);
+      const cover = QUALITY.treeDetail ? this.landIndex.polys[ci]?.filter(i => [LC.SCRUB, LC.GARDEN, LC.ALLOTMENTS, LC.FOREST].includes(w.l.cls[i])) ?? [] : [];
+      const trees = buildTrees(w, ci, x0, z0, forest, cover);
+      ch.vegetation = trees.batch;
+      ch.vegetation?.update(focusX, focusZ, ch.dist);
       for (const m of trees.meshes) { m.matrixAutoUpdate = false; ch.group.add(m); }
       ch.trees = trees.meshes;
       ch.obstacles = trees.obstacles;
@@ -1648,7 +1671,8 @@ export class ChunkManager {
     this.heritage.dispose(ch);
     ch.regularBuildings?.geometry.dispose();
     for (const g of ch.disposables) g.dispose();
-    for (const m of ch.trees) m.dispose();
+    if (ch.vegetation) ch.vegetation.dispose();
+    else for (const m of ch.trees) m.dispose();
     if (ch.tex) ch.tex.dispose();
     if (ch.terrainMat) ch.terrainMat.dispose();
     ch.traffic?.dispose();
@@ -1705,6 +1729,7 @@ export class ChunkManager {
     for (const [ci, ch] of this.chunks) {
       const d = Math.hypot(ch.cx - x, ch.cz - z);
       ch.dist = d;
+      ch.vegetation?.update(x, z, d);
       if (ch.structure) w.structures.setNear(ch.structure, d < 420,
         detailRequestLimit() - this.heritage.fetching - (orthophoto?.requests ?? 0));
       if (orthoRequests && ch.orthoTile) {
@@ -1776,7 +1801,7 @@ export class ChunkManager {
           done++;
           continue;
         }
-        this._step(ci, ch); done++;
+        this._step(ci, ch, x, z); done++;
         if (ch.stage === 2 && ch.heritage) this.heritage.update(ch.heritage, x, z, y);
         if (ch.stage >= STAGES) pending--;
         if (ch.stage === 1 || ch.dist < 520) pendingStart--;
