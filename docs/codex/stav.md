@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Ověřené archivy 0.2.0
+
+Ve složce `data-raw/e26/vydani/` jsou webový a zdrojový ZIP revize `34458c8` a manifest. Všech 815 webových a 1 371 zdrojových položek souhlasí s manifestem. Sestavení z rozbalených zdrojů dalo stejných 815 souborů. Na WebGPU i WebGL 2 prošlo všech šest cílených zkoušek k nálezům kontroly. Zbývající případy běží nad stejným produkčním webem. [Otisky archivů a způsob sestavení](../E26.md)
+
 ## Výsledky závěrečné kontroly Astrou
 
 Astra prošla zadání E13–E25 a našla dva problémy, které blokovaly ovládání nebo start, a jednu chybu diagnostiky. Opravy obnovily návrat z mapy po stisku O, spuštění s neodpovídajícími katalogy a měření času GPU na podporované záložní WebGL 2. Z rozbaleného webového ZIPu prošlo načtení a návrat do E12 i E25. Úplná sada má 356 prohlížečových případů, výsledky opakované jízdy a měření na autorových zařízeních jsou otevřené. [Jednotlivé nálezy, ověření a otisk webu](../E26.md)
