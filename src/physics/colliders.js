@@ -1,5 +1,5 @@
 import { streetLamps } from '../world/lamps.js';
-import { railingFaces } from './railings.js';
+import { RoadFurnitureBodies } from './road-furniture.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
 import { CHUNK } from '../config.js';
 import { terrainTriangles } from './terrain.js';
@@ -37,7 +37,7 @@ function building(world, i, measured, emit) {
   for (let k = 0; k < indices.length; k += 3) roof(emit, ...indices.slice(k, k + 3).map((id) => top[id]));
 }
 
-export function staticMeshBody(physics, triangles, layer = layers.STATIC) {
+export function staticMeshBody(physics, triangles, layer = layers.STATIC, triangleIds = null) {
   const { Jolt, bodies } = physics;
   // Zápis do jednoho předem velkého pole vynechá volání do WASM pro každý vrchol.
   const count = triangles.length / 9;
@@ -47,8 +47,10 @@ export function staticMeshBody(physics, triangles, layer = layers.STATIC) {
   const offset = address(0), stride = address(1) - offset;
   const heap = Jolt.HEAPF32;
   for (let i = 0; i < count; i++) heap.set(triangles.subarray(i * 9, i * 9 + 9), offset + stride * i);
+  if (triangleIds) for (let i = 0; i < count; i++) list.at(i).mUserData = triangleIds[i];
   list.resize(count);
   const mesh = new Jolt.MeshShapeSettings(list);
+  mesh.mPerTriangleUserData = !!triangleIds;
   Jolt.destroy(list);
   const result = mesh.Create();
   try {
@@ -75,6 +77,7 @@ export class TileColliders {
     this.debug = debug;
     this.lamps = lamps;
     this.trafficFurniture = trafficFurniture;
+    this.roadFurniture = new RoadFurnitureBodies(physics, world, staticMeshBody, debug);
     this.lampTiles = new Map();
     this.tiles = new Map();
     this.structures = new RoadStructures(world);
@@ -115,14 +118,7 @@ export class TileColliders {
       this.lamps.load(lamps);
     }
     this.trafficFurniture?.load(ci);
-    const edges = w.bridgeEdges.get(ci);
-    if (edges?.length) {
-      const rails = [];
-      for (const edge of edges) railingFaces(edge, (a, b, c, d) => rails.push(...a, ...b, ...c, ...a, ...c, ...d));
-      const railPositions = Float32Array.from(rails);
-      bodies.push(staticMeshBody(this.physics, railPositions, layers.RAILING));
-      this.debug?.add(ci, railPositions);
-    }
+    this.roadFurniture.load(ci);
     this.debug?.add(ci, positions);
   }
 
@@ -171,6 +167,7 @@ export class TileColliders {
         this.lampTiles.delete(ci);
       }
       this.trafficFurniture?.unload(ci);
+      this.roadFurniture.unload(ci);
       this.tiles.delete(ci);
       this.debug?.remove(ci);
     }

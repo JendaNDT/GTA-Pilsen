@@ -1,3 +1,4 @@
+import { breakableId } from './breakables.js';
 import { prazdrojThickness } from '../world/prazdroj-bridge.js';
 import { COLL_CELL, RF } from '../config.js';
 import { BRIDGE_THICKNESS, densePath, pathNormal } from '../world/road-profile.js';
@@ -102,7 +103,11 @@ export function exteriorBridgeEdges(world, paths) {
     const ci = world.chunkIndex((a[0] + b[0]) / 2, (a[2] + b[2]) / 2);
     if (ci < 0) return;
     if (!tiles.has(ci)) tiles.set(ci, []);
-    tiles.get(ci).push(edge);
+    const entries = tiles.get(ci);
+    const center = edge.corners.reduce((sum, p) => sum.map((v, i) => v + p[i] / 4), [0, 0, 0]);
+    Object.assign(edge, { id: breakableId('railing', ci, entries.length), tile: ci,
+      x: center[0], y: center[1] + edge.height / 2, z: center[2] });
+    entries.push(edge);
   }
   for (const [index, entry] of paths.entries()) {
     bridgeEdges(world, entry.path, entry.width, entry.style, edge => {

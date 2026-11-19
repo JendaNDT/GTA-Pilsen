@@ -103,7 +103,7 @@ test('zábradlí zastaví běžící kapsli při sto různých úhlech náběhu'
   const physics = new PhysicsWorld(await loadJolt());
   const pairs = physics.engine.GetObjectLayerPairFilter();
   assert.equal(pairs.ShouldCollide(layers.CHARACTER, layers.RAILING), true);
-  assert.equal(pairs.ShouldCollide(layers.VEHICLE, layers.RAILING), false);
+  assert.equal(pairs.ShouldCollide(layers.VEHICLE, layers.RAILING), true);
   const floor = staticMeshBody(physics, Float32Array.from([
     -25, 0, -4, -25, 0, 4, 25, 0, -4, 25, 0, -4, -25, 0, 4, 25, 0, 4,
   ]));

@@ -111,7 +111,8 @@ export class Game {
         if (this.water.step(vehicle, this.world, dt)) this.audio.splash(car);
       }
       physics.engine.Step(dt, 1);
-      const remaining = this.trafficFurniture.step(this.clock.now);
+      const roadBudget = this.colliders.roadFurniture.step(this.clock.now);
+      const remaining = this.trafficFurniture.step(this.clock.now, roadBudget);
       this.lampBodies.step(this.clock.now, remaining);
       this.driver?.read();
       this.trafficBodies.read(this);
@@ -144,6 +145,7 @@ export class Game {
     this.trafficFurniture = new TrafficFurnitureBodies(physics, this.world, this.scene);
     this.colliders = new TileColliders(physics, this.world, data, DEBUG ? new CollisionView(this.scene) : null,
       this.lampBodies, this.trafficFurniture);
+    physics.onRailingHit = (rail, car, subshape, impulse) => this.colliders.roadFurniture.contact(rail, car, subshape, impulse);
     this.hud = new Hud(this.world);
     this.soundPlaces = data.soundPlaces;
     this.audio = new GameAudio(this);
@@ -205,7 +207,9 @@ export class Game {
   }
 
   syncClock(reposition = false) {
-    this.trafficFurniture.repair(this.lampBodies.repair(this.clock.now));
+    const repaired = this.lampBodies.repair(this.clock.now);
+    this.trafficFurniture.repair(repaired);
+    this.colliders.roadFurniture.repair(repaired);
     if (reposition) {
       this.postfx?.resetHistory();
       if (this.ride) this._alight(true);

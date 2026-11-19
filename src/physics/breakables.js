@@ -28,7 +28,7 @@ export class Breakables {
   }
 
   damage(id, state, now) {
-    if (state !== 'bent' && state !== 'broken') throw new Error('Neznámý druh poškození.');
+    if (state !== 'bent' && state !== 'broken' && state !== 'moved') throw new Error('Neznámý druh poškození.');
     const current = this.state(id);
     if (current === state || current === 'broken') return false;
     const repairAt = (Math.floor(now / DAY_SECONDS) + 1) * DAY_SECONDS + 4 * HOUR_SECONDS;
@@ -40,6 +40,12 @@ export class Breakables {
   bendPose(id, pose) {
     const damage = this.damaged.get(id);
     if (damage?.state !== 'bent') return;
+    this.setPose(id, pose);
+  }
+
+  setPose(id, pose) {
+    const damage = this.damaged.get(id);
+    if (!damage) return;
     damage.pose = pose;
     this.visuals.get(id)?.show(false);
   }

@@ -24,7 +24,6 @@ export class RoadStructures {
       const path = densePath(pts.map((p) => p.x), pts.map((p) => p.z), pts.map((p) => p.y), 0, end, 0, end, 4);
       this.strip(path, tunnel.halfWidth, tunnel);
     }
-    for (const closure of world.roadClosures) this.barrier(closure);
   }
 
   quad(a, b, c, d) {
@@ -108,22 +107,6 @@ export class RoadStructures {
       }
       previous = section;
     }
-  }
-
-  barrier([x, z, dx, dz, width]) {
-    const point = (side, ahead, lift) => {
-      const px = x - dz * side + dx * ahead, pz = z + dx * side + dz * ahead;
-      return [px, this.world.heightAt(px, pz) + lift, pz];
-    };
-    const half = (width + 0.5) / 2;
-    const ends = [[-half, -0.24], [-half, 0.24], [half, 0.24], [half, -0.24]];
-    const top = ends.map(([s, a]) => point(s, a, 0.88));
-    const base = ends.map(([s, a]) => point(s, a, 0.28));
-    for (let i = 0; i < 4; i++) {
-      const j = (i + 1) % 4;
-      this.quad(base[j], base[i], top[i], top[j]);
-    }
-    this.quad(top[3], top[2], top[1], top[0]);
   }
 
   emit(ci, triangle) {

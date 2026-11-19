@@ -23,6 +23,16 @@ export class CollisionView {
     if (!this.tiles.has(ci)) this.tiles.set(ci, []);
     this.tiles.get(ci).push(mesh);
     this.group.add(mesh);
+    return mesh;
+  }
+
+  discard(ci, mesh) {
+    const meshes = this.tiles.get(ci);
+    if (!mesh || !meshes) return;
+    const index = meshes.indexOf(mesh);
+    if (index >= 0) meshes.splice(index, 1);
+    mesh.removeFromParent();
+    mesh.geometry.dispose();
   }
 
   remove(ci) {

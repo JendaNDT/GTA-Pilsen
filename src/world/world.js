@@ -1,4 +1,4 @@
-import { Breakables } from '../physics/breakables.js';
+import { breakableId, Breakables } from '../physics/breakables.js';
 // Herní svět: dekódování dat, prostorové indexy, kolize, silniční graf.
 import { CHUNK, COLL_CELL, DRIVABLE_MAX, RF, RC, LC, BF } from '../config.js';
 import { Tunnel, TUNNEL_HEIGHT } from './tunnels.js';
@@ -87,13 +87,15 @@ export class World {
       const [x, z, dx, dz, width] = closure;
       const ci = this.chunkIndex(x, z);
       if (!this.closureChunks.has(ci)) this.closureChunks.set(ci, []);
-      this.closureChunks.get(ci).push(closure);
+      const entries = this.closureChunks.get(ci);
       const obstacles = [];
       const sections = Math.ceil(width / 1.15);
       for (let i = 0; i < sections; i++) {
         const side = width * ((i + 0.5) / sections - 0.5);
         obstacles.push(x - dz * side, z + dx * side, 0.66);
       }
+      entries.push({ id: breakableId('closure', ci, entries.length), tile: ci, closure, obstacles,
+        x, y: this.heightAt(x, z) + 0.44, z });
       this.addObstacles(obstacles);
     }
   }

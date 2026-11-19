@@ -8,7 +8,7 @@ export const layers = Object.freeze({
 const { STATIC, VEHICLE, CHARACTER, RAILING, BREAKABLE, DEBRIS, TRANSIT, SENSOR } = layers;
 const partners = [
   [STATIC, VEHICLE, CHARACTER, DEBRIS],
-  [VEHICLE, VEHICLE, CHARACTER, BREAKABLE, DEBRIS, TRANSIT, SENSOR],
+  [VEHICLE, VEHICLE, CHARACTER, RAILING, BREAKABLE, DEBRIS, TRANSIT, SENSOR],
   [CHARACTER, RAILING, BREAKABLE, DEBRIS, TRANSIT, SENSOR],
   [DEBRIS, DEBRIS, TRANSIT],
 ];
@@ -49,7 +49,7 @@ export class PhysicsWorld {
     this.listener.OnContactValidate = () => Jolt.ValidateResult_AcceptAllContactsForThisBodyPair;
 
     this.listener.OnContactRemoved = () => {};
-    const contactEvent = (a, b, contact, added) => {
+    const contactEvent = (a, b, contact, settings, added) => {
       const first = Jolt.wrapPointer(a, Jolt.Body);
       const second = Jolt.wrapPointer(b, Jolt.Body);
       const la = first.GetObjectLayer(), lb = second.GetObjectLayer();
@@ -64,13 +64,22 @@ export class PhysicsWorld {
       const inverseMass = (first.IsDynamic() ? first.GetMotionProperties().GetInverseMass() : 0)
         + (second.IsDynamic() ? second.GetMotionProperties().GetInverseMass() : 0);
       if (!inverseMass) return;
-      const normal = Jolt.wrapPointer(contact, Jolt.ContactManifold).mWorldSpaceNormal;
+      const manifold = Jolt.wrapPointer(contact, Jolt.ContactManifold);
+      const normal = manifold.mWorldSpaceNormal;
       const approach = first.GetLinearVelocity().Dot(normal) - second.GetLinearVelocity().Dot(normal);
-      if (approach > 0) this.onImpact(first, second, approach / inverseMass);
+      if (approach <= 0) return;
+      const impulse = approach / inverseMass;
+      if ((la === RAILING && lb === VEHICLE) || (lb === RAILING && la === VEHICLE)) {
+        const railFirst = la === RAILING;
+        const broken = this.onRailingHit?.(railFirst ? first : second, railFirst ? second : first,
+          railFirst ? manifold.mSubShapeID1 : manifold.mSubShapeID2, impulse);
+        if (broken) Jolt.wrapPointer(settings, Jolt.ContactSettings).mIsSensor = true;
+      }
+      this.onImpact(first, second, impulse, manifold);
     };
-    this.listener.OnContactAdded = (a, b, contact) => contactEvent(a, b, contact, true);
-    this.listener.OnContactPersisted = (a, b, contact) => {
-      if (this.onPedContact || this.onVehicleContact) contactEvent(a, b, contact, false);
+    this.listener.OnContactAdded = (a, b, contact, settings) => contactEvent(a, b, contact, settings, true);
+    this.listener.OnContactPersisted = (a, b, contact, settings) => {
+      if (this.onPedContact || this.onVehicleContact) contactEvent(a, b, contact, settings, false);
     };
     this.system.SetContactListener(this.listener);
   }

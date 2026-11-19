@@ -6,8 +6,8 @@ Větev `etapa/E21` navazuje na E20 sloučenou revizí `623e081`. [Zadání E21](
 | --- | --- |
 | 1. Registr a stálé identifikátory | Hotovo. Každý svět má vlastní registr. Značky a hlavy semaforů dostávají identitu ve zdrojovém pořadí své dlaždice před seskupením podle materiálu. |
 | 2. Lampy | Hotovo. Společné umístění pro grafiku a fyziku, sražení, zhasnutí, dvě části lampy, obnova po návratu a ranní oprava prošly ověřením. |
-| 3. Značky a semafory | Rozpracováno. Tělesa, ohnutí, zlomení a přednost po výpadku jsou zapojené. Probíhají zkoušky polohy sloupků a provozu. |
-| 4. Mosty a uzavírky | Zbývá rozbití jednotlivých úseků a odtlačení zábrany. Historické mosty mají vlastní kamenné ohrazení. |
+| 3. Značky a semafory | Funkční kontroly včetně návratu po opravě a dopravní špičky prošly. Celková grafická kontrola na cílovém zařízení zůstává otevřená. |
+| 4. Mosty a uzavírky | Hotovo. Náraz, návrat a oprava ověřeny ve fyzice a průjezd autem na WebGL 2 i WebGPU. |
 | 5. Následky nárazu | Zbývá hledanost, zvuky a správa počtu úlomků. |
 | 6. Auta a garáž | Zbývají deformace, odpadlé díly, jízdní následky, uložení a oprava. |
 | 7. Částice | Zbývají obě vykreslovací cesty a rozpočet. |
@@ -114,3 +114,9 @@ Po opravě prošlo všech 115 testů JavaScriptu, produkční sestavení a rozš
 Na revizi `243735c` prošlo všech sedm prohlížečových scénářů v `breakables.spec.js` (čtyři na WebGL 2 a tři na WebGPU) a všech 23 testů Pythonu. Obě desetiminutové zkoušky ranní špičky prošly. Na Klatovské se vystřídalo 120 aut, nejdelší stání bylo 68,5 s. U hlavního nádraží bylo 103 aut a nejdelší stání 60,5 s. Ani na jednom místě sledované auto nevyjelo pod plynem z vozovky. Výsledky jsou v `data-raw/e21/spicka-cloud/`.
 
 Úplná kontrola kroku 3 zůstává otevřená. V cloudu (2 procesorová jádra pro výpočet, softwarové vykreslování) dosáhly grafické testy E17 při vysoké kvalitě a ultra limitu 90 s v pohledu na Lochotín. U ultra se to zopakovalo ve dvou verzích Chromia (156 a projektová 159) a také v samostatné kopii původní E20 na revizi `623e081` s Chromiem 159. Test skončil před výsledkem počtu volání a trojúhelníků pro tento pohled. Původní limity i grafické předvolby zůstávají součástí závěrečného ověření. Záznamy jsou v `data-raw/e21/{pesi-e2e,ultra-159,e20-ultra}.log`.
+
+### Mostní zábradlí a uzavírky
+
+Každý díl zábradlí má vlastní identitu uvnitř společné kolizní sítě dlaždice. Rozbití dílu otevře mezeru a uvolní pohyblivý kus. Ostatní úseky dál drží chodce i vozidla. Zábrany uzavírek se dají odtlačit, pamatují si polohu po návratu do oblasti a při ranní opravě se vrátí na původní místo. Změna očekávání ve starší zkoušce E19 odpovídá nové kolizi auta se zábradlím. Všech sto pěších náběhů zůstalo součástí testu.
+
+Prošlo 119 testů JavaScriptu a sestavení. Ve fyzice se ověřilo chování tří typů zábradlí, odtlačení zábrany i obnova. V prohlížeči auto na WebGL 2 i WebGPU projelo vzniklou mezerou. První zvolená trajektorie na složitém napojení křížila jinou pevnou konstrukci. Zkouška nyní vybírá úsek s volným kolmým příjezdem po vozovce. Kontroluje skutečný pohyb auta, vznik dílu, stav po návratu a opravu. Výstup je v `data-raw/e21/mosty-prujezd.log`.

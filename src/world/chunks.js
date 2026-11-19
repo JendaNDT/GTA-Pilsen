@@ -1,3 +1,4 @@
+import { attachRoadFurniture } from './road-furniture.js';
 import { prazdrojThickness } from './prazdroj-bridge.js';
 import { BRIDGE_THICKNESS, densePath, pathNormal } from './road-profile.js';
 // Stavba 3D geometrie po dlaždicích: budovy, silnice, koleje, stromy.
@@ -841,7 +842,9 @@ function buildRoads(world, ci) {
       }
     }
   }
+  const furniture = [];
   for (const edge of world.bridgeEdges.get(ci) ?? []) {
+    const start = solid.p.length;
     if (edge.style === 'stone') {
       railingFaces(edge, (a, b, c, d) => solid.quad(a, b, c, d, COL.bridgeStone));
     } else {
@@ -855,6 +858,7 @@ function buildRoads(world, ci) {
         solid.box(a[0], a[1], a[1] + edge.height, a[2], 0.045, COL.railing);
       } else band(0, edge.height, COL.railing);
     }
+    furniture.push({ fixture: edge, start, end: solid.p.length });
   }
   rondelAbutments(world, solid, ci);
   for (const underpass of world.trackUnderpasses.get(ci) ?? []) buildTrackUnderpass(world, solid, underpass);
@@ -878,10 +882,14 @@ function buildRoads(world, ci) {
       }
     }
   }
-  for (const closure of world.closureChunks.get(ci) ?? []) drawClosure(world, solid, closure);
+  for (const fixture of world.closureChunks.get(ci) ?? []) {
+    const start = solid.p.length;
+    drawClosure(world, solid, fixture.closure);
+    furniture.push({ fixture, start, end: solid.p.length });
+  }
   const traffic = world.traffic.chunks.get(ci);
   if (traffic) drawTrafficMarkings(world, marks, traffic);
-  return { asphalt: asphalt.geometry(), marks: marks.geometry(), solid: solid.geometry() };
+  return { asphalt: asphalt.geometry(), marks: marks.geometry(), solid: solid.geometry(), furniture };
 }
 
 function drawTrafficMarkings(world, buf, traffic) {
@@ -1554,6 +1562,8 @@ export class ChunkManager {
     } else if (ch.stage === 2) {
       const roads = buildRoads(w, ci);
       if (roads.solid) { const m = new THREE.Mesh(roads.solid, this.solidMat); m.castShadow = true; m.receiveShadow = true; add(m, roads.solid); }
+      if (roads.furniture.length) ch.roadFurniture = attachRoadFurniture(w.breakables, ch.group,
+        roads.solid, this.solidMat, roads.furniture);
       if (roads.asphalt) { const m = new THREE.Mesh(roads.asphalt, this.asphaltMat); m.renderOrder = 14; m.receiveShadow = true; add(m, roads.asphalt); ch.asphalt = m; }
       if (roads.marks) { const m = new THREE.Mesh(roads.marks, this.marksMat); m.renderOrder = 16; m.receiveShadow = true; add(m, roads.marks); ch.marks = m; }
       const entries = w.traffic.chunks.get(ci);
@@ -1587,6 +1597,7 @@ export class ChunkManager {
     if (ch.tex) ch.tex.dispose();
     if (ch.terrainMat) ch.terrainMat.dispose();
     ch.traffic?.dispose();
+    for (const visual of ch.roadFurniture ?? []) this.world.breakables.detach(visual);
     if (ch.lamps) {
       for (const visual of ch.lamps.visuals) this.world.breakables.detach(visual);
       ch.lamps.dispose();
