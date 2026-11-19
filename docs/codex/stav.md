@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Pozdní načtení textur interiérů
+
+Na WebGPU i WebGL 2 prošly obě zkoušky pomalé sítě. Hra se spustila i při neodpovídajících katalozích a barevné tabulce. Při samostatném pokusu s minimálně třináctisekundovým zpožděním se atlas interiérů po spuštění doplnil a obsah okna reagoval na pohyb kamery. Prošlo všech 181 testů JavaScriptu a 27 testů Pythonu. Node.js 20.19.0, 22.12.0 a 24.22.1 sestavily shodných 815 souborů. Na tomto sestavení vůz dokončil první návrat po 51,32 km. V té chvíli bylo načteno 73 textur, 239 geometrií, 884 fyzikálních těles a žádný úlomek. Porovnání třetího a čtvrtého návratu a úplná prohlížečová sada pokračují.
+
 ## Ověřené archivy 0.2.0
 
 Ve složce `data-raw/e26/vydani/` jsou webový a zdrojový ZIP revize `34458c8` a manifest. Všech 815 webových a 1 371 zdrojových položek souhlasí s manifestem. Sestavení z rozbalených zdrojů dalo stejných 815 souborů. Na WebGPU i WebGL 2 prošlo všech šest cílených zkoušek k nálezům kontroly. Zbývající případy běží nad stejným produkčním webem. [Otisky archivů a způsob sestavení](../E26.md)

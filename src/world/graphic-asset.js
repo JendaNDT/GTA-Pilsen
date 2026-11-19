@@ -15,6 +15,6 @@ export async function fetchGraphicResponse(path, url, options) {
   return new Response(bytes, {headers:{'Content-Type':response.headers.get('content-type') || 'application/octet-stream'}});
 }
 
-export async function graphicAsset(path, base = import.meta.env?.BASE_URL ?? '/') {
-  return (await fetchGraphicResponse(path, base + path, { signal: AbortSignal.timeout(12000) })).blob();
+export async function graphicAsset(path, base = import.meta.env?.BASE_URL ?? '/', signal) {
+  return (await fetchGraphicResponse(path, base + path, { signal })).blob();
 }

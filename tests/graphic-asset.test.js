@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { graphicAsset } from '../src/world/graphic-asset.js';
+import { loadColorLuts } from '../src/world/color-luts.js';
 import { graphicsManifest } from '../tools/freeze_graphics.mjs';
 
 test('manifest textur odpovídá vydání a nesoulad z podsložky se odmítne před dekódováním',async t => {
@@ -61,4 +62,21 @@ test('výpadek seznamu měřených budov ponechá hratelné původní město, č
   assert.equal(city.streetDetails,undefined);
   assert.ok(city.buildings.header && city.terrain.header);
   assert.doesNotThrow(()=>new Districts(city.heritage.districts).at(0,0));
+});
+
+test('na barevné tabulky čeká start s jedním limitem a atlas se může načíst i později', async t => {
+  const signals = new Map();
+  t.mock.method(globalThis, 'fetch', async (url, { signal }) => {
+    const path = url.slice('/hra/'.length);
+    signals.set(path, signal);
+    return new Response(await readFile('public/' + path));
+  });
+  const atlas = 'textures/facades/interiery.webp';
+  await graphicAsset(atlas, '/hra/');
+  assert.equal(signals.get(atlas), undefined);
+  assert.equal((await loadColorLuts('/hra/')).length, 3);
+  const startup = signals.get('luts/den.cube');
+  assert.ok(startup instanceof AbortSignal);
+  assert.equal(signals.get('luts/soumrak.cube'), startup);
+  assert.equal(signals.get('luts/noc.cube'), startup);
 });

@@ -14,7 +14,8 @@ test('E24 – obsah místnosti za stejným oknem reaguje na změnu úhlu pohledu
     release = resolve;
   });
   await page.route('**/textures/facades/interiery.webp', async (route) => {
-    await gate;
+    // Pomalá odpověď atlasu má do hry dorazit i po dvanáctisekundovém limitu startu.
+    await Promise.all([gate, new Promise(resolve => setTimeout(resolve, 13000))]);
     await route.continue();
   });
   try {
