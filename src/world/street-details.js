@@ -1,7 +1,7 @@
 // Detail průčelí patří pouze k přesné verzi dlaždice měřených budov.
 import { assetFingerprint, parsePack } from '../data.js';
 
-export function applyFronts(section, name, hash, count, previous = null) {
+export function applyFronts(section, name, hash, count, previous = null, entrances = null) {
   const tile = section.header.tiles.find(entry => entry.name === name);
   if (!tile || tile.hash !== hash || !Number.isSafeInteger(tile.start) || !Number.isSafeInteger(tile.count) ||
       tile.start < 0 || tile.count <= 0 || tile.start + tile.count > section.vertex.length ||
@@ -11,6 +11,7 @@ export function applyFronts(section, name, hash, count, previous = null) {
   const attribute = previous ?? new Float32Array(count * 4);
   for (let i = 0; i < indices.length; i++) {
     const offset = (tile.start + i) * 4;
+    if (entrances) entrances[indices[i]] = section.entrance?.[tile.start + i] ?? 0;
     attribute.set(section.front.subarray(offset, offset + 4), indices[i] * 4);
   }
   return attribute;
@@ -37,11 +38,12 @@ export class StreetDetails {
     const pack = parsePack(bytes);
     if (pack.header.version !== 1 || !Array.isArray(pack.header.tiles) ||
         !(pack.vertex instanceof Uint32Array) || !(pack.front instanceof Float32Array) ||
-        !pack.front.every(Number.isFinite)) throw Error('Neplatná data úseku ' + section.id);
+        (pack.entrance && (!(pack.entrance instanceof Float32Array) || pack.entrance.length !== pack.vertex.length ||
+          !pack.entrance.every(v => Number.isFinite(v) && v >= 0))) || !pack.front.every(Number.isFinite)) throw Error('Neplatná data úseku ' + section.id);
     return pack;
   }
 
-  async forTile(name, hash, count, scenery) {
+  async forTile(name, hash, count, scenery, entrances) {
     let attribute = null;
     for (const section of this.tiles.get(name) ?? []) {
       if (!this.cache.has(section.id)) {
@@ -54,7 +56,7 @@ export class StreetDetails {
       if (pack) {
         const tile = pack.header.tiles.find(t => t.name === name && t.hash === hash);
         if (!tile) continue;
-        const next = applyFronts(pack, name, hash, count, attribute);
+        const next = applyFronts(pack, name, hash, count, attribute, entrances);
         if (next && scenery) scenery.push({ id: section.id + '/' + name,
           items: tile.furniture ?? [], paving: tile.paving ?? [] });
         attribute = next;

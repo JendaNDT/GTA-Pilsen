@@ -218,6 +218,18 @@ export function buildingNodes(night, schedule, camera, sky, textures, heritage, 
       glazing.assign(glass.select(.9,0));
       illumination.assign(glass.select(night.mul(.19),0));
       If(front.y.lessThan(.38), () => color.mulAssign(.68));
+      const entrance = attribute('aEntrance', 'float');
+      const offset = front.x.sub(entrance);
+      If(entrance.greaterThan(0).and(offset.abs().lessThan(.55), front.y.lessThan(2.25)), () => {
+        const pane = offset.abs().lessThan(.43).and(front.y.greaterThan(.22), front.y.lessThan(2.13));
+        color.assign(mix(vec3(.12,.11,.10),vec3(.09,.19,.22),pane));
+        glazing.assign(pane.select(.87,0));
+        illumination.assign(pane.select(night.mul(.14),0));
+        if (textures) If(offset.sub(.34).abs().lessThan(.024).and(front.y.sub(1.08).abs().lessThan(.15)), () => {
+          color.assign(vec3(.48,.50,.51));
+          glazing.assign(0);
+        });
+      });
       If(front.y.sub(height.sub(.25)).abs().lessThan(.065), () => color.mulAssign(1.18));
     });
     if (textures) addSurfaceDetail(color, positionWorld, cell, code);

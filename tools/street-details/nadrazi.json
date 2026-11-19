@@ -69,7 +69,8 @@
       ],
       "bottom": 309.07,
       "top": 318.71,
-      "sha256": "763c4a747d8ebcca7c326f4ef18b6cb761f8fa7c2ebe8ad50406bc9d88c7cec2"
+      "sha256": "763c4a747d8ebcca7c326f4ef18b6cb761f8fa7c2ebe8ad50406bc9d88c7cec2",
+      "entrance": 1.26
     },
     {
       "building": "00000000000306328",
@@ -101,7 +102,8 @@
       ],
       "bottom": 311.59,
       "top": 328.39,
-      "sha256": "2fce6e954068a2368cfa0ab64c9b36e877d24e65b619eb7c156c5d8ad484fdb1"
+      "sha256": "2fce6e954068a2368cfa0ab64c9b36e877d24e65b619eb7c156c5d8ad484fdb1",
+      "entrance": 2.45
     },
     {
       "building": "00000000000307246",
@@ -133,7 +135,8 @@
       ],
       "bottom": 311.98,
       "top": 317.15,
-      "sha256": "cc5710f236812790b3fbda4e70873c297dec5d0aa86bca2491fd536495be8e9f"
+      "sha256": "cc5710f236812790b3fbda4e70873c297dec5d0aa86bca2491fd536495be8e9f",
+      "entrance": 1.36
     },
     {
       "building": "00000002023200010",
@@ -149,7 +152,8 @@
       ],
       "bottom": 310.55,
       "top": 315.18,
-      "sha256": "90dd9184c931efc3b1a592ede8c125a9281c1b65807f962dfa6affa31b03becd"
+      "sha256": "90dd9184c931efc3b1a592ede8c125a9281c1b65807f962dfa6affa31b03becd",
+      "entrance": 2.8
     }
   ],
   "furniture": [
@@ -256,6 +260,7 @@
     "furniture": "OpenStreetMap",
     "date": "2026-11-15T01:07:22Z",
     "paving": "Pracovní obrys herního chodníku k ověření podle fotek.",
-    "shelters": "OSM uvádí zastřešení na nástupištích. Poloha a podoba modelu jsou pracovní do kontroly podle fotografií."
+    "shelters": "OSM uvádí zastřešení na nástupištích. Poloha a podoba modelu jsou pracovní do kontroly podle fotografií.",
+    "entrances": "Pracovní poloha dveří na vybraném průčelí. Ověřit z autorovy fotografie."
   }
 }

@@ -28,13 +28,14 @@ test('E25 – v pilotním úseku Americké se vykreslí jediná přízemní vrst
         g.render();
         await g.renderer.backend.device?.queue.onSubmittedWorkDone();
         return {material:facade.material === heritage.streetClose,
+          entrance:facade.geometry.getAttribute('aEntrance').array.some(width => width > 0),
           measured:facade.geometry.getAttribute('aStreet').array.some((v,i) => i%4 === 2 && v > 0)};
       }
       if (performance.now()-start > 120000) throw Error('Chybí detail pilotu na Americké.');
       await new Promise(resolve => setTimeout(resolve,10));
     }
   });
-  expect(observed).toEqual({material:true, measured:true});
+  expect(observed).toEqual({material:true, entrance:true, measured:true});
   expect(errors).toEqual([]);
 });
 

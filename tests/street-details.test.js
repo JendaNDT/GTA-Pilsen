@@ -42,3 +42,26 @@ test('pilot mění jen přiřazené vrcholy, po změně otisku zůstane běžný
   assert.equal(await corrupt.forTile(name,hash,count),null);
   assert.equal(corrupt.cache.size,0);
 });
+
+test('vstupy vybraných stěn odpovídají popisu a přenášejí se jen na označené vrcholy', async () => {
+  const root = new URL('../public/detail/', import.meta.url);
+  const index = JSON.parse(await readFile(new URL('streets/index.json', root)));
+  for (const section of index.sections) {
+    const desc = JSON.parse(await readFile(new URL('../tools/street-details/'+section.id+'.json', import.meta.url)));
+    const expected = desc.fronts.flatMap(f => f.entrance === undefined ? [] : [Math.round(f.entrance*100)]);
+    assert.ok(expected.length > 0);
+    const pack = parsePack(Uint8Array.from(await readFile(new URL('streets/'+section.name,root))).buffer);
+    const observed = new Set();
+    for (const tile of pack.header.tiles) {
+      const city = parsePack(Uint8Array.from(await readFile(new URL('city/'+tile.name,root))).buffer);
+      const doors = new Float32Array(city.p.length/3);
+      const fronts = applyFronts(pack,tile.name,tile.hash,doors.length,null,doors);
+      doors.forEach((offset,i) => {
+        if (offset === 0) return;
+        assert.ok(offset >= .55 && offset <= fronts[4*i+2]-.55);
+        observed.add(Math.round(offset*100));
+      });
+    }
+    assert.deepEqual(observed,new Set(expected));
+  }
+});
