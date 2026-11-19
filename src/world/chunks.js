@@ -4,7 +4,6 @@ import { BRIDGE_THICKNESS, densePath, pathNormal } from './road-profile.js';
 // Stavba 3D geometrie po dlaždicích: budovy, silnice, koleje, stromy.
 import * as THREE from 'three/webgpu';
 import { hash } from './hash.js';
-import { streetLamps } from './lamps.js';
 import { railingFaces } from '../physics/railings.js';
 import { terrainGridStep } from '../physics/terrain.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
@@ -1370,7 +1369,7 @@ const lampMatrix = new THREE.Matrix4();
 const hiddenLamp = new THREE.Matrix4().makeScale(0, 0, 0);
 
 function buildLamps(world, ci) {
-  const entries = streetLamps(world, ci);
+  const entries = world.lampsInTile(ci);
   if (!entries.length) return null;
   const poles = new THREE.Group();
   const instances = new Map();

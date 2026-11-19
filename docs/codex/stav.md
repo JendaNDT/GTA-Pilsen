@@ -13,6 +13,10 @@ Větev `etapa/E21` navazuje na E20 sloučenou revizí `623e081`. [Zadání E21](
 | 7. Částice | Hotovo. Prošla kontrola výpočtu na WebGPU i náhradního výpočtu na WebGL 2. |
 | 8. Závěrečné ověření | Probíhají závěrečné prohlížečové zkoušky. Snímky a měření ze softwarového vykreslovače jsou v protokolu. Měření na autorově počítači je otevřené. |
 
+### Oddělená zkušební plocha
+
+Lampa pro fyzikální zkoušku vzniká na vlastní plošině nad herním terénem. Vykreslení i fyzika si vyžádají stejný seznam lamp v dlaždici. Také zkušební značka a světelný signál pocházejí ze samostatného testovacího vstupu s vlastní skupinou. Prošla ztráta a obnova světla po návratu, změna stavu a oprava u všech tří předmětů. V Chromiu uspěly dva scénáře na WebGL 2 a tytéž dva na WebGPU. Prošlo všech 128 testů JavaScriptu a produkční sestavení. Regrese dřívějších etap pokračují.
+
 ### Směny a spuštění vykreslovače
 
 Na softwarovém adaptéru první sestavení scény někdy přesáhlo pevnou minutu. Zkoušky směn a vykreslovače nyní čekají na připravenou hru v rámci času určeného pro celý test. V Chromiu prošlo všech pět scénářů směn včetně výplaty, zrušení a opětovného načtení. Prošlo ruční i automatické spuštění WebGL 2. V minutové zkoušce na vysoké předvolbě adaptér zvládl jen 11 snímků, požadavek přes 30 zůstává otevřený. Prošlo 128 testů JavaScriptu a produkční sestavení. Regrese dopravy a starších grafických scén pokračují.
