@@ -5,13 +5,29 @@ import { gameUrl } from './game-url.js';
 test.use({ viewport: reference.viewport, deviceScaleFactor: 1 });
 
 async function averageRegion(page, clip) {
-  return page.evaluate(({ x, y, width, height }) => {
+  return page.evaluate(async ({ x, y, width, height }) => {
     const game = window.__game;
-    const ctx = new OffscreenCanvas(width, height).getContext('2d');
-    // Přečti skutečné plátno hned po vykreslení, ještě v téže úloze prohlížeče.
-    game.render();
-    ctx.drawImage(game.renderer.domElement, x, y, width, height, 0, 0, width, height);
-    const { data } = ctx.getImageData(0, 0, width, height);
+    const { renderer } = game;
+    let data;
+    if (renderer.backend.isWebGPUBackend) {
+      // Čtení výstupní textury počká na dokončení obrazu i na WebGPU.
+      const Target = game.postfx.scenePass.renderTarget.constructor;
+      const target = new Target(renderer.domElement.width, renderer.domElement.height);
+      const previous = renderer.getRenderTarget();
+      try {
+        renderer.setRenderTarget(target);
+        game.render();
+        data = await renderer.readRenderTargetPixelsAsync(target, x, y, width, height);
+      } finally {
+        renderer.setRenderTarget(previous);
+        target.dispose();
+      }
+    } else {
+      const ctx = new OffscreenCanvas(width, height).getContext('2d');
+      game.render();
+      ctx.drawImage(renderer.domElement, x, y, width, height, 0, 0, width, height);
+      data = ctx.getImageData(0, 0, width, height).data;
+    }
     const rgb = [0, 0, 0];
     for (let i = 0; i < data.length; i += 4) {
       rgb[0] += data[i];

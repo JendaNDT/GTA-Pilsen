@@ -13,6 +13,10 @@ Větev `etapa/E21` navazuje na E20 sloučenou revizí `623e081`. [Zadání E21](
 | 7. Částice | Hotovo. Prošla kontrola výpočtu na WebGPU i náhradního výpočtu na WebGL 2. |
 | 8. Závěrečné ověření | Probíhají závěrečné prohlížečové zkoušky. Snímky a měření ze softwarového vykreslovače jsou v protokolu. Měření na autorově počítači je otevřené. |
 
+### Barvy na WebGPU a minutová zkouška WebGL 2
+
+Po opravě čtení výsledné textury prošlo všech pět barevných kontrol na WebGPU. Stejné původní meze ověřily denní a noční oblohu, sousední světlá a tmavá okna, vodu u Wilsonova mostu, oba portály se značením a dlažbu náměstí. Na WebGL 2 prošlo sedm zkoušek materiálů včetně pohybu náhonu, světel auta a osvětlení pod lampou. Napříč běhy má úspěšný výsledek 182 ze 183 případů. Při opakování zbývající minuty dne a noci vykázal softwarový WebGL 2 v Chromiu 159 s Mesa llvmpipe 20 snímků při souběžné práci. Mez je více než 30. Výsledek izolovaného běhu a měření na skutečné grafické kartě zůstávají otevřené.
+
 ### Závěrečné prohlížečové zkoušky
 
 Na Chromiu 159 prošel výchozí start na WebGPU, zobrazení názvu vykreslovače v nabídce i získání prvních snímků bez varování. Prošly také všechny čtyři předvolby vyhlazování a stínů, pohyb dveří tramvaje v obrazu pro TRAA, měsíc po západu slunce a oba případy vztlaku. Z 37 znovu spuštěných případů prošlo 32. Pět zbývajících v tomto běhu používalo čtení barev plátna. Součet jednotlivých úspěšných zkoušek napříč opravami dosahuje 177 ze 183. Kromě pěti kontrol barev zbývá ověřit počet snímků během minuty hraní na WebGL 2. Původní mez nad 30 snímků zůstává součástí zkoušky.
