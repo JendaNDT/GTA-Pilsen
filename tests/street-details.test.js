@@ -65,3 +65,43 @@ test('vstupy vybraných stěn odpovídají popisu a přenášejí se jen na ozna
     assert.deepEqual(observed,new Set(expected));
   }
 });
+
+test('práh všech 21 vstupů leží na chodníku před měřenou stěnou', async () => {
+  const { loadStructureMap } = await import('../tools/audit_structures.mjs');
+  const { world } = await loadStructureMap('public/data');
+  const detail = new URL('../public/detail/', import.meta.url);
+  const readPack = async path => parsePack(Uint8Array.from(await readFile(new URL(path, detail))).buffer);
+  const manifest = JSON.parse(await readFile(new URL('streets/index.json', detail)));
+  let doors = 0;
+  for (const section of manifest.sections) {
+    const desc = JSON.parse(await readFile(new URL('../tools/street-details/' + section.id + '.json', import.meta.url)));
+    const pack = await readPack('streets/' + section.name);
+    const fronts = desc.fronts.filter(front => front.entrance !== undefined);
+    const seen = new Set();
+    for (const tile of pack.header.tiles) {
+      const city = await readPack('city/' + tile.name);
+      for (let i = tile.start; i < tile.start + tile.count; i++) {
+        if (!pack.entrance[i]) continue;
+        const id = pack.vertex[i];
+        const x = city.header.cx + city.p[id * 3] * .02;
+        const y = city.p[id * 3 + 1] * .02;
+        const z = city.header.cz + city.p[id * 3 + 2] * .02;
+        const front = fronts.find(f => {
+          const uv = faceCoordinates(x, y, z, f, world.baseElevation);
+          return uv && Math.abs(f.entrance - pack.entrance[i]) < .001 &&
+            Math.abs(uv[0] - pack.front[i * 4]) < .001 && Math.abs(uv[2] - pack.front[i * 4 + 2]) < .001;
+        });
+        assert.ok(front, section.name + ' – vrchol dveří leží mimo přiřazenou stěnu');
+        const [[ax, az], [bx, bz]] = front.edge;
+        const ratio = front.entrance / Math.hypot(bx - ax, bz - az);
+        const ground = world.heightAt(ax + (bx - ax) * ratio, az + (bz - az) * ratio);
+        const sill = y - pack.front[i * 4 + 1];
+        assert.ok(Math.abs(sill - ground) < .04, section.id + ' – práh domu ' + front.building);
+        seen.add(front);
+      }
+    }
+    assert.equal(seen.size, fronts.length);
+    doors += seen.size;
+  }
+  assert.equal(doors, 21);
+});

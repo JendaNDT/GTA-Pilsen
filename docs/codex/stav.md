@@ -1,5 +1,9 @@
 # Stav etapy E25
 
+## Výška vstupů nad chodníkem
+
+První snímky ukázaly nízká okna a zčásti zapuštěné dveře. U všech 21 vstupů ležel spodek měřené stěny 1,05 až 3,14 m pod chodníkem. Převod teď odvozuje výšku prahu z herního terénu v místě dveří. Otisky stěn, počet vrcholů a jejich poloha zůstávají platné. Kontrola našla všech 21 vstupů v distribuovaných dlaždicích a ověřila polohu prahu s tolerancí 4 cm. Prošlo 176 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. Na opraveném vysokém WebGPU je při pohledu z Americké vidět celý vstup až k chodníku. Pokračuje porovnání všech tří dvojic snímků. [Protokol E25](../E25.md)
+
 ## Vymezení pilotu
 
 Americká mezi západním koncem Wilsonova mostu a kruhovou křižovatkou zahrnuje obě strany ulice i nároží u nábřeží. Ze všech 205 452 ploch městského archivu 2024 se podařilo určit 26 stěn osmi budov pro fotografické porovnání. Výběr vychází z průsečíků s paprsky z osy ulice a z předmostí v úrovni parteru. Všechny konce hran leží ve vymezeném obrysu a otisky ploch jsou jedinečné. Zbývá fotograficky ověřit podobu a členění provozoven i vybavení. [Návod k focení a soupis](../E25/navod-foceni.md)

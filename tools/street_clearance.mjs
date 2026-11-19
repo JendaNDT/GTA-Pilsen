@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { Box3, Vector3 } from 'three/webgpu';
-import { loadStructureMap, indexRoutes, corridor } from './audit_structures.mjs';
+import { indexRoutes, corridor } from './audit_structures.mjs';
 import { STREET_MODELS } from '../src/world/street-furniture.js';
 
 // Konzervativní kružnice obepíše půdorys modelu i při pootočení.
@@ -14,8 +14,7 @@ export function blocksPassage(x,z,y,radius,height,route) {
   return Math.hypot(end,side) < radius && y+height>floor+.12 && y<floor+route.height;
 }
 
-export async function streetClearance(index, sections) {
-  const {world,stops} = await loadStructureMap('public/data',index.bridges,index.railDecks);
+export async function streetClearance({world, stops}, sections) {
   const {RC,RF,DRIVABLE_MAX} = await import('../src/config.js');
   const area = new Box3();
   for (const s of sections) for (const [x,z] of s.outline) area.expandByPoint(new Vector3(x,0,z));

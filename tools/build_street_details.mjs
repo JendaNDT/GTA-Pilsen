@@ -4,6 +4,7 @@ import { readFileSync, readdirSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { assetFingerprint, parsePack } from '../src/data.js';
+import { loadStructureMap } from './audit_structures.mjs';
 import { streetClearance } from './street_clearance.mjs';
 import { writePack } from './write_pack.mjs';
 
@@ -59,17 +60,26 @@ export function verifiedFronts(section, source) {
   return section.fronts;
 }
 
-function matchTile(pack, fronts, elevation, matched) {
+function matchTile(pack, fronts, world, matched) {
   const matches = new Map();
   const {cx,cz}=pack.header;
   for(let i=0;i<pack.i.length;i+=3) {
     const ids=[pack.i[i],pack.i[i+1],pack.i[i+2]];
     if (ids.some(id=>Math.abs(pack.n[id*3+1])>24)) continue;
     for(const front of fronts) {
-      const coords=ids.map(id=>faceCoordinates(cx+pack.p[id*3]*.02,pack.p[id*3+1]*.02,cz+pack.p[id*3+2]*.02,front,elevation));
+      const coords=ids.map(id=>faceCoordinates(cx+pack.p[id*3]*.02,pack.p[id*3+1]*.02,cz+pack.p[id*3+2]*.02,front,world.baseElevation));
       if(coords.every(Boolean)) {
         matched.add(front.sha256);
-        ids.forEach((id,j)=>matches.set(id,{uv:coords[j],entrance:front.entrance ?? 0}));
+        // Spodní hrana měřeného pláště často leží ve sklepě. Výlohu a kliku
+        // umístíme nad chodník u vstupu, samotnou měřenou geometrii zachováme.
+        const [[ax, az], [bx, bz]] = front.edge;
+        const along = front.entrance === undefined ? .5 : front.entrance / coords[0][2];
+        const sidewalk = world.baseElevation + world.heightAt(ax + along * (bx - ax), az + along * (bz - az));
+        const buried = Math.max(0, sidewalk - front.bottom);
+        ids.forEach((id, j) => {
+          const [u, v, width, height] = coords[j];
+          matches.set(id, {uv: [u, v - buried, width, height - buried], entrance: front.entrance ?? 0});
+        });
         break;
       }
     }
@@ -79,11 +89,12 @@ function matchTile(pack, fronts, elevation, matched) {
 
 export async function buildStreets(sourcePath, descriptions='tools/street-details', output='public/detail/streets') {
   const source=json(sourcePath), city=json('public/detail/city/index.json');
-  const elevation=json('public/data/meta.json').baseElevation;
   const descriptionsList = readdirSync(descriptions).filter(f => f.endsWith('.json')).sort()
     .map(file => json(join(descriptions,file)));
   const structureFile = 'public/detail/structures/index.json';
-  const check = await streetClearance(json(structureFile), descriptionsList);
+  const {bridges, railDecks} = json(structureFile);
+  const map = await loadStructureMap('public/data', bridges, railDecks);
+  const check = await streetClearance(map, descriptionsList);
   const centers = new Map(city.tiles.map(([x,z,name]) => [name,[x,z]]));
   const sections = [], ids = new Set();
   mkdirSync(output,{recursive:true});
@@ -95,10 +106,10 @@ export async function buildStreets(sourcePath, descriptions='tools/street-detail
     for(const [,,name,[x0,z0,x1,z1]] of city.tiles) {
       if (x1<bounds[0] || x0>bounds[2] || z1<bounds[1] || z0>bounds[3]) continue;
       const input=bytes(join('public/detail/city',name));
-      const map=matchTile(parsePack(input), fronts, elevation, matched);
-      if (!map.size) continue;
-      tiles.push({name,hash:assetFingerprint(input),start:indices.length,count:map.size});
-      for(const [id,coord] of map) {indices.push(id);uv.push(...coord.uv);entrances.push(coord.entrance);}
+      const vertices=matchTile(parsePack(input), fronts, map.world, matched);
+      if (!vertices.size) continue;
+      tiles.push({name,hash:assetFingerprint(input),start:indices.length,count:vertices.size});
+      for(const [id,coord] of vertices) {indices.push(id);uv.push(...coord.uv);entrances.push(coord.entrance);}
     }
     const missing = fronts.filter(front => !matched.has(front.sha256));
     if (missing.length) throw new Error(section.id + ' – chybí v herních dlaždicích: ' +
