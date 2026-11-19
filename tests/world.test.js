@@ -256,6 +256,21 @@ test('před levým odbočením řidič nechá projet rozjetý protisměr a vedle
   assert.equal(waiting(opposite, 1.8, true), undefined);
 });
 
+test('před zúžením do jednoho pruhu řidič nechá místo sousednímu autu, které už vjíždí', () => {
+  const traffic = Object.create(Traffic.prototype);
+  const control = { group: {}, edge: 1, s: 40, tx: 0, tz: 1 };
+  const entering = { control, edge: 2, lane: 1.8, exitLane: 0, left: false };
+  const other = { mode: 'ai', edge: 1, s: 37, halfLen: 2, trafficStop: { entering: true, movement: entering } };
+  const driver = { type: { wid: 1.8 } };
+  const waiting = exitLane => traffic.turnInProgress(driver, { ...entering, lane: -1.8, exitLane }, [other]);
+  assert.equal(waiting(0), entering);
+  assert.equal(waiting(-1.8), undefined);
+  other.trafficStop.entering = false;
+  assert.equal(waiting(0), undefined);
+  other.junctionMovement = entering;
+  assert.equal(waiting(0), entering);
+});
+
 test('po obnovení dlaždice má každý semafor a značka stejné vlastní ID a zachová poškození', async () => {
   const { Breakables } = await import('../src/physics/breakables.js');
   const registry = new Breakables();

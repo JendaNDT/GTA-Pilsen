@@ -391,6 +391,8 @@ export class Traffic {
       if (state.movement) state.yieldingTo = this.turnInProgress(car, state.movement, others);
       stop = !!state.yieldingTo || this.exitBlocked(car, control, others, extra);
     }
+    // Při souběhu dvou pruhů si řidič ještě před čárou ponechá místo k zařazení.
+    state.entering = !stop && !!state.movement && limit > 0 && distance < 3 + speed * speed / 8;
     state.crossing = !stop && checkExit && control.directedHead && speed > 0 && distance < 2;
     if (stop) stopping?.(distance + 0.45);
     else if (checkExit && control.directedHead && limit > 0 && speed > 0 && distance <= speed * dt) {
@@ -402,37 +404,45 @@ export class Traffic {
   junctionMovement(car, control) {
     const w = this.world;
     if (car.next < 0 || w.eLen[car.edge] - control.s > 27) return null;
-    let edge = car.next, turn = car.plannedTurn, width = w.r.w[w.eRoad[car.edge]];
+    let edge = car.next, exitLane = car.nextLane, turn = car.plannedTurn, width = w.r.w[w.eRoad[car.edge]];
     for (const move of car.exitPlan) {
       if (move.from !== edge || move.to < 0 || w.eLen[edge] >= 12) break;
       width = Math.max(width, w.r.w[w.eRoad[edge]]);
       edge = move.to;
+      exitLane = move.lane;
       turn = move.turn;
     }
     const exit = w.edgePoint(edge, turn?.exit ?? 0, 0, {});
     const left = control.tx * exit.tz - control.tz * exit.tx < -0.35;
-    return { control, lane: car.lane, edge, left, reached: false,
+    return { control, lane: car.lane, edge, exitLane, left, reached: false,
       clearAt: Math.min(w.eLen[edge], Math.max(width / 2, turn?.exit ?? 0) + car.halfLen + 1) };
   }
 
   turnInProgress(car, mine, others) {
     const light = mine.control;
-    return others.find(other => {
+    for (const other of others) {
+      if (other === car || other.mode !== 'ai') continue;
       const active = other.junctionMovement;
-      if (other === car || other.mode !== 'ai' || !active || active.control.group !== light.group) return false;
+      const state = other.trafficStop;
+      const entering = active ?? (state?.entering && other.edge === light.edge &&
+        other.s + other.halfLen < light.s + 1 ? state.movement : null);
+      if (entering?.control === light && entering.lane !== mine.lane && entering.edge === mine.edge &&
+          entering.exitLane === mine.exitLane && Number.isFinite(mine.exitLane)) return entering;
+      if (!active || active.control.group !== light.group) continue;
       const alignment = active.control.tx * light.tx + active.control.tz * light.tz;
       // Vlevo odbočíme až po uvolnění protisměru. Vůz jedoucí rovně si
       // zachovává přednost. Za odbočujícím ve vlastním pruhu necháme prostor.
       if (alignment < -0.75) {
-        if (mine.left) return true;
+        if (mine.left) return active;
         // Před obloukem odbočující čeká. Pokud už do oblouku najel, musí
         // protijedoucí řidič před čárou ponechat místo k jeho dokončení.
         const turn = other.finishingTurn ?? other.plannedTurn;
-        return active.left && turn?.sign < 0 && (other.edge === turn.to ||
-          other.edge === turn.from && other.s >= turn.entry);
+        if (active.left && turn?.sign < 0 && (other.edge === turn.to ||
+            other.edge === turn.from && other.s >= turn.entry)) return active;
+      } else if (active.left && active.control === light && Math.abs(active.lane - mine.lane) < car.type.wid) {
+        return active;
       }
-      return active.left && active.control === light && Math.abs(active.lane - mine.lane) < car.type.wid;
-    })?.junctionMovement;
+    }
   }
 
   conflict(car, control, others, extra) {

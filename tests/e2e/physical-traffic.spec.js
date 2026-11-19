@@ -731,3 +731,48 @@ test('E20 – trolejbus 12 respektuje vlastní semafor v Tylově a uvolní výje
   expect(result).toMatchObject({ stopped: true, entered: true, mark: 3843, carRule: false });
   expect(result.rear).toBeGreaterThan(5009);
 });
+
+test('E21 – dvě auta z Klatovské se za Tylovou zařadí do jediného pruhu bez dotyku', async ({ page }) => {
+  await start(page);
+  const result = await page.evaluate(() => {
+    const g = __game, { world, vehicles } = g, traffic = world.traffic;
+    const Car = g.player.lastCar.constructor;
+    for (const car of [...vehicles.cars]) vehicles.remove(car);
+    vehicles.obstacles.length = 0;
+    const entry = 19355, exit = 19410;
+    const rule = traffic.byEdge.get(entry).find(c => c.directedHead && c.id === 10274015040);
+    const pair = [-1, 1].map(side => {
+      const car = vehicles.add(new Car(side < 0 ? 'suv' : 'hatch', 0x557788));
+      const lane = vehicles._laneFor(entry, side), s = rule.s - car.halfLen - 8;
+      const p = world.edgePoint(entry, s, lane, {});
+      car.place(p.x, p.z, Math.atan2(p.tx, p.tz));
+      Object.assign(car, { mode: 'ai', edge: entry, s, lane, temper: 1, speed: 6, vx: 6 * p.tx, vz: 6 * p.tz });
+      car.exitPlan.push({ from: entry, to: exit, lane: vehicles._laneFor(exit, side), slow: 99 });
+      vehicles._pickNext(car);
+      return car;
+    });
+    g.player.place(pair[0].x + 15, pair[0].z);
+    for (let i = 0; i < 25; i++) g.colliders.update(g.player.x, g.player.z);
+    g.trafficBodies.update(g, 1 / 60);
+    const green = 'green' + rule.axis;
+    while (traffic.phase(rule.group) === green) traffic.tick(0.25);
+    while (traffic.phase(rule.group) !== green) traffic.tick(0.25);
+    let closest = Infinity, passed = false;
+    const [a, b] = pair;
+    for (let i = 0; i < 6000; i++) {
+      traffic.tick(1 / 60);
+      g.physics.step(1 / 60);
+      const gap = axis => {
+        const extent = c => c.halfLen * Math.abs(Math.cos(c.yaw - axis)) +
+          c.type.wid / 2 * Math.abs(Math.sin(c.yaw - axis));
+        return Math.abs((b.x - a.x) * Math.sin(axis) + (b.z - a.z) * Math.cos(axis)) - extent(a) - extent(b);
+      };
+      closest = Math.min(closest, Math.max(gap(a.yaw), gap(a.yaw + Math.PI / 2), gap(b.yaw), gap(b.yaw + Math.PI / 2)));
+      passed = pair.every(car => car.edge === exit && car.s > 7);
+      if (passed || pair.some(car => car.crashed)) break;
+    }
+    return { closest, passed, crashed: pair.some(car => car.crashed) };
+  });
+  expect(result, JSON.stringify(result)).toMatchObject({ passed: true, crashed: false });
+  expect(result.closest).toBeGreaterThan(0);
+});
