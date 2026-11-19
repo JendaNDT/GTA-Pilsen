@@ -40,9 +40,17 @@ Ve čtyřech městských dlaždicích se podařilo přiřadit všech 66 vymezen�
 
 Prošlo 173 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. Ve všech šesti prohlížečových zkouškách prošel pilot a chůze ve třech úsecích na nízké i vysoké předvolbě za dne, soumraku a noci ve WebGL 2 i WebGPU. Zbývají samostatné zkoušky nástupu u nádraží, doručení na místní adresy a snímky před a po. Věrnost přízemí a přístřešku vyžaduje fotografie autora. [Protokol úseků](../E25.md)
 
+## Rozvoz a nastoupení u nádraží
+
+V Chromiu na WebGL 2 i WebGPU prošel rozvoz na adresy ve všech třech úsecích. Na posledních metrech šel hráč pěšky a po doručení dostal odměnu. U hlavního nádraží byla před nástupem načtená nová uliční vrstva. Hráč nastoupil do linky 49, dojel do Pařížské a vystoupil. Všechny čtyři scénáře prošly. Produkční sestavení, 175 jednotkových testů a 26 testů Pythonu prošlo i s připravovanou úpravou vstupů.
+
 # Stav etapy E24
 
 E24 navazuje na G17 ve větvi E23 (`fe30ef0`). [Zadání E24](E24.md)
+
+## Průhlednost objemových oblaků
+
+Ve vysoké předvolbě se u nádraží objevila černá obloha. Na stejném místě po opravě zmizely černé plochy a mezi oblaky je vidět modrá obloha. Oprava zachovává krytí vypočtené pro každý paprsek i při přebírání předchozího snímku. WebGL 2 i WebGPU našly částečně průhledné vzorky mezi oblaky a ověřily nulové krytí při pohledu přímo dolů. Prošlo 166 jednotkových testů JavaScriptu a produkční sestavení. [Porovnání obrazu](../E24.md)
 
 ## G18 a G20 · Fasády a střechy
 
@@ -96,7 +104,7 @@ Prošlo 166 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. Ve W
 
 ## Snímky a měření
 
-Stejná kamera zachytila déšť i sníh na vysoké předvolbě. Ve čtyřech předvolbách prošel rozpočet ve třech referenčních pohledech. Na softwarovém adaptéru jsme zaznamenali také pět snímků za deště i sněhu v každé předvolbě. První postupné srovnání suché scény E23 a E24 ukázalo delší čas vykreslení při souběžných testech. Probíhá střídavé měření obou verzí za stejných podmínek. [Protokol a snímky](../E24.md)
+Stejná kamera zachytila déšť i sníh na vysoké předvolbě. Ve čtyřech předvolbách prošel rozpočet ve třech referenčních pohledech. Na softwarovém adaptéru jsme zaznamenali také pět snímků za deště i sněhu v každé předvolbě. První postupné srovnání suché scény E23 a E24 ukázalo delší čas vykreslení při souběžných testech. Při prvním střídavém měření byl Wilsonův most o 1 % rychlejší, náměstí o 15 % pomalejší v čase do dokončení snímku. Nízká předvolba nyní kreslí oblohu až za neprůhledné povrchy. V obou vykreslovačích prošlo porovnání obrazu starého a nového pořadí. [Protokol a snímky](../E24.md)
 
 ## Výchozí etapa E23
 

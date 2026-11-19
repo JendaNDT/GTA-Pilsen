@@ -23,14 +23,27 @@ test('E24 – vysoká předvolba přeprojektuje čtvrtinový obraz oblaků @webg
     await g.renderer.backend.device?.queue.onSubmittedWorkDone();
     const target = cloud.targets.find(t => t.texture === image);
     const data = await g.renderer.readRenderTargetPixelsAsync(target, 0, 0, target.width, target.height);
-    const populated = Array.from(data).some((x,i) => i % 4 === 3 && x > 0);
+    const opaque = data instanceof Uint16Array ? 0x3c00 : 1;
+    let partial = 0;
+    for (let i=3; i<data.length; i+=4) {
+      if (data[i] > 0 && data[i] < opaque) partial++;
+    }
+    // Pod horizontem musí zůstat celá vrstva průhledná.
+    __view(101,100,5,101,0,5);
+    g.render();
+    const groundTarget = cloud.targets.find(t=>t.texture===cloud.image.value);
+    const below = await g.renderer.readRenderTargetPixelsAsync(groundTarget,0,0,groundTarget.width,groundTarget.height);
+    let belowClouds = 0;
+    for (let i=3; i<below.length; i+=4) if (below[i] !== 0) belowClouds++;
     cam.position.x += 100; g.render();
     const size = g.renderer.getDrawingBufferSize(cloud.size);
-    return {reuse, swapped: first !== image, reset: cloud.weight.value, populated,
+    return {reuse, swapped: first !== image, reset: cloud.weight.value, partial, belowClouds,
       dimensions: target.width === Math.ceil(size.x/4) && target.height === Math.ceil(size.y/4)};
   });
   expect(result.reuse).toBeGreaterThan(0);
   expect(result.reset).toBe(0);
-  expect(result.populated && result.swapped && result.dimensions).toBe(true);
+  expect(result.partial).toBeGreaterThan(0);
+  expect(result.belowClouds).toBe(0);
+  expect(result.swapped && result.dimensions).toBe(true);
   expect(errors).toEqual([]);
 });
