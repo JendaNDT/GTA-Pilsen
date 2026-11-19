@@ -60,6 +60,27 @@ class ReleaseArchiveTest(unittest.TestCase):
                 with self.assertRaises(SystemExit):
                     run("../chyba")
 
+                # I po neúplném přenosu mohou být ve složce index i všechna veřejná data.
+                output = root / "neuvolnene"
+                html = root / "dist/index.html"
+                html.write_text('<script type="module" src="./assets/hra.js?v=2"></script>'
+                                '<link rel="stylesheet" href="./assets/hra.css">')
+                for name in ["hra.js", "hra.css"]:
+                    with self.assertRaises(SystemExit):
+                        run("0.2.0")
+                    self.assertFalse(output.exists())
+                    asset = root / "dist/assets" / name
+                    asset.parent.mkdir(exist_ok=True)
+                    asset.write_text("")
+                # Cesta od kořene webu selže při nasazení z podsložky.
+                html.write_text('<script src="/assets/hra.js"></script>')
+                with self.assertRaises(SystemExit):
+                    run("0.2.0")
+                html.write_text('<script src="./assets/hra.js?v=2"></script><link rel="stylesheet" href="assets/hra.css">')
+                run("0.2.0")
+                self.assertTrue((output / "manifest.json").exists())
+                html.write_text("<canvas></canvas>")
+
                 # Změna po zabalení webu nesmí vytvořit dva vzájemně odlišné archivy.
                 write_zip = archive_release.write_zip
                 def change_during_pack(archive, files, tree, *executable):

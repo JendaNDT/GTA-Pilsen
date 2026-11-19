@@ -3,11 +3,14 @@
 import argparse
 import hashlib
 import json
+import posixpath
 import re
 import stat
 import subprocess
 import tempfile
+from html.parser import HTMLParser
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -34,6 +37,26 @@ def write_zip(archive, files, root, executable=()):
                     checksum.update(block)
             hashes[name] = checksum.hexdigest()
     return hashes
+
+
+class PageAssets(HTMLParser):
+    """Místní skripty a styly, které prohlížeč potřebuje při otevření indexu."""
+    def __init__(self):
+        super().__init__()
+        self.paths = set()
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if tag == "script":
+            url = attrs.get("src")
+        elif tag == "link" and {"stylesheet", "modulepreload"}.intersection((attrs.get("rel") or "").lower().split()):
+            url = attrs.get("href")
+        else:
+            return
+        if url:
+            parts = urlsplit(url)
+            if parts.path and not parts.scheme and not parts.netloc:
+                self.paths.add(posixpath.normpath(unquote(parts.path)))
 
 
 def main():
@@ -83,6 +106,13 @@ def main():
         web = stage / f"{base}-web.zip"
         sources = stage / f"{base}-zdroje.zip"
         manifest["published"] = write_zip(web, published, dist)
+        with ZipFile(web) as bundle:
+            assets = PageAssets()
+            assets.feed(bundle.read("index.html").decode("utf-8"))
+            assets.close()
+        missing = sorted(assets.paths.difference(manifest["published"]))
+        if missing:
+            parser.error("Ve webovém archivu chybí soubory z index.html: " + ", ".join(missing))
         manifest["sources"] = write_zip(sources, paths, ROOT, executable)
         for name, checksum in manifest["sources"].items():
             if name.startswith("public/") and manifest["published"].get(name.removeprefix("public/")) != checksum:
