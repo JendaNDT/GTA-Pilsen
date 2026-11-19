@@ -256,6 +256,22 @@ test('před levým odbočením řidič nechá projet rozjetý protisměr a vedle
   assert.equal(waiting(opposite, 1.8, true), undefined);
 });
 
+test('příčná zelená vyčká na záď posledního vozu z předchozí fáze', () => {
+  const traffic = Object.create(Traffic.prototype), group = { x: 0, z: 0, radius: 20 };
+  const previous = { group, axis: 0, tx: 0, tz: 1 };
+  const current = { group, axis: 1, tx: 1, tz: 0 };
+  const movement = { control: previous, edge: 3, left: false, clearAt: 8 };
+  const car = { mode: 'ai', edge: 3, s: 7.9, halfLen: 2, enteredSignal: previous, junctionMovement: movement };
+  const driver = { type: { wid: 1.8 } };
+  const wait = control => traffic.turnInProgress(driver, { control, edge: 4, left: false }, [car]);
+  traffic.updateJunction(car, 2, 1);
+  assert.equal(wait(current), movement);
+  assert.equal(wait({ ...current, group: {} }), undefined);
+  car.s = 8;
+  traffic.updateJunction(car, 2, 1);
+  assert.equal(wait(current), undefined);
+});
+
 test('před zúžením do jednoho pruhu řidič nechá místo sousednímu autu, které už vjíždí', () => {
   const traffic = Object.create(Traffic.prototype);
   const control = { group: {}, edge: 1, s: 40, tx: 0, tz: 1 };

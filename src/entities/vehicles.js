@@ -345,15 +345,21 @@ export class VehicleManager {
     return this._moveTo(e, lane, pick);
   }
 
-  _detourAroundWreck(car) {
+  _detourAroundBlockage(car) {
     const w = this.world, traffic = w.traffic, state = car.trafficStop, rule = state?.rule;
     if (!rule || rule.edge !== car.edge || car.finishingTurn || car.enteredSignal && car.enteredSignal.group === rule.group ||
         traffic.time < car.nextDetourCheck) return;
     const gap = rule.s - car.s - car.halfLen;
     if (gap < 0 || gap > 4 || w.eLen[car.edge] - rule.s > 27) return;
     car.nextDetourCheck = traffic.time + 2;
-    if (!this.cars.some(other => other.crashed && (other.mode === 'loose' || other.mode === 'parked') &&
-        Math.hypot(other.x - car.x, other.z - car.z) < 65 && traffic.exitBlocked(car, rule, [other], []))) return;
+    const wreck = this.cars.some(other => other.crashed && (other.mode === 'loose' || other.mode === 'parked') &&
+        Math.hypot(other.x - car.x, other.z - car.z) < 65 && traffic.exitBlocked(car, rule, [other], []));
+    // Linkový vůz může zůstat stát napříč výjezdem i přes další zelenou.
+    // Řidič hledá objížďku až po minutě stání obou vozů mimo nástup cestujících.
+    const longWait = 60;
+    if (!wreck && !(car.blocked >= longWait && rule.directedHead && traffic.light(rule) === 'green' &&
+        this.obstacles.some(section => section.stoppedInTraffic >= longWait &&
+          traffic.exitBlocked(car, rule, [], [section])))) return;
 
     // Projdeme povolené výjezdy ze stávajícího pruhu. Křižovatka může mít
     // více krátkých spojek před místem, kde se za odbočením vejde celé auto.
@@ -559,7 +565,7 @@ export class VehicleManager {
 
   stepAI(car, dt, physical = null) {
     const w = this.world;
-    if (car.blocked > 2 && Math.abs(car.speed) < 0.3) this._detourAroundWreck(car);
+    if (car.blocked > 2 && Math.abs(car.speed) < 0.3) this._detourAroundBlockage(car);
     if (car.finishingTurn && car.finishingTurn.to !== car.edge) car.finishingTurn = null;
     let turn = car.finishingTurn ?? car.plannedTurn;
     let arcDistance = 0;

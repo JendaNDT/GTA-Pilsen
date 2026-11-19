@@ -486,6 +486,8 @@ export class Traffic {
       if (entering?.control === light && entering.lane !== mine.lane && entering.edge === mine.edge &&
           entering.exitLane === mine.exitLane && Number.isFinite(mine.exitLane)) return entering;
       if (!active || active.control.group !== light.group) continue;
+      // Zelená příčné osy může začít dřív, než pomalý vůz vyklidí křižovatku.
+      if (active.control.axis !== light.axis) return active;
       const alignment = active.control.tx * light.tx + active.control.tz * light.tz;
       // Vlevo odbočíme až po uvolnění protisměru. Vůz jedoucí rovně si
       // zachovává přednost. Za odbočujícím ve vlastním pruhu necháme prostor.
