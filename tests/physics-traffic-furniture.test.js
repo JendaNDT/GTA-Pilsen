@@ -13,7 +13,7 @@ function testFurniture(type, run) {
   const registry = new Breakables();
   const physics = new PhysicsWorld(Jolt);
   const world = { breakables: registry, groundY: () => 0, traffic: { chunks: new Map([
-    [0, { signs: type === 'sign' ? [entry] : [], heads: type === 'signal' ? [entry] : [] }],
+    [0, { signs: type === 'sign' ? [entry] : [], heads: type === 'signal' ? [entry] : [], posts: type === 'bollard' ? [entry] : [] }],
   ]) } };
   const furniture = new TrafficFurnitureBodies(physics, world);
   physics.onImpact = (a, b, impulse) => furniture.contact(a, b, impulse);
@@ -92,5 +92,16 @@ test('semafor odolá 45 km/h a při nárazu 65 km/h z něj spadnou dva samostatn
     hit(45, 'intact');
     hit(65, 'broken');
     assert.equal(furniture.records.get(id).pieces.length, 2);
+  });
+});
+
+test('samostatný sloupek se uvolní jako jediný díl a ráno se znovu ukotví', () => {
+  testFurniture('bollard', ({furniture, id, hit, registry}) => {
+    hit(10, 'intact');
+    hit(40, 'broken');
+    assert.equal(furniture.records.get(id).pieces.length, 1);
+    furniture.repair(registry.repairDue(28 * 3600));
+    furniture.step(28 * 3600);
+    assert.ok(furniture.records.get(id).body.IsStatic());
   });
 });

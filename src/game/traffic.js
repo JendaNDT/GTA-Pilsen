@@ -207,10 +207,10 @@ export class Traffic {
   addVisual(x, z, kind, entry) {
     const ci = this.world.chunkIndex(x, z);
     if (ci < 0) return;
-    if (!this.chunks.has(ci)) this.chunks.set(ci, { signs: [], heads: [], crossings: [], lines: [] });
+    if (!this.chunks.has(ci)) this.chunks.set(ci, { signs: [], heads: [], posts: [], crossings: [], lines: [] });
     const list = this.chunks.get(ci)[kind];
-    if (kind === 'heads' || kind === 'signs') {
-      const type = kind === 'heads' ? 'signal' : 'sign';
+    if (kind === 'heads' || kind === 'signs' || kind === 'posts') {
+      const type = { heads: 'signal', signs: 'sign', posts: 'bollard' }[kind];
       const visual = { ...entry, breakableId: breakableId(type, ci, list.length) };
       if (kind === 'heads' && entry.group) (entry.group.fixtures ??= []).push(visual.breakableId);
       list.push(visual);

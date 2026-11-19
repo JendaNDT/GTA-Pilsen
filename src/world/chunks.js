@@ -1567,7 +1567,7 @@ export class ChunkManager {
       if (roads.asphalt) { const m = new THREE.Mesh(roads.asphalt, this.asphaltMat); m.renderOrder = 14; m.receiveShadow = true; add(m, roads.asphalt); ch.asphalt = m; }
       if (roads.marks) { const m = new THREE.Mesh(roads.marks, this.marksMat); m.renderOrder = 16; m.receiveShadow = true; add(m, roads.marks); ch.marks = m; }
       const entries = w.traffic.chunks.get(ci);
-      if (entries && (entries.signs.length || entries.heads.length)) {
+      if (entries && (entries.signs.length || entries.heads.length || entries.posts?.length)) {
         ch.traffic = buildTrafficMeshes(w, entries);
         add(ch.traffic.group);
       }
