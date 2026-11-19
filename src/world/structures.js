@@ -17,6 +17,7 @@ export class Structures {
   constructor(layer, cols, rows) {
     this.tiles = new Map();
     this.positions = layer.positions;
+    this.loading = 0;
     for (const tile of layer.index.tiles) {
       if (tile.cx >= cols || tile.cz >= rows) {
         this.tiles.clear();
@@ -43,7 +44,7 @@ export class Structures {
     return { tile: this.tiles.get(ci), mesh, core, controller: null };
   }
 
-  setNear(item, near) {
+  setNear(item, near, available = 2) {
     if (!near) {
       item.controller?.abort();
       item.controller = null;
@@ -53,12 +54,13 @@ export class Structures {
       }
       return;
     }
-    if (item.controller) return;
+    if (item.controller || this.loading >= available) return;
     const controller = new AbortController();
     item.controller = controller;
+    this.loading++;
     loadStructureDetail(item.tile, controller.signal).then(positions => {
       if (item.controller === controller && positions) item.mesh.geometry = geometry(positions);
-    });
+    }).finally(() => { this.loading--; });
   }
 
   dispose(item) {

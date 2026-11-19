@@ -188,3 +188,15 @@ Půdorysy z městské sady určují polohu chodníků a kamenného ohrazení vč
 Konce městské desky a půdorys zaměřeného pilíře určují rozpětí dvou oblouků. Městský model obsahuje desku, samostatný pilíř a ohrazení. Přesná křivka spodního líce oblouků v těchto plochách chybí, proto zůstává herní aproximací. Zdroj a podmínky užití jsou v README a v obrazovce O hře.
 
 Prošlo 134 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. Dvě sestavení dat se shodují po bajtech. Na WebGL 2 prošla chůze po chodníku, zastavení pěší postavy na obou stranách mostu i průchod pod mostem mimo pilíř. Původní zkouška měřila vzdálenost k vnější stěně při pevné tloušťce 0,5 m. Na měřeném půdorysu ověřuje vzdálenost kapsle k vnitřní stěně v rozsahu 0,32 až 0,45 m. U ostatních mostů platí původní požadavek. Další prohlížečové kontroly včetně průjezdu auta a porovnání pohledu před a po se vyhodnocují v `data-raw/structures/kalibrace-final-e2e.log` a `kalibrace-snimky.log`.
+
+### Zdi a pilíře v obvodu Plzeň 1
+
+První obvod přidává 34 zdí a dva pilíře. S dřívějším pilotním pilířem obsahuje základ 37 objektů ve 12 dlaždicích a zabírá 95 276 bajtů. Z 61 nově posuzovaných dílů obvodu jich 24 zasahuje do herních tras. Jeden další pilíř má patu nad terénem a čeká na určení navazující konstrukce. Inventura zachovává důvod u každého dílu.
+
+Převod řeže plochy na hranicích dlaždic. U členitých zdí ověřuje, že zjednodušení nezaplní dvůr nebo průchod. Před zařazením kontroluje původní plochy i výsledný kolizní obal proti herním trasám. Běžící hra nadále načte také starší formát základu. Detail sdílí omezený počet souběžných přenosů s budovami a leteckými snímky.
+
+Dva převody daly stejné soubory jako distribuovaná vrstva. Prošlo 139 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. V obou vykreslovačích prošlo ověření horní plochy zdi ve fyzice s tolerancí 4 cm a načtení podrobného modelu. Snímek na nízké nastavení pochází z dokončeného snímku WebGPU. [Zeď na nábřeží v obvodu Plzeň 1](../E22/obvod-1.jpg)
+
+Po kalibraci mostu prošlo 12 ze 13 cílených prohlížečových případů včetně kamery u kamenného okraje a pěších cest v obou vykreslovačích. Společná zkouška průjezdu Wilsonovým mostem a oběma tubusy Valíku přesáhla čtyři minuty. Nyní mají oba úseky samostatné výsledky při stejných požadavcích na dojezd, stav auta i kontakt kol.
+
+Dva snímky z téže kamery zachycují změnu u středového pilíře a obou oblouků. Oba vznikly na WebGL 2 v nízkém nastavení. [Před kalibrací](../E22/most-pred.jpg) · [Po kalibraci](../E22/most-po.jpg)

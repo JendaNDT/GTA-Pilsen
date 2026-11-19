@@ -104,7 +104,7 @@ try {
             built = game.chunks.update(focus.x, focus.z, game.camera.far / 1.35, 40, focus.y);
             await new Promise(requestAnimationFrame);
             if (performance.now() > deadline) throw new Error('Okolí měření se nestihlo dostavět.');
-          } while (built || game.chunks.pending || game.chunks.heritage.fetching || game.chunks.orthophotoPending);
+          } while (built || game.chunks.pending || game.chunks.heritage.fetching || game.chunks.orthophotoPending || game.world.structures?.loading);
           window.__step(1 / 60);
           if (mode === 'traffic') {
             // Po načtení okolí necháme přijet běžný ranní provoz. Měření začne při plném počtu aut.

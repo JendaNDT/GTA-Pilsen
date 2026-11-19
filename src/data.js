@@ -73,11 +73,21 @@ export async function loadCityTile(file, signal) {
 
 const structuresPath = (import.meta.env?.BASE_URL || '/') + 'detail/structures/';
 
-function checkedPositions(buffer, hash) {
+function checkedPositions(buffer, hash, version = 1) {
   if (assetFingerprint(buffer) !== hash) return null;
-  const {header, p} = parsePack(buffer);
-  return header.version === 1 && p instanceof Float32Array && p.length % 9 === 0 &&
-    p.every(Number.isFinite) ? p : null;
+  const {header, p, i:indices} = parsePack(buffer);
+  if (header.version !== version || !(p instanceof Float32Array) || p.length % 3 || !p.every(Number.isFinite)) return null;
+  if (version === 1) return p.length % 9 === 0 ? p : null;
+  if (!(indices instanceof Uint16Array || indices instanceof Uint32Array) || indices.length % 3 ||
+      !indices.every(i => i < p.length/3)) return null;
+  const positions = new Float32Array(indices.length*3);
+  for (let i = 0; i < indices.length; i++) {
+    const j = indices[i]*3;
+    positions[3*i] = p[j];
+    positions[3*i+1] = p[j+1];
+    positions[3*i+2] = p[j+2];
+  }
+  return positions;
 }
 
 export async function loadStructureDetail(tile, signal) {
@@ -98,7 +108,7 @@ export async function loadStructureCore(search = globalThis.location?.search) {
       fetch(structuresPath + file, { signal })));
     if (!manifest.ok || !core.ok) return null;
     const index = await manifest.json(), buffer = await core.arrayBuffer();
-    if (index.version !== 1 || buffer.byteLength > 2 * 1024 * 1024 || !Array.isArray(index.tiles)) return null;
+    if (![1,2].includes(index.version) || buffer.byteLength > 2 * 1024 * 1024 || !Array.isArray(index.tiles)) return null;
     const roads = new Set();
     for (const bridge of index.bridges ?? []) {
       if (!Number.isSafeInteger(bridge.road) || bridge.road < 0 || roads.has(bridge.road) ||
@@ -111,7 +121,7 @@ export async function loadStructureCore(search = globalThis.location?.search) {
             s[3] > s[0] && s[2] >= s[1] && s[5] >= s[4])) return null;
       roads.add(bridge.road);
     }
-    const positions = checkedPositions(buffer, index.hash);
+    const positions = checkedPositions(buffer, index.hash, index.version);
     if (!positions) return null;
     const visited = new Set();
     let end = 0;

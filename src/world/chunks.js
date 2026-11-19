@@ -1460,7 +1460,7 @@ export class ChunkManager {
         origin: [world.minX, world.minZ], cols: world.cols, rows: world.rows,
         chunk: CHUNK, fingerprints: orthophotoSources,
       }, QUALITY.groundTex === 256 ? 12 : 24, {
-        availableRequests: () => detailRequestLimit() - this.heritage.fetching,
+        availableRequests: () => detailRequestLimit() - this.heritage.fetching - (world.structures?.loading ?? 0),
       });
     }
     this.buildingMat = makeBuildingMaterial();
@@ -1662,7 +1662,8 @@ export class ChunkManager {
     for (const [ci, ch] of this.chunks) {
       const d = Math.hypot(ch.cx - x, ch.cz - z);
       ch.dist = d;
-      if (ch.structure) w.structures.setNear(ch.structure, d < 420);
+      if (ch.structure) w.structures.setNear(ch.structure, d < 420,
+        detailRequestLimit() - this.heritage.fetching - (orthophoto?.requests ?? 0));
       if (orthoRequests && ch.orthoTile) {
         const key = ch.orthoTile.key;
         if (d < (orthoRequests.get(key) ?? Infinity)) orthoRequests.set(key, d);
@@ -1695,7 +1696,7 @@ export class ChunkManager {
         else if (ch.texSize === this.texNear && d > 640 && !rebake) rebake = [d, ci, ch, this.texFar];
       }
     }
-    this.heritage.prefetch(cityRequests, orthophoto?.requests);
+    this.heritage.prefetch(cityRequests, (orthophoto?.requests ?? 0) + (w.structures?.loading ?? 0));
     let orthoRebake;
     if (orthoRequests) {
       orthophoto.prefetch([...orthoRequests].sort((a, b) => a[1] - b[1]).map(([key]) => key));

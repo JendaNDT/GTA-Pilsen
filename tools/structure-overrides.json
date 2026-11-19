@@ -18,5 +18,8 @@
       "reason": "Horní městské plochy určují osu a obě hrany chodníku. Pět příčných řezů určuje posun a výškovou opravu herního profilu. Horní plochu městské desky nepřidávat do kolizí, slouží již jízdní profil.",
       "pier": "00000002021000213-265e2383af644593"
     }
+  ],
+  "districts": [
+    1
   ]
 }

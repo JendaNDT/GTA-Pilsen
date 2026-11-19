@@ -47,7 +47,7 @@ function gridCells(minX, minZ, maxX, maxZ, visit) {
   }
 }
 
-async function gameData(dir) {
+async function gameData(dir, bridges) {
   globalThis.window ??= {};
   globalThis.location ??= { search: '' };
   globalThis.matchMedia ??= () => ({ matches: false });
@@ -70,6 +70,7 @@ async function gameData(dir) {
   for (const [key, fingerprint] of Object.entries(data.gradeSeparations.sources)) {
     if (sources[key] !== fingerprint) throw Error('Výškové profily neodpovídají vrstvě ' + key);
   }
+  if (bridges) data.structures = {index:{tiles:[], bridges}, positions:new Float32Array()};
   return { world: new GeometryWorld(data), sources, stops: (await json('timetable.json')).stops };
 }
 
@@ -221,8 +222,21 @@ function bridgeLevel(p, segments) {
   return match;
 }
 
-export async function audit(parts, mapDir) {
-  const { world, sources, stops } = await gameData(mapDir);
+// U konvexního kolizního obalu může celý krátký průchozí objem ležet uvnitř.
+export function hullContainsCorridorCenter(triangles, inside, c) {
+  const mid = c.length/2;
+  const point = new Vector3(c.x+c.dx*mid, c.y+c.grade*mid+(c.localBox.min.y+c.localBox.max.y)/2, c.z+c.dz*mid);
+  const normal = new Vector3(), delta = new Vector3();
+  for (const face of triangles) {
+    face.getNormal(normal);
+    const sign = Math.sign(normal.dot(delta.subVectors(inside,face.a)));
+    if (sign && sign * normal.dot(delta.subVectors(point,face.a)) < -1e-6) return false;
+  }
+  return true;
+}
+
+export async function audit(parts, mapDir, calibrations) {
+  const { world, sources, stops } = await gameData(mapDir, calibrations);
   const { RC, RF, DRIVABLE_MAX } = await import('../src/config.js');
   const area = new Box3(),
     v = new Vector3(),
@@ -261,6 +275,23 @@ export async function audit(parts, mapDir) {
             f.face[0] === 'Most' && f.triangles.some((t) => Math.abs(t.tri.getNormal(new Vector3()).y) > 0.8)
         });
       }
+    }
+    if (part.convex) {
+      const triangles = vertices.get(part.id).flatMap(f => f.triangles.map(t => t.tri));
+      const box = new Box3(), inside = new Vector3();
+      for (const tri of triangles) for (const p of [tri.a,tri.b,tri.c]) {
+        box.expandByPoint(p);
+        inside.add(p);
+      }
+      inside.divideScalar(3*triangles.length);
+      const checked = new Set();
+      gridCells(box.min.x,box.min.z,box.max.x,box.max.z,key => {
+        for (const c of cells.get(key) ?? []) {
+          if (categories.has(c.kind) || checked.has(c)) continue;
+          checked.add(c);
+          if (hullContainsCorridorCenter(triangles,inside,c)) categories.add(c.kind);
+        }
+      });
     }
     reports.push({ id: part.id, categories: [...categories].sort(), levels });
   }

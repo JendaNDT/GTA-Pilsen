@@ -119,3 +119,59 @@ test('kalibrovaný průřez zachovává šířku chodníků a výšku horních m
     assert.ok(Math.abs(bridge.archStops[i]-expected)*length < 0.1);
   }
 });
+
+test('detail dalších dlaždic počká na volnou kapacitu i při zrušení přenosu', async t => {
+  const {Structures} = await import('../src/world/structures.js');
+  const {Group, MeshBasicMaterial} = await import('three/webgpu');
+  const pending = [];
+  t.mock.method(globalThis, 'fetch', () => new Promise(resolve => pending.push(resolve)));
+  const tiles = [0,1,2].map(cx => ({cx, cz:0, file:cx+'_0.bin', objects:[{start:0,count:3}]}));
+  const models = new Structures({positions:new Float32Array(9), index:{tiles}}, 3, 1);
+  const group = new Group(), material = new MeshBasicMaterial();
+  const items = tiles.map(({cx}) => models.build(cx,group,material));
+  for (const item of items) models.setNear(item,true,2);
+  assert.equal(models.loading,2);
+  assert.equal(items[2].controller,null);
+  models.setNear(items[0],false);
+  models.setNear(items[2],true,2);
+  assert.equal(pending.length,2);
+  pending[0](new Response(null,{status:404}));
+  await new Promise(resolve => setImmediate(resolve));
+  models.setNear(items[2],true,1);
+  assert.equal(items[2].controller,null);
+  models.setNear(items[2],true,2);
+  assert.equal(pending.length,3);
+  for (const resolve of pending.slice(1)) resolve(new Response(null,{status:404}));
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(models.loading,0);
+  for (const item of items) models.dispose(item);
+  material.dispose();
+});
+
+test('základ načte i první verzi a odmítne index trojúhelníku mimo vrcholy', async t => {
+  const {mkdtemp, readFile, rm} = await import('node:fs/promises');
+  const {tmpdir} = await import('node:os');
+  const {join} = await import('node:path');
+  const {writePack} = await import('../tools/write_pack.mjs');
+  const {loadStructureCore, assetFingerprint} = await import('../src/data.js');
+  const dir = await mkdtemp(join(tmpdir(),'vrcholy-'));
+  t.after(() => rm(dir,{recursive:true,force:true}));
+  const file = join(dir,'core.bin');
+  const p = Float32Array.of(0,1,0, 1,1,0, 0,1,1);
+  let version = 1;
+  const tile = {cx:0, cz:0, file:'0_0.bin', objects:[{start:0,dStart:0,count:3,dCount:3}]};
+  t.mock.method(globalThis,'fetch',async url => {
+    const bytes = await readFile(file);
+    return url.endsWith('core.bin') ? new Response(bytes) :
+      Response.json({version,tiles:[tile],hash:assetFingerprint(bytes)});
+  });
+  writePack(file,{version},{p:['f4',p]});
+  assert.deepEqual((await loadStructureCore('')).positions,p);
+  version = 2;
+  for (const [index,valid] of [[2,true],[3,false]]) {
+    writePack(file,{version},{p:['f4',p],i:['u2',Uint16Array.of(0,1,index)]});
+    const layer = await loadStructureCore('');
+    if (valid) assert.deepEqual(layer.positions,p);
+    else assert.equal(layer,null);
+  }
+});
