@@ -1,3 +1,5 @@
+import { streetLamps } from '../world/lamps.js';
+import { LampBodies } from '../physics/lamp-bodies.js';
 import { Water } from '../physics/water.js';
 import { Falls } from './falls.js';
 import { HelicopterBody } from '../physics/heli.js';
@@ -65,6 +67,7 @@ export class Game {
       if (ped && car) this.queuePedHit(ped, car, vehicle.GetLinearVelocity());
     };
     physics.onImpact = (first, second, impulse) => {
+      this.lampBodies.contact(first, second, impulse);
       this.driver?.recordImpact(first, second, impulse);
       this.trafficBodies.recordImpact(first, second, impulse);
       const flight = this.heli?.physical;
@@ -106,6 +109,7 @@ export class Game {
         if (this.water.step(vehicle, this.world, dt)) this.audio.splash(car);
       }
       physics.engine.Step(dt, 1);
+      this.lampBodies.step(this.clock.now);
       this.driver?.read();
       this.trafficBodies.read(this);
       for (const h of this.helis) if (h.physical) {
@@ -133,7 +137,8 @@ export class Game {
     this.env = new Environment(this.scene, renderer);
     this.postfx = createPostFX(renderer, this.scene, this.camera, this.world);
     this.chunks = new ChunkManager(this.scene, this.world, renderer, data.heritage, data.orthophotoSources);
-    this.colliders = new TileColliders(physics, this.world, data, DEBUG ? new CollisionView(this.scene) : null);
+    this.lampBodies = new LampBodies(physics, this.world.breakables, this.scene);
+    this.colliders = new TileColliders(physics, this.world, data, DEBUG ? new CollisionView(this.scene) : null, this.lampBodies);
     this.hud = new Hud(this.world);
     this.soundPlaces = data.soundPlaces;
     this.audio = new GameAudio(this);
@@ -195,6 +200,7 @@ export class Game {
   }
 
   syncClock(reposition = false) {
+    this.lampBodies.repair(this.clock.now);
     if (reposition) {
       this.postfx?.resetHistory();
       if (this.ride) this._alight(true);
@@ -356,13 +362,37 @@ export class Game {
     const w = this.world, p = this.player;
     const r = w.nearestRoad(p.x, p.z, 120, RC.LIVING, RC.TERTIARY, {});
     if (!r) return;
-    const hw = w.r.w[r.road] / 2;
-    const x = r.x - r.dz * (hw + 0.8), z = r.z + r.dx * (hw + 0.8);
-    if (w.blocked(x, z, 2.2, 0.3, 1.5)) return;
-    const car = this.vehicles.add(new Car('hatch', 0xc8922e));
-    car.mode = 'parked';
-    car.place(x, z, Math.atan2(r.dx, r.dz));
-    this.player.lastCar = car;
+    const type = CAR_TYPES.hatch;
+    const owner = w.chunkIndex(r.x, r.z), col = owner % w.cols, row = Math.floor(owner / w.cols);
+    const lamps = [];
+    // Vůz se parkuje dřív, než se do scény načtou stožáry z okolních dlaždic.
+    for (let j = Math.max(0, row - 1); j <= Math.min(w.rows - 1, row + 1); j++) {
+      for (let i = Math.max(0, col - 1); i <= Math.min(w.cols - 1, col + 1); i++) {
+        lamps.push(...streetLamps(w, j * w.cols + i));
+      }
+    }
+    const off = w.r.w[r.road] / 2 + 0.8;
+    for (const shift of [0, 6, -6, 12, -12, 18, -18]) {
+      const at = shift ? w.nearestRoad(r.x + r.dx * shift, r.z + r.dz * shift, 5, RC.LIVING, RC.TERTIARY, {}) : r;
+      if (!at || at.road !== r.road) continue;
+      const x = at.x - at.dz * off, z = at.z + at.dx * off;
+      if (w.blocked(x, z, 2.2, 0.3, 1.5) || w.isWater(x, z)) continue;
+      const y = w.heightAt(x, z);
+      // Před nárazníkem nech místo, aby řidič mohl od obrubníku vyjet.
+      const lampInPath = lamps.some(lamp => {
+        const dx = lamp.x - x, dz = lamp.z - z;
+        const along = dx * at.dx + dz * at.dz;
+        return lamp.y < y + type.h && lamp.y + lamp.height > y &&
+          along > -type.len / 2 - 0.15 && along < type.len / 2 + 8 &&
+          Math.abs(dx * at.dz - dz * at.dx) < type.wid / 2 + 0.35;
+      });
+      if (lampInPath) continue;
+      const car = this.vehicles.add(new Car('hatch', 0xc8922e));
+      car.mode = 'parked';
+      car.place(x, z, Math.atan2(at.dx, at.dz));
+      this.player.lastCar = car;
+      return;
+    }
   }
 
   // -------------------------------------------------------------- akce ----

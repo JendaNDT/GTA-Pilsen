@@ -8,10 +8,23 @@ export function breakableId(kind, tile, source) {
 export class Breakables {
   constructor() {
     this.damaged = new Map();
+    this.visuals = new Map();
   }
 
   state(id) {
     return this.damaged.get(id)?.state ?? 'intact';
+  }
+
+  attach(visual) {
+    this.detach(this.visuals.get(visual.id));
+    this.visuals.set(visual.id, visual);
+    visual.show(this.state(visual.id) === 'intact');
+  }
+
+  detach(visual) {
+    if (!visual || this.visuals.get(visual.id) !== visual) return;
+    visual.remove();
+    this.visuals.delete(visual.id);
   }
 
   damage(id, state, now) {
@@ -20,6 +33,7 @@ export class Breakables {
     if (current === state || current === 'broken') return false;
     const repairAt = (Math.floor(now / DAY_SECONDS) + 1) * DAY_SECONDS + 4 * HOUR_SECONDS;
     this.damaged.set(id, { state, repairAt });
+    this.visuals.get(id)?.show(false);
     return true;
   }
 
@@ -28,6 +42,7 @@ export class Breakables {
     for (const [id, item] of this.damaged) {
       if (now < item.repairAt) continue;
       this.damaged.delete(id);
+      this.visuals.get(id)?.show(true);
       repaired.push(id);
     }
     return repaired;

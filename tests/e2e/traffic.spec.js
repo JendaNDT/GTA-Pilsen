@@ -568,3 +568,29 @@ test('E20 – řidič ze sadů objede vrak povoleným směrem a před zaplněný
     expect(waiting).toEqual({ obstructed: true, selected: 1423, early: false, cleared: false });
   }
 });
+
+test('E21 – řidič před Husovou zná levé odbočení i za druhou krátkou spojkou', async ({ page }) => {
+  await boot(page);
+  const observed = await page.evaluate(() => {
+    const { vehicles, world, player } = __game;
+    const car = player.lastCar;
+    const light = world.traffic.byEdge.get(34501).find(control => control.directedHead);
+    const lane = vehicles._laneFor(light.edge, 1), s = light.s - car.halfLen - 2;
+    const point = world.edgePoint(light.edge, s, lane, {});
+    car.place(point.x, point.z, Math.atan2(point.tx, point.tz));
+    Object.assign(car, { mode: 'ai', edge: light.edge, lane, s, temper: 1 });
+    const first = { from: light.edge, to: 1423, lane: vehicles._laneFor(1423, 1), slow: 6 };
+    const middle = { from: 1423, to: 1421, lane: vehicles._laneFor(1421, 1), slow: 6 };
+    car.exitPlan.push(first, middle);
+    vehicles._pickNext(car);
+    // Vůz již zvolil prostřední spojku. Tady zadáme cíl jeho jediné zbývající volby.
+    const choose = vehicles._nextMove.bind(vehicles);
+    vehicles._nextMove = (edge, context, lane) => edge === 1421
+      ? { from: edge, to: 12147, lane: vehicles._laneFor(12147, 1), slow: 5 }
+      : choose(edge, context, lane);
+    vehicles.stepAI(car, 1 / 60);
+    const movement = car.trafficStop?.movement;
+    return { kept: car.exitPlan[0] === middle, exit: movement?.edge, left: movement?.left };
+  });
+  expect(observed).toEqual({ kept: true, exit: 12147, left: true });
+});

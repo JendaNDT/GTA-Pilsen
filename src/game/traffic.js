@@ -423,7 +423,14 @@ export class Traffic {
       const alignment = active.control.tx * light.tx + active.control.tz * light.tz;
       // Vlevo odbočíme až po uvolnění protisměru. Vůz jedoucí rovně si
       // zachovává přednost. Za odbočujícím ve vlastním pruhu necháme prostor.
-      if (alignment < -0.75) return mine.left;
+      if (alignment < -0.75) {
+        if (mine.left) return true;
+        // Před obloukem odbočující čeká. Pokud už do oblouku najel, musí
+        // protijedoucí řidič před čárou ponechat místo k jeho dokončení.
+        const turn = other.finishingTurn ?? other.plannedTurn;
+        return active.left && turn?.sign < 0 && (other.edge === turn.to ||
+          other.edge === turn.from && other.s >= turn.entry);
+      }
       return active.left && active.control === light && Math.abs(active.lane - mine.lane) < car.type.wid;
     })?.junctionMovement;
   }

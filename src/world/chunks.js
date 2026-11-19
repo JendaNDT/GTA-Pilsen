@@ -2,6 +2,8 @@ import { prazdrojThickness } from './prazdroj-bridge.js';
 import { BRIDGE_THICKNESS, densePath, pathNormal } from './road-profile.js';
 // Stavba 3D geometrie po dlaždicích: budovy, silnice, koleje, stromy.
 import * as THREE from 'three/webgpu';
+import { hash } from './hash.js';
+import { streetLamps } from './lamps.js';
 import { railingFaces } from '../physics/railings.js';
 import { terrainGridStep } from '../physics/terrain.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
@@ -19,10 +21,7 @@ import { Orthophoto, orthophotoTile } from './orthophoto.js';
 
 const _c = new THREE.Color();
 function lin(hex) { _c.setHex(hex); return [_c.r, _c.g, _c.b]; }
-function hash(i, salt = 0) {
-  const s = Math.sin(i * 12.9898 + salt * 78.233) * 43758.5453;
-  return s - Math.floor(s);
-}
+
 function pick(arr, r) { return arr[Math.min(arr.length - 1, Math.floor(r * arr.length))]; }
 
 // ---------------------------------------------------------------- barvy ----
@@ -1357,67 +1356,50 @@ function buildTrees(world, ci, cx0, cz0, forest) {
 // ---------------------------------------------------------------- lampy ----
 const LAMP_POLE = lin(0x3a3f45), LAMP_HEAD = lin(SURFACE.lamp.emissive);
 const lampSurfaces = new Map([[LAMP_HEAD, SURFACE.lamp]]);
-const _lr = {};
+const lampGeometry = new Map();
+const lampMatrix = new THREE.Matrix4();
+const hiddenLamp = new THREE.Matrix4().makeScale(0, 0, 0);
 
-/** Pouliční lampy podél ulic + světelné kužely na zemi (viditelné v noci). */
 function buildLamps(world, ci) {
-  const pieces = world.rPieces[ci];
-  if (!pieces) return null;
-  const R = world.r, px = world.rpx, pz = world.rpz;
-  const parts = new Parts(SURFACE.metal, lampSurfaces);
-  const pp = [], pu = [], pi = [];
-  const obstacles = [];
-  let count = 0;
-  for (let q = 0; q < pieces.length && count < 90; q += 3) {
-    const i = pieces[q], s = pieces[q + 1], e = pieces[q + 2];
-    const cls = R.cls[i], flags = R.flags[i];
-    if (cls < RC.PRIMARY || cls > RC.LIVING || cls === RC.PRIMARY_LINK || cls === RC.SECONDARY_LINK || cls === RC.TERTIARY_LINK) continue;
-    if (flags & (RF.TUNNEL | RF.PRIVATE | RF.BRIDGE)) continue;
-    const hw = R.w[i] / 2, tall = cls <= RC.SECONDARY;
-    const spacing = tall ? 40 : 34;
-    let acc = hash(i, 9) * spacing;
-    let side = hash(i, 11) < 0.5 ? 1 : -1;
-    for (let k = s; k < e; k++) {
-      const x1 = px[k], z1 = pz[k];
-      let dx = px[k + 1] - x1, dz = pz[k + 1] - z1;
-      const len = Math.hypot(dx, dz);
-      if (len < 1e-3) continue;
-      dx /= len; dz /= len;
-      while (acc < len) {
-        const off = hw + 1.3;
-        const x = x1 + dx * acc - dz * side * off, z = z1 + dz * acc + dx * side * off;
-        acc += spacing;
-        if (!tall) side = -side;
-        const gy = world.heightAt(x, z);
-        if (world.buildingAt(x, z) >= 0 || world.collideCircle(x, z, 0.5, gy + 0.3, gy + 3) || world.isWater(x, z)) continue;
-        const rd = world.nearestRoad(x, z, 6, DRIVABLE_MAX, 0, _lr);
-        if (rd && rd.road !== i && rd.dist < R.w[rd.road] / 2 + 0.4) continue;
-        const h = tall ? 9 : 6.2;
-        parts.box(0.16, h + 0.5, 0.16, x, gy + h / 2 - 0.25, z, LAMP_POLE);
-        parts.box(tall ? 0.7 : 0.5, 0.14, tall ? 0.7 : 0.5, x, gy + h + 0.07, z, LAMP_HEAD);
-        obstacles.push(x, z, 0.14);
-        // světlo na zemi (síť 3 × 3 kopíruje terén), posunuté směrem k vozovce
-        const r = tall ? 14 : 10;
-        const shift = tall ? 3 : 1.6;
-        const cx = x + dz * side * shift, cz = z - dx * side * shift;
-        const b = pp.length / 3;
-        for (let v = 0; v <= 3; v++) for (let u = 0; u <= 3; u++) {
-          const vx = cx + (u / 3 * 2 - 1) * r, vz = cz + (v / 3 * 2 - 1) * r;
-          pp.push(vx, world.heightAt(vx, vz) + SURF + 0.07, vz);
-          pu.push(u / 3, v / 3);
-        }
-        for (let v = 0; v < 3; v++) for (let u = 0; u < 3; u++) {
-          const a0 = b + v * 4 + u;
-          pi.push(a0, a0 + 4, a0 + 1, a0 + 1, a0 + 4, a0 + 5);
-        }
-        count++;
+  const entries = streetLamps(world, ci);
+  if (!entries.length) return null;
+  const poles = new THREE.Group();
+  const instances = new Map();
+  for (const lamp of entries) {
+    let batch = instances.get(lamp.height);
+    if (!batch) {
+      let geometry = lampGeometry.get(lamp.height);
+      if (!geometry) {
+        const parts = new Parts(SURFACE.metal, lampSurfaces);
+        parts.box(0.16, lamp.height + 0.5, 0.16, 0, lamp.height / 2 - 0.25, 0, LAMP_POLE);
+        parts.box(lamp.head, 0.14, lamp.head, 0, lamp.height + 0.07, 0, LAMP_HEAD);
+        geometry = parts.geometry();
+        lampGeometry.set(lamp.height, geometry);
       }
-      acc -= len;
+      batch = new THREE.InstancedMesh(geometry, getDetailMaterial(), entries.filter(e => e.height === lamp.height).length);
+      batch.count = 0;
+      instances.set(lamp.height, batch);
+      poles.add(batch);
+    }
+    lamp.instance = batch.count++;
+    batch.setMatrixAt(lamp.instance, lampMatrix.makeTranslation(lamp.x, lamp.y, lamp.z));
+  }
+  // Pevné meze zahrnují i sloupy, které při návratu do dlaždice čekají na opravu.
+  for (const batch of instances.values()) batch.computeBoundingSphere();
+  const pp = [], pu = [], pi = [];
+  for (const lamp of entries) {
+    const b = pp.length / 3;
+    for (let v = 0; v <= 3; v++) for (let u = 0; u <= 3; u++) {
+      const x = lamp.lightX + (u / 3 * 2 - 1) * lamp.radius;
+      const z = lamp.lightZ + (v / 3 * 2 - 1) * lamp.radius;
+      pp.push(x, world.heightAt(x, z) + SURF + 0.07, z);
+      pu.push(u / 3, v / 3);
+    }
+    for (let v = 0; v < 3; v++) for (let u = 0; u < 3; u++) {
+      const a = b + v * 4 + u;
+      pi.push(a, a + 4, a + 1, a + 1, a + 4, a + 5);
     }
   }
-  if (!count) return null;
-  const poles = new THREE.Mesh(parts.geometry(), getDetailMaterial());
-  poles.matrixAutoUpdate = false;
   const pg = new THREE.BufferGeometry();
   pg.setAttribute('position', new THREE.Float32BufferAttribute(pp, 3));
   pg.setAttribute('uv', new THREE.Float32BufferAttribute(pu, 2));
@@ -1425,7 +1407,25 @@ function buildLamps(world, ci) {
   pg.computeBoundingSphere();
   const pools = new THREE.Mesh(pg, getPoolMaterial());
   pools.renderOrder = 18; pools.matrixAutoUpdate = false;
-  return { poles, pools, obstacles };
+  const visuals = entries.map((lamp, index) => {
+    const obstacle = [lamp.x, lamp.z, 0.14];
+    let shown = false;
+    return { id: lamp.id, show(intact) {
+      const batch = instances.get(lamp.height);
+      batch.setMatrixAt(lamp.instance, intact ? lampMatrix.makeTranslation(lamp.x, lamp.y, lamp.z) : hiddenLamp);
+      batch.instanceMatrix.needsUpdate = true;
+      const start = index * 54;
+      for (let i = start; i < start + 54; i++) pg.index.array[i] = intact ? pi[i] : pi[start];
+      pg.index.needsUpdate = true;
+      if (intact && !shown) world.addObstacles(obstacle);
+      if (!intact && shown) world.removeObstacles(obstacle);
+      shown = intact;
+    }, remove() { if (shown) world.removeObstacles(obstacle); } };
+  });
+  return { poles, pools, visuals, dispose() {
+    for (const batch of instances.values()) batch.dispose();
+    pg.dispose();
+  } };
 }
 
 // ------------------------------------------------------------- správce ----
@@ -1570,8 +1570,7 @@ export class ChunkManager {
       const lamps = buildLamps(w, ci);
       if (lamps) {
         ch.group.add(lamps.poles, lamps.pools);
-        ch.disposables.push(lamps.poles.geometry, lamps.pools.geometry);
-        for (const o of lamps.obstacles) ch.obstacles.push(o);
+        for (const visual of lamps.visuals) w.breakables.attach(visual);
         ch.lamps = lamps;
       }
       w.addObstacles(ch.obstacles);
@@ -1588,6 +1587,10 @@ export class ChunkManager {
     if (ch.tex) ch.tex.dispose();
     if (ch.terrainMat) ch.terrainMat.dispose();
     ch.traffic?.dispose();
+    if (ch.lamps) {
+      for (const visual of ch.lamps.visuals) this.world.breakables.detach(visual);
+      ch.lamps.dispose();
+    }
     this.world.removeObstacles(ch.obstacles);
   }
 

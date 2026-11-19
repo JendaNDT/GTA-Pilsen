@@ -1,3 +1,4 @@
+import { streetLamps } from '../world/lamps.js';
 import { railingFaces } from './railings.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
 import { CHUNK } from '../config.js';
@@ -68,10 +69,12 @@ export function staticMeshBody(physics, triangles, layer = layers.STATIC) {
 }
 
 export class TileColliders {
-  constructor(physics, world, data, debug) {
+  constructor(physics, world, data, debug, lamps) {
     this.physics = physics;
     this.world = world;
     this.debug = debug;
+    this.lamps = lamps;
+    this.lampTiles = new Map();
     this.tiles = new Map();
     this.structures = new RoadStructures(world);
     this.roofs = new Map();
@@ -105,6 +108,11 @@ export class TileColliders {
     const body = staticMeshBody(this.physics, positions);
     const bodies = [body];
     this.tiles.set(ci, bodies);
+    if (this.lamps) {
+      const lamps = streetLamps(w, ci);
+      this.lampTiles.set(ci, lamps);
+      this.lamps.load(lamps);
+    }
     const edges = w.bridgeEdges.get(ci);
     if (edges?.length) {
       const rails = [];
@@ -155,6 +163,10 @@ export class TileColliders {
         const id = body.GetID();
         this.physics.bodies.RemoveBody(id);
         this.physics.bodies.DestroyBody(id);
+      }
+      if (this.lamps) {
+        this.lamps.unload(this.lampTiles.get(ci));
+        this.lampTiles.delete(ci);
       }
       this.tiles.delete(ci);
       this.debug?.remove(ci);

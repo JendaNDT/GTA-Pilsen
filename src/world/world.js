@@ -399,7 +399,7 @@ export class World {
   }
 
   /** Vysune kruh (x, z, r) ve výšce y ven ze zdí budov. Vrací true při kolizi; výsledek v this.hit. */
-  collideCircle(x, z, r, y, yTop) {
+  collideCircle(x, z, r, y, yTop, fixedMapOnly = false) {
     const hit = this.hit || (this.hit = { x: 0, z: 0, nx: 0, nz: 0, depth: 0, building: -1 });
     hit.x = x; hit.z = z; hit.nx = 0; hit.nz = 0; hit.depth = 0; hit.building = -1;
     let any = false;
@@ -423,7 +423,7 @@ export class World {
           const i = this.bCellItems[k];
           x = hit.x; z = hit.z;
           if (x + r < this.bMinX[i] || x - r > this.bMaxX[i] || z + r < this.bMinZ[i] || z - r > this.bMaxZ[i]) continue;
-          const importedRoof = this.heritage?.replaced.has(i) && y > this.bGround[i] + 2.5
+          const importedRoof = !fixedMapOnly && this.heritage?.replaced.has(i) && y > this.bGround[i] + 2.5
             ? this.heritage.roofHeight(x, z) : -Infinity;
           const top = Number.isFinite(importedRoof) ? importedRoof : this.bTop[i];
           if (y >= top - 0.25 || yTop <= this.bBase[i]) continue;
@@ -462,7 +462,7 @@ export class World {
       }
       if (!moved) break;
     }
-    return this.collideStreetObjects(hit, r, y) || any;
+    return fixedMapOnly ? any : this.collideStreetObjects(hit, r, y) || any;
   }
 
   collideStreetObjects(hit, r, y) {

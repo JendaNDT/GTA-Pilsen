@@ -1,6 +1,8 @@
 import { PlayerVehicle } from './vehicle.js';
 import { layers } from './world.js';
 
+const parkingBrake = Object.freeze({ throttle: 0, steer: 0, brake: 1 });
+
 export class TrafficBodies {
   constructor(physics, quality = {}) {
     this.quality = quality;
@@ -69,7 +71,20 @@ export class TrafficBodies {
     candidates.sort((a, b) => priority(b) - priority(a) ||
       Number(!!b.physical) - Number(!!a.physical) || distance(a) - distance(b));
     const selected = new Set(candidates.slice(0, cap));
-    for (const car of this.dynamic.keys()) if (!selected.has(car)) this.removeCar(car);
+    for (const [car, vehicle] of this.dynamic) if (!selected.has(car)) {
+      if (car.mode === 'parked' && !car.floodTime) {
+        vehicle.read();
+        // I mimo okruh musí valící se vrak dojet. Zaparkovaný vůz už polohu
+        // nemění a nesmí si nést zbytkovou rychlost z posledního kroku.
+        if (vehicle.body.IsActive() && (car.air || Math.hypot(car.vx, car.vy, car.vz) >= 0.2)) {
+          car.mode = 'loose';
+          car.rest = 0;
+        } else {
+          car.vx = car.vy = car.vz = car.speed = 0;
+        }
+      }
+      this.removeCar(car);
+    }
     for (const car of selected) {
       if (car.physical && !car.physicsTeleport) continue;
       if (!car.physical) {
@@ -85,7 +100,10 @@ export class TrafficBodies {
     for (const [car, vehicle] of this.dynamic) {
       if (car.mode === 'ai') game.vehicles.stepAI(car, dt, vehicle);
       else if (car.mode === 'police' && game.wanted > 0) game.vehicles.stepPolice(car, dt, game.focus, vehicle);
-      else if (vehicle.body.IsActive()) vehicle.controller.SetDriverInput(0, 0, 0.6, 0);
+      else if (vehicle.body.IsActive()) {
+        if (car.mode === 'parked' && !car.floodTime) vehicle.driveAI(parkingBrake, dt, game.tireSurface);
+        else vehicle.controller.SetDriverInput(0, 0, 0.6, 0);
+      }
     }
   }
 
@@ -98,7 +116,8 @@ export class TrafficBodies {
 
   read(game) {
     for (const [car, vehicle] of this.dynamic) {
-      if (car.mode === 'parked' && !vehicle.body.IsActive() && !vehicle.impactSpeed) continue;
+      if (car.mode === 'parked' && !vehicle.body.IsActive() && !vehicle.impactSpeed &&
+          !car.vx && !car.vy && !car.vz && !car.speed) continue;
       vehicle.read();
       if (vehicle.touchedVehicle) {
         vehicle.touchedVehicle = false;

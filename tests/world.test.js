@@ -248,6 +248,10 @@ test('před levým odbočením řidič nechá projet rozjetý protisměr a vedle
   assert.equal(waiting(head, -1.8, false), first);
   assert.equal(waiting(head, 1.8, false), undefined);
   assert.equal(waiting(opposite, 1.8, false), undefined);
+  Object.assign(leader, { edge: 2, s: 1, plannedTurn: { from: 2, to: 3, sign: -1, entry: 2 } });
+  assert.equal(waiting(opposite, 1.8, false), undefined);
+  leader.s = 2.1;
+  assert.equal(waiting(opposite, 1.8, false), first);
   leader.junctionMovement = null;
   assert.equal(waiting(opposite, 1.8, true), undefined);
 });

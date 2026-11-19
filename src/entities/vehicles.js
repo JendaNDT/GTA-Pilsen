@@ -420,10 +420,13 @@ export class VehicleManager {
     let edge = car.next, lane = car.nextLane, distance = w.eLen[edge];
     let context = w.turnContext(car.edge, edge, car.turnContext);
     // Stejná rozhodnutí použije auto při průjezdu, i když spojka sama nepojme celé auto.
-    while (distance < 42 && car.exitPlan.length < 3) {
-      const move = this._nextMove(edge, context, lane);
+    for (let index = 0; distance < 42 && index < 3; index++) {
+      let move = car.exitPlan[index];
+      if (!move) {
+        move = this._nextMove(edge, context, lane);
+        car.exitPlan.push(move);
+      }
       this._planTurn(car, edge, lane, move);
-      car.exitPlan.push(move);
       if (move.to < 0) break;
       context = w.turnContext(edge, move.to, context);
       edge = move.to;
@@ -575,7 +578,11 @@ export class VehicleManager {
     if (car.next >= 0) {
       const nextLimit = w.roadSpeed(w.eRoad[car.next], w.eA[car.next] < w.eB[car.next]) / 3.6;
       vmax = Math.min(vmax, Math.sqrt(nextLimit ** 2 + 8 * Math.max(0, remain)));
-      if (remain < 50 && w.eLen[car.next] < 42 && !car.exitPlan.length) {
+      // Dřívější plán může končit uprostřed dělené křižovatky. Před stopčárou
+      // doplníme i následné odbočení, aby protisměr znal celý zamýšlený průjezd.
+      const lastMove = car.exitPlan.at(-1);
+      const shortExit = !lastMove || (lastMove.to >= 0 && w.eLen[lastMove.to] < 12 && car.exitPlan.length < 3);
+      if (remain < 50 && w.eLen[car.next] < 42 && shortExit) {
         this._planJunctionExit(car);
       }
       let distance = remain, lane = car.nextLane;

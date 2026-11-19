@@ -246,3 +246,35 @@ test('odklizení nabouraného auta vyžaduje celou minutu stání a celý vůz m
   wreck.crashed = false;
   assert.equal(manager.clearWreck(wreck, 100), false);
 });
+
+test('u stojícího vraku se při uspání a odjezdu vynuluje rychlost, pohybující se vrak dál dojíždí', async () => {
+  const { TrafficBodies } = await import('../src/physics/traffic-bodies.js');
+  for (const moving of [false, true]) {
+    const { vehicle, car } = track('sedan', Math.atan(0.13));
+    const physics = vehicle.physics, traffic = new TrafficBodies(physics);
+    Object.assign(car, { mode: 'parked', crashed: true, vx: 0, vy: 0, vz: 0.318, speed: 0.318 });
+    traffic.keepCar(vehicle);
+    try {
+      const id = vehicle.body.GetID();
+      if (moving) {
+        physics.bodies.ActivateBody(id);
+        vehicle.velocity.Set(0, 0, 0.318);
+        physics.bodies.SetLinearVelocity(id, vehicle.velocity);
+      } else {
+        physics.bodies.DeactivateBody(id);
+        traffic.read({});
+        assert.deepEqual([car.speed, car.vx, car.vy, car.vz], [0, 0, 0, 0]);
+      }
+      traffic.selectCars({ focus: { x: 310, z: 310 }, vehicles: { cars: [car] },
+        world: { chunkIndex: () => 0 }, colliders: { tiles: new Set([0]) } });
+      assert.equal(car.physical, null);
+      assert.equal(car.mode, moving ? 'loose' : 'parked');
+      assert.ok(moving ? car.vz > 0.3 : car.speed === 0);
+    } finally {
+      if (car.physical) traffic.removeCar(car);
+      Jolt.destroy(traffic.pos);
+      Jolt.destroy(traffic.rotation);
+      physics.dispose();
+    }
+  }
+});
