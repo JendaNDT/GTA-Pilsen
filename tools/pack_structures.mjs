@@ -3,7 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
 import { Vector3 } from 'three/webgpu';
-import { assetFingerprint } from '../src/data.js';
+import { calibrateBridge } from './calibrate_bridge.mjs';
+import { assetFingerprint, parsePack } from '../src/data.js';
 import { structureSurface } from './build_structures.mjs';
 import { writePack } from './write_pack.mjs';
 
@@ -11,7 +12,7 @@ const [dir = 'data-raw/structures', output = 'data-raw/kandidat/detail/structure
 const json = file => JSON.parse(fs.readFileSync(file));
 const {parts, source} = json(path.join(dir, 'dily.json'));
 const {sources, reports} = json(path.join(dir, 'kontroly.json'));
-const overrides = json('tools/structure-overrides.json').parts;
+const {parts: overrides, bridges: choices} = json('tools/structure-overrides.json');
 const meta = json('public/data/meta.json');
 const tiles = new Map(), chunk = 256;
 const minX = Math.floor(meta.bounds.minX / chunk) * chunk, minZ = Math.floor(meta.bounds.minZ / chunk) * chunk;
@@ -62,13 +63,25 @@ const file = path.join(output,'core.bin');
 writePack(file,{version:1},{p:['f4',Float32Array.from(all)]});
 const bytes = fs.readFileSync(file);
 if (bytes.length > 2 * 1024 * 1024) throw Error('Základní balík přesahuje 2 MiB.');
-const index = {version:1, source, sources, hash:assetFingerprint(bytes), tiles:entries};
+const roadBytes = fs.readFileSync('public/data/roads.bin');
+if (assetFingerprint(roadBytes) !== sources.roads) throw Error('Kalibrace a inventura používají různé silnice.');
+const roads = parsePack(roadBytes.buffer.slice(roadBytes.byteOffset, roadBytes.byteOffset + roadBytes.byteLength));
+const byId = new Map(parts.map(part => [part.id, part]));
+const calibrationReasons = new Map();
+const bridges = choices.map(choice => {
+  for (const id of choice.rails) {
+    if (reportsById.get(id)?.categories.length !== 0) throw Error('Nevyřešený průnik pěšího okraje ' + id);
+  }
+  for (const id of [choice.deck, ...choice.rails]) calibrationReasons.set(id, choice.reason);
+  return calibrateBridge(choice, byId, roads);
+});
+const index = {version:1, bridges, source, sources, hash:assetFingerprint(bytes), tiles:entries};
 fs.writeFileSync(path.join(output,'index.json'), JSON.stringify(index) + '\n');
 const rows = [['díl', 'zdrojové ID', 'ploch v SHP', 'unikátních ploch', 'stav', 'důvod']];
 for (const part of parts) {
-  const chosen = accepted.has(part.id);
+  const chosen = accepted.has(part.id) || calibrationReasons.has(part.id);
   rows.push([part.id, part.uid, part.records, part.faces.length,
-    chosen ? 'začleněn' : part.status, chosen ? overrides[part.id].reason : part.reason]);
+    chosen ? 'začleněn' : part.status, calibrationReasons.get(part.id) ?? overrides[part.id]?.reason ?? part.reason]);
 }
 fs.writeFileSync(path.join(dir, 'inventura.tsv'), rows.map(row => row.join('\t')).join('\n') + '\n');
 console.log(accepted.size + ' objektů, ' + bytes.length + ' bajtů v základní vrstvě.');

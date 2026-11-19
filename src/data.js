@@ -99,6 +99,18 @@ export async function loadStructureCore(search = globalThis.location?.search) {
     if (!manifest.ok || !core.ok) return null;
     const index = await manifest.json(), buffer = await core.arrayBuffer();
     if (index.version !== 1 || buffer.byteLength > 2 * 1024 * 1024 || !Array.isArray(index.tiles)) return null;
+    const roads = new Set();
+    for (const bridge of index.bridges ?? []) {
+      if (!Number.isSafeInteger(bridge.road) || bridge.road < 0 || roads.has(bridge.road) ||
+          ![bridge.halfWidth, bridge.railHeight].every(v => Number.isFinite(v) && v > 0) ||
+          ![bridge.shiftX, bridge.shiftZ, bridge.lift].every(Number.isFinite) ||
+          !Array.isArray(bridge.archStops) || bridge.archStops.length !== 3 ||
+          !bridge.archStops.every((v,i,a) => Number.isFinite(v) && v >= 0 && v <= 1 && (!i || v > a[i-1])) ||
+          !Array.isArray(bridge.strips) || !bridge.strips.length ||
+          !bridge.strips.every(s => Array.isArray(s) && s.length === 6 && s.every(Number.isFinite) &&
+            s[3] > s[0] && s[2] >= s[1] && s[5] >= s[4])) return null;
+      roads.add(bridge.road);
+    }
     const positions = checkedPositions(buffer, index.hash);
     if (!positions) return null;
     const visited = new Set();

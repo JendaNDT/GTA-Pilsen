@@ -43,3 +43,11 @@ export function pathNormal(D, k) {
   _nrm.x = nx; _nrm.z = nz; _nrm.scale = scale; _nrm.dot = dot;
   return _nrm;
 }
+
+/** Posun konstrukce vůči ose jízdních pruhů zachová návaznost uličního grafu. */
+export function offsetDeck(path, calibration) {
+  if (!calibration) return path;
+  const {shiftX, shiftZ} = calibration;
+  return {...path, x:path.x.map(x => x + shiftX), z:path.z.map(z => z + shiftZ),
+    px:path.px + shiftX, pz:path.pz + shiftZ, nx:path.nx + shiftX, nz:path.nz + shiftZ};
+}

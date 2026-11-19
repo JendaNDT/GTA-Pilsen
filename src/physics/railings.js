@@ -1,7 +1,7 @@
 import { breakableId } from './breakables.js';
 import { prazdrojThickness } from '../world/prazdroj-bridge.js';
 import { COLL_CELL, RF } from '../config.js';
-import { BRIDGE_THICKNESS, densePath, pathNormal } from '../world/road-profile.js';
+import { BRIDGE_THICKNESS, densePath, offsetDeck, pathNormal } from '../world/road-profile.js';
 
 const interpolate = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
 const lift = (a, dy) => [a[0], a[1] + dy, a[2]];
@@ -32,6 +32,21 @@ export function bridgeEdges(world, path, halfWidth, style, add) {
       }
       outer = end; inner = inside;
     }
+  }
+}
+
+// Čelní i boční stěny používají stejný půdorys jako model. Pravidla hry určuje běžný typ ohrazení.
+function measuredEdges(entry, put) {
+  const {survey, original: path} = entry;
+  const dx = path.x[1] - path.x[0], dz = path.z[1] - path.z[0], length = Math.hypot(dx,dz);
+  const ux = dx/length, uz = dz/length;
+  const point = (u,v) => [path.x[0] + ux*u - uz*v,
+    path.y[0] + (path.y[1]-path.y[0])*u/length, path.z[0] + uz*u + ux*v];
+  for (const [u,lo,hi,v,endLo,endHi] of survey.strips) {
+    const corners = hi + lo >= 0
+      ? [point(u,hi),point(v,endHi),point(v,endLo),point(u,lo)]
+      : [point(v,endLo),point(u,lo),point(u,hi),point(v,endHi)];
+    put({corners, style:entry.style, height:survey.railHeight, measured:true});
   }
 }
 
@@ -110,6 +125,10 @@ export function exteriorBridgeEdges(world, paths) {
     entries.push(edge);
   }
   for (const [index, entry] of paths.entries()) {
+    if (entry.survey) {
+      measuredEdges(entry, put);
+      continue;
+    }
     bridgeEdges(world, entry.path, entry.width, entry.style, edge => {
       if (edge.style === 'stone') { put(edge); return; }
       const [a, b, c, d] = edge.corners, covered = [];
@@ -152,7 +171,8 @@ export function indexBridgeEdges(world) {
     const a = world.rOff[i], b = world.rOff[i + 1] - 1;
     const path = densePath(world.rpx, world.rpz, world.rpy, a, b, a, b, Infinity);
     const style = world.archedBridges.has(i) ? 'stone' : measured || world.gradeRoads.has(i) ? 'open' : 'solid';
-    paths.push({ path, width: world.deckHalfWidth(i), style, thickness: i === world.prazdrojRoad ? prazdrojThickness : BRIDGE_THICKNESS });
+    const survey = world.deckCalibrations.get(i);
+    paths.push({ path:offsetDeck(path, survey), original:path, survey, width: world.deckHalfWidth(i), style, thickness: i === world.prazdrojRoad ? prazdrojThickness : BRIDGE_THICKNESS });
   }
   for (const [i, rail] of world.rails.entries()) {
     if (!rail.y) continue;

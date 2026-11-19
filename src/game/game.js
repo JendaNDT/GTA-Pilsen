@@ -11,6 +11,7 @@ import { HelicopterBody } from '../physics/heli.js';
 import { TransitBodies } from '../physics/transit-bodies.js';
 import { TrafficBodies } from '../physics/traffic-bodies.js';
 import { PlayerVehicle } from '../physics/vehicle.js';
+import { cameraRailFraction } from '../world/camera-railings.js';
 import { TileColliders } from '../physics/colliders.js';
 import { CollisionView } from '../physics/debug.js';
 // Řízení hry: stav hráče, kamera, pravidla (hledanost, zdraví, peníze), ukládání.
@@ -795,6 +796,15 @@ export class Game {
         const over = ground(f.x + (camX - f.x) * u, f.z + (camZ - f.z) * u) + 0.4 - (ty + (camY - ty) * u);
         if (over > 0) camY += over / u;
       }
+    }
+    const rail = cameraRailFraction(w, f.x, ty-0.18, f.z, camX, camY-0.18, camZ);
+    if (rail < 1) {
+      const length = Math.hypot(camX-f.x, camY-ty, camZ-f.z);
+      const fraction = Math.max(0, rail - 0.18/length);
+      camX = f.x + (camX-f.x)*fraction;
+      camY = ty + (camY-ty)*fraction;
+      camZ = f.z + (camZ-f.z)*fraction;
+      this.camDist = Math.min(this.camDist, length*fraction);
     }
     cam.position.set(camX, camY, camZ);
     if (this.shake > 0.01) {

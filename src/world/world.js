@@ -50,6 +50,15 @@ export class World {
       const begin = this.rOff[road], end = this.rOff[road + 1], last = end - 1;
       return [[this.rpx[begin], this.rpz[begin], this.rpx[last], this.rpz[last]], this.rpy.subarray(begin, end)];
     });
+    this.deckCalibrations = new Map();
+    for (const model of data.structures?.index.bridges ?? []) {
+      const road = model.road;
+      if (!(this.r.flags[road] & RF.BRIDGE) || this.gradeRoads.has(road)) continue;
+      const start = this.rOff[road], end = this.rOff[road + 1];
+      if (end - start !== 2) continue;
+      this.deckCalibrations.set(road, model);
+      for (let k = start; k < end; k++) this.rpy[k] += model.lift;
+    }
     this.rondel = prepareRondel(this);
     this.archedBridges = new Map(data.roads.header.archedBridges ?? []);
     this.tunnelRoads = new Set(data.roads.header.tunnels ?? []);
@@ -260,7 +269,11 @@ export class World {
       if (R.flags[i] & RF.SHARED_DECK) continue;
       const cls = R.cls[i];
       const hw = this.deckHalfWidth(i);
-      for (let k = this.rOff[i], ke = this.rOff[i + 1] - 1; k < ke; k++) seg.push(px[k], pz[k], py[k], px[k + 1], pz[k + 1], py[k + 1], hw, cls <= DRIVABLE_MAX ? 0 : 3);
+      const model = this.deckCalibrations.get(i);
+      const dx = model?.shiftX ?? 0, dz = model?.shiftZ ?? 0;
+      for (let k = this.rOff[i], ke = this.rOff[i + 1] - 1; k < ke; k++) {
+        seg.push(px[k]+dx, pz[k]+dz, py[k], px[k+1]+dx, pz[k+1]+dz, py[k+1], hw, cls <= DRIVABLE_MAX ? 0 : 3);
+      }
     }
     for (const rail of this.rails) {
       if (!rail.y) continue;
@@ -287,6 +300,8 @@ export class World {
 
   /** Poloviční šířka mostovky silnice (včetně chodníků). */
   deckHalfWidth(road) {
+    const calibration = this.deckCalibrations?.get(road);
+    if (calibration) return calibration.halfWidth;
     if (road === this.prazdrojRoad) return 1.55;
     const measured = this.rondel?.elevated.get(road);
     if (measured !== undefined) return measured;

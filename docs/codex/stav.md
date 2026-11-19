@@ -1,6 +1,6 @@
 # Stav etapy E22
 
-Ve větvi `etapa/E22` jsou hotové kroky 1 až 3. Následuje kalibrace Wilsonova mostu. [Zadání E22](E22.md) · [Výsledky převodu a pilotu](#e22--převod-a-inventura)
+Ve větvi `etapa/E22` jsou hotové kroky 1 až 3. Ve čtvrtém kroku se ověřuje kalibrovaný Wilsonův most. [Zadání E22](E22.md) · [Výsledky převodu a pilotu](#e22--převod-a-inventura)
 
 ## Výchozí etapa E21
 
@@ -180,3 +180,11 @@ Následuje kalibrace Wilsonova mostu. První řezy horní městskou plochou v 20
 Oporu a načtení detailní geometrie ověřil také WebGPU. Všech pět cílených prohlížečových případů dokončilo zkoušku.
 
 E22 převzala opravy E21 z revize `7398106`. Následná kontrola kódu potvrdila vypořádání obou nálezů. Po sloučení prošlo všech 131 testů JavaScriptu, produkční sestavení a zkouška pilíře na WebGL 2 i WebGPU.
+
+### Kalibrace Wilsonova mostu
+
+Půdorysy z městské sady určují polohu chodníků a kamenného ohrazení včetně jejich rozšíření uprostřed. Herní jízdní plocha dál vychází ze silničního profilu. Pět příčných řezů určilo společnou výškovou opravu 0,103 m a příčný posun konstrukce přibližně 0,58 m vůči ose jízdních pruhů. V každém řezu se vzdálenost mezi vnitřními stěnami liší od 15 m o méně než 0,1 m. Výška herního ohrazení je 1,15 m. Stejné rohy používá kresba a pěší kolize. Kamera protíná pouze viditelné díly a nad ohrazením vidí přes něj.
+
+Konce městské desky a půdorys zaměřeného pilíře určují rozpětí dvou oblouků. Městský model obsahuje desku, samostatný pilíř a ohrazení. Přesná křivka spodního líce oblouků v těchto plochách chybí, proto zůstává herní aproximací. Zdroj a podmínky užití jsou v README a v obrazovce O hře.
+
+Prošlo 134 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. Dvě sestavení dat se shodují po bajtech. Na WebGL 2 prošla chůze po chodníku, zastavení pěší postavy na obou stranách mostu i průchod pod mostem mimo pilíř. Původní zkouška měřila vzdálenost k vnější stěně při pevné tloušťce 0,5 m. Na měřeném půdorysu ověřuje vzdálenost kapsle k vnitřní stěně v rozsahu 0,32 až 0,45 m. U ostatních mostů platí původní požadavek. Další prohlížečové kontroly včetně průjezdu auta a porovnání pohledu před a po se vyhodnocují v `data-raw/structures/kalibrace-final-e2e.log` a `kalibrace-snimky.log`.

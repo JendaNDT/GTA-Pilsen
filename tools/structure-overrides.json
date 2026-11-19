@@ -4,5 +4,19 @@
       "role": "pillar",
       "reason": "Pilotní měřený pilíř. Kontrola herních tras nehlásí průnik. Pata pokračuje pod herní terén u řeky, horní plocha končí pod jízdním povrchem. Zachovat zdrojovou výšku."
     }
-  }
+  },
+  "bridges": [
+    {
+      "road": 19,
+      "deck": "00000002021000450-8b5e397e409799da",
+      "rails": [
+        "00000002021000069-8b5c9e4c3df5a1c4",
+        "00000002021000070-7290c2d5833f446a"
+      ],
+      "clearWidth": 15,
+      "railHeight": 1.15,
+      "reason": "Horní městské plochy určují osu a obě hrany chodníku. Pět příčných řezů určuje posun a výškovou opravu herního profilu. Horní plochu městské desky nepřidávat do kolizí, slouží již jízdní profil.",
+      "pier": "00000002021000213-265e2383af644593"
+    }
+  ]
 }

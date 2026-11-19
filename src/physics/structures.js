@@ -1,6 +1,6 @@
 import { CHUNK, COLL_CELL, RF } from '../config.js';
 import { prazdrojThickness } from '../world/prazdroj-bridge.js';
-import { BRIDGE_THICKNESS, densePath, pathNormal } from '../world/road-profile.js';
+import { BRIDGE_THICKNESS, densePath, offsetDeck, pathNormal } from '../world/road-profile.js';
 import { TUNNEL_HEIGHT } from '../world/tunnels.js';
 
 export class RoadStructures {
@@ -11,7 +11,8 @@ export class RoadStructures {
       const flags = world.r.flags[i];
       if (flags & RF.SHARED_DECK || (!(flags & RF.BRIDGE) && !world.rondel?.elevated.has(i))) continue;
       const a = world.rOff[i], b = world.rOff[i + 1] - 1;
-      this.strip(densePath(world.rpx, world.rpz, world.rpy, a, b, a, b, 4), world.deckHalfWidth(i),
+      const path = densePath(world.rpx, world.rpz, world.rpy, a, b, a, b, 4);
+      this.strip(offsetDeck(path, world.deckCalibrations.get(i)), world.deckHalfWidth(i),
         null, i === world.prazdrojRoad ? prazdrojThickness : undefined);
     }
     for (const rail of world.rails) if (rail.y) {

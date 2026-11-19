@@ -57,3 +57,33 @@ for (const mode of ['vypnuto', 'chybějící základ', 'starý otisk']) {
     expect(count).toBe(mode === 'vypnuto' ? 0 : 2);
   });
 }
+
+test('E22 – kamera zaparkovaného vozu se u nízkého pohledu zastaví před kamenným okrajem', async ({page}) => {
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0'));
+  await page.waitForFunction(() => window.__ready);
+  const result = await page.evaluate(() => {
+    const g = __game, w = g.world, car = g.player.lastCar;
+    const model = w.deckCalibrations.get(19), k = w.rOff[19];
+    const dx = w.rpx[k+1]-w.rpx[k], dz = w.rpz[k+1]-w.rpz[k], length = Math.hypot(dx,dz);
+    const nx = -dz/length, nz = dx/length, t = 0.35, u = t*length;
+    const strip = model.strips.find(([a,lo,,b]) => a <= u && u < b && lo > 0);
+    const inner = strip[1] + (strip[4]-strip[1])*(u-strip[0])/(strip[3]-strip[0]);
+    const side = inner-1, x = w.rpx[k]+t*dx+side*nx, z = w.rpz[k]+t*dz+side*nz;
+    const y = w.rpy[k]+t*(w.rpy[k+1]-w.rpy[k]);
+    car.place(x,z,Math.atan2(dx,dz),y);
+    g._enterCar(car);
+    g.camYaw = Math.atan2(-nx,-nz);
+    g.camPitch = 0.04;
+    g.camDist = 7;
+    g._updateCamera(1/60);
+    const near = (g.camera.position.x-x)*nx+(g.camera.position.z-z)*nz;
+    g.camPitch = 0.8;
+    g.camDist = 7;
+    g._updateCamera(1/60);
+    const high = (g.camera.position.x-x)*nx+(g.camera.position.z-z)*nz;
+    return {near,high};
+  });
+  expect(result.near).toBeGreaterThan(0.3);
+  expect(result.near).toBeLessThan(1);
+  expect(result.high).toBeGreaterThan(2);
+});

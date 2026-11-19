@@ -296,10 +296,11 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
   Pro další ulice a pro chodce hra používá odhad. [Dopravní detektory](https://opendata.plzen.eu/public/opendata/detail/160) ·
   [Hodinové profily PoliVisu](https://polivisuapi.plzen.eu/api/)
 
-- Měřené budovy centra, pilíř Wilsonova mostu a profil lávky U Prazdroje vycházejí z dat města Plzně z roku 2024 od GEOREAL – Vybíral. Plochy jsou
+- Měřené budovy centra, geometrie Wilsonova mostu a profil lávky U Prazdroje vycházejí z dat města Plzně z roku 2024 od GEOREAL – Vybíral. Plochy jsou
   převedené do herních souřadnic a doplněné vlastními materiály. Hranice městských částí určují
   místní palety. [3D budovy centra Plzně](https://opendata.plzen.eu/public/opendata/detail/37) ·
   [Městské části](https://opendata.plzen.eu/public/opendata/detail/108)
+  Město u sady 3D uvádí, že neobsahuje autorská díla a databáze nepodléhá autorskoprávní ochraně ani zvláštnímu právu pořizovatele. [Podmínky užití v katalogu města](https://opendata.plzen.eu/public/opendata/dataset/37)
 - Odjezdy tramvají, trolejbusů a autobusů vycházejí z GTFS Plzeňských městských dopravních podniků, a.s.
   Hra přiřazuje zastávky ke kolejím a silnicím OpenStreetMap a ořezává spoje na okraji herního území.
   [Jízdní řády PMDP](https://opendata.plzen.eu/public/opendata/detail/187) ·

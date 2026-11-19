@@ -1,6 +1,6 @@
 import { attachRoadFurniture } from './road-furniture.js';
 import { prazdrojThickness } from './prazdroj-bridge.js';
-import { BRIDGE_THICKNESS, densePath, pathNormal } from './road-profile.js';
+import { BRIDGE_THICKNESS, densePath, offsetDeck, pathNormal } from './road-profile.js';
 // Stavba 3D geometrie po dlaždicích: budovy, silnice, koleje, stromy.
 import * as THREE from 'three/webgpu';
 import { hash } from './hash.js';
@@ -688,7 +688,7 @@ function rondelAbutments(world, solid, ci) {
   }
 }
 
-function stoneBridge(world, solid, D, hw, arches) {
+function stoneBridge(world, solid, D, hw, arches, supports) {
   const a = [D.x[0], D.z[0]], b = [D.x.at(-1), D.z.at(-1)];
   const length = Math.hypot(b[0] - a[0], b[1] - a[1]);
   const nx = (a[1] - b[1]) / length, nz = (b[0] - a[0]) / length;
@@ -697,14 +697,22 @@ function stoneBridge(world, solid, D, hw, arches) {
   const point = (t, side, y) => [a[0] + (b[0] - a[0]) * t + nx * side, y, a[1] + (b[1] - a[1]) * t + nz * side];
   const bed = Math.min(world.heightAt(...a), world.heightAt(...b),
     world.heightAt((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)) - 1.1;
-  const segments = arches * 24;
+  const stops = supports ?? Array.from({length:arches+1}, (_,i) => i/arches);
+  const samples = [0];
+  if (stops[0] > 0) samples.push(stops[0]);
+  for (let j = 1; j < stops.length; j++) {
+    for (let i = 1; i <= 24; i++) samples.push(stops[j-1] + (stops[j]-stops[j-1])*i/24);
+  }
+  if (stops.at(-1) < 1) samples.push(1);
   const soffit = (t) => {
-    const local = (t * arches) % 1;
+    const j = stops.findIndex(end => end >= t);
+    if (j <= 0) return bed;
+    const local = (t-stops[j-1])/(stops[j]-stops[j-1]);
     const span = Math.max(0, 1 - ((local - 0.5) / 0.44) ** 2);
     return bed + Math.sqrt(span) * Math.max(0.2, deck(t) - bed - 0.85);
   };
-  for (let i = 0; i < segments; i++) {
-    const t0 = i / segments, t1 = (i + 1) / segments;
+  for (let i = 1; i < samples.length; i++) {
+    const t0 = samples[i-1], t1 = samples[i];
     const y0 = deck(t0) - 0.04, y1 = deck(t1) - 0.04;
     const u0 = soffit(t0), u1 = soffit(t1);
     solid.quad(point(t0, -hw, y0), point(t1, -hw, y1), point(t1, hw, y1), point(t0, hw, y0), COL.sidewalk);
@@ -812,8 +820,10 @@ function buildRoads(world, ci) {
       ribbon(world, asphalt, D, surfaceWidth, col, 0, 0, s === a && !start, e === b && !end, hw > 2.2 && !raised);
       if (bridge) {
         const arches = world.archedBridges.get(i);
-        if (arches) stoneBridge(world, solid, D, world.deckHalfWidth(i), arches);
-        else bridgeSlab(world, solid, D, world.deckHalfWidth(i),
+        const calibration = world.deckCalibrations.get(i);
+        const deck = offsetDeck(D, calibration);
+        if (arches) stoneBridge(world, solid, deck, world.deckHalfWidth(i), arches, calibration?.archStops);
+        else bridgeSlab(world, solid, deck, world.deckHalfWidth(i),
           cls <= RC.LIVING ? COL.sidewalk : COL.concrete, measured === undefined && i !== world.prazdrojRoad,
           i === world.prazdrojRoad ? prazdrojThickness : undefined);
       } else if (measured !== undefined && D.y.some((y, k) => y - world.heightAt(D.x[k], D.z[k]) > 0.75)) {

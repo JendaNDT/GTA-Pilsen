@@ -80,3 +80,42 @@ test('základní model sdílí vrcholy s kolizí a přežije chybějící detail
   assert.equal(await loadStructureCore(''), null);
   material.dispose();
 });
+
+test('příčné řezy členitého půdorysu zachovají plochu i vnitřní volný prostor', async () => {
+  const {footprintStrips} = await import('../tools/calibrate_bridge.mjs');
+  const ring = [[0,0],[8,0],[8,1],[2,1],[2,3],[8,3],[8,4],[0,4]];
+  const strips = footprintStrips(ring);
+  const area = strips.reduce((a,[u,lo,hi,v,endLo,endHi]) => a + (v-u)*(hi-lo+endHi-endLo)/2, 0);
+  assert.equal(area,20);
+  assert.ok(strips.every(([u,lo,hi,v]) => v-u <= 2.5 && (v <= 2 || lo >= 3 || hi <= 1)));
+});
+
+test('kalibrovaný průřez zachovává šířku chodníků a výšku horních městských ploch', async () => {
+  const {readFile} = await import('node:fs/promises');
+  const {parsePack} = await import('../src/data.js');
+  const index = JSON.parse(await readFile(new URL('../public/detail/structures/index.json', import.meta.url)));
+  const bridge = index.bridges.find(b => b.road === 19);
+  const bytes = await readFile(new URL('../public/data/roads.bin', import.meta.url));
+  const r = parsePack(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
+  const k = r.start[bridge.road], h = r.bridgeOff[bridge.road];
+  const length = Math.hypot(r.dx[k], r.dz[k])*0.1;
+  const levels = [-2.025,-2.045,-2.045,-2.069,-2.101];
+  const axis = (-r.dz[k]*bridge.shiftX + r.dx[k]*bridge.shiftZ)*0.1/length;
+  assert.ok(axis > 0.5 && axis < 0.65);
+  for (const [i,t] of [0.2,0.35,0.5,0.65,0.8].entries()) {
+    const u = length*t;
+    const bands = bridge.strips.filter(s => s[0] <= u && s[3] > u).map(([a,lo,hi,b,elo,ehi]) => {
+      const f = (u-a)/(b-a);
+      return [lo+(elo-lo)*f,hi+(ehi-hi)*f];
+    }).sort((a,b) => a[0]-b[0]);
+    assert.equal(bands.length,2);
+    assert.ok(Math.abs(bands[1][0]-bands[0][1]-15) < 0.1);
+    const height = bridge.lift + 0.02*(r.bridgeY[h]*(1-t) + r.bridgeY[h+1]*t);
+    assert.ok(Math.abs(height-levels[i]) < 0.1);
+  }
+  assert.equal(bridge.railHeight,1.15);
+  // Měřený střed pilíře i oba konce městské desky leží uvnitř uličního úseku.
+  for (const [i, expected] of [0.043,0.504,0.961].entries()) {
+    assert.ok(Math.abs(bridge.archStops[i]-expected)*length < 0.1);
+  }
+});
