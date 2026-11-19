@@ -100,6 +100,10 @@ Na suché polní cestě a v trávě se od zadních kol zvedá prach. Na mokré v
 
 Prošlo 160 jednotkových testů a produkční sestavení. Oba vykreslovače ověřily vznik částic od kol, zastavení emise ve vzduchu i společný rozpočet. WebGPU přečetl výslednou polohu z výpočetního bufferu, WebGL 2 ověřil stejný výpočet na CPU. Závěrečné ověření E23 zahrnuje rozpočet všech předvoleb, referenční pohledy a měření výkonu.
 
+## Uzavření E23
+
+G11 až G17 jsou implementované a prošly funkčními zkouškami. Závěrečné sestavení prošlo se 160 testy JavaScriptu a 25 testy Pythonu. Ve WebGPU prošly všechny čtyři předvolby ve třech referenčních pohledech při 1280 × 720. Nízká předvolba na náměstí má ověřený přírůstek deseti volání za měřené konstrukce E22. Protokol obsahuje kontrolní měření s těmito konstrukcemi i bez nich, osm měření ze dvou pevných kamer a snímky ze hry. Na cílovém zařízení zbývá ověřit 60 FPS při jízdě a letu. [Protokol E23](../E23.md)
+
 ## Výchozí etapa E22
 
 Ve větvi `etapa/E22` jsou převedené městské objekty, ověřený Wilsonův most i tři dávky zdí a pilířů. Hra používá další dvě lávky, silniční desku, dvě železniční mostovky a čtyři díly jezů. Vývoj a dostupné přejímací kontroly E22 jsou dokončené. Zůstává porovnání s autorovými fotografiemi a změření plynulosti na jeho zařízení. [Protokol E22](../E22.md). [Zadání E22](E22.md) · [Výsledky převodu a pilotu](#e22--převod-a-inventura)

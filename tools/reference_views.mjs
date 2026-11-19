@@ -56,7 +56,8 @@ export async function renderReferenceView(page, view) {
     if (game.env.skyLight?.face >= 0) {
       for (let i = 0; i < 6 && game.env.skyLight.face >= 0; i++) {
         await new Promise(requestAnimationFrame);
-        game.render();
+        // Pootočení sondy potřebuje pouze oblohu. Město se vykreslí až s dokončenou mapou.
+        game.env.updateSkyLight();
       }
       // Odečti ustálený pohled po dokončení aktualizace světla.
       game.render();
