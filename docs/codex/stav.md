@@ -15,7 +15,7 @@ Větev `etapa/E21` navazuje na E20 sloučenou revizí `623e081`. [Zadání E21](
 
 ### Zkoušky s herní figurínou
 
-Tři regresní scénáře nyní používají vlastní rovnou desku v Joltu a herní figuríny mimo městskou geometrii, bez jízdního řádu a běžného provozu. Na WebGL 2 prošla registrace jediné události při kontaktu, sledování kamery a návrat pěšího hráče do chůze i omezení souběžných pádů. Prošlo 128 testů JavaScriptu a produkční sestavení. Samostatně prošla ve WebGL 2 příprava střední předvolby stínů a stereo tramvaje. Průchod všech osmi referenčních kamer na softwarovém WebGL 2 překročil při souběžném ověřování dvacetiminutový limit. Kontrola klaksonu se opakuje s odečtem při skutečném vzniku zvuku.
+Tři regresní scénáře nyní používají vlastní rovnou desku v Joltu a herní figuríny mimo městskou geometrii, bez jízdního řádu a běžného provozu. Na WebGL 2 prošla registrace jediné události při kontaktu, sledování kamery a návrat pěšího hráče do chůze i omezení souběžných pádů. Prošlo 128 testů JavaScriptu a produkční sestavení. Samostatně prošla ve WebGL 2 příprava střední předvolby stínů a stereo tramvaje. Průchod všech osmi referenčních kamer na softwarovém WebGL 2 překročil při souběžném ověřování dvacetiminutový limit. Kontrola klaksonu prošla na WebGL 2 (Mesa llvmpipe) i na WebGPU (SwiftShader). Krátký tón test zachytí při jeho skutečném vytvoření po stisku H. Před odebráním auta navíc ověřuje, že má aktivní vlastní zvuk. Prošlo také stereo tramvaje a zastavení kol a zvuku hamru na WebGL 2.
 
 ### Oddělená zkušební plocha
 
