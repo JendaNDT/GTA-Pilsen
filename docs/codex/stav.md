@@ -2,6 +2,10 @@
 
 E24 navazuje na G17 ve větvi E23 (`fe30ef0`). [Zadání E24](E24.md)
 
+## Výsledek měření E24
+
+G18–G27 jsou implementovány. Po úpravách v revizi `910314b` prošlo 166 testů JavaScriptu, produkční sestavení a funkční kontroly obou vykreslovačů. Při porovnání nízké předvolby na jednom vyhrazeném jádře byl měřený pohled na noční náměstí o 7,0 % pomalejší než E23. Na Wilsonově mostu činil rozdíl 14,6 %, nad požadovanou mezí 10 %. Výsledek z autorova grafického zařízení, výkon vysoké předvolby v dešti a ovládání na skutečném telefonu zůstávají otevřené. Další místní ověření probíhá v souhrnné sadě vydání E26. [Měření, snímky a postup kontroly](../E24.md)
+
 ## Vypnutí počasí a práce vykreslovače
 
 Při volbě **Vždy jasno** se i na vysoké a ultra předvolbě vrací původní obloha z E23. Výpočet objemové vrstvy stojí a krajinu nestíní její maska. Po návratu k proměnlivému počasí se první snímek vytvoří bez zastaralé historie. Za sucha materiály přeskočí výpočet sněhové pokrývky. Pod horizontem se vynechá výpočet procedurálních mraků, kde mají nulové krytí. Noční osvětlení používá společný zdroj pozic lamp z E21.
