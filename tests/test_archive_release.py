@@ -18,7 +18,12 @@ class ReleaseArchiveTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             subprocess.run(["git", "init", "-q", str(root)], check=True)
-            for path, contents in {"package.json": '{"version":"0.2.0"}', "dist/index.html": "<canvas></canvas>",
+            index_html = '<script type="module" src="./assets/hra.js"></script>'
+            chunks = {"index.html": {"file": "assets/hra.js", "dynamicImports": ["fyzika.js"]},
+                      "fyzika.js": {"file": "assets/fyzika.js", "imports": ["index.html"]}}
+            for path, contents in {"package.json": '{"version":"0.2.0"}', "dist/index.html": index_html,
+                                   "dist/.vite/manifest.json": json.dumps(chunks),
+                                   "dist/assets/hra.js": 'import("./fyzika.js")', "dist/assets/fyzika.js": "export default 1",
                                    "public/test.bin": "dlaždice", "dist/test.bin": "dlaždice",
                                    "vendor/picomatch/index.js": "export default 1", "AGENTS.md": "Pokyny"}.items():
                 target = root / path
@@ -63,6 +68,8 @@ class ReleaseArchiveTest(unittest.TestCase):
                 # I po neúplném přenosu mohou být ve složce index i všechna veřejná data.
                 output = root / "neuvolnene"
                 html = root / "dist/index.html"
+                js = root / "dist/assets/hra.js"
+                js.unlink()
                 html.write_text('<script type="module" src="./assets/hra.js?v=2"></script>'
                                 '<link rel="stylesheet" href="./assets/hra.css">')
                 for name in ["hra.js", "hra.css"]:
@@ -79,7 +86,26 @@ class ReleaseArchiveTest(unittest.TestCase):
                 html.write_text('<script src="./assets/hra.js?v=2"></script><link rel="stylesheet" href="assets/hra.css">')
                 run("0.2.0")
                 self.assertTrue((output / "manifest.json").exists())
-                html.write_text("<canvas></canvas>")
+                html.write_text(index_html)
+
+                # Jolt se načítá až ze vstupního modulu. V samotném HTML odkaz chybí.
+                output = root / "chybejici-modul"
+                engine = root / "dist/assets/fyzika.js"
+                engine.unlink()
+                with self.assertRaises(SystemExit):
+                    run("0.2.0")
+                self.assertFalse(output.exists())
+                engine.write_text("export default 1")
+                vite_manifest = root / "dist/.vite/manifest.json"
+                vite_manifest.write_text(json.dumps({"index.html": chunks["index.html"]}))
+                with self.assertRaises(SystemExit):
+                    run("0.2.0")
+                self.assertFalse(output.exists())
+                vite_manifest.unlink()
+                with self.assertRaises(SystemExit):
+                    run("0.2.0")
+                self.assertFalse(output.exists())
+                vite_manifest.write_text(json.dumps(chunks))
 
                 # Běžný zdroj může být při balení jiný než ve zveřejněné revizi.
                 output = root / "jine-zdroje"

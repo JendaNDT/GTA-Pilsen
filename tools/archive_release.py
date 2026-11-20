@@ -68,6 +68,38 @@ class PageAssets(HTMLParser):
                 self.paths.add(posixpath.normpath(unquote(parts.path)))
 
 
+def check_build_assets(bundle):
+    page = PageAssets()
+    page.feed(bundle.read("index.html").decode("utf-8"))
+    page.close()
+    try:
+        chunks = json.loads(bundle.read(".vite/manifest.json"))
+    except KeyError:
+        raise ValueError("Chybí manifest sestavení Vite. Spusť znovu npm run build.") from None
+    if not isinstance(chunks, dict) or not isinstance(chunks.get("index.html"), dict):
+        raise ValueError("V manifestu Vite chybí vstup index.html.")
+    entry = chunks["index.html"].get("file")
+    if not isinstance(entry, str) or entry not in page.paths:
+        raise ValueError("Vstup z manifestu Vite neodpovídá souborům v index.html.")
+
+    paths = set(page.paths)
+    for name, chunk in chunks.items():
+        if not isinstance(chunk, dict) or not isinstance(chunk.get("file"), str):
+            raise ValueError(f"V manifestu Vite chybí soubor pro {name}.")
+        paths.add(chunk["file"])
+        for field in ("css", "assets", "imports", "dynamicImports"):
+            values = chunk.get(field, [])
+            if not isinstance(values, list) or not all(isinstance(value, str) for value in values):
+                raise ValueError(f"V manifestu Vite je neplatné pole {field} u {name}.")
+            if field in ("css", "assets"):
+                paths.update(values)
+            elif missing := sorted(set(values).difference(chunks)):
+                raise ValueError(f"V manifestu Vite chybí modul pro {name}: " + ", ".join(missing))
+    missing = sorted(paths.difference(bundle.namelist()))
+    if missing:
+        raise ValueError("Ve webovém archivu chybí výstupy sestavení: " + ", ".join(missing))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--version", help="Označení vydání, výchozí je verze z package.json.")
@@ -117,14 +149,9 @@ def main():
         web = stage / f"{base}-web.zip"
         sources = stage / f"{base}-zdroje.zip"
         manifest["published"] = write_zip(web, published, dist)
-        with ZipFile(web) as bundle:
-            assets = PageAssets()
-            assets.feed(bundle.read("index.html").decode("utf-8"))
-            assets.close()
-        missing = sorted(assets.paths.difference(manifest["published"]))
-        if missing:
-            parser.error("Ve webovém archivu chybí soubory z index.html: " + ", ".join(missing))
         try:
+            with ZipFile(web) as bundle:
+                check_build_assets(bundle)
             manifest["sources"] = write_zip(sources, paths, ROOT, executable, source_ids)
         except ValueError as error:
             parser.error(str(error))

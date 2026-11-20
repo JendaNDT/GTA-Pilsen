@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Úplnost fyzikálního modulu ve webovém archivu
+
+Archivace odhalí chybějící modul Joltu i při úplném vstupním HTML. Ověřili jsme to na kopii produkčního sestavení. Prošlo 183 testů JavaScriptu a 27 testů Pythonu. Obsah 815 dosavadních herních souborů se shoduje s kandidátem `254ae60`. Prohlížečová sada a dlouhá jízda pokračují. [Zkouška neúplného webu](../E26.md#úplnost-fyzikálního-modulu-ve-webovém-archivu)
+
 ## Ověření archivů po opravě rozvozu MHD
 
 Web kandidáta `254ae60` se shoduje po sestavení na všech třech podporovaných verzích Node.js. Oba návraty s uloženou hrou prošly. Samostatný průjezd místem dřívějšího zastavení měřil 1131,61 m. Úplná prohlížečová sada a porovnání zásob při čtvrtém návratu zůstávají otevřené. [Otisky archivů a výsledky průjezdu](../E26.md#ověření-archivů-po-opravě-rozvozu-mhd)
