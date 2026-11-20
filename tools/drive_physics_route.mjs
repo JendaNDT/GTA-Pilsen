@@ -117,7 +117,10 @@ try {
       const relativeAngle = (yaw) => Math.atan2(Math.sin(yaw - car.yaw), Math.cos(yaw - car.yaw));
       const angle = relativeAngle(Math.atan2(dx, dz));
       const limit = Math.min(1, 0.13 + 32 / (32 + car.speed ** 2));
-      let steer = input(-Math.atan2(2 * vehicle.spec.wheelbase * Math.sin(angle), Math.hypot(dx, dz)) / (0.62 * limit));
+      // Mimo pruh dlouhá spojnice k trase příliš rozevře oblouk návratu.
+      const targetDistance = Math.hypot(dx, dz);
+      const turnDistance = loops && best > 2.5 ? Math.min(targetDistance, look) : targetDistance;
+      let steer = input(-Math.atan2(2 * vehicle.spec.wheelbase * Math.sin(angle), turnDistance) / (0.62 * limit));
       const ahead = points[Math.min(points.length - 1, index + 8)];
       const bend = Math.abs(relativeAngle(Math.atan2(ahead.tx, ahead.tz)));
       const speed = Math.min(points[index].safeSpeed, cruise / (1 + 3 * bend), loops && best > 2.5 ? 2.5 : Infinity);
@@ -161,7 +164,9 @@ try {
       distance += Math.hypot(car.x - x, car.z - z);
       const seconds = (tick + 1) / 60;
       if (loops && tick % 60 === 0) {
-        recent.push({ index, offset: best, speed: car.speed, desired: speed, backing });
+        const point = points[index];
+        const lateralSpeed = car.vx * point.tz - car.vz * point.tx;
+        recent.push({ index, offset: best, speed: car.speed, lateralSpeed, angle, steer, throttle, desired: speed, backing });
         if (recent.length > 8) recent.shift();
       }
       if (game.car !== car || tick - lastAdvance > 360 || (loops ? repeatedAttempts : attempts) > 25 || best > 12 || maxDrop > 1) {

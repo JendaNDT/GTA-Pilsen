@@ -1,5 +1,11 @@
 # Stav etapy E26
 
+## Opakování dlouhé jízdy
+
+Předchozí jízda skončila ve třetím okruhu po 103,21 km překročením 12 m od bodu trasy. Po úpravě řízení se vůz na fiktivní přímé dráze vrátil z odchylky 11 m s maximem 11,515 m. V samostatné jízdě přes dotčený úsek ujel 1,04 km bez vyprošťování. Prošlo 182 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. Zbývá porovnat zásoby při třetím a čtvrtém návratu. [Výsledky jízdy](../E26.md#návrat-zkušebního-řidiče-do-pruhu)
+
+Návrat uloženého postupu z archivované revize `2516ec7` do E12 i E25 prošel včetně zachování nákupu vozu a postupu získaného v kandidátovi. [Výsledky obnovy](../E26.md#obnova-postupu-u-kandidáta-2516ec7)
+
 ## Zrnitost povrchu v dálce
 
 U vzdálených povrchů nyní shader přeskočí výpočet jemné nebo střední zrnitosti v místech, kde by její váha byla nulová. Výpočet šířky pixelu zůstává mimo obě podmínky, aby měl stejnou hodnotu i na jejich hranicích.
