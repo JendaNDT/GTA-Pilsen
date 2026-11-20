@@ -8,6 +8,10 @@ extends RefCounted
 ## three.js proti směru. Proto jsou trojice vrcholů oproti předloze prohozené.
 
 const SURF := 0.05          ## o kolik nad terénem leží jízdní povrch (World.SURF)
+const KROK_OSY := 3.0       ## úsek osy silnice ve svahu, kde se terén láme (m)
+const KROK_NAPRIC := 3.0    ## pruh příčného dělení vozovky na nerovném terénu (m)
+const ZATOCENI_KROK := 0.12 ## nejvýš o tolik radiánů (asi 7°) se osa stočí na jednom úseku
+const ODCHYLKA := 0.04      ## terén smí od přímého úseku silnice odbočit nejvýš o 4 cm
 
 
 ## Pomocná třída pro skládání jedné plochy sítě.
@@ -149,6 +153,109 @@ class Cesta:
 	var pz := NAN
 	var nx := NAN
 	var nz := NAN
+	var teren: Mapa.Teren          ## dlaždice, ve které se staví (rychlé výšky terénu)
+
+
+## Centripetální Catmull–Rom (Barry–Goldman) mezi p1 a p2; t mimo 0–1 prodlouží křivku.
+static func _cr(p0: Vector2, p1: Vector2, p2: Vector2, p3: Vector2, t: float) -> Vector2:
+	var t1 := sqrt(maxf(p0.distance_to(p1), 1e-3))
+	var t2 := t1 + sqrt(maxf(p1.distance_to(p2), 1e-3))
+	var t3 := t2 + sqrt(maxf(p2.distance_to(p3), 1e-3))
+	return _cr_u(p0, p1, p2, p3, t1, t2, t3, lerpf(t1, t2, t))
+
+
+## Bod křivky pro předem spočtené uzly t1–t3 (jednou na úsek).
+static func _cr_u(p0: Vector2, p1: Vector2, p2: Vector2, p3: Vector2, t1: float, t2: float, t3: float, u: float) -> Vector2:
+	var a1 := p0 * ((t1 - u) / t1) + p1 * (u / t1)
+	var a2 := p1 * ((t2 - u) / (t2 - t1)) + p2 * ((u - t1) / (t2 - t1))
+	var a3 := p2 * ((t3 - u) / (t3 - t2)) + p3 * ((u - t2) / (t3 - t2))
+	var b1 := a1 * ((t2 - u) / t2) + a2 * (u / t2)
+	var b2 := a2 * ((t3 - u) / (t3 - t1)) + a3 * ((u - t1) / (t3 - t1))
+	return b1 * ((t2 - u) / (t2 - t1)) + b2 * ((u - t1) / (t2 - t1))
+
+
+## Vyhlazená a zhuštěná osa silnice. Křivka prochází všemi body z mapy (osa se neposune),
+## mezi nimi se ohýbá plynule místo lomu a body má nejvýš po KROK_OSY, takže povrch kopíruje
+## terén i ve svahu. Sousední body (px, nx) určují směr na koncích, aby navazující kusy silnice
+## měly v místě spoje stejnou kolmici.
+static func vyhlad(d: Cesta) -> Cesta:
+	if d.n < 2:
+		return d
+	var o := d.zac
+	var P := PackedVector2Array()
+	P.resize(d.n + 2)
+	for k in d.n:
+		P[k + 1] = Vector2(d.x[o + k], d.z[o + k])
+	var ma_pred := not is_nan(d.px)
+	var ma_dal := not is_nan(d.nx)
+	P[0] = Vector2(d.px, d.pz) if ma_pred else P[1] * 2.0 - P[2]
+	P[d.n + 1] = Vector2(d.nx, d.nz) if ma_dal else P[d.n] * 2.0 - P[d.n - 1]
+	var X := PackedFloat32Array()
+	var Z := PackedFloat32Array()
+	var Y := PackedFloat32Array()
+	for i in range(1, d.n):
+		var delka := P[i].distance_to(P[i + 1])
+		var m := _deleni(P, i, delka, d.s_y, d.teren)
+		X.append(P[i].x)
+		Z.append(P[i].y)
+		if d.s_y:
+			Y.append(d.y[o + i - 1])
+		if m > 1:
+			var t1 := sqrt(maxf(P[i - 1].distance_to(P[i]), 1e-3))
+			var t2 := t1 + sqrt(maxf(delka, 1e-3))
+			var t3 := t2 + sqrt(maxf(P[i + 1].distance_to(P[i + 2]), 1e-3))
+			for j in range(1, m):
+				var t := float(j) / m
+				var q := _cr_u(P[i - 1], P[i], P[i + 1], P[i + 2], t1, t2, t3, lerpf(t1, t2, t))
+				X.append(q.x)
+				Z.append(q.y)
+				if d.s_y:
+					Y.append(lerpf(d.y[o + i - 1], d.y[o + i], t))
+	X.append(P[d.n].x)
+	Z.append(P[d.n].y)
+	if d.s_y:
+		Y.append(d.y[o + d.n - 1])
+	var out := Cesta.new()
+	out.x = X
+	out.z = Z
+	out.y = Y if d.s_y else d.y
+	out.zac = 0
+	out.n = X.size()
+	out.s_y = d.s_y
+	out.teren = d.teren
+	# směr na koncích podle křivky (stejný jako u navazujícího kusu)
+	if ma_pred:
+		var t0 := (_cr(P[0], P[1], P[2], P[3], 0.02) - P[1]).normalized()
+		out.px = P[1].x - t0.x * 2.0
+		out.pz = P[1].y - t0.y * 2.0
+	if ma_dal:
+		var n := d.n
+		var t1 := (P[n] - _cr(P[n - 2], P[n - 1], P[n], P[n + 1], 0.98)).normalized()
+		out.nx = P[n].x + t1.x * 2.0
+		out.nz = P[n].y + t1.y * 2.0
+	return out
+
+
+## Na kolik dílů rozdělit úsek osy mezi body i a i + 1: v zatáčce podle stočení křivky,
+## ve svahu podle toho, jak se terén pod přímým úsekem láme. Na rovině a na přímce zůstane 1.
+static func _deleni(P: PackedVector2Array, i: int, delka: float, vlastni_vyska: bool, t: Mapa.Teren) -> int:
+	if delka <= 0.5:
+		return 1
+	var t0 := (P[i + 1] - P[i - 1]).normalized()
+	var t1 := (P[i + 2] - P[i]).normalized()
+	var m := ceili(absf(t0.angle_to(t1)) / ZATOCENI_KROK)
+	if not vlastni_vyska and delka > KROK_OSY:
+		var kroku := ceili(delka / KROK_OSY)
+		var ya := Mapa.vyska_v(t, P[i].x, P[i].y)
+		var yb := Mapa.vyska_v(t, P[i + 1].x, P[i + 1].y)
+		var vzorku := mini(kroku, 5)
+		for j in range(1, vzorku):
+			var f := float(j) / vzorku
+			var q := P[i].lerp(P[i + 1], f)
+			if absf(Mapa.vyska_v(t, q.x, q.y) - lerpf(ya, yb, f)) > ODCHYLKA:
+				m = maxi(m, kroku)
+				break
+	return clampi(m, 1, mini(48, ceili(delka)))
 
 
 static func _nan(v: float) -> float:
@@ -227,7 +334,7 @@ static func _ctyruhelnik(p: Plocha, a: int, b: int, c: int, d: int) -> void:
 static func _y(d: Cesta, k: int, x: float, z: float, lift: float) -> float:
 	if d.s_y:
 		return d.y[d.zac + k] + lift
-	return Mapa.vyska(x, z) + SURF + lift
+	return Mapa.vyska_v(d.teren, x, z) + SURF + lift
 
 
 static func _kruh(p: Plocha, d: Cesta, k: int, x: float, z: float, r: float, col: Color, lift: float) -> void:
@@ -250,9 +357,26 @@ static func _kruh(p: Plocha, d: Cesta, k: int, x: float, z: float, r: float, col
 ## Pás položený na terén nebo na mostovku (ribbon v chunks.js).
 static func pas(p: Plocha, d: Cesta, hw: float, col: Color, lateral: float, lift: float,
 		cap_zac: bool, cap_kon: bool, stred: bool) -> void:
-	var pL := -1
-	var pC := -1
-	var pR := -1
+	# příčné dělení: kde se terén napříč vozovkou láme, má široká vozovka body po KROK_NAPRIC,
+	# aby terén neprosvítal uprostřed; na rovném terénu stačí okraje (a střed u pásů se středem)
+	var sloupcu := 2 if stred else 1
+	if not d.s_y and 2.0 * hw > KROK_NAPRIC:
+		for k in range(0, d.n, 3):
+			var nr := kolmice(d, k)
+			var cx := d.x[d.zac + k] + nr.x * lateral * nr.z
+			var cz := d.z[d.zac + k] + nr.y * lateral * nr.z
+			var ox := nr.x * hw * nr.z
+			var oz := nr.y * hw * nr.z
+			var hl := Mapa.vyska_v(d.teren, cx - ox, cz - oz)
+			var hr := Mapa.vyska_v(d.teren, cx + ox, cz + oz)
+			if absf(Mapa.vyska_v(d.teren, cx, cz) - (hl + hr) * 0.5) > ODCHYLKA:
+				sloupcu = maxi(sloupcu, ceili(2.0 * hw / KROK_NAPRIC))
+				break
+		if stred and sloupcu % 2 == 1:
+			sloupcu += 1
+	var pred := PackedInt32Array()
+	var rada := PackedInt32Array()
+	rada.resize(sloupcu + 1)
 	var X := d.x
 	var Z := d.z
 	for k in d.n:
@@ -266,24 +390,15 @@ static func pas(p: Plocha, d: Cesta, hw: float, col: Color, lateral: float, lift
 			_kruh(p, d, k, bx + nx * lateral, bz + nz * lateral, hw, col, lift)
 		var cx := bx + nx * lateral * sc
 		var cz := bz + nz * lateral * sc
-		var lx := cx - nx * hw * sc
-		var lz := cz - nz * hw * sc
-		var rx := cx + nx * hw * sc
-		var rz := cz + nz * hw * sc
-		var L := _vrchol(p, lx, _y(d, k, lx, lz, lift), lz, col)
-		var R := _vrchol(p, rx, _y(d, k, rx, rz, lift), rz, col)
-		var C := -1
-		if stred:
-			C = _vrchol(p, cx, _y(d, k, cx, cz, lift), cz, col)
-		if pL >= 0:
-			if stred:
-				_ctyruhelnik(p, pL, pC, C, L)
-				_ctyruhelnik(p, pC, pR, R, C)
-			else:
-				_ctyruhelnik(p, pL, pR, R, L)
-		pL = L
-		pC = C
-		pR = R
+		for j in sloupcu + 1:
+			var f := (-1.0 + 2.0 * j / sloupcu) * hw * sc
+			var vx := cx + nx * f
+			var vz := cz + nz * f
+			rada[j] = _vrchol(p, vx, _y(d, k, vx, vz, lift), vz, col)
+		if not pred.is_empty():
+			for j in sloupcu:
+				_ctyruhelnik(p, pred[j], pred[j + 1], rada[j + 1], rada[j])
+		pred = rada.duplicate()
 		if (k == 0 and cap_zac) or (k == d.n - 1 and cap_kon):
 			_kruh(p, d, k, cx, cz, hw, col, lift)
 
@@ -348,6 +463,11 @@ static func silnice(blok: Variant) -> Dictionary:
 		var Z: PackedFloat32Array = blok.z
 		var Y: PackedFloat32Array = blok.y
 		var rib: PackedFloat32Array = blok.rib
+		var teren_dlazdice: Mapa.Teren = null
+		if X.size() > 0:
+			var ci := Mapa.index_dlazdice(X[0], Z[0])
+			if ci >= 0:
+				teren_dlazdice = Mapa.teren(ci)
 		for q in range(0, rib.size(), 16):
 			var d := Cesta.new()
 			d.x = X
@@ -361,6 +481,8 @@ static func silnice(blok: Variant) -> Dictionary:
 			d.nz = _nan(rib[q + 11])
 			d.zac = int(rib[q + 12])
 			d.n = int(rib[q + 13])
+			d.teren = teren_dlazdice
+			d = vyhlad(d)
 			var cil := znacky if rib[q] > 0.5 else asfalt
 			var od := cil.pocet()
 			var od_i := cil.i.size()
@@ -381,6 +503,8 @@ static func silnice(blok: Variant) -> Dictionary:
 			d.s_y = dash[q + 9] > 0.5
 			d.zac = int(dash[q + 10])
 			d.n = int(dash[q + 11])
+			d.teren = teren_dlazdice
+			d = vyhlad(d)
 			var cil := znacky if dash[q] > 0.5 else asfalt
 			carkovani(cil, d, dash[q + 1], Color(dash[q + 2], dash[q + 3], dash[q + 4]), dash[q + 5], dash[q + 6],
 				dash[q + 7], dash[q + 8])

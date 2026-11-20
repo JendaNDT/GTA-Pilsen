@@ -76,10 +76,12 @@ func _priprav_materialy() -> void:
 	_mat_teren.set_shader_parameter("paleta", _paleta)
 	_mat_asfalt = ShaderMaterial.new()
 	_mat_asfalt.shader = load("res://materialy/silnice.gdshader")
-	_mat_asfalt.set_shader_parameter("posun", 0.0012)
+	# asfalt a značení o kousek blíž ke kameře než terén (výstupky terénu ve svahu do ~10 cm),
+	# značení ještě o něco blíž než asfalt
+	_mat_asfalt.set_shader_parameter("posun", 0.0025)
 	_mat_znacky = ShaderMaterial.new()
 	_mat_znacky.shader = load("res://materialy/silnice.gdshader")
-	_mat_znacky.set_shader_parameter("posun", 0.0022)
+	_mat_znacky.set_shader_parameter("posun", 0.0035)
 	_mat_znacky.set_shader_parameter("drsnost", 0.7)
 	_mat_pevne = StandardMaterial3D.new()
 	_mat_pevne.vertex_color_use_as_albedo = true

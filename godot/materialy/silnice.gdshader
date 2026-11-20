@@ -4,6 +4,7 @@ shader_type spatial;
 render_mode cull_back;
 
 uniform float posun = 0.0015;      // podíl vzdálenosti od kamery
+uniform float posun_m = 0.05;      // stálý posun ke kameře (m): zakryje drobné výstupky terénu mezi body silnice
 uniform float drsnost = 0.9;
 global uniform float mokro;    // mokrá vozovka po dešti 0–1
 global uniform float snih;     // sněhová pokrývka 0–1
@@ -26,7 +27,7 @@ float vnoise(vec2 p) {
 void vertex() {
 	svet = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	vec4 pohled = MODELVIEW_MATRIX * vec4(VERTEX, 1.0);
-	pohled.xyz *= 1.0 - posun - 0.02 / max(1.0, length(pohled.xyz));
+	pohled.xyz *= 1.0 - posun - posun_m / max(1.0, length(pohled.xyz));
 	POSITION = PROJECTION_MATRIX * pohled;
 }
 

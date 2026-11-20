@@ -15,7 +15,7 @@ Stav v Godotu: **hotovo** = funguje a je ověřené zkouškou, **částečně** 
 | 2 | Terén ČÚZK (8 m, 4 m na vybraných místech, zarovnání pod silnicemi) | hotovo | výšky převzaté z výpočtu předlohy, shoda s jejími trojúhelníky |
 | 3 | 103 300 budov s výškou, střechy sedlové, valbové, odsazené, ploché | hotovo | stejný výpočet tvaru jako `buildBuildings`; oboustranné kolize stěn, hráč se nedostane dovnitř chůzí, startem ani výstupem z auta (zkouška `scenar_budovy`) |
 | 4 | Okna fasád podle stylu (dům, panelák, činžák, kanceláře, hala, kostel, radnice), svícení v noci | hotovo | převedený shader, rozvrh rozsvícení oken |
-| 5 | Silnice, chodníky, pěšiny, vodorovné značení, přechody, stopčáry | hotovo | kreslicí příkazy převzaté z předlohy |
+| 5 | Silnice, chodníky, pěšiny, vodorovné značení, přechody, stopčáry | hotovo | kreslicí příkazy převzaté z předlohy; navíc vyhlazená osa (křivka přes všechny body z mapy) a zhuštění ve svahu, takže silnice v kopcích a zatáčkách není rozpadlá ani hranatá (zkouška `test_silnice`: terén nad vozovkou o víc než 10 cm u 1,1 % místo 1,98 %, žádný viditelný lom osy místo 85); okraje chodníků a krajnic jako hladká čára |
 | 6 | 1 179 mostů s mostovkou, pilíři a zábradlím, kamenné oblouky | hotovo | včetně kalibrace mostovek podle měření; ověřen průjezd i chůze po Wilsonově mostě a průjezd pod mostem Milénia |
 | 7 | Tunel Valík (dva tubusy, portály, osvětlení) | částečně | tubusy, portály a světla s kolizí; terén nad portálem zatím nemá otvor |
 | 8 | Povrch země: pole, louky, lesy, parky, voda, potoky, štěrk kolejí | hotovo | mapa barev 1 m na pixel |

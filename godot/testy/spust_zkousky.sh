@@ -25,6 +25,7 @@ zkouska() {
 
 zkouska import -s res://testy/test_import.gd
 zkouska pocasi -s res://testy/test_pocasi.gd
+zkouska silnice -s res://testy/test_silnice.gd
 zkouska most testy/scenar_most.tscn
 zkouska mhd testy/scenar_mhd.tscn
 zkouska zkusebna-narazu testy/zkusebna.tscn

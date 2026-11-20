@@ -65,7 +65,40 @@ void fragment() {
 	vec2 t = UV * pixelu - 0.5;
 	ivec2 b = ivec2(floor(t));
 	vec2 f = fract(t);
-	vec4 c = mix(mix(barva(b), barva(b + ivec2(1, 0)), f.x), mix(barva(b + ivec2(0, 1)), barva(b + ivec2(1, 1)), f.x), f.y);
+	// Hranice barev (chodník, krajnice, tráva) jako hladká čára místo schodů po 1 m: každá ze čtyř
+	// sousedních barev dostane podíl podle bilineárních vah a vyhraje ta s největším podílem; přechod
+	// k druhé je jen tak široký, aby se hrana nevykreslila zubatě (vyhlazení podle velikosti pixelu).
+	int k00 = kod(b) % 128;
+	int k10 = kod(b + ivec2(1, 0)) % 128;
+	int k01 = kod(b + ivec2(0, 1)) % 128;
+	int k11 = kod(b + ivec2(1, 1)) % 128;
+	vec4 w = vec4((1.0 - f.x) * (1.0 - f.y), f.x * (1.0 - f.y), (1.0 - f.x) * f.y, f.x * f.y);
+	ivec4 kody = ivec4(k00, k10, k01, k11);
+	vec4 podil = vec4(0.0);
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			podil[i] += kody[i] == kody[j] ? w[j] : 0.0;
+		}
+	}
+	int prvni = 0;
+	for (int i = 1; i < 4; i++) {
+		if (podil[i] > podil[prvni]) { prvni = i; }
+	}
+	int druhy = -1;
+	for (int i = 0; i < 4; i++) {
+		if (kody[i] != kody[prvni] && (druhy < 0 || podil[i] > podil[druhy])) { druhy = i; }
+	}
+	vec4 c;
+	vec4 ca = barva(b + ivec2(prvni % 2, prvni / 2));
+	if (druhy < 0) {
+		c = ca;
+	} else {
+		vec4 cb = barva(b + ivec2(druhy % 2, druhy / 2));
+		float rozdil = podil[prvni] - podil[druhy];
+		float sirka = max(fwidth(rozdil) * 0.8, 0.16);
+		// rozdil je vždy ≥ 0 (vítěz má největší podíl); na hranici je 0 → polovina obou barev
+		c = mix(cb, ca, 0.5 + 0.5 * smoothstep(0.0, sirka, rozdil));
+	}
 	float voda_plocha = smoothstep(0.35, 0.65, c.a);
 	// Hladina je jen na rovině; svah břehu v polygonu vody se kreslí jako mokrý břeh.
 	float rovina = smoothstep(0.955, 0.99, svet_normala.y);

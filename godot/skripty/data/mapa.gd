@@ -158,6 +158,26 @@ static func teren(ci: int) -> Teren:
 	return t
 
 
+## Výška terénu jako vyska(), ale pro bod uvnitř známé dlaždice t bez hledání a zamykání
+## (rychlé při stavbě silnic dlaždice); mimo ni se použije vyska().
+static func vyska_v(t: Teren, x: float, z: float) -> float:
+	if t == null or x < t.x0 or z < t.z0 or x >= t.x0 + dlazdice or z >= t.z0 + dlazdice:
+		return vyska(x, z)
+	var gx := clampf((x - t.x0) / t.g, 0.0, t.n - 1.001)
+	var gz := clampf((z - t.z0) / t.g, 0.0, t.n - 1.001)
+	var i := int(gx)
+	var j := int(gz)
+	var fx := gx - i
+	var fz := gz - j
+	var k := j * t.n + i
+	var h := t.h
+	if fx + fz <= 1.0:
+		var c := h[k]
+		return c + (h[k + 1] - c) * fx + (h[k + t.n] - c) * fz
+	var c2 := h[k + t.n + 1]
+	return c2 + (h[k + t.n] - c2) * (1.0 - fx) + (h[k + 1] - c2) * (1.0 - fz)
+
+
 ## Výška terénu v bodě (m), shodná s viditelnými trojúhelníky. Mosty a střechy nezahrnuje.
 static func vyska(x: float, z: float) -> float:
 	if not nacti():
