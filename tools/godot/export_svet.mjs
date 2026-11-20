@@ -38,21 +38,20 @@ const cfg = await import(path.join(ROOT, 'src/config.js'));
 cfg.applyQualityProfile('low');
 cfg.QUALITY.treesPerForestChunk = 210;
 const { CHUNK, RC, RF, LC, BF, BK, DRIVABLE_MAX } = cfg;
-const { parsePack } = await import(path.join(ROOT, 'src/data.js'));
-
-async function readPack(file) {
-  const b = await readFile(path.join(ROOT, 'public', file));
-  return parsePack(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength));
-}
+// Data se načítají stejnou funkcí loadAll jako v prohlížeči (src/data.js), včetně kontrol otisků,
+// zaměřených konstrukcí (kalibrace mostovek), úseků ulic a městského modelu. Místo sítě čte soubory z public/.
+globalThis.fetch = async (url) => {
+  const file = path.join(ROOT, 'public', String(url).replace(/^\/+/, '').split('?')[0]);
+  try { return new Response(await readFile(file)); } catch { return new Response(null, { status: 404 }); }
+};
+const { loadAll, loadCityTile } = await import(path.join(ROOT, 'src/data.js'));
 async function readJson(file) { return JSON.parse(await readFile(path.join(ROOT, 'public', file), 'utf8')); }
 
 const t0 = performance.now();
-const data = {};
-for (const [k, f] of Object.entries({ terrain: 'terrain.bin', roads: 'roads.bin', buildings: 'buildings.bin',
-  land: 'land.bin', rails: 'rails.bin', trees: 'trees.bin', landscape: 'landscape.bin' })) data[k] = await readPack('data/' + f);
-for (const [k, f] of Object.entries({ meta: 'meta.json', gradeSeparations: 'grade-separations.json',
-  treeTypes: 'tree-types.json', buildingMaterials: 'building-materials.json' })) data[k] = await readJson('data/' + f);
-const heritageManifest = await readJson('detail/city/index.json');
+const data = await loadAll(() => {});
+const heritageManifest = data.heritage;
+console.log(`Načtena data: konstrukce ${data.structures ? 'ano' : 'NE'}, úseky ulic ${data.streetDetails ? 'ano' : 'NE'}, ` +
+  `městský model ${heritageManifest.tiles.length} dlaždic, mimoúrovňová křížení ${data.gradeSeparations ? 'ano' : 'NE'}`);
 
 const { World, SURF } = await import(path.join(ROOT, 'src/world/world.js'));
 const world = new World(data);
@@ -488,6 +487,88 @@ function exportStreets(ci) {
   return { u: Int32Array.from(ints), w: f32(widths), p: new Vec3Array(pts) };
 }
 
+// ------------------------------------------------------------------ městský model centra
+// Zaměřené budovy (data města Plzně 2024) po dlaždicích; heritage.js je kreslí místo budov z OSM.
+async function exportCity(ci) {
+  const cell = heritageCells.get(ci);
+  if (!cell) return null;
+  const pack = await loadCityTile(cell.name);
+  const { cx, cz } = pack.header;
+  const out = {};
+  for (const prefix of ['', 'd']) {
+    const src = pack[prefix + 'p'];
+    if (!src?.length) continue;
+    const pos = new Float32Array(src.length);
+    for (let i = 0; i < src.length; i += 3) {
+      pos[i] = cx + src[i] * 0.02; pos[i + 1] = src[i + 1] * 0.02; pos[i + 2] = cz + src[i + 2] * 0.02;
+    }
+    const nrm = Float32Array.from(pack[prefix + 'n'], (v) => Math.max(-1, v / 127));
+    const col = Float32Array.from(pack[prefix + 'c'], (v) => v / 255);
+    out[prefix + 'p'] = new Vec3Array(pos);
+    out[prefix + 'n'] = new Vec3Array(nrm);
+    out[prefix + 'c'] = new ColorArray(col);
+    out[prefix + 'i'] = flipIndices(pack[prefix + 'i']);
+    if (!prefix && pack.win) out.win = Float32Array.from(pack.win, (v, i) => (i % 3 === 2 ? v : v / 32));
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+// Zaměřené stavební konstrukce (zdi, pilíře, jezy, mosty) jako trojúhelníky.
+function exportStructures(ci) {
+  const positions = world.structures?.positionsFor(ci);
+  return positions?.length ? { p: new Vec3Array(flipTriangles(positions, 3)) } : null;
+}
+
+// ------------------------------------------------------------------ mapa celého území
+const MAPA_SIRKA = 4096;
+const mapaKrok = (world.maxX - world.minX) / MAPA_SIRKA;
+const MAPA_VYSKA = Math.ceil((world.maxZ - world.minZ) / mapaKrok);
+const mapa = new Uint8Array(MAPA_SIRKA * MAPA_VYSKA * 3);
+const paletteRgb = () => palette.map((hex) => [1, 3, 5].map((k) => parseInt(hex.slice(k, k + 2), 16)));
+const WATER_RGB = [87, 121, 130];
+function mapaZDlazdice(ci, x0, z0, ground) {
+  const rgb = paletteRgb();
+  const S = ground.s, k = S / CHUNK;
+  const m0 = Math.max(0, Math.floor((x0 - world.minX) / mapaKrok)), m1 = Math.min(MAPA_SIRKA - 1, Math.ceil((x0 + CHUNK - world.minX) / mapaKrok));
+  const n0 = Math.max(0, Math.floor((z0 - world.minZ) / mapaKrok)), n1 = Math.min(MAPA_VYSKA - 1, Math.ceil((z0 + CHUNK - world.minZ) / mapaKrok));
+  for (let n = n0; n <= n1; n++) for (let m = m0; m <= m1; m++) {
+    const wx = world.minX + (m + 0.5) * mapaKrok, wz = world.minZ + (n + 0.5) * mapaKrok;
+    if (wx < x0 || wx >= x0 + CHUNK || wz < z0 || wz >= z0 + CHUNK) continue;
+    let r = 0, g = 0, b = 0, cnt = 0;
+    const i0 = Math.floor((wx - x0 - mapaKrok / 2) * k), j0 = Math.floor((wz - z0 - mapaKrok / 2) * k);
+    const kroku = Math.max(1, Math.round(mapaKrok * k));
+    for (let j = j0; j < j0 + kroku; j += 2) for (let i = i0; i < i0 + kroku; i += 2) {
+      if (i < 0 || j < 0 || i >= S || j >= S) continue;
+      const v = ground.px[j * S + i], c = v === 0 ? WATER_RGB : rgb[v];
+      r += c[0]; g += c[1]; b += c[2]; cnt++;
+    }
+    if (!cnt) continue;
+    const o = (n * MAPA_SIRKA + m) * 3;
+    mapa[o] = r / cnt; mapa[o + 1] = g / cnt; mapa[o + 2] = b / cnt;
+  }
+}
+function pngRgb(w, h, rgb) {
+  const crcTable = new Int32Array(256).map((_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c; });
+  const crc = (buf) => { let c = -1; for (const b of buf) c = crcTable[(c ^ b) & 255] ^ (c >>> 8); return (c ^ -1) >>> 0; };
+  const chunk = (type, data) => {
+    const t = Buffer.from(type, 'ascii'), len = Buffer.alloc(4), c = Buffer.alloc(4);
+    len.writeUInt32BE(data.length); c.writeUInt32BE(crc(Buffer.concat([t, data])));
+    return Buffer.concat([len, t, data, c]);
+  };
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 2;
+  const raw = Buffer.alloc((w * 3 + 1) * h);
+  for (let y = 0; y < h; y++) {
+    raw[y * (w * 3 + 1)] = 1;     // filtr Sub
+    for (let x = 0; x < w * 3; x++) {
+      const v = rgb[y * w * 3 + x], left = x >= 3 ? rgb[y * w * 3 + x - 3] : 0;
+      raw[y * (w * 3 + 1) + 1 + x] = (v - left) & 255;
+    }
+  }
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ihdr),
+    chunk('IDAT', deflateSync(raw, { level: 9 })), chunk('IEND', Buffer.alloc(0))]);
+}
+
 // ------------------------------------------------------------------ zápis
 class Pack {
   constructor(name) { this.name = name; this.blobs = new Array(world.cols * world.rows).fill(null); this.raw = 0; }
@@ -521,7 +602,8 @@ class Pack {
 
 await mkdir(OUT, { recursive: true });
 const packs = { teren: new Pack('teren'), povrch: new Pack('povrch'), silnice: new Pack('silnice'),
-  budovy: new Pack('budovy'), stromy: new Pack('stromy'), lampy: new Pack('lampy'), ulice: new Pack('ulice') };
+  budovy: new Pack('budovy'), stromy: new Pack('stromy'), lampy: new Pack('lampy'), ulice: new Pack('ulice'),
+  mesto: new Pack('mesto'), konstrukce: new Pack('konstrukce') };
 const tiles = [];
 const t1 = performance.now();
 for (let ci = 0; ci < (onlyLists ? 0 : world.cols * world.rows); ci++) {
@@ -529,7 +611,11 @@ for (let ci = 0; ci < (onlyLists ? 0 : world.cols * world.rows); ci++) {
   if (areaArg && (x0 + CHUNK < areaArg[0] || x0 > areaArg[2] || z0 + CHUNK < areaArg[1] || z0 > areaArg[3])) continue;
   tiles.push(ci);
   packs.teren.set(ci, exportTerrain(ci, x0, z0));
-  packs.povrch.set(ci, exportGround(ci, x0, z0));
+  const ground = exportGround(ci, x0, z0);
+  packs.povrch.set(ci, ground);
+  mapaZDlazdice(ci, x0, z0, ground);
+  packs.mesto.set(ci, await exportCity(ci));
+  packs.konstrukce.set(ci, exportStructures(ci));
   packs.silnice.set(ci, exportRoads(ci));
   packs.budovy.set(ci, exportBuildings(ci, true));
   packs.stromy.set(ci, exportTrees(ci, x0, z0));
@@ -541,7 +627,20 @@ for (let ci = 0; ci < (onlyLists ? 0 : world.cols * world.rows); ci++) {
 let commit = 'neznámý';
 try { commit = execSync('git rev-parse HEAD', { cwd: ROOT }).toString().trim(); } catch { /* mimo git */ }
 const files = [];
-if (!onlyLists) for (const pack of Object.values(packs)) files.push(await pack.write());
+if (!onlyLists) {
+  for (const pack of Object.values(packs)) files.push(await pack.write());
+  await writeFile(path.join(OUT, 'mapa.png'), pngRgb(MAPA_SIRKA, MAPA_VYSKA, mapa));
+  // Tunel Valík: tubusy, portály a světla (buildTunnel v předloze), ve světových souřadnicích.
+  const tunely = world.tunnels.map((tunnel) => {
+    const geo = ch.buildTunnel(world, tunnel);
+    const portaly = tunnel.portals.map((pp) => [pp.x, pp.y, pp.z, pp.dx, pp.dz]);
+    return { pevne: new Vec3Array(flipTriangles(geo.solid.attributes.position.array, 3)),
+      barvy: new ColorArray(flipTriangles(geo.solid.attributes.color.array, 3)),
+      svetla: new Vec3Array(flipTriangles(geo.lights.attributes.position.array, 3)),
+      portaly, polosirka: tunnel.halfWidth, silnice: tunnel.road };
+  });
+  await writeFile(path.join(OUT, 'tunely.bin'), deflateSync(encodeVariant(tunely), { level: 9 }));
+}
 
 const meta = data.meta;
 const svet = {
@@ -550,6 +649,7 @@ const svet = {
   dlazdice: CHUNK, sloupce: world.cols, radky: world.rows, minX: world.minX, minZ: world.minZ,
   hraniceHry: meta.bounds, pocatek: meta.origin, nadmorskaVyska: meta.baseElevation, povrchNad: SURF,
   povrchPx: GROUND_PX, paleta: palette, oblast: areaArg, pocetDlazdic: tiles.length,
+  mapa: { soubor: 'mapa.png', sirka: MAPA_SIRKA, vyska: MAPA_VYSKA, krok: mapaKrok, x0: world.minX, z0: world.minZ },
   soubory: files,
 };
 if (!onlyLists) await writeFile(path.join(OUT, 'svet.json'), JSON.stringify(svet, null, 1) + '\n');
@@ -605,5 +705,24 @@ const mhd = {
   zdroj: timetable.source,
 };
 await writeFile(path.join(OUT, 'mhd.bin'), deflateSync(encodeVariant(mhd), { level: 9 }));
+
+// Silniční graf pro navigaci, zakázky a dopravu (World._initGraph v předloze):
+// uzly, orientované hrany mezi body silnic, výstupní hrany uzlů a vlastnosti silnic.
+const R = world.r;
+const graf = {
+  verze: 1,
+  uzelX: Float32Array.from(world.nodeX), uzelZ: Float32Array.from(world.nodeZ),
+  hOd: Int32Array.from(world.eFrom), hDo: Int32Array.from(world.eTo),
+  hA: Int32Array.from(world.eA), hB: Int32Array.from(world.eB),
+  hDelka: Float32Array.from(world.eLen), hSilnice: Int32Array.from(world.eRoad),
+  vystupZac: Int32Array.from(world.outStart), vystupHrany: Int32Array.from(world.outEdges),
+  bodX: Float32Array.from(world.rpx), bodZ: Float32Array.from(world.rpz), bodY: Float32Array.from(world.rpy),
+  silniceZac: Int32Array.from(world.rOff),
+  trida: Uint8Array.from(R.cls), priznaky: Uint8Array.from(R.flags), sirka: Float32Array.from(R.w),
+  pruhy: Uint8Array.from(R.lanes), nazev: Int32Array.from(R.name),
+  rychlostVpred: Uint8Array.from(R.speedForward ?? R.speed), rychlostVzad: Uint8Array.from(R.speedBackward ?? R.speed),
+  limitVpred: Uint8Array.from(R.limitForward ?? []), limitVzad: Uint8Array.from(R.limitBackward ?? []),
+};
+await writeFile(path.join(OUT, 'graf.bin'), deflateSync(encodeVariant(graf), { level: 9 }));
 console.log(`Hotovo za ${((performance.now() - t0) / 1000).toFixed(0)} s, ${tiles.length} dlaždic`);
 for (const f of files) console.log(`  ${f.name}.pak ${(f.bytes / 1e6).toFixed(2)} MB (nekomprimováno ${(f.raw / 1e6).toFixed(1)} MB)`);

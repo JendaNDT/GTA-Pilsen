@@ -1,7 +1,7 @@
 {
  "format": 1,
  "zdroj": {
-  "commit": "5233937acd7821c455c8e97494a1722f107fb181",
+  "commit": "16728e5d6ee48a74da620e97b9c640bd61e4d052",
   "osm": "2026-11-15T01:07:22Z",
   "popis": "Převedeno z public/ nástrojem tools/godot/export_svet.mjs"
  },
@@ -91,6 +91,14 @@
  ],
  "oblast": null,
  "pocetDlazdic": 10218,
+ "mapa": {
+  "soubor": "mapa.png",
+  "sirka": 4096,
+  "vyska": 2439,
+  "krok": 8.1875,
+  "x0": -8960,
+  "z0": -11008
+ },
  "soubory": [
   {
    "name": "teren",
@@ -106,9 +114,9 @@
   },
   {
    "name": "silnice",
-   "bytes": 8963825,
-   "raw": 30781992,
-   "sha256": "9da922942c4bc36290f1562168abc7b2c5156af2507b387915c0810dc318c86e"
+   "bytes": 8968741,
+   "raw": 30842136,
+   "sha256": "037f601a60b6cb0c8ae6e4c514d5a9fad72c30527a1735f10ec201e678519d14"
   },
   {
    "name": "budovy",
@@ -130,9 +138,21 @@
   },
   {
    "name": "ulice",
-   "bytes": 3356524,
+   "bytes": 3356530,
    "raw": 5876664,
-   "sha256": "e9f6d5611aa88dcd621c9b22899c9dd4c214340ed357e113bc4540f98dad8cca"
+   "sha256": "33c1f0b7cee51934be2cb25a6da7a1c80fd97a43ab4428ebf2e9fed0bc91e436"
+  },
+  {
+   "name": "mesto",
+   "bytes": 6551678,
+   "raw": 42481264,
+   "sha256": "fb454263af6c7714ed0b066bb295614dfe2e0ab6d72005a22aba1b6d08acdbee"
+  },
+  {
+   "name": "konstrukce",
+   "bytes": 498275,
+   "raw": 2249708,
+   "sha256": "6d81583924f177e1054b8142ddeb4ec96bdc95f69c1758202873badbfcd3eca5"
   }
  ]
 }

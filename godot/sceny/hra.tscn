@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://skripty/hra/hra.gd" id="1"]
 [ext_resource type="Script" path="res://skripty/hra/prostredi.gd" id="2"]
@@ -10,6 +10,8 @@
 [ext_resource type="Script" path="res://skripty/svet/oblasti.gd" id="8"]
 [ext_resource type="Script" path="res://skripty/mhd/mhd.gd" id="9"]
 [ext_resource type="Script" path="res://skripty/ui/menu.gd" id="10"]
+[ext_resource type="Script" path="res://skripty/hra/zakazky.gd" id="11"]
+[ext_resource type="Script" path="res://skripty/ui/mapa_ui.gd" id="12"]
 
 [node name="Hra" type="Node3D"]
 script = ExtResource("1")
@@ -30,6 +32,9 @@ script = ExtResource("8")
 [node name="Mhd" type="Node3D" parent="."]
 script = ExtResource("9")
 
+[node name="Zakazky" type="Node3D" parent="."]
+script = ExtResource("11")
+
 [node name="Auta" type="Node3D" parent="."]
 
 [node name="Kamera" type="Node3D" parent="."]
@@ -40,6 +45,9 @@ script = ExtResource("6")
 
 [node name="Dotyk" type="CanvasLayer" parent="."]
 script = ExtResource("7")
+
+[node name="Mapa" type="CanvasLayer" parent="."]
+script = ExtResource("12")
 
 [node name="Menu" type="CanvasLayer" parent="."]
 script = ExtResource("10")

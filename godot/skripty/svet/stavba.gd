@@ -631,3 +631,47 @@ static func stromy(blok: Variant, roh: Vector2) -> Array:
 		var g := 0.82 + r * 0.36
 		out[druh].append([t, Color(g * (0.9 + r * 0.25), g, g * 0.85)])
 	return out
+
+
+# ------------------------------------------------------------------ městský model a konstrukce
+
+## Zaměřené budovy centra: hlavní síť (s okny jako budovy) a detail (římsy, věže…).
+static func mesto(blok: Variant) -> Dictionary:
+	if blok == null:
+		return {}
+	var out := {}
+	var kolize := PackedVector3Array()
+	for prefix: String in ["", "d"]:
+		if not blok.has(prefix + "p"):
+			continue
+		var p := Plocha.new()
+		p.v = blok[prefix + "p"]
+		p.n = blok[prefix + "n"]
+		p.c = blok[prefix + "c"]
+		p.i = blok[prefix + "i"]
+		if prefix == "" and blok.has("win"):
+			var w: PackedFloat32Array = blok.win
+			p.s_uv = true
+			var n := p.v.size()
+			p.uv.resize(n)
+			p.uv2.resize(n)
+			for k in n:
+				p.uv[k] = Vector2(w[k * 3], w[k * 3 + 1])
+				p.uv2[k] = Vector2(w[k * 3 + 2], 0.0)
+		out["hlavni" if prefix == "" else "detail"] = p
+		if prefix == "":
+			kolize = trojuhelniky(p)
+	out["kolize"] = kolize
+	return out
+
+
+## Zaměřené konstrukce (zdi, pilíře, jezy): betonová barva, ploché normály.
+static func konstrukce(blok: Variant) -> Dictionary:
+	if blok == null:
+		return {}
+	var p := Plocha.new()
+	p.v = blok.p
+	p.n = ploche_normaly(p.v)
+	p.c.resize(p.v.size())
+	p.c.fill(Color.hex(0x938c82ff).srgb_to_linear())
+	return {"konstrukce": p, "kolize": p.v}

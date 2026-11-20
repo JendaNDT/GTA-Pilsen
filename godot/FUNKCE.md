@@ -16,12 +16,12 @@ Stav v Godotu: **hotovo** = funguje a je ověřené zkouškou, **částečně** 
 | 3 | 103 300 budov s výškou, střechy sedlové, valbové, odsazené, ploché | hotovo | stejný výpočet tvaru jako `buildBuildings` |
 | 4 | Okna fasád podle stylu (dům, panelák, činžák, kanceláře, hala, kostel, radnice), svícení v noci | hotovo | převedený shader, rozvrh rozsvícení oken |
 | 5 | Silnice, chodníky, pěšiny, vodorovné značení, přechody, stopčáry | hotovo | kreslicí příkazy převzaté z předlohy |
-| 6 | 1 179 mostů s mostovkou, pilíři a zábradlím, kamenné oblouky | hotovo | Wilsonův most ověřen průjezdem a chůzí |
-| 7 | Tunel Valík (dva tubusy, portály, osvětlení) | chybí | |
+| 6 | 1 179 mostů s mostovkou, pilíři a zábradlím, kamenné oblouky | hotovo | včetně kalibrace mostovek podle měření; Wilsonův most ověřen průjezdem a chůzí |
+| 7 | Tunel Valík (dva tubusy, portály, osvětlení) | částečně | tubusy, portály a světla s kolizí; terén nad portálem zatím nemá otvor |
 | 8 | Povrch země: pole, louky, lesy, parky, voda, potoky, štěrk kolejí | hotovo | mapa barev 1 m na pixel |
 | 9 | Letecké snímky otevřené krajiny (ortofoto ČÚZK) | chybí | |
 | 10 | Stromy (listnaté, jehličnaté, lesy) a lampy veřejného osvětlení | částečně | bez ročních období a kolizí |
-| 11 | Měřené budovy centra (3D model města), stavby, jezy | chybí | zatím se kreslí budovy z OSM |
+| 11 | Měřené budovy centra (3D model města), stavby, jezy | hotovo | 93 dlaždic městského modelu nahrazuje budovy z OSM, zdi, pilíře a jezy s kolizí |
 | 12 | Tři podrobné úseky ulic s přízemím a mobiliářem | chybí | |
 | 13 | Vodní hamr v Dobřívě s otáčejícími se koly | chybí | |
 | 14 | Proudící voda, pěna na jezech | částečně | voda se vlní, bez proudu a pěny |
@@ -51,8 +51,8 @@ Stav v Godotu: **hotovo** = funguje a je ověřené zkouškou, **částečně** 
 | 28 | Semafory pro auta, chodce a MHD | chybí | |
 | 29 | Denní rytmus provozu podle měření | chybí | |
 | 30 | Chodci na chodnících a přechodech | chybí | |
-| 31 | MHD PMDP: 51 linek, jízdní řád GTFS, zastávky, odjezdy | chybí | |
-| 32 | Nástup a výstup z MHD, přestupy, noční spoje | chybí | |
+| 31 | MHD PMDP: 51 linek, jízdní řád GTFS, zastávky, odjezdy | hotovo | 370 tras podle jízdního řádu, tabule odjezdů; scénář `scenar_mhd` |
+| 32 | Nástup a výstup z MHD, přestupy, noční spoje | částečně | nástup a výstup ověřené; tabule přestupů chybí |
 | 33 | Policie, hledanost, pokuty | chybí | |
 | 34 | Ničitelné lampy, značky, semafory a zábradlí | chybí | |
 
@@ -60,33 +60,33 @@ Stav v Godotu: **hotovo** = funguje a je ověřené zkouškou, **částečně** 
 
 | # | Funkce v předloze | Godot | Ověření a rozdíly |
 | --- | --- | --- | --- |
-| 35 | Rozvoz jídla a taxi na skutečné adresy | chybí | |
+| 35 | Rozvoz jídla a taxi na skutečné adresy | částečně | zakázky se dají vzít (J, menu), trasa a limit z grafu; dokončení zatím neověřené zkouškou, odloženo |
 | 36 | Směny řidiče MHD (tram 1, trolejbus 16, bus 30) | chybí | |
 | 37 | Garáž u hlavního nádraží, koupě vozu, úpravy, oprava | chybí | |
 | 38 | Peníze, statistiky | částečně | ukazatel peněz |
-| 39 | Ukládání postupu a načtení po restartu | chybí | |
-| 40 | 53 míst k objevení | chybí | seznam míst je převedený |
-| 41 | Velká mapa, hledání míst, cíl a navigace | chybí | |
-| 42 | Minimapa a hodiny | částečně | hodiny |
+| 39 | Ukládání postupu a načtení po restartu | hotovo | scénář `scenar_ulozeni` ve dvou samostatných spuštěních |
+| 40 | 53 míst k objevení | hotovo | do 75 m, 150 Kč a popis; místa jsou upravitelná v oblastech |
+| 41 | Velká mapa, hledání míst, cíl a navigace | částečně | mapa M, hledání bez diakritiky, cíl kliknutím, trasa po silnicích; bez zákazů odbočení |
+| 42 | Minimapa a hodiny | hotovo | |
 
 ## Prostředí, zvuk a nastavení
 
 | # | Funkce v předloze | Godot | Ověření a rozdíly |
 | --- | --- | --- | --- |
 | 43 | Slunce a obloha podle data a času v Plzni | hotovo | stejný výpočet polohy slunce (NOAA) |
-| 44 | Herní čas podle Plzně, ruční nastavení, posun N | částečně | čas ze systému, posun N |
+| 44 | Herní čas podle Plzně, ruční nastavení, posun N | hotovo | živý čas, ruční hodina v nastavení, N |
 | 45 | Počasí (déšť, sníh, mlha), přilnavost, „vždy jasno“ | chybí | |
 | 46 | Roční období stromů | chybí | |
 | 47 | Prostorový zvuk motorů, klaksonů, hlášení zastávek, vody | chybí | |
-| 48 | Nastavení kvality (4 předvolby a automaticky) | chybí | |
+| 48 | Nastavení kvality (4 předvolby a automaticky) | částečně | 3 předvolby a automaticky (podle snímků za sekundu) |
 | 49 | Fotorežim (O) | chybí | |
 | 50 | Dotykové ovládání na telefonu | částečně | páčka, tlačítka, kamera tahem |
-| 51 | Menu, nastavení, O hře s licencemi | chybí | |
+| 51 | Menu, nastavení, O hře s licencemi | hotovo | |
 | 52 | Měření výkonu a ladicí režim | chybí | |
 
 ## Editor (nové v Godotu)
 
 | # | Funkce | Godot | Ověření |
 | --- | --- | --- | --- |
-| E1 | Náhled skutečného okolí v editoru | částečně | uzel Svet staví náhled kolem zvoleného bodu |
-| E2 | Ruční úpravy zastávek a objektů zachované při novém importu | chybí | |
+| E1 | Náhled skutečného okolí v editoru | hotovo | scény oblastí ukazují okolí, panel Plzeň hledá místa |
+| E2 | Ruční úpravy zastávek a objektů zachované při novém importu | hotovo | zkouška `test_import`; posunutá zastávka mění i místo zastavení MHD |

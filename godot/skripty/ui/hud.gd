@@ -12,6 +12,7 @@ var _zprava: Label
 var _zprava_cas := 0.0
 var _nacitani: Label
 var _odjezdy: Label
+var _zakazka: Label
 
 
 func _ready() -> void:
@@ -30,6 +31,8 @@ func _ready() -> void:
 	_zprava.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_nacitani = _stitek(koren, 30, Color(1, 1, 1), Control.PRESET_CENTER, Rect2(-300, -20, 600, 40), HORIZONTAL_ALIGNMENT_CENTER)
 	_odjezdy = _stitek(koren, 17, Color(1.0, 0.85, 0.45), Control.PRESET_TOP_LEFT, Rect2(18, 80, 420, 120))
+	_zakazka = _stitek(koren, 18, Color(1.0, 0.86, 0.5), Control.PRESET_TOP_RIGHT, Rect2(-480, 80, 460, 110), HORIZONTAL_ALIGNMENT_RIGHT)
+	_zakazka.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 
 
 ## Popisek ukotvený k okraji obrazovky; obdélník = posun a velikost vůči kotvě.
@@ -85,6 +88,14 @@ func odjezdy(data: Variant) -> void:
 	for r: Dictionary in data.radky:
 		t += "%s  %s → %s\n" % [JizdniRad.format_cas(r.cas), r.linka, r.cil]
 	_odjezdy.text = t
+
+
+func zakazka(text: String) -> void:
+	_zakazka.text = text
+
+
+func text_zakazky() -> String:
+	return _zakazka.text
 
 
 func text_odjezdu() -> String:

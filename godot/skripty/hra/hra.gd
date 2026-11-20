@@ -28,6 +28,12 @@ var _info_cas := 0.0
 @onready var oblasti: Oblasti = $Oblasti
 @onready var mhd: Mhd = $Mhd
 @onready var menu: Menu = $Menu
+@onready var zakazky: Zakazky = $Zakazky
+@onready var mapa: MapaUI = $Mapa
+
+var navigace_cil: Variant = null           ## vlastní cíl (Vector2) z mapy
+var navigace_body := PackedVector2Array()  ## trasa k cíli po silnicích
+var _navigace_cas := 0.0
 
 var jizda: VuzMhd               ## vůz MHD, ve kterém hráč jede
 var _odjezdy_cas := 0.0
@@ -78,6 +84,18 @@ func _ready() -> void:
 	mhd.hodiny = ted
 	_sleduj(chodec)
 	dotyk.akce.connect(_akce)
+	zakazky.hra = self
+	mapa.hra = self
+	mapa.cil_nastaven.connect(func(b: Vector2, nazev: String) -> void:
+		navigace_cil = b
+		_navigace_cas = 0.0
+		hud.zprava("Cíl nastaven%s – trasa je na minimapě." % ((" · " + nazev) if nazev != "" else ""), 3))
+	var z: Dictionary = u.get("zakazky", {})
+	if z.get("aktivni", "") != "":
+		zakazky.posledni = {"typ": z.aktivni, "stav": "preruseno", "castka": 0, "poznamka": "Načtení uložené hry"}
+	elif z.get("posledni", {}) is Dictionary:
+		zakazky.posledni = z.get("posledni", {})
+	_menu_zakazek()
 	menu.zmena_nastaveni.connect(_zmena_nastaveni)
 	menu.pozadavek.connect(_pozadavek_menu)
 	_pouzij_kvalitu()
@@ -162,6 +180,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		_akce("nastoupit")
 	elif event.is_action_pressed("na_silnici"):
 		_akce("na_silnici")
+	elif event.is_action_pressed("mapa"):
+		_akce("mapa")
+	elif event.is_action_pressed("zakazka"):
+		_akce("zakazka")
 	elif event.is_action_pressed("posun_casu"):
 		cas_zivy = false
 		nastav_cas(cas_hodina + 3.0)
@@ -186,7 +208,17 @@ func _akce(nazev: String) -> void:
 		"na_silnici":
 			if rezim == "auto" and auto_hrace:
 				auto_hrace.vrat_na_kola()
+		"mapa":
+			mapa.prepni()
+		"zakazka":
+			if not zakazky.zakazka.is_empty():
+				zakazky.zrus()
+			else:
+				var chyba := zakazky.zacni("jidlo")
+				if chyba != "":
+					hud.zprava(chyba, 3)
 		"menu":
+			_menu_zakazek()
 			menu.otevri(nastaveni, cas_zivy, cas_hodina, "Peníze: %s Kč · objevená místa: %d/%d" % [
 				Hud._tisice(penize), objevene.size(), (Mapa.mista().get("pamatky", []) as Array).size()])
 
@@ -307,6 +339,7 @@ func _process(delta: float) -> void:
 	if _ukladani <= 0.0:
 		_ukladani = 20.0
 		uloz()
+	_navigace(delta)
 	_mista_cas -= delta
 	if _mista_cas <= 0.0:
 		_mista_cas = 0.5
@@ -396,6 +429,7 @@ func stav() -> Dictionary:
 	u.penize = penize
 	u.objevene = objevene.keys()
 	u.statistiky = statistiky
+	u.zakazky = {"aktivni": zakazky.zakazka.get("typ", ""), "posledni": zakazky.posledni}
 	u.nastaveni = nastaveni
 	u.cas = {"zivy": cas_zivy, "den": cas_den, "hodina": cas_hodina}
 	var p := chodec.global_position
@@ -485,3 +519,62 @@ func _pozadavek_menu(akce: String) -> void:
 		"konec":
 			uloz()
 			get_tree().quit()
+
+
+## Karta Zakázky v menu: nabídka a poslední výsledek.
+func _menu_zakazek() -> void:
+	var k := menu.karta("zakazky")
+	for n in k.get_children():
+		n.queue_free()
+	var info := Label.new()
+	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info.text = "Rozvážej jídlo ze skutečných podniků na skutečné adresy, nebo vozi zákazníky autem.\n" + \
+		("Poslední: " + Zakazky.text_vysledku(zakazky.posledni) if not zakazky.posledni.is_empty() else "")
+	k.add_child(info)
+	for volba: Array in [["Rozvoz jídla (J)", "jidlo"], ["Taxi (musíš sedět v autě)", "taxi"]]:
+		var b := Button.new()
+		b.text = volba[0]
+		b.custom_minimum_size = Vector2(0, 44)
+		var typ: String = volba[1]
+		b.pressed.connect(func() -> void:
+			menu.zavri()
+			var chyba := zakazky.zacni(typ)
+			if chyba != "":
+				hud.zprava(chyba, 3))
+		k.add_child(b)
+	var z := Button.new()
+	z.text = "Zrušit probíhající zakázku"
+	z.custom_minimum_size = Vector2(0, 44)
+	z.pressed.connect(func() -> void:
+		menu.zavri()
+		zakazky.zrus())
+	k.add_child(z)
+
+
+## Trasa po silnicích k cíli zakázky nebo k vlastnímu cíli (obnovuje se každé 2,2 s).
+func _navigace(delta: float) -> void:
+	var p := kamera.cil.global_position
+	var cil: Variant = null
+	var z: Variant = zakazky.cil()
+	if z != null:
+		cil = Vector2(z.x, z.z)
+	elif navigace_cil != null:
+		cil = navigace_cil
+		if Vector2(p.x, p.z).distance_to(navigace_cil) < 22.0:
+			navigace_cil = null
+			navigace_body = PackedVector2Array()
+			hud.zprava("Jsi v cíli.", 2)
+			return
+	if cil == null:
+		navigace_body = PackedVector2Array()
+		return
+	_navigace_cas -= delta
+	if _navigace_cas > 0.0:
+		return
+	_navigace_cas = 2.2
+	var g := Graf.nacti()
+	var cesta: Variant = g.najdi_cestu(g.nejblizsi_uzel(p.x, p.z), g.nejblizsi_uzel(cil.x, cil.y), 18000)
+	navigace_body = PackedVector2Array([Vector2(p.x, p.z)])
+	if cesta != null:
+		navigace_body.append_array(g.body_cesty(cesta))
+	navigace_body.append(cil)

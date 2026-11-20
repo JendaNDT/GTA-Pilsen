@@ -90,9 +90,51 @@ func _priprav_materialy() -> void:
 	_lampa_mesh = Modely.lampa()
 
 
+var _tunely_hotove := false
+
+
+## Tunel Valík (tubusy, portály, světla) se staví jednou pro celou mapu.
+func _postav_tunely() -> void:
+	_tunely_hotove = true
+	var surova := FileAccess.get_file_as_bytes(Mapa.SLOZKA + "tunely.bin")
+	if surova.is_empty():
+		return
+	var tunely: Array = bytes_to_var(surova.decompress_dynamic(-1, FileAccess.COMPRESSION_DEFLATE))
+	var svetla_mat := StandardMaterial3D.new()
+	svetla_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	svetla_mat.albedo_color = Color(1.0, 0.92, 0.75)
+	svetla_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	for t: Dictionary in tunely:
+		var p := Stavba.Plocha.new()
+		p.v = t.pevne
+		p.c = t.barvy
+		p.n = Stavba.ploche_normaly(p.v)
+		var mi := _mesh(p, _mat_pevne)
+		mi.name = "Tunel_%d" % t.silnice
+		add_child(mi)
+		var l := Stavba.Plocha.new()
+		l.v = t.svetla
+		l.n = Stavba.ploche_normaly(l.v)
+		l.c.resize(l.v.size())
+		l.c.fill(Color.WHITE)
+		var ml := _mesh(l, svetla_mat, false)
+		add_child(ml)
+		if not Engine.is_editor_hint():
+			var telo := StaticBody3D.new()
+			var cs := CollisionShape3D.new()
+			var tvar := ConcavePolygonShape3D.new()
+			tvar.backface_collision = true
+			tvar.set_faces(p.v)
+			cs.shape = tvar
+			telo.add_child(cs)
+			mi.add_child(telo)
+
+
 func _process(_delta: float) -> void:
 	if not Mapa.nacteno or _mat_teren == null:
 		return
+	if not _tunely_hotove:
+		_postav_tunely()
 	var stred: Vector2
 	var r: float
 	if Engine.is_editor_hint():
@@ -259,7 +301,24 @@ func _krok(d: Dlazdice) -> void:
 						u.add_child(mi)
 				_pridej_kolizi(d, s.kolize, true, "mosty")
 		2:
-			var b := Stavba.budovy(Mapa.blok("budovy", d.ci))
+			# zaměřené budovy centra nahrazují odpovídající budovy z OSM
+			var mesto := Stavba.mesto(Mapa.blok("mesto", d.ci))
+			var b := Stavba.budovy(Mapa.blok("budovy", d.ci), not mesto.is_empty())
+			if mesto.has("hlavni"):
+				var mh := _mesh(mesto.hlavni, _mat_budovy)
+				mh.name = "MestoZamerene"
+				u.add_child(mh)
+				_pridej_kolizi(d, mesto.kolize, true, "mesto")
+			if mesto.has("detail"):
+				var md := _mesh(mesto.detail, _mat_pevne)
+				md.name = "MestoDetail"
+				u.add_child(md)
+			var k := Stavba.konstrukce(Mapa.blok("konstrukce", d.ci))
+			if not k.is_empty():
+				var mk := _mesh(k.konstrukce, _mat_pevne)
+				mk.name = "Konstrukce"
+				u.add_child(mk)
+				_pridej_kolizi(d, k.kolize, true, "konstrukce")
 			if not b.is_empty():
 				var mi := _mesh(b.budovy, _mat_budovy)
 				if mi:
