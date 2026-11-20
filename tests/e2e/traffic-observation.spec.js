@@ -4,7 +4,7 @@ import { gameUrl } from './game-url.js';
 
 for (const site of ['Klatovská', 'hlavní nádraží']) {
   test('E20 – deset minut ranní špičky, ' + site, async ({ page }, info) => {
-    test.setTimeout(240_000);
+    test.setTimeout(Math.max(info.timeout, 240_000));
     await page.addInitScript(() => {
       let seed = 20261118;
       Math.random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32);

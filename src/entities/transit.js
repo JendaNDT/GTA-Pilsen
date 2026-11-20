@@ -121,6 +121,7 @@ class TransitVehicle {
 
   followSchedule({ s, index, wait }) {
     this.enteredSignal = null;
+    this.stoppedInTraffic = 0;
     this.s = s;
     this.stopIndex = index;
     this.wait = wait;
@@ -377,6 +378,7 @@ export class TransitManager {
   }
 
   _pose(v, dt) {
+    v.stoppedInTraffic = !v.doorsOpen && Math.abs(v.v) < 0.02 ? v.stoppedInTraffic + dt : 0;
     let referenceY = v.y, end = v.s;
     for (const [index, mesh] of v.meshes.entries()) {
       const section = v.sections[index];
@@ -400,7 +402,8 @@ export class TransitManager {
       const collisionPoints = v.isTatra ? [-collisionSpan, -axle, 0, axle, collisionSpan] : [-axle, 0, axle];
       for (const k of collisionPoints) this.heavy.push({ x: x + fx * k, y, z: z + fz * k, r: 1.35, vx, vz });
       const footprint = v.footprints[index];
-      Object.assign(footprint, { x, y, z, vx, vz, yaw, halfLen: length / 2, radius: 1.4 });
+      Object.assign(footprint, { x, y, z, vx, vz, yaw, halfLen: length / 2, radius: 1.4,
+        stoppedInTraffic: v.stoppedInTraffic });
       this.obstacles.push(footprint);
       if (index === (v.isTram ? 1 : 0)) Object.assign(v, { x, y, z, yaw, vx, vz });
     }
@@ -460,6 +463,7 @@ export class TransitManager {
       }
       if (!near) {
         this._show(v, false);
+        v.stoppedInTraffic = 0;
         v.waitingForSpace = false;
         v.trafficStop = null;
         v.x = frontPoint.x;

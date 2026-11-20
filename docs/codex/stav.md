@@ -1,5 +1,11 @@
 # Stav etapy E26
 
+## Průjezd křižovatkou z E21
+
+Větev vydání přebírá opravu `7d9471b`. Při změně směru zelené řidič počká, až záď vozu z předchozí fáze uvolní křižovatku. Při dlouhém stání MHD u výjezdu může zvolit volnou povolenou odbočku. Na větvi E21 prošla po této změně dvě desetiminutová pozorování. Nejdelší stání na Klatovské třídě bylo 118 s a u hlavního nádraží 56,5 s. Obě měření zachovala hranici pod 120 s i kontrolu jízdy po vozovce.
+
+Na sestavení E26 se změnou prošlo 182 jednotkových testů, produkční sestavení a dva případy na WebGL 2. Jeden ověřil přednost při levém odbočení, druhý vyčkání a volbu odbočky u stojící MHD. Časový limit pozorovacího testu může běžec pro pomalý adaptér prodloužit, doba simulace i podmínky přijetí zůstávají stejné. Výsledky jsou v `data-raw/e26/kolona-sokl-e2e.log`.
+
 ## Podmínky materiálu u výloh na Americké
 
 Při spuštění kandidáta `f6a1254` hlásil WebGL 2 čtyři návraty hodnot z podmínek uvnitř shaderu. Úprava z E25 mění barvu soklu a římsy přímo uvnitř podmínek. V obou vykreslovačích prošla stejná kontrola u Wilsonova mostu. Změřená stěna měla přiřazený materiál přízemí i vstup a kompilace proběhla bez varování TSL. Na tomto sestavení prošlo 181 jednotkových testů a produkční sestavení. Výsledky jsou v `data-raw/e26/sokl-e2e.log`. Výkon při minutové zkoušce dne a noci se měří samostatně.

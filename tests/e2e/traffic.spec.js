@@ -595,3 +595,56 @@ test('E21 – řidič před Husovou zná levé odbočení i za druhou krátkou s
   });
   expect(observed).toEqual({ kept: true, exit: 12147, left: true });
 });
+
+test('E21 – řidič u dlouho stojící MHD počká na zelenou a použije volný výjezd', async ({ page }) => {
+  await boot(page);
+  const result = await page.evaluate(() => {
+    const { vehicles, world, transit, player, clock } = __game, t = world.traffic;
+    const tramEvent = transit.timetable.events(clock.day).find(event => event.trip.route.type === 'tram');
+    const tram = transit.takeShift(tramEvent, 0);
+    const footprintTime = (seconds, doorsOpen, speed) => {
+      tram.doorsOpen = doorsOpen;
+      tram.v = speed;
+      transit._pose(tram, seconds);
+      return tram.footprints[0].stoppedInTraffic;
+    };
+    const waiting = [footprintTime(75, true, 0), footprintTime(30, false, 0),
+      footprintTime(30, false, 0), footprintTime(1, false, 1)];
+    const car = player.lastCar;
+    for (const other of [...vehicles.cars]) if (other !== car) vehicles.remove(other);
+    const rule = t.byEdge.get(28439).find(control => control.id === 3073913700);
+    const lane = vehicles._laneFor(rule.edge, 1), s = rule.s - car.halfLen - 0.9;
+    const p = world.edgePoint(rule.edge, s, lane, {});
+    car.place(p.x, p.z, Math.atan2(p.tx, p.tz));
+    Object.assign(car, { mode: 'ai', edge: rule.edge, next: 19355, lane, nextLane: lane, s,
+      trafficStop: { rule }, blocked: 60 });
+    const section = { x: -362.612, z: 262.264, y: car.y, yaw: 1.448, halfLen: 6, radius: 1.4,
+      stoppedInTraffic: 20, vx: 0, vz: 0 };
+    vehicles.obstacles.splice(0, vehicles.obstacles.length, section);
+    const originalBlocked = t.exitBlocked(car, rule, [], [section]);
+    const check = color => {
+      const deadline = t.time + 180;
+      while (t.time < deadline && t.light(rule) !== color) t.tick(0.25);
+      if (t.light(rule) !== color) throw new Error('Semafor nepřešel na očekávanou barvu ' + color);
+      car.nextDetourCheck = 0;
+      vehicles.stepAI(car, 1 / 60);
+      return car.next;
+    };
+    t.users.clear();
+    const exits = [check('green')];
+    section.stoppedInTraffic = 75;
+    exits.push(check('red'));
+    const alternative = world.edgePoint(34502, 4, vehicles._laneFor(34502, 1), {});
+    vehicles.obstacles.push({ ...section, x: alternative.x, z: alternative.z, yaw: Math.atan2(alternative.tx, alternative.tz) });
+    exits.push(check('green'));
+    vehicles.obstacles.pop();
+    exits.push(check('green'));
+    for (let i = 0; i < 1800 && car.edge !== 34502; i++) {
+      t.tick(1 / 60);
+      vehicles.stepAI(car, 1 / 60);
+    }
+    return { waiting, originalBlocked, exits, leftOn: car.edge };
+  });
+  expect(result).toEqual({ waiting: [0, 30, 60, 0], originalBlocked: true,
+    exits: [19355, 19355, 19355, 34502], leftOn: 34502 });
+});
