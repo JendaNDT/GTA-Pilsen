@@ -2,7 +2,7 @@
 
 ## Ověření brzd po načtení auta
 
-Na WebGL 2 prošla zkouška zakázek a garáže po sjednocení počasí při měření brzd. Všech 816 souborů sestavené hry odpovídá ověřovanému archivu. Na témže webu pokračuje úplná sada a dlouhá jízda. [Výsledek a podmínky zkoušky](../E26.md#brzdění-po-vyzvednutí-auta-z-garáže)
+Na WebGL 2 prošla zkouška zakázek a garáže po sjednocení počasí při měření brzd. Archiv větve `f6d41bb` obsahuje opravenou zkoušku. Webový ZIP je po bajtech shodný s herní revizí `5233937`. Na témže webu pokračuje úplná sada a dlouhá jízda. [Výsledek a podmínky zkoušky](../E26.md#brzdění-po-vyzvednutí-auta-z-garáže)
 
 ## Ověření ranní špičky a archiv
 
