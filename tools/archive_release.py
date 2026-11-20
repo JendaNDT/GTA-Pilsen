@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import os
 import posixpath
 import re
 import stat
@@ -20,7 +21,7 @@ def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def write_zip(archive, files, root, executable=()):
+def write_zip(archive, files, root, executable=(), source_ids=None):
     hashes = {}
     with ZipFile(archive, "w", compression=ZIP_DEFLATED) as bundle:
         for name in files:
@@ -32,9 +33,17 @@ def write_zip(archive, files, root, executable=()):
             info.compress_type = ZIP_DEFLATED
             checksum = hashlib.sha256()
             with path.open("rb") as source, bundle.open(info, "w") as target:
+                if source_ids is not None:
+                    # Otisk objektu Git zahrnuje délku i stejné bajty, které zapisujeme do ZIPu.
+                    algorithm = "sha256" if len(source_ids[name]) == 64 else "sha1"
+                    blob = hashlib.new(algorithm, f"blob {os.fstat(source.fileno()).st_size}\0".encode())
                 while block := source.read(1024 * 1024):
                     target.write(block)
                     checksum.update(block)
+                    if source_ids is not None:
+                        blob.update(block)
+                if source_ids is not None and blob.hexdigest() != source_ids[name]:
+                    raise ValueError(f"Obsah {name} neodpovídá zdrojové revizi.")
             hashes[name] = checksum.hexdigest()
     return hashes
 
@@ -71,32 +80,34 @@ def main():
     dist = args.dist.resolve()
     if not (dist / "index.html").is_file():
         parser.error("Výstup musí obsahovat sestavené index.html.")
-    source = subprocess.check_output(
-        ["git", "ls-files", "--stage", "-z",
-         "--", "AGENTS.md", "vendor", ".github", ".gitignore", ".nvmrc", "README.md", "Spustit hru.command", "docs",
-         "index.html", "package.json", "package-lock.json", "playwright.config.js", "public", "src", "tests", "tools", "vite.config.js"],
-        cwd=ROOT,
-    )
+    revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
+    inputs = ["AGENTS.md", "vendor", ".github", ".gitignore", ".nvmrc", "README.md", "Spustit hru.command", "docs",
+              "index.html", "package.json", "package-lock.json", "playwright.config.js", "public", "src", "tests", "tools", "vite.config.js"]
+    changed = subprocess.check_output(["git", "diff", "--cached", "--name-only", "-z", revision, "--", *inputs], cwd=ROOT)
+    if changed:
+        first_changed = os.fsdecode(changed.split(b"\0", 1)[0])
+        parser.error(f"Index se liší od zdrojové revize v souboru {first_changed}.")
+    source = subprocess.check_output(["git", "ls-tree", "-r", "-z", revision, "--", *inputs], cwd=ROOT)
     executable = set()
-    paths = []
+    source_ids = {}
     for row in source.decode().split("\0"):
         if not row:
             continue
         metadata, name = row.split("\t", 1)
-        mode, _, stage = metadata.split()
-        if stage != "0" or mode not in {"100644", "100755"}:
+        mode, kind, object_id = metadata.split()
+        if kind != "blob" or mode not in {"100644", "100755"}:
             parser.error(f"Neuzavřený nebo nepodporovaný zdrojový soubor {name}.")
         if not (ROOT / name).is_file() or (ROOT / name).is_symlink():
             parser.error(f"V pracovní kopii chybí běžný sledovaný soubor {name}.")
-        paths.append(name)
+        source_ids[name] = object_id
         if mode == "100755":
             executable.add(name)
-    paths.sort()
+    paths = sorted(source_ids)
     published = sorted(path.relative_to(dist).as_posix() for path in dist.rglob("*") if path.is_file())
     base = f"Plzen-naplno-{version}"
     manifest = {
         "version": version,
-        "baseCommit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
+        "baseCommit": revision,
     }
     output = args.output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -113,7 +124,10 @@ def main():
         missing = sorted(assets.paths.difference(manifest["published"]))
         if missing:
             parser.error("Ve webovém archivu chybí soubory z index.html: " + ", ".join(missing))
-        manifest["sources"] = write_zip(sources, paths, ROOT, executable)
+        try:
+            manifest["sources"] = write_zip(sources, paths, ROOT, executable, source_ids)
+        except ValueError as error:
+            parser.error(str(error))
         for name, checksum in manifest["sources"].items():
             if name.startswith("public/") and manifest["published"].get(name.removeprefix("public/")) != checksum:
                 parser.error(f"Sestavení neodpovídá souboru {name}.")

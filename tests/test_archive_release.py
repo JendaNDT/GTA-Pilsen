@@ -81,6 +81,19 @@ class ReleaseArchiveTest(unittest.TestCase):
                 self.assertTrue((output / "manifest.json").exists())
                 html.write_text("<canvas></canvas>")
 
+                # Běžný zdroj může být při balení jiný než ve zveřejněné revizi.
+                output = root / "jine-zdroje"
+                vendor = root / "vendor/picomatch/index.js"
+                vendor.write_text("export default 2")
+                with self.assertRaises(SystemExit):
+                    run("0.2.0")
+                self.assertFalse(output.exists())
+                subprocess.run(["git", "add", str(vendor)], cwd=root, check=True)
+                with self.assertRaises(SystemExit):
+                    run("0.2.0")
+                self.assertFalse(output.exists())
+                subprocess.run(["git", "restore", "--staged", "--worktree", str(vendor)], cwd=root, check=True)
+
                 # Změna po zabalení webu nesmí vytvořit dva vzájemně odlišné archivy.
                 write_zip = archive_release.write_zip
                 def change_during_pack(archive, files, tree, *executable):

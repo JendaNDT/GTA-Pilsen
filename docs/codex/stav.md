@@ -1,5 +1,11 @@
 # Stav etapy E26
 
+## Shoda zdrojového archivu s označenou revizí
+
+Při regresní zkoušce se lokálně změněná knihovna dostala do zdrojového ZIPu pod označením původního commitu. Nástroj nyní bere seznam souborů a oprávnění z určeného commitu. Při zápisu porovná skutečné bajty každého zdroje s otiskem jeho objektu v Gitu. Zkouška ověřila odmítnutí změněné knihovny jak před `git add`, tak po něm. Dosavadní výstup se při chybě zachová.
+
+Při opakovaném zabalení čisté revize `be8a43b` vyšly oba ZIPy i manifest přesně stejné jako původní soubory. Prošlo 182 testů JavaScriptu, 27 testů Pythonu a produkční sestavení.
+
 ## Ověření archivu s opravou provozu
 
 Webový ZIP z revize `be8a43b` obsahuje 815 souborů. Všech 1 371 položek zdrojového ZIPu odpovídá čisté pracovní kopii. Při použití stejných nainstalovaných závislostí daly Node.js 20.19.0, 22.12.0 i 24.22.1 ve všech souborech stejný výsledek jako zabalený web. Další kontrola rozbalila zdrojový ZIP do prázdné složky, na Node.js 24.22.1 nainstalovala závislosti pomocí `npm ci --offline` z místní mezipaměti a znovu sestavila všech 815 souborů se stejnými otisky. Audit zámku závislostí našel nula známých zranitelností. [Otisky a velikosti obou archivů](../E26.md#archiv-kandidáta-z-revize-be8a43b)
