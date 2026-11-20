@@ -1,5 +1,13 @@
 # Stav etapy E26
 
+## Zrnitost povrchu v dálce
+
+U vzdálených povrchů nyní shader přeskočí výpočet jemné nebo střední zrnitosti v místech, kde by její váha byla nulová. Výpočet šířky pixelu zůstává mimo obě podmínky, aby měl stejnou hodnotu i na jejich hranicích.
+
+Časy stejné úpravy na větvi E24 jsou v jejím protokolu. Zde šlo o funkční zkoušky.
+
+Na E26 prošlo 182 testů JavaScriptu, produkční sestavení a čtyři prohlížečové kontroly terénu. WebGL 2 i WebGPU vykreslily nízkou předvolbu bez atlasů a střední s barevnou a normálovou texturou.
+
 ## Kandidát s opravenými fasádami
 
 Na revizi `2516ec7` se ve vysoké předvolbě na WebGL 2 podařilo spustit hru bez původní chyby při kreslení budov. Při zkoušce dne a noci v okně 400 × 280 bylo v poslední minutě 17 snímků při požadavku více než 30. Zkouška skončila u tohoto požadavku, závěrečnou kontrolu zpráv vykreslovače tedy neprovedla. Výsledek je v `data-raw/e26/vrstva-minuta.log`.
