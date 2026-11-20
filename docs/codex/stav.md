@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Archiv s úplným seznamem modulů
+
+Revize `962291e` má ověřené archivy, sestavení na třech verzích Node.js a oba návraty s uloženým postupem. Hra používá stejných 815 souborů jako při probíhajících zkouškách. [Otisky archivů a rozsah ověření](../E26.md#archiv-s-úplným-seznamem-modulů)
+
 ## Úplnost fyzikálního modulu ve webovém archivu
 
 Archivace odhalí chybějící modul Joltu i při úplném vstupním HTML. Ověřili jsme to na kopii produkčního sestavení. Prošlo 183 testů JavaScriptu a 27 testů Pythonu. Obsah 815 dosavadních herních souborů se shoduje s kandidátem `254ae60`. Prohlížečová sada a dlouhá jízda pokračují. [Zkouška neúplného webu](../E26.md#úplnost-fyzikálního-modulu-ve-webovém-archivu)
