@@ -74,3 +74,35 @@ export function bridgeApproach(world, bridge, road) {
   }
   return null;
 }
+
+// Vyrovná povrch vozovky u opěry. Pod středem mostu zůstane původní koryto.
+export function bridgeBankOffsets(world, bridge, road) {
+  const head = world.rOff[bridge], end = world.rOff[road + 1] - 1;
+  const { rpx, rpz, rpy, gradeStep } = world;
+  const x0 = rpx[head], z0 = rpz[head];
+  if (rpx[end] !== x0 || rpz[end] !== z0) return [];
+  const length = Math.hypot(rpx[end - 1] - x0, rpz[end - 1] - z0);
+  if (!length) return [];
+  const dx = (rpx[end - 1] - x0) / length, dz = (rpz[end - 1] - z0) / length;
+  const width = world.r.w[road] / 2;
+  const startY = rpy[head] - 0.05;
+  const reach = Math.min(20, length);
+  const endY = world.heightAt(x0 + reach * dx, z0 + reach * dz);
+  const smooth = value => {
+    const t = Math.max(0, Math.min(1, value));
+    return t * t * (3 - 2 * t);
+  };
+  const radius = reach + width + 6, offsets = [];
+  for (let x = gradeStep * Math.floor((x0 - radius) / gradeStep); x <= x0 + radius; x += gradeStep) {
+    for (let z = gradeStep * Math.floor((z0 - radius) / gradeStep); z <= z0 + radius; z += gradeStep) {
+      const along = (x - x0) * dx + (z - z0) * dz;
+      const across = Math.abs((z - z0) * dx - (x - x0) * dz);
+      const weight = smooth((width + 4 - across) / 4) * smooth((along + 5) / 3) * smooth((reach + 5 - along) / 5);
+      if (!weight) continue;
+      const target = startY + (endY - startY) * Math.max(0, Math.min(1, along / reach));
+      const delta = Math.round(100 * weight * (target - world.heightAt(x, z)));
+      if (delta) offsets.push([x, z, delta]);
+    }
+  }
+  return offsets;
+}

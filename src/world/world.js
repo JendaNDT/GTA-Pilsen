@@ -1,4 +1,4 @@
-import { bridgeApproach } from './road-profile.js';
+import { bridgeApproach, bridgeBankOffsets } from './road-profile.js';
 import { streetLamps } from './lamps.js';
 import { breakableId, Breakables } from '../physics/breakables.js';
 // Herní svět: dekódování dat, prostorové indexy, kolize, silniční graf.
@@ -98,6 +98,10 @@ export class World {
     for (const model of data.structures?.index.railDecks ?? []) {
       const rail = this.rails[model.rail];
       if (rail?.y && !this.gradeRails.has(model.rail)) rail.deck = measuredRailDeck(rail,model.sections);
+    }
+    // Pravý pruh mostu 2706 přechází na šikmý břeh silnice 33139.
+    if (this.gradeStep && (this.r.flags[2706] & RF.BRIDGE)) {
+      for (const [x, z, delta] of bridgeBankOffsets(this, 2706, 33139)) this._setGradeOffset(x, z, delta, true);
     }
     // V tomto výřezu končí nájezd 2725 u měřeného horního pásu 64.
     this.roadApproach = bridgeApproach(this, 64, 2725);
@@ -210,17 +214,21 @@ export class World {
       this.trackUnderpasses.get(tile).push(section);
     }
     for (const [i, j, delta] of data.terrain ?? []) {
-      const x = i * data.grid, z = j * data.grid;
-      const ix = (x - this.minX) / CHUNK, iz = (z - this.minZ) / CHUNK;
-      // Stejný upravený vrchol patří oběma sousedům na hraně dlaždice.
-      for (const cx of Number.isInteger(ix) ? [ix - 1, ix] : [Math.floor(ix)]) {
-        for (const cz of Number.isInteger(iz) ? [iz - 1, iz] : [Math.floor(iz)]) {
-          if (cx < 0 || cx >= this.cols || cz < 0 || cz >= this.rows) continue;
-          const tile = cz * this.cols + cx;
-          if (!this.gradeTerrain.has(tile)) this.gradeTerrain.set(tile, new Int16Array(this.gradeStride ** 2));
-          const u = (ix - cx) * (this.gradeStride - 1), v = (iz - cz) * (this.gradeStride - 1);
-          this.gradeTerrain.get(tile)[v * this.gradeStride + u] = delta;
-        }
+      this._setGradeOffset(i * data.grid, j * data.grid, delta);
+    }
+  }
+
+  _setGradeOffset(x, z, delta, relative = false) {
+    const ix = (x - this.minX) / CHUNK, iz = (z - this.minZ) / CHUNK;
+    // Stejný upravený vrchol patří oběma sousedům na hraně dlaždice.
+    for (const cx of Number.isInteger(ix) ? [ix - 1, ix] : [Math.floor(ix)]) {
+      for (const cz of Number.isInteger(iz) ? [iz - 1, iz] : [Math.floor(iz)]) {
+        if (cx < 0 || cx >= this.cols || cz < 0 || cz >= this.rows) continue;
+        const tile = cz * this.cols + cx;
+        if (!this.gradeTerrain.has(tile)) this.gradeTerrain.set(tile, new Int16Array(this.gradeStride ** 2));
+        const u = (ix - cx) * (this.gradeStride - 1), v = (iz - cz) * (this.gradeStride - 1);
+        const heights = this.gradeTerrain.get(tile), index = v * this.gradeStride + u;
+        heights[index] = relative ? heights[index] + delta : delta;
       }
     }
   }

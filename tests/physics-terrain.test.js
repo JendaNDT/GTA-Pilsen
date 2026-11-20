@@ -112,6 +112,22 @@ test('Jolt protne Wilsonův most, Rondel i vozovky a stropy Valíku ve výšce p
       }
     }
     assert.ok(w.heightAt(path.x.at(-1), path.z.at(-1)) >= path.y.at(-1));
+    // Příčný sklon břehu dříve nechával pravá kola za koncem mostu bez opory.
+    const bridgeEnd = w.rOff[2706], landEnd = w.rOff[33140] - 1;
+    const x0 = w.rpx[bridgeEnd], z0 = w.rpz[bridgeEnd], y0 = w.rpy[bridgeEnd];
+    assert.equal(w.rpx[landEnd], x0);
+    assert.equal(w.rpz[landEnd], z0);
+    const dx = w.rpx[landEnd - 1] - x0, dz = w.rpz[landEnd - 1] - z0;
+    const length = Math.hypot(dx, dz);
+    for (const side of [-2, 0, 2]) {
+      let previous = y0;
+      for (let d = 0; d <= 8; d += 0.25) {
+        const x = x0 + (dx * d - dz * side) / length, z = z0 + (dz * d + dx * side) / length;
+        const y = w.heightAt(x, z);
+        assert.ok(Math.abs(y - previous) < 0.15, 'Kola potřebují souvislý povrch při přechodu na břeh.');
+        previous = y;
+      }
+    }
     const wilson = [...w.archedBridges.keys()].find((i) => w.roadNames[w.r.name[i]] === 'Wilsonův most');
     assert.ok(Number.isInteger(wilson));
     for (const road of [wilson, ...w.rondel.elevated.keys(), ...w.gradeRoads]) {
