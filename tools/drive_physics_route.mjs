@@ -133,7 +133,11 @@ try {
       // Rozjetí vzad potřebuje několik kroků i s volantem blízko přímého směru.
       if (backing && best < 7 && (loops || Math.abs(angle) > 0.35)) {
         backing--;
-        if (loops) recoveryDistance = best;
+        if (loops) {
+          recoveryDistance = best;
+          // Čas na další pokus počítáme od přeřazení vpřed, až po dokončení couvání.
+          if (!backing) lastAdvance = tick;
+        }
         throttle = input((-3.5 - car.speed) * 0.8);
         steer = loops ? input(angle) : Math.sign(angle);
       } else backing = 0;

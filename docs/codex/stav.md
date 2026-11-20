@@ -1,5 +1,11 @@
 # Stav etapy E26
 
+## Čtvrtý okruh a kontrola památek
+
+Na kandidátu `f6a1254` se vůz třikrát vrátil do Plzně. Ve čtvrtém okruhu po 154,56 km střídal pokusy o vyproštění. Po dokončení couvání dostal jediný krok fyziky na jízdu vpřed. Nástroj nyní začne čekací dobu počítat na konci couvání. V opakovaném sledu povelů měl řidič mezi pokusy 100 kroků vpřed. Na sestavení `19b459d` projel od místa dřívějšího zastavení 1 295,65 m bez dalšího couvání. Ověření spotřeby prostředků po čtvrtém návratu pokračuje. [Podmínky jízdy a výsledky](../E26.md)
+
+Na WebGL 2 prošla kontrola blízkého a vzdáleného materiálu památky, střechy i uvolnění dlaždice. Zkouška čeká na obě příslušné dlaždice, aby její výsledek nezávisel na tom, zda se dříve načte novější uliční vybavení. Při samostatné minutové kontrole dne a noci na softwarovém WebGL 2 vzniklo za sledovanou minutu 11 snímků při požadavku více než 30. Výchozí WebGPU hru spustilo a zobrazilo v menu správný název vykreslovače. V okně 960 × 600 během desetiminutového limitu panel nezaznamenal vzorek času GPU. Při opakovaném spuštění v okně 400 × 280 vrátil stejný adaptér po pěti snímcích jeden vzorek, 8 342,91 ms. Minutová zkouška a původní rozlišení zůstávají otevřené. Prošlo všech 182 testů JavaScriptu a 27 testů Pythonu. Nové produkční sestavení se ve všech 815 souborech shoduje se sestavením použité hry. Nad herním kódem `19b459d` byla zahájena nová sada 358 prohlížečových zkoušek.
+
 ## Průjezd křižovatkou z E21
 
 Větev vydání přebírá opravu `7d9471b`. Při změně směru zelené řidič počká, až záď vozu z předchozí fáze uvolní křižovatku. Při dlouhém stání MHD u výjezdu může zvolit volnou povolenou odbočku. Na větvi E21 prošla po této změně dvě desetiminutová pozorování. Nejdelší stání na Klatovské třídě bylo 118 s a u hlavního nádraží 56,5 s. Obě měření zachovala hranici pod 120 s i kontrolu jízdy po vozovce.

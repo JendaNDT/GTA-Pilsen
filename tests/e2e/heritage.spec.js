@@ -17,12 +17,14 @@ test('E05 – pilotní památky se vykreslí, přepnou detail a uvolní dlaždic
   await page.waitForFunction(() => {
     const g = window.__game;
     g.chunks.update(5, 5, 620, 8);
-    return [...g.chunks.chunks.values()].some((ch) => ch.heritage?.city && ch.heritage.detail.length);
+    // Vyčkáme na původní detail památky i na měřenou dlaždici v místě dotazu na střechu.
+    const landmark = g.chunks.chunks.get(g.world.chunkIndex(-128, 128))?.heritage;
+    const roof = g.chunks.chunks.get(g.world.chunkIndex(-22.8, -9.7))?.heritage;
+    return landmark?.city && landmark.detail.length > 0 && roof?.city;
   });
   const city = await page.evaluate(() => {
     const g = window.__game, heritage = g.chunks.heritage;
-    const index = [...heritage.cells.keys()].find((i) => g.chunks.chunks.get(i)?.heritage?.detail.length);
-    const ch = g.chunks.chunks.get(index);
+    const ch = g.chunks.chunks.get(g.world.chunkIndex(-128, 128));
     const detail = ch.heritage.detail[0], base = ch.heritage.base[0];
     const near = detail.visible && base.material === heritage.cityClose;
     g.chunks.update(5, 5, 620, 0, 450);
