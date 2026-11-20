@@ -71,8 +71,14 @@ export function makeAsphaltMaterial(detail) {
 // Zrnitost slábne s velikostí promítnutého pixelu.
 function groundNoise(point) {
   const px = point.x.fwidth().max(point.y.fwidth()).toVar();
-  const fine = valueNoise(point.mul(2.6)).sub(0.5).mul(smoothstep(0.15, 0.7, px).oneMinus());
-  const mid = valueNoise(point.mul(0.33)).sub(0.5).mul(smoothstep(1.2, 5, px).oneMinus()).toVar();
+  const fine = float(0).toVar(), mid = float(0).toVar();
+  // Pokud promítnutý pixel překročí celou šířku přechodu, váha vrstvy už je nula.
+  If(px.lessThan(0.7), () => {
+    fine.assign(valueNoise(point.mul(2.6)).sub(0.5).mul(smoothstep(0.15, 0.7, px).oneMinus()));
+  });
+  If(px.lessThan(5), () => {
+    mid.assign(valueNoise(point.mul(0.33)).sub(0.5).mul(smoothstep(1.2, 5, px).oneMinus()));
+  });
   const big = valueNoise(point.mul(0.021)).sub(0.5).toVar();
   return { px, mid, big, gain: fine.mul(0.13).add(mid.mul(0.10), big.mul(0.07), 1) };
 }
