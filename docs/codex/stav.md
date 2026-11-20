@@ -1,5 +1,11 @@
 # Stav etapy E26
 
+## Kandidát s opravenými fasádami
+
+Na revizi `2516ec7` se ve vysoké předvolbě na WebGL 2 podařilo spustit hru bez původní chyby při kreslení budov. Při zkoušce dne a noci v okně 400 × 280 bylo v poslední minutě 17 snímků při požadavku více než 30. Zkouška skončila u tohoto požadavku, závěrečnou kontrolu zpráv vykreslovače tedy neprovedla. Výsledek je v `data-raw/e26/vrstva-minuta.log`.
+
+Všechny tři předepsané verze Node.js sestavily stejných 815 souborů jako webový ZIP. Na novém sestavení byla spuštěna úplná sada zkoušek na obou vykreslovačích. V předchozím běhu prošlo před přerušením 22 případů. Dlouhá jízda na herním kódu `19b459d` pokračuje ve druhém okruhu. Při prvním návratu po 51,35 km bylo 74 textur, 239 geometrií, 884 těles Joltu a žádný úlomek. [Archiv a otisky souborů](../E26.md#archiv-kandidáta-z-revize-2516ec7)
+
 ## Číslo materiálu fasády na WebGL 2
 
 Při startu hry na WebGL 2 odmítl ovladač vykreslit část domů. U atributu `buildingLayer` shader očekával celé číslo, zatímco geometrie předávala bajt jako číslo s plovoucí řádovou čárkou. Geometrie nyní výslovně předává celočíselný atribut. Stěny a střechy si zachovávají původní čísla materiálů.
