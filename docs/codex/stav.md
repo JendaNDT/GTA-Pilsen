@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Mělčina, hluboká voda a plavání
+
+Na opraveném sestavení prošlo všech osm cílených kontrol na WebGL 2 a WebGPU. Zahrnují rozvoz MHD, dvě fiktivní nádrže a plavání v mapě Radbuzy. Úplná sada nyní obsahuje 360 případů. Otevřená je úplná sada, porovnání třetího a čtvrtého návratu a kontroly na autorových zařízeních. [Výsledky zkoušek vody](../E26.md#mělčina-hluboká-voda-a-plavání)
+
 ## Počítání zpátečky při zkoušce čtyř okruhů
 
 Zkouška čtvrtého okruhu na revizi `d4630eb` skončila po 196,42 km. Opravený nástroj přičte pokus až při skutečném couvání. Ověření prošlo v záznamu řídicích vstupů i na fiktivní dráze v Joltu. Prošlo 183 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. Dlouhá jízda zůstává otevřená. [Výsledky zkoušky řízení](../E26.md#počítání-zpátečky-při-zkoušce-čtyř-okruhů)
