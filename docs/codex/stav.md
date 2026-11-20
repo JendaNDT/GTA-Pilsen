@@ -6,7 +6,7 @@ Větev `etapa/E21` navazuje na E20 sloučenou revizí `623e081`. [Zadání E21](
 
 V desetiminutové zkoušce na Klatovské třídě čekalo jedno auto 381 sekund. U stojícího vozu v sadech Pětatřicátníků ukázal záznam v čase 376 s zelenou, volný přechod a část vozu MHD ve zvoleném výjezdu. V rekonstrukci zůstával z jeho jízdního pruhu volný ještě jeden povolený výjezd. Další měření na původním sestavení zachytilo po čtyřech minutách čekání až 184,5 s. V této koloně už výjezd blokovala i osobní auta z více směrů. Měření jsme potom ukončili a uvolnili prostředky pro ověření opravy.
 
-Řidič může při zelené zvolit jiný povolený směr, když sám čeká nejméně minutu a MHD mu stejně dlouho stojí ve výjezdu se zavřenými dveřmi. Objížďka používá stejné kontroly volných pruhů jako běžný průjezd. Po změně fáze řidič s volnem vyčká, až záď posledního auta z příčného směru uvolní křižovatku. Regresní zkouška této přednosti před úpravou selhala a po úpravě prošla. Celkový výsledek ranní špičky závisí na novém desetiminutovém průjezdu.
+Řidič může při zelené zvolit jiný povolený směr, když sám čeká nejméně minutu a MHD mu stejně dlouho stojí ve výjezdu se zavřenými dveřmi. Objížďka používá stejné kontroly volných pruhů jako běžný průjezd. Po změně fáze řidič s volnem vyčká, až záď posledního auta z příčného směru uvolní křižovatku. Regresní zkouška této přednosti před úpravou selhala a po úpravě prošla. Na revizi `7d9471b` prošla obě desetiminutová pozorování ranní špičky na WebGL 2. Na Klatovské třídě trvalo nejdelší stání 118 s, u hlavního nádraží 56,5 s. Ověřený limit je méně než 120 s.
 
 Na sestavení s objížďkou prošly v Chromiu na WebGL 2 obě cílené zkoušky. Řidič počkal za krátce stojící MHD, na červenou a před obsazeným druhým výjezdem. Na zelenou odbočil volným směrem. Druhý případ ověřil dřívější chování u odstaveného vozidla. Na sestavení zahrnujícím i čekání příčné osy prošlo 129 testů JavaScriptu a produkční sestavení. Záznamy zkoušek jsou v `data-raw/e21/kolona-objizdka-e2e.log`, `kolona-pricny-node.log` a `kolona-pricny-build.log` ve stejné složce.
 
@@ -14,7 +14,7 @@ Na sestavení s objížďkou prošly v Chromiu na WebGL 2 obě cílené zkoušky
 | --- | --- |
 | 1. Registr a stálé identifikátory | Hotovo. Každý svět má vlastní registr. Značky a hlavy semaforů dostávají identitu ve zdrojovém pořadí své dlaždice před seskupením podle materiálu. |
 | 2. Lampy | Hotovo. Společné umístění pro grafiku a fyziku, sražení, zhasnutí, dvě části lampy, obnova po návratu a ranní oprava prošly ověřením. |
-| 3. Značky a semafory | Kontrola návratu po opravě prošla. Ranní špička na Klatovské třídě a grafická kontrola na cílovém zařízení zůstávají otevřené. |
+| 3. Značky a semafory | Kontrola návratu po opravě a desetiminutová ranní špička na Klatovské i u hlavního nádraží prošly. Grafická kontrola na cílovém zařízení zůstává otevřená. |
 | 4. Mosty a uzavírky | Hotovo. Náraz, návrat a oprava ověřeny ve fyzice a průjezd autem na WebGL 2 i WebGPU. |
 | 5. Následky nárazu | Hotovo. Hledanost, zvuky a společný limit úlomků jsou zapojené do hry. |
 | 6. Auta a garáž | Hotovo. Prošly deformace, odpadnutí dílu, načtení uloženého poškození a oprava v garáži. |
