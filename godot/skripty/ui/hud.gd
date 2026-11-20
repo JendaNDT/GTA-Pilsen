@@ -16,6 +16,20 @@ var _zakazka: Label
 var _hledanost: Label
 
 
+var _ladeni: Label
+
+
+## Ladicí přehled výkonu (F3): snímky za sekundu, čas snímku, vykreslování a paměť.
+func prepni_ladeni() -> bool:
+	_ladeni.visible = not _ladeni.visible
+	return _ladeni.visible
+
+
+func ladeni(text: String) -> void:
+	if _ladeni.visible:
+		_ladeni.text = text
+
+
 func _ready() -> void:
 	layer = 5
 	var koren := Control.new()
@@ -29,6 +43,8 @@ func _ready() -> void:
 	_rychlost = _stitek(koren, 40, Color(1, 1, 1), Control.PRESET_BOTTOM_RIGHT, Rect2(-260, -90, 240, 60), HORIZONTAL_ALIGNMENT_RIGHT)
 	_napoveda = _stitek(koren, 20, Color(1, 0.95, 0.7), Control.PRESET_CENTER_BOTTOM, Rect2(-300, -120, 600, 30), HORIZONTAL_ALIGNMENT_CENTER)
 	_zprava = _stitek(koren, 24, Color(1, 1, 1), Control.PRESET_CENTER_TOP, Rect2(-450, 90, 900, 40), HORIZONTAL_ALIGNMENT_CENTER)
+	_ladeni = _stitek(koren, 15, Color(0.8, 1.0, 0.8), Control.PRESET_TOP_LEFT, Rect2(18, 80, 520, 200))
+	_ladeni.visible = false
 	_zprava.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_nacitani = _stitek(koren, 30, Color(1, 1, 1), Control.PRESET_CENTER, Rect2(-300, -20, 600, 40), HORIZONTAL_ALIGNMENT_CENTER)
 	_odjezdy = _stitek(koren, 17, Color(1.0, 0.85, 0.45), Control.PRESET_TOP_LEFT, Rect2(18, 80, 420, 120))

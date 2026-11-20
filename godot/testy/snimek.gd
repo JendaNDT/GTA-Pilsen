@@ -1,7 +1,7 @@
 extends Node3D
 ## Zkušební snímek světa bez hráče. Spuštění (z kořene repozitáře):
 ##   godot --path godot testy/snimek.tscn -- --kamera x,y,z --cil x,y,z --soubor /cesta/snimek.png [--hodina 14]
-##   [--pocasi rain|snow|fog|storm|clear|partly|cloudy]
+##   [--pocasi rain|snow|fog|storm|clear|partly|cloudy] [--datum 2026-11-20]
 ## Postaví dlaždice kolem kamery, počká na vykreslení a uloží obrázek.
 
 var _kamera := Vector3(120, 30, 520)
@@ -10,6 +10,7 @@ var _soubor := "user://snimek.png"
 var _dohled := 900.0
 var _hodina := 14.0
 var _pocasi := ""
+var _datum := ""
 
 
 func _ready() -> void:
@@ -22,12 +23,18 @@ func _ready() -> void:
 			"--dohled": _dohled = float(a[i + 1])
 			"--hodina": _hodina = float(a[i + 1])
 			"--pocasi": _pocasi = a[i + 1]
+			"--datum": _datum = a[i + 1]
 	var prostredi: Prostredi = $Prostredi
 	if _pocasi != "":
 		prostredi.pocasi.vynuceno = _pocasi
 	else:
 		prostredi.pocasi.rezim = "jasno"
-	prostredi.nastav_hodinu(_hodina, Slunce.den_z_data(2026, 1, 15) if _pocasi == "snow" else -1)
+	var den := -1
+	if _datum != "":
+		den = JizdniRad.den_z_textu(_datum)
+	elif _pocasi == "snow":
+		den = Slunce.den_z_data(2026, 1, 15)
+	prostredi.nastav_hodinu(_hodina, den)
 	var svet: Svet = $Svet
 	var t0 := Time.get_ticks_msec()
 	svet.postav_hned(Vector2(_kamera.x, _kamera.z), _dohled)

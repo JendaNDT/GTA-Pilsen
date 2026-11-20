@@ -162,3 +162,7 @@ snih={
 "type": "float",
 "value": 0.0
 }
+obdobi={
+"type": "vec4",
+"value": Vector4(1, 1, 1, 0)
+}

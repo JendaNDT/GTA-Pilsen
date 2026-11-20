@@ -181,6 +181,19 @@ func nastav_cas(hodina: float, den := -1) -> void:
 	_obnov_pocasi()
 
 
+## Text ladicího přehledu (F3). Čas snímku je skutečná práce procesoru, ne interval mezi snímky.
+func _text_ladeni() -> String:
+	var P := Performance
+	return "%d snímků/s · zpracování %.1f ms · fyzika %.1f ms\nkreslení: %d volání, %d tis. trojúhelníků, %d objektů\npaměť %d MB · videopaměť %d MB · uzlů %d\ndlaždic hotových %d, čeká %d · provoz %d aut, %d chodců · MHD %d vozů\nkvalita %s · počasí %s, mokro %.2f, sníh %.2f, přilnavost %.2f\npoloha x %.0f z %.0f y %.1f" % [
+		P.get_monitor(P.TIME_FPS), P.get_monitor(P.TIME_PROCESS) * 1000.0, P.get_monitor(P.TIME_PHYSICS_PROCESS) * 1000.0,
+		P.get_monitor(P.RENDER_TOTAL_DRAW_CALLS_IN_FRAME), P.get_monitor(P.RENDER_TOTAL_PRIMITIVES_IN_FRAME) / 1000.0,
+		P.get_monitor(P.RENDER_TOTAL_OBJECTS_IN_FRAME), P.get_monitor(P.MEMORY_STATIC) / 1048576.0,
+		P.get_monitor(P.RENDER_VIDEO_MEM_USED) / 1048576.0, P.get_monitor(P.OBJECT_NODE_COUNT),
+		svet.pocet_hotovych(), svet.ceka_na_stavbu(), doprava.auta.size(), chodci.get_child_count(), mhd.vozy.size(),
+		kvalita, Pocasi.NAZVY.get(prostredi.pocasi.druh, ""), prostredi.pocasi.mokro, prostredi.pocasi.snih, Auto.prilnavost,
+		kamera.cil.global_position.x, kamera.cil.global_position.z, kamera.cil.global_position.y]
+
+
 ## Přilnavost aut a údaj v hodinách podle počasí.
 func _obnov_pocasi() -> void:
 	var p := prostredi.pocasi
@@ -243,6 +256,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("fotorezim") and not fotorezim.aktivni:
 		_akce("fotorezim")
 		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("svetla"):
+		Auto.dalkova = not Auto.dalkova
+		hud.zprava("Dálková světla zapnutá" if Auto.dalkova else "Potkávací světla", 1.5)
+	elif event.is_action_pressed("ladeni"):
+		hud.prepni_ladeni()
 	elif event.is_action_pressed("posun_casu"):
 		cas_zivy = false
 		nastav_cas(cas_hodina + 3.0)
@@ -515,6 +533,7 @@ func _process(delta: float) -> void:
 			("%s · " % ctvrt if ctvrt != "" else "") + "%d m n. m." % Mapa.nadmorska_vyska(p.y))
 		prostredi.nastav_hodinu(cas_hodina, cas_den)
 		_obnov_pocasi()
+		hud.ladeni(_text_ladeni())
 	if OS.has_feature("web") and _info_cas == 0.5:
 		_stav_pro_prohlizec()
 	if rezim == "auto" and auto_hrace:

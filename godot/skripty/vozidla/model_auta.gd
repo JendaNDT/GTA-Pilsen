@@ -27,7 +27,34 @@ static func _box(rodic: Node3D, jmeno: String, velikost: Vector3, pozice: Vector
 	return mi
 
 
+## Sdílené materiály reflektorů a koncových světel (v noci svítí všem autům najednou).
+static var mat_predni: StandardMaterial3D
+static var mat_zadni: StandardMaterial3D
+
+
+static func _svetla() -> void:
+	if mat_predni:
+		return
+	mat_predni = _mat(Color(1.0, 0.97, 0.88), 0.2)
+	mat_predni.emission_enabled = true
+	mat_predni.emission = Color(0.9, 0.85, 0.7)
+	mat_predni.emission_energy_multiplier = 0.4
+	mat_zadni = _mat(Color(0.7, 0.05, 0.04), 0.3)
+	mat_zadni.emission_enabled = true
+	mat_zadni.emission = Color(0.6, 0.02, 0.02)
+	mat_zadni.emission_energy_multiplier = 0.3
+
+
+## Svícení podle noci (0 den, 1 noc): auta rozsvítí, když je noc nad 0,25 (vehicles.js).
+static func nastav_noc(noc: float) -> void:
+	_svetla()
+	var sviti := noc > 0.25
+	mat_predni.emission_energy_multiplier = 2.6 if sviti else 0.4
+	mat_zadni.emission_energy_multiplier = 1.3 if sviti else 0.3
+
+
 static func karoserie(spec: Dictionary, barva: Color, typ: String) -> Node3D:
+	_svetla()
 	var m := Node3D.new()
 	m.name = "Model"
 	var L: float = spec.len
@@ -53,16 +80,8 @@ static func karoserie(spec: Dictionary, barva: Color, typ: String) -> Node3D:
 	for strana: int in [1, -1]:
 		_box(m, "BocniSklo%d" % strana, Vector3(0.04, kabina_h * 0.66, kabina_l * 0.86),
 			Vector3(strana * W * 0.465, spodek + telo_h + kabina_h * 0.45, kabina_z), sklo)
-		var predni := _mat(Color(1.0, 0.97, 0.88), 0.2)
-		predni.emission_enabled = true
-		predni.emission = Color(0.9, 0.85, 0.7)
-		predni.emission_energy_multiplier = 0.4
-		_box(m, "Svetlo%d" % strana, Vector3(0.32, 0.12, 0.05), Vector3(strana * W * 0.34, spodek + telo_h * 0.7, L / 2.0 + 0.01), predni)
-		var zadni := _mat(Color(0.7, 0.05, 0.04), 0.3)
-		zadni.emission_enabled = true
-		zadni.emission = Color(0.6, 0.02, 0.02)
-		zadni.emission_energy_multiplier = 0.3
-		_box(m, "Koncove%d" % strana, Vector3(0.28, 0.12, 0.05), Vector3(strana * W * 0.36, spodek + telo_h * 0.72, -L / 2.0 - 0.01), zadni)
+		_box(m, "Svetlo%d" % strana, Vector3(0.32, 0.12, 0.05), Vector3(strana * W * 0.34, spodek + telo_h * 0.7, L / 2.0 + 0.01), mat_predni)
+		_box(m, "Koncove%d" % strana, Vector3(0.28, 0.12, 0.05), Vector3(strana * W * 0.36, spodek + telo_h * 0.72, -L / 2.0 - 0.01), mat_zadni)
 	if typ == "taxi":
 		_box(m, "TaxiCedule", Vector3(0.6, 0.18, 0.25), Vector3(0, H + 0.09, kabina_z), _mat(Color(0.95, 0.8, 0.15), 0.4))
 	if typ == "policie":

@@ -114,6 +114,15 @@ func nastav_zari(zapnout: bool) -> void:
 		_env.glow_enabled = zapnout
 
 
+## Tón listí podle období (treeSeason a SEASON_TINT v předloze): jaro, léto, podzim, zima.
+## Vrací rgb tón a w = 1 v zimě (listnáče bez listí).
+static func obdobi(d: int) -> Vector4:
+	var mesic := int(Slunce.datum(d).month) - 1
+	var i := 3 if mesic < 2 or mesic == 11 else floori((mesic - 2) / 3.0)
+	var t: Array = [[1.22, 1.38, 0.87], [1.0, 1.0, 1.0], [2.5, 0.63, 0.28], [1.0, 1.0, 1.0]][i]
+	return Vector4(t[0], t[1], t[2], 1.0 if i == 3 else 0.0)
+
+
 static func rozvrh_oken(h: float) -> Vector3:
 	var hh := fposmod(h, 24.0)
 	var i := int(hh)
@@ -202,6 +211,9 @@ func _obnov() -> void:
 	var r := rozvrh_oken(h)
 	RenderingServer.global_shader_parameter_set("noc", noc)
 	RenderingServer.global_shader_parameter_set("okna", Vector4(r.x, r.y, r.z, 1.0))
+	var o := obdobi(den)
+	RenderingServer.global_shader_parameter_set("obdobi", o)
+	ModelAuta.nastav_noc(noc)
 	RenderingServer.global_shader_parameter_set("mokro", pocasi.mokro)
 	RenderingServer.global_shader_parameter_set("snih", pocasi.snih)
 	_srazky.nastav(pocasi.dest, pocasi.vlocky, hustota_srazek if srazky_zapnute else 0.0)

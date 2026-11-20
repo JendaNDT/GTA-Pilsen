@@ -38,7 +38,8 @@ var _mat_asfalt: ShaderMaterial
 var _mat_znacky: ShaderMaterial
 var _mat_pevne: StandardMaterial3D
 var _mat_budovy: ShaderMaterial
-var _mat_strom: StandardMaterial3D
+var _mat_strom: ShaderMaterial
+var _mat_jehlicnan: ShaderMaterial
 var _paleta: ImageTexture
 var _strom_mesh: Array[Mesh] = []
 var _lampa_mesh: Mesh
@@ -86,9 +87,11 @@ func _priprav_materialy() -> void:
 	_mat_pevne.cull_mode = BaseMaterial3D.CULL_DISABLED
 	_mat_budovy = ShaderMaterial.new()
 	_mat_budovy.shader = load("res://materialy/budova.gdshader")
-	_mat_strom = StandardMaterial3D.new()
-	_mat_strom.vertex_color_use_as_albedo = true
-	_mat_strom.roughness = 0.95
+	_mat_strom = ShaderMaterial.new()
+	_mat_strom.shader = load("res://materialy/strom.gdshader")
+	_mat_jehlicnan = ShaderMaterial.new()
+	_mat_jehlicnan.shader = _mat_strom.shader
+	_mat_jehlicnan.set_shader_parameter("listnaty", false)
 	_strom_mesh = [Modely.strom_listnaty(), Modely.strom_jehlicnaty()]
 	_lampa_mesh = Modely.lampa()
 
@@ -372,7 +375,7 @@ func _krok(d: Dlazdice) -> void:
 						mm.set_instance_color(k, seznam[k][1])
 					var mmi := MultiMeshInstance3D.new()
 					mmi.multimesh = mm
-					mmi.material_override = _mat_strom
+					mmi.material_override = _mat_strom if druh == 0 else _mat_jehlicnan
 					mmi.name = "Stromy%d" % druh
 					u.add_child(mmi)
 			var lampy: Variant = Mapa.blok("lampy", d.ci)

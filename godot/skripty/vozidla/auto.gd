@@ -29,6 +29,10 @@ static var prilnavost := 1.0
 
 ## Vylepšení z garáže: "brzdy" (silnější brzdy), "pneu" (lepší pneumatiky).
 var vylepseni := {}
+## Dálková světla hráčova auta (klávesa L).
+static var dalkova := false
+var _reflektor: SpotLight3D
+var _brzdova: StandardMaterial3D
 
 var plyn := 0.0
 var zatoceni := 0.0
@@ -181,6 +185,37 @@ func _physics_process(delta: float) -> void:
 	# mírný odpor vzduchu a valení
 	if linear_velocity.length() > 0.5:
 		apply_central_force(-linear_velocity * linear_velocity.length() * 0.35)
+	if ridi_hrac or _reflektor:
+		_svetla_hrace(ridi_hrac and (brzda > 0.05 or rucni))
+
+
+## Reflektor a brzdová světla auta, které řídí hráč (v noci, dálková klávesou L).
+func _svetla_hrace(brzdi: bool) -> void:
+	var noc := ModelAuta.mat_predni != null and ModelAuta.mat_predni.emission_energy_multiplier > 1.0
+	var sviti := ridi_hrac and noc and poskozeni < 100.0
+	if sviti and _reflektor == null:
+		_reflektor = SpotLight3D.new()
+		_reflektor.name = "Reflektor"
+		_reflektor.position = Vector3(0, 0.75, float(_spec.len) / 2.0 + 0.1)
+		_reflektor.rotation.y = PI
+		_reflektor.rotation.x = -0.05
+		_reflektor.light_color = Color(1.0, 0.95, 0.85)
+		_reflektor.shadow_enabled = false
+		add_child(_reflektor)
+	if _reflektor:
+		_reflektor.visible = sviti
+		_reflektor.spot_range = 95.0 if dalkova else 45.0
+		_reflektor.spot_angle = 22.0 if dalkova else 32.0
+		_reflektor.light_energy = 3.2 if dalkova else 2.2
+	if not ridi_hrac:
+		return
+	if _brzdova == null:
+		_brzdova = ModelAuta.mat_zadni.duplicate()
+		for jmeno in ["Model/Koncove1", "Model/Koncove-1"]:
+			var mi := get_node_or_null(jmeno) as MeshInstance3D
+			if mi:
+				mi.material_override = _brzdova
+	_brzdova.emission_energy_multiplier = 3.0 if brzdi else ModelAuta.mat_zadni.emission_energy_multiplier
 
 
 ## Náraz: prudká změna rychlosti při dotyku s jiným tělesem zvýší poškození.

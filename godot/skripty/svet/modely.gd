@@ -43,6 +43,9 @@ static func _kuzel(r: float, h: float, segmentu: int) -> Array:
 
 static func _strom(koruny: Array, kmen_h: float, kmen_r: float, kmen_col: Color, koruna_col: Color) -> ArrayMesh:
 	var p := Stavba.Plocha.new()
+	# alfa barvy odlišuje kmen (0) od listí (1) pro roční období ve shaderu stromů
+	kmen_col.a = 0.0
+	koruna_col.a = 1.0
 	# kmen: otevřený šestiboký válec
 	var y0 := -0.3
 	var y1 := kmen_h + 0.3

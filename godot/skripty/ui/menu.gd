@@ -196,6 +196,8 @@ C – vzdálenost kamery
 R – postavit auto zpět na kola
 N – posunout čas o 3 hodiny
 O – fotorežim (WASD a Q/E pohyb, myš otáčí, uložení PNG)
+H – klakson, L – dálková světla
+F3 – přehled výkonu (snímky za sekundu, kreslení, paměť)
 Ve směně MHD: W/S plyn a brzda, mezerník nouzová brzda, F dveře
 Esc – menu
 
