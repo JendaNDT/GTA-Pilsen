@@ -1,5 +1,11 @@
 # Stav etapy E26
 
+## Ověření archivu s opravou provozu
+
+Webový ZIP z revize `be8a43b` obsahuje 815 souborů. Všech 1 371 položek zdrojového ZIPu odpovídá čisté pracovní kopii. Při použití stejných nainstalovaných závislostí daly Node.js 20.19.0, 22.12.0 i 24.22.1 ve všech souborech stejný výsledek jako zabalený web. Audit zámku závislostí našel nula známých zranitelností. [Otisky a velikosti obou archivů](../E26.md#archiv-kandidáta-z-revize-be8a43b)
+
+Ve 400 × 280 prošel celý test výchozího WebGPU včetně kladného vzorku času GPU, ověření názvu vykreslovače a kontroly chyb a varování. Při načítání nyní test používá společnou kontrolu připravenosti hry. Výsledek je v `data-raw/e26/mensi-start.log`. Měření v původním rozlišení 960 × 600 zůstává otevřené.
+
 ## Čtvrtý okruh a kontrola památek
 
 Na kandidátu `f6a1254` se vůz třikrát vrátil do Plzně. Ve čtvrtém okruhu po 154,56 km střídal pokusy o vyproštění. Po dokončení couvání dostal jediný krok fyziky na jízdu vpřed. Nástroj nyní začne čekací dobu počítat na konci couvání. V opakovaném sledu povelů měl řidič mezi pokusy 100 kroků vpřed. Na sestavení `19b459d` projel od místa dřívějšího zastavení 1 295,65 m bez dalšího couvání. Ověření spotřeby prostředků po čtvrtém návratu pokračuje. [Podmínky jízdy a výsledky](../E26.md)
