@@ -4,7 +4,7 @@ test('E24 – detailní povrchy budov se načtou a vykreslí na střední předv
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => {
-    if (/shader.*error|error.*shader|validation error|invalid shader module/i.test(m.text()))
+    if (/shader.*error|error.*shader|validation error|invalid shader module|GL_INVALID_OPERATION/i.test(m.text()))
       errors.push(m.text());
   });
   await page.setViewportSize({ width: 480, height: 320 });

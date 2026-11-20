@@ -1,5 +1,11 @@
 # Stav etapy E26
 
+## Číslo materiálu fasády na WebGL 2
+
+Při startu hry na WebGL 2 odmítl ovladač vykreslit část domů. U atributu `buildingLayer` shader očekával celé číslo, zatímco geometrie předávala bajt jako číslo s plovoucí řádovou čárkou. Geometrie nyní výslovně předává celočíselný atribut. Stěny a střechy si zachovávají původní čísla materiálů.
+
+Na této větvi prošlo 182 testů JavaScriptu a produkční sestavení. Chromium 159 na střední předvolbě načetlo atlasy fasád a ověřilo materiál stěn i střech v herní scéně na WebGL 2 a WebGPU. Kontrola nově zachytí i odmítnutí příkazu vykreslení ve WebGL. Výsledky jsou v `data-raw/e26/vrstva-typ-e2e.log`.
+
 ## Shoda zdrojového archivu s označenou revizí
 
 Při regresní zkoušce se lokálně změněná knihovna dostala do zdrojového ZIPu pod označením původního commitu. Nástroj nyní bere seznam souborů a oprávnění z určeného commitu. Při zápisu porovná skutečné bajty každého zdroje s otiskem jeho objektu v Gitu. Zkouška ověřila odmítnutí změněné knihovny jak před `git add`, tak po něm. Dosavadní výstup se při chybě zachová.
