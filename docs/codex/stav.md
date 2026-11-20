@@ -1,5 +1,13 @@
 # Stav etapy E25
 
+## Zrnitost povrchu v dálce
+
+U vzdálených povrchů nyní shader přeskočí výpočet jemné nebo střední zrnitosti v místech, kde by její váha byla nulová. Výpočet šířky pixelu zůstává mimo obě podmínky, aby měl stejnou hodnotu i na jejich hranicích.
+
+Časy stejné úpravy na větvi E24 jsou v jejím protokolu. Zde šlo o funkční zkoušky.
+
+Na E25 prošlo 176 testů JavaScriptu, produkční sestavení a čtyři prohlížečové kontroly terénu. WebGL 2 i WebGPU vykreslily nízkou předvolbu bez atlasů a střední s barevnou a normálovou texturou.
+
 ## Číslo materiálu fasády na WebGL 2
 
 Při startu hry na WebGL 2 odmítl ovladač vykreslit část domů. U atributu `buildingLayer` shader očekával celé číslo, zatímco geometrie předávala bajt jako číslo s plovoucí řádovou čárkou. Geometrie nyní výslovně předává celočíselný atribut. Stěny a střechy si zachovávají původní čísla materiálů.
