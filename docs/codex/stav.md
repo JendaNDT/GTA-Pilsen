@@ -1,5 +1,11 @@
 # Stav etapy E25
 
+## Číslo materiálu fasády na WebGL 2
+
+Při startu hry na WebGL 2 odmítl ovladač vykreslit část domů. U atributu `buildingLayer` shader očekával celé číslo, zatímco geometrie předávala bajt jako číslo s plovoucí řádovou čárkou. Geometrie nyní výslovně předává celočíselný atribut. Stěny a střechy si zachovávají původní čísla materiálů.
+
+Na této větvi prošlo 176 testů JavaScriptu a produkční sestavení. Chromium 159 na střední předvolbě načetlo atlasy fasád a ověřilo materiál stěn i střech v herní scéně na WebGL 2 a WebGPU. Kontrola nově zachytí i odmítnutí příkazu vykreslení ve WebGL. Výsledky jsou v `data-raw/e25/vrstva-typ-e2e.log`.
+
 ## Vykreslení soklu a římsy
 
 V materiálu přízemí dvě podmínky vracely změněnou barvu do překladače shaderů Three.js. Po spuštění hry na WebGL 2 hlásil čtyři varování. Podmínky teď přímo upraví barvu soklu a římsy. Kontrola u Wilsonova mostu sleduje i hlášení překladače TSL.
