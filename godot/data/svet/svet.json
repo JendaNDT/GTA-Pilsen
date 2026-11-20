@@ -1,7 +1,7 @@
 {
  "format": 1,
  "zdroj": {
-  "commit": "16728e5d6ee48a74da620e97b9c640bd61e4d052",
+  "commit": "604ba7b3f5751e294929144acb0322da30285a34",
   "osm": "2026-11-15T01:07:22Z",
   "popis": "Převedeno z public/ nástrojem tools/godot/export_svet.mjs"
  },
@@ -108,9 +108,9 @@
   },
   {
    "name": "povrch",
-   "bytes": 12513378,
+   "bytes": 12526258,
    "raw": 670137312,
-   "sha256": "433abf4a12b3c80e17bf2f746b82036e756dbdc80a23dd56697e543c140a1664"
+   "sha256": "4f19cbbc0aca2fef0b7ed225561077afdbd9a5a8327b92fb45f6428221ec623f"
   },
   {
    "name": "silnice",

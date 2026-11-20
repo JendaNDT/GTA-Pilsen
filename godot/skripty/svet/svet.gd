@@ -306,6 +306,37 @@ func _postav_vybaveni(d: Dlazdice) -> void:
 		z.global_position = Vector3(L[o], L[o + 1], L[o + 2])
 
 
+## Letecké snímky: bloky 4 × 4 dlaždice (1 024 m, 512 px), dekódované při prvním použití.
+## Bloky ve stejné mřížce jako dlaždice (počátek mapy je shodný s katalogem ortofota).
+const ORTO_SLOZKA := "res://data/ortofoto/"
+var _orto := {}                  ## klíč bloku -> ImageTexture (nejnověji použité na konci)
+var _orto_chybi := {}
+var orto_kapacita := 24
+
+
+func _ortofoto(mat: ShaderMaterial, ci: int) -> void:
+	var cx := ci % Mapa.sloupce
+	var cz := ci / Mapa.sloupce
+	var klic := "%d_%d" % [cx / 4, cz / 4]
+	var tex: ImageTexture = _orto.get(klic)
+	if tex == null and not _orto_chybi.has(klic):
+		var bajty := FileAccess.get_file_as_bytes(ORTO_SLOZKA + klic + ".webp")
+		var img := Image.new()
+		if bajty.is_empty() or img.load_webp_from_buffer(bajty) != OK:
+			_orto_chybi[klic] = true
+		else:
+			tex = ImageTexture.create_from_image(img)
+	if tex == null:
+		return
+	_orto.erase(klic)
+	_orto[klic] = tex
+	while _orto.size() > orto_kapacita:
+		_orto.erase(_orto.keys()[0])
+	mat.set_shader_parameter("ortofoto", tex)
+	mat.set_shader_parameter("orto_uv", Vector3((cx % 4) * 0.25, (cz % 4) * 0.25, 0.25))
+	mat.set_shader_parameter("orto_ma", 1.0)
+
+
 ## Jeden krok stavby: 0 terén, 1 silnice a mosty, 2 budovy, 3 stromy a lampy.
 func _krok(d: Dlazdice) -> void:
 	var u := d.uzel
@@ -320,6 +351,7 @@ func _krok(d: Dlazdice) -> void:
 				var mat: ShaderMaterial = mi.mesh.surface_get_material(0)
 				mat.set_shader_parameter("povrch", ImageTexture.create_from_image(img))
 				mat.set_shader_parameter("pixelu", float(img.get_width()))
+				_ortofoto(mat, d.ci)
 			mi.name = "Teren"
 			u.add_child(mi)
 			_pridej_kolizi(d, g.kolize, false, "teren")

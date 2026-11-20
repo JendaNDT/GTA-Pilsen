@@ -26,6 +26,7 @@ static func pouzij(nazev: String, svet: Svet, prostredi: Prostredi, viewport: Vi
 	prostredi.nastav_stiny(p.stiny)
 	prostredi.nastav_zari(p.zare)
 	prostredi.hustota_srazek = p.srazky
+	svet.orto_kapacita = 12 if nazev == "nizka" else 24
 	viewport.msaa_3d = p.msaa
 	viewport.scaling_3d_scale = p.meritko
 	var hra := svet.get_parent() as Hra

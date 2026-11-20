@@ -6,6 +6,11 @@ render_mode cull_back;
 uniform sampler2D povrch : filter_nearest, repeat_disable;
 uniform sampler2D paleta : filter_nearest, repeat_disable;
 uniform float pixelu = 256.0;
+// letecký snímek bloku 1 024 m (2 m na pixel); orto_uv = posun a měřítko dlaždice v bloku
+uniform sampler2D ortofoto : source_color, filter_linear, repeat_disable;
+uniform vec3 orto_uv = vec3(0.0, 0.0, 0.25);
+uniform float orto_ma = 0.0;
+global uniform float ortofoto_zap;
 global uniform float noc;
 global uniform float mokro;
 global uniform float snih;
@@ -26,11 +31,29 @@ float vnoise(vec2 p) {
 	return mix(mix(hash21(c), hash21(c + vec2(1, 0)), f.x), mix(hash21(c + vec2(0, 1)), hash21(c + vec2(1, 1)), f.x), f.y);
 }
 
-vec4 barva(ivec2 p) {
+// Číslo barvy z palety; bit 0x80 označuje otevřenou krajinu s leteckým snímkem.
+int kod(ivec2 p) {
 	int maxp = int(pixelu) - 1;
-	int i = int(texelFetch(povrch, clamp(p, ivec2(0), ivec2(maxp)), 0).r * 255.0 + 0.5);
+	return int(texelFetch(povrch, clamp(p, ivec2(0), ivec2(maxp)), 0).r * 255.0 + 0.5);
+}
+
+vec4 barva(ivec2 p) {
+	int i = kod(p) % 128;
 	vec3 c = texelFetch(paleta, ivec2(i, 0), 0).rgb;
 	return vec4(c, i == 0 ? 1.0 : 0.0);
+}
+
+float krajina(ivec2 p) {
+	return kod(p) >= 128 ? 1.0 : 0.0;
+}
+
+// Míchání „soft-light“ jako drawGround v předloze (snímek přes barvu povrchu, 80 %).
+float mekke(float a, float b) {
+	if (b <= 0.5) {
+		return a - (1.0 - 2.0 * b) * a * (1.0 - a);
+	}
+	float d = a <= 0.25 ? ((16.0 * a - 12.0) * a + 4.0) * a : sqrt(a);
+	return a + (2.0 * b - 1.0) * (d - a);
 }
 
 void vertex() {
@@ -55,6 +78,17 @@ void fragment() {
 	float mid = (vnoise(xz * 0.33) - 0.5) * (1.0 - smoothstep(1.2, 5.0, px));
 	float big = vnoise(xz * 0.021) - 0.5;
 	float gain = fine * 0.13 + mid * 0.10 + big * 0.07 + 1.0;
+	if (orto_ma * ortofoto_zap > 0.5) {
+		float w = mix(mix(krajina(b), krajina(b + ivec2(1, 0)), f.x), mix(krajina(b + ivec2(0, 1)), krajina(b + ivec2(1, 1)), f.x), f.y);
+		if (w > 0.0) {
+			// barvy povrchu jsou lineární, míchání probíhá v sRGB jako na plátně předlohy
+			vec3 s = pow(clamp(c.rgb, 0.0, 1.0), vec3(1.0 / 2.2));
+			vec3 o = texture(ortofoto, orto_uv.xy + UV * orto_uv.z).rgb;
+			o = pow(o, vec3(1.0 / 2.2));
+			vec3 m = vec3(mekke(s.r, o.r), mekke(s.g, o.g), mekke(s.b, o.b));
+			c.rgb = mix(c.rgb, pow(m, vec3(2.2)), 0.8 * w);
+		}
+	}
 	vec3 zeme = c.rgb * gain * (1.0 - 0.14 * mokro);
 	if (snih > 0.0) {
 		zeme = mix(zeme, vec3(0.79, 0.85, 0.9), smoothstep(0.17, 0.88, svet_normala.y) * snih);

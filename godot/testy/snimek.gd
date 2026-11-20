@@ -1,7 +1,7 @@
 extends Node3D
 ## Zkušební snímek světa bez hráče. Spuštění (z kořene repozitáře):
 ##   godot --path godot testy/snimek.tscn -- --kamera x,y,z --cil x,y,z --soubor /cesta/snimek.png [--hodina 14]
-##   [--pocasi rain|snow|fog|storm|clear|partly|cloudy] [--datum 2026-11-20]
+##   [--pocasi rain|snow|fog|storm|clear|partly|cloudy] [--datum 2026-11-20] [--bez-ortofota]
 ## Postaví dlaždice kolem kamery, počká na vykreslení a uloží obrázek.
 
 var _kamera := Vector3(120, 30, 520)
@@ -24,6 +24,7 @@ func _ready() -> void:
 			"--hodina": _hodina = float(a[i + 1])
 			"--pocasi": _pocasi = a[i + 1]
 			"--datum": _datum = a[i + 1]
+			"--bez-ortofota": RenderingServer.global_shader_parameter_set("ortofoto_zap", 0.0)
 	var prostredi: Prostredi = $Prostredi
 	if _pocasi != "":
 		prostredi.pocasi.vynuceno = _pocasi

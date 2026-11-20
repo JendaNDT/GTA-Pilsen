@@ -166,3 +166,7 @@ obdobi={
 "type": "vec4",
 "value": Vector4(1, 1, 1, 0)
 }
+ortofoto_zap={
+"type": "float",
+"value": 1.0
+}

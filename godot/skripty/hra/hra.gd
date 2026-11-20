@@ -139,6 +139,7 @@ func _ready() -> void:
 	menu.pozadavek.connect(_pozadavek_menu)
 	_pouzij_kvalitu()
 	prostredi.srazky_zapnute = bool(nastaveni.get("srazky", true))
+	RenderingServer.global_shader_parameter_set("ortofoto_zap", 1.0 if bool(nastaveni.get("ortofoto", true)) else 0.0)
 	prostredi.nastav_pocasi(str(nastaveni.get("pocasi", "promenlive")))
 	hud.hodiny_viditelne(bool(nastaveni.get("hodiny", true)))
 	AudioServer.set_bus_mute(0, not bool(nastaveni.get("zvuk", true)))
@@ -722,6 +723,9 @@ func _zmena_nastaveni(klic: String, hodnota: Variant) -> void:
 		"srazky":
 			nastaveni.srazky = hodnota
 			prostredi.srazky_zapnute = hodnota
+		"ortofoto":
+			nastaveni.ortofoto = hodnota
+			RenderingServer.global_shader_parameter_set("ortofoto_zap", 1.0 if hodnota else 0.0)
 		"cas_zivy":
 			cas_zivy = hodnota
 			if hodnota:

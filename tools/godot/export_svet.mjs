@@ -164,6 +164,7 @@ function mixHex(a, b, t) {
   const c = [16, 8, 0].map((s) => Math.round(((pa >> s) & 255) * (1 - t) + ((pb >> s) & 255) * t));
   return '#' + c.map((v) => v.toString(16).padStart(2, '0')).join('');
 }
+const ORTHO_LAND = new Set([LC.FARMLAND, LC.MEADOW, LC.GRASS, LC.SCRUB]);
 const DENSITY_LEVELS = [0, 1, 2, 3, 4, 5].map((l) => colorIndex(mixHex('#9aa873', '#aca78d', l / 5)));
 
 function exportGround(ci, x0, z0) {
@@ -201,7 +202,11 @@ function exportGround(ci, x0, z0) {
         else if (cls === LC.FOREST) color = ch.pick(ch.FOREST_COLORS, hash(i, 20));
         else if (cls === LC.PLAZA && context === 2) color = '#b9ae9c';
         else if (cls === LC.RESIDENTIAL && context < 2) color = context ? '#a6aa92' : '#a2ae85';
-        fillRings(px, S, S, rings(i), colorIndex(color));
+        // Otevřená krajina (pole, louky, tráva, křoviny) dostane příznak 0x80: ve hře se na ni
+        // kreslí letecký snímek (ORTHOPHOTO_LAND a drawGround v předloze, jen uvnitř hrací plochy).
+        const ortho = ORTHO_LAND.has(cls) && x0 + CHUNK > world.playMinX && x0 < world.playMaxX &&
+          z0 + CHUNK > world.playMinZ && z0 < world.playMaxZ;
+        fillRings(px, S, S, rings(i), colorIndex(color) | (ortho ? 0x80 : 0));
       }
     }
     // břehy vod
@@ -539,7 +544,7 @@ function mapaZDlazdice(ci, x0, z0, ground) {
     const kroku = Math.max(1, Math.round(mapaKrok * k));
     for (let j = j0; j < j0 + kroku; j += 2) for (let i = i0; i < i0 + kroku; i += 2) {
       if (i < 0 || j < 0 || i >= S || j >= S) continue;
-      const v = ground.px[j * S + i], c = v === 0 ? WATER_RGB : rgb[v];
+      const v = ground.px[j * S + i] & 0x7f, c = v === 0 ? WATER_RGB : rgb[v];
       r += c[0]; g += c[1]; b += c[2]; cnt++;
     }
     if (!cnt) continue;
@@ -710,6 +715,16 @@ await writeFile(path.join(OUT, 'mhd.bin'), deflateSync(encodeVariant(mhd), { lev
 const ZVUK = path.join(ROOT, 'godot/data/zvuk');
 await mkdir(ZVUK, { recursive: true });
 for (const f of await readdir(path.join(ROOT, 'public/audio'))) await copyFile(path.join(ROOT, 'public/audio', f), path.join(ZVUK, f));
+
+// Letecké snímky otevřené krajiny (Ortofoto ČR © ČÚZK, CC BY 4.0): bloky 1 024 m ve 2 m na pixel
+// se kopírují beze změny. Soubor .import „keep“ je nechá v exportu jako obyčejné soubory, hra je
+// dekóduje sama až u hráče (Image.load_webp_from_buffer).
+const ORTO = path.join(ROOT, 'godot/data/ortofoto');
+await mkdir(ORTO, { recursive: true });
+for (const f of await readdir(path.join(ROOT, 'public/detail/orthophoto'))) {
+  await copyFile(path.join(ROOT, 'public/detail/orthophoto', f), path.join(ORTO, f));
+  if (f.endsWith('.webp')) await writeFile(path.join(ORTO, f + '.import'), '[remap]\n\nimporter="keep"\n');
+}
 
 // Silniční graf pro navigaci, zakázky a dopravu (World._initGraph v předloze):
 // uzly, orientované hrany mezi body silnic, výstupní hrany uzlů a vlastnosti silnic.

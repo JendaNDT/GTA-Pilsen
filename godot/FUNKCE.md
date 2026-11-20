@@ -19,7 +19,7 @@ Stav v Godotu: **hotovo** = funguje a je ověřené zkouškou, **částečně** 
 | 6 | 1 179 mostů s mostovkou, pilíři a zábradlím, kamenné oblouky | hotovo | včetně kalibrace mostovek podle měření; ověřen průjezd i chůze po Wilsonově mostě a průjezd pod mostem Milénia |
 | 7 | Tunel Valík (dva tubusy, portály, osvětlení) | částečně | tubusy, portály a světla s kolizí; terén nad portálem zatím nemá otvor |
 | 8 | Povrch země: pole, louky, lesy, parky, voda, potoky, štěrk kolejí | hotovo | mapa barev 1 m na pixel |
-| 9 | Letecké snímky otevřené krajiny (ortofoto ČÚZK) | chybí | |
+| 9 | Letecké snímky otevřené krajiny (ortofoto ČÚZK) | hotovo | stejné bloky ČÚZK (2 m na pixel) a stejné míchání „soft-light“ 80 % na polích, loukách, trávě a křovinách uvnitř hrací plochy; vypínač v nastavení; ověřeno snímkem se snímky a bez nich |
 | 10 | Stromy (listnaté, jehličnaté, lesy) a lampy veřejného osvětlení | částečně | stromy s ročními obdobími a sněhem; stromy zatím bez kolizí |
 | 11 | Měřené budovy centra (3D model města), stavby, jezy | hotovo | 93 dlaždic městského modelu nahrazuje budovy z OSM, zdi, pilíře a jezy s kolizí |
 | 12 | Tři podrobné úseky ulic s přízemím a mobiliářem | chybí | |

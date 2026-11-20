@@ -13,6 +13,7 @@ var _zvuk: CheckButton
 var _hodiny: CheckButton
 var _pocasi: OptionButton
 var _srazky: CheckButton
+var _ortofoto: CheckButton
 var _cas_zivy: CheckButton
 var _hodina: SpinBox
 var _stav: Label
@@ -122,6 +123,7 @@ func _karta_nastaveni() -> void:
 	_pocasi.item_selected.connect(func(i: int) -> void: zmena_nastaveni.emit("pocasi", _pocasi.get_item_metadata(i)))
 	r0.add_child(_pocasi)
 	_srazky = _prepinac(v, "Kapky deště a vločky", "srazky")
+	_ortofoto = _prepinac(v, "Letecké snímky krajiny", "ortofoto")
 	_zvuk = _prepinac(v, "Zvuk", "zvuk")
 	_hodiny = _prepinac(v, "Zobrazit hodiny", "hodiny")
 	_cas_zivy = _prepinac(v, "Herní čas podle hodin v Plzni", "cas_zivy")
@@ -166,6 +168,7 @@ func otevri(nastaveni: Dictionary, cas_zivy: bool, hodina: float, info := "") ->
 			_kvalita.select(i)
 	_pocasi.select(1 if nastaveni.get("pocasi", "promenlive") == "jasno" else 0)
 	_srazky.set_pressed_no_signal(bool(nastaveni.get("srazky", true)))
+	_ortofoto.set_pressed_no_signal(bool(nastaveni.get("ortofoto", true)))
 	_zvuk.set_pressed_no_signal(bool(nastaveni.get("zvuk", true)))
 	_hodiny.set_pressed_no_signal(bool(nastaveni.get("hodiny", true)))
 	_cas_zivy.set_pressed_no_signal(cas_zivy)
@@ -218,6 +221,7 @@ Polohy značek, stop čar a přechodů v Plzni vycházejí také z otevřeného 
 Odjezdy tramvají, trolejbusů a autobusů vycházejí z GTFS [url=https://opendata.plzen.eu/public/opendata/detail/187]Plzeňských městských dopravních podniků, a.s.[/url] ([url=https://creativecommons.org/licenses/by/4.0/]CC BY 4.0[/url]).
 Tvar říčního dna je vlastní herní odhad podle vzdálenosti od břehu; výška dna u Wilsonova mostu byla porovnána s [url=https://gis.plzen.eu/foto/pov_model/profily/PM_Psany_PP.pdf]profilem R19 povodňového modelu města Plzně[/url].
 Popisy památek obsahují jen obecně známá fakta.
+Letecké snímky otevřené krajiny vycházejí z [url=https://atom.cuzk.gov.cz/ORTOFOTO/ORTOFOTO.xml]Ortofota ČR © ČÚZK[/url] ([url=https://creativecommons.org/licenses/by/4.0/]CC BY 4.0[/url]), snímkování 2025, převedené do 2 m na pixel.
 
 [b]Zvuk[/b]
 Motory, rotor, klakson, náraz a zvonek se syntetizují přímo ve hře. Česká hlášení zastávek jsou z původní hry: syntetický hlas Piper 1.5.0 [url=https://huggingface.co/rhasspy/piper-voices/blob/2f358b6a560e3a913ebf509b2f3344f20b367f94/cs/cs_CZ/jirka/medium/MODEL_CARD]cs_CZ-jirka-medium[/url] (česká data Jirka CC0, základ hlasu Cori Samuel z [url=https://www.openslr.org/109/]Hi-Fi TTS[/url], CC BY 4.0), texty z jízdních řádů PMDP (CC BY 4.0); podrobnosti v data/zvuk/zdroje.txt.
