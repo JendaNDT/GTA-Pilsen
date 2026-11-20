@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Archiv po opravě rozjezdu
+
+Na větvi E26 je oprava `87aba55`. Pět cílených průjezdů křižovatkou prošlo na každé z obou vykreslovacích cest. Z rozbalených zdrojů se na třech verzích Node.js podařilo sestavit přesně stejných 816 webových souborů. Další pozorování špičky, návrat s uloženou hrou a zbytek úplné sady jsou rozpracované. [Archiv a ověřené průjezdy](../E26.md#archiv-a-průjezd-křižovatkou-po-opravě-rozjezdu)
+
 ## Rozjezd na protější zelenou
 
 Řidič odbočující vlevo nyní počká na vůz rozjíždějící se z protější čáry. Na softwarovém WebGPU prošlo deset minut ranní špičky na Klatovské. Nejdelší stání bylo 117,5 s při limitu 120 s. Prošlo také všech 184 testů JavaScriptu, 27 testů Pythonu a sestavení. Další ověřování dopravy a celého vydání pokračuje. [Výsledky a rozsah měření](../E26.md#rozjezd-protisměru-na-zelenou)
