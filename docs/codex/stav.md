@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Počítání zpátečky při zkoušce čtyř okruhů
+
+Zkouška čtvrtého okruhu na revizi `d4630eb` skončila po 196,42 km. Opravený nástroj přičte pokus až při skutečném couvání. Ověření prošlo v záznamu řídicích vstupů i na fiktivní dráze v Joltu. Prošlo 183 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. Dlouhá jízda zůstává otevřená. [Výsledky zkoušky řízení](../E26.md#počítání-zpátečky-při-zkoušce-čtyř-okruhů)
+
 ## Pěší cesta k tramvaji při rozvozu MHD
 
 Opravenou trasu k nástupišti prošel hráč na WebGL 2 i WebGPU. V obou případech dokončil přestup a doručil zásilku pěšky. Prošlo 183 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. Úplná sada vydání a čtyři návraty autem jsou dál rozpracované. [Průběh zakázky](../E26.md#pěší-cesta-k-tramvaji-při-rozvozu-mhd)

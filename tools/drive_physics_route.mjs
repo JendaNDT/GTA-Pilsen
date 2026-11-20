@@ -128,13 +128,19 @@ try {
       if (!reverseTurn && Math.abs(angle) > (loops ? 2.1 : 2.55)) reverseTurn = Math.sign(angle);
       if (reverseTurn && Math.abs(angle) < 1.65) reverseTurn = 0;
       if (reverseTurn && (loops || best < 7)) { steer = reverseTurn; throttle = input((-2.5 - car.speed) * 0.85); }
-      if (tick - lastAdvance > 100 && Math.abs(car.speed) < 0.45 && !backing) {
+      const canBack = best < 7 && (loops || Math.abs(angle) > 0.35);
+      if (backing && !canBack) {
+        // Při dosažení meze dostane vůz stejný čas na jízdu vpřed jako po celém couvání.
+        backing = 0;
+        if (loops) { lastAdvance = tick; recoveryDistance = best; }
+      }
+      if (canBack && tick - lastAdvance > 100 && Math.abs(car.speed) < 0.45 && !backing) {
         backing = 100; lastAdvance = tick; attempts++;
         if (index - recoveryStart > 20) { recoveryStart = index; repeatedAttempts = 0; }
         repeatedAttempts++;
       }
       // Rozjetí vzad potřebuje několik kroků i s volantem blízko přímého směru.
-      if (backing && best < 7 && (loops || Math.abs(angle) > 0.35)) {
+      if (backing) {
         backing--;
         if (loops) {
           recoveryDistance = best;
@@ -143,7 +149,7 @@ try {
         }
         throttle = input((-3.5 - car.speed) * 0.8);
         steer = loops ? input(angle) : Math.sign(angle);
-      } else backing = 0;
+      }
 
       const { x, z } = car;
       if (loops) {
