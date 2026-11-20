@@ -2,7 +2,9 @@
 
 ## Ověření archivu s opravou provozu
 
-Webový ZIP z revize `be8a43b` obsahuje 815 souborů. Všech 1 371 položek zdrojového ZIPu odpovídá čisté pracovní kopii. Při použití stejných nainstalovaných závislostí daly Node.js 20.19.0, 22.12.0 i 24.22.1 ve všech souborech stejný výsledek jako zabalený web. Audit zámku závislostí našel nula známých zranitelností. [Otisky a velikosti obou archivů](../E26.md#archiv-kandidáta-z-revize-be8a43b)
+Webový ZIP z revize `be8a43b` obsahuje 815 souborů. Všech 1 371 položek zdrojového ZIPu odpovídá čisté pracovní kopii. Při použití stejných nainstalovaných závislostí daly Node.js 20.19.0, 22.12.0 i 24.22.1 ve všech souborech stejný výsledek jako zabalený web. Další kontrola rozbalila zdrojový ZIP do prázdné složky, na Node.js 24.22.1 nainstalovala závislosti pomocí `npm ci --offline` z místní mezipaměti a znovu sestavila všech 815 souborů se stejnými otisky. Audit zámku závislostí našel nula známých zranitelností. [Otisky a velikosti obou archivů](../E26.md#archiv-kandidáta-z-revize-be8a43b)
+
+Na webu rozbaleném z tohoto ZIPu prošla také obnova uložené hry z E12 a z E25, její přehrání po nové odměně a objevu i návrat do původních verzí. E25 zachovala vzhled vozu a nastavení počasí. Obě zkoušky běžely v oddělených profilech prohlížeče.
 
 Ve 400 × 280 prošel celý test výchozího WebGPU včetně kladného vzorku času GPU, ověření názvu vykreslovače a kontroly chyb a varování. Při načítání nyní test používá společnou kontrolu připravenosti hry. Výsledek je v `data-raw/e26/mensi-start.log`. Měření v původním rozlišení 960 × 600 zůstává otevřené.
 
