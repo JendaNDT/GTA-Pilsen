@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Rozjezd na protější zelenou
+
+Řidič odbočující vlevo nyní počká na vůz rozjíždějící se z protější čáry. Na softwarovém WebGPU prošlo deset minut ranní špičky na Klatovské. Nejdelší stání bylo 117,5 s při limitu 120 s. Prošlo také všech 184 testů JavaScriptu, 27 testů Pythonu a sestavení. Další ověřování dopravy a celého vydání pokračuje. [Výsledky a rozsah měření](../E26.md#rozjezd-protisměru-na-zelenou)
+
 ## Dlouhá jízda splněna
 
 V jedné souvislé jízdě se vůz čtyřikrát vrátil do Plzně a ujel 205,27 km. Při posledních dvou návratech klesl počet textur z 81 na 73 a počet geometrií z 275 na 272. Počet těles zůstal na 887 a úlomků na nule. Úplná prohlížečová sada pokračuje. Na Klatovské odhalila vůz čekající 545 s při požadavku méně než 120 s. [Záznam všech návratů](../E26.md#čtyři-návraty-po-trase-plzeňrokycanydobřív)

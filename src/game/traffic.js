@@ -481,24 +481,29 @@ export class Traffic {
       if (other === car || other.mode !== 'ai') continue;
       const active = other.junctionMovement;
       const state = other.trafficStop;
-      const entering = active ?? (state?.entering && other.edge === light.edge &&
-        other.s + other.halfLen < light.s + 1 ? state.movement : null);
+      const approach = state?.movement?.control;
+      const entering = active ?? (state?.entering && approach && other.edge === approach.edge &&
+        other.s + other.halfLen < approach.s + 1 ? state.movement : null);
       if (entering?.control === light && entering.lane !== mine.lane && entering.edge === mine.edge &&
           entering.exitLane === mine.exitLane && Number.isFinite(mine.exitLane)) return entering;
-      if (!active || active.control.group !== light.group) continue;
+      if (!entering || entering.control.group !== light.group) continue;
       // Zelená příčné osy může začít dřív, než pomalý vůz vyklidí křižovatku.
-      if (active.control.axis !== light.axis) return active;
-      const alignment = active.control.tx * light.tx + active.control.tz * light.tz;
+      if (entering.control.axis !== light.axis) {
+        if (active) return active;
+        continue;
+      }
+      const alignment = entering.control.tx * light.tx + entering.control.tz * light.tz;
       // Vlevo odbočíme až po uvolnění protisměru. Vůz jedoucí rovně si
       // zachovává přednost. Za odbočujícím ve vlastním pruhu necháme prostor.
       if (alignment < -0.75) {
-        if (mine.left) return active;
+        // U protisměru zohledníme již zahájený rozjezd i před přejetím čáry.
+        if (mine.left) return entering;
         // Před obloukem odbočující čeká. Pokud už do oblouku najel, musí
         // protijedoucí řidič před čárou ponechat místo k jeho dokončení.
         const turn = other.finishingTurn ?? other.plannedTurn;
-        if (active.left && turn?.sign < 0 && (other.edge === turn.to ||
+        if (active?.left && turn?.sign < 0 && (other.edge === turn.to ||
             other.edge === turn.from && other.s >= turn.entry)) return active;
-      } else if (active.left && active.control === light && Math.abs(active.lane - mine.lane) < car.type.wid) {
+      } else if (active?.left && active.control === light && Math.abs(active.lane - mine.lane) < car.type.wid) {
         return active;
       }
     }

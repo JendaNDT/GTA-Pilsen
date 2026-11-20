@@ -31,12 +31,18 @@ for (const site of ['Klatovská', 'hlavní nádraží']) {
       const seen = new Map(), flow = [], departures = [];
       let longestStop = 0, stoppedAt = null, peak = 0, samples = 0;
       const queues = [];
+      const movement = move => move && ({
+        signal: move.control.id, lane: move.lane, exit: move.edge, exitLane: move.exitLane, left: move.left,
+      });
       const describe = car => ({
         type: car.typeId, mode: car.mode, edge: car.edge, next: car.next, lane: car.lane,
         x: car.x, y: car.y, z: car.z, yaw: car.yaw, s: car.s, speed: car.speed,
         halfLen: car.halfLen, radius: car.radius, crashed: car.crashed,
         pathBlocked: car.pathBlocked, target: car.physical?.input?.targetSpeed,
         turn: car.upcomingLeft?.to, following: car.exitPlan?.map(move => move.to),
+        junction: movement(car.junctionMovement), waitingFor: movement(car.trafficStop?.yieldingTo),
+        signal: car.trafficStop?.rule.id, entering: car.trafficStop?.entering,
+        planned: movement(car.trafficStop?.movement),
       });
       for (let minute = 0; minute < 10; minute++) {
         let distance = 0;

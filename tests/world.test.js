@@ -287,6 +287,34 @@ test('před zúžením do jednoho pruhu řidič nechá místo sousednímu autu, 
   assert.equal(waiting(0), entering);
 });
 
+test('levé odbočení počká na protijedoucí vůz rozjíždějící se od čáry', () => {
+  const traffic = Object.assign(Object.create(Traffic.prototype), { light: () => 'green', exitBlocked: () => false });
+  const group = {};
+  const west = { kind: 'signal', directedHead: true, group, axis: 0, edge: 1, s: 20, tx: 1, tz: 0 };
+  const east = { kind: 'signal', directedHead: true, group, axis: 0, edge: 2, s: 25, tx: -1, tz: 0 };
+  const mine = { control: west, left: true };
+  const theirs = { control: east, left: true };
+  const atLine = movement => ({
+    mode: 'ai', type: { wid: 1.8 }, edge: movement.control.edge, s: movement.control.s - 3, halfLen: 2,
+    speed: 0, trafficStop: { rule: movement.control, movement },
+  });
+  const driver = atLine(mine), other = atLine(theirs);
+  const cars = [driver, other];
+  for (const car of [other, driver]) traffic.drivingRule(car, car.trafficStop.rule, 0.55, 1 / 60, 4, cars, [], null, true);
+  assert.equal(other.trafficStop.entering, true);
+  assert.equal(driver.trafficStop.entering, false);
+  const wait = () => traffic.turnInProgress(driver, mine, [other]);
+  assert.equal(wait(), theirs);
+  mine.left = false;
+  assert.equal(wait(), undefined);
+  mine.left = true;
+  other.trafficStop.entering = false;
+  assert.equal(wait(), undefined);
+  other.trafficStop.entering = true;
+  other.edge = 3;
+  assert.equal(wait(), undefined);
+});
+
 test('po obnovení dlaždice má každý semafor a značka stejné vlastní ID a zachová poškození', async () => {
   const { Breakables } = await import('../src/physics/breakables.js');
   const registry = new Breakables();
