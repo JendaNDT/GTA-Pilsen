@@ -1,0 +1,62 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_tdj88"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_iaa4c"]
+
+[node name="Oblast_4_10" type="Node3D" unique_id=1090309605]
+script = ExtResource("1_tdj88")
+bunka = Vector2i(4, 10)
+stred = Vector2(-4352, -256)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=278139897]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=2002810057]
+
+[node name="Skvrňany_57146-1" type="Node3D" parent="Zastavky" unique_id=595649176]
+transform = Transform3D(-0.8630129, 0, -0.50518185, 0, 1, 0, 0.50518185, 0, -0.8630129, 274.5, 26.82, 493)
+script = ExtResource("2_iaa4c")
+id = "57146/1"
+nazev = "Skvrňany"
+poradi = 55
+gen_pozice = Vector3(274.5, 26.82, 493)
+gen_natoceni = -2.612
+gen_nazev = "Skvrňany"
+
+[node name="Skvrňany_57146-2" type="Node3D" parent="Zastavky" unique_id=908494322]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 242.1, 26.7, 480.7)
+script = ExtResource("2_iaa4c")
+id = "57146/2"
+nazev = "Skvrňany"
+poradi = 56
+gen_pozice = Vector3(242.1, 26.7, 480.7)
+gen_nazev = "Skvrňany"
+
+[node name="K_Rozvodně_26970-1" type="Node3D" parent="Zastavky" unique_id=2139386660]
+transform = Transform3D(0.37814933, 0, 0.9257446, 0, 1, 0, -0.9257446, 0, 0.37814933, -158.6, 7.16, -461.2)
+script = ExtResource("2_iaa4c")
+id = "26970/1"
+nazev = "K Rozvodně"
+poradi = 248
+gen_pozice = Vector3(-158.6, 7.16, -461.2)
+gen_natoceni = 1.183
+gen_nazev = "K Rozvodně"
+
+[node name="Pošta_logistika_47350-2" type="Node3D" parent="Zastavky" unique_id=977630332]
+transform = Transform3D(0.36049294, 0, 0.93276197, 0, 1, 0, -0.93276197, 0, 0.36049294, 402.8, 5.88, -245.7)
+script = ExtResource("2_iaa4c")
+id = "47350/2"
+nazev = "Pošta logistika"
+poradi = 473
+gen_pozice = Vector3(402.8, 5.88, -245.7)
+gen_natoceni = 1.202
+gen_nazev = "Pošta logistika"
+
+[node name="Pošta_logistika_47350-1" type="Node3D" parent="Zastavky" unique_id=141553929]
+transform = Transform3D(0.39199242, 0, 0.9199684, 0, 1, 0, -0.9199684, 0, 0.39199242, 410.7, 5.88, -226.6)
+script = ExtResource("2_iaa4c")
+id = "47350/1"
+nazev = "Pošta logistika"
+poradi = 477
+gen_pozice = Vector3(410.7, 5.88, -226.6)
+gen_natoceni = 1.168
+gen_nazev = "Pošta logistika"

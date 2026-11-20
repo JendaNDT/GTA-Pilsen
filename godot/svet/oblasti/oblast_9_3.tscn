@@ -1,0 +1,53 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_udi5j"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_71cfk"]
+
+[node name="Oblast_9_3" type="Node3D" unique_id=947953887]
+script = ExtResource("1_udi5j")
+bunka = Vector2i(9, 3)
+stred = Vector2(768, -7424)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=951918184]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1750217406]
+
+[node name="Třemošná,_Orlík_36814-1" type="Node3D" parent="Zastavky" unique_id=64319363]
+transform = Transform3D(-0.95721036, 0, 0.28939298, 0, 1, 0, -0.28939298, 0, -0.95721036, 267.6, 46.36, 477)
+script = ExtResource("2_71cfk")
+id = "36814/1"
+nazev = "Třemošná, Orlík"
+poradi = 441
+gen_pozice = Vector3(267.6, 46.36, 477)
+gen_natoceni = 2.848
+gen_nazev = "Třemošná, Orlík"
+
+[node name="Třemošná,_sídliště_36808-1" type="Node3D" parent="Zastavky" unique_id=269478577]
+transform = Transform3D(-0.9512315, 0, 0.308478, 0, 1, 0, -0.308478, 0, -0.9512315, 416, 36.25, 9.9)
+script = ExtResource("2_71cfk")
+id = "36808/1"
+nazev = "Třemošná, sídliště"
+poradi = 442
+gen_pozice = Vector3(416, 36.25, 9.9)
+gen_natoceni = 2.828
+gen_nazev = "Třemošná, sídliště"
+
+[node name="Třemošná,_sídliště_36808-2" type="Node3D" parent="Zastavky" unique_id=1473905936]
+transform = Transform3D(-0.9512315, 0, 0.308478, 0, 1, 0, -0.308478, 0, -0.9512315, 399.2, 36.52, 29.8)
+script = ExtResource("2_71cfk")
+id = "36808/2"
+nazev = "Třemošná, sídliště"
+poradi = 447
+gen_pozice = Vector3(399.2, 36.52, 29.8)
+gen_natoceni = 2.828
+gen_nazev = "Třemošná, sídliště"
+
+[node name="Třemošná,_Orlík_36814-2" type="Node3D" parent="Zastavky" unique_id=694084959]
+transform = Transform3D(-0.95721036, 0, 0.28939298, 0, 1, 0, -0.28939298, 0, -0.95721036, 253.9, 46.51, 481.3)
+script = ExtResource("2_71cfk")
+id = "36814/2"
+nazev = "Třemošná, Orlík"
+poradi = 448
+gen_pozice = Vector3(253.9, 46.51, 481.3)
+gen_natoceni = 2.848
+gen_nazev = "Třemošná, Orlík"

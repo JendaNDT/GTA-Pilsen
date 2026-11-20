@@ -19,44 +19,27 @@ func _ready() -> void:
 	koren.set_anchors_preset(Control.PRESET_FULL_RECT)
 	koren.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(koren)
-	_misto = _stitek(koren, 22, Color(1, 1, 1))
-	_misto.position = Vector2(18, 12)
-	_ulice = _stitek(koren, 17, Color(0.85, 0.9, 0.95))
-	_ulice.position = Vector2(18, 44)
-	_cas = _stitek(koren, 20, Color(1, 1, 1))
-	_cas.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	_cas.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_cas.position = Vector2(-220, 12)
-	_cas.size = Vector2(200, 30)
-	_penize = _stitek(koren, 20, Color(0.75, 1.0, 0.7))
-	_penize.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	_penize.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_penize.position = Vector2(-220, 42)
-	_penize.size = Vector2(200, 30)
-	_rychlost = _stitek(koren, 40, Color(1, 1, 1))
-	_rychlost.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
-	_rychlost.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_rychlost.position = Vector2(-260, -90)
-	_rychlost.size = Vector2(240, 60)
-	_napoveda = _stitek(koren, 20, Color(1, 0.95, 0.7))
-	_napoveda.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
-	_napoveda.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_napoveda.position = Vector2(-300, -120)
-	_napoveda.size = Vector2(600, 30)
-	_zprava = _stitek(koren, 24, Color(1, 1, 1))
-	_zprava.set_anchors_preset(Control.PRESET_CENTER_TOP)
-	_zprava.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_zprava.position = Vector2(-400, 90)
-	_zprava.size = Vector2(800, 40)
-	_nacitani = _stitek(koren, 30, Color(1, 1, 1))
-	_nacitani.set_anchors_preset(Control.PRESET_CENTER)
-	_nacitani.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_nacitani.position = Vector2(-300, -20)
-	_nacitani.size = Vector2(600, 40)
+	_misto = _stitek(koren, 22, Color(1, 1, 1), Control.PRESET_TOP_LEFT, Rect2(18, 12, 600, 30))
+	_ulice = _stitek(koren, 17, Color(0.85, 0.9, 0.95), Control.PRESET_TOP_LEFT, Rect2(18, 44, 600, 26))
+	_cas = _stitek(koren, 20, Color(1, 1, 1), Control.PRESET_TOP_RIGHT, Rect2(-220, 12, 200, 30), HORIZONTAL_ALIGNMENT_RIGHT)
+	_penize = _stitek(koren, 20, Color(0.75, 1.0, 0.7), Control.PRESET_TOP_RIGHT, Rect2(-220, 42, 200, 30), HORIZONTAL_ALIGNMENT_RIGHT)
+	_rychlost = _stitek(koren, 40, Color(1, 1, 1), Control.PRESET_BOTTOM_RIGHT, Rect2(-260, -90, 240, 60), HORIZONTAL_ALIGNMENT_RIGHT)
+	_napoveda = _stitek(koren, 20, Color(1, 0.95, 0.7), Control.PRESET_CENTER_BOTTOM, Rect2(-300, -120, 600, 30), HORIZONTAL_ALIGNMENT_CENTER)
+	_zprava = _stitek(koren, 24, Color(1, 1, 1), Control.PRESET_CENTER_TOP, Rect2(-450, 90, 900, 40), HORIZONTAL_ALIGNMENT_CENTER)
+	_zprava.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_nacitani = _stitek(koren, 30, Color(1, 1, 1), Control.PRESET_CENTER, Rect2(-300, -20, 600, 40), HORIZONTAL_ALIGNMENT_CENTER)
 
 
-func _stitek(rodic: Control, velikost: int, barva: Color) -> Label:
+## Popisek ukotvený k okraji obrazovky; obdélník = posun a velikost vůči kotvě.
+func _stitek(rodic: Control, velikost: int, barva: Color, kotva: Control.LayoutPreset, r: Rect2,
+		zarovnani := HORIZONTAL_ALIGNMENT_LEFT) -> Label:
 	var l := Label.new()
+	l.set_anchors_preset(kotva)
+	l.offset_left = r.position.x
+	l.offset_top = r.position.y
+	l.offset_right = r.position.x + r.size.x
+	l.offset_bottom = r.position.y + r.size.y
+	l.horizontal_alignment = zarovnani
 	l.add_theme_font_size_override("font_size", velikost)
 	l.add_theme_color_override("font_color", barva)
 	l.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))

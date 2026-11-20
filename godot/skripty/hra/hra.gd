@@ -25,6 +25,7 @@ var _info_cas := 0.0
 @onready var chodec: Chodec = $Chodec
 @onready var kamera: KameraHrace = $Kamera
 @onready var auta: Node3D = $Auta
+@onready var oblasti: Oblasti = $Oblasti
 @onready var hud: Hud = $Hud
 @onready var dotyk: Dotyk = $Dotyk
 
@@ -41,8 +42,7 @@ func _ready() -> void:
 	_nastav_cas_ze_systemu()
 	chodec.collision_layer = VRSTVA_HRAC
 	chodec.collision_mask = VRSTVA_SVET | VRSTVA_VOZIDLA
-	kamera.cil = chodec
-	svet.sledovat = chodec
+	_sleduj(chodec)
 	dotyk.akce.connect(_akce)
 	hud.nacitani("Načítám Plzeň…")
 	hud.penize(penize)
@@ -135,8 +135,7 @@ func nastoupit(a: Auto) -> void:
 	chodec.collision_mask = 0
 	a.ridi_hrac = true
 	a.sleeping = false
-	kamera.cil = a
-	svet.sledovat = a
+	_sleduj(a)
 	rezim_zmenen.emit(rezim)
 
 
@@ -157,11 +156,17 @@ func vystoupit() -> bool:
 	chodec.collision_layer = VRSTVA_HRAC
 	chodec.collision_mask = VRSTVA_SVET | VRSTVA_VOZIDLA
 	chodec.natoceni = atan2(a.global_basis.z.x, a.global_basis.z.z)
-	kamera.cil = chodec
-	svet.sledovat = chodec
+	_sleduj(chodec)
 	rezim = "pesky"
 	rezim_zmenen.emit(rezim)
 	return true
+
+
+## Kamera, načítání mapy a oblastí sledují hráče nebo jeho vozidlo.
+func _sleduj(uzel: Node3D) -> void:
+	kamera.cil = uzel
+	svet.sledovat = uzel
+	oblasti.sledovat = uzel
 
 
 ## Výška pochozího povrchu v bodě (most, střecha i terén) paprskem shora.
@@ -192,9 +197,19 @@ func _process(delta: float) -> void:
 			("%s · " % ctvrt if ctvrt != "" else "") + "%d m n. m." % Mapa.nadmorska_vyska(p.y))
 		hud.cas("%02d:%02d" % [int(cas_hodina), int(fmod(cas_hodina, 1.0) * 60.0)])
 		prostredi.nastav_hodinu(cas_hodina, cas_den)
+	if OS.has_feature("web") and _info_cas == 0.5:
+		_stav_pro_prohlizec()
 	if rezim == "auto" and auto_hrace:
 		hud.rychlost(auto_hrace.rychlost_kmh())
 		hud.napoveda("F – vystoupit" if absf(auto_hrace.rychlost()) < 4.0 else "")
 	else:
 		hud.rychlost(-1)
 		hud.napoveda("F – nastoupit do auta" if auto_nablizku() else "")
+
+
+## Ve webové verzi zapíše stav hry do window.__plzen (pro zkoušky v prohlížeči).
+func _stav_pro_prohlizec() -> void:
+	var p := kamera.cil.global_position
+	var stav := {"x": p.x, "y": p.y, "z": p.z, "rezim": rezim, "dlazdice": svet.pocet_hotovych(),
+		"ceka": svet.ceka_na_stavbu(), "dotyk": Vstup.aktivni_dotyk, "fps": Engine.get_frames_per_second()}
+	JavaScriptBridge.eval("window.__plzen = %s;" % JSON.stringify(stav), true)

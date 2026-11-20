@@ -1,0 +1,46 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_a8lwx"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_kffsx"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="3_n8dp3"]
+
+[node name="Oblast_6_8" type="Node3D" unique_id=378667491]
+script = ExtResource("1_a8lwx")
+bunka = Vector2i(6, 8)
+stred = Vector2(-2304, -2304)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1208426671]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=191489060]
+
+[node name="Hodonínská_57082-1" type="Node3D" parent="Zastavky" unique_id=1591169002]
+transform = Transform3D(-0.09705066, 0, 0.99527943, 0, 1, 0, -0.99527943, 0, -0.09705066, 408.7, 38.75, 507.8)
+script = ExtResource("2_kffsx")
+id = "57082/1"
+nazev = "Hodonínská"
+poradi = 254
+gen_pozice = Vector3(408.7, 38.75, 507.8)
+gen_natoceni = 1.668
+gen_nazev = "Hodonínská"
+
+[node name="Hodonínská_57082-2" type="Node3D" parent="Zastavky" unique_id=947210821]
+transform = Transform3D(0.11255735, 0, -0.99364525, 0, 1, 0, 0.99364525, 0, 0.11255735, 237.9, 43.32, 497.7)
+script = ExtResource("2_kffsx")
+id = "57082/2"
+nazev = "Hodonínská"
+poradi = 267
+gen_pozice = Vector3(237.9, 43.32, 497.7)
+gen_natoceni = -1.458
+gen_nazev = "Hodonínská"
+
+[node name="Mista" type="Node3D" parent="." unique_id=1343419497]
+
+[node name="Rozhledna_Sylván_pamatka-23" type="Node3D" parent="Mista" unique_id=1206195276]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 155.2, 92.54, -168.7)
+script = ExtResource("3_n8dp3")
+popis = "Rozhledna na Sylvánském vrchu na severozápadě města."
+id = "pamatka-23"
+nazev = "Rozhledna Sylván"
+poradi = 23
+gen_pozice = Vector3(155.2, 92.54, -168.7)
+gen_nazev = "Rozhledna Sylván"

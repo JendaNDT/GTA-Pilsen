@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_37dss"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_37srh"]
+
+[node name="Oblast_1_15" type="Node3D" unique_id=1308361451]
+script = ExtResource("1_37dss")
+bunka = Vector2i(1, 15)
+stred = Vector2(-7424, 4864)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1688713058]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1077395172]
+
+[node name="Líně,_Sulkov_18534-1" type="Node3D" parent="Zastavky" unique_id=892571319]
+transform = Transform3D(0.6425306, 0, -0.76625997, 0, 1, 0, 0.76625997, 0, 0.6425306, 248.4, 27.25, -336.2)
+script = ExtResource("2_37srh")
+id = "18534/1"
+nazev = "Líně, Sulkov"
+poradi = 518
+gen_pozice = Vector3(248.4, 27.25, -336.2)
+gen_natoceni = -0.873
+gen_nazev = "Líně, Sulkov"
+
+[node name="Líně,_Sulkov_18534-2" type="Node3D" parent="Zastavky" unique_id=1600429190]
+transform = Transform3D(0.9814332, 0, 0.19180405, 0, 1, 0, -0.19180405, 0, 0.9814332, 181, 26.91, -269.1)
+script = ExtResource("2_37srh")
+id = "18534/2"
+nazev = "Líně, Sulkov"
+poradi = 521
+gen_pozice = Vector3(181, 26.91, -269.1)
+gen_natoceni = 0.193
+gen_nazev = "Líně, Sulkov"

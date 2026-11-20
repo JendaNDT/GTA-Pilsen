@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_qie01"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_8w87y"]
+
+[node name="Oblast_16_5" type="Node3D" unique_id=1551869271]
+script = ExtResource("1_qie01")
+bunka = Vector2i(16, 5)
+stred = Vector2(7936, -5376)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=295827181]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=2030995282]
+
+[node name="Chrást,_ZŠ_53189-1" type="Node3D" parent="Zastavky" unique_id=942384281]
+transform = Transform3D(-0.97811574, 0, -0.20806156, 0, 1, 0, 0.20806156, 0, -0.97811574, 416.4, 26.28, 284)
+script = ExtResource("2_8w87y")
+id = "53189/1"
+nazev = "Chrást, ZŠ"
+poradi = 508
+gen_pozice = Vector3(416.4, 26.28, 284)
+gen_natoceni = -2.932
+gen_nazev = "Chrást, ZŠ"
+
+[node name="Chrást,_ZŠ_53189-2" type="Node3D" parent="Zastavky" unique_id=1093462034]
+transform = Transform3D(0.6916682, 0, -0.7222154, 0, 1, 0, 0.7222154, 0, 0.6916682, 378.3, 27.33, 323)
+script = ExtResource("2_8w87y")
+id = "53189/2"
+nazev = "Chrást, ZŠ"
+poradi = 514
+gen_pozice = Vector3(378.3, 27.33, 323)
+gen_natoceni = -0.807
+gen_nazev = "Chrást, ZŠ"

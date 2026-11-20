@@ -1,0 +1,173 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_ve71m"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_bben1"]
+
+[node name="Oblast_4_12" type="Node3D" unique_id=458992968]
+script = ExtResource("1_ve71m")
+bunka = Vector2i(4, 12)
+stred = Vector2(-4352, 1792)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1210109517]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=129902994]
+
+[node name="Folmavská_rondel_53580-1" type="Node3D" parent="Zastavky" unique_id=719597141]
+transform = Transform3D(0.039785806, 0, -0.9992082, 0, 1, 0, 0.9992082, 0, 0.039785806, 388.4, 45.35, -23.7)
+script = ExtResource("2_bben1")
+id = "53580/1"
+nazev = "Folmavská rondel"
+poradi = 200
+gen_pozice = Vector3(388.4, 45.35, -23.7)
+gen_natoceni = -1.531
+gen_nazev = "Folmavská rondel"
+
+[node name="Regensburská_rondel_60205-1" type="Node3D" parent="Zastavky" unique_id=805367731]
+transform = Transform3D(-0.91528046, 0, 0.40281713, 0, 1, 0, -0.40281713, 0, -0.91528046, 307.6, 40.76, -255.8)
+script = ExtResource("2_bben1")
+id = "60205/1"
+nazev = "Regensburská rondel"
+poradi = 201
+gen_pozice = Vector3(307.6, 40.76, -255.8)
+gen_natoceni = 2.727
+gen_nazev = "Regensburská rondel"
+
+[node name="Regensburská_rondel_60205-2" type="Node3D" parent="Zastavky" unique_id=1197155788]
+transform = Transform3D(0.9222251, 0, -0.38665342, 0, 1, 0, 0.38665342, 0, 0.9222251, 219.7, 44.57, -129.4)
+script = ExtResource("2_bben1")
+id = "60205/2"
+nazev = "Regensburská rondel"
+poradi = 233
+gen_pozice = Vector3(219.7, 44.57, -129.4)
+gen_natoceni = -0.397
+gen_nazev = "Regensburská rondel"
+
+[node name="Folmavská_rondel_53580-2" type="Node3D" parent="Zastavky" unique_id=351471558]
+transform = Transform3D(-0.033197545, 0, 0.99944884, 0, 1, 0, -0.99944884, 0, -0.033197545, 433.1, 45.18, 0.9)
+script = ExtResource("2_bben1")
+id = "53580/2"
+nazev = "Folmavská rondel"
+poradi = 234
+gen_pozice = Vector3(433.1, 45.18, 0.9)
+gen_natoceni = 1.604
+gen_nazev = "Folmavská rondel"
+
+[node name="Obchodní_rondel_57131-1" type="Node3D" parent="Zastavky" unique_id=862047414]
+transform = Transform3D(0.8707848, 0, 0.49166432, 0, 1, 0, -0.49166432, 0, 0.8707848, 365.3, 46.55, 146.8)
+script = ExtResource("2_bben1")
+id = "57131/1"
+nazev = "Obchodní rondel"
+poradi = 253
+gen_pozice = Vector3(365.3, 46.55, 146.8)
+gen_natoceni = 0.514
+gen_nazev = "Obchodní rondel"
+
+[node name="Obchodní_rondel_57131-2" type="Node3D" parent="Zastavky" unique_id=1148988140]
+transform = Transform3D(0.871276, 0, 0.4907933, 0, 1, 0, -0.4907933, 0, 0.871276, 410.7, 47.48, 258)
+script = ExtResource("2_bben1")
+id = "57131/2"
+nazev = "Obchodní rondel"
+poradi = 268
+gen_pozice = Vector3(410.7, 47.48, 258)
+gen_natoceni = 0.513
+gen_nazev = "Obchodní rondel"
+
+[node name="Obchodní_57130-2" type="Node3D" parent="Zastavky" unique_id=527032773]
+transform = Transform3D(0.06275505, 0, 0.99802893, 0, 1, 0, -0.99802893, 0, 0.06275505, 507.3, 46.93, 507.1)
+script = ExtResource("2_bben1")
+id = "57130/2"
+nazev = "Obchodní"
+poradi = 269
+gen_pozice = Vector3(507.3, 46.93, 507.1)
+gen_natoceni = 1.508
+gen_nazev = "Obchodní"
+
+[node name="Domažlická_rondel_52136-1" type="Node3D" parent="Zastavky" unique_id=608238985]
+transform = Transform3D(0.7364424, 0, -0.67650026, 0, 1, 0, 0.67650026, 0, 0.7364424, 334.1, 45.16, -174.6)
+script = ExtResource("2_bben1")
+id = "52136/1"
+nazev = "Domažlická rondel"
+poradi = 483
+gen_pozice = Vector3(334.1, 45.16, -174.6)
+gen_natoceni = -0.743
+gen_nazev = "Domažlická rondel"
+
+[node name="Nová_Hospoda_rondel_68941-1" type="Node3D" parent="Zastavky" unique_id=34674815]
+transform = Transform3D(-0.23206842, 0, 0.97269946, 0, 1, 0, -0.97269946, 0, -0.23206842, 74.5, 45.57, -20)
+script = ExtResource("2_bben1")
+id = "68941/1"
+nazev = "Nová Hospoda rondel"
+poradi = 484
+gen_pozice = Vector3(74.5, 45.57, -20)
+gen_natoceni = 1.805
+gen_nazev = "Nová Hospoda rondel"
+
+[node name="Nová_Hospoda_26955-5" type="Node3D" parent="Zastavky" unique_id=255023707]
+transform = Transform3D(-0.95153946, 0, -0.30752668, 0, 1, 0, 0.30752668, 0, -0.95153946, -257.4, 47.45, 20.8)
+script = ExtResource("2_bben1")
+id = "26955/5"
+nazev = "Nová Hospoda"
+poradi = 485
+gen_pozice = Vector3(-257.4, 47.45, 20.8)
+gen_natoceni = -2.829
+gen_nazev = "Nová Hospoda"
+
+[node name="Prostřední_68850-1" type="Node3D" parent="Zastavky" unique_id=61562034]
+transform = Transform3D(-0.97663534, 0, 0.21490319, 0, 1, 0, -0.21490319, 0, -0.97663534, -355.7, 41.07, -270.3)
+script = ExtResource("2_bben1")
+id = "68850/1"
+nazev = "Prostřední"
+poradi = 486
+gen_pozice = Vector3(-355.7, 41.07, -270.3)
+gen_natoceni = 2.925
+gen_nazev = "Prostřední"
+
+[node name="Prostřední_68850-2" type="Node3D" parent="Zastavky" unique_id=750068798]
+transform = Transform3D(-0.15260504, 0, -0.98828727, 0, 1, 0, 0.98828727, 0, -0.15260504, -357.1, 41.2, -263.3)
+script = ExtResource("2_bben1")
+id = "68850/2"
+nazev = "Prostřední"
+poradi = 487
+gen_pozice = Vector3(-357.1, 41.2, -263.3)
+gen_natoceni = -1.724
+gen_nazev = "Prostřední"
+
+[node name="Nová_Hospoda_26955-6" type="Node3D" parent="Zastavky" unique_id=1430100010]
+transform = Transform3D(-0.8005448, 0, -0.5992729, 0, 1, 0, 0.5992729, 0, -0.8005448, -216.3, 47.67, 113.3)
+script = ExtResource("2_bben1")
+id = "26955/6"
+nazev = "Nová Hospoda"
+poradi = 488
+gen_pozice = Vector3(-216.3, 47.67, 113.3)
+gen_natoceni = -2.499
+gen_nazev = "Nová Hospoda"
+
+[node name="Domažlická_rondel_52136-2" type="Node3D" parent="Zastavky" unique_id=273384919]
+transform = Transform3D(-0.74477905, 0, 0.66731113, 0, 1, 0, -0.66731113, 0, -0.74477905, 350.2, 44.9, -163.8)
+script = ExtResource("2_bben1")
+id = "52136/2"
+nazev = "Domažlická rondel"
+poradi = 489
+gen_pozice = Vector3(350.2, 44.9, -163.8)
+gen_natoceni = 2.411
+gen_nazev = "Domažlická rondel"
+
+[node name="Nová_Hospoda_26955-1" type="Node3D" parent="Zastavky" unique_id=1163374644]
+transform = Transform3D(0.5792402, 0, -0.8151569, 0, 1, 0, 0.8151569, 0, 0.5792402, -290.5, 47.58, 32.3)
+script = ExtResource("2_bben1")
+id = "26955/1"
+nazev = "Nová Hospoda"
+poradi = 614
+gen_pozice = Vector3(-290.5, 47.58, 32.3)
+gen_natoceni = -0.953
+gen_nazev = "Nová Hospoda"
+
+[node name="Nová_Hospoda_26955-2" type="Node3D" parent="Zastavky" unique_id=1228974957]
+transform = Transform3D(-0.4088592, 0, 0.9125975, 0, 1, 0, -0.9125975, 0, -0.4088592, -248.7, 48.07, 96.8)
+script = ExtResource("2_bben1")
+id = "26955/2"
+nazev = "Nová Hospoda"
+poradi = 615
+gen_pozice = Vector3(-248.7, 48.07, 96.8)
+gen_natoceni = 1.992
+gen_nazev = "Nová Hospoda"

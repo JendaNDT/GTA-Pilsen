@@ -1,0 +1,73 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_6ic24"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_cxc8u"]
+
+[node name="Oblast_10_8" type="Node3D" unique_id=585330570]
+script = ExtResource("1_6ic24")
+bunka = Vector2i(10, 8)
+stred = Vector2(1792, -2304)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=677417476]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=325916818]
+
+[node name="Nádraží_Bílá_Hora_26962-2" type="Node3D" parent="Zastavky" unique_id=1758230409]
+transform = Transform3D(-0.6164322, 0, 0.787408, 0, 1, 0, -0.787408, 0, -0.6164322, -71.8, -5.41, -17.4)
+script = ExtResource("2_cxc8u")
+id = "26962/2"
+nazev = "Nádraží Bílá Hora"
+poradi = 115
+gen_pozice = Vector3(-71.8, -5.41, -17.4)
+gen_natoceni = 2.235
+gen_nazev = "Nádraží Bílá Hora"
+
+[node name="U_Kondrů_53214-2" type="Node3D" parent="Zastavky" unique_id=973235564]
+transform = Transform3D(-0.5100162, 0, 0.8601648, 0, 1, 0, -0.8601648, 0, -0.5100162, 384.4, 19.63, -505.3)
+script = ExtResource("2_cxc8u")
+id = "53214/2"
+nazev = "U Kondrů"
+poradi = 116
+gen_pozice = Vector3(384.4, 19.63, -505.3)
+gen_natoceni = 2.106
+gen_nazev = "U Kondrů"
+
+[node name="U_Kondrů_53214-1" type="Node3D" parent="Zastavky" unique_id=1464934902]
+transform = Transform3D(-0.5100162, 0, 0.8601648, 0, 1, 0, -0.8601648, 0, -0.5100162, 331.8, 21.23, -482)
+script = ExtResource("2_cxc8u")
+id = "53214/1"
+nazev = "U Kondrů"
+poradi = 124
+gen_pozice = Vector3(331.8, 21.23, -482)
+gen_natoceni = 2.106
+gen_nazev = "U Kondrů"
+
+[node name="Nádraží_Bílá_Hora_26962-1" type="Node3D" parent="Zastavky" unique_id=1438574279]
+transform = Transform3D(0.62941206, 0, -0.7770717, 0, 1, 0, 0.7770717, 0, 0.62941206, -92.7, -5.91, -17.4)
+script = ExtResource("2_cxc8u")
+id = "26962/1"
+nazev = "Nádraží Bílá Hora"
+poradi = 125
+gen_pozice = Vector3(-92.7, -5.91, -17.4)
+gen_natoceni = -0.89
+gen_nazev = "Nádraží Bílá Hora"
+
+[node name="Bolevecký_rybník_57125-1" type="Node3D" parent="Zastavky" unique_id=126388193]
+transform = Transform3D(0.5694169, 0, 0.8220489, 0, 1, 0, -0.8220489, 0, 0.5694169, -364.3, 0.81, -329.7)
+script = ExtResource("2_cxc8u")
+id = "57125/1"
+nazev = "Bolevecký rybník"
+poradi = 390
+gen_pozice = Vector3(-364.3, 0.81, -329.7)
+gen_natoceni = 0.965
+gen_nazev = "Bolevecký rybník"
+
+[node name="Bolevecký_rybník_57125-2" type="Node3D" parent="Zastavky" unique_id=829231426]
+transform = Transform3D(0.56282234, 0, 0.8265779, 0, 1, 0, -0.8265779, 0, 0.56282234, -398.2, 0.85, -344.1)
+script = ExtResource("2_cxc8u")
+id = "57125/2"
+nazev = "Bolevecký rybník"
+poradi = 404
+gen_pozice = Vector3(-398.2, 0.85, -344.1)
+gen_natoceni = 0.973
+gen_nazev = "Bolevecký rybník"

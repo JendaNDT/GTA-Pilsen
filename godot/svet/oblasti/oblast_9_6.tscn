@@ -1,0 +1,73 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_8qeh8"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_6118m"]
+
+[node name="Oblast_9_6" type="Node3D" unique_id=1416764977]
+script = ExtResource("1_8qeh8")
+bunka = Vector2i(9, 6)
+stred = Vector2(768, -4352)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=2127048058]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=2100677775]
+
+[node name="Bolevec_57060-1" type="Node3D" parent="Zastavky" unique_id=148708467]
+transform = Transform3D(0.97740114, 0, -0.21139304, 0, 1, 0, 0.21139304, 0, 0.97740114, -345, 31.3, 297.8)
+script = ExtResource("2_6118m")
+id = "57060/1"
+nazev = "Bolevec"
+poradi = 18
+gen_pozice = Vector3(-345, 31.3, 297.8)
+gen_natoceni = -0.213
+gen_nazev = "Bolevec"
+
+[node name="Bolevec_57060-2" type="Node3D" parent="Zastavky" unique_id=984143667]
+transform = Transform3D(0.9782389, 0, -0.20748177, 0, 1, 0, 0.20748177, 0, 0.9782389, -368, 32.18, 329.2)
+script = ExtResource("2_6118m")
+id = "57060/2"
+nazev = "Bolevec"
+poradi = 19
+gen_pozice = Vector3(-368, 32.18, 329.2)
+gen_natoceni = -0.209
+gen_nazev = "Bolevec"
+
+[node name="Bolevec_57060-4" type="Node3D" parent="Zastavky" unique_id=515362099]
+transform = Transform3D(-0.69556326, 0, 0.71846485, 0, 1, 0, -0.71846485, 0, -0.69556326, -324, 31.35, 315.6)
+script = ExtResource("2_6118m")
+id = "57060/4"
+nazev = "Bolevec"
+poradi = 220
+gen_pozice = Vector3(-324, 31.35, 315.6)
+gen_natoceni = 2.34
+gen_nazev = "Bolevec"
+
+[node name="Bolevec_57060-3" type="Node3D" parent="Zastavky" unique_id=1815160449]
+transform = Transform3D(0.9782389, 0, -0.20748177, 0, 1, 0, 0.20748177, 0, 0.9782389, -343.6, 31.75, 323.7)
+script = ExtResource("2_6118m")
+id = "57060/3"
+nazev = "Bolevec"
+poradi = 221
+gen_pozice = Vector3(-343.6, 31.75, 323.7)
+gen_natoceni = -0.209
+gen_nazev = "Bolevec"
+
+[node name="Bolevec_57060-5" type="Node3D" parent="Zastavky" unique_id=846561796]
+transform = Transform3D(-0.9415505, 0, 0.33687183, 0, 1, 0, -0.33687183, 0, -0.9415505, -261.4, 28.34, 325.8)
+script = ExtResource("2_6118m")
+id = "57060/5"
+nazev = "Bolevec"
+poradi = 439
+gen_pozice = Vector3(-261.4, 28.34, 325.8)
+gen_natoceni = 2.798
+gen_nazev = "Bolevec"
+
+[node name="Bolevec_57060-6" type="Node3D" parent="Zastavky" unique_id=1960494497]
+transform = Transform3D(0.9282932, 0, -0.37184897, 0, 1, 0, 0.37184897, 0, 0.9282932, -288, 28.66, 324.5)
+script = ExtResource("2_6118m")
+id = "57060/6"
+nazev = "Bolevec"
+poradi = 445
+gen_pozice = Vector3(-288, 28.66, 324.5)
+gen_natoceni = -0.381
+gen_nazev = "Bolevec"

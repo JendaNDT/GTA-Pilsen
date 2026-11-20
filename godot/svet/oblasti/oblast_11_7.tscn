@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_yxy4t"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_0wa6g"]
+
+[node name="Oblast_11_7" type="Node3D" unique_id=894173421]
+script = ExtResource("1_yxy4t")
+bunka = Vector2i(11, 7)
+stred = Vector2(2816, -3328)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=364547303]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=2132214357]
+
+[node name="Papírna_Bukovec_57073-1" type="Node3D" parent="Zastavky" unique_id=517088858]
+transform = Transform3D(-0.22817583, 0, -0.97361994, 0, 1, 0, 0.97361994, 0, -0.22817583, 318.8, 9.62, 267)
+script = ExtResource("2_0wa6g")
+id = "57073/1"
+nazev = "Papírna Bukovec"
+poradi = 313
+gen_pozice = Vector3(318.8, 9.62, 267)
+gen_natoceni = -1.801
+gen_nazev = "Papírna Bukovec"
+
+[node name="Papírna_Bukovec_57073-2" type="Node3D" parent="Zastavky" unique_id=1409867055]
+transform = Transform3D(-0.23595741, 0, -0.9717634, 0, 1, 0, 0.9717634, 0, -0.23595741, 326.8, 9.82, 268.3)
+script = ExtResource("2_0wa6g")
+id = "57073/2"
+nazev = "Papírna Bukovec"
+poradi = 349
+gen_pozice = Vector3(326.8, 9.82, 268.3)
+gen_natoceni = -1.809
+gen_nazev = "Papírna Bukovec"

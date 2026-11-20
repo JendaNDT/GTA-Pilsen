@@ -1,0 +1,23 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_mfwlq"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_cvlfm"]
+
+[node name="Oblast_16_9" type="Node3D" unique_id=385664178]
+script = ExtResource("1_mfwlq")
+bunka = Vector2i(16, 9)
+stred = Vector2(7936, -1280)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=62760383]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=148884840]
+
+[node name="Kyšice_17376-2" type="Node3D" parent="Zastavky" unique_id=588622156]
+transform = Transform3D(0.999998, 0, -0.0019999987, 0, 1, 0, 0.0019999987, 0, 0.999998, -218.5, 70.64, 455.9)
+script = ExtResource("2_cvlfm")
+id = "17376/2"
+nazev = "Kyšice"
+poradi = 505
+gen_pozice = Vector3(-218.5, 70.64, 455.9)
+gen_natoceni = -0.002
+gen_nazev = "Kyšice"

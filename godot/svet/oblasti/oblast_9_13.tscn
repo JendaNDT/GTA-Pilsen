@@ -1,0 +1,126 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_mfpu0"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_j5xwd"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="3_mmw76"]
+
+[node name="Oblast_9_13" type="Node3D" unique_id=1147418378]
+script = ExtResource("1_mfpu0")
+bunka = Vector2i(9, 13)
+stred = Vector2(768, 2816)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=980539814]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1778641893]
+
+[node name="Tyršův_most_47078-2" type="Node3D" parent="Zastavky" unique_id=680365280]
+transform = Transform3D(-0.889479, 0, -0.45697612, 0, 1, 0, 0.45697612, 0, -0.889479, -502.3, 9.33, 297.4)
+script = ExtResource("2_j5xwd")
+id = "47078/2"
+nazev = "Tyršův most"
+poradi = 158
+gen_pozice = Vector3(-502.3, 9.33, 297.4)
+gen_natoceni = -2.667
+gen_nazev = "Tyršův most"
+
+[node name="Tyršův_most_47078-1" type="Node3D" parent="Zastavky" unique_id=1216658877]
+transform = Transform3D(-0.85169095, 0, -0.5240444, 0, 1, 0, 0.5240444, 0, -0.85169095, -510.7, 9.62, 263.7)
+script = ExtResource("2_j5xwd")
+id = "47078/1"
+nazev = "Tyršův most"
+poradi = 189
+gen_pozice = Vector3(-510.7, 9.62, 263.7)
+gen_natoceni = -2.59
+gen_nazev = "Tyršův most"
+
+[node name="Vodárna_57116-1" type="Node3D" parent="Zastavky" unique_id=1843658498]
+transform = Transform3D(-0.45574018, 0, -0.8901129, 0, 1, 0, 0.8901129, 0, -0.45574018, 238.8, -0.57, -318)
+script = ExtResource("2_j5xwd")
+id = "57116/1"
+nazev = "Vodárna"
+poradi = 359
+gen_pozice = Vector3(238.8, -0.57, -318)
+gen_natoceni = -2.044
+gen_nazev = "Vodárna"
+
+[node name="Vodárna_57116-2" type="Node3D" parent="Zastavky" unique_id=1739830706]
+transform = Transform3D(-0.24953848, 0, -0.9683649, 0, 1, 0, 0.9683649, 0, -0.24953848, 194.8, -2.36, -348.1)
+script = ExtResource("2_j5xwd")
+id = "57116/2"
+nazev = "Vodárna"
+poradi = 376
+gen_pozice = Vector3(194.8, -2.36, -348.1)
+gen_natoceni = -1.823
+gen_nazev = "Vodárna"
+
+[node name="Mlýnské_nábřeží_57120-1" type="Node3D" parent="Zastavky" unique_id=939574017]
+transform = Transform3D(0.9932795, 0, -0.11574002, 0, 1, 0, 0.11574002, 0, 0.9932795, -62.5, 0.84, -136.8)
+script = ExtResource("2_j5xwd")
+id = "57120/1"
+nazev = "Mlýnské nábřeží"
+poradi = 397
+gen_pozice = Vector3(-62.5, 0.84, -136.8)
+gen_natoceni = -0.116
+gen_nazev = "Mlýnské nábřeží"
+
+[node name="Mlýnské_nábřeží_57120-2" type="Node3D" parent="Zastavky" unique_id=1845595868]
+transform = Transform3D(0.9962179, 0, -0.08689029, 0, 1, 0, 0.08689029, 0, 0.9962179, -78.3, 0.16, -253.5)
+script = ExtResource("2_j5xwd")
+id = "57120/2"
+nazev = "Mlýnské nábřeží"
+poradi = 400
+gen_pozice = Vector3(-78.3, 0.16, -253.5)
+gen_natoceni = -0.087
+gen_nazev = "Mlýnské nábřeží"
+
+[node name="Průmyslová_57139-1" type="Node3D" parent="Zastavky" unique_id=759590934]
+transform = Transform3D(0.9954909, 0, -0.09485717, 0, 1, 0, 0.09485717, 0, 0.9954909, -180.7, 7.27, -94.4)
+script = ExtResource("2_j5xwd")
+id = "57139/1"
+nazev = "Průmyslová"
+poradi = 602
+gen_pozice = Vector3(-180.7, 7.27, -94.4)
+gen_natoceni = -0.095
+gen_nazev = "Průmyslová"
+
+[node name="Révová_57141-1" type="Node3D" parent="Zastavky" unique_id=908603582]
+transform = Transform3D(0.9950042, 0, -0.09983342, 0, 1, 0, 0.09983342, 0, 0.9950042, -197.9, 8.09, 118.2)
+script = ExtResource("2_j5xwd")
+id = "57141/1"
+nazev = "Révová"
+poradi = 603
+gen_pozice = Vector3(-197.9, 8.09, 118.2)
+gen_natoceni = -0.1
+gen_nazev = "Révová"
+
+[node name="Révová_57141-2" type="Node3D" parent="Zastavky" unique_id=2104118733]
+transform = Transform3D(0.9950042, 0, -0.09983342, 0, 1, 0, 0.09983342, 0, 0.9950042, -191.5, 8.72, 93.6)
+script = ExtResource("2_j5xwd")
+id = "57141/2"
+nazev = "Révová"
+poradi = 606
+gen_pozice = Vector3(-191.5, 8.72, 93.6)
+gen_natoceni = -0.1
+gen_nazev = "Révová"
+
+[node name="Průmyslová_57139-2" type="Node3D" parent="Zastavky" unique_id=902186273]
+transform = Transform3D(0.98816544, 0, -0.15339202, 0, 1, 0, 0.15339202, 0, 0.98816544, -162.7, 5.18, -184.3)
+script = ExtResource("2_j5xwd")
+id = "57139/2"
+nazev = "Průmyslová"
+poradi = 607
+gen_pozice = Vector3(-162.7, 5.18, -184.3)
+gen_natoceni = -0.154
+gen_nazev = "Průmyslová"
+
+[node name="Mista" type="Node3D" parent="." unique_id=322537211]
+
+[node name="Meditační_zahrada_pamatka-26" type="Node3D" parent="Mista" unique_id=765747835]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.8, 2.51, 438.6)
+script = ExtResource("3_mmw76")
+popis = "Meditační zahrada s Památníkem obětem zla."
+id = "pamatka-26"
+nazev = "Meditační zahrada"
+poradi = 26
+gen_pozice = Vector3(-3.8, 2.51, 438.6)
+gen_nazev = "Meditační zahrada"

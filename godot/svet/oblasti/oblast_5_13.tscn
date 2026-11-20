@@ -1,0 +1,83 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_sg8fu"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_pntf6"]
+
+[node name="Oblast_5_13" type="Node3D" unique_id=1192500220]
+script = ExtResource("1_sg8fu")
+bunka = Vector2i(5, 13)
+stred = Vector2(-3328, 2816)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1663249774]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=188162184]
+
+[node name="Vltava_57138-1" type="Node3D" parent="Zastavky" unique_id=1260240161]
+transform = Transform3D(-0.062163584, 0, -0.99806595, 0, 1, 0, 0.99806595, 0, -0.062163584, 484.2, 42.8, -461.4)
+script = ExtResource("2_pntf6")
+id = "57138/1"
+nazev = "Vltava"
+poradi = 197
+gen_pozice = Vector3(484.2, 42.8, -461.4)
+gen_natoceni = -1.633
+gen_nazev = "Vltava"
+
+[node name="Vltava_57138-2" type="Node3D" parent="Zastavky" unique_id=1480538073]
+transform = Transform3D(-0.062163584, 0, -0.99806595, 0, 1, 0, 0.99806595, 0, -0.062163584, 480.7, 42.89, -452.5)
+script = ExtResource("2_pntf6")
+id = "57138/2"
+nazev = "Vltava"
+poradi = 237
+gen_pozice = Vector3(480.7, 42.89, -452.5)
+gen_natoceni = -1.633
+gen_nazev = "Vltava"
+
+[node name="Staré_letiště_57157-1" type="Node3D" parent="Zastavky" unique_id=236172565]
+transform = Transform3D(0.9984324, 0, -0.055970736, 0, 1, 0, 0.055970736, 0, 0.9984324, 392.8, 42.96, -392.6)
+script = ExtResource("2_pntf6")
+id = "57157/1"
+nazev = "Staré letiště"
+poradi = 250
+gen_pozice = Vector3(392.8, 42.96, -392.6)
+gen_natoceni = -0.056
+gen_nazev = "Staré letiště"
+
+[node name="Daiho_57137-1" type="Node3D" parent="Zastavky" unique_id=1708408316]
+transform = Transform3D(0.064750955, 0, 0.99790144, 0, 1, 0, -0.99790144, 0, 0.064750955, 287.5, 44.01, -477.1)
+script = ExtResource("2_pntf6")
+id = "57137/1"
+nazev = "Daiho"
+poradi = 251
+gen_pozice = Vector3(287.5, 44.01, -477.1)
+gen_natoceni = 1.506
+gen_nazev = "Daiho"
+
+[node name="Borská_pole_57064-1" type="Node3D" parent="Zastavky" unique_id=281110069]
+transform = Transform3D(0.99695957, 0, -0.077920936, 0, 1, 0, 0.077920936, 0, 0.99695957, -268.8, 44.76, -412.6)
+script = ExtResource("2_pntf6")
+id = "57064/1"
+nazev = "Borská pole"
+poradi = 270
+gen_pozice = Vector3(-268.8, 44.76, -412.6)
+gen_natoceni = -0.078
+gen_nazev = "Borská pole"
+
+[node name="Morseova_59519-1" type="Node3D" parent="Zastavky" unique_id=597445217]
+transform = Transform3D(-0.07214096, 0, -0.99739444, 0, 1, 0, 0.99739444, 0, -0.07214096, 214.8, 43.25, -315.8)
+script = ExtResource("2_pntf6")
+id = "59519/1"
+nazev = "Morseova"
+poradi = 271
+gen_pozice = Vector3(214.8, 43.25, -315.8)
+gen_natoceni = -1.643
+gen_nazev = "Morseova"
+
+[node name="Borská_pole_57064-2" type="Node3D" parent="Zastavky" unique_id=756750962]
+transform = Transform3D(-0.9984551, 0, 0.055564057, 0, 1, 0, -0.055564057, 0, -0.9984551, -263.8, 44.59, -316.7)
+script = ExtResource("2_pntf6")
+id = "57064/2"
+nazev = "Borská pole"
+poradi = 352
+gen_pozice = Vector3(-263.8, 44.59, -316.7)
+gen_natoceni = 3.086
+gen_nazev = "Borská pole"

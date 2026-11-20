@@ -21,6 +21,13 @@ func scenar() -> void:
 	var ulice := Mapa.nejblizsi_ulice(p.x, p.z, 45.0, 14)
 	over(ulice.get("nazev", "") == "náměstí Republiky", "nejbližší ulice je náměstí Republiky (%s)" % ulice.get("nazev", ""))
 	over(absi(Mapa.nadmorska_vyska(p.y) - 313) <= 2, "nadmořská výška %d m" % Mapa.nadmorska_vyska(p.y))
+	hra.oblasti.aktualizuj(Hra.START)
+	var zastavky := hra.oblasti.zastavky()
+	var na_namesti := zastavky.filter(func(z: Zastavka) -> bool: return z.nazev == "Náměstí Republiky")
+	over(na_namesti.size() >= 3, "kolem startu jsou zastávky Náměstí Republiky z upravitelných oblastí (%d)" % na_namesti.size())
+	if not na_namesti.is_empty():
+		var g: Vector3 = na_namesti[0].global_position
+		over(absf(g.y - Mapa.vyska(g.x, g.z)) < 1.0, "zastávka stojí na zemi")
 	await snimek("01-start-namesti")
 
 	krok("Chůze ke zaparkovanému autu")

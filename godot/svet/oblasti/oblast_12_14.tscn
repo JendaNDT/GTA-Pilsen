@@ -1,0 +1,43 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_wqa78"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_ho43u"]
+
+[node name="Oblast_12_14" type="Node3D" unique_id=123254518]
+script = ExtResource("1_wqa78")
+bunka = Vector2i(12, 14)
+stred = Vector2(3840, 3840)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=645647]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1050731807]
+
+[node name="Koterov_50738-1" type="Node3D" parent="Zastavky" unique_id=1764158548]
+transform = Transform3D(0.6050243, 0, 0.7962071, 0, 1, 0, -0.7962071, 0, 0.6050243, -188.4, 22.75, -103.9)
+script = ExtResource("2_ho43u")
+id = "50738/1"
+nazev = "Koterov"
+poradi = 618
+gen_pozice = Vector3(-188.4, 22.75, -103.9)
+gen_natoceni = 0.921
+gen_nazev = "Koterov"
+
+[node name="Koterov_50738-3" type="Node3D" parent="Zastavky" unique_id=1543721999]
+transform = Transform3D(0.5849321, 0, -0.81108224, 0, 1, 0, 0.81108224, 0, 0.5849321, -249.7, 22.25, -179.4)
+script = ExtResource("2_ho43u")
+id = "50738/3"
+nazev = "Koterov"
+poradi = 633
+gen_pozice = Vector3(-249.7, 22.25, -179.4)
+gen_natoceni = -0.946
+gen_nazev = "Koterov"
+
+[node name="Koterov_50738-2" type="Node3D" parent="Zastavky" unique_id=1488497236]
+transform = Transform3D(0.4347821, 0, 0.9005357, 0, 1, 0, -0.9005357, 0, 0.4347821, -157.4, 22.85, -86.1)
+script = ExtResource("2_ho43u")
+id = "50738/2"
+nazev = "Koterov"
+poradi = 644
+gen_pozice = Vector3(-157.4, 22.85, -86.1)
+gen_natoceni = 1.121
+gen_nazev = "Koterov"

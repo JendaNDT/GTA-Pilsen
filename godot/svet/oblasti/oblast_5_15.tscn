@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_jbmgu"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_xhqkj"]
+
+[node name="Oblast_5_15" type="Node3D" unique_id=1943760850]
+script = ExtResource("1_jbmgu")
+bunka = Vector2i(5, 15)
+stred = Vector2(-3328, 4864)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=520197911]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=530847060]
+
+[node name="Lašitov_53221-2" type="Node3D" parent="Zastavky" unique_id=857059688]
+transform = Transform3D(0.93160224, 0, -0.36347938, 0, 1, 0, 0.36347938, 0, 0.93160224, -52.6, 7.9, -352.7)
+script = ExtResource("2_xhqkj")
+id = "53221/2"
+nazev = "Lašitov"
+poradi = 290
+gen_pozice = Vector3(-52.6, 7.9, -352.7)
+gen_natoceni = -0.372
+gen_nazev = "Lašitov"
+
+[node name="U_Prodejny_53220-2" type="Node3D" parent="Zastavky" unique_id=1718522966]
+transform = Transform3D(0.17095245, 0, -0.98527926, 0, 1, 0, 0.98527926, 0, 0.17095245, -3.6, 6.26, -508.4)
+script = ExtResource("2_xhqkj")
+id = "53220/2"
+nazev = "U Prodejny"
+poradi = 293
+gen_pozice = Vector3(-3.6, 6.26, -508.4)
+gen_natoceni = -1.399
+gen_nazev = "U Prodejny"

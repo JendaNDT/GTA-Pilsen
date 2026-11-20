@@ -1,0 +1,43 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_v6me7"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_42nrt"]
+
+[node name="Oblast_1_9" type="Node3D" unique_id=555203960]
+script = ExtResource("1_v6me7")
+bunka = Vector2i(1, 9)
+stred = Vector2(-7424, -1280)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1151279401]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1635327712]
+
+[node name="Vochov_39981-2" type="Node3D" parent="Zastavky" unique_id=122281868]
+transform = Transform3D(0.2972358, 0, -0.9548041, 0, 1, 0, 0.9548041, 0, 0.2972358, 285.1, 42.76, 169.1)
+script = ExtResource("2_42nrt")
+id = "39981/2"
+nazev = "Vochov"
+poradi = 492
+gen_pozice = Vector3(285.1, 42.76, 169.1)
+gen_natoceni = -1.269
+gen_nazev = "Vochov"
+
+[node name="Vochov,_rozc__39982-1" type="Node3D" parent="Zastavky" unique_id=1564034579]
+transform = Transform3D(0.2355616, 0, 0.9718594, 0, 1, 0, -0.9718594, 0, 0.2355616, 123.7, 31.63, -142.4)
+script = ExtResource("2_42nrt")
+id = "39982/1"
+nazev = "Vochov, rozc."
+poradi = 495
+gen_pozice = Vector3(123.7, 31.63, -142.4)
+gen_natoceni = 1.333
+gen_nazev = "Vochov, rozc."
+
+[node name="Vochov_39981-1" type="Node3D" parent="Zastavky" unique_id=1978853216]
+transform = Transform3D(0.2972358, 0, -0.9548041, 0, 1, 0, 0.9548041, 0, 0.2972358, 285.1, 42.76, 167.8)
+script = ExtResource("2_42nrt")
+id = "39981/1"
+nazev = "Vochov"
+poradi = 496
+gen_pozice = Vector3(285.1, 42.76, 167.8)
+gen_natoceni = -1.269
+gen_nazev = "Vochov"

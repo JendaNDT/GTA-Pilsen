@@ -1,0 +1,153 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_av65s"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_ew81n"]
+
+[node name="Oblast_10_13" type="Node3D" unique_id=1877080673]
+script = ExtResource("1_av65s")
+bunka = Vector2i(10, 13)
+stred = Vector2(1792, 2816)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1439111053]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=592291424]
+
+[node name="Vozovna_Slovany_50733-3" type="Node3D" parent="Zastavky" unique_id=2129586427]
+transform = Transform3D(0.23653327, 0, 0.9716234, 0, 1, 0, -0.9716234, 0, 0.23653327, 155.2, 29.35, -418.1)
+script = ExtResource("2_ew81n")
+id = "50733/3"
+nazev = "Vozovna Slovany"
+poradi = 0
+gen_pozice = Vector3(155.2, 29.35, -418.1)
+gen_natoceni = 1.332
+gen_nazev = "Vozovna Slovany"
+
+[node name="Slovany_50732-7" type="Node3D" parent="Zastavky" unique_id=340351240]
+transform = Transform3D(-0.12090717, 0, -0.9926638, 0, 1, 0, 0.9926638, 0, -0.12090717, -188.5, 33.51, -295.5)
+script = ExtResource("2_ew81n")
+id = "50732/7"
+nazev = "Slovany"
+poradi = 1
+gen_pozice = Vector3(-188.5, 33.51, -295.5)
+gen_natoceni = -1.692
+gen_nazev = "Slovany"
+
+[node name="Slovany_50732-8" type="Node3D" parent="Zastavky" unique_id=1704915055]
+transform = Transform3D(0.8643198, 0, 0.5029427, 0, 1, 0, -0.5029427, 0, 0.8643198, -182.8, 35.1, -214.4)
+script = ExtResource("2_ew81n")
+id = "50732/8"
+nazev = "Slovany"
+poradi = 36
+gen_pozice = Vector3(-182.8, 35.1, -214.4)
+gen_natoceni = 0.527
+gen_nazev = "Slovany"
+
+[node name="Vozovna_Slovany_50733-2" type="Node3D" parent="Zastavky" unique_id=339999944]
+transform = Transform3D(0.23653327, 0, 0.9716234, 0, 1, 0, -0.9716234, 0, 0.23653327, 175.4, 29.45, -407.9)
+script = ExtResource("2_ew81n")
+id = "50733/2"
+nazev = "Vozovna Slovany"
+poradi = 37
+gen_pozice = Vector3(175.4, 29.45, -407.9)
+gen_natoceni = 1.332
+gen_nazev = "Vozovna Slovany"
+
+[node name="Chválenická_50739-1" type="Node3D" parent="Zastavky" unique_id=1278528685]
+transform = Transform3D(0.8440528, 0, 0.5362601, 0, 1, 0, -0.5362601, 0, 0.8440528, 24, 33.04, -104.5)
+script = ExtResource("2_ew81n")
+id = "50739/1"
+nazev = "Chválenická"
+poradi = 172
+gen_pozice = Vector3(24, 33.04, -104.5)
+gen_natoceni = 0.566
+gen_nazev = "Chválenická"
+
+[node name="Slovany_50732-4" type="Node3D" parent="Zastavky" unique_id=914709288]
+transform = Transform3D(-0.5134527, 0, 0.8581179, 0, 1, 0, -0.8581179, 0, -0.5134527, -187.8, 32.99, -312.4)
+script = ExtResource("2_ew81n")
+id = "50732/4"
+nazev = "Slovany"
+poradi = 173
+gen_pozice = Vector3(-187.8, 32.99, -312.4)
+gen_natoceni = 2.11
+gen_nazev = "Slovany"
+
+[node name="Slovany_50732-9" type="Node3D" parent="Zastavky" unique_id=1453444799]
+transform = Transform3D(0.6894984, 0, 0.72428715, 0, 1, 0, -0.72428715, 0, 0.6894984, -155.4, 35.98, -169)
+script = ExtResource("2_ew81n")
+id = "50732/9"
+nazev = "Slovany"
+poradi = 174
+gen_pozice = Vector3(-155.4, 35.98, -169)
+gen_natoceni = 0.81
+gen_nazev = "Slovany"
+
+[node name="Slovany_50732-2" type="Node3D" parent="Zastavky" unique_id=91326515]
+transform = Transform3D(-0.508295, 0, 0.86118305, 0, 1, 0, -0.86118305, 0, -0.508295, -58.1, 31.6, -302.3)
+script = ExtResource("2_ew81n")
+id = "50732/2"
+nazev = "Slovany"
+poradi = 360
+gen_pozice = Vector3(-58.1, 31.6, -302.3)
+gen_natoceni = 2.104
+gen_nazev = "Slovany"
+
+[node name="Slovany_50732-1" type="Node3D" parent="Zastavky" unique_id=740684936]
+transform = Transform3D(0.5199533, 0, -0.8541947, 0, 1, 0, 0.8541947, 0, 0.5199533, -84.8, 31.91, -320.1)
+script = ExtResource("2_ew81n")
+id = "50732/1"
+nazev = "Slovany"
+poradi = 375
+gen_pozice = Vector3(-84.8, 31.91, -320.1)
+gen_natoceni = -1.024
+gen_nazev = "Slovany"
+
+[node name="U_Školky_47348-1" type="Node3D" parent="Zastavky" unique_id=478282918]
+transform = Transform3D(0.57188046, 0, 0.820337, 0, 1, 0, -0.820337, 0, 0.57188046, 18.3, 34.65, 105.9)
+script = ExtResource("2_ew81n")
+id = "47348/1"
+nazev = "U Školky"
+poradi = 407
+gen_pozice = Vector3(18.3, 34.65, 105.9)
+gen_natoceni = 0.962
+gen_nazev = "U Školky"
+
+[node name="U_Školky_47348-2" type="Node3D" parent="Zastavky" unique_id=347189657]
+transform = Transform3D(0.8530468, 0, 0.52183443, 0, 1, 0, -0.52183443, 0, 0.8530468, 55.8, 34.46, 143.7)
+script = ExtResource("2_ew81n")
+id = "47348/2"
+nazev = "U Školky"
+poradi = 414
+gen_pozice = Vector3(55.8, 34.46, 143.7)
+gen_natoceni = 0.549
+gen_nazev = "U Školky"
+
+[node name="Chválenická_50739-2" type="Node3D" parent="Zastavky" unique_id=961791837]
+transform = Transform3D(0.8440528, 0, 0.5362601, 0, 1, 0, -0.5362601, 0, 0.8440528, 23.3, 33.02, -106.7)
+script = ExtResource("2_ew81n")
+id = "50739/2"
+nazev = "Chválenická"
+poradi = 415
+gen_pozice = Vector3(23.3, 33.02, -106.7)
+gen_natoceni = 0.566
+gen_nazev = "Chválenická"
+
+[node name="Vozovna_Slovany_50733-1" type="Node3D" parent="Zastavky" unique_id=2006865701]
+transform = Transform3D(-0.23109567, 0, -0.972931, 0, 1, 0, 0.972931, 0, -0.23109567, 169.7, 29.45, -427)
+script = ExtResource("2_ew81n")
+id = "50733/1"
+nazev = "Vozovna Slovany"
+poradi = 541
+gen_pozice = Vector3(169.7, 29.45, -427)
+gen_natoceni = -1.804
+gen_nazev = "Vozovna Slovany"
+
+[node name="Slovany_50732-10" type="Node3D" parent="Zastavky" unique_id=1385446164]
+transform = Transform3D(-0.85894394, 0, -0.51206964, 0, 1, 0, 0.51206964, 0, -0.85894394, -200.1, 33.71, -283.6)
+script = ExtResource("2_ew81n")
+id = "50732/10"
+nazev = "Slovany"
+poradi = 573
+gen_pozice = Vector3(-200.1, 33.71, -283.6)
+gen_natoceni = -2.604
+gen_nazev = "Slovany"

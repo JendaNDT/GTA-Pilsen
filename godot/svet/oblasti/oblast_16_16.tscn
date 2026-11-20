@@ -1,0 +1,53 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_yt16f"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_10xbg"]
+
+[node name="Oblast_16_16" type="Node3D" unique_id=1217829731]
+script = ExtResource("1_yt16f")
+bunka = Vector2i(16, 16)
+stred = Vector2(7936, 5888)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=550012688]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=946466116]
+
+[node name="Starý_Plzenec,_Sedlec,_Školní_66172-1" type="Node3D" parent="Zastavky" unique_id=1592707156]
+transform = Transform3D(-0.52626634, 0, 0.8503198, 0, 1, 0, -0.8503198, 0, -0.52626634, 86.4, 31.41, 244.9)
+script = ExtResource("2_10xbg")
+id = "66172/1"
+nazev = "Starý Plzenec, Sedlec, Školní"
+poradi = 650
+gen_pozice = Vector3(86.4, 31.41, 244.9)
+gen_natoceni = 2.125
+gen_nazev = "Starý Plzenec, Sedlec, Školní"
+
+[node name="Starý_Plzenec,_Sedlec_33069-1" type="Node3D" parent="Zastavky" unique_id=2046393988]
+transform = Transform3D(0.14132161, 0, 0.9899637, 0, 1, 0, -0.9899637, 0, 0.14132161, 456.8, 26.05, -24.1)
+script = ExtResource("2_10xbg")
+id = "33069/1"
+nazev = "Starý Plzenec, Sedlec"
+poradi = 651
+gen_pozice = Vector3(456.8, 26.05, -24.1)
+gen_natoceni = 1.429
+gen_nazev = "Starý Plzenec, Sedlec"
+
+[node name="Starý_Plzenec,_Sedlec,_Školní_66172-2" type="Node3D" parent="Zastavky" unique_id=1968861133]
+transform = Transform3D(-0.52541584, 0, 0.8508456, 0, 1, 0, -0.8508456, 0, -0.52541584, 33.1, 33.32, 271.6)
+script = ExtResource("2_10xbg")
+id = "66172/2"
+nazev = "Starý Plzenec, Sedlec, Školní"
+poradi = 652
+gen_pozice = Vector3(33.1, 33.32, 271.6)
+gen_natoceni = 2.124
+gen_nazev = "Starý Plzenec, Sedlec, Školní"
+
+[node name="Starý_Plzenec,_Sedlec_33069-2" type="Node3D" parent="Zastavky" unique_id=1995542429]
+transform = Transform3D(0.14132161, 0, 0.9899637, 0, 1, 0, -0.9899637, 0, 0.14132161, 454.6, 26.07, -24.1)
+script = ExtResource("2_10xbg")
+id = "33069/2"
+nazev = "Starý Plzenec, Sedlec"
+poradi = 654
+gen_pozice = Vector3(454.6, 26.07, -24.1)
+gen_natoceni = 1.429
+gen_nazev = "Starý Plzenec, Sedlec"

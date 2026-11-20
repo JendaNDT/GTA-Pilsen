@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_4p3qp"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_sbfcv"]
+
+[node name="Oblast_14_16" type="Node3D" unique_id=1413944607]
+script = ExtResource("1_4p3qp")
+bunka = Vector2i(14, 16)
+stred = Vector2(5888, 5888)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1468751110]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1043495649]
+
+[node name="Starý_Plzenec,_Bezručova_33064-1" type="Node3D" parent="Zastavky" unique_id=9274882]
+transform = Transform3D(-0.04618722, 0, -0.9989328, 0, 1, 0, 0.9989328, 0, -0.04618722, 288, 47.84, -264.7)
+script = ExtResource("2_sbfcv")
+id = "33064/1"
+nazev = "Starý Plzenec, Bezručova"
+poradi = 501
+gen_pozice = Vector3(288, 47.84, -264.7)
+gen_natoceni = -1.617
+gen_nazev = "Starý Plzenec, Bezručova"
+
+[node name="Starý_Plzenec,_Bezručova_33064-2" type="Node3D" parent="Zastavky" unique_id=1989076082]
+transform = Transform3D(0.110569745, 0, -0.99386835, 0, 1, 0, 0.99386835, 0, 0.110569745, 205.9, 48.86, -271)
+script = ExtResource("2_sbfcv")
+id = "33064/2"
+nazev = "Starý Plzenec, Bezručova"
+poradi = 643
+gen_pozice = Vector3(205.9, 48.86, -271)
+gen_natoceni = -1.46
+gen_nazev = "Starý Plzenec, Bezručova"

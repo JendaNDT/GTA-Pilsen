@@ -1,0 +1,23 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_qxuuy"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="2_dljiq"]
+
+[node name="Oblast_4_7" type="Node3D" unique_id=825535209]
+script = ExtResource("1_qxuuy")
+bunka = Vector2i(4, 7)
+stred = Vector2(-4352, -3328)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=851141447]
+
+[node name="Mista" type="Node3D" parent="." unique_id=887991416]
+
+[node name="Zřícenina_Kyjov_pamatka-40" type="Node3D" parent="Mista" unique_id=482752301]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -457.4, 54.87, -139.8)
+script = ExtResource("2_dljiq")
+popis = "Zbytky středověkého hrádku v lesích mezi Malesicemi a Chotíkovem."
+id = "pamatka-40"
+nazev = "Zřícenina Kyjov"
+poradi = 40
+gen_pozice = Vector3(-457.4, 54.87, -139.8)
+gen_nazev = "Zřícenina Kyjov"

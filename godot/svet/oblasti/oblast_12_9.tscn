@@ -1,0 +1,143 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_i6byo"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_ii1xi"]
+
+[node name="Oblast_12_9" type="Node3D" unique_id=922394652]
+script = ExtResource("1_i6byo")
+bunka = Vector2i(12, 9)
+stred = Vector2(3840, -1280)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=166906239]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=389532144]
+
+[node name="Svatojirská_57178-1" type="Node3D" parent="Zastavky" unique_id=1644452527]
+transform = Transform3D(0.91390264, 0, -0.40593347, 0, 1, 0, 0.40593347, 0, 0.91390264, 396.1, 28.72, -440.6)
+script = ExtResource("2_ii1xi")
+id = "57178/1"
+nazev = "Svatojirská"
+poradi = 317
+gen_pozice = Vector3(396.1, 28.72, -440.6)
+gen_natoceni = -0.418
+gen_nazev = "Svatojirská"
+
+[node name="Náměstí_Karla_Panušky_57177-1" type="Node3D" parent="Zastavky" unique_id=1898459650]
+transform = Transform3D(-0.9746617, 0, -0.22368415, 0, 1, 0, 0.22368415, 0, -0.9746617, 380.9, 23.53, -73.6)
+script = ExtResource("2_ii1xi")
+id = "57177/1"
+nazev = "Náměstí Karla Panušky"
+poradi = 318
+gen_pozice = Vector3(380.9, 23.53, -73.6)
+gen_natoceni = -2.916
+gen_nazev = "Náměstí Karla Panušky"
+
+[node name="Ejpovická_50753-1" type="Node3D" parent="Zastavky" unique_id=214246754]
+transform = Transform3D(0.47661158, 0, 0.879114, 0, 1, 0, -0.879114, 0, 0.47661158, 65.3, 27.53, 180.1)
+script = ExtResource("2_ii1xi")
+id = "50753/1"
+nazev = "Ejpovická"
+poradi = 319
+gen_pozice = Vector3(65.3, 27.53, 180.1)
+gen_natoceni = 1.074
+gen_nazev = "Ejpovická"
+
+[node name="Doubravka_47344-6" type="Node3D" parent="Zastavky" unique_id=1506040311]
+transform = Transform3D(-0.99999356, 0, -0.0035926343, 0, 1, 0, 0.0035926343, 0, -0.99999356, -505.5, 14.09, 60.9)
+script = ExtResource("2_ii1xi")
+id = "47344/6"
+nazev = "Doubravka"
+poradi = 342
+gen_pozice = Vector3(-505.5, 14.09, 60.9)
+gen_natoceni = -3.138
+gen_nazev = "Doubravka"
+
+[node name="Ejpovická_50753-2" type="Node3D" parent="Zastavky" unique_id=216438327]
+transform = Transform3D(0.31247398, 0, 0.9499263, 0, 1, 0, -0.9499263, 0, 0.31247398, 156.1, 30.15, 235.7)
+script = ExtResource("2_ii1xi")
+id = "50753/2"
+nazev = "Ejpovická"
+poradi = 343
+gen_pozice = Vector3(156.1, 30.15, 235.7)
+gen_natoceni = 1.253
+gen_nazev = "Ejpovická"
+
+[node name="Náměstí_Karla_Panušky_57177-2" type="Node3D" parent="Zastavky" unique_id=1474918976]
+transform = Transform3D(-0.9690131, 0, -0.24700929, 0, 1, 0, 0.24700929, 0, -0.9690131, 364.3, 22.85, -166.1)
+script = ExtResource("2_ii1xi")
+id = "57177/2"
+nazev = "Náměstí Karla Panušky"
+poradi = 344
+gen_pozice = Vector3(364.3, 22.85, -166.1)
+gen_natoceni = -2.892
+gen_nazev = "Náměstí Karla Panušky"
+
+[node name="Svatojirská_57178-2" type="Node3D" parent="Zastavky" unique_id=66283096]
+transform = Transform3D(-0.9391693, 0, 0.34345457, 0, 1, 0, -0.34345457, 0, -0.9391693, 380.2, 27.48, -389.3)
+script = ExtResource("2_ii1xi")
+id = "57178/2"
+nazev = "Svatojirská"
+poradi = 345
+gen_pozice = Vector3(380.2, 27.48, -389.3)
+gen_natoceni = 2.791
+gen_nazev = "Svatojirská"
+
+[node name="Doubravka_47344-4" type="Node3D" parent="Zastavky" unique_id=482725615]
+transform = Transform3D(-0.372966, 0, 0.927845, 0, 1, 0, -0.927845, 0, -0.372966, -467.3, 12.15, 26.5)
+script = ExtResource("2_ii1xi")
+id = "47344/4"
+nazev = "Doubravka"
+poradi = 368
+gen_pozice = Vector3(-467.3, 12.15, 26.5)
+gen_natoceni = 1.953
+gen_nazev = "Doubravka"
+
+[node name="Doubravka_47344-3" type="Node3D" parent="Zastavky" unique_id=1156540699]
+transform = Transform3D(0.1115636, 0, 0.9937573, 0, 1, 0, -0.9937573, 0, 0.1115636, -422.6, 11.36, 19.7)
+script = ExtResource("2_ii1xi")
+id = "47344/3"
+nazev = "Doubravka"
+poradi = 384
+gen_pozice = Vector3(-422.6, 11.36, 19.7)
+gen_natoceni = 1.459
+gen_nazev = "Doubravka"
+
+[node name="Safírová_68469-1" type="Node3D" parent="Zastavky" unique_id=211944351]
+transform = Transform3D(-0.07513283, 0, 0.99717355, 0, 1, 0, -0.99717355, 0, -0.07513283, 461.6, 36.03, 253.5)
+script = ExtResource("2_ii1xi")
+id = "68469/1"
+nazev = "Safírová"
+poradi = 455
+gen_pozice = Vector3(461.6, 36.03, 253.5)
+gen_natoceni = 1.646
+gen_nazev = "Safírová"
+
+[node name="Safírová_68469-2" type="Node3D" parent="Zastavky" unique_id=1548640970]
+transform = Transform3D(-0.07513283, 0, 0.99717355, 0, 1, 0, -0.99717355, 0, -0.07513283, 432.1, 35.05, 248.8)
+script = ExtResource("2_ii1xi")
+id = "68469/2"
+nazev = "Safírová"
+poradi = 462
+gen_pozice = Vector3(432.1, 35.05, 248.8)
+gen_natoceni = 1.646
+gen_nazev = "Safírová"
+
+[node name="Doubravka_47344-1" type="Node3D" parent="Zastavky" unique_id=1754104119]
+transform = Transform3D(0.012796009, 0, -0.9999181, 0, 1, 0, 0.9999181, 0, 0.012796009, -478.1, 12.73, 42.2)
+script = ExtResource("2_ii1xi")
+id = "47344/1"
+nazev = "Doubravka"
+poradi = 551
+gen_pozice = Vector3(-478.1, 12.73, 42.2)
+gen_natoceni = -1.558
+gen_nazev = "Doubravka"
+
+[node name="Doubravka_47344-2" type="Node3D" parent="Zastavky" unique_id=342432560]
+transform = Transform3D(-0.13875458, 0, 0.9903268, 0, 1, 0, -0.9903268, 0, -0.13875458, -426.9, 10.13, -11.3)
+script = ExtResource("2_ii1xi")
+id = "47344/2"
+nazev = "Doubravka"
+poradi = 558
+gen_pozice = Vector3(-426.9, 10.13, -11.3)
+gen_natoceni = 1.71
+gen_nazev = "Doubravka"

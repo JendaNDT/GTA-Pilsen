@@ -1,0 +1,153 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_0bxnh"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_y2l5r"]
+
+[node name="Oblast_6_11" type="Node3D" unique_id=1061030801]
+script = ExtResource("1_0bxnh")
+bunka = Vector2i(6, 11)
+stred = Vector2(-2304, 768)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1291016693]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1064636011]
+
+[node name="Malesická_57114-1" type="Node3D" parent="Zastavky" unique_id=2134410117]
+transform = Transform3D(-0.25920948, 0, 0.96582115, 0, 1, 0, -0.96582115, 0, -0.25920948, 45.5, 2.94, -441)
+script = ExtResource("2_y2l5r")
+id = "57114/1"
+nazev = "Malesická"
+poradi = 49
+gen_pozice = Vector3(45.5, 2.94, -441)
+gen_natoceni = 1.833
+gen_nazev = "Malesická"
+
+[node name="Slovanské_údolí_57149-1" type="Node3D" parent="Zastavky" unique_id=1645224592]
+transform = Transform3D(-0.28231236, 0, 0.9593225, 0, 1, 0, -0.9593225, 0, -0.28231236, -482.8, 15.28, -290.8)
+script = ExtResource("2_y2l5r")
+id = "57149/1"
+nazev = "Slovanské údolí"
+poradi = 50
+gen_pozice = Vector3(-482.8, 15.28, -290.8)
+gen_natoceni = 1.857
+gen_nazev = "Slovanské údolí"
+
+[node name="Slovanské_údolí_57149-2" type="Node3D" parent="Zastavky" unique_id=460760788]
+transform = Transform3D(-0.2938036, 0, 0.9558658, 0, 1, 0, -0.9558658, 0, -0.2938036, -377.6, 14.36, -321)
+script = ExtResource("2_y2l5r")
+id = "57149/2"
+nazev = "Slovanské údolí"
+poradi = 61
+gen_pozice = Vector3(-377.6, 14.36, -321)
+gen_natoceni = 1.869
+gen_nazev = "Slovanské údolí"
+
+[node name="Malesická_57114-2" type="Node3D" parent="Zastavky" unique_id=1975012747]
+transform = Transform3D(-0.25920948, 0, 0.96582115, 0, 1, 0, -0.96582115, 0, -0.25920948, 80, 2.55, -447.8)
+script = ExtResource("2_y2l5r")
+id = "57114/2"
+nazev = "Malesická"
+poradi = 62
+gen_pozice = Vector3(80, 2.55, -447.8)
+gen_natoceni = 1.833
+gen_nazev = "Malesická"
+
+[node name="Škoda_VIII__brána_53212-2" type="Node3D" parent="Zastavky" unique_id=1252067830]
+transform = Transform3D(0.99826, 0, -0.058965776, 0, 1, 0, 0.058965776, 0, 0.99826, 260.2, 24.69, 457.6)
+script = ExtResource("2_y2l5r")
+id = "53212/2"
+nazev = "Škoda VIII. brána"
+poradi = 418
+gen_pozice = Vector3(260.2, 24.69, 457.6)
+gen_natoceni = -0.059
+gen_nazev = "Škoda VIII. brána"
+
+[node name="Škoda_VIII__brána_53212-1" type="Node3D" parent="Zastavky" unique_id=2025241010]
+transform = Transform3D(0.9962179, 0, -0.08689029, 0, 1, 0, 0.08689029, 0, 0.9962179, 294.8, 23.42, 433.4)
+script = ExtResource("2_y2l5r")
+id = "53212/1"
+nazev = "Škoda VIII. brána"
+poradi = 423
+gen_pozice = Vector3(294.8, 23.42, 433.4)
+gen_natoceni = -0.087
+gen_nazev = "Škoda VIII. brána"
+
+[node name="Malesická_57114-3" type="Node3D" parent="Zastavky" unique_id=675118119]
+transform = Transform3D(0.25785008, 0, -0.9661849, 0, 1, 0, 0.9661849, 0, 0.25785008, -1.4, 3.35, -439.8)
+script = ExtResource("2_y2l5r")
+id = "57114/3"
+nazev = "Malesická"
+poradi = 533
+gen_pozice = Vector3(-1.4, 3.35, -439.8)
+gen_natoceni = -1.31
+gen_nazev = "Malesická"
+
+[node name="Malesická_57114-4" type="Node3D" parent="Zastavky" unique_id=1522790624]
+transform = Transform3D(-0.25050676, 0, 0.96811485, 0, 1, 0, -0.96811485, 0, -0.25050676, 72.1, 2.58, -433.4)
+script = ExtResource("2_y2l5r")
+id = "57114/4"
+nazev = "Malesická"
+poradi = 546
+gen_pozice = Vector3(72.1, 2.58, -433.4)
+gen_natoceni = 1.824
+gen_nazev = "Malesická"
+
+[node name="Škoda_VIII__brána_53212-4" type="Node3D" parent="Zastavky" unique_id=429058711]
+transform = Transform3D(0.99826, 0, -0.058965776, 0, 1, 0, 0.058965776, 0, 0.99826, 260.9, 26.3, 500)
+script = ExtResource("2_y2l5r")
+id = "53212/4"
+nazev = "Škoda VIII. brána"
+poradi = 628
+gen_pozice = Vector3(260.9, 26.3, 500)
+gen_natoceni = -0.059
+gen_nazev = "Škoda VIII. brána"
+
+[node name="U_Dráhy_47353-1" type="Node3D" parent="Zastavky" unique_id=377487189]
+transform = Transform3D(0.45715734, 0, -0.8893858, 0, 1, 0, 0.8893858, 0, 0.45715734, 359.7, 15.57, -351.1)
+script = ExtResource("2_y2l5r")
+id = "47353/1"
+nazev = "U Dráhy"
+poradi = 677
+gen_pozice = Vector3(359.7, 15.57, -351.1)
+gen_natoceni = -1.096
+gen_nazev = "U Dráhy"
+
+[node name="Nádraží_Skvrňany_50751-1" type="Node3D" parent="Zastavky" unique_id=2111471361]
+transform = Transform3D(0.37814933, 0, -0.9257446, 0, 1, 0, 0.9257446, 0, 0.37814933, -60.5, 17.89, -187.3)
+script = ExtResource("2_y2l5r")
+id = "50751/1"
+nazev = "Nádraží Skvrňany"
+poradi = 678
+gen_pozice = Vector3(-60.5, 17.89, -187.3)
+gen_natoceni = -1.183
+gen_nazev = "Nádraží Skvrňany"
+
+[node name="Panelárna_26960-2" type="Node3D" parent="Zastavky" unique_id=304832827]
+transform = Transform3D(0.53946054, 0, -0.8420109, 0, 1, 0, 0.8420109, 0, 0.53946054, -476.3, 23.6, 164)
+script = ExtResource("2_y2l5r")
+id = "26960/2"
+nazev = "Panelárna"
+poradi = 692
+gen_pozice = Vector3(-476.3, 23.6, 164)
+gen_natoceni = -1.001
+gen_nazev = "Panelárna"
+
+[node name="Nádraží_Skvrňany_50751-2" type="Node3D" parent="Zastavky" unique_id=230139087]
+transform = Transform3D(-0.33838835, 0, 0.94100654, 0, 1, 0, -0.94100654, 0, -0.33838835, 95.9, 19.95, -224.2)
+script = ExtResource("2_y2l5r")
+id = "50751/2"
+nazev = "Nádraží Skvrňany"
+poradi = 693
+gen_pozice = Vector3(95.9, 19.95, -224.2)
+gen_natoceni = 1.916
+gen_nazev = "Nádraží Skvrňany"
+
+[node name="U_Dráhy_47353-2" type="Node3D" parent="Zastavky" unique_id=1658991129]
+transform = Transform3D(-0.45395917, 0, 0.8910225, 0, 1, 0, -0.8910225, 0, -0.45395917, 449.7, 12.7, -373.1)
+script = ExtResource("2_y2l5r")
+id = "47353/2"
+nazev = "U Dráhy"
+poradi = 694
+gen_pozice = Vector3(449.7, 12.7, -373.1)
+gen_natoceni = 2.042
+gen_nazev = "U Dráhy"

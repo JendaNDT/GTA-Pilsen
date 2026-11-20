@@ -1,0 +1,106 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_6s0lm"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_4tv2c"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="3_36rdm"]
+
+[node name="Oblast_7_11" type="Node3D" unique_id=1693314735]
+script = ExtResource("1_6s0lm")
+bunka = Vector2i(7, 11)
+stred = Vector2(-1280, 768)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1549831874]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=203958519]
+
+[node name="Cínová_65022-2" type="Node3D" parent="Zastavky" unique_id=1750088682]
+transform = Transform3D(0.45893517, 0, -0.88846976, 0, 1, 0, 0.88846976, 0, 0.45893517, -305.4, 23.77, 455.5)
+script = ExtResource("2_4tv2c")
+id = "65022/2"
+nazev = "Cínová"
+poradi = 570
+gen_pozice = Vector3(-305.4, 23.77, 455.5)
+gen_natoceni = -1.094
+gen_nazev = "Cínová"
+
+[node name="Techmania_53211-2" type="Node3D" parent="Zastavky" unique_id=137649870]
+transform = Transform3D(0.4704462, 0, -0.8824287, 0, 1, 0, 0.8824287, 0, 0.4704462, 158.6, 19.3, 207.3)
+script = ExtResource("2_4tv2c")
+id = "53211/2"
+nazev = "Techmania"
+poradi = 571
+gen_pozice = Vector3(158.6, 19.3, 207.3)
+gen_natoceni = -1.081
+gen_nazev = "Techmania"
+
+[node name="Jižní_Předměstí_53258-3" type="Node3D" parent="Zastavky" unique_id=336762160]
+transform = Transform3D(-0.054177135, 0, -0.99853134, 0, 1, 0, 0.99853134, 0, -0.054177135, 441.5, 18.8, 67.7)
+script = ExtResource("2_4tv2c")
+id = "53258/3"
+nazev = "Jižní Předměstí"
+poradi = 579
+gen_pozice = Vector3(441.5, 18.8, 67.7)
+gen_natoceni = -1.625
+gen_nazev = "Jižní Předměstí"
+
+[node name="Techmania_53211-1" type="Node3D" parent="Zastavky" unique_id=1184914813]
+transform = Transform3D(0.46956348, 0, -0.8828987, 0, 1, 0, 0.8828987, 0, 0.46956348, 107.5, 18.97, 216.2)
+script = ExtResource("2_4tv2c")
+id = "53211/1"
+nazev = "Techmania"
+poradi = 580
+gen_pozice = Vector3(107.5, 18.97, 216.2)
+gen_natoceni = -1.082
+gen_nazev = "Techmania"
+
+[node name="Cínová_65022-1" type="Node3D" parent="Zastavky" unique_id=1386726324]
+transform = Transform3D(0.45893517, 0, -0.88846976, 0, 1, 0, 0.88846976, 0, 0.45893517, -337.2, 23.86, 455.5)
+script = ExtResource("2_4tv2c")
+id = "65022/1"
+nazev = "Cínová"
+poradi = 581
+gen_pozice = Vector3(-337.2, 23.86, 455.5)
+gen_natoceni = -1.094
+gen_nazev = "Cínová"
+
+[node name="Nám__Českých_bratří_62926-2" type="Node3D" parent="Zastavky" unique_id=648874891]
+transform = Transform3D(-0.967766, 0, -0.25185114, 0, 1, 0, 0.25185114, 0, -0.967766, 510.4, 18.48, 194.1)
+script = ExtResource("2_4tv2c")
+id = "62926/2"
+nazev = "Nám. Českých bratří"
+poradi = 609
+gen_pozice = Vector3(510.4, 18.48, 194.1)
+gen_natoceni = -2.887
+gen_nazev = "Nám. Českých bratří"
+
+[node name="Jižní_Předměstí_53258-1" type="Node3D" parent="Zastavky" unique_id=388202489]
+transform = Transform3D(-0.99108976, 0, 0.13319574, 0, 1, 0, -0.13319574, 0, -0.99108976, 488.7, 18.55, 137.3)
+script = ExtResource("2_4tv2c")
+id = "53258/1"
+nazev = "Jižní Předměstí"
+poradi = 610
+gen_pozice = Vector3(488.7, 18.55, 137.3)
+gen_natoceni = 3.008
+gen_nazev = "Jižní Předměstí"
+
+[node name="Škoda_III__brána_53088-4" type="Node3D" parent="Zastavky" unique_id=883770704]
+transform = Transform3D(-0.48135823, 0, 0.876524, 0, 1, 0, -0.876524, 0, -0.48135823, -312, 6.16, -502.1)
+script = ExtResource("2_4tv2c")
+id = "53088/4"
+nazev = "Škoda III. brána"
+poradi = 695
+gen_pozice = Vector3(-312, 6.16, -502.1)
+gen_natoceni = 2.073
+gen_nazev = "Škoda III. brána"
+
+[node name="Mista" type="Node3D" parent="." unique_id=24097205]
+
+[node name="Techmania_Science_Center_pamatka-5" type="Node3D" parent="Mista" unique_id=468360338]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 144.7, 16.03, 6.2)
+script = ExtResource("3_36rdm")
+popis = "Zábavné vědecké centrum v bývalých halách Škodových závodů."
+id = "pamatka-5"
+nazev = "Techmania Science Center"
+poradi = 5
+gen_pozice = Vector3(144.7, 16.03, 6.2)
+gen_nazev = "Techmania Science Center"

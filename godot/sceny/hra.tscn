@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://skripty/hra/hra.gd" id="1"]
 [ext_resource type="Script" path="res://skripty/hra/prostredi.gd" id="2"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://skripty/kamera/kamera.gd" id="5"]
 [ext_resource type="Script" path="res://skripty/ui/hud.gd" id="6"]
 [ext_resource type="Script" path="res://skripty/ui/dotyk.gd" id="7"]
+[ext_resource type="Script" path="res://skripty/svet/oblasti.gd" id="8"]
 
 [node name="Hra" type="Node3D"]
 script = ExtResource("1")
@@ -20,6 +21,9 @@ nahled_zapnout = false
 
 [node name="Chodec" type="CharacterBody3D" parent="."]
 script = ExtResource("4")
+
+[node name="Oblasti" type="Node3D" parent="."]
+script = ExtResource("8")
 
 [node name="Auta" type="Node3D" parent="."]
 

@@ -1,0 +1,103 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_bt4rx"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_j82es"]
+
+[node name="Oblast_9_12" type="Node3D" unique_id=1166712423]
+script = ExtResource("1_bt4rx")
+bunka = Vector2i(9, 12)
+stred = Vector2(768, 1792)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=770640612]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1500390342]
+
+[node name="Olšová_57133-1" type="Node3D" parent="Zastavky" unique_id=1953145323]
+transform = Transform3D(0.8643198, 0, 0.5029427, 0, 1, 0, -0.5029427, 0, 0.8643198, 462.9, 23.2, 126.5)
+script = ExtResource("2_j82es")
+id = "57133/1"
+nazev = "Olšová"
+poradi = 3
+gen_pozice = Vector3(462.9, 23.2, 126.5)
+gen_natoceni = 0.527
+gen_nazev = "Olšová"
+
+[node name="Liliová_57109-1" type="Node3D" parent="Zastavky" unique_id=1822258505]
+transform = Transform3D(0.8643198, 0, 0.5029427, 0, 1, 0, -0.5029427, 0, 0.8643198, 251, 16.5, -228.2)
+script = ExtResource("2_j82es")
+id = "57109/1"
+nazev = "Liliová"
+poradi = 4
+gen_pozice = Vector3(251, 16.5, -228.2)
+gen_natoceni = 0.527
+gen_nazev = "Liliová"
+
+[node name="Jedlová_57093-1" type="Node3D" parent="Zastavky" unique_id=1771861124]
+transform = Transform3D(0.8643198, 0, 0.5029427, 0, 1, 0, -0.5029427, 0, 0.8643198, 86.7, 11.87, -509.5)
+script = ExtResource("2_j82es")
+id = "57093/1"
+nazev = "Jedlová"
+poradi = 5
+gen_pozice = Vector3(86.7, 11.87, -509.5)
+gen_natoceni = 0.527
+gen_nazev = "Jedlová"
+
+[node name="Jedlová_57093-2" type="Node3D" parent="Zastavky" unique_id=353375426]
+transform = Transform3D(0.8643198, 0, 0.5029427, 0, 1, 0, -0.5029427, 0, 0.8643198, 114.8, 12.38, -448.4)
+script = ExtResource("2_j82es")
+id = "57093/2"
+nazev = "Jedlová"
+poradi = 32
+gen_pozice = Vector3(114.8, 12.38, -448.4)
+gen_natoceni = 0.527
+gen_nazev = "Jedlová"
+
+[node name="Liliová_57109-2" type="Node3D" parent="Zastavky" unique_id=1737763620]
+transform = Transform3D(0.8643198, 0, 0.5029427, 0, 1, 0, -0.5029427, 0, 0.8643198, 262.5, 16.87, -196.8)
+script = ExtResource("2_j82es")
+id = "57109/2"
+nazev = "Liliová"
+poradi = 33
+gen_pozice = Vector3(262.5, 16.87, -196.8)
+gen_natoceni = 0.527
+gen_nazev = "Liliová"
+
+[node name="Olšová_57133-2" type="Node3D" parent="Zastavky" unique_id=1002702297]
+transform = Transform3D(0.8643198, 0, 0.5029427, 0, 1, 0, -0.5029427, 0, 0.8643198, 475.1, 24.54, 171)
+script = ExtResource("2_j82es")
+id = "57133/2"
+nazev = "Olšová"
+poradi = 34
+gen_pozice = Vector3(475.1, 24.54, 171)
+gen_natoceni = 0.527
+gen_nazev = "Olšová"
+
+[node name="Doudlevce_ETZ_26967-1" type="Node3D" parent="Zastavky" unique_id=9632222]
+transform = Transform3D(-0.5125944, 0, -0.8586309, 0, 1, 0, 0.8586309, 0, -0.5125944, -142.5, 0.51, 481.6)
+script = ExtResource("2_j82es")
+id = "26967/1"
+nazev = "Doudlevce ETZ"
+poradi = 358
+gen_pozice = Vector3(-142.5, 0.51, 481.6)
+gen_natoceni = -2.109
+gen_nazev = "Doudlevce ETZ"
+
+[node name="Doudlevce_ETZ_26967-2" type="Node3D" parent="Zastavky" unique_id=1345375594]
+transform = Transform3D(-0.53051144, 0, -0.84767777, 0, 1, 0, 0.84767777, 0, -0.53051144, -257, 3.14, 401.4)
+script = ExtResource("2_j82es")
+id = "26967/2"
+nazev = "Doudlevce ETZ"
+poradi = 377
+gen_pozice = Vector3(-257, 3.14, 401.4)
+gen_natoceni = -2.13
+gen_nazev = "Doudlevce ETZ"
+
+[node name="Samaritská_57143-1" type="Node3D" parent="Zastavky" unique_id=115835404]
+transform = Transform3D(-0.7765703, 0, -0.6300306, 0, 1, 0, 0.6300306, 0, -0.7765703, -412.7, 7.95, 271.1)
+script = ExtResource("2_j82es")
+id = "57143/1"
+nazev = "Samaritská"
+poradi = 568
+gen_pozice = Vector3(-412.7, 7.95, 271.1)
+gen_natoceni = -2.46
+gen_nazev = "Samaritská"

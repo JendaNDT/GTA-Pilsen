@@ -1,0 +1,66 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_lcqll"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_rljq0"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="3_nslnw"]
+
+[node name="Oblast_3_9" type="Node3D" unique_id=1202898633]
+script = ExtResource("1_lcqll")
+bunka = Vector2i(3, 9)
+stred = Vector2(-5376, -1280)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1488523232]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=803406406]
+
+[node name="Chebská_47349-2" type="Node3D" parent="Zastavky" unique_id=362274443]
+transform = Transform3D(0.36887315, 0, 0.9294798, 0, 1, 0, -0.9294798, 0, 0.36887315, 249.3, 8.43, 296.8)
+script = ExtResource("2_rljq0")
+id = "47349/2"
+nazev = "Chebská"
+poradi = 207
+gen_pozice = Vector3(249.3, 8.43, 296.8)
+gen_natoceni = 1.193
+gen_nazev = "Chebská"
+
+[node name="Zámecké_náměstí_57103-2" type="Node3D" parent="Zastavky" unique_id=343599338]
+transform = Transform3D(0.3623577, 0, 0.9320391, 0, 1, 0, -0.9320391, 0, 0.3623577, 331.4, 6.49, 43.1)
+script = ExtResource("2_rljq0")
+id = "57103/2"
+nazev = "Zámecké náměstí"
+poradi = 208
+gen_pozice = Vector3(331.4, 6.49, 43.1)
+gen_natoceni = 1.2
+gen_nazev = "Zámecké náměstí"
+
+[node name="Zámecké_náměstí_57103-1" type="Node3D" parent="Zastavky" unique_id=2142872871]
+transform = Transform3D(0.9355441, 0, -0.35320994, 0, 1, 0, 0.35320994, 0, 0.9355441, 328.5, 6.06, 25.2)
+script = ExtResource("2_rljq0")
+id = "57103/1"
+nazev = "Zámecké náměstí"
+poradi = 246
+gen_pozice = Vector3(328.5, 6.06, 25.2)
+gen_natoceni = -0.361
+gen_nazev = "Zámecké náměstí"
+
+[node name="Chebská_47349-1" type="Node3D" parent="Zastavky" unique_id=921145226]
+transform = Transform3D(0.36887315, 0, 0.9294798, 0, 1, 0, -0.9294798, 0, 0.36887315, 258.6, 8.42, 314.6)
+script = ExtResource("2_rljq0")
+id = "47349/1"
+nazev = "Chebská"
+poradi = 247
+gen_pozice = Vector3(258.6, 8.42, 314.6)
+gen_natoceni = 1.193
+gen_nazev = "Chebská"
+
+[node name="Mista" type="Node3D" parent="." unique_id=1702511933]
+
+[node name="Zámek_Křimice_pamatka-38" type="Node3D" parent="Mista" unique_id=523281247]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 259.1, 6.84, 43.9)
+script = ExtResource("3_nslnw")
+popis = "Barokní zámek, dlouho spojený s rodem Lobkowiczů."
+id = "pamatka-38"
+nazev = "Zámek Křimice"
+poradi = 38
+gen_pozice = Vector3(259.1, 6.84, 43.9)
+gen_nazev = "Zámek Křimice"

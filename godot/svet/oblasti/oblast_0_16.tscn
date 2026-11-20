@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_ahv81"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_fl2r2"]
+
+[node name="Oblast_0_16" type="Node3D" unique_id=50585462]
+script = ExtResource("1_ahv81")
+bunka = Vector2i(0, 16)
+stred = Vector2(-8448, 5888)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1978109876]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1960818763]
+
+[node name="Líně_18531-1" type="Node3D" parent="Zastavky" unique_id=450981496]
+transform = Transform3D(0.6034306, 0, -0.7974155, 0, 1, 0, 0.7974155, 0, 0.6034306, -204.3, 23.02, -78.8)
+script = ExtResource("2_fl2r2")
+id = "18531/1"
+nazev = "Líně"
+poradi = 519
+gen_pozice = Vector3(-204.3, 23.02, -78.8)
+gen_natoceni = -0.923
+gen_nazev = "Líně"
+
+[node name="Líně_18531-2" type="Node3D" parent="Zastavky" unique_id=1212584288]
+transform = Transform3D(0.6002362, 0, -0.7998228, 0, 1, 0, 0.7998228, 0, 0.6002362, -108.5, 20.57, -135.7)
+script = ExtResource("2_fl2r2")
+id = "18531/2"
+nazev = "Líně"
+poradi = 520
+gen_pozice = Vector3(-108.5, 20.57, -135.7)
+gen_natoceni = -0.927
+gen_nazev = "Líně"

@@ -1,0 +1,23 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_hisv0"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="2_k3ttn"]
+
+[node name="Oblast_6_15" type="Node3D" unique_id=1935089163]
+script = ExtResource("1_hisv0")
+bunka = Vector2i(6, 15)
+stred = Vector2(-2304, 4864)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1288125886]
+
+[node name="Mista" type="Node3D" parent="." unique_id=985375651]
+
+[node name="Zřícenina_hradu_Litice_pamatka-36" type="Node3D" parent="Mista" unique_id=945377189]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 363.9, 43.05, 506.3)
+script = ExtResource("2_k3ttn")
+popis = "Zbytky středověkého hradu na ostrohu nad Radbuzou."
+id = "pamatka-36"
+nazev = "Zřícenina hradu Litice"
+poradi = 36
+gen_pozice = Vector3(363.9, 43.05, 506.3)
+gen_nazev = "Zřícenina hradu Litice"

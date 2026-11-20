@@ -1,0 +1,193 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_bl1lg"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_vc0m5"]
+
+[node name="Oblast_5_11" type="Node3D" unique_id=1833944489]
+script = ExtResource("1_bl1lg")
+bunka = Vector2i(5, 11)
+stred = Vector2(-3328, 768)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=2123669334]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1672128489]
+
+[node name="Školy_Vejprnická_57091-1" type="Node3D" parent="Zastavky" unique_id=330213579]
+transform = Transform3D(0.28383988, 0, -0.95887166, 0, 1, 0, 0.95887166, 0, 0.28383988, 205.3, 17.78, -196.2)
+script = ExtResource("2_vc0m5")
+id = "57091/1"
+nazev = "Školy Vejprnická"
+poradi = 51
+gen_pozice = Vector3(205.3, 17.78, -196.2)
+gen_natoceni = -1.283
+gen_nazev = "Školy Vejprnická"
+
+[node name="Karla_Steinera_57180-1" type="Node3D" parent="Zastavky" unique_id=588583280]
+transform = Transform3D(-0.59495014, 0, -0.8037626, 0, 1, 0, 0.8037626, 0, -0.59495014, -147.8, 24.1, -169.5)
+script = ExtResource("2_vc0m5")
+id = "57180/1"
+nazev = "Karla Steinera"
+poradi = 52
+gen_pozice = Vector3(-147.8, 24.1, -169.5)
+gen_natoceni = -2.208
+gen_nazev = "Karla Steinera"
+
+[node name="Macháčkova_57111-3" type="Node3D" parent="Zastavky" unique_id=1876860545]
+transform = Transform3D(-0.22720204, 0, -0.9738476, 0, 1, 0, 0.9738476, 0, -0.22720204, -381.9, 31.91, -250.9)
+script = ExtResource("2_vc0m5")
+id = "57111/3"
+nazev = "Macháčkova"
+poradi = 53
+gen_pozice = Vector3(-381.9, 31.91, -250.9)
+gen_natoceni = -1.8
+gen_nazev = "Macháčkova"
+
+[node name="Macháčkova_57111-4" type="Node3D" parent="Zastavky" unique_id=555344782]
+transform = Transform3D(0.23847601, 0, 0.9711484, 0, 1, 0, -0.9711484, 0, 0.23847601, -351, 31.35, -234)
+script = ExtResource("2_vc0m5")
+id = "57111/4"
+nazev = "Macháčkova"
+poradi = 58
+gen_pozice = Vector3(-351, 31.35, -234)
+gen_natoceni = 1.33
+gen_nazev = "Macháčkova"
+
+[node name="Karla_Steinera_57180-2" type="Node3D" parent="Zastavky" unique_id=2136285503]
+transform = Transform3D(0.61374575, 0, 0.78950375, 0, 1, 0, -0.78950375, 0, 0.61374575, -128.3, 22.76, -144)
+script = ExtResource("2_vc0m5")
+id = "57180/2"
+nazev = "Karla Steinera"
+poradi = 59
+gen_pozice = Vector3(-128.3, 22.76, -144)
+gen_natoceni = 0.91
+gen_nazev = "Karla Steinera"
+
+[node name="Školy_Vejprnická_57091-2" type="Node3D" parent="Zastavky" unique_id=1539255015]
+transform = Transform3D(-0.2794331, 0, 0.96016514, 0, 1, 0, -0.96016514, 0, -0.2794331, 238.5, 17.47, -197.5)
+script = ExtResource("2_vc0m5")
+id = "57091/2"
+nazev = "Školy Vejprnická"
+poradi = 60
+gen_pozice = Vector3(238.5, 17.47, -197.5)
+gen_natoceni = 1.854
+gen_nazev = "Školy Vejprnická"
+
+[node name="Waltrova_65748-1" type="Node3D" parent="Zastavky" unique_id=286923876]
+transform = Transform3D(-0.5523691, 0, 0.8335996, 0, 1, 0, -0.8335996, 0, -0.5523691, -160.7, 19.84, -39.7)
+script = ExtResource("2_vc0m5")
+id = "65748/1"
+nazev = "Waltrova"
+poradi = 202
+gen_pozice = Vector3(-160.7, 19.84, -39.7)
+gen_natoceni = 2.156
+gen_nazev = "Waltrova"
+
+[node name="Macháčkova_57111-1" type="Node3D" parent="Zastavky" unique_id=1498327740]
+transform = Transform3D(-0.22720204, 0, -0.9738476, 0, 1, 0, 0.9738476, 0, -0.22720204, -379, 31.72, -257.3)
+script = ExtResource("2_vc0m5")
+id = "57111/1"
+nazev = "Macháčkova"
+poradi = 203
+gen_pozice = Vector3(-379, 31.72, -257.3)
+gen_natoceni = -1.8
+gen_nazev = "Macháčkova"
+
+[node name="Lábkova_57105-1" type="Node3D" parent="Zastavky" unique_id=716733453]
+transform = Transform3D(-0.9946391, 0, -0.10340736, 0, 1, 0, 0.10340736, 0, -0.9946391, -500.1, 25.99, -482.2)
+script = ExtResource("2_vc0m5")
+id = "57105/1"
+nazev = "Lábkova"
+poradi = 204
+gen_pozice = Vector3(-500.1, 25.99, -482.2)
+gen_natoceni = -3.038
+gen_nazev = "Lábkova"
+
+[node name="Lábkova_57105-2" type="Node3D" parent="Zastavky" unique_id=1852520430]
+transform = Transform3D(0.98921496, 0, 0.14647116, 0, 1, 0, -0.14647116, 0, 0.98921496, -505.2, 29.9, -363)
+script = ExtResource("2_vc0m5")
+id = "57105/2"
+nazev = "Lábkova"
+poradi = 230
+gen_pozice = Vector3(-505.2, 29.9, -363)
+gen_natoceni = 0.147
+gen_nazev = "Lábkova"
+
+[node name="Macháčkova_57111-2" type="Node3D" parent="Zastavky" unique_id=1962667802]
+transform = Transform3D(0.23750481, 0, 0.9713864, 0, 1, 0, -0.9713864, 0, 0.23750481, -352.4, 31.31, -227.6)
+script = ExtResource("2_vc0m5")
+id = "57111/2"
+nazev = "Macháčkova"
+poradi = 231
+gen_pozice = Vector3(-352.4, 31.31, -227.6)
+gen_natoceni = 1.331
+gen_nazev = "Macháčkova"
+
+[node name="Waltrova_65748-2" type="Node3D" parent="Zastavky" unique_id=295885707]
+transform = Transform3D(-0.515168, 0, 0.8570892, 0, 1, 0, -0.8570892, 0, -0.515168, -234.2, 19.04, -16.3)
+script = ExtResource("2_vc0m5")
+id = "65748/2"
+nazev = "Waltrova"
+poradi = 232
+gen_pozice = Vector3(-234.2, 19.04, -16.3)
+gen_natoceni = 2.112
+gen_nazev = "Waltrova"
+
+[node name="Zátiší_53095-4" type="Node3D" parent="Zastavky" unique_id=399418380]
+transform = Transform3D(0.14725886, 0, -0.989098, 0, 1, 0, 0.989098, 0, 0.14725886, -56.2, 31.47, 385.5)
+script = ExtResource("2_vc0m5")
+id = "53095/4"
+nazev = "Zátiší"
+poradi = 481
+gen_pozice = Vector3(-56.2, 31.47, 385.5)
+gen_natoceni = -1.423
+gen_nazev = "Zátiší"
+
+[node name="Zátiší_53095-3" type="Node3D" parent="Zastavky" unique_id=1031096515]
+transform = Transform3D(-0.2727052, 0, -0.96209764, 0, 1, 0, 0.96209764, 0, -0.2727052, 15.1, 29.86, 392.3)
+script = ExtResource("2_vc0m5")
+id = "53095/3"
+nazev = "Zátiší"
+poradi = 491
+gen_pozice = Vector3(15.1, 29.86, 392.3)
+gen_natoceni = -1.847
+gen_nazev = "Zátiší"
+
+[node name="Školy_Vejprnická_57091-3" type="Node3D" parent="Zastavky" unique_id=1690568632]
+transform = Transform3D(0.28767303, 0, -0.9577287, 0, 1, 0, 0.9577287, 0, 0.28767303, 138.3, 18.22, -183.9)
+script = ExtResource("2_vc0m5")
+id = "57091/3"
+nazev = "Školy Vejprnická"
+poradi = 534
+gen_pozice = Vector3(138.3, 18.22, -183.9)
+gen_natoceni = -1.279
+gen_nazev = "Školy Vejprnická"
+
+[node name="Školy_Vejprnická_57091-4" type="Node3D" parent="Zastavky" unique_id=258326673]
+transform = Transform3D(-0.26789132, 0, 0.9634491, 0, 1, 0, -0.9634491, 0, -0.26789132, 128.3, 18.45, -160.6)
+script = ExtResource("2_vc0m5")
+id = "57091/4"
+nazev = "Školy Vejprnická"
+poradi = 545
+gen_pozice = Vector3(128.3, 18.45, -160.6)
+gen_natoceni = 1.842
+gen_nazev = "Školy Vejprnická"
+
+[node name="Panelárna_26960-1" type="Node3D" parent="Zastavky" unique_id=258667691]
+transform = Transform3D(-0.49358195, 0, 0.8696993, 0, 1, 0, -0.8696993, 0, -0.49358195, 355.3, 28.48, 240.8)
+script = ExtResource("2_vc0m5")
+id = "26960/1"
+nazev = "Panelárna"
+poradi = 679
+gen_pozice = Vector3(355.3, 28.48, 240.8)
+gen_natoceni = 2.087
+gen_nazev = "Panelárna"
+
+[node name="Zátiší_53095-2" type="Node3D" parent="Zastavky" unique_id=74731101]
+transform = Transform3D(0.49930492, 0, -0.86642635, 0, 1, 0, 0.86642635, 0, 0.49930492, -39.7, 32.78, 483.1)
+script = ExtResource("2_vc0m5")
+id = "53095/2"
+nazev = "Zátiší"
+poradi = 691
+gen_pozice = Vector3(-39.7, 32.78, 483.1)
+gen_natoceni = -1.048
+gen_nazev = "Zátiší"

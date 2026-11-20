@@ -30,6 +30,8 @@ const GROUND_PX = 256;          // pixelů povrchu na dlaždici (1 m na pixel)
 
 const args = process.argv.slice(2);
 const areaArg = args.includes('--oblast') ? args[args.indexOf('--oblast') + 1].split(',').map(Number) : null;
+// --jen-seznamy: převede jen místa, zastávky a názvy ulic (rychlé, dlaždice zůstanou beze změny)
+const onlyLists = args.includes('--jen-seznamy');
 
 const cfg = await import(path.join(ROOT, 'src/config.js'));
 // Nízká předvolba = základní geometrie bez přídavných atributů pro shadery vykreslovače three.js.
@@ -58,6 +60,7 @@ const ch = await import(path.join(ROOT, 'src/world/chunks.js'));
 const { Districts } = await import(path.join(ROOT, 'src/world/districts.js'));
 const { hash } = await import(path.join(ROOT, 'src/world/hash.js'));
 const { Earcut } = await import('three/src/extras/Earcut.js');
+const { LANDMARK_INFO } = await import(path.join(ROOT, 'src/game/landmarks.js'));
 console.log(`Svět postaven za ${((performance.now() - t0) / 1000).toFixed(1)} s: ${world.cols} × ${world.rows} dlaždic`);
 
 const districts = new Districts(heritageManifest.districts);
@@ -521,7 +524,7 @@ const packs = { teren: new Pack('teren'), povrch: new Pack('povrch'), silnice: n
   budovy: new Pack('budovy'), stromy: new Pack('stromy'), lampy: new Pack('lampy'), ulice: new Pack('ulice') };
 const tiles = [];
 const t1 = performance.now();
-for (let ci = 0; ci < world.cols * world.rows; ci++) {
+for (let ci = 0; ci < (onlyLists ? 0 : world.cols * world.rows); ci++) {
   const [x0, z0] = tileOrigin(ci);
   if (areaArg && (x0 + CHUNK < areaArg[0] || x0 > areaArg[2] || z0 + CHUNK < areaArg[1] || z0 > areaArg[3])) continue;
   tiles.push(ci);
@@ -538,7 +541,7 @@ for (let ci = 0; ci < world.cols * world.rows; ci++) {
 let commit = 'neznámý';
 try { commit = execSync('git rev-parse HEAD', { cwd: ROOT }).toString().trim(); } catch { /* mimo git */ }
 const files = [];
-for (const pack of Object.values(packs)) files.push(await pack.write());
+if (!onlyLists) for (const pack of Object.values(packs)) files.push(await pack.write());
 
 const meta = data.meta;
 const svet = {
@@ -549,17 +552,26 @@ const svet = {
   povrchPx: GROUND_PX, paleta: palette, oblast: areaArg, pocetDlazdic: tiles.length,
   soubory: files,
 };
-await writeFile(path.join(OUT, 'svet.json'), JSON.stringify(svet, null, 1) + '\n');
+if (!onlyLists) await writeFile(path.join(OUT, 'svet.json'), JSON.stringify(svet, null, 1) + '\n');
 await writeFile(path.join(OUT, 'nazvy-ulic.json'), JSON.stringify(meta.roadNames) + '\n');
 // Pojmenovaná místa: obce a čtvrti, památky k objevení, podniky, adresy a služby.
 const mista = {
   obce: meta.places.map(([x, z, name, kind]) => ({ x, z, nazev: name, druh: kind })),
-  pamatky: meta.landmarks.map(([x, z, name]) => ({ x, z, nazev: name, y: Math.round(world.groundY(x, z) * 100) / 100 })),
+  pamatky: meta.landmarks.map(([x, z, name], index) => ({ index, id: 'pamatka-' + index, x, z, nazev: name,
+    popis: LANDMARK_INFO[name] ?? '', y: Math.round(world.groundY(x, z) * 100) / 100, smer: 0 })),
   podniky: meta.food.map(([x, z, kind, name, street]) => ({ x, z, druh: kind, nazev: name, ulice: street })),
   sluzby: meta.services.map(([x, z, kind, name]) => ({ x, z, druh: kind, nazev: name })),
   adresy: meta.addresses.map(([x, z, street, number]) => [x, z, street, number]),
   pesiPristupy: meta.walkingApproaches,
 };
 await writeFile(path.join(OUT, 'mista.json'), JSON.stringify(mista) + '\n');
+// Stanoviště MHD z jízdního řádu PMDP (GTFS): číslo, název, poloha a směr nejbližší silnice nebo koleje.
+const timetable = await readJson('data/timetable.json');
+const zastavky = timetable.stops.map(([name, x, z, id], index) => {
+  const road = world.nearestRoad(x, z, 25, DRIVABLE_MAX, 0, {});
+  return { index, id, nazev: name, x, z, y: Math.round(world.groundY(x, z) * 100) / 100,
+    smer: road ? Math.round(Math.atan2(road.dx, road.dz) * 1000) / 1000 : 0 };
+});
+await writeFile(path.join(OUT, 'zastavky.json'), JSON.stringify(zastavky, null, 0) + '\n');
 console.log(`Hotovo za ${((performance.now() - t0) / 1000).toFixed(0)} s, ${tiles.length} dlaždic`);
 for (const f of files) console.log(`  ${f.name}.pak ${(f.bytes / 1e6).toFixed(2)} MB (nekomprimováno ${(f.raw / 1e6).toFixed(1)} MB)`);

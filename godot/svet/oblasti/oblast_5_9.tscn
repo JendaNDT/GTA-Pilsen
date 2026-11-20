@@ -1,0 +1,53 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_dl63y"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_cxepq"]
+
+[node name="Oblast_5_9" type="Node3D" unique_id=68861947]
+script = ExtResource("1_dl63y")
+bunka = Vector2i(5, 9)
+stred = Vector2(-3328, -1280)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1866263922]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1092647133]
+
+[node name="Náves_Radčice_57140-2" type="Node3D" parent="Zastavky" unique_id=1829526237]
+transform = Transform3D(-0.43604913, 0, -0.89992285, 0, 1, 0, 0.89992285, 0, -0.43604913, -341.6, 1.08, -356.2)
+script = ExtResource("2_cxepq")
+id = "57140/2"
+nazev = "Náves Radčice"
+poradi = 211
+gen_pozice = Vector3(-341.6, 1.08, -356.2)
+gen_natoceni = -2.022
+gen_nazev = "Náves Radčice"
+
+[node name="Ke_Kovářce_68261-1" type="Node3D" parent="Zastavky" unique_id=362828004]
+transform = Transform3D(-0.6187917, 0, 0.7855551, 0, 1, 0, -0.7855551, 0, -0.6187917, 118.2, 28.7, -372.7)
+script = ExtResource("2_cxepq")
+id = "68261/1"
+nazev = "Ke Kovářce"
+poradi = 212
+gen_pozice = Vector3(118.2, 28.7, -372.7)
+gen_natoceni = 2.238
+gen_nazev = "Ke Kovářce"
+
+[node name="Ke_Kovářce_68261-2" type="Node3D" parent="Zastavky" unique_id=920672121]
+transform = Transform3D(-0.61721945, 0, 0.786791, 0, 1, 0, -0.786791, 0, -0.61721945, 23.8, 19.4, -318.4)
+script = ExtResource("2_cxepq")
+id = "68261/2"
+nazev = "Ke Kovářce"
+poradi = 242
+gen_pozice = Vector3(23.8, 19.4, -318.4)
+gen_natoceni = 2.236
+gen_nazev = "Ke Kovářce"
+
+[node name="Náves_Radčice_57140-1" type="Node3D" parent="Zastavky" unique_id=91561261]
+transform = Transform3D(-0.7126046, 0, -0.7015659, 0, 1, 0, 0.7015659, 0, -0.7126046, -373.3, 1.04, -385.1)
+script = ExtResource("2_cxepq")
+id = "57140/1"
+nazev = "Náves Radčice"
+poradi = 243
+gen_pozice = Vector3(-373.3, 1.04, -385.1)
+gen_natoceni = -2.364
+gen_nazev = "Náves Radčice"

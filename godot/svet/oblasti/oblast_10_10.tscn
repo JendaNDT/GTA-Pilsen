@@ -1,0 +1,103 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_ctali"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_7wkro"]
+
+[node name="Oblast_10_10" type="Node3D" unique_id=1070065024]
+script = ExtResource("1_ctali")
+bunka = Vector2i(10, 10)
+stred = Vector2(1792, -256)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=541691958]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1833404487]
+
+[node name="Teplárna_53203-1" type="Node3D" parent="Zastavky" unique_id=1771120359]
+transform = Transform3D(0.9877008, 0, -0.15635581, 0, 1, 0, 0.15635581, 0, 0.9877008, -19.2, -2.21, -204.5)
+script = ExtResource("2_7wkro")
+id = "53203/1"
+nazev = "Teplárna"
+poradi = 325
+gen_pozice = Vector3(-19.2, -2.21, -204.5)
+gen_natoceni = -0.157
+gen_nazev = "Teplárna"
+
+[node name="Stavební_stroje_53209-1" type="Node3D" parent="Zastavky" unique_id=1759016669]
+transform = Transform3D(0.99775636, 0, -0.06694989, 0, 1, 0, 0.06694989, 0, 0.99775636, -6.2, -4.41, 70.4)
+script = ExtResource("2_7wkro")
+id = "53209/1"
+nazev = "Stavební stroje"
+poradi = 326
+gen_pozice = Vector3(-6.2, -4.41, 70.4)
+gen_natoceni = -0.067
+gen_nazev = "Stavební stroje"
+
+[node name="Gambrinus_53199-2" type="Node3D" parent="Zastavky" unique_id=1999921596]
+transform = Transform3D(-0.29762477, 0, 0.95468295, 0, 1, 0, -0.95468295, 0, -0.29762477, -393.2, 5.84, 207.1)
+script = ExtResource("2_7wkro")
+id = "53199/2"
+nazev = "Gambrinus"
+poradi = 335
+gen_pozice = Vector3(-393.2, 5.84, 207.1)
+gen_natoceni = 1.873
+gen_nazev = "Gambrinus"
+
+[node name="Stavební_stroje_53209-2" type="Node3D" parent="Zastavky" unique_id=832028376]
+transform = Transform3D(0.99775636, 0, -0.06694989, 0, 1, 0, 0.06694989, 0, 0.99775636, 16.1, -3.93, 47.1)
+script = ExtResource("2_7wkro")
+id = "53209/2"
+nazev = "Stavební stroje"
+poradi = 336
+gen_pozice = Vector3(16.1, -3.93, 47.1)
+gen_natoceni = -0.067
+gen_nazev = "Stavební stroje"
+
+[node name="Teplárna_53203-2" type="Node3D" parent="Zastavky" unique_id=1541198951]
+transform = Transform3D(0.9883183, 0, -0.15240377, 0, 1, 0, 0.15240377, 0, 0.9883183, 8.9, -2.87, -319.1)
+script = ExtResource("2_7wkro")
+id = "53203/2"
+nazev = "Teplárna"
+poradi = 337
+gen_pozice = Vector3(8.9, -2.87, -319.1)
+gen_natoceni = -0.153
+gen_nazev = "Teplárna"
+
+[node name="Divadlo_Alfa_47076-1" type="Node3D" parent="Zastavky" unique_id=363458072]
+transform = Transform3D(-0.055175684, 0, -0.9984767, 0, 1, 0, 0.9984767, 0, -0.055175684, 63.7, -4.74, 134.9)
+script = ExtResource("2_7wkro")
+id = "47076/1"
+nazev = "Divadlo Alfa"
+poradi = 554
+gen_pozice = Vector3(63.7, -4.74, 134.9)
+gen_natoceni = -1.626
+gen_nazev = "Divadlo Alfa"
+
+[node name="Divadlo_Alfa_47076-2" type="Node3D" parent="Zastavky" unique_id=444360724]
+transform = Transform3D(0.07771785, 0, 0.9969754, 0, 1, 0, -0.9969754, 0, 0.07771785, 88.2, -4.65, 170.6)
+script = ExtResource("2_7wkro")
+id = "47076/2"
+nazev = "Divadlo Alfa"
+poradi = 555
+gen_pozice = Vector3(88.2, -4.65, 170.6)
+gen_natoceni = 1.493
+gen_nazev = "Divadlo Alfa"
+
+[node name="Těšínská_57164-1" type="Node3D" parent="Zastavky" unique_id=2081064849]
+transform = Transform3D(0.30105266, 0, 0.9536075, 0, 1, 0, -0.9536075, 0, 0.30105266, 490.4, 4.77, -66.6)
+script = ExtResource("2_7wkro")
+id = "57164/1"
+nazev = "Těšínská"
+poradi = 591
+gen_pozice = Vector3(490.4, 4.77, -66.6)
+gen_natoceni = 1.265
+gen_nazev = "Těšínská"
+
+[node name="Těšínská_57164-2" type="Node3D" parent="Zastavky" unique_id=638130990]
+transform = Transform3D(0.3247963, 0, 0.94578403, 0, 1, 0, -0.94578403, 0, 0.3247963, 461.5, 3.9, -57.7)
+script = ExtResource("2_7wkro")
+id = "57164/2"
+nazev = "Těšínská"
+poradi = 597
+gen_pozice = Vector3(461.5, 3.9, -57.7)
+gen_natoceni = 1.24
+gen_nazev = "Těšínská"

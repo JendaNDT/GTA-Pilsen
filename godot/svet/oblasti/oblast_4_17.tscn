@@ -1,0 +1,43 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_ggfr7"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_mt0xg"]
+
+[node name="Oblast_4_17" type="Node3D" unique_id=571338857]
+script = ExtResource("1_ggfr7")
+bunka = Vector2i(4, 17)
+stred = Vector2(-4352, 6912)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=911595016]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=107614423]
+
+[node name="Náves_Lhota_18058-1" type="Node3D" parent="Zastavky" unique_id=1590875986]
+transform = Transform3D(-0.2918913, 0, 0.9564515, 0, 1, 0, -0.9564515, 0, -0.2918913, 269.4, 12.36, -503.3)
+script = ExtResource("2_mt0xg")
+id = "18058/1"
+nazev = "Náves Lhota"
+poradi = 283
+gen_pozice = Vector3(269.4, 12.36, -503.3)
+gen_natoceni = 1.867
+gen_nazev = "Náves Lhota"
+
+[node name="Lhota_68165-1" type="Node3D" parent="Zastavky" unique_id=1365505256]
+transform = Transform3D(-0.76446027, 0, 0.6446709, 0, 1, 0, -0.6446709, 0, -0.76446027, -39, 16.57, 310.9)
+script = ExtResource("2_mt0xg")
+id = "68165/1"
+nazev = "Lhota"
+poradi = 286
+gen_pozice = Vector3(-39, 16.57, 310.9)
+gen_natoceni = 2.441
+gen_nazev = "Lhota"
+
+[node name="Lhota_68165-2" type="Node3D" parent="Zastavky" unique_id=1788097910]
+transform = Transform3D(-0.76446027, 0, 0.6446709, 0, 1, 0, -0.6446709, 0, -0.76446027, -47.6, 16.41, 323.2)
+script = ExtResource("2_mt0xg")
+id = "68165/2"
+nazev = "Lhota"
+poradi = 287
+gen_pozice = Vector3(-47.6, 16.41, 323.2)
+gen_natoceni = 2.441
+gen_nazev = "Lhota"

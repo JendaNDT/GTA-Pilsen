@@ -1,0 +1,96 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_ydlxm"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_kmosj"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="3_gvipq"]
+
+[node name="Oblast_7_9" type="Node3D" unique_id=1636550529]
+script = ExtResource("1_ydlxm")
+bunka = Vector2i(7, 9)
+stred = Vector2(-1280, -1280)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1070152215]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=884136672]
+
+[node name="Boženy_Němcové_57179-2" type="Node3D" parent="Zastavky" unique_id=1906232399]
+transform = Transform3D(0.94796956, 0, 0.31836098, 0, 1, 0, -0.31836098, 0, 0.94796956, 377, 22.1, -489.4)
+script = ExtResource("2_kmosj")
+id = "57179/2"
+nazev = "Boženy Němcové"
+poradi = 96
+gen_pozice = Vector3(377, 22.1, -489.4)
+gen_natoceni = 0.324
+gen_nazev = "Boženy Němcové"
+
+[node name="Brněnská_57067-1" type="Node3D" parent="Zastavky" unique_id=1643454827]
+transform = Transform3D(0.40483308, 0, 0.9143906, 0, 1, 0, -0.9143906, 0, 0.40483308, -195.9, 29.78, -402.9)
+script = ExtResource("2_kmosj")
+id = "57067/1"
+nazev = "Brněnská"
+poradi = 255
+gen_pozice = Vector3(-195.9, 29.78, -402.9)
+gen_natoceni = 1.154
+gen_nazev = "Brněnská"
+
+[node name="Amfiteátr_57071-1" type="Node3D" parent="Zastavky" unique_id=1341176428]
+transform = Transform3D(0.4030035, 0, 0.91519845, 0, 1, 0, -0.91519845, 0, 0.4030035, -1.3, 27.12, -321.8)
+script = ExtResource("2_kmosj")
+id = "57071/1"
+nazev = "Amfiteátr"
+poradi = 256
+gen_pozice = Vector3(-1.3, 27.12, -321.8)
+gen_natoceni = 1.156
+gen_nazev = "Amfiteátr"
+
+[node name="Lochotínský_pavilón_57124-2" type="Node3D" parent="Zastavky" unique_id=1046798691]
+transform = Transform3D(0.46425763, 0, -0.8857002, 0, 1, 0, 0.8857002, 0, 0.46425763, 333.7, 19.43, -332.9)
+script = ExtResource("2_kmosj")
+id = "57124/2"
+nazev = "Lochotínský pavilón"
+poradi = 264
+gen_pozice = Vector3(333.7, 19.43, -332.9)
+gen_natoceni = -1.088
+gen_nazev = "Lochotínský pavilón"
+
+[node name="Amfiteátr_57071-2" type="Node3D" parent="Zastavky" unique_id=1086859735]
+transform = Transform3D(-0.4015454, 0, -0.91583914, 0, 1, 0, 0.91583914, 0, -0.4015454, -19.4, 27.74, -361.7)
+script = ExtResource("2_kmosj")
+id = "57071/2"
+nazev = "Amfiteátr"
+poradi = 265
+gen_pozice = Vector3(-19.4, 27.74, -361.7)
+gen_natoceni = -1.984
+gen_nazev = "Amfiteátr"
+
+[node name="Brněnská_57067-2" type="Node3D" parent="Zastavky" unique_id=1157879953]
+transform = Transform3D(-0.38314956, 0, -0.9236863, 0, 1, 0, 0.9236863, 0, -0.38314956, -294.6, 32.91, -483.1)
+script = ExtResource("2_kmosj")
+id = "57067/2"
+nazev = "Brněnská"
+poradi = 266
+gen_pozice = Vector3(-294.6, 32.91, -483.1)
+gen_natoceni = -1.964
+gen_nazev = "Brněnská"
+
+[node name="Mista" type="Node3D" parent="." unique_id=1045346963]
+
+[node name="Zoologická_a_botanická_zahrada_pamatka-6" type="Node3D" parent="Mista" unique_id=38884965]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.3, -6.55, 134.9)
+script = ExtResource("3_gvipq")
+popis = "Zoologická a botanická zahrada města Plzně na Lochotíně."
+id = "pamatka-6"
+nazev = "Zoologická a botanická zahrada"
+poradi = 6
+gen_pozice = Vector3(10.3, -6.55, 134.9)
+gen_nazev = "Zoologická a botanická zahrada"
+
+[node name="Lochotínský_amfiteátr_pamatka-12" type="Node3D" parent="Mista" unique_id=811659543]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 66.1, -1.79, -106.2)
+script = ExtResource("3_gvipq")
+popis = "Přírodní amfiteátr pro koncerty a letní kino."
+id = "pamatka-12"
+nazev = "Lochotínský amfiteátr"
+poradi = 12
+gen_pozice = Vector3(66.1, -1.79, -106.2)
+gen_nazev = "Lochotínský amfiteátr"

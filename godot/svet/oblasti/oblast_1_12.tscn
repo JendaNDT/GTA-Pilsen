@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_0350f"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_falxr"]
+
+[node name="Oblast_1_12" type="Node3D" unique_id=1736939392]
+script = ExtResource("1_0350f")
+bunka = Vector2i(1, 12)
+stred = Vector2(-7424, 1792)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1853095471]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1145417235]
+
+[node name="Vejprnice,_Pod_farou_38392-1" type="Node3D" parent="Zastavky" unique_id=1921005662]
+transform = Transform3D(-0.3692517, 0, 0.92932945, 0, 1, 0, -0.92932945, 0, -0.3692517, 135.2, 16.6, 154.5)
+script = ExtResource("2_falxr")
+id = "38392/1"
+nazev = "Vejprnice, Pod farou"
+poradi = 516
+gen_pozice = Vector3(135.2, 16.6, 154.5)
+gen_natoceni = 1.949
+gen_nazev = "Vejprnice, Pod farou"
+
+[node name="Vejprnice,_Náves_53099-1" type="Node3D" parent="Zastavky" unique_id=1868871113]
+transform = Transform3D(-0.23887166, 0, 0.97105116, 0, 1, 0, -0.97105116, 0, -0.23887166, 125.2, 15.11, 323.3)
+script = ExtResource("2_falxr")
+id = "53099/1"
+nazev = "Vejprnice, Náves"
+poradi = 517
+gen_pozice = Vector3(125.2, 15.11, 323.3)
+gen_natoceni = 1.812
+gen_nazev = "Vejprnice, Náves"

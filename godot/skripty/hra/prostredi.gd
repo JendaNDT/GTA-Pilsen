@@ -117,7 +117,10 @@ func _obnov() -> void:
 		_svetlo.global_transform = Transform3D(Basis.looking_at(smer, nahoru), Vector3.ZERO)
 	_mesic.light_energy = 0.18 * noc
 	_mesic.visible = noc > 0.05
-	_env.ambient_light_energy = 0.35 + 0.65 * den_podil
+	# rozptýlené světlo jako polokoule v předloze: teplé shora, méně modré oblohy
+	_env.ambient_light_sky_contribution = 0.35
+	_env.ambient_light_color = Color("ffe9d5").lerp(Color("6f83c0"), 1.0 - den_podil)
+	_env.ambient_light_energy = 0.35 + 0.55 * den_podil
 	_env.fog_light_color = obzor
 	_env.fog_depth_begin = dohled * 0.55
 	_env.fog_depth_end = dohled * 1.05

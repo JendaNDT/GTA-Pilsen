@@ -1,0 +1,53 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_crmjm"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_dr4q4"]
+
+[node name="Oblast_13_9" type="Node3D" unique_id=1993789148]
+script = ExtResource("1_crmjm")
+bunka = Vector2i(13, 9)
+stred = Vector2(4864, -1280)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=618984619]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1637746711]
+
+[node name="U_Továrničky_50740-1" type="Node3D" parent="Zastavky" unique_id=1841695315]
+transform = Transform3D(0.32574195, 0, 0.9454587, 0, 1, 0, -0.9454587, 0, 0.32574195, 115, 42.9, 309.1)
+script = ExtResource("2_dr4q4")
+id = "50740/1"
+nazev = "U Továrničky"
+poradi = 456
+gen_pozice = Vector3(115, 42.9, 309.1)
+gen_natoceni = 1.239
+gen_nazev = "U Továrničky"
+
+[node name="Na_Rozcestí_50728-1" type="Node3D" parent="Zastavky" unique_id=986732702]
+transform = Transform3D(-0.9321128, 0, -0.362168, 0, 1, 0, 0.362168, 0, -0.9321128, 481.1, 45.44, 305.7)
+script = ExtResource("2_dr4q4")
+id = "50728/1"
+nazev = "Na Rozcestí"
+poradi = 457
+gen_pozice = Vector3(481.1, 45.44, 305.7)
+gen_natoceni = -2.771
+gen_nazev = "Na Rozcestí"
+
+[node name="Na_Rozcestí_50728-2" type="Node3D" parent="Zastavky" unique_id=916210063]
+transform = Transform3D(-0.22525392, 0, 0.9743001, 0, 1, 0, -0.9743001, 0, -0.22525392, 476.8, 45.27, 302.3)
+script = ExtResource("2_dr4q4")
+id = "50728/2"
+nazev = "Na Rozcestí"
+poradi = 460
+gen_pozice = Vector3(476.8, 45.27, 302.3)
+gen_natoceni = 1.798
+gen_nazev = "Na Rozcestí"
+
+[node name="U_Továrničky_50740-2" type="Node3D" parent="Zastavky" unique_id=1340594028]
+transform = Transform3D(0.32574195, 0, 0.9454587, 0, 1, 0, -0.9454587, 0, 0.32574195, 145.3, 42.85, 318.8)
+script = ExtResource("2_dr4q4")
+id = "50740/2"
+nazev = "U Továrničky"
+poradi = 461
+gen_pozice = Vector3(145.3, 42.85, 318.8)
+gen_natoceni = 1.239
+gen_nazev = "U Továrničky"

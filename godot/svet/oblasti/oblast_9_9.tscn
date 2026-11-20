@@ -1,0 +1,63 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_cvuxq"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_f4udk"]
+
+[node name="Oblast_9_9" type="Node3D" unique_id=866531247]
+script = ExtResource("1_cvuxq")
+bunka = Vector2i(9, 9)
+stred = Vector2(768, -1280)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=283615329]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1155503821]
+
+[node name="Zadní_Roudná_57189-2" type="Node3D" parent="Zastavky" unique_id=104517768]
+transform = Transform3D(0.98921496, 0, 0.14647116, 0, 1, 0, -0.14647116, 0, 0.98921496, -356.5, -6.37, 39.7)
+script = ExtResource("2_f4udk")
+id = "57189/2"
+nazev = "Zadní Roudná"
+poradi = 113
+gen_pozice = Vector3(-356.5, -6.37, 39.7)
+gen_natoceni = 0.147
+gen_nazev = "Zadní Roudná"
+
+[node name="V_Ráji_57183-2" type="Node3D" parent="Zastavky" unique_id=124887938]
+transform = Transform3D(0.7275859, 0, -0.68601656, 0, 1, 0, 0.68601656, 0, 0.7275859, -24.3, -4.56, -392.7)
+script = ExtResource("2_f4udk")
+id = "57183/2"
+nazev = "V Ráji"
+poradi = 114
+gen_pozice = Vector3(-24.3, -4.56, -392.7)
+gen_natoceni = -0.756
+gen_nazev = "V Ráji"
+
+[node name="V_Ráji_57183-1" type="Node3D" parent="Zastavky" unique_id=523026922]
+transform = Transform3D(0.6309649, 0, -0.7758114, 0, 1, 0, 0.7758114, 0, 0.6309649, 12.4, -5.32, -436.4)
+script = ExtResource("2_f4udk")
+id = "57183/1"
+nazev = "V Ráji"
+poradi = 126
+gen_pozice = Vector3(12.4, -5.32, -436.4)
+gen_natoceni = -0.888
+gen_nazev = "V Ráji"
+
+[node name="Zadní_Roudná_57189-1" type="Node3D" parent="Zastavky" unique_id=1461595821]
+transform = Transform3D(0.9514141, 0, 0.30791426, 0, 1, 0, -0.30791426, 0, 0.9514141, -370.9, -5.85, 23.1)
+script = ExtResource("2_f4udk")
+id = "57189/1"
+nazev = "Zadní Roudná"
+poradi = 127
+gen_pozice = Vector3(-370.9, -5.85, 23.1)
+gen_natoceni = 0.313
+gen_nazev = "Zadní Roudná"
+
+[node name="Areál_FN_69452-1" type="Node3D" parent="Zastavky" unique_id=1164567961]
+transform = Transform3D(0.99304605, 0, 0.117726356, 0, 1, 0, -0.117726356, 0, 0.99304605, -492, 19.2, -318.4)
+script = ExtResource("2_f4udk")
+id = "69452/1"
+nazev = "Areál FN"
+poradi = 637
+gen_pozice = Vector3(-492, 19.2, -318.4)
+gen_natoceni = 0.118
+gen_nazev = "Areál FN"

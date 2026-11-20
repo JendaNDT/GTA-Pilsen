@@ -1,0 +1,143 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_n2idc"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_g2hgj"]
+
+[node name="Oblast_11_16" type="Node3D" unique_id=1760374893]
+script = ExtResource("1_n2idc")
+bunka = Vector2i(11, 16)
+stred = Vector2(2816, 5888)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=684499052]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1108990032]
+
+[node name="U_Staré_Kovárny_53195-2" type="Node3D" parent="Zastavky" unique_id=532033090]
+transform = Transform3D(-0.9997669, 0, 0.02159109, 0, 1, 0, -0.02159109, 0, -0.9997669, 1.8, 53.98, -319)
+script = ExtResource("2_g2hgj")
+id = "53195/2"
+nazev = "U Staré Kovárny"
+poradi = 167
+gen_pozice = Vector3(1.8, 53.98, -319)
+gen_natoceni = 3.12
+gen_nazev = "U Staré Kovárny"
+
+[node name="K_Plzenci_53193-2" type="Node3D" parent="Zastavky" unique_id=951843714]
+transform = Transform3D(-0.99940175, 0, 0.034585644, 0, 1, 0, -0.034585644, 0, -0.99940175, 60.3, 48.55, -498.9)
+script = ExtResource("2_g2hgj")
+id = "53193/2"
+nazev = "K Plzenci"
+poradi = 168
+gen_pozice = Vector3(60.3, 48.55, -498.9)
+gen_natoceni = 3.107
+gen_nazev = "K Plzenci"
+
+[node name="K_Plzenci_53193-1" type="Node3D" parent="Zastavky" unique_id=149226417]
+transform = Transform3D(-0.99940175, 0, 0.034585644, 0, 1, 0, -0.034585644, 0, -0.99940175, 52.7, 48.75, -476.9)
+script = ExtResource("2_g2hgj")
+id = "53193/1"
+nazev = "K Plzenci"
+poradi = 178
+gen_pozice = Vector3(52.7, 48.75, -476.9)
+gen_natoceni = 3.107
+gen_nazev = "K Plzenci"
+
+[node name="U_Staré_Kovárny_53195-1" type="Node3D" parent="Zastavky" unique_id=1379494094]
+transform = Transform3D(-0.98912793, 0, -0.14705743, 0, 1, 0, 0.14705743, 0, -0.98912793, -2.5, 54.77, -292.2)
+script = ExtResource("2_g2hgj")
+id = "53195/1"
+nazev = "U Staré Kovárny"
+poradi = 179
+gen_pozice = Vector3(-2.5, 54.77, -292.2)
+gen_natoceni = -2.994
+gen_nazev = "U Staré Kovárny"
+
+[node name="Konvalinková_53196-2" type="Node3D" parent="Zastavky" unique_id=1728548341]
+transform = Transform3D(-0.32044917, 0, 0.9472657, 0, 1, 0, -0.9472657, 0, -0.32044917, -295.2, 40.49, -104.3)
+script = ExtResource("2_g2hgj")
+id = "53196/2"
+nazev = "Konvalinková"
+poradi = 180
+gen_pozice = Vector3(-295.2, 40.49, -104.3)
+gen_natoceni = 1.897
+gen_nazev = "Konvalinková"
+
+[node name="Pampelišková_56686-1" type="Node3D" parent="Zastavky" unique_id=802259006]
+transform = Transform3D(0.21412534, 0, 0.9768062, 0, 1, 0, -0.9768062, 0, 0.21412534, 354.4, 59.15, -472.8)
+script = ExtResource("2_g2hgj")
+id = "56686/1"
+nazev = "Pampelišková"
+poradi = 416
+gen_pozice = Vector3(354.4, 59.15, -472.8)
+gen_natoceni = 1.355
+gen_nazev = "Pampelišková"
+
+[node name="Pampelišková_56686-2" type="Node3D" parent="Zastavky" unique_id=1671250477]
+transform = Transform3D(0.16701004, 0, 0.9859552, 0, 1, 0, -0.9859552, 0, 0.16701004, 300.2, 58.79, -489.1)
+script = ExtResource("2_g2hgj")
+id = "56686/2"
+nazev = "Pampelišková"
+poradi = 421
+gen_pozice = Vector3(300.2, 58.79, -489.1)
+gen_natoceni = 1.403
+gen_nazev = "Pampelišková"
+
+[node name="Černice_53192-2" type="Node3D" parent="Zastavky" unique_id=1951216010]
+transform = Transform3D(0.7193015, 0, 0.69469804, 0, 1, 0, -0.69469804, 0, 0.7193015, 107.7, 65.36, -118.7)
+script = ExtResource("2_g2hgj")
+id = "53192/2"
+nazev = "Černice"
+poradi = 535
+gen_pozice = Vector3(107.7, 65.36, -118.7)
+gen_natoceni = 0.768
+gen_nazev = "Černice"
+
+[node name="Černice_53192-1" type="Node3D" parent="Zastavky" unique_id=2078371427]
+transform = Transform3D(0.7193015, 0, 0.69469804, 0, 1, 0, -0.69469804, 0, 0.7193015, 101.3, 65.16, -114.5)
+script = ExtResource("2_g2hgj")
+id = "53192/1"
+nazev = "Černice"
+poradi = 544
+gen_pozice = Vector3(101.3, 65.16, -114.5)
+gen_natoceni = 0.768
+gen_nazev = "Černice"
+
+[node name="Černice_53192-3" type="Node3D" parent="Zastavky" unique_id=591209380]
+transform = Transform3D(0.724836, 0, 0.68892145, 0, 1, 0, -0.68892145, 0, 0.724836, 204.3, 70.46, -3.3)
+script = ExtResource("2_g2hgj")
+id = "53192/3"
+nazev = "Černice"
+poradi = 586
+gen_pozice = Vector3(204.3, 70.46, -3.3)
+gen_natoceni = 0.76
+gen_nazev = "Černice"
+
+[node name="K_Losiné_55690-1" type="Node3D" parent="Zastavky" unique_id=2066230852]
+transform = Transform3D(0.92144996, 0, 0.38849708, 0, 1, 0, -0.38849708, 0, 0.92144996, 476.7, 72.71, 486.3)
+script = ExtResource("2_g2hgj")
+id = "55690/1"
+nazev = "K Losiné"
+poradi = 587
+gen_pozice = Vector3(476.7, 72.71, 486.3)
+gen_natoceni = 0.399
+gen_nazev = "K Losiné"
+
+[node name="K_Losiné_55690-2" type="Node3D" parent="Zastavky" unique_id=933273534]
+transform = Transform3D(0.92144996, 0, 0.38849708, 0, 1, 0, -0.38849708, 0, 0.92144996, 483.9, 72.38, 466.4)
+script = ExtResource("2_g2hgj")
+id = "55690/2"
+nazev = "K Losiné"
+poradi = 600
+gen_pozice = Vector3(483.9, 72.38, 466.4)
+gen_natoceni = 0.399
+gen_nazev = "K Losiné"
+
+[node name="K_Radyni_55689-2" type="Node3D" parent="Zastavky" unique_id=947872971]
+transform = Transform3D(-0.98226905, 0, -0.18747662, 0, 1, 0, 0.18747662, 0, -0.98226905, 509.2, 64.12, -106.4)
+script = ExtResource("2_g2hgj")
+id = "55689/2"
+nazev = "K Radyni"
+poradi = 601
+gen_pozice = Vector3(509.2, 64.12, -106.4)
+gen_natoceni = -2.953
+gen_nazev = "K Radyni"

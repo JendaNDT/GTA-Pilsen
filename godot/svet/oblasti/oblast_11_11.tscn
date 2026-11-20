@@ -1,0 +1,93 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_jfjl6"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_xj0x7"]
+
+[node name="Oblast_11_11" type="Node3D" unique_id=152523050]
+script = ExtResource("1_jfjl6")
+bunka = Vector2i(11, 11)
+stred = Vector2(2816, 768)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=2124849849]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1550531336]
+
+[node name="Rolnické_náměstí_57142-1" type="Node3D" parent="Zastavky" unique_id=539263249]
+transform = Transform3D(0.80743796, 0, -0.58995247, 0, 1, 0, 0.58995247, 0, 0.80743796, -458.7, -2.38, 337.5)
+script = ExtResource("2_xj0x7")
+id = "57142/1"
+nazev = "Rolnické náměstí"
+poradi = 364
+gen_pozice = Vector3(-458.7, -2.38, 337.5)
+gen_natoceni = -0.631
+gen_nazev = "Rolnické náměstí"
+
+[node name="U_Astry_57168-1" type="Node3D" parent="Zastavky" unique_id=47731522]
+transform = Transform3D(0.94892037, 0, -0.31551564, 0, 1, 0, 0.31551564, 0, 0.94892037, -419.1, 24.07, -254.3)
+script = ExtResource("2_xj0x7")
+id = "57168/1"
+nazev = "U Astry"
+poradi = 365
+gen_pozice = Vector3(-419.1, 24.07, -254.3)
+gen_natoceni = -0.321
+gen_nazev = "U Astry"
+
+[node name="U_Astry_57168-2" type="Node3D" parent="Zastavky" unique_id=59201095]
+transform = Transform3D(0.95202804, 0, -0.3060108, 0, 1, 0, 0.3060108, 0, 0.95202804, -466, 22.17, -150.8)
+script = ExtResource("2_xj0x7")
+id = "57168/2"
+nazev = "U Astry"
+poradi = 370
+gen_pozice = Vector3(-466, 22.17, -150.8)
+gen_natoceni = -0.311
+gen_nazev = "U Astry"
+
+[node name="Rolnické_náměstí_57142-2" type="Node3D" parent="Zastavky" unique_id=1080175490]
+transform = Transform3D(0.80743796, 0, -0.58995247, 0, 1, 0, 0.58995247, 0, 0.80743796, -489, -2.31, 363)
+script = ExtResource("2_xj0x7")
+id = "57142/2"
+nazev = "Rolnické náměstí"
+poradi = 371
+gen_pozice = Vector3(-489, -2.31, 363)
+gen_natoceni = -0.631
+gen_nazev = "Rolnické náměstí"
+
+[node name="Lobzy_57110-1" type="Node3D" parent="Zastavky" unique_id=2114937740]
+transform = Transform3D(-0.66403586, 0, 0.74770075, 0, 1, 0, -0.74770075, 0, -0.66403586, -346.5, 27, -178)
+script = ExtResource("2_xj0x7")
+id = "57110/1"
+nazev = "Lobzy"
+poradi = 552
+gen_pozice = Vector3(-346.5, 27, -178)
+gen_natoceni = 2.297
+gen_nazev = "Lobzy"
+
+[node name="Lobzy_57110-2" type="Node3D" parent="Zastavky" unique_id=659652105]
+transform = Transform3D(0.31342378, 0, 0.94961333, 0, 1, 0, -0.94961333, 0, 0.31342378, -391.5, 24.91, -181.3)
+script = ExtResource("2_xj0x7")
+id = "57110/2"
+nazev = "Lobzy"
+poradi = 557
+gen_pozice = Vector3(-391.5, 24.91, -181.3)
+gen_natoceni = 1.252
+gen_nazev = "Lobzy"
+
+[node name="Sokolská_57153-1" type="Node3D" parent="Zastavky" unique_id=290830324]
+transform = Transform3D(-0.32328954, 0, -0.9463001, 0, 1, 0, 0.9463001, 0, -0.32328954, -347.3, 26.91, -370.8)
+script = ExtResource("2_xj0x7")
+id = "57153/1"
+nazev = "Sokolská"
+poradi = 700
+gen_pozice = Vector3(-347.3, 26.91, -370.8)
+gen_natoceni = -1.9
+gen_nazev = "Sokolská"
+
+[node name="Sokolská_57153-2" type="Node3D" parent="Zastavky" unique_id=1021053891]
+transform = Transform3D(0.94765073, 0, -0.3193088, 0, 1, 0, 0.3193088, 0, 0.94765073, -364.8, 24.95, -438.9)
+script = ExtResource("2_xj0x7")
+id = "57153/2"
+nazev = "Sokolská"
+poradi = 702
+gen_pozice = Vector3(-364.8, 24.95, -438.9)
+gen_natoceni = -0.325
+gen_nazev = "Sokolská"

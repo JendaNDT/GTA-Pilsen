@@ -1,0 +1,176 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_nasn4"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_cwkqj"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="3_cwwb4"]
+
+[node name="Oblast_7_10" type="Node3D" unique_id=32879960]
+script = ExtResource("1_nasn4")
+bunka = Vector2i(7, 10)
+stred = Vector2(-1280, -256)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=795377829]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=71288566]
+
+[node name="CAN_Skvrňanská_57074-1" type="Node3D" parent="Zastavky" unique_id=828228785]
+transform = Transform3D(0.39291212, 0, -0.91957605, 0, 1, 0, 0.91957605, 0, 0.39291212, 234.3, -0.72, 242.7)
+script = ExtResource("2_cwkqj")
+id = "57074/1"
+nazev = "CAN Skvrňanská"
+poradi = 46
+gen_pozice = Vector3(234.3, -0.72, 242.7)
+gen_natoceni = -1.167
+gen_nazev = "CAN Skvrňanská"
+
+[node name="Škoda_III__brána_53088-1" type="Node3D" parent="Zastavky" unique_id=452483938]
+transform = Transform3D(0.4984382, 0, 0.86692524, 0, 1, 0, -0.86692524, 0, 0.4984382, -255, 5.12, 379.3)
+script = ExtResource("2_cwkqj")
+id = "53088/1"
+nazev = "Škoda III. brána"
+poradi = 47
+gen_pozice = Vector3(-255, 5.12, 379.3)
+gen_natoceni = 1.049
+gen_nazev = "Škoda III. brána"
+
+[node name="Škoda_III__brána_53088-2" type="Node3D" parent="Zastavky" unique_id=251609147]
+transform = Transform3D(0.4984382, 0, 0.86692524, 0, 1, 0, -0.86692524, 0, 0.4984382, -217.5, 5.82, 407.3)
+script = ExtResource("2_cwkqj")
+id = "53088/2"
+nazev = "Škoda III. brána"
+poradi = 64
+gen_pozice = Vector3(-217.5, 5.82, 407.3)
+gen_natoceni = 1.049
+gen_nazev = "Škoda III. brána"
+
+[node name="CAN_Skvrňanská_57074-2" type="Node3D" parent="Zastavky" unique_id=676048418]
+transform = Transform3D(-0.40062943, 0, 0.91624016, 0, 1, 0, -0.91624016, 0, -0.40062943, 275.4, -1.04, 232.5)
+script = ExtResource("2_cwkqj")
+id = "57074/2"
+nazev = "CAN Skvrňanská"
+poradi = 65
+gen_pozice = Vector3(275.4, -1.04, 232.5)
+gen_natoceni = 1.983
+gen_nazev = "CAN Skvrňanská"
+
+[node name="CAN_Husova_50752-1" type="Node3D" parent="Zastavky" unique_id=663113254]
+transform = Transform3D(-0.15951923, 0, -0.98719484, 0, 1, 0, 0.98719484, 0, -0.15951923, 277.6, 5.52, 410.7)
+script = ExtResource("2_cwkqj")
+id = "50752/1"
+nazev = "CAN Husova"
+poradi = 331
+gen_pozice = Vector3(277.6, 5.52, 410.7)
+gen_natoceni = -1.731
+gen_nazev = "CAN Husova"
+
+[node name="CAN_Husova_50752-3" type="Node3D" parent="Zastavky" unique_id=1239886421]
+transform = Transform3D(-0.14865074, 0, -0.98888975, 0, 1, 0, 0.98888975, 0, -0.14865074, 304.3, 5.82, 429.4)
+script = ExtResource("2_cwkqj")
+id = "50752/3"
+nazev = "CAN Husova"
+poradi = 350
+gen_pozice = Vector3(304.3, 5.82, 429.4)
+gen_natoceni = -1.72
+gen_nazev = "CAN Husova"
+
+[node name="CAN_Husova_50752-2" type="Node3D" parent="Zastavky" unique_id=1718818392]
+transform = Transform3D(-0.15556923, 0, -0.987825, 0, 1, 0, 0.987825, 0, -0.15556923, 150.8, 6.25, 395)
+script = ExtResource("2_cwkqj")
+id = "50752/2"
+nazev = "CAN Husova"
+poradi = 470
+gen_pozice = Vector3(150.8, 6.25, 395)
+gen_natoceni = -1.727
+gen_nazev = "CAN Husova"
+
+[node name="CAN_Tylova_53087-1" type="Node3D" parent="Zastavky" unique_id=555384356]
+transform = Transform3D(-0.13974476, 0, -0.9901876, 0, 1, 0, 0.9901876, 0, -0.13974476, 152.2, 7.45, 480.7)
+script = ExtResource("2_cwkqj")
+id = "53087/1"
+nazev = "CAN Tylova"
+poradi = 532
+gen_pozice = Vector3(152.2, 7.45, 480.7)
+gen_natoceni = -1.711
+gen_nazev = "CAN Tylova"
+
+[node name="CAN_Tylova_53087-2" type="Node3D" parent="Zastavky" unique_id=485396542]
+transform = Transform3D(-0.13974476, 0, -0.9901876, 0, 1, 0, 0.9901876, 0, -0.13974476, 184.6, 7.44, 502.8)
+script = ExtResource("2_cwkqj")
+id = "53087/2"
+nazev = "CAN Tylova"
+poradi = 547
+gen_pozice = Vector3(184.6, 7.44, 502.8)
+gen_natoceni = -1.711
+gen_nazev = "CAN Tylova"
+
+[node name="Kalikova_57096-1" type="Node3D" parent="Zastavky" unique_id=527841945]
+transform = Transform3D(-0.99453515, 0, 0.10440212, 0, 1, 0, -0.10440212, 0, -0.99453515, 441.2, -0.61, 96.7)
+script = ExtResource("2_cwkqj")
+id = "57096/1"
+nazev = "Kalikova"
+poradi = 655
+gen_pozice = Vector3(441.2, -0.61, 96.7)
+gen_natoceni = 3.037
+gen_nazev = "Kalikova"
+
+[node name="U_Bouzků_26957-1" type="Node3D" parent="Zastavky" unique_id=394711191]
+transform = Transform3D(-0.34308913, 0, -0.93930286, 0, 1, 0, 0.93930286, 0, -0.34308913, -479.9, -5.57, -492.6)
+script = ExtResource("2_cwkqj")
+id = "26957/1"
+nazev = "U Bouzků"
+poradi = 656
+gen_pozice = Vector3(-479.9, -5.57, -492.6)
+gen_natoceni = -1.921
+gen_nazev = "U Bouzků"
+
+[node name="U_Bouzků_26957-2" type="Node3D" parent="Zastavky" unique_id=1262262434]
+transform = Transform3D(-0.34308913, 0, -0.93930286, 0, 1, 0, 0.93930286, 0, -0.34308913, -409.2, -5.55, -457)
+script = ExtResource("2_cwkqj")
+id = "26957/2"
+nazev = "U Bouzků"
+poradi = 666
+gen_pozice = Vector3(-409.2, -5.55, -457)
+gen_natoceni = -1.921
+gen_nazev = "U Bouzků"
+
+[node name="Kalikova_57096-2" type="Node3D" parent="Zastavky" unique_id=926884830]
+transform = Transform3D(-0.99453515, 0, 0.10440212, 0, 1, 0, -0.10440212, 0, -0.99453515, 439.7, -1.06, 79.3)
+script = ExtResource("2_cwkqj")
+id = "57096/2"
+nazev = "Kalikova"
+poradi = 667
+gen_pozice = Vector3(439.7, -1.06, 79.3)
+gen_natoceni = 3.037
+gen_nazev = "Kalikova"
+
+[node name="Škoda_III__brána_53088-3" type="Node3D" parent="Zastavky" unique_id=2062977626]
+transform = Transform3D(0.51224464, 0, -0.8588396, 0, 1, 0, 0.8588396, 0, 0.51224464, -268.7, 5.91, 473.1)
+script = ExtResource("2_cwkqj")
+id = "53088/3"
+nazev = "Škoda III. brána"
+poradi = 676
+gen_pozice = Vector3(-268.7, 5.91, 473.1)
+gen_natoceni = -1.033
+gen_nazev = "Škoda III. brána"
+
+[node name="Mista" type="Node3D" parent="." unique_id=1591579599]
+
+[node name="Loosovy_interiéry_pamatka-22" type="Node3D" parent="Mista" unique_id=1719640040]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 315.8, 5.99, 412.8)
+script = ExtResource("3_cwwb4")
+popis = "Bytové interiéry navržené architektem Adolfem Loosem."
+id = "pamatka-22"
+nazev = "Loosovy interiéry"
+poradi = 22
+gen_pozice = Vector3(315.8, 5.99, 412.8)
+gen_nazev = "Loosovy interiéry"
+
+[node name="Kalikovský_mlýn_pamatka-25" type="Node3D" parent="Mista" unique_id=2003121152]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 402.4, -5.68, -61.5)
+script = ExtResource("3_cwwb4")
+popis = "Historický mlýn u řeky Mže."
+id = "pamatka-25"
+nazev = "Kalikovský mlýn"
+poradi = 25
+gen_pozice = Vector3(402.4, -5.68, -61.5)
+gen_nazev = "Kalikovský mlýn"

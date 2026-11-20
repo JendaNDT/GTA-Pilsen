@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_ivtxp"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_nqyeo"]
+
+[node name="Oblast_19_4" type="Node3D" unique_id=101519141]
+script = ExtResource("1_ivtxp")
+bunka = Vector2i(19, 4)
+stred = Vector2(11008, -6400)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1757254853]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=981977342]
+
+[node name="Bušovice,_Sedlecko_3566-1" type="Node3D" parent="Zastavky" unique_id=1351405843]
+transform = Transform3D(0.035788715, 0, 0.99935937, 0, 1, 0, -0.99935937, 0, 0.035788715, -201.7, 44.81, -123.1)
+script = ExtResource("2_nqyeo")
+id = "3566/1"
+nazev = "Bušovice, Sedlecko"
+poradi = 511
+gen_pozice = Vector3(-201.7, 44.81, -123.1)
+gen_natoceni = 1.535
+gen_nazev = "Bušovice, Sedlecko"
+
+[node name="Bušovice,_Sedlecko_3566-2" type="Node3D" parent="Zastavky" unique_id=1354752662]
+transform = Transform3D(0.02579351, 0, 0.9996673, 0, 1, 0, -0.9996673, 0, 0.02579351, -188, 44.71, -115.5)
+script = ExtResource("2_nqyeo")
+id = "3566/2"
+nazev = "Bušovice, Sedlecko"
+poradi = 512
+gen_pozice = Vector3(-188, 44.71, -115.5)
+gen_natoceni = 1.545
+gen_nazev = "Bušovice, Sedlecko"

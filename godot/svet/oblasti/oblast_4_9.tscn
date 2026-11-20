@@ -1,0 +1,23 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_72fld"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_cgdgy"]
+
+[node name="Oblast_4_9" type="Node3D" unique_id=1939269865]
+script = ExtResource("1_72fld")
+bunka = Vector2i(4, 9)
+stred = Vector2(-4352, -1280)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1724272039]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=149353574]
+
+[node name="K_Rozvodně_26970-2" type="Node3D" parent="Zastavky" unique_id=445458096]
+transform = Transform3D(0.38369688, 0, 0.9234591, 0, 1, 0, -0.9234591, 0, 0.38369688, -330.1, 7.52, 479.2)
+script = ExtResource("2_cgdgy")
+id = "26970/2"
+nazev = "K Rozvodně"
+poradi = 206
+gen_pozice = Vector3(-330.1, 7.52, 479.2)
+gen_natoceni = 1.177
+gen_nazev = "K Rozvodně"

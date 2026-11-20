@@ -1,0 +1,43 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_ehh8a"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_x52v7"]
+
+[node name="Oblast_7_15" type="Node3D" unique_id=1271739015]
+script = ExtResource("1_ehh8a")
+bunka = Vector2i(7, 15)
+stred = Vector2(-1280, 4864)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1605109194]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=737621345]
+
+[node name="Višňovka_51892-1" type="Node3D" parent="Zastavky" unique_id=496370250]
+transform = Transform3D(-0.99421746, 0, 0.10738527, 0, 1, 0, -0.10738527, 0, -0.99421746, -253.5, 33.62, -461.8)
+script = ExtResource("2_x52v7")
+id = "51892/1"
+nazev = "Višňovka"
+poradi = 142
+gen_pozice = Vector3(-253.5, 33.62, -461.8)
+gen_natoceni = 3.034
+gen_nazev = "Višňovka"
+
+[node name="Přeučilova_47351-1" type="Node3D" parent="Zastavky" unique_id=1954581972]
+transform = Transform3D(-0.9753284, 0, 0.22075914, 0, 1, 0, -0.22075914, 0, -0.9753284, -417.9, 53.21, 375.8)
+script = ExtResource("2_x52v7")
+id = "47351/1"
+nazev = "Přeučilova"
+poradi = 143
+gen_pozice = Vector3(-417.9, 53.21, 375.8)
+gen_natoceni = 2.919
+gen_nazev = "Přeučilova"
+
+[node name="Přeučilova_47351-2" type="Node3D" parent="Zastavky" unique_id=653894146]
+transform = Transform3D(-0.9742124, 0, 0.22563288, 0, 1, 0, -0.22563288, 0, -0.9742124, -399.9, 55.29, 332.5)
+script = ExtResource("2_x52v7")
+id = "47351/2"
+nazev = "Přeučilova"
+poradi = 148
+gen_pozice = Vector3(-399.9, 55.29, 332.5)
+gen_natoceni = 2.914
+gen_nazev = "Přeučilova"

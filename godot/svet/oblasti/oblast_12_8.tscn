@@ -1,0 +1,23 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_lh2s5"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="2_the4k"]
+
+[node name="Oblast_12_8" type="Node3D" unique_id=455107944]
+script = ExtResource("1_lh2s5")
+bunka = Vector2i(12, 8)
+stred = Vector2(3840, -2304)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1064514267]
+
+[node name="Mista" type="Node3D" parent="." unique_id=1032811843]
+
+[node name="Rozhledna_Chlum_pamatka-24" type="Node3D" parent="Mista" unique_id=1235461344]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -31.1, 103.85, 96.9)
+script = ExtResource("2_the4k")
+popis = "Rozhledna na vrchu Chlum nad Doubravkou."
+id = "pamatka-24"
+nazev = "Rozhledna Chlum"
+poradi = 24
+gen_pozice = Vector3(-31.1, 103.85, 96.9)
+gen_nazev = "Rozhledna Chlum"

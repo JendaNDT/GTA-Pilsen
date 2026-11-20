@@ -1,0 +1,136 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_clyn1"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_g7wlw"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="3_i4qdq"]
+
+[node name="Oblast_6_13" type="Node3D" unique_id=149663548]
+script = ExtResource("1_clyn1")
+bunka = Vector2i(6, 13)
+stred = Vector2(-2304, 2816)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=361100020]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=530275364]
+
+[node name="Univerzita_66654-1" type="Node3D" parent="Zastavky" unique_id=946650410]
+transform = Transform3D(0.54868984, 0, 0.836026, 0, 1, 0, -0.836026, 0, 0.54868984, 198.2, 37.07, -423.6)
+script = ExtResource("2_g7wlw")
+id = "66654/1"
+nazev = "Univerzita"
+poradi = 89
+gen_pozice = Vector3(198.2, 37.07, -423.6)
+gen_natoceni = 0.99
+gen_nazev = "Univerzita"
+
+[node name="Univerzita_66654-2" type="Node3D" parent="Zastavky" unique_id=1529372136]
+transform = Transform3D(0.027792765, 0, -0.9996137, 0, 1, 0, 0.9996137, 0, 0.027792765, 118.2, 38.98, -462.6)
+script = ExtResource("2_g7wlw")
+id = "66654/2"
+nazev = "Univerzita"
+poradi = 107
+gen_pozice = Vector3(118.2, 38.98, -462.6)
+gen_natoceni = -1.543
+gen_nazev = "Univerzita"
+
+[node name="Západočeská_univerzita_57190-1" type="Node3D" parent="Zastavky" unique_id=212655145]
+transform = Transform3D(-0.00020365318, 0, 1, 0, 1, 0, -1, 0, -0.00020365318, 369.8, 40.47, -97.8)
+script = ExtResource("2_g7wlw")
+id = "57190/1"
+nazev = "Západočeská univerzita"
+poradi = 195
+gen_pozice = Vector3(369.8, 40.47, -97.8)
+gen_natoceni = 1.571
+gen_nazev = "Západočeská univerzita"
+
+[node name="U_Letiště_57136-1" type="Node3D" parent="Zastavky" unique_id=850929130]
+transform = Transform3D(-0.063161545, 0, -0.9980033, 0, 1, 0, 0.9980033, 0, -0.063161545, -51.9, 40.14, -433.8)
+script = ExtResource("2_g7wlw")
+id = "57136/1"
+nazev = "U Letiště"
+poradi = 196
+gen_pozice = Vector3(-51.9, 40.14, -433.8)
+gen_natoceni = -1.634
+gen_nazev = "U Letiště"
+
+[node name="U_Letiště_57136-2" type="Node3D" parent="Zastavky" unique_id=1903708412]
+transform = Transform3D(-0.014203234, 0, 0.99989915, 0, 1, 0, -0.99989915, 0, -0.014203234, 29.6, 40.54, -329)
+script = ExtResource("2_g7wlw")
+id = "57136/2"
+nazev = "U Letiště"
+poradi = 238
+gen_pozice = Vector3(29.6, 40.54, -329)
+gen_natoceni = 1.585
+gen_nazev = "U Letiště"
+
+[node name="Západočeská_univerzita_57190-2" type="Node3D" parent="Zastavky" unique_id=1603902579]
+transform = Transform3D(0.012796009, 0, 0.9999181, 0, 1, 0, -0.9999181, 0, 0.012796009, 471.4, 39.36, -83.3)
+script = ExtResource("2_g7wlw")
+id = "57190/2"
+nazev = "Západočeská univerzita"
+poradi = 239
+gen_pozice = Vector3(471.4, 39.36, -83.3)
+gen_natoceni = 1.558
+gen_nazev = "Západočeská univerzita"
+
+[node name="Plochá_dráha_58739-1" type="Node3D" parent="Zastavky" unique_id=1972375785]
+transform = Transform3D(0.006796264, 0, 0.99997693, 0, 1, 0, -0.99997693, 0, 0.006796264, -254.3, 42.05, -95.6)
+script = ExtResource("2_g7wlw")
+id = "58739/1"
+nazev = "Plochá dráha"
+poradi = 249
+gen_pozice = Vector3(-254.3, 42.05, -95.6)
+gen_natoceni = 1.564
+gen_nazev = "Plochá dráha"
+
+[node name="Plochá_dráha_58739-2" type="Node3D" parent="Zastavky" unique_id=78515779]
+transform = Transform3D(-0.010203467, 0, 0.99994797, 0, 1, 0, -0.99994797, 0, -0.010203467, -100.1, 42.03, -84.2)
+script = ExtResource("2_g7wlw")
+id = "58739/2"
+nazev = "Plochá dráha"
+poradi = 272
+gen_pozice = Vector3(-100.1, 42.03, -84.2)
+gen_natoceni = 1.581
+gen_nazev = "Plochá dráha"
+
+[node name="Chaty_53201-1" type="Node3D" parent="Zastavky" unique_id=1509001622]
+transform = Transform3D(0.7537805, 0, -0.6571263, 0, 1, 0, 0.6571263, 0, 0.7537805, -280.3, 2.15, 394)
+script = ExtResource("2_g7wlw")
+id = "53201/1"
+nazev = "Chaty"
+poradi = 277
+gen_pozice = Vector3(-280.3, 2.15, 394)
+gen_natoceni = -0.717
+gen_nazev = "Chaty"
+
+[node name="Chaty_53201-2" type="Node3D" parent="Zastavky" unique_id=963710767]
+transform = Transform3D(0.7537805, 0, -0.6571263, 0, 1, 0, 0.6571263, 0, 0.7537805, -291.1, 1.23, 418.6)
+script = ExtResource("2_g7wlw")
+id = "53201/2"
+nazev = "Chaty"
+poradi = 295
+gen_pozice = Vector3(-291.1, 1.23, 418.6)
+gen_natoceni = -0.717
+gen_nazev = "Chaty"
+
+[node name="Mista" type="Node3D" parent="." unique_id=1581083885]
+
+[node name="Západočeská_univerzita_pamatka-19" type="Node3D" parent="Mista" unique_id=1042386619]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 366.6, 40.57, -100.1)
+script = ExtResource("3_i4qdq")
+popis = "Kampus Západočeské univerzity v Plzni na Borech."
+id = "pamatka-19"
+nazev = "Západočeská univerzita"
+poradi = 19
+gen_pozice = Vector3(366.6, 40.57, -100.1)
+gen_nazev = "Západočeská univerzita"
+
+[node name="Přehrada_České_údolí_pamatka-37" type="Node3D" parent="Mista" unique_id=1240588173]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -206.4, 8.81, 257.6)
+script = ExtResource("3_i4qdq")
+popis = "Přehrada na Radbuze, které Plzeňané říkají Borská."
+id = "pamatka-37"
+nazev = "Přehrada České údolí"
+poradi = 37
+gen_pozice = Vector3(-206.4, 8.81, 257.6)
+gen_nazev = "Přehrada České údolí"

@@ -1,0 +1,23 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_rjeob"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="2_g4v4d"]
+
+[node name="Oblast_6_4" type="Node3D" unique_id=386805353]
+script = ExtResource("1_rjeob")
+bunka = Vector2i(6, 4)
+stred = Vector2(-2304, -6400)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=564423069]
+
+[node name="Mista" type="Node3D" parent="." unique_id=1629203045]
+
+[node name="Rozhledna_Krkavec_pamatka-41" type="Node3D" parent="Mista" unique_id=958827959]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -309.5, 184.94, 305.8)
+script = ExtResource("2_g4v4d")
+popis = "Rozhledna na zalesněném vrchu Krkavec severně od Plzně."
+id = "pamatka-41"
+nazev = "Rozhledna Krkavec"
+poradi = 41
+gen_pozice = Vector3(-309.5, 184.94, 305.8)
+gen_nazev = "Rozhledna Krkavec"

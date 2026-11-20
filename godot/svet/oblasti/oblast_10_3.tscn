@@ -1,0 +1,66 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_lbjw2"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_iwsq1"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="3_ehpyx"]
+
+[node name="Oblast_10_3" type="Node3D" unique_id=960162123]
+script = ExtResource("1_lbjw2")
+bunka = Vector2i(10, 3)
+stred = Vector2(1792, -7424)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=581869591]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=650705988]
+
+[node name="Třemošná,_u_pošty_36810-2" type="Node3D" parent="Zastavky" unique_id=1278151279]
+transform = Transform3D(-0.018202655, 0, 0.9998343, 0, 1, 0, -0.9998343, 0, -0.018202655, -480.4, 32.77, -281.6)
+script = ExtResource("2_iwsq1")
+id = "36810/2"
+nazev = "Třemošná, u pošty"
+poradi = 497
+gen_pozice = Vector3(-480.4, 32.77, -281.6)
+gen_natoceni = 1.589
+gen_nazev = "Třemošná, u pošty"
+
+[node name="Třemošná,_Pod_Luhovou_68507-2" type="Node3D" parent="Zastavky" unique_id=857043044]
+transform = Transform3D(0.26749888, 0, 0.9635582, 0, 1, 0, -0.9635582, 0, 0.26749888, 300.8, 41.43, 166.4)
+script = ExtResource("2_iwsq1")
+id = "68507/2"
+nazev = "Třemošná, Pod Luhovou"
+poradi = 498
+gen_pozice = Vector3(300.8, 41.43, 166.4)
+gen_natoceni = 1.3
+gen_nazev = "Třemošná, Pod Luhovou"
+
+[node name="Třemošná,_Pod_Luhovou_68507-1" type="Node3D" parent="Zastavky" unique_id=345553954]
+transform = Transform3D(0.26749888, 0, 0.9635582, 0, 1, 0, -0.9635582, 0, 0.26749888, 269.1, 40.67, 145.6)
+script = ExtResource("2_iwsq1")
+id = "68507/1"
+nazev = "Třemošná, Pod Luhovou"
+poradi = 499
+gen_pozice = Vector3(269.1, 40.67, 145.6)
+gen_natoceni = 1.3
+gen_nazev = "Třemošná, Pod Luhovou"
+
+[node name="Třemošná,_u_pošty_36810-1" type="Node3D" parent="Zastavky" unique_id=1769837227]
+transform = Transform3D(-0.039193645, 0, 0.99923164, 0, 1, 0, -0.99923164, 0, -0.039193645, -492.7, 33.14, -289.2)
+script = ExtResource("2_iwsq1")
+id = "36810/1"
+nazev = "Třemošná, u pošty"
+poradi = 500
+gen_pozice = Vector3(-492.7, 33.14, -289.2)
+gen_natoceni = 1.61
+gen_nazev = "Třemošná, u pošty"
+
+[node name="Mista" type="Node3D" parent="." unique_id=1332568263]
+
+[node name="Radnice_v_Třemošné_pamatka-46" type="Node3D" parent="Mista" unique_id=1160868618]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -510, 33.4, -122.3)
+script = ExtResource("3_ehpyx")
+popis = "Město severně od Plzně s dlouhou tradicí výroby keramiky."
+id = "pamatka-46"
+nazev = "Radnice v Třemošné"
+poradi = 46
+gen_pozice = Vector3(-510, 33.4, -122.3)
+gen_nazev = "Radnice v Třemošné"

@@ -1,0 +1,83 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_253rm"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_sfkmt"]
+
+[node name="Oblast_7_12" type="Node3D" unique_id=205317769]
+script = ExtResource("1_253rm")
+bunka = Vector2i(7, 12)
+stred = Vector2(-1280, 1792)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=322415993]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1459705005]
+
+[node name="Borský_park_66652-1" type="Node3D" parent="Zastavky" unique_id=788616114]
+transform = Transform3D(-0.7702313, 0, 0.6377647, 0, 1, 0, -0.6377647, 0, -0.7702313, 498.1, 36.35, 483.7)
+script = ExtResource("2_sfkmt")
+id = "66652/1"
+nazev = "Borský park"
+poradi = 74
+gen_pozice = Vector3(498.1, 36.35, 483.7)
+gen_natoceni = 2.45
+gen_nazev = "Borský park"
+
+[node name="Technická_66653-1" type="Node3D" parent="Zastavky" unique_id=1872558588]
+transform = Transform3D(0.19944972, 0, 0.97990805, 0, 1, 0, -0.97990805, 0, 0.19944972, -462.5, 34.93, 465.9)
+script = ExtResource("2_sfkmt")
+id = "66653/1"
+nazev = "Technická"
+poradi = 90
+gen_pozice = Vector3(-462.5, 34.93, 465.9)
+gen_natoceni = 1.37
+gen_nazev = "Technická"
+
+[node name="Borský_park_66652-2" type="Node3D" parent="Zastavky" unique_id=587655152]
+transform = Transform3D(-0.7702313, 0, 0.6377647, 0, 1, 0, -0.6377647, 0, -0.7702313, 474.3, 36.5, 505.8)
+script = ExtResource("2_sfkmt")
+id = "66652/2"
+nazev = "Borský park"
+poradi = 104
+gen_pozice = Vector3(474.3, 36.5, 505.8)
+gen_natoceni = 2.45
+gen_nazev = "Borský park"
+
+[node name="Bory_26935-7" type="Node3D" parent="Zastavky" unique_id=667583840]
+transform = Transform3D(-0.33932924, 0, 0.9406677, 0, 1, 0, -0.9406677, 0, -0.33932924, 26, 35.28, 510.4)
+script = ExtResource("2_sfkmt")
+id = "26935/7"
+nazev = "Bory"
+poradi = 137
+gen_pozice = Vector3(26, 35.28, 510.4)
+gen_natoceni = 1.917
+gen_nazev = "Bory"
+
+[node name="Goldscheiderova_63237-2" type="Node3D" parent="Zastavky" unique_id=702316291]
+transform = Transform3D(0.17587669, 0, 0.9844122, 0, 1, 0, -0.9844122, 0, 0.17587669, -423.6, 38.58, 146.8)
+script = ExtResource("2_sfkmt")
+id = "63237/2"
+nazev = "Goldscheiderova"
+poradi = 355
+gen_pozice = Vector3(-423.6, 38.58, 146.8)
+gen_natoceni = 1.394
+gen_nazev = "Goldscheiderova"
+
+[node name="Čermákova_57059-1" type="Node3D" parent="Zastavky" unique_id=1676974510]
+transform = Transform3D(0.013795848, 0, 0.9999048, 0, 1, 0, -0.9999048, 0, 0.013795848, 186, 35.89, 171)
+script = ExtResource("2_sfkmt")
+id = "57059/1"
+nazev = "Čermákova"
+poradi = 356
+gen_pozice = Vector3(186, 35.89, 171)
+gen_natoceni = 1.557
+gen_nazev = "Čermákova"
+
+[node name="Čermákova_57059-2" type="Node3D" parent="Zastavky" unique_id=1481753931]
+transform = Transform3D(0.03378995, 0, -0.9994289, 0, 1, 0, 0.9994289, 0, 0.03378995, 51.3, 35.89, 140.9)
+script = ExtResource("2_sfkmt")
+id = "57059/2"
+nazev = "Čermákova"
+poradi = 380
+gen_pozice = Vector3(51.3, 35.89, 140.9)
+gen_natoceni = -1.537
+gen_nazev = "Čermákova"

@@ -1,0 +1,326 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_0powo"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_ersmt"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="3_5ndqg"]
+
+[node name="Oblast_8_11" type="Node3D" unique_id=1566828229]
+script = ExtResource("1_0powo")
+bunka = Vector2i(8, 11)
+stred = Vector2(-256, 768)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=165902170]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1516397259]
+
+[node name="Chodské_náměstí_57088-1" type="Node3D" parent="Zastavky" unique_id=224625149]
+transform = Transform3D(-0.9889804, 0, 0.14804642, 0, 1, 0, -0.14804642, 0, -0.9889804, -240.5, 18.07, 305.3)
+script = ExtResource("2_ersmt")
+id = "57088/1"
+nazev = "Chodské náměstí"
+poradi = 78
+gen_pozice = Vector3(-240.5, 18.07, 305.3)
+gen_natoceni = 2.993
+gen_nazev = "Chodské náměstí"
+
+[node name="Masarykovo_náměstí_57118-1" type="Node3D" parent="Zastavky" unique_id=277217998]
+transform = Transform3D(-0.9818921, 0, 0.18944088, 0, 1, 0, -0.18944088, 0, -0.9818921, -175.7, 15.21, -98.6)
+script = ExtResource("2_ersmt")
+id = "57118/1"
+nazev = "Masarykovo náměstí"
+poradi = 79
+gen_pozice = Vector3(-175.7, 15.21, -98.6)
+gen_natoceni = 2.951
+gen_nazev = "Masarykovo náměstí"
+
+[node name="U_Práce_53090-3" type="Node3D" parent="Zastavky" unique_id=1219459997]
+transform = Transform3D(-0.98208106, 0, 0.18845896, 0, 1, 0, -0.18845896, 0, -0.98208106, -118.7, 12.36, -380.8)
+script = ExtResource("2_ersmt")
+id = "53090/3"
+nazev = "U Práce"
+poradi = 80
+gen_pozice = Vector3(-118.7, 12.36, -380.8)
+gen_natoceni = 2.952
+gen_nazev = "U Práce"
+
+[node name="U_Práce_53090-4" type="Node3D" parent="Zastavky" unique_id=601702355]
+transform = Transform3D(-0.98208106, 0, 0.18845896, 0, 1, 0, -0.18845896, 0, -0.98208106, -133.8, 12.65, -339.6)
+script = ExtResource("2_ersmt")
+id = "53090/4"
+nazev = "U Práce"
+poradi = 98
+gen_pozice = Vector3(-133.8, 12.65, -339.6)
+gen_natoceni = 2.952
+gen_nazev = "U Práce"
+
+[node name="Masarykovo_náměstí_57118-2" type="Node3D" parent="Zastavky" unique_id=1568888798]
+transform = Transform3D(-0.9818921, 0, 0.18944088, 0, 1, 0, -0.18944088, 0, -0.9818921, -184.4, 15.75, -56.2)
+script = ExtResource("2_ersmt")
+id = "57118/2"
+nazev = "Masarykovo náměstí"
+poradi = 99
+gen_pozice = Vector3(-184.4, 15.75, -56.2)
+gen_natoceni = 2.951
+gen_nazev = "Masarykovo náměstí"
+
+[node name="Chodské_náměstí_57088-2" type="Node3D" parent="Zastavky" unique_id=1275933304]
+transform = Transform3D(-0.9889804, 0, 0.14804642, 0, 1, 0, -0.14804642, 0, -0.9889804, -248.5, 18.35, 351.1)
+script = ExtResource("2_ersmt")
+id = "57088/2"
+nazev = "Chodské náměstí"
+poradi = 100
+gen_pozice = Vector3(-248.5, 18.35, 351.1)
+gen_natoceni = 2.993
+gen_nazev = "Chodské náměstí"
+
+[node name="Mrakodrap_53078-1" type="Node3D" parent="Zastavky" unique_id=1024338858]
+transform = Transform3D(0.05976066, 0, 0.99821275, 0, 1, 0, -0.99821275, 0, 0.05976066, 202, 1.25, -321.8)
+script = ExtResource("2_ersmt")
+id = "53078/1"
+nazev = "Mrakodrap"
+poradi = 109
+gen_pozice = Vector3(202, 1.25, -321.8)
+gen_natoceni = 1.511
+gen_nazev = "Mrakodrap"
+
+[node name="U_Práce_53090-1" type="Node3D" parent="Zastavky" unique_id=435980782]
+transform = Transform3D(0.54701674, 0, 0.83712167, 0, 1, 0, -0.83712167, 0, 0.54701674, -73.4, 10.32, -395.2)
+script = ExtResource("2_ersmt")
+id = "53090/1"
+nazev = "U Práce"
+poradi = 110
+gen_pozice = Vector3(-73.4, 10.32, -395.2)
+gen_natoceni = 0.992
+gen_nazev = "U Práce"
+
+[node name="Goethova_57079-1" type="Node3D" parent="Zastavky" unique_id=1136550655]
+transform = Transform3D(0.99490386, 0, 0.10082837, 0, 1, 0, -0.10082837, 0, 0.99490386, 320.9, -0.85, -343)
+script = ExtResource("2_ersmt")
+id = "57079/1"
+nazev = "Goethova"
+poradi = 131
+gen_pozice = Vector3(320.9, -0.85, -343)
+gen_natoceni = 0.101
+gen_nazev = "Goethova"
+
+[node name="U_Práce_53090-2" type="Node3D" parent="Zastavky" unique_id=1861026188]
+transform = Transform3D(0.4338814, 0, 0.90097, 0, 1, 0, -0.90097, 0, 0.4338814, -43.8, 8.56, -354)
+script = ExtResource("2_ersmt")
+id = "53090/2"
+nazev = "U Práce"
+poradi = 311
+gen_pozice = Vector3(-43.8, 8.56, -354)
+gen_natoceni = 1.122
+gen_nazev = "U Práce"
+
+[node name="Mrakodrap_53078-2" type="Node3D" parent="Zastavky" unique_id=1144617309]
+transform = Transform3D(0.0707372, 0, 0.997495, 0, 1, 0, -0.997495, 0, 0.0707372, 240.9, 0.48, -303.1)
+script = ExtResource("2_ersmt")
+id = "53078/2"
+nazev = "Mrakodrap"
+poradi = 312
+gen_pozice = Vector3(240.9, 0.48, -303.1)
+gen_natoceni = 1.5
+gen_nazev = "Mrakodrap"
+
+[node name="Goethova_57079-2" type="Node3D" parent="Zastavky" unique_id=225645322]
+transform = Transform3D(0.99490386, 0, 0.10082837, 0, 1, 0, -0.10082837, 0, 0.99490386, 328.8, -0.86, -353.2)
+script = ExtResource("2_ersmt")
+id = "57079/2"
+nazev = "Goethova"
+poradi = 424
+gen_pozice = Vector3(328.8, -0.86, -353.2)
+gen_natoceni = 0.101
+gen_nazev = "Goethova"
+
+[node name="Tylova_53084-1" type="Node3D" parent="Zastavky" unique_id=874355280]
+transform = Transform3D(0.13835108, 0, 0.99038327, 0, 1, 0, -0.99038327, 0, 0.13835108, -503.6, 12.09, -482.2)
+script = ExtResource("2_ersmt")
+id = "53084/1"
+nazev = "Tylova"
+poradi = 531
+gen_pozice = Vector3(-503.6, 12.09, -482.2)
+gen_natoceni = 1.432
+gen_nazev = "Tylova"
+
+[node name="Tylova_53084-2" type="Node3D" parent="Zastavky" unique_id=662331374]
+transform = Transform3D(0.1353794, 0, 0.9907938, 0, 1, 0, -0.9907938, 0, 0.1353794, -394, 13.01, -453.3)
+script = ExtResource("2_ersmt")
+id = "53084/2"
+nazev = "Tylova"
+poradi = 548
+gen_pozice = Vector3(-394, 13.01, -453.3)
+gen_natoceni = 1.435
+gen_nazev = "Tylova"
+
+[node name="Prokopova_53080-1" type="Node3D" parent="Zastavky" unique_id=2145434208]
+transform = Transform3D(0.9745705, 0, 0.22408104, 0, 1, 0, -0.22408104, 0, 0.9745705, 356.9, 0.37, -210.6)
+script = ExtResource("2_ersmt")
+id = "53080/1"
+nazev = "Prokopova"
+poradi = 564
+gen_pozice = Vector3(356.9, 0.37, -210.6)
+gen_natoceni = 0.226
+gen_nazev = "Prokopova"
+
+[node name="U_Radbuzy_53086-1" type="Node3D" parent="Zastavky" unique_id=409494801]
+transform = Transform3D(-0.9993306, 0, -0.03658447, 0, 1, 0, 0.03658447, 0, -0.9993306, 394.4, 3.14, 120.7)
+script = ExtResource("2_ersmt")
+id = "53086/1"
+nazev = "U Radbuzy"
+poradi = 565
+gen_pozice = Vector3(394.4, 3.14, 120.7)
+gen_natoceni = -3.105
+gen_nazev = "U Radbuzy"
+
+[node name="Zimní_stadion_57192-1" type="Node3D" parent="Zastavky" unique_id=2124998695]
+transform = Transform3D(-0.94936347, 0, 0.31417984, 0, 1, 0, -0.31417984, 0, -0.94936347, 362, 5.41, 428.8)
+script = ExtResource("2_ersmt")
+id = "57192/1"
+nazev = "Zimní stadion"
+poradi = 566
+gen_pozice = Vector3(362, 5.41, 428.8)
+gen_natoceni = 2.822
+gen_nazev = "Zimní stadion"
+
+[node name="Jižní_Předměstí_53258-2" type="Node3D" parent="Zastavky" unique_id=1412746185]
+transform = Transform3D(-0.99453515, 0, 0.10440212, 0, 1, 0, -0.10440212, 0, -0.99453515, -496.4, 17.53, -65.1)
+script = ExtResource("2_ersmt")
+id = "53258/2"
+nazev = "Jižní Předměstí"
+poradi = 572
+gen_pozice = Vector3(-496.4, 17.53, -65.1)
+gen_natoceni = 3.037
+gen_nazev = "Jižní Předměstí"
+
+[node name="Zimní_stadion_57192-2" type="Node3D" parent="Zastavky" unique_id=1883035862]
+transform = Transform3D(-0.94936347, 0, 0.31417984, 0, 1, 0, -0.31417984, 0, -0.94936347, 377.8, 5.17, 399.9)
+script = ExtResource("2_ersmt")
+id = "57192/2"
+nazev = "Zimní stadion"
+poradi = 575
+gen_pozice = Vector3(377.8, 5.17, 399.9)
+gen_natoceni = 2.822
+gen_nazev = "Zimní stadion"
+
+[node name="U_Radbuzy_53086-2" type="Node3D" parent="Zastavky" unique_id=2043167374]
+transform = Transform3D(-0.9993306, 0, -0.03658447, 0, 1, 0, 0.03658447, 0, -0.9993306, 400.1, 3.32, 98.2)
+script = ExtResource("2_ersmt")
+id = "53086/2"
+nazev = "U Radbuzy"
+poradi = 576
+gen_pozice = Vector3(400.1, 3.32, 98.2)
+gen_natoceni = -3.105
+gen_nazev = "U Radbuzy"
+
+[node name="Radobyčická_47819-1" type="Node3D" parent="Zastavky" unique_id=553466092]
+transform = Transform3D(0.18472922, 0, -0.98278946, 0, 1, 0, 0.98278946, 0, 0.18472922, 276.9, 7.37, 29.5)
+script = ExtResource("2_ersmt")
+id = "47819/1"
+nazev = "Radobyčická"
+poradi = 577
+gen_pozice = Vector3(276.9, 7.37, 29.5)
+gen_natoceni = -1.385
+gen_nazev = "Radobyčická"
+
+[node name="Belánka_65795-1" type="Node3D" parent="Zastavky" unique_id=706625628]
+transform = Transform3D(-0.2057242, 0, -0.97861004, 0, 1, 0, 0.97861004, 0, -0.2057242, -267.9, 14.11, 67.3)
+script = ExtResource("2_ersmt")
+id = "65795/1"
+nazev = "Belánka"
+poradi = 578
+gen_pozice = Vector3(-267.9, 14.11, 67.3)
+gen_natoceni = -1.778
+gen_nazev = "Belánka"
+
+[node name="Jižní_Předměstí_53258-4" type="Node3D" parent="Zastavky" unique_id=2002102084]
+transform = Transform3D(-0.066155285, 0, 0.99780935, 0, 1, 0, -0.99780935, 0, -0.066155285, -464.6, 18.4, 91.9)
+script = ExtResource("2_ersmt")
+id = "53258/4"
+nazev = "Jižní Předměstí"
+poradi = 583
+gen_pozice = Vector3(-464.6, 18.4, 91.9)
+gen_natoceni = 1.637
+gen_nazev = "Jižní Předměstí"
+
+[node name="Belánka_65795-2" type="Node3D" parent="Zastavky" unique_id=615051923]
+transform = Transform3D(-0.055175684, 0, 0.9984767, 0, 1, 0, -0.9984767, 0, -0.055175684, -45.3, 13.77, 74.1)
+script = ExtResource("2_ersmt")
+id = "65795/2"
+nazev = "Belánka"
+poradi = 584
+gen_pozice = Vector3(-45.3, 13.77, 74.1)
+gen_natoceni = 1.626
+gen_nazev = "Belánka"
+
+[node name="Radobyčická_47819-2" type="Node3D" parent="Zastavky" unique_id=1582854874]
+transform = Transform3D(-0.2669277, 0, 0.96371657, 0, 1, 0, -0.96371657, 0, -0.2669277, 326.6, 5.05, 43.9)
+script = ExtResource("2_ersmt")
+id = "47819/2"
+nazev = "Radobyčická"
+poradi = 585
+gen_pozice = Vector3(326.6, 5.05, 43.9)
+gen_natoceni = 1.841
+gen_nazev = "Radobyčická"
+
+[node name="Tylova_53084-3" type="Node3D" parent="Zastavky" unique_id=269798232]
+transform = Transform3D(-0.994742, 0, 0.102412745, 0, 1, 0, -0.102412745, 0, -0.994742, -474.7, 13.57, -387.6)
+script = ExtResource("2_ersmt")
+id = "53084/3"
+nazev = "Tylova"
+poradi = 595
+gen_pozice = Vector3(-474.7, 13.57, -387.6)
+gen_natoceni = 3.039
+gen_nazev = "Tylova"
+
+[node name="Mrakodrap_53078-4" type="Node3D" parent="Zastavky" unique_id=1718348990]
+transform = Transform3D(0.0707372, 0, 0.997495, 0, 1, 0, -0.997495, 0, 0.0707372, 240.9, 0.48, -303.1)
+script = ExtResource("2_ersmt")
+id = "53078/4"
+nazev = "Mrakodrap"
+poradi = 612
+gen_pozice = Vector3(240.9, 0.48, -303.1)
+gen_natoceni = 1.5
+gen_nazev = "Mrakodrap"
+
+[node name="Mista" type="Node3D" parent="." unique_id=1590135002]
+
+[node name="Západočeské_muzeum_pamatka-10" type="Node3D" parent="Mista" unique_id=1469370904]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 376.9, -2.85, -486.6)
+script = ExtResource("3_5ndqg")
+popis = "Muzeum s rozsáhlými sbírkami k dějinám západních Čech."
+id = "pamatka-10"
+nazev = "Západočeské muzeum"
+poradi = 10
+gen_pozice = Vector3(376.9, -2.85, -486.6)
+gen_nazev = "Západočeské muzeum"
+
+[node name="Měšťanská_beseda_pamatka-11" type="Node3D" parent="Mista" unique_id=1214398226]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 187.1, 1.88, -402.7)
+script = ExtResource("3_5ndqg")
+popis = "Kulturní a společenský dům s kavárnou, kinem a sály."
+id = "pamatka-11"
+nazev = "Měšťanská beseda"
+poradi = 11
+gen_pozice = Vector3(187.1, 1.88, -402.7)
+gen_nazev = "Měšťanská beseda"
+
+[node name="Zimní_stadion_pamatka-18" type="Node3D" parent="Mista" unique_id=1881799338]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 230.7, 6.72, 466.2)
+script = ExtResource("3_5ndqg")
+popis = "Domácí led plzeňských hokejistů."
+id = "pamatka-18"
+nazev = "Zimní stadion"
+poradi = 18
+gen_pozice = Vector3(230.7, 6.72, 466.2)
+gen_nazev = "Zimní stadion"
+
+[node name="Wilsonův_most_pamatka-30" type="Node3D" parent="Mista" unique_id=872989457]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 458.5, -2.15, -310.4)
+script = ExtResource("3_5ndqg")
+popis = "Kamenný most přes Radbuzu z počátku 20. století."
+id = "pamatka-30"
+nazev = "Wilsonův most"
+poradi = 30
+gen_pozice = Vector3(458.5, -2.15, -310.4)
+gen_nazev = "Wilsonův most"

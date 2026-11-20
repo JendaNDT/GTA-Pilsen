@@ -1,0 +1,46 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_lchh7"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_ydq7v"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="3_q3ean"]
+
+[node name="Oblast_10_7" type="Node3D" unique_id=336523204]
+script = ExtResource("1_lchh7")
+bunka = Vector2i(10, 7)
+stred = Vector2(1792, -3328)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1237827255]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=2018325584]
+
+[node name="Bílá_Hora_53191-2" type="Node3D" parent="Zastavky" unique_id=189363157]
+transform = Transform3D(0.8879167, 0, -0.46000424, 0, 1, 0, 0.46000424, 0, 0.8879167, 474.5, 20.56, 160.6)
+script = ExtResource("2_ydq7v")
+id = "53191/2"
+nazev = "Bílá Hora"
+poradi = 117
+gen_pozice = Vector3(474.5, 20.56, 160.6)
+gen_natoceni = -0.478
+gen_nazev = "Bílá Hora"
+
+[node name="Bílá_Hora_53191-1" type="Node3D" parent="Zastavky" unique_id=347323984]
+transform = Transform3D(0.8440528, 0, 0.5362601, 0, 1, 0, -0.5362601, 0, 0.8440528, 473, 20.71, 171.6)
+script = ExtResource("2_ydq7v")
+id = "53191/1"
+nazev = "Bílá Hora"
+poradi = 123
+gen_pozice = Vector3(473, 20.71, 171.6)
+gen_natoceni = 0.566
+gen_nazev = "Bílá Hora"
+
+[node name="Mista" type="Node3D" parent="." unique_id=1430903354]
+
+[node name="Velký_bolevecký_rybník_pamatka-15" type="Node3D" parent="Mista" unique_id=1519594653]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -309.8, -1.75, 366.7)
+script = ExtResource("3_q3ean")
+popis = "Největší z Boleveckých rybníků na severu města."
+id = "pamatka-15"
+nazev = "Velký bolevecký rybník"
+poradi = 15
+gen_pozice = Vector3(-309.8, -1.75, 366.7)
+gen_nazev = "Velký bolevecký rybník"

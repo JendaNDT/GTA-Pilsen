@@ -1,0 +1,73 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_lxjq6"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_qg1fe"]
+
+[node name="Oblast_10_14" type="Node3D" unique_id=806964543]
+script = ExtResource("1_lxjq6")
+bunka = Vector2i(10, 14)
+stred = Vector2(1792, 3840)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=782831324]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1220312746]
+
+[node name="Zelenohorská_57191-1" type="Node3D" parent="Zastavky" unique_id=2028689763]
+transform = Transform3D(0.54198414, 0, -0.8403887, 0, 1, 0, 0.8403887, 0, 0.54198414, 113.4, 27.18, -284.2)
+script = ExtResource("2_qg1fe")
+id = "57191/1"
+nazev = "Zelenohorská"
+poradi = 408
+gen_pozice = Vector3(113.4, 27.18, -284.2)
+gen_natoceni = -0.998
+gen_nazev = "Zelenohorská"
+
+[node name="K_Řečišti_57095-1" type="Node3D" parent="Zastavky" unique_id=1862971434]
+transform = Transform3D(0.49496657, 0, -0.86891204, 0, 1, 0, 0.86891204, 0, 0.49496657, -346.3, 3.82, 324.2)
+script = ExtResource("2_qg1fe")
+id = "57095/1"
+nazev = "K Řečišti"
+poradi = 409
+gen_pozice = Vector3(-346.3, 3.82, 324.2)
+gen_natoceni = -1.053
+gen_nazev = "K Řečišti"
+
+[node name="K_Řečišti_57095-2" type="Node3D" parent="Zastavky" unique_id=307668626]
+transform = Transform3D(0.90979767, 0, -0.41505203, 0, 1, 0, 0.41505203, 0, 0.90979767, -253.4, 8.46, 259.7)
+script = ExtResource("2_qg1fe")
+id = "57095/2"
+nazev = "K Řečišti"
+poradi = 412
+gen_pozice = Vector3(-253.4, 8.46, 259.7)
+gen_natoceni = -0.428
+gen_nazev = "K Řečišti"
+
+[node name="Zelenohorská_57191-2" type="Node3D" parent="Zastavky" unique_id=1701514168]
+transform = Transform3D(0.51396126, 0, -0.8578134, 0, 1, 0, 0.8578134, 0, 0.51396126, 103.3, 26.55, -273.2)
+script = ExtResource("2_qg1fe")
+id = "57191/2"
+nazev = "Zelenohorská"
+poradi = 413
+gen_pozice = Vector3(103.3, 26.55, -273.2)
+gen_natoceni = -1.031
+gen_nazev = "Zelenohorská"
+
+[node name="U_Kasáren_57171-2" type="Node3D" parent="Zastavky" unique_id=1695780691]
+transform = Transform3D(0.850427, 0, 0.5260931, 0, 1, 0, -0.5260931, 0, 0.850427, 372.1, 36.1, -383.1)
+script = ExtResource("2_qg1fe")
+id = "57171/2"
+nazev = "U Kasáren"
+poradi = 537
+gen_pozice = Vector3(372.1, 36.1, -383.1)
+gen_natoceni = 0.554
+gen_nazev = "U Kasáren"
+
+[node name="U_Kasáren_57171-1" type="Node3D" parent="Zastavky" unique_id=1338074434]
+transform = Transform3D(0.850427, 0, 0.5260931, 0, 1, 0, -0.5260931, 0, 0.850427, 377.2, 35.89, -343.2)
+script = ExtResource("2_qg1fe")
+id = "57171/1"
+nazev = "U Kasáren"
+poradi = 542
+gen_pozice = Vector3(377.2, 35.89, -343.2)
+gen_natoceni = 0.554
+gen_nazev = "U Kasáren"

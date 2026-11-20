@@ -1,0 +1,23 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_d13y2"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="2_njbvx"]
+
+[node name="Oblast_8_5" type="Node3D" unique_id=929532185]
+script = ExtResource("1_d13y2")
+bunka = Vector2i(8, 5)
+stred = Vector2(-256, -5376)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=479216268]
+
+[node name="Mista" type="Node3D" parent="." unique_id=1565676627]
+
+[node name="Kolomazná_pec_pamatka-43" type="Node3D" parent="Mista" unique_id=1399652222]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 252.4, 36.68, 114)
+script = ExtResource("2_njbvx")
+popis = "Památka na výrobu kolomazi v boleveckých lesích."
+id = "pamatka-43"
+nazev = "Kolomazná pec"
+poradi = 43
+gen_pozice = Vector3(252.4, 36.68, 114)
+gen_nazev = "Kolomazná pec"

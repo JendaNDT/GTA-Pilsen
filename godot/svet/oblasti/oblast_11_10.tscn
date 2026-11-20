@@ -1,0 +1,183 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_o7rkc"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_jdp50"]
+
+[node name="Oblast_11_10" type="Node3D" unique_id=1323146835]
+script = ExtResource("1_o7rkc")
+bunka = Vector2i(11, 10)
+stred = Vector2(2816, -256)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=96629398]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1052210526]
+
+[node name="U_Pietasu_57173-1" type="Node3D" parent="Zastavky" unique_id=1934167023]
+transform = Transform3D(0.945066, 0, -0.3268797, 0, 1, 0, 0.3268797, 0, 0.945066, -265.8, 21.25, 303.9)
+script = ExtResource("2_jdp50")
+id = "57173/1"
+nazev = "U Pietasu"
+poradi = 366
+gen_pozice = Vector3(-265.8, 21.25, 303.9)
+gen_natoceni = -0.333
+gen_nazev = "U Pietasu"
+
+[node name="Opavská_26941-2" type="Node3D" parent="Zastavky" unique_id=1451221916]
+transform = Transform3D(0.977612, 0, -0.21041554, 0, 1, 0, 0.21041554, 0, 0.977612, -183.4, 17.04, -122.2)
+script = ExtResource("2_jdp50")
+id = "26941/2"
+nazev = "Opavská"
+poradi = 367
+gen_pozice = Vector3(-183.4, 17.04, -122.2)
+gen_natoceni = -0.212
+gen_nazev = "Opavská"
+
+[node name="U_Pietasu_57173-3" type="Node3D" parent="Zastavky" unique_id=689282233]
+transform = Transform3D(0.945066, 0, -0.3268797, 0, 1, 0, 0.3268797, 0, 0.945066, -266.8, 21.03, 291.9)
+script = ExtResource("2_jdp50")
+id = "57173/3"
+nazev = "U Pietasu"
+poradi = 369
+gen_pozice = Vector3(-266.8, 21.03, 291.9)
+gen_natoceni = -0.333
+gen_nazev = "U Pietasu"
+
+[node name="Poliklinika_Doubravka_57092-1" type="Node3D" parent="Zastavky" unique_id=433160814]
+transform = Transform3D(0.7756828, 0, -0.63112295, 0, 1, 0, 0.63112295, 0, 0.7756828, -9.7, 14.15, -439.1)
+script = ExtResource("2_jdp50")
+id = "57092/1"
+nazev = "Poliklinika Doubravka"
+poradi = 385
+gen_pozice = Vector3(-9.7, 14.15, -439.1)
+gen_natoceni = -0.683
+gen_nazev = "Poliklinika Doubravka"
+
+[node name="Opavská_26941-1" type="Node3D" parent="Zastavky" unique_id=1969753035]
+transform = Transform3D(0.977612, 0, -0.21041554, 0, 1, 0, 0.21041554, 0, 0.977612, -200, 16.95, -123.5)
+script = ExtResource("2_jdp50")
+id = "26941/1"
+nazev = "Opavská"
+poradi = 386
+gen_pozice = Vector3(-200, 16.95, -123.5)
+gen_natoceni = -0.212
+gen_nazev = "Opavská"
+
+[node name="Ke_Špitálskému_lesu_57099-2" type="Node3D" parent="Zastavky" unique_id=54780326]
+transform = Transform3D(-0.75927854, 0, 0.6507658, 0, 1, 0, -0.6507658, 0, -0.75927854, 151.7, 26.35, -59)
+script = ExtResource("2_jdp50")
+id = "57099/2"
+nazev = "Ke Špitálskému lesu"
+poradi = 463
+gen_pozice = Vector3(151.7, 26.35, -59)
+gen_natoceni = 2.433
+gen_nazev = "Ke Špitálskému lesu"
+
+[node name="Letná_57108-1" type="Node3D" parent="Zastavky" unique_id=144451505]
+transform = Transform3D(-0.07912087, 0, -0.99686503, 0, 1, 0, 0.99686503, 0, -0.07912087, -443.2, 9.5, 176.4)
+script = ExtResource("2_jdp50")
+id = "57108/1"
+nazev = "Letná"
+poradi = 553
+gen_pozice = Vector3(-443.2, 9.5, 176.4)
+gen_natoceni = -1.65
+gen_nazev = "Letná"
+
+[node name="Letná_57108-2" type="Node3D" parent="Zastavky" unique_id=904931960]
+transform = Transform3D(0.08070844, 0, 0.9967378, 0, 1, 0, -0.9967378, 0, 0.08070844, -411.2, 11.42, 212.6)
+script = ExtResource("2_jdp50")
+id = "57108/2"
+nazev = "Letná"
+poradi = 556
+gen_pozice = Vector3(-411.2, 11.42, 212.6)
+gen_natoceni = 1.49
+gen_nazev = "Letná"
+
+[node name="Na_Dlouhých_26940-1" type="Node3D" parent="Zastavky" unique_id=1562452172]
+transform = Transform3D(-0.77593994, 0, 0.6308068, 0, 1, 0, -0.6308068, 0, -0.77593994, 437.8, 20.57, -412.4)
+script = ExtResource("2_jdp50")
+id = "26940/1"
+nazev = "Na Dlouhých"
+poradi = 588
+gen_pozice = Vector3(437.8, 20.57, -412.4)
+gen_natoceni = 2.459
+gen_nazev = "Na Dlouhých"
+
+[node name="Ke_Špitálskému_lesu_57099-1" type="Node3D" parent="Zastavky" unique_id=125332007]
+transform = Transform3D(-0.6926839, 0, 0.7212413, 0, 1, 0, -0.7212413, 0, -0.6926839, 119.3, 26.25, -32.2)
+script = ExtResource("2_jdp50")
+id = "57099/1"
+nazev = "Ke Špitálskému lesu"
+poradi = 589
+gen_pozice = Vector3(119.3, 26.25, -32.2)
+gen_natoceni = 2.336
+gen_nazev = "Ke Špitálskému lesu"
+
+[node name="Ke_Kukačce_57123-1" type="Node3D" parent="Zastavky" unique_id=603420117]
+transform = Transform3D(0.09266316, 0, 0.9956975, 0, 1, 0, -0.9956975, 0, 0.09266316, -143.8, 19.36, -11)
+script = ExtResource("2_jdp50")
+id = "57123/1"
+nazev = "Ke Kukačce"
+poradi = 590
+gen_pozice = Vector3(-143.8, 19.36, -11)
+gen_natoceni = 1.478
+gen_nazev = "Ke Kukačce"
+
+[node name="Ke_Kukačce_57123-2" type="Node3D" parent="Zastavky" unique_id=1216759170]
+transform = Transform3D(0.09266316, 0, 0.9956975, 0, 1, 0, -0.9956975, 0, 0.09266316, -115, 20.18, 4.7)
+script = ExtResource("2_jdp50")
+id = "57123/2"
+nazev = "Ke Kukačce"
+poradi = 598
+gen_pozice = Vector3(-115, 20.18, 4.7)
+gen_natoceni = 1.478
+gen_nazev = "Ke Kukačce"
+
+[node name="Na_Dlouhých_26940-2" type="Node3D" parent="Zastavky" unique_id=919868116]
+transform = Transform3D(-0.7765703, 0, 0.6300306, 0, 1, 0, -0.6300306, 0, -0.7765703, 422.6, 20.83, -393.7)
+script = ExtResource("2_jdp50")
+id = "26940/2"
+nazev = "Na Dlouhých"
+poradi = 599
+gen_pozice = Vector3(422.6, 20.83, -393.7)
+gen_natoceni = 2.46
+gen_nazev = "Na Dlouhých"
+
+[node name="Pietas_43706-1" type="Node3D" parent="Zastavky" unique_id=1196256470]
+transform = Transform3D(-0.077127, 0, -0.99702126, 0, 1, 0, 0.99702126, 0, -0.077127, -117.2, 25.72, 198.1)
+script = ExtResource("2_jdp50")
+id = "43706/1"
+nazev = "Pietas"
+poradi = 661
+gen_pozice = Vector3(-117.2, 25.72, 198.1)
+gen_natoceni = -1.648
+gen_nazev = "Pietas"
+
+[node name="Pietas_43706-2" type="Node3D" parent="Zastavky" unique_id=837777875]
+transform = Transform3D(0.086687416, 0, 0.99623555, 0, 1, 0, -0.99623555, 0, 0.086687416, -145.2, 24.81, 235.1)
+script = ExtResource("2_jdp50")
+id = "43706/2"
+nazev = "Pietas"
+poradi = 662
+gen_pozice = Vector3(-145.2, 24.81, 235.1)
+gen_natoceni = 1.484
+gen_nazev = "Pietas"
+
+[node name="Poliklinika_Doubravka_57092-4" type="Node3D" parent="Zastavky" unique_id=1057196939]
+transform = Transform3D(0.7706091, 0, -0.6373081, 0, 1, 0, 0.6373081, 0, 0.7706091, -63.1, 14.97, -351.3)
+script = ExtResource("2_jdp50")
+id = "57092/4"
+nazev = "Poliklinika Doubravka"
+poradi = 699
+gen_pozice = Vector3(-63.1, 14.97, -351.3)
+gen_natoceni = -0.691
+gen_nazev = "Poliklinika Doubravka"
+
+[node name="U_Pietasu_57173-2" type="Node3D" parent="Zastavky" unique_id=1428536299]
+transform = Transform3D(0.945066, 0, -0.3268797, 0, 1, 0, 0.3268797, 0, 0.945066, -276.4, 21.04, 289.4)
+script = ExtResource("2_jdp50")
+id = "57173/2"
+nazev = "U Pietasu"
+poradi = 701
+gen_pozice = Vector3(-276.4, 21.04, 289.4)
+gen_natoceni = -0.333
+gen_nazev = "U Pietasu"

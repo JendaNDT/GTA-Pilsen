@@ -1,0 +1,176 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_go843"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_heslx"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="3_jru1y"]
+
+[node name="Oblast_7_13" type="Node3D" unique_id=1741601662]
+script = ExtResource("1_go843")
+bunka = Vector2i(7, 13)
+stred = Vector2(-1280, 2816)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=314913229]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1561926455]
+
+[node name="Bory_26935-1" type="Node3D" parent="Zastavky" unique_id=2091427309]
+transform = Transform3D(-0.16346678, 0, 0.98654884, 0, 1, 0, -0.98654884, 0, -0.16346678, 35.4, 35.09, -481.3)
+script = ExtResource("2_heslx")
+id = "26935/1"
+nazev = "Bory"
+poradi = 73
+gen_pozice = Vector3(35.4, 35.09, -481.3)
+gen_natoceni = 1.735
+gen_nazev = "Bory"
+
+[node name="Bory_26935-3" type="Node3D" parent="Zastavky" unique_id=875378237]
+transform = Transform3D(-0.16346678, 0, 0.98654884, 0, 1, 0, -0.98654884, 0, -0.16346678, 5.8, 34.83, -492.3)
+script = ExtResource("2_heslx")
+id = "26935/3"
+nazev = "Bory"
+poradi = 105
+gen_pozice = Vector3(5.8, 34.83, -492.3)
+gen_natoceni = 1.735
+gen_nazev = "Bory"
+
+[node name="Bory_26935-2" type="Node3D" parent="Zastavky" unique_id=920493042]
+transform = Transform3D(0.6763503, 0, -0.73658013, 0, 1, 0, 0.73658013, 0, 0.6763503, 29.7, 34.12, -444.8)
+script = ExtResource("2_heslx")
+id = "26935/2"
+nazev = "Bory"
+poradi = 108
+gen_pozice = Vector3(29.7, 34.12, -444.8)
+gen_natoceni = -0.828
+gen_nazev = "Bory"
+
+[node name="Borský_park_66652-5" type="Node3D" parent="Zastavky" unique_id=1549269971]
+transform = Transform3D(-0.7721411, 0, 0.6354511, 0, 1, 0, -0.6354511, 0, -0.7721411, 379.9, 36.05, -414.7)
+script = ExtResource("2_heslx")
+id = "66652/5"
+nazev = "Borský park"
+poradi = 138
+gen_pozice = Vector3(379.9, 36.05, -414.7)
+gen_natoceni = 2.453
+gen_nazev = "Borský park"
+
+[node name="Věznice_Bory_57066-1" type="Node3D" parent="Zastavky" unique_id=936144520]
+transform = Transform3D(-0.94552505, 0, 0.3255494, 0, 1, 0, -0.3255494, 0, -0.94552505, 49.1, 23.64, 104.6)
+script = ExtResource("2_heslx")
+id = "57066/1"
+nazev = "Věznice Bory"
+poradi = 139
+gen_pozice = Vector3(49.1, 23.64, 104.6)
+gen_natoceni = 2.81
+gen_nazev = "Věznice Bory"
+
+[node name="Věznice_Bory_57066-2" type="Node3D" parent="Zastavky" unique_id=453975813]
+transform = Transform3D(-0.85430056, 0, 0.5197793, 0, 1, 0, -0.5197793, 0, -0.85430056, 132.7, 25.71, -19.7)
+script = ExtResource("2_heslx")
+id = "57066/2"
+nazev = "Věznice Bory"
+poradi = 152
+gen_pozice = Vector3(132.7, 25.71, -19.7)
+gen_natoceni = 2.595
+gen_nazev = "Věznice Bory"
+
+[node name="Borský_park_66652-6" type="Node3D" parent="Zastavky" unique_id=375858361]
+transform = Transform3D(-0.7721411, 0, 0.6354511, 0, 1, 0, -0.6354511, 0, -0.7721411, 389.3, 36.05, -407.1)
+script = ExtResource("2_heslx")
+id = "66652/6"
+nazev = "Borský park"
+poradi = 153
+gen_pozice = Vector3(389.3, 36.05, -407.1)
+gen_natoceni = 2.453
+gen_nazev = "Borský park"
+
+[node name="Bory_26935-4" type="Node3D" parent="Zastavky" unique_id=139852697]
+transform = Transform3D(-0.5615052, 0, 0.8274732, 0, 1, 0, -0.8274732, 0, -0.5615052, -8.5, 32.99, -411.3)
+script = ExtResource("2_heslx")
+id = "26935/4"
+nazev = "Bory"
+poradi = 154
+gen_pozice = Vector3(-8.5, 32.99, -411.3)
+gen_natoceni = 2.167
+gen_nazev = "Bory"
+
+[node name="Borský_park_66652-3" type="Node3D" parent="Zastavky" unique_id=75419699]
+transform = Transform3D(-0.64818895, 0, -0.76147956, 0, 1, 0, 0.76147956, 0, -0.64818895, 480.1, 35.86, -407.1)
+script = ExtResource("2_heslx")
+id = "66652/3"
+nazev = "Borský park"
+poradi = 156
+gen_pozice = Vector3(480.1, 35.86, -407.1)
+gen_natoceni = -2.276
+gen_nazev = "Borský park"
+
+[node name="Borský_park_66652-4" type="Node3D" parent="Zastavky" unique_id=1162239368]
+transform = Transform3D(-0.6266161, 0, -0.77932805, 0, 1, 0, 0.77932805, 0, -0.6266161, 480.8, 36.08, -429.1)
+script = ExtResource("2_heslx")
+id = "66652/4"
+nazev = "Borský park"
+poradi = 192
+gen_pozice = Vector3(480.8, 36.08, -429.1)
+gen_natoceni = -2.248
+gen_nazev = "Borský park"
+
+[node name="Bory_26935-8" type="Node3D" parent="Zastavky" unique_id=2077983585]
+transform = Transform3D(-0.72442764, 0, 0.68935084, 0, 1, 0, -0.68935084, 0, -0.72442764, 40.5, 33.74, -438)
+script = ExtResource("2_heslx")
+id = "26935/8"
+nazev = "Bory"
+poradi = 193
+gen_pozice = Vector3(40.5, 33.74, -438)
+gen_natoceni = 2.381
+gen_nazev = "Bory"
+
+[node name="U_Darebáka_47343-1" type="Node3D" parent="Zastavky" unique_id=1012729067]
+transform = Transform3D(-0.6868919, 0, 0.72675955, 0, 1, 0, -0.72675955, 0, -0.6868919, -168.5, 32.59, -230.1)
+script = ExtResource("2_heslx")
+id = "47343/1"
+nazev = "U Darebáka"
+poradi = 194
+gen_pozice = Vector3(-168.5, 32.59, -230.1)
+gen_natoceni = 2.328
+gen_nazev = "U Darebáka"
+
+[node name="U_Darebáka_47343-2" type="Node3D" parent="Zastavky" unique_id=1543745544]
+transform = Transform3D(-0.6670215, 0, 0.7450385, 0, 1, 0, -0.7450385, 0, -0.6670215, -244.9, 34.63, -144.4)
+script = ExtResource("2_heslx")
+id = "47343/2"
+nazev = "U Darebáka"
+poradi = 240
+gen_pozice = Vector3(-244.9, 34.63, -144.4)
+gen_natoceni = 2.301
+gen_nazev = "U Darebáka"
+
+[node name="Bory_26935-6" type="Node3D" parent="Zastavky" unique_id=1452209938]
+transform = Transform3D(-0.5615052, 0, 0.8274732, 0, 1, 0, -0.8274732, 0, -0.5615052, -17.9, 33.05, -417.6)
+script = ExtResource("2_heslx")
+id = "26935/6"
+nazev = "Bory"
+poradi = 241
+gen_pozice = Vector3(-17.9, 33.05, -417.6)
+gen_natoceni = 2.167
+gen_nazev = "Bory"
+
+[node name="Bory_26935-5" type="Node3D" parent="Zastavky" unique_id=711129497]
+transform = Transform3D(-0.48135823, 0, 0.876524, 0, 1, 0, -0.876524, 0, -0.48135823, 11.6, 35.09, -503.8)
+script = ExtResource("2_heslx")
+id = "26935/5"
+nazev = "Bory"
+poradi = 394
+gen_pozice = Vector3(11.6, 35.09, -503.8)
+gen_natoceni = 2.073
+gen_nazev = "Bory"
+
+[node name="Mista" type="Node3D" parent="." unique_id=517636734]
+
+[node name="Věznice_Bory_pamatka-13" type="Node3D" parent="Mista" unique_id=647149919]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 44.4, 23.76, 103.5)
+script = ExtResource("3_jru1y")
+popis = "Borská věznice s typickým hvězdicovým půdorysem."
+id = "pamatka-13"
+nazev = "Věznice Bory"
+poradi = 13
+gen_pozice = Vector3(44.4, 23.76, 103.5)
+gen_nazev = "Věznice Bory"

@@ -1,0 +1,55 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_8jqew"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_7mnua"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="3_t85b0"]
+
+[node name="Oblast_8_6" type="Node3D" unique_id=1534136441]
+script = ExtResource("1_8jqew")
+bunka = Vector2i(8, 6)
+stred = Vector2(-256, -4352)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=144135902]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=618564449]
+
+[node name="Košutka_57100-1" type="Node3D" parent="Zastavky" unique_id=1492833846]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -70.5, 52.05, 487.9)
+script = ExtResource("2_7mnua")
+id = "57100/1"
+nazev = "Košutka"
+poradi = 87
+gen_pozice = Vector3(-70.5, 52.05, 487.9)
+gen_nazev = "Košutka"
+
+[node name="Košutka_57100-2" type="Node3D" parent="Zastavky" unique_id=1482529878]
+transform = Transform3D(-0.9418869, 0, 0.33593017, 0, 1, 0, -0.33593017, 0, -0.9418869, -113.7, 51.56, 469.2)
+script = ExtResource("2_7mnua")
+id = "57100/2"
+nazev = "Košutka"
+poradi = 91
+gen_pozice = Vector3(-113.7, 51.56, 469.2)
+gen_natoceni = 2.799
+gen_nazev = "Košutka"
+
+[node name="Mista" type="Node3D" parent="." unique_id=1795178158]
+
+[node name="Šídlovský_rybník_pamatka-32" type="Node3D" parent="Mista" unique_id=472798404]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 288.2, 27.55, 178.3)
+script = ExtResource("3_t85b0")
+popis = "Jeden z Boleveckých rybníků, kterému se říká Šídlovák."
+id = "pamatka-32"
+nazev = "Šídlovský rybník"
+poradi = 32
+gen_pozice = Vector3(288.2, 27.55, 178.3)
+gen_nazev = "Šídlovský rybník"
+
+[node name="Kamenný_rybník_pamatka-42" type="Node3D" parent="Mista" unique_id=198742484]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 480.8, 24.75, -423.6)
+script = ExtResource("3_t85b0")
+popis = "Jeden z Boleveckých rybníků, schovaný v lesích na severu města."
+id = "pamatka-42"
+nazev = "Kamenný rybník"
+poradi = 42
+gen_pozice = Vector3(480.8, 24.75, -423.6)
+gen_nazev = "Kamenný rybník"

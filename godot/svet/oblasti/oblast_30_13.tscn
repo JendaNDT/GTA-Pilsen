@@ -1,0 +1,23 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_4qk0o"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="2_16qkg"]
+
+[node name="Oblast_30_13" type="Node3D" unique_id=905561406]
+script = ExtResource("1_4qk0o")
+bunka = Vector2i(30, 13)
+stred = Vector2(22272, 2816)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=602797053]
+
+[node name="Mista" type="Node3D" parent="." unique_id=322071298]
+
+[node name="Vodní_hamr_Dobřív_pamatka-52" type="Node3D" parent="Mista" unique_id=1845546667]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 387.8, 110.26, 283.4)
+script = ExtResource("2_16qkg")
+popis = "Vodní kola pohánějí stroje historické kovárny, včetně těžkých bucharů."
+id = "pamatka-52"
+nazev = "Vodní hamr Dobřív"
+poradi = 52
+gen_pozice = Vector3(387.8, 110.26, 283.4)
+gen_nazev = "Vodní hamr Dobřív"

@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_8x55r"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_anr78"]
+
+[node name="Oblast_12_16" type="Node3D" unique_id=1427938093]
+script = ExtResource("1_8x55r")
+bunka = Vector2i(12, 16)
+stred = Vector2(3840, 5888)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1876244432]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1209194613]
+
+[node name="K_Losiné_55690-3" type="Node3D" parent="Zastavky" unique_id=146288576]
+transform = Transform3D(-0.86098534, 0, 0.5086298, 0, 1, 0, -0.5086298, 0, -0.86098534, -455.8, 71.16, 456.2)
+script = ExtResource("2_anr78")
+id = "55690/3"
+nazev = "K Losiné"
+poradi = 593
+gen_pozice = Vector3(-455.8, 71.16, 456.2)
+gen_natoceni = 2.608
+gen_nazev = "K Losiné"
+
+[node name="K_Radyni_55689-1" type="Node3D" parent="Zastavky" unique_id=324636291]
+transform = Transform3D(-0.9999207, 0, -0.0125923725, 0, 1, 0, 0.0125923725, 0, -0.9999207, -511.3, 63.57, -179)
+script = ExtResource("2_anr78")
+id = "55689/1"
+nazev = "K Radyni"
+poradi = 594
+gen_pozice = Vector3(-511.3, 63.57, -179)
+gen_natoceni = -3.129
+gen_nazev = "K Radyni"

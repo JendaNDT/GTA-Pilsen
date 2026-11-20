@@ -1,0 +1,73 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_rg0qd"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_vh1xe"]
+
+[node name="Oblast_6_16" type="Node3D" unique_id=449471501]
+script = ExtResource("1_rg0qd")
+bunka = Vector2i(6, 16)
+stred = Vector2(-2304, 5888)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=773916726]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1800598765]
+
+[node name="Litice_47352-1" type="Node3D" parent="Zastavky" unique_id=2119296918]
+transform = Transform3D(-0.9995321, 0, -0.03058782, 0, 1, 0, 0.03058782, 0, -0.9995321, 385.6, 60.95, 94.7)
+script = ExtResource("2_vh1xe")
+id = "47352/1"
+nazev = "Litice"
+poradi = 145
+gen_pozice = Vector3(385.6, 60.95, 94.7)
+gen_natoceni = -3.111
+gen_nazev = "Litice"
+
+[node name="Litice_47352-2" type="Node3D" parent="Zastavky" unique_id=1882303641]
+transform = Transform3D(-0.9998624, 0, -0.016591892, 0, 1, 0, 0.016591892, 0, -0.9998624, 395.7, 60.97, 74.8)
+script = ExtResource("2_vh1xe")
+id = "47352/2"
+nazev = "Litice"
+poradi = 146
+gen_pozice = Vector3(395.7, 60.97, 74.8)
+gen_natoceni = -3.125
+gen_nazev = "Litice"
+
+[node name="Šlovická_68859-1" type="Node3D" parent="Zastavky" unique_id=1269253476]
+transform = Transform3D(-0.2717429, 0, 0.96236986, 0, 1, 0, -0.96236986, 0, -0.2717429, 325, 57.81, -4.2)
+script = ExtResource("2_vh1xe")
+id = "68859/1"
+nazev = "Šlovická"
+poradi = 449
+gen_pozice = Vector3(325, 57.81, -4.2)
+gen_natoceni = 1.846
+gen_nazev = "Šlovická"
+
+[node name="Větrná_68860-1" type="Node3D" parent="Zastavky" unique_id=15029481]
+transform = Transform3D(-0.92918575, 0, -0.36961314, 0, 1, 0, 0.36961314, 0, -0.92918575, 170.8, 42.21, -131)
+script = ExtResource("2_vh1xe")
+id = "68860/1"
+nazev = "Větrná"
+poradi = 450
+gen_pozice = Vector3(170.8, 42.21, -131)
+gen_natoceni = -2.763
+gen_nazev = "Větrná"
+
+[node name="Sídliště_Litice_68861-1" type="Node3D" parent="Zastavky" unique_id=1697221880]
+transform = Transform3D(0.022794375, 0, 0.9997402, 0, 1, 0, -0.9997402, 0, 0.022794375, 191, 27.79, -393.7)
+script = ExtResource("2_vh1xe")
+id = "68861/1"
+nazev = "Sídliště Litice"
+poradi = 451
+gen_pozice = Vector3(191, 27.79, -393.7)
+gen_natoceni = 1.548
+gen_nazev = "Sídliště Litice"
+
+[node name="Sídliště_Litice_68861-2" type="Node3D" parent="Zastavky" unique_id=621508971]
+transform = Transform3D(0.022794375, 0, 0.9997402, 0, 1, 0, -0.9997402, 0, 0.022794375, 191, 27.79, -393.7)
+script = ExtResource("2_vh1xe")
+id = "68861/2"
+nazev = "Sídliště Litice"
+poradi = 452
+gen_pozice = Vector3(191, 27.79, -393.7)
+gen_natoceni = 1.548
+gen_nazev = "Sídliště Litice"

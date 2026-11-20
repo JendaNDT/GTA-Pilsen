@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_q7kxb"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_jopdc"]
+
+[node name="Oblast_14_15" type="Node3D" unique_id=1208194865]
+script = ExtResource("1_q7kxb")
+bunka = Vector2i(14, 15)
+stred = Vector2(5888, 4864)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=145218356]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1926991835]
+
+[node name="Starý_Plzenec,_U_Mlýna_50750-1" type="Node3D" parent="Zastavky" unique_id=1392327836]
+transform = Transform3D(0.5881718, 0, 0.808736, 0, 1, 0, -0.808736, 0, 0.5881718, 274.4, 31.06, -26.9)
+script = ExtResource("2_jopdc")
+id = "50750/1"
+nazev = "Starý Plzenec, U Mlýna"
+poradi = 645
+gen_pozice = Vector3(274.4, 31.06, -26.9)
+gen_natoceni = 0.942
+gen_nazev = "Starý Plzenec, U Mlýna"
+
+[node name="Starý_Plzenec,_U_Mlýna_50750-2" type="Node3D" parent="Zastavky" unique_id=839442804]
+transform = Transform3D(0.5096658, 0, 0.8603725, 0, 1, 0, -0.8603725, 0, 0.5096658, 244.1, 31.65, -53.6)
+script = ExtResource("2_jopdc")
+id = "50750/2"
+nazev = "Starý Plzenec, U Mlýna"
+poradi = 653
+gen_pozice = Vector3(244.1, 31.65, -53.6)
+gen_natoceni = 1.036
+gen_nazev = "Starý Plzenec, U Mlýna"

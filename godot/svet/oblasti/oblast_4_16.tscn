@@ -1,0 +1,43 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_1impc"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_jvb13"]
+
+[node name="Oblast_4_16" type="Node3D" unique_id=1369352024]
+script = ExtResource("1_1impc")
+bunka = Vector2i(4, 16)
+stred = Vector2(-4352, 5888)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=2085772256]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=947503644]
+
+[node name="Pod_Dubovkou_18057-1" type="Node3D" parent="Zastavky" unique_id=1581519912]
+transform = Transform3D(0.92376435, 0, -0.38296142, 0, 1, 0, 0.38296142, 0, 0.92376435, 312, 25.46, -33)
+script = ExtResource("2_jvb13")
+id = "18057/1"
+nazev = "Pod Dubovkou"
+poradi = 282
+gen_pozice = Vector3(312, 25.46, -33)
+gen_natoceni = -0.393
+gen_nazev = "Pod Dubovkou"
+
+[node name="Náves_Lhota_18058-2" type="Node3D" parent="Zastavky" unique_id=1485543539]
+transform = Transform3D(0.98816544, 0, -0.15339202, 0, 1, 0, 0.15339202, 0, 0.98816544, 285.3, 14.28, 402.7)
+script = ExtResource("2_jvb13")
+id = "18058/2"
+nazev = "Náves Lhota"
+poradi = 288
+gen_pozice = Vector3(285.3, 14.28, 402.7)
+gen_natoceni = -0.154
+gen_nazev = "Náves Lhota"
+
+[node name="Pod_Dubovkou_18057-2" type="Node3D" parent="Zastavky" unique_id=324392167]
+transform = Transform3D(0.92792094, 0, -0.37277704, 0, 1, 0, 0.37277704, 0, 0.92792094, 319.9, 25.54, -48.7)
+script = ExtResource("2_jvb13")
+id = "18057/2"
+nazev = "Pod Dubovkou"
+poradi = 289
+gen_pozice = Vector3(319.9, 25.54, -48.7)
+gen_natoceni = -0.382
+gen_nazev = "Pod Dubovkou"

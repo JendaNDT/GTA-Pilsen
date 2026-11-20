@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_0y7gg"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_s6qw7"]
+
+[node name="Oblast_16_7" type="Node3D" unique_id=1037534572]
+script = ExtResource("1_0y7gg")
+bunka = Vector2i(16, 7)
+stred = Vector2(7936, -3328)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=848712493]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=729459035]
+
+[node name="Dýšina,_náves_53186-1" type="Node3D" parent="Zastavky" unique_id=778926069]
+transform = Transform3D(-0.99967253, 0, 0.025589922, 0, 1, 0, -0.025589922, 0, -0.99967253, 240.6, 48.44, -17.6)
+script = ExtResource("2_s6qw7")
+id = "53186/1"
+nazev = "Dýšina, náves"
+poradi = 506
+gen_pozice = Vector3(240.6, 48.44, -17.6)
+gen_natoceni = 3.116
+gen_nazev = "Dýšina, náves"
+
+[node name="Dýšina,_Armaturka_7651-1" type="Node3D" parent="Zastavky" unique_id=1068780727]
+transform = Transform3D(-0.93533456, 0, 0.35376438, 0, 1, 0, -0.35376438, 0, -0.93533456, 399.2, 61.89, -427.9)
+script = ExtResource("2_s6qw7")
+id = "7651/1"
+nazev = "Dýšina, Armaturka"
+poradi = 507
+gen_pozice = Vector3(399.2, 61.89, -427.9)
+gen_natoceni = 2.78
+gen_nazev = "Dýšina, Armaturka"

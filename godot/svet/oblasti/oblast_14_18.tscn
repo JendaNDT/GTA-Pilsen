@@ -1,0 +1,23 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_ggich"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="2_mfdar"]
+
+[node name="Oblast_14_18" type="Node3D" unique_id=1880036933]
+script = ExtResource("1_ggich")
+bunka = Vector2i(14, 18)
+stred = Vector2(5888, 7936)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1486273545]
+
+[node name="Mista" type="Node3D" parent="." unique_id=1592009822]
+
+[node name="Hrad_Radyně_pamatka-33" type="Node3D" parent="Mista" unique_id=1841770209]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 332.4, 233.35, -475.4)
+script = ExtResource("2_mfdar")
+popis = "Zřícenina hradu, který nechal ve 14. století postavit Karel IV. Je vidět z velké části Plzeňska."
+id = "pamatka-33"
+nazev = "Hrad Radyně"
+poradi = 33
+gen_pozice = Vector3(332.4, 233.35, -475.4)
+gen_nazev = "Hrad Radyně"
