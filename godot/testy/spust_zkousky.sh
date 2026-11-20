@@ -26,8 +26,10 @@ zkouska() {
 zkouska import -s res://testy/test_import.gd
 zkouska most testy/scenar_most.tscn
 zkouska mhd testy/scenar_mhd.tscn
+zkouska ulozeni-1 testy/scenar_ulozeni.tscn -- --faze 1
+zkouska ulozeni-2-po-restartu testy/scenar_ulozeni.tscn -- --faze 2
 for dalsi in testy/scenar_*.tscn; do
-  case "$dalsi" in *scenar_most.tscn|*scenar_mhd.tscn) continue ;; esac
+  case "$dalsi" in *scenar_most.tscn|*scenar_mhd.tscn|*scenar_ulozeni.tscn) continue ;; esac
   zkouska "$(basename "$dalsi" .tscn)" "$dalsi"
 done
 

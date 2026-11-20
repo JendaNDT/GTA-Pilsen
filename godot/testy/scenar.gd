@@ -8,6 +8,8 @@ var hra: Hra
 var chyby := 0
 var _snimky := ""
 var _limit := 600.0
+## Ponechat uložení z předchozího běhu (zkouška restartu).
+var zachovat_ulozeni := false
 
 
 func _ready() -> void:
@@ -15,6 +17,10 @@ func _ready() -> void:
 	for i in a.size():
 		if a[i] == "--snimky" and i + 1 < a.size():
 			_snimky = a[i + 1]
+	# každá zkouška má vlastní uložení a začíná od začátku
+	Ulozeni.soubor = "user://zkouska-%s.json" % name
+	if not zachovat_ulozeni:
+		Ulozeni.smaz()
 	hra = load("res://sceny/hra.tscn").instantiate()
 	add_child(hra)
 	_hlidac()

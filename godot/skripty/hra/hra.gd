@@ -27,9 +27,20 @@ var _info_cas := 0.0
 @onready var auta: Node3D = $Auta
 @onready var oblasti: Oblasti = $Oblasti
 @onready var mhd: Mhd = $Mhd
+@onready var menu: Menu = $Menu
 
 var jizda: VuzMhd               ## vůz MHD, ve kterém hráč jede
 var _odjezdy_cas := 0.0
+var objevene := {}              ## id místa -> true
+var statistiky := {}
+var nastaveni := {}
+var cas_zivy := true            ## herní čas běží podle hodin v Plzni
+var _ukladani := 20.0
+var _mista_cas := 0.0
+var kvalita := ""                ## použitá předvolba (nizka, stredni, vysoka)
+var nastaveni_prikaz := ""       ## kvalita z příkazové řádky (--kvalita nizka)
+var _auto_kvalita := -1.0        ## měření snímků pro automatickou kvalitu
+var _snimku := 0
 @onready var hud: Hud = $Hud
 @onready var dotyk: Dotyk = $Dotyk
 
@@ -43,21 +54,58 @@ func _ready() -> void:
 		if a[i] == "--start" and i + 1 < a.size():
 			var p := a[i + 1].split(",")
 			start = Vector2(float(p[0]), float(p[1]))
-	_nastav_cas_ze_systemu()
+	var nova := a.has("--nova-hra")
+	if a.has("--kvalita") and a.find("--kvalita") + 1 < a.size():
+		nastaveni_prikaz = a[a.find("--kvalita") + 1]
+	var u := Ulozeni.nacti() if not nova else Ulozeni.VYCHOZI.duplicate(true)
+	penize = int(u.penize)
+	statistiky = u.statistiky
+	nastaveni = u.nastaveni
+	if nastaveni_prikaz != "":
+		nastaveni.kvalita = nastaveni_prikaz
+	for id: String in u.objevene:
+		objevene[id] = true
+	cas_zivy = bool(u.cas.zivy) or int(u.cas.den) < 0
+	if cas_zivy:
+		_nastav_cas_ze_systemu()
+	else:
+		nastav_cas(float(u.cas.hodina), int(u.cas.den))
+	var ulozeny_hrac: Dictionary = u.hrac
+	if not ulozeny_hrac.is_empty():
+		start = Vector2(float(ulozeny_hrac.x), float(ulozeny_hrac.z))
 	chodec.collision_layer = VRSTVA_HRAC
 	chodec.collision_mask = VRSTVA_SVET | VRSTVA_VOZIDLA
 	mhd.hodiny = ted
 	_sleduj(chodec)
 	dotyk.akce.connect(_akce)
+	menu.zmena_nastaveni.connect(_zmena_nastaveni)
+	menu.pozadavek.connect(_pozadavek_menu)
+	_pouzij_kvalitu()
+	hud.hodiny_viditelne(bool(nastaveni.get("hodiny", true)))
+	AudioServer.set_bus_mute(0, not bool(nastaveni.get("zvuk", true)))
 	hud.nacitani("Načítám Plzeň…")
 	hud.penize(penize)
 	# okolí startu se postaví hned, zbytek se dostaví během hry
 	svet.postav_hned(start, 300.0)
-	chodec.postav_na(start.x, start.y)
-	chodec.natoceni = 2.4
-	_postav_auto_u_startu()
+	chodec.postav_na(start.x, start.y, float(ulozeny_hrac.get("y", NAN)))
+	chodec.natoceni = float(ulozeny_hrac.get("natoceni", 2.4))
+	var ulozene_auto: Dictionary = u.auto
+	if ulozene_auto.is_empty():
+		_postav_auto_u_startu()
+	else:
+		var smer := Vector3(sin(float(ulozene_auto.natoceni)), 0, cos(float(ulozene_auto.natoceni)))
+		auto_hrace = postav_auto(ulozene_auto.typ, Vector3(float(ulozene_auto.x), float(ulozene_auto.y), float(ulozene_auto.z)),
+			smer, Color.html(ulozene_auto.barva))
+		if ulozeny_hrac.get("rezim", "") == "auto":
+			nastoupit.call_deferred(auto_hrace)
 	hud.nacitani("")
-	hud.zprava("Vítej v Plzni! WASD chůze, F nastoupit, myš otáčí kamerou.", 6)
+	hud.penize(penize)
+	if Ulozeni.existuje() and not nova:
+		hud.zprava("Pokračuješ v uložené hře.", 4)
+	elif Vstup.aktivni_dotyk:
+		hud.zprava("Vítej v Plzni! Páčkou vlevo chodíš, tahem vpravo otáčíš pohled.", 6)
+	else:
+		hud.zprava("Vítej v Plzni! WASD chůze, F nastoupit, myš otáčí kamerou.", 6)
 
 
 ## Herní čas v sekundách od 1. 1. 1970 (místní čas v Plzni), jako clock.now v předloze.
@@ -107,13 +155,16 @@ func postav_auto(typ: String, bod: Vector3, smer: Vector3, barva: Color) -> Auto
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("nastoupit"):
+	if event.is_action_pressed("menu") and not menu.visible:
+		_akce("menu")
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("nastoupit"):
 		_akce("nastoupit")
 	elif event.is_action_pressed("na_silnici"):
 		_akce("na_silnici")
 	elif event.is_action_pressed("posun_casu"):
-		cas_hodina = fmod(cas_hodina + 3.0, 24.0)
-		prostredi.nastav_hodinu(cas_hodina, cas_den)
+		cas_zivy = false
+		nastav_cas(cas_hodina + 3.0)
 		hud.zprava("Čas posunut o 3 hodiny", 2)
 
 
@@ -135,6 +186,9 @@ func _akce(nazev: String) -> void:
 		"na_silnici":
 			if rezim == "auto" and auto_hrace:
 				auto_hrace.vrat_na_kola()
+		"menu":
+			menu.otevri(nastaveni, cas_zivy, cas_hodina, "Peníze: %s Kč · objevená místa: %d/%d" % [
+				Hud._tisice(penize), objevene.size(), (Mapa.mista().get("pamatky", []) as Array).size()])
 
 
 ## Nejbližší auto do 4 m od hráče.
@@ -242,12 +296,21 @@ func _povrch(p: Vector3) -> float:
 func _process(delta: float) -> void:
 	if not Mapa.nacteno:
 		return
+	_hlidej_kvalitu(delta)
 	chodec.smer_kamery = kamera.yaw
 	# herní čas plyne stejně rychle jako skutečný
 	cas_hodina += delta / 3600.0
 	if cas_hodina >= 24.0:
 		cas_hodina -= 24.0
 		cas_den += 1
+	_ukladani -= delta
+	if _ukladani <= 0.0:
+		_ukladani = 20.0
+		uloz()
+	_mista_cas -= delta
+	if _mista_cas <= 0.0:
+		_mista_cas = 0.5
+		_kontrola_mist()
 	_info_cas -= delta
 	if _info_cas <= 0.0:
 		_info_cas = 0.5
@@ -292,3 +355,133 @@ func _stav_pro_prohlizec() -> void:
 	var stav := {"x": p.x, "y": p.y, "z": p.z, "rezim": rezim, "dlazdice": svet.pocet_hotovych(),
 		"ceka": svet.ceka_na_stavbu(), "dotyk": Vstup.aktivni_dotyk, "fps": Engine.get_frames_per_second()}
 	JavaScriptBridge.eval("window.__plzen = %s;" % JSON.stringify(stav), true)
+
+
+# ------------------------------------------------------------------ peníze, objevy, ukládání
+
+func pridej_penize(kc: int) -> void:
+	penize = maxi(0, penize + kc)
+	hud.penize(penize)
+
+
+## Objevení památky: do 75 m od místa (missions.js v předloze), odměna a krátký popis.
+func _kontrola_mist() -> void:
+	if rezim == "auto" and auto_hrace == null:
+		return
+	var p := kamera.cil.global_position
+	for o: Node in oblasti.get_children():
+		var skupina := o.get_node_or_null("Mista")
+		if skupina == null:
+			continue
+		for m in skupina.get_children():
+			if not m is Misto or objevene.has(m.id):
+				continue
+			var g: Vector3 = m.global_position
+			if Vector2(g.x - p.x, g.z - p.z).length() < m.dosah:
+				objev(m)
+
+
+func objev(m: Misto) -> void:
+	objevene[m.id] = true
+	pridej_penize(m.odmena)
+	var celkem: int = (Mapa.mista().get("pamatky", []) as Array).size()
+	hud.zprava("Objeveno: %s (%d/%d) · +%d Kč%s" % [m.nazev, objevene.size(), celkem, m.odmena,
+		("\n" + m.popis) if m.popis != "" else ""], 7)
+	uloz()
+
+
+## Stav hry k uložení.
+func stav() -> Dictionary:
+	var u: Dictionary = Ulozeni.VYCHOZI.duplicate(true)
+	u.penize = penize
+	u.objevene = objevene.keys()
+	u.statistiky = statistiky
+	u.nastaveni = nastaveni
+	u.cas = {"zivy": cas_zivy, "den": cas_den, "hodina": cas_hodina}
+	var p := chodec.global_position
+	if rezim == "auto" and auto_hrace:
+		p = auto_hrace.global_position
+	elif rezim == "mhd" and jizda:
+		p = jizda.misto_dveri(1.0)
+		p.y = _povrch(p)
+	u.hrac = {"x": p.x, "y": p.y, "z": p.z, "natoceni": chodec.natoceni, "rezim": rezim if rezim != "mhd" else "pesky"}
+	if auto_hrace:
+		var a := auto_hrace.global_position
+		var z := auto_hrace.global_basis.z
+		u.auto = {"typ": auto_hrace.typ, "barva": auto_hrace.barva.to_html(false), "x": a.x, "y": a.y + 0.1, "z": a.z,
+			"natoceni": atan2(z.x, z.z)}
+	return u
+
+
+func uloz() -> bool:
+	return Ulozeni.uloz(stav())
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST and Mapa.nacteno:
+		uloz()
+
+
+# ------------------------------------------------------------------ nastavení
+
+func _pouzij_kvalitu() -> void:
+	var volba: String = nastaveni.get("kvalita", "auto")
+	if volba == "auto":
+		kvalita = Kvalita.pouzij(Kvalita.vychozi() if kvalita == "" else kvalita, svet, prostredi, get_viewport())
+		_auto_kvalita = 10.0
+		_snimku = 0
+	else:
+		kvalita = Kvalita.pouzij(volba, svet, prostredi, get_viewport())
+		_auto_kvalita = -1.0
+
+
+## Automatická kvalita: po 10 s hraní sníží předvolbu, když hra běží pod 30 snímků za sekundu.
+func _hlidej_kvalitu(delta: float) -> void:
+	if _auto_kvalita < 0.0:
+		return
+	_auto_kvalita -= delta
+	_snimku += 1
+	if _auto_kvalita > 0.0:
+		return
+	var fps := _snimku / 10.0
+	_auto_kvalita = -1.0
+	var i := Kvalita.PORADI.find(kvalita)
+	if fps < 30.0 and i > 0:
+		kvalita = Kvalita.pouzij(Kvalita.PORADI[i - 1], svet, prostredi, get_viewport())
+		hud.zprava("Kvalita grafiky snížena na %s (%.0f snímků/s)" % [Kvalita.PREDVOLBY[kvalita].nazev.to_lower(), fps], 3)
+
+
+func _zmena_nastaveni(klic: String, hodnota: Variant) -> void:
+	match klic:
+		"kvalita":
+			nastaveni.kvalita = hodnota
+			kvalita = ""
+			_pouzij_kvalitu()
+		"zvuk":
+			nastaveni.zvuk = hodnota
+			AudioServer.set_bus_mute(0, not hodnota)
+		"hodiny":
+			nastaveni.hodiny = hodnota
+			hud.hodiny_viditelne(hodnota)
+		"cas_zivy":
+			cas_zivy = hodnota
+			if hodnota:
+				_nastav_cas_ze_systemu()
+		"hodina":
+			cas_zivy = false
+			nastav_cas(hodnota)
+	uloz()
+
+
+func _pozadavek_menu(akce: String) -> void:
+	match akce:
+		"ulozit":
+			if uloz():
+				hud.zprava("Hra uložena", 2)
+		"nova_hra":
+			Ulozeni.smaz()
+			menu.zavri()
+			get_tree().reload_current_scene()
+		"konec":
+			uloz()
+			get_tree().quit()

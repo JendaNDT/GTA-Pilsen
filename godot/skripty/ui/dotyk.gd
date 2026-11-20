@@ -26,7 +26,7 @@ func _ready() -> void:
 	add_child(_koren)
 	_koren.draw.connect(_kresli)
 	var seznam := [["nastoupit", "Nastoupit", Vector2(-120, -250)], ["skok_brzda", "Brzda", Vector2(-120, -140)],
-		["beh", "Běh", Vector2(-240, -140)], ["mapa", "Mapa", Vector2(-120, -360)], ["menu", "Menu", Vector2(-80, 20)]]
+		["beh", "Běh", Vector2(-240, -140)], ["mapa", "Mapa", Vector2(-120, -360)], ["menu", "Menu", Vector2(-80, 80)]]
 	for t: Array in seznam:
 		var b := Button.new()
 		b.text = t[1]

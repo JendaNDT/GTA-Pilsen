@@ -56,6 +56,10 @@ func misto(obec: String, ulice: String) -> void:
 	_ulice.text = ulice
 
 
+func hodiny_viditelne(zapnout: bool) -> void:
+	_cas.visible = zapnout
+
+
 func cas(text: String) -> void:
 	_cas.text = text
 

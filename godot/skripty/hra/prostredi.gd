@@ -66,6 +66,19 @@ func _ready() -> void:
 	_obnov()
 
 
+## Stíny slunce do vzdálenosti (m); 0 = bez stínů (nízká kvalita).
+func nastav_stiny(vzdalenost: float) -> void:
+	if _svetlo == null:
+		return
+	_svetlo.shadow_enabled = vzdalenost > 0.0
+	_svetlo.directional_shadow_max_distance = maxf(50.0, vzdalenost)
+
+
+func nastav_zari(zapnout: bool) -> void:
+	if _env:
+		_env.glow_enabled = zapnout
+
+
 static func rozvrh_oken(h: float) -> Vector3:
 	var hh := fposmod(h, 24.0)
 	var i := int(hh)
