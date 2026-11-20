@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Ověření brzd po načtení auta
+
+Na WebGL 2 prošla zkouška zakázek a garáže po sjednocení počasí při měření brzd. Všech 816 souborů sestavené hry odpovídá ověřovanému archivu. Na témže webu pokračuje úplná sada a dlouhá jízda. [Výsledek a podmínky zkoušky](../E26.md#brzdění-po-vyzvednutí-auta-z-garáže)
+
 ## Ověření ranní špičky a archiv
 
 Na herní revizi `5233937` prošla ranní špička u hlavního nádraží i na Klatovské na WebGL 2 a WebGPU. Nejdelší stání ze všech čtyř běhů dosáhlo 118 s při limitu 120 s. Prošlo také všech 70 cílených prohlížečových případů dopravy. Tři verze Node.js sestavily přesně stejný web jako v archivu. Uložený postup prošel přechodem z E12 i E25 do nové verze a zpět. Zbytek úplné prohlížečové sady pokračuje. [Měření a otisky souborů](../E26.md#špička-na-dvou-místech-a-archiv-po-úpravě-rampy)
