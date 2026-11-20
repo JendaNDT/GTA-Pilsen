@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Archiv a návrat uloženého postupu po úpravě řízení
+
+Tři podporované verze Node.js sestavily stejný web jako archiv revize `dc58b1f`. Návrat s uloženým postupem do E12 a E25 prošel. [Velikosti, otisky a výsledky zkoušek](../E26.md#archiv-a-návrat-uloženého-postupu-po-úpravě-řízení)
+
 ## Opakování dlouhé jízdy
 
 Předchozí jízda skončila ve třetím okruhu po 103,21 km překročením 12 m od bodu trasy. Po úpravě řízení se vůz na fiktivní přímé dráze vrátil z odchylky 11 m s maximem 11,515 m. V samostatné jízdě přes dotčený úsek ujel 1,04 km bez vyprošťování. Prošlo 182 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. Zbývá porovnat zásoby při třetím a čtvrtém návratu. [Výsledky jízdy](../E26.md#návrat-zkušebního-řidiče-do-pruhu)
