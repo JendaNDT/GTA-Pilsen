@@ -391,10 +391,19 @@ func _postav_semafor(rodic: Node3D, i: int) -> void:
 	var h := rizeni.hlavy
 	var o := i * 8
 	var chodci := h[o + 7] > 0.5
+	if Zlomitelny.ulomene.has("semafor/%d" % i):
+		return
+	var telo := Zlomitelny.new()
+	telo.id = "semafor/%d" % i
+	telo.vyska = 3.3
+	telo.polomer = 0.1
+	telo.hmotnost = 70.0
+	telo.position = Vector3(h[o], h[o + 1], h[o + 2])
+	rodic.add_child(telo)
 	var uzel := Node3D.new()
-	uzel.position = Vector3(h[o], h[o + 1], h[o + 2])
+	uzel.name = "Vzhled"
 	uzel.rotation.y = atan2(-h[o + 3], -h[o + 4])
-	rodic.add_child(uzel)
+	telo.add_child(uzel)
 	var sloup := MeshInstance3D.new()
 	var c := CylinderMesh.new()
 	c.top_radius = 0.06
@@ -431,12 +440,20 @@ func _postav_znacku(rodic: Node3D, i: int) -> void:
 	var z := rizeni.znacky
 	var o := i * 6
 	var druh := int(z[o + 5])
-	if druh == 0:
+	if druh == 0 or Zlomitelny.ulomene.has("znacka/%d" % i):
 		return
+	var telo := Zlomitelny.new()
+	telo.id = "znacka/%d" % i
+	telo.vyska = 2.6
+	telo.polomer = 0.05
+	telo.hmotnost = 25.0
+	telo.pevnost = 2.0
+	telo.position = Vector3(z[o], z[o + 1], z[o + 2])
+	rodic.add_child(telo)
 	var uzel := Node3D.new()
-	uzel.position = Vector3(z[o], z[o + 1], z[o + 2])
+	uzel.name = "Vzhled"
 	uzel.rotation.y = atan2(-z[o + 3], -z[o + 4])
-	rodic.add_child(uzel)
+	telo.add_child(uzel)
 	var sloup := MeshInstance3D.new()
 	var c := CylinderMesh.new()
 	c.top_radius = 0.035

@@ -20,10 +20,17 @@ const BARVY := [0xd9dadb, 0x9da3a8, 0x2b2e33, 0x1f3a5f, 0x8f1d1d, 0xb8b0a0, 0x3d
 ## Řídí hráč (čte vstup). Jinak auto stojí nebo ho řídí doprava.
 @export var ridi_hrac := false
 
+signal naraz(sila: float, telo: Node)
+
+## Herní den (pro ranní opravu ulomených zařízení), nastavuje Hra.
+static var herni_den := 0
+
 var plyn := 0.0
 var zatoceni := 0.0
 var rucni := false
-var poskozeni := 0.0
+var poskozeni := 0.0               ## 0–100 %; při 100 je auto nepojízdné
+var _minula := Vector3.ZERO
+var _kour: CPUParticles3D
 var _kola: Array[VehicleWheel3D] = []
 var _spec := {}
 var _zpatecka := false
@@ -56,6 +63,27 @@ func _ready() -> void:
 	cs2.position = Vector3(0, 0.32 + H * 0.62 + H * 0.17, -L * 0.04)
 	add_child(cs2)
 	add_child(ModelAuta.karoserie(_spec, barva, typ))
+	body_entered.connect(_dotyk)
+	_kour = CPUParticles3D.new()
+	_kour.emitting = false
+	_kour.amount = 24
+	_kour.lifetime = 1.6
+	_kour.direction = Vector3.UP
+	_kour.initial_velocity_min = 1.0
+	_kour.initial_velocity_max = 2.0
+	_kour.gravity = Vector3(0, 0.6, 0)
+	_kour.scale_amount_min = 0.4
+	_kour.scale_amount_max = 1.0
+	var koule := SphereMesh.new()
+	koule.radius = 0.3
+	koule.height = 0.6
+	var m := StandardMaterial3D.new()
+	m.albedo_color = Color(0.2, 0.2, 0.2, 0.5)
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	koule.material = m
+	_kour.mesh = koule
+	_kour.position = Vector3(0, H * 0.6, L * 0.38)
+	add_child(_kour)
 	var polomer := 0.39 if typ == "suv" else (0.36 if typ == "van" else 0.31)
 	var rozvor := L * 0.64
 	var rozchod := W * 0.84
@@ -97,6 +125,7 @@ func _physics_process(delta: float) -> void:
 		plyn = 0.0
 		zatoceni = 0.0
 		rucni = true
+	_hlidej_naraz()
 	var v := rychlost()
 	var vmax: float = _spec.max
 	# automatická převodovka: dozadu jen ze zastavení
@@ -108,7 +137,9 @@ func _physics_process(delta: float) -> void:
 	for k in _kola:
 		if k.use_as_traction:
 			tazna += 1
-	var sila := mass * float(_spec.accel) / maxi(1, tazna)
+	# poškozený motor má menší výkon, při 100 % auto nejede
+	var vykon := 0.0 if poskozeni >= 100.0 else 1.0 - poskozeni / 100.0 * 0.7
+	var sila := mass * float(_spec.accel) / maxi(1, tazna) * vykon
 	var motor := 0.0
 	var brzda := 0.0
 	if _zpatecka:
@@ -136,6 +167,39 @@ func _physics_process(delta: float) -> void:
 	# mírný odpor vzduchu a valení
 	if linear_velocity.length() > 0.5:
 		apply_central_force(-linear_velocity * linear_velocity.length() * 0.35)
+
+
+## Náraz: prudká změna rychlosti při dotyku s jiným tělesem zvýší poškození.
+func _hlidej_naraz() -> void:
+	var dv := (linear_velocity - _minula).length()
+	_minula = linear_velocity
+	if dv > 2.5 and get_contact_count() > 0:
+		poskozeni = minf(100.0, poskozeni + (dv - 2.5) * 4.0)
+		_kour.emitting = poskozeni >= 60.0
+		var tmavsi := clampf(poskozeni / 100.0, 0.0, 1.0) * 0.45
+		for jmeno in ["Model/Spodek", "Model/Kabina"]:
+			var mi := get_node_or_null(jmeno) as MeshInstance3D
+			if mi and mi.mesh:
+				var mat := (mi.mesh as BoxMesh).material as StandardMaterial3D
+				mat.albedo_color = barva.darkened(tmavsi)
+		naraz.emit(dv, null)
+
+
+## Dotyk s tělesem: ulomitelná zařízení se zlomí, ostatní nárazy hlásí signál naraz.
+func _dotyk(telo: Node) -> void:
+	if telo is Zlomitelny:
+		if (telo as Zlomitelny).zasazen(_minula, herni_den):
+			# zlomení stojí část rychlosti, auto jede dál
+			linear_velocity = _minula * 0.85
+
+
+func opravit() -> void:
+	poskozeni = 0.0
+	_kour.emitting = false
+	for jmeno in ["Model/Spodek", "Model/Kabina"]:
+		var mi := get_node_or_null(jmeno) as MeshInstance3D
+		if mi and mi.mesh:
+			((mi.mesh as BoxMesh).material as StandardMaterial3D).albedo_color = barva
 
 
 ## Místo vedle levých předních dveří (pro výstup) ve světových souřadnicích.

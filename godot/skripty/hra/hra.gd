@@ -434,6 +434,9 @@ func _process(delta: float) -> void:
 	if cas_hodina >= 24.0:
 		cas_hodina -= 24.0
 		cas_den += 1
+	if Auto.herni_den != cas_den:
+		Auto.herni_den = cas_den
+		Zlomitelny.oprav(cas_den)
 	_ukladani -= delta
 	if _ukladani <= 0.0:
 		_ukladani = 20.0

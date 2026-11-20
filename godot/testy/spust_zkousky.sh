@@ -26,6 +26,7 @@ zkouska() {
 zkouska import -s res://testy/test_import.gd
 zkouska most testy/scenar_most.tscn
 zkouska mhd testy/scenar_mhd.tscn
+zkouska zkusebna-narazu testy/zkusebna.tscn
 zkouska ulozeni-1 testy/scenar_ulozeni.tscn -- --faze 1
 zkouska ulozeni-2-po-restartu testy/scenar_ulozeni.tscn -- --faze 2
 for dalsi in testy/scenar_*.tscn; do

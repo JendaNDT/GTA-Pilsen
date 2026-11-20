@@ -54,6 +54,9 @@ class Dlazdice:
 	var kolize: StaticBody3D
 	var kolizni_tvary: Array = []
 	var hotova := false
+	var lampy := PackedFloat32Array()
+	var lampy_mm: MultiMesh
+	var vybaveni: Node3D
 
 
 func _ready() -> void:
@@ -268,9 +271,36 @@ func _nastav_kolize(d: Dlazdice, zapnout: bool) -> void:
 				cs.shape = t[0]
 				cs.name = t[1]
 				d.kolize.add_child(cs)
+		if d.vybaveni == null and d.lampy_mm != null:
+			_postav_vybaveni(d)
 	elif d.kolize != null:
 		d.kolize.queue_free()
 		d.kolize = null
+		if d.vybaveni:
+			d.vybaveni.queue_free()
+			d.vybaveni = null
+
+
+## Kolizní sloupky lamp (ulomitelné autem). Vzhled zůstává v MultiMesh dlaždice.
+func _postav_vybaveni(d: Dlazdice) -> void:
+	d.vybaveni = Node3D.new()
+	d.vybaveni.name = "Vybaveni"
+	d.uzel.add_child(d.vybaveni)
+	var L := d.lampy
+	for k in L.size() / 8:
+		var o := k * 8
+		var id := "lampa/%d/%d" % [d.ci, k]
+		if Zlomitelny.ulomene.has(id):
+			continue
+		var z := Zlomitelny.new()
+		z.id = id
+		z.vyska = L[o + 3]
+		z.polomer = 0.12
+		z.multimesh = d.lampy_mm
+		z.instance = k
+		z.vzhled = _lampa_mesh
+		d.vybaveni.add_child(z)
+		z.global_position = Vector3(L[o], L[o + 1], L[o + 2])
 
 
 ## Jeden krok stavby: 0 terén, 1 silnice a mosty, 2 budovy, 3 stromy a lampy.
@@ -358,10 +388,15 @@ func _krok(d: Dlazdice) -> void:
 					var vyska_sloupu := L[o + 3]
 					var b := Basis.IDENTITY.scaled(Vector3(1.0, vyska_sloupu / 7.0, 1.0))
 					mm.set_instance_transform(k, Transform3D(b, Vector3(L[o], L[o + 1], L[o + 2])))
+				for k in pocet:
+					if Zlomitelny.ulomene.has("lampa/%d/%d" % [d.ci, k]):
+						mm.set_instance_transform(k, Transform3D(Basis().scaled(Vector3.ZERO), Vector3(L[k * 8], L[k * 8 + 1], L[k * 8 + 2])))
 				var mmi := MultiMeshInstance3D.new()
 				mmi.multimesh = mm
 				mmi.name = "Lampy"
 				u.add_child(mmi)
+				d.lampy = L
+				d.lampy_mm = mm
 			d.hotova = true
 	d.faze += 1
 
