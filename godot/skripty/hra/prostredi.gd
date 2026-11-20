@@ -1,8 +1,8 @@
 @tool
 class_name Prostredi
 extends Node3D
-## Slunce, obloha, mlha a noční svícení oken podle data a hodiny v Plzni.
-## Barvy a průběhy přebírá z předlohy (src/world/scene.js, setHour).
+## Slunce, obloha, mlha, počasí a noční svícení oken podle data a hodiny v Plzni.
+## Barvy a průběhy přebírá z předlohy (src/world/scene.js, setHour; src/game/game.js, updateWeather).
 
 const DOMOVY := [0.15, 0.09, 0.07, 0.06, 0.08, 0.16, 0.28, 0.27, 0.14, 0.1, 0.09, 0.1, 0.12, 0.11, 0.12,
 	0.16, 0.28, 0.43, 0.6, 0.72, 0.78, 0.72, 0.56, 0.34]
@@ -21,6 +21,18 @@ const DOMOVY := [0.15, 0.09, 0.07, 0.06, 0.08, 0.16, 0.28, 0.27, 0.14, 0.1, 0.09
 		dohled = v
 		_obnov()
 
+## Počasí (déšť, sníh, mlha, mokro); režim "jasno" vypne proměnlivé počasí.
+var pocasi := Pocasi.new()
+## Hustota srážek podle kvality (0 = vypnuto).
+var hustota_srazek := 0.6:
+	set(v):
+		hustota_srazek = v
+		_obnov()
+## Vypínač kapek a vloček (mokro, sníh a mlha zůstávají).
+var srazky_zapnute := true:
+	set(v):
+		srazky_zapnute = v
+		_obnov()
 var slunce_smer := Vector3.UP
 var noc := 0.0
 var den_podil := 1.0
@@ -29,6 +41,8 @@ var _mesic: DirectionalLight3D
 var _env: Environment
 var _obloha: ProceduralSkyMaterial
 var _we: WorldEnvironment
+var _srazky: Srazky
+var _mraky: NoiseTexture2D
 
 
 func _ready() -> void:
@@ -63,6 +77,27 @@ func _ready() -> void:
 	_we = WorldEnvironment.new()
 	_we.environment = _env
 	add_child(_we, false, Node.INTERNAL_MODE_FRONT)
+	# oblaka: šum na obloze, jejich množství řídí počasí
+	var sum := FastNoiseLite.new()
+	sum.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	sum.frequency = 0.006
+	sum.fractal_octaves = 4
+	var mraky := NoiseTexture2D.new()
+	mraky.width = 512
+	mraky.height = 256
+	mraky.seamless = true
+	mraky.noise = sum
+	var rampa := Gradient.new()
+	rampa.set_color(0, Color(0, 0, 0))
+	rampa.set_offset(0, 0.45)
+	rampa.set_color(1, Color(1, 1, 1))
+	rampa.set_offset(1, 0.8)
+	mraky.color_ramp = rampa
+	_obloha.sky_cover = mraky
+	_mraky = mraky
+	_srazky = Srazky.new()
+	_srazky.name = "Srazky"
+	add_child(_srazky, false, Node.INTERNAL_MODE_FRONT)
 	_obnov()
 
 
@@ -102,28 +137,50 @@ func nastav_hodinu(h: float, d := -1) -> void:
 	hodina = h
 
 
+## Počká, až se vygeneruje textura oblaků (pro snímky).
+func pripraveno() -> void:
+	if _mraky and _mraky.get_image() == null:
+		await _mraky.changed
+
+
+## Režim počasí: "promenlive" nebo "jasno".
+func nastav_pocasi(rezim: String) -> void:
+	pocasi.rezim = "jasno" if rezim == "jasno" else "promenlive"
+	_obnov()
+
+
 func _obnov() -> void:
 	if _svetlo == null:
 		return
 	var h := hodina
+	pocasi.obnov(den * 86400.0 + h * 3600.0)
+	var promenlive := pocasi.rezim != "jasno"
+	var mraky := pocasi.oblacnost if promenlive else 0.41
+	var zatazeno := maxf(0.0, mraky - 0.41)
 	slunce_smer = Slunce.smer(den, h)
 	var elev := slunce_smer.y
 	den_podil = smoothstep(-0.16, 0.19, elev)
 	var soumrak := 1.0 - smoothstep(0.035, 0.24, absf(elev + 0.025))
 	noc = 1.0 - smoothstep(-0.17, 0.04, elev)
 	var obzor := Color("b4cfe6").lerp(Color("f0a060"), soumrak * 0.85).lerp(Color("121a2c"), 1.0 - den_podil)
+	obzor = obzor.lerp(Color("9babb3") if den_podil > 0.5 else Color("202733"), zatazeno * 1.3)
 	var vrch := Color("3a7fd0").lerp(Color("050915"), 1.0 - den_podil)
+	vrch = vrch.lerp(Color("7d8a93").lerp(Color("0b0f18"), 1.0 - den_podil), zatazeno * 1.2)
+	var mrak := Color.WHITE.lerp(Color("ffc089"), soumrak * 0.8).lerp(Color("1b2338"), 1.0 - den_podil)
+	mrak = mrak.lerp(Color(0.3, 0.32, 0.36) * mrak, clampf(zatazeno * 1.6, 0.0, 1.0))
+	_obloha.sky_cover_modulate = Color(mrak.r, mrak.g, mrak.b, clampf(0.2 + mraky * 0.75, 0.0, 1.0))
 	_obloha.sky_top_color = vrch
 	_obloha.sky_horizon_color = obzor
 	_obloha.ground_horizon_color = obzor
 	_obloha.ground_bottom_color = Color("5b5a4a").lerp(Color("0c1120"), 1.0 - den_podil)
 	_obloha.sun_angle_max = 8.0
 	_obloha.sky_curve = 0.12
-	_obloha.sky_energy_multiplier = 0.25 + 0.75 * den_podil
+	_obloha.sky_energy_multiplier = (0.25 + 0.75 * den_podil) * (1.0 - zatazeno * 0.55)
 	_svetlo.light_color = Color("fff0d8").lerp(Color("ffa05a"), soumrak)
-	_svetlo.light_energy = 1.6 * smoothstep(-0.06, 0.19, elev)
+	_svetlo.light_energy = 1.6 * maxf(0.08, 1.0 - zatazeno * 1.6) * smoothstep(-0.06, 0.19, elev)
 	_svetlo.visible = elev > -0.06
-	_svetlo.shadow_opacity = 0.43 + 0.48 * den_podil * (1.0 - soumrak * 0.5)
+	# pod zataženou oblohou stíny slábnou
+	_svetlo.shadow_opacity = (0.43 + 0.48 * den_podil * (1.0 - soumrak * 0.5)) * clampf(1.0 - zatazeno * 1.4, 0.15, 1.0)
 	if slunce_smer.length() > 0.001:
 		var smer := -slunce_smer.normalized()
 		var nahoru := Vector3.UP if absf(smer.y) < 0.99 else Vector3.FORWARD
@@ -133,12 +190,18 @@ func _obnov() -> void:
 	# rozptýlené světlo jako polokoule v předloze: teplé shora, méně modré oblohy
 	_env.ambient_light_sky_contribution = 0.35
 	_env.ambient_light_color = Color("ffe9d5").lerp(Color("6f83c0"), 1.0 - den_podil)
-	_env.ambient_light_energy = 0.35 + 0.55 * den_podil
+	_env.ambient_light_energy = (0.35 + 0.55 * den_podil) * (1.0 - zatazeno * 0.3)
 	_env.fog_light_color = obzor
-	_env.fog_depth_begin = dohled * 0.55
-	_env.fog_depth_end = dohled * 1.05
+	# hustá mlha zkrátí dohled (scene.js: near × (1 − 0,96 mlha), far × (1 − 0,83 mlha))
+	_env.fog_depth_begin = dohled * 0.55 * (1.0 - 0.96 * pocasi.mlha)
+	_env.fog_depth_end = dohled * 1.05 * (1.0 - 0.83 * pocasi.mlha)
 	_env.fog_density = 0.9
+	# mlha zakryje oblohu jen při mlhavém počasí (jinak je vidět modř a oblaka)
+	_env.fog_sky_affect = 0.15 + 0.85 * pocasi.mlha
 	_env.tonemap_exposure = 1.0 + noc * 0.6
 	var r := rozvrh_oken(h)
 	RenderingServer.global_shader_parameter_set("noc", noc)
 	RenderingServer.global_shader_parameter_set("okna", Vector4(r.x, r.y, r.z, 1.0))
+	RenderingServer.global_shader_parameter_set("mokro", pocasi.mokro)
+	RenderingServer.global_shader_parameter_set("snih", pocasi.snih)
+	_srazky.nastav(pocasi.dest, pocasi.vlocky, hustota_srazek if srazky_zapnute else 0.0)

@@ -16,6 +16,7 @@ var _posledni_ted := -1.0
 var _obnova := 0.0
 var _hranice := {}              ## Trasa -> Rect2 s rezervou
 var hodiny: Callable            ## vrací herní čas v sekundách od 1. 1. 1970 (místní čas)
+var zvuky: Zvuky
 
 
 func _ready() -> void:
@@ -152,6 +153,8 @@ func _vyber_viditelne(t: float, stred: Vector2) -> void:
 		add_child(v)
 		v.priprav(chci[klic])
 		v.nastav(jr.stav(chci[klic], t), 1.0)
+		if zvuky:
+			v.motor = zvuky.motor_pro(v.clanky[0], v.typ, -8.0)
 		vozy[klic] = v
 
 

@@ -75,9 +75,9 @@ Stav v Godotu: **hotovo** = funguje a je ověřené zkouškou, **částečně** 
 | --- | --- | --- | --- |
 | 43 | Slunce a obloha podle data a času v Plzni | hotovo | stejný výpočet polohy slunce (NOAA) |
 | 44 | Herní čas podle Plzně, ruční nastavení, posun N | hotovo | živý čas, ruční hodina v nastavení, N |
-| 45 | Počasí (déšť, sníh, mlha), přilnavost, „vždy jasno“ | chybí | |
+| 45 | Počasí (déšť, sníh, mlha), přilnavost, „vždy jasno“ | hotovo | stejný výpočet jako `weather.js` (zkouška `test_pocasi`: 12 vzorků shodných s předlohou, rozložení za rok, vysychání); kapky a vločky kolem kamery (vypínatelné, hustota podle kvality), oblaka, mlha, mokrá a zasněžená zem a střechy; brzdná dráha z 50 km/h sucho 8,8 m, mokro 12,2 m, sníh 21,7 m (zkušebna) |
 | 46 | Roční období stromů | chybí | |
-| 47 | Prostorový zvuk motorů, klaksonů, hlášení zastávek, vody | chybí | |
+| 47 | Prostorový zvuk motorů, klaksonů, hlášení zastávek, vody | částečně | syntetizované motory aut, autobusů, tramvají a trolejbusů (výška tónu podle rychlosti), rotor, klakson H, náraz, zvonek tramvaje, česká hlášení zastávek z předlohy (ověřeno v `scenar_mhd`); bez zvuků vody a hamru |
 | 48 | Nastavení kvality (4 předvolby a automaticky) | částečně | 3 předvolby a automaticky (podle snímků za sekundu) |
 | 49 | Fotorežim (O) | chybí | |
 | 50 | Dotykové ovládání na telefonu | částečně | páčka, tlačítka, kamera tahem |

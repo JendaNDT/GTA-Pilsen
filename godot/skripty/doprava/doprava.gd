@@ -122,6 +122,8 @@ func _dopln(stred: Vector3) -> void:
 		add_child(v)
 		auta.append(v)
 		_umisti(v)
+		if hra and hra.zvuky:
+			v.set_meta("motor", hra.zvuky.motor_pro(v, "car", -16.0))
 	var pokusu2 := 0
 	while zaparkovana.size() < pocet_zaparkovanych and pokusu2 < 4:
 		pokusu2 += 1
@@ -225,7 +227,8 @@ func _prekazka(v: VozProvozu) -> float:
 
 func _jed(v: VozProvozu, delta: float) -> void:
 	var delka_hrany := graf.h_delka[v.hrana]
-	var cil := v.cestovni
+	# na mokru a sněhu jezdí pomaleji (vmax × √přilnavosti jako v předloze)
+	var cil := v.cestovni * sqrt(Auto.prilnavost)
 	# zatáčka na konci hrany
 	if v.dalsi >= 0:
 		var ostrost := _smer_konce(v.hrana).angle_to(_smer_zacatku(v.dalsi))
@@ -267,6 +270,8 @@ func _jed(v: VozProvozu, delta: float) -> void:
 	if volno <= 0.0:
 		v.rychlost = 0.0
 	v.s += v.rychlost * delta
+	if v.has_meta("motor"):
+		(v.get_meta("motor") as AudioStreamPlayer3D).pitch_scale = Zvuky.ladeni("car", v.rychlost / 20.0)
 	while v.s > delka_hrany:
 		v.s -= delka_hrany
 		var predchozi := v.hrana

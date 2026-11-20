@@ -5,6 +5,8 @@ render_mode cull_back;
 
 uniform float posun = 0.0015;      // podíl vzdálenosti od kamery
 uniform float drsnost = 0.9;
+global uniform float mokro;    // mokrá vozovka po dešti 0–1
+global uniform float snih;     // sněhová pokrývka 0–1
 
 varying vec3 svet;
 
@@ -34,7 +36,11 @@ void fragment() {
 	float fine = (vnoise(xz * 2.6) - 0.5) * (1.0 - smoothstep(0.15, 0.7, px));
 	float mid = (vnoise(xz * 0.33) - 0.5) * (1.0 - smoothstep(1.2, 5.0, px));
 	float big = vnoise(xz * 0.021) - 0.5;
-	ALBEDO = COLOR.rgb * (fine * 0.13 + mid * 0.10 + big * 0.07 + 1.0);
-	ROUGHNESS = drsnost;
-	SPECULAR = 0.3;
+	vec3 c = COLOR.rgb * (fine * 0.13 + mid * 0.10 + big * 0.07 + 1.0);
+	// mokrý asfalt ztmavne a zlesklí; ujetý sníh pokryje vozovku jen zčásti
+	c *= 1.0 - 0.22 * mokro;
+	c = mix(c, vec3(0.74, 0.78, 0.82), snih * (0.35 + 0.3 * smoothstep(0.4, 0.7, vnoise(xz * 0.7))));
+	ALBEDO = c;
+	ROUGHNESS = mix(drsnost, 0.34, mokro * (1.0 - snih));
+	SPECULAR = 0.3 + 0.2 * mokro;
 }

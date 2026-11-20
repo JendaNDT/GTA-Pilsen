@@ -98,3 +98,5 @@ func scenar() -> void:
 	var zem := Mapa.vyska(p.x, p.z)
 	over(hra.chodec.global_position.y > zem - 0.5 and hra.chodec.is_on_floor(), "hráč stojí na zemi")
 	await snimek("04-vystup")
+	over(hra.zvuky.ohlas(stanice), "hlášení zastávky %s se přehraje" % stanice)
+	over(hra.zvuky._smycky.has("tram") and (hra.zvuky._smycky.tram as AudioStreamWAV).data.size() > 40000, "zvuk tramvaje je připravený")

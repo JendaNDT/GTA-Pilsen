@@ -4,9 +4,9 @@ extends RefCounted
 ## „auto“ začne podle zařízení a po 10 sekundách hraní případně sníží kvalitu podle snímků za sekundu.
 
 const PREDVOLBY := {
-	"nizka": {"nazev": "Nízká", "provoz": 12, "chodci": 8, "parkovani": 26, "dohled": 620.0, "stiny": 0.0, "msaa": Viewport.MSAA_DISABLED, "meritko": 0.75, "stromy": true, "zare": false},
-	"stredni": {"nazev": "Střední", "provoz": 26, "chodci": 16, "parkovani": 46, "dohled": 1100.0, "stiny": 160.0, "msaa": Viewport.MSAA_2X, "meritko": 1.0, "stromy": true, "zare": true},
-	"vysoka": {"nazev": "Vysoká", "provoz": 42, "chodci": 26, "parkovani": 70, "dohled": 1600.0, "stiny": 260.0, "msaa": Viewport.MSAA_4X, "meritko": 1.0, "stromy": true, "zare": true},
+	"nizka": {"nazev": "Nízká", "provoz": 12, "chodci": 8, "parkovani": 26, "dohled": 620.0, "stiny": 0.0, "msaa": Viewport.MSAA_DISABLED, "meritko": 0.75, "stromy": true, "zare": false, "srazky": 0.35},
+	"stredni": {"nazev": "Střední", "provoz": 26, "chodci": 16, "parkovani": 46, "dohled": 1100.0, "stiny": 160.0, "msaa": Viewport.MSAA_2X, "meritko": 1.0, "stromy": true, "zare": true, "srazky": 0.6},
+	"vysoka": {"nazev": "Vysoká", "provoz": 42, "chodci": 26, "parkovani": 70, "dohled": 1600.0, "stiny": 260.0, "msaa": Viewport.MSAA_4X, "meritko": 1.0, "stromy": true, "zare": true, "srazky": 1.0},
 }
 const PORADI := ["nizka", "stredni", "vysoka"]
 
@@ -25,6 +25,7 @@ static func pouzij(nazev: String, svet: Svet, prostredi: Prostredi, viewport: Vi
 	prostredi.dohled = p.dohled
 	prostredi.nastav_stiny(p.stiny)
 	prostredi.nastav_zari(p.zare)
+	prostredi.hustota_srazek = p.srazky
 	viewport.msaa_3d = p.msaa
 	viewport.scaling_3d_scale = p.meritko
 	var hra := svet.get_parent() as Hra

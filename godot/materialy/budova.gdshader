@@ -5,8 +5,10 @@ render_mode cull_back;
 
 global uniform float noc;      // 0 den, 1 noc
 global uniform vec4 okna;      // podíl rozsvícených oken: x byty, y kanceláře, z obchody, w = 1 rozvrh platí
+global uniform float snih;     // sněhová pokrývka 0–1 (střechy)
 
 varying vec3 okno;
+varying float nahoru;
 
 float hash21(vec2 p) {
 	p = fract(p * vec2(123.34, 456.21));
@@ -27,6 +29,7 @@ float rozsah(float v, float a, float b, float w) {
 
 void vertex() {
 	okno = vec3(UV, UV2.x);
+	nahoru = (MODEL_MATRIX * vec4(NORMAL, 0.0)).y;
 }
 
 void fasada(inout vec3 color, inout float svit, inout float sklo, vec2 cell, float code, float style, vec2 width) {
@@ -152,6 +155,10 @@ void fragment() {
 	if (code > 0.0 && style > 0.5) {
 		vec2 width = fwidth(okno.xy) * 0.75 + 0.0001;
 		fasada(color, svit, sklo, okno.xy, code, style, width);
+	}
+	// sníh na plochých a mírně šikmých střechách (snowColor ve weather-surfaces.js)
+	if (snih > 0.0) {
+		color = mix(color, vec3(0.79, 0.85, 0.9), smoothstep(0.17, 0.88, nahoru) * snih);
 	}
 	ALBEDO = color;
 	ROUGHNESS = mix(0.88, 0.12, sklo);

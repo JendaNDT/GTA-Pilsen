@@ -24,6 +24,11 @@ signal naraz(sila: float, telo: Node)
 
 ## Herní den (pro ranní opravu ulomených zařízení), nastavuje Hra.
 static var herni_den := 0
+## Přilnavost povrchu podle počasí (1 = sucho, 0,7 mokro, 0,35 sníh), nastavuje Hra.
+static var prilnavost := 1.0
+
+## Vylepšení z garáže: "brzdy" (silnější brzdy), "pneu" (lepší pneumatiky).
+var vylepseni := {}
 
 var plyn := 0.0
 var zatoceni := 0.0
@@ -32,6 +37,7 @@ var poskozeni := 0.0               ## 0–100 %; při 100 je auto nepojízdné
 var _minula := Vector3.ZERO
 var _naraz_dv := 0.0                ## změna rychlosti během probíhajícího nárazu
 var _naraz_cas := 0.0
+var _neprirazeno := 0.0
 var _kour: CPUParticles3D
 var _kola: Array[VehicleWheel3D] = []
 var _spec := {}
@@ -131,9 +137,10 @@ func _physics_process(delta: float) -> void:
 	var v := rychlost()
 	var vmax: float = _spec.max
 	# automatická převodovka: dozadu jen ze zastavení
+	# (jede-li auto znatelně dopředu, brzda brzdí i po předchozím couvání)
 	if plyn < -0.05 and v < 0.6:
 		_zpatecka = true
-	elif plyn > 0.05 and v > -0.6:
+	elif (plyn > 0.05 and v > -0.6) or v > 1.5:
 		_zpatecka = false
 	var tazna := 0
 	for k in _kola:
@@ -159,12 +166,17 @@ func _physics_process(delta: float) -> void:
 	# arkádové řízení: menší rejd ve vyšší rychlosti
 	var rejd := 0.62 / (1.0 + absf(v) / 14.0)
 	_zatoceni_hladke = move_toward(_zatoceni_hladke, zatoceni * rejd, delta * 2.4)
+	# brzdy z garáže 21/16 síly, pneumatiky +25 % přilnavosti (vehicles.js v předloze)
+	var sila_brzd := prilnavost * (21.0 / 16.0 if vylepseni.get("brzdy", false) else 1.0)
+	var treni := 2.6 * prilnavost * (1.25 if vylepseni.get("pneu", false) else 1.0)
 	for k in _kola:
 		k.engine_force = motor if k.use_as_traction else 0.0
+		k.wheel_friction_slip = treni
 		var predni := k.use_as_steering
-		k.brake = brzda * mass * (0.0105 if predni else 0.0075)
+		# brzda je impuls za krok fyziky: plné brzdění ≈ 10 m/s² na suchu (předloha 16 m/s²)
+		k.brake = brzda * mass * (0.048 if predni else 0.035) * sila_brzd
 		if rucni and not predni:
-			k.brake = mass * 0.02
+			k.brake = mass * 0.04 * prilnavost
 		k.steering = _zatoceni_hladke if predni else 0.0
 	# mírný odpor vzduchu a valení
 	if linear_velocity.length() > 0.5:
@@ -176,11 +188,17 @@ func _hlidej_naraz() -> void:
 	var dv := (linear_velocity - _minula).length()
 	_minula = linear_velocity
 	var dt := get_physics_process_delta_time()
-	if dv > 2.5 and get_contact_count() > 0:
+	# běžná jízda a brzdění mění rychlost nejvýš o 0,2 m/s za krok; víc znamená dotyk s překážkou
+	# během probíhajícího nárazu se počítají i menší změny (tlačení do překážky)
+	if get_contact_count() > 0 and (dv > 1.0 or (_naraz_cas > 0.0 and dv > 0.25)):
 		# jeden náraz se rozloží do několika kroků fyziky – sečte se celá změna rychlosti
-		_naraz_dv += dv
+		# (hlášení dotyku přichází o krok později, proto se přičte i předchozí krok)
+		_naraz_dv += dv + _neprirazeno
+		_neprirazeno = 0.0
 		_naraz_cas = 0.3
-	elif _naraz_cas > 0.0:
+		return
+	_neprirazeno = dv if dv > 1.0 else 0.0
+	if _naraz_cas > 0.0:
 		_naraz_cas -= dt
 		if _naraz_cas <= 0.0:
 			_vyhodnot_naraz(_naraz_dv)

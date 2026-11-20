@@ -11,6 +11,8 @@ var _karty: TabContainer
 var _kvalita: OptionButton
 var _zvuk: CheckButton
 var _hodiny: CheckButton
+var _pocasi: OptionButton
+var _srazky: CheckButton
 var _cas_zivy: CheckButton
 var _hodina: SpinBox
 var _stav: Label
@@ -104,6 +106,20 @@ func _karta_nastaveni() -> void:
 		_kvalita.set_item_metadata(_kvalita.item_count - 1, k)
 	_kvalita.item_selected.connect(func(i: int) -> void: zmena_nastaveni.emit("kvalita", _kvalita.get_item_metadata(i)))
 	r1.add_child(_kvalita)
+	var r0 := HBoxContainer.new()
+	v.add_child(r0)
+	var l0 := Label.new()
+	l0.text = "Počasí"
+	l0.custom_minimum_size.x = 260
+	r0.add_child(l0)
+	_pocasi = OptionButton.new()
+	_pocasi.add_item("Proměnlivé")
+	_pocasi.set_item_metadata(0, "promenlive")
+	_pocasi.add_item("Vždy jasno")
+	_pocasi.set_item_metadata(1, "jasno")
+	_pocasi.item_selected.connect(func(i: int) -> void: zmena_nastaveni.emit("pocasi", _pocasi.get_item_metadata(i)))
+	r0.add_child(_pocasi)
+	_srazky = _prepinac(v, "Kapky deště a vločky", "srazky")
 	_zvuk = _prepinac(v, "Zvuk", "zvuk")
 	_hodiny = _prepinac(v, "Zobrazit hodiny", "hodiny")
 	_cas_zivy = _prepinac(v, "Herní čas podle hodin v Plzni", "cas_zivy")
@@ -146,6 +162,8 @@ func otevri(nastaveni: Dictionary, cas_zivy: bool, hodina: float, info := "") ->
 	for i in _kvalita.item_count:
 		if _kvalita.get_item_metadata(i) == nastaveni.get("kvalita", "auto"):
 			_kvalita.select(i)
+	_pocasi.select(1 if nastaveni.get("pocasi", "promenlive") == "jasno" else 0)
+	_srazky.set_pressed_no_signal(bool(nastaveni.get("srazky", true)))
 	_zvuk.set_pressed_no_signal(bool(nastaveni.get("zvuk", true)))
 	_hodiny.set_pressed_no_signal(bool(nastaveni.get("hodiny", true)))
 	_cas_zivy.set_pressed_no_signal(cas_zivy)
@@ -194,5 +212,8 @@ Polohy značek, stop čar a přechodů v Plzni vycházejí také z otevřeného 
 Odjezdy tramvají, trolejbusů a autobusů vycházejí z GTFS [url=https://opendata.plzen.eu/public/opendata/detail/187]Plzeňských městských dopravních podniků, a.s.[/url] ([url=https://creativecommons.org/licenses/by/4.0/]CC BY 4.0[/url]).
 Tvar říčního dna je vlastní herní odhad podle vzdálenosti od břehu; výška dna u Wilsonova mostu byla porovnána s [url=https://gis.plzen.eu/foto/pov_model/profily/PM_Psany_PP.pdf]profilem R19 povodňového modelu města Plzně[/url].
 Popisy památek obsahují jen obecně známá fakta.
+
+[b]Zvuk[/b]
+Motory, rotor, klakson, náraz a zvonek se syntetizují přímo ve hře. Česká hlášení zastávek jsou z původní hry: syntetický hlas Piper 1.5.0 [url=https://huggingface.co/rhasspy/piper-voices/blob/2f358b6a560e3a913ebf509b2f3344f20b367f94/cs/cs_CZ/jirka/medium/MODEL_CARD]cs_CZ-jirka-medium[/url] (česká data Jirka CC0, základ hlasu Cori Samuel z [url=https://www.openslr.org/109/]Hi-Fi TTS[/url], CC BY 4.0), texty z jízdních řádů PMDP (CC BY 4.0); podrobnosti v data/zvuk/zdroje.txt.
 
 Data převádí nástroj tools/godot/export_svet.mjs z původní webové hry Plzeň naplno; skutečné jsou půdorysy a výšky budov, tvar terénu, průběh ulic, linky a zastávky MHD, názvy ulic, podniků a adresy. Barvy a okna domů jsou stylizované, provoz a chodci jsou simulovaní."""

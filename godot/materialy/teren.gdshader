@@ -7,6 +7,8 @@ uniform sampler2D povrch : filter_nearest, repeat_disable;
 uniform sampler2D paleta : filter_nearest, repeat_disable;
 uniform float pixelu = 256.0;
 global uniform float noc;
+global uniform float mokro;
+global uniform float snih;
 
 varying vec3 svet;
 varying vec3 svet_normala;
@@ -53,12 +55,15 @@ void fragment() {
 	float mid = (vnoise(xz * 0.33) - 0.5) * (1.0 - smoothstep(1.2, 5.0, px));
 	float big = vnoise(xz * 0.021) - 0.5;
 	float gain = fine * 0.13 + mid * 0.10 + big * 0.07 + 1.0;
-	vec3 zeme = c.rgb * gain;
+	vec3 zeme = c.rgb * gain * (1.0 - 0.14 * mokro);
+	if (snih > 0.0) {
+		zeme = mix(zeme, vec3(0.79, 0.85, 0.9), smoothstep(0.17, 0.88, svet_normala.y) * snih);
+	}
 	// voda: tmavá hladina s jemným vlněním
 	float vlna = vnoise(xz * 0.35 + TIME * vec2(0.12, 0.05)) + vnoise(xz * 1.1 - TIME * vec2(0.05, 0.16)) * 0.5;
 	vec3 hladina = vec3(0.035, 0.075, 0.085) * (0.9 + vlna * 0.12);
 	ALBEDO = mix(zeme, hladina, voda);
-	ROUGHNESS = mix(0.95, 0.08, voda);
+	ROUGHNESS = mix(0.95 * (1.0 - 0.38 * mokro), 0.08, voda);
 	SPECULAR = mix(0.25, 0.6, voda);
 	if (voda > 0.01) {
 		vec3 n = normalize(vec3((vlna - 0.75) * 0.08, 1.0, (vnoise(xz * 0.5 + TIME * 0.1) - 0.5) * 0.08));

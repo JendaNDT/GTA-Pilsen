@@ -16,7 +16,7 @@ const VYCHOZI := {
 	"cas": {"zivy": true, "den": -1, "hodina": -1.0},
 	"objevene": [],
 	"statistiky": {},
-	"nastaveni": {"kvalita": "auto", "zvuk": true, "hodiny": true, "pocasi": "promenlive"},
+	"nastaveni": {"kvalita": "auto", "zvuk": true, "hodiny": true, "pocasi": "promenlive", "srazky": true},
 	"garaz": {},
 	"zakazky": {},
 }

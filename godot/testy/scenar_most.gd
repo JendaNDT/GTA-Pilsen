@@ -98,8 +98,12 @@ func scenar() -> void:
 		Vstup.dotyk_pohyb = Vector2(0, 0.4 if auto.rychlost_kmh() < 15.0 else 0.0)
 		await get_tree().physics_frame
 		t += 1.0 / Engine.physics_ticks_per_second
+	# brzdit do zastavení (déle držená brzda ze stání zařadí zpátečku jako v předloze)
 	Vstup.dotyk_pohyb = Vector2(0, -1)
-	await cekej(1.5)
+	t = 0.0
+	while auto.rychlost_kmh() > 0.5 and t < 3.0:
+		await get_tree().physics_frame
+		t += 1.0 / Engine.physics_ticks_per_second
 	Vstup.dotyk_pohyb = Vector2.ZERO
 	await cekej(0.5)
 	over(auto.rychlost_kmh() < 5.0, "auto zastavilo na mostě (x %.0f, %.0f km/h)" % [auto.global_position.x, auto.rychlost_kmh()])

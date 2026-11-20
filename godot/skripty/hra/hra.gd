@@ -33,6 +33,8 @@ var _info_cas := 0.0
 @onready var doprava: Doprava = $Doprava
 @onready var chodci: Chodci = $Chodci
 @onready var policie: Policie = $Policie
+@onready var zvuky: Zvuky = $Zvuky
+var _dvere_minule := false
 var _narazy := 0
 ## Heliporty z předlohy: FN Lochotín, pivovar, Bory a náměstí Republiky.
 const HELIPORTY := [Vector2(106, -1596), Vector2(984, -396), Vector2(-266, 1314), Vector2(48, 52)]
@@ -72,6 +74,9 @@ func _ready() -> void:
 	var nova := a.has("--nova-hra")
 	if a.has("--kvalita") and a.find("--kvalita") + 1 < a.size():
 		nastaveni_prikaz = a[a.find("--kvalita") + 1]
+	# ladění: pevné počasí (--pocasi rain | snow | fog | storm | clear …)
+	if a.has("--pocasi") and a.find("--pocasi") + 1 < a.size():
+		prostredi.pocasi.vynuceno = a[a.find("--pocasi") + 1]
 	var u := Ulozeni.nacti() if not nova else Ulozeni.VYCHOZI.duplicate(true)
 	penize = int(u.penize)
 	statistiky = u.statistiky
@@ -94,6 +99,8 @@ func _ready() -> void:
 	_sleduj(chodec)
 	dotyk.akce.connect(_akce)
 	zakazky.hra = self
+	zvuky.hra = self
+	mhd.zvuky = zvuky
 	doprava.hra = self
 	chodci.hra = self
 	policie.hra = self
@@ -111,6 +118,8 @@ func _ready() -> void:
 	menu.zmena_nastaveni.connect(_zmena_nastaveni)
 	menu.pozadavek.connect(_pozadavek_menu)
 	_pouzij_kvalitu()
+	prostredi.srazky_zapnute = bool(nastaveni.get("srazky", true))
+	prostredi.nastav_pocasi(str(nastaveni.get("pocasi", "promenlive")))
 	hud.hodiny_viditelne(bool(nastaveni.get("hodiny", true)))
 	AudioServer.set_bus_mute(0, not bool(nastaveni.get("zvuk", true)))
 	hud.nacitani("Načítám Plzeň…")
@@ -149,6 +158,17 @@ func nastav_cas(hodina: float, den := -1) -> void:
 		cas_den = den
 	cas_hodina = fposmod(hodina, 24.0)
 	prostredi.nastav_hodinu(cas_hodina, cas_den)
+	_obnov_pocasi()
+
+
+## Přilnavost aut a údaj v hodinách podle počasí.
+func _obnov_pocasi() -> void:
+	var p := prostredi.pocasi
+	Auto.prilnavost = p.prilnavost()
+	var text := "%02d:%02d" % [int(cas_hodina), int(fmod(cas_hodina, 1.0) * 60.0)]
+	if p.rezim != "jasno":
+		text += " · %s %d °C" % [Pocasi.NAZVY.get(p.druh, ""), roundi(p.teplota)]
+	hud.cas(text)
 
 
 func _nastav_cas_ze_systemu() -> void:
@@ -180,6 +200,9 @@ func postav_auto(typ: String, bod: Vector3, smer: Vector3, barva: Color) -> Auto
 	a.collision_mask = VRSTVA_SVET | VRSTVA_HRAC | VRSTVA_VOZIDLA
 	auta.add_child(a)
 	a.body_entered.connect(_naraz.bind(a))
+	a.naraz.connect(func(dv: float, _telo: Node) -> void:
+		if a == auto_hrace:
+			zvuky.efekt("naraz", a.global_position, dv / 18.0))
 	smer.y = 0
 	a.global_transform = Transform3D(Basis.looking_at(-smer.normalized(), Vector3.UP), bod + Vector3(0, 0.15, 0))
 	return a
@@ -456,8 +479,8 @@ func _process(delta: float) -> void:
 		var ctvrt := Mapa.nejblizsi_obec(p.x, p.z)
 		hud.misto(u.get("nazev", "") if not u.is_empty() else "",
 			("%s · " % ctvrt if ctvrt != "" else "") + "%d m n. m." % Mapa.nadmorska_vyska(p.y))
-		hud.cas("%02d:%02d" % [int(cas_hodina), int(fmod(cas_hodina, 1.0) * 60.0)])
 		prostredi.nastav_hodinu(cas_hodina, cas_den)
+		_obnov_pocasi()
 	if OS.has_feature("web") and _info_cas == 0.5:
 		_stav_pro_prohlizec()
 	if rezim == "auto" and auto_hrace:
@@ -467,6 +490,12 @@ func _process(delta: float) -> void:
 		hud.rychlost(vrtulnik.rychlost_kmh())
 		hud.napoveda("Vrtulník · výška %d m%s" % [roundi(vrtulnik.vyska_nad_terenem()), " · F vystoupit" if vrtulnik.pristany else ""])
 	elif rezim == "mhd" and jizda:
+		# hlášení příští zastávky po zavření dveří, zvonek tramvaje
+		if _dvere_minule and not jizda.dvere_otevrene:
+			if jizda.typ == "tram":
+				zvuky.efekt("zvonek", jizda.clanky[0].global_position, 0.5)
+			zvuky.ohlas(jizda.pristi_zastavka())
+		_dvere_minule = jizda.dvere_otevrene
 		hud.rychlost(-1)
 		var pristi := jizda.pristi_zastavka()
 		hud.napoveda("%s · %s%s" % [jizda.nazev_spoje(), ("zastávka " if jizda.dvere_otevrene else "příští: ") + pristi,
@@ -628,6 +657,13 @@ func _zmena_nastaveni(klic: String, hodnota: Variant) -> void:
 		"hodiny":
 			nastaveni.hodiny = hodnota
 			hud.hodiny_viditelne(hodnota)
+		"pocasi":
+			nastaveni.pocasi = hodnota
+			prostredi.nastav_pocasi(hodnota)
+			_obnov_pocasi()
+		"srazky":
+			nastaveni.srazky = hodnota
+			prostredi.srazky_zapnute = hodnota
 		"cas_zivy":
 			cas_zivy = hodnota
 			if hodnota:

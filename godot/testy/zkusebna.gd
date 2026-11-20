@@ -110,5 +110,29 @@ func _ready() -> void:
 	await cekej(3.0)
 	Vstup.dotyk_pohyb = Vector2.ZERO
 	over(auto.rychlost_kmh() < 2.0, "zničené auto se už nerozjede (%.1f km/h)" % auto.rychlost_kmh())
+
+	print("— Brzdná dráha z 50 km/h na suchu, na mokru a na sněhu")
+	var drahy := {}
+	for povrch: Array in [["sucho", 1.0], ["mokro", 0.7], ["sníh", 0.35]]:
+		auto.opravit()
+		Auto.prilnavost = povrch[1]
+		auto.global_transform = Transform3D(Basis.IDENTITY, Vector3(-120, 0.4, -200))
+		auto.linear_velocity = Vector3.ZERO
+		await cekej(0.6)
+		auto.linear_velocity = Vector3(0, 0, 50.0 / 3.6)
+		await cekej(0.05)
+		var z0 := auto.global_position.z
+		Vstup.dotyk_pohyb = Vector2(0, -1)
+		var t := 0.0
+		while auto.rychlost() > 0.3 and t < 12.0:
+			await get_tree().physics_frame
+			t += 1.0 / Engine.physics_ticks_per_second
+		Vstup.dotyk_pohyb = Vector2.ZERO
+		drahy[povrch[0]] = auto.global_position.z - z0
+		print("  %s: %.1f m za %.1f s" % [povrch[0], drahy[povrch[0]], t])
+	Auto.prilnavost = 1.0
+	over(drahy["sucho"] > 6.0 and drahy["sucho"] < 16.0, "na suchu auto zastaví na %.1f m" % drahy["sucho"])
+	over(drahy["mokro"] > drahy["sucho"] * 1.15, "na mokru je brzdná dráha delší (%.1f m)" % drahy["mokro"])
+	over(drahy["sníh"] > drahy["mokro"] * 1.3, "na sněhu je brzdná dráha ještě delší (%.1f m)" % drahy["sníh"])
 	print("VÝSLEDEK: ", "PROŠLO" if chyby == 0 else "SELHALO (%d)" % chyby)
 	get_tree().quit(0 if chyby == 0 else 1)

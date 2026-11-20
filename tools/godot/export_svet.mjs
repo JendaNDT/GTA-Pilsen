@@ -10,7 +10,7 @@
 //   node tools/godot/export_svet.mjs --oblast -1500,-1000,1500,1500   jen výřez (x0,z0,x1,z1 v metrech)
 
 import { register } from 'node:module';
-import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, rename, copyFile, readdir } from 'node:fs/promises';
 import { execSync } from 'node:child_process';
 import { deflateSync } from 'node:zlib';
 import { createHash } from 'node:crypto';
@@ -705,6 +705,11 @@ const mhd = {
   zdroj: timetable.source,
 };
 await writeFile(path.join(OUT, 'mhd.bin'), deflateSync(encodeVariant(mhd), { level: 9 }));
+
+// Hlášení zastávek (syntetický hlas Piper, viz public/audio/zdroje.txt) se kopírují beze změny.
+const ZVUK = path.join(ROOT, 'godot/data/zvuk');
+await mkdir(ZVUK, { recursive: true });
+for (const f of await readdir(path.join(ROOT, 'public/audio'))) await copyFile(path.join(ROOT, 'public/audio', f), path.join(ZVUK, f));
 
 // Silniční graf pro navigaci, zakázky a dopravu (World._initGraph v předloze):
 // uzly, orientované hrany mezi body silnic, výstupní hrany uzlů a vlastnosti silnic.

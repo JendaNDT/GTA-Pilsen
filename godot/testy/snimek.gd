@@ -1,12 +1,15 @@
 extends Node3D
 ## Zkušební snímek světa bez hráče. Spuštění (z kořene repozitáře):
 ##   godot --path godot testy/snimek.tscn -- --kamera x,y,z --cil x,y,z --soubor /cesta/snimek.png [--hodina 14]
+##   [--pocasi rain|snow|fog|storm|clear|partly|cloudy]
 ## Postaví dlaždice kolem kamery, počká na vykreslení a uloží obrázek.
 
 var _kamera := Vector3(120, 30, 520)
 var _cil := Vector3(200, 0, 457)
 var _soubor := "user://snimek.png"
 var _dohled := 900.0
+var _hodina := 14.0
+var _pocasi := ""
 
 
 func _ready() -> void:
@@ -17,12 +20,19 @@ func _ready() -> void:
 			"--cil": _cil = _vec(a[i + 1])
 			"--soubor": _soubor = a[i + 1]
 			"--dohled": _dohled = float(a[i + 1])
+			"--hodina": _hodina = float(a[i + 1])
+			"--pocasi": _pocasi = a[i + 1]
 	var prostredi: Prostredi = $Prostredi
-	prostredi.nastav_hodinu(14.0)
+	if _pocasi != "":
+		prostredi.pocasi.vynuceno = _pocasi
+	else:
+		prostredi.pocasi.rezim = "jasno"
+	prostredi.nastav_hodinu(_hodina, Slunce.den_z_data(2026, 1, 15) if _pocasi == "snow" else -1)
 	var svet: Svet = $Svet
 	var t0 := Time.get_ticks_msec()
 	svet.postav_hned(Vector2(_kamera.x, _kamera.z), _dohled)
 	print("Postaveno %d dlaždic za %d ms" % [svet.pocet_hotovych(), Time.get_ticks_msec() - t0])
+	await prostredi.pripraveno()
 	var cam: Camera3D = $Kamera
 	cam.position = _kamera
 	cam.look_at(_cil)

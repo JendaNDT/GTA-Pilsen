@@ -36,6 +36,8 @@ var _tela: Array[AnimatableBody3D] = []
 var _dvere: Array[Node3D] = []
 var _otevreni := 0.0
 var _popis: Array = []
+var motor: AudioStreamPlayer3D
+var _s_minule := -1.0
 
 
 func priprav(u: Dictionary) -> void:
@@ -155,6 +157,9 @@ func _postav_clanek(i: int, druh: String) -> void:
 
 ## Nastaví polohu podle stavu jízdního řádu.
 func nastav(stav: Dictionary, delta: float) -> void:
+	if motor and delta > 0.0 and _s_minule >= 0.0:
+		motor.pitch_scale = Zvuky.ladeni(typ, absf(stav.s - _s_minule) / delta / 12.0)
+	_s_minule = stav.s
 	s = stav.s
 	index = stav.index
 	cekani = stav.cekani
