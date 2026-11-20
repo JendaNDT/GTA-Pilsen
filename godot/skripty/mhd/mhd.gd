@@ -17,6 +17,7 @@ var _obnova := 0.0
 var _hranice := {}              ## Trasa -> Rect2 s rezervou
 var hodiny: Callable            ## vrací herní čas v sekundách od 1. 1. 1970 (místní čas)
 var zvuky: Zvuky
+var _koleje := {}               ## buňky 4 m, kudy vedou tramvajové koleje
 
 
 func _ready() -> void:
@@ -28,6 +29,14 @@ func _ready() -> void:
 		for i in range(0, t.body.size(), 2):
 			r = r.expand(Vector2(t.body[i], t.body[i + 1]))
 		_hranice[t] = r.grow(dohled + 50.0)
+		if t.typ == "tram":
+			for i in range(0, t.body.size() - 2, 2):
+				var a := Vector2(t.body[i], t.body[i + 1])
+				var b := Vector2(t.body[i + 2], t.body[i + 3])
+				var kroku := ceili(a.distance_to(b) / 2.0)
+				for k in kroku + 1:
+					var p := a.lerp(b, float(k) / maxf(1.0, kroku))
+					_koleje[Vector2i(floori(p.x / 4.0), floori(p.y / 4.0))] = true
 	_prevezmi_upravy_zastavek()
 
 
@@ -87,6 +96,16 @@ static func _prumet(t: JizdniRad.Trasa, p: Vector2, s0: float) -> float:
 	return nej
 
 
+## Bod leží do 4–8 m od tramvajové koleje.
+func u_koleji(x: float, z: float) -> bool:
+	var c := Vector2i(floori(x / 4.0), floori(z / 4.0))
+	for dx in [-1, 0, 1]:
+		for dz in [-1, 0, 1]:
+			if _koleje.has(c + Vector2i(dx, dz)):
+				return true
+	return false
+
+
 func ted() -> float:
 	return hodiny.call() if hodiny.is_valid() else 0.0
 
@@ -123,7 +142,8 @@ func _physics_process(delta: float) -> void:
 		_vyber_viditelne(t, stred)
 	for klic: String in vozy:
 		var v: VuzMhd = vozy[klic]
-		v.nastav(jr.stav(v.udalost, t), delta)
+		if not v.has_meta("smena"):
+			v.nastav(jr.stav(v.udalost, t), delta)
 
 
 func _vyber_viditelne(t: float, stred: Vector2) -> void:
@@ -142,7 +162,7 @@ func _vyber_viditelne(t: float, stred: Vector2) -> void:
 			chci[e.klic] = e
 	_aktivni = zbyle
 	for klic: String in vozy.keys():
-		if not chci.has(klic) and not vozy[klic].has_meta("cestujici"):
+		if not chci.has(klic) and not vozy[klic].has_meta("cestujici") and not vozy[klic].has_meta("smena"):
 			vozy[klic].queue_free()
 			vozy.erase(klic)
 	for klic: String in chci:
@@ -158,12 +178,33 @@ func _vyber_viditelne(t: float, stred: Vector2) -> void:
 		vozy[klic] = v
 
 
+## Převezme spoj pro směnu hráče: vůz stojí na poloze s a dál ho řídí hráč (takeShift).
+func prevezmi(udalost: Dictionary, s: float) -> VuzMhd:
+	var v: VuzMhd = vozy.get(udalost.klic)
+	if v == null:
+		v = VuzMhd.new()
+		v.name = "Vuz_" + str(udalost.klic).replace(":", "_")
+		add_child(v)
+		v.priprav(udalost)
+		if zvuky:
+			v.motor = zvuky.motor_pro(v.clanky[0], v.typ, -8.0)
+		vozy[udalost.klic] = v
+	v.set_meta("smena", true)
+	v.ridit(s, 1.0)
+	return v
+
+
+## Vrátí vůz po směně jízdnímu řádu (dojede svůj spoj).
+func vrat(v: VuzMhd) -> void:
+	v.remove_meta("smena")
+
+
 ## Vůz s otevřenými dveřmi, ke kterému může hráč v bodě p nastoupit (do 4 m od dveří).
 func vuz_k_nastupu(p: Vector3) -> VuzMhd:
 	var nej: VuzMhd = null
 	var nej_d := 4.5
 	for v: VuzMhd in vozy.values():
-		if not v.dvere_otevrene or v.je_konecna():
+		if not v.dvere_otevrene or v.je_konecna() or v.has_meta("smena"):
 			continue
 		for c: Node3D in v.clanky:
 			# vzdálenost k obdélníku článku v půdorysu

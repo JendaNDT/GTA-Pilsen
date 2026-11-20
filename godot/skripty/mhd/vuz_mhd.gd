@@ -185,6 +185,23 @@ func nastav(stav: Dictionary, delta: float) -> void:
 		dv.position.x = -1.27 - 0.25 * _otevreni
 
 
+## Ruční řízení (směna): poloha čela na trase s, dveře a zastávku drží řidič.
+func ridit(nove_s: float, delta: float) -> void:
+	nastav({"s": nove_s, "index": index, "cekani": 1.0 if dvere_otevrene else 0.0}, delta)
+
+
+## Směr jízdy prvního článku (vodorovně).
+func smer() -> Vector3:
+	var z := clanky[0].global_basis.z
+	z.y = 0.0
+	return z.normalized()
+
+
+## Střed čela vozu ve světě.
+func celo() -> Vector3:
+	return clanky[0].global_transform * Vector3(0, 0, float(_popis[0].delka) / 2.0)
+
+
 ## Poloha dveří prvního článku ve světě (pro nástup a výstup).
 func misto_dveri(vne := 1.2) -> Vector3:
 	var c := clanky[0]

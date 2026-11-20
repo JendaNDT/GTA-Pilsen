@@ -19,6 +19,7 @@ const VYCHOZI := {
 	"nastaveni": {"kvalita": "auto", "zvuk": true, "hodiny": true, "pocasi": "promenlive", "srazky": true},
 	"garaz": {},
 	"zakazky": {},
+	"smeny": {},
 }
 
 

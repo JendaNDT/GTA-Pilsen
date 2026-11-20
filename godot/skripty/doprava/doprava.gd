@@ -197,6 +197,7 @@ func _prekazka(v: VozProvozu) -> float:
 	var poloha := v.global_position
 	var vpred := v.global_basis.z
 	var nej := INF
+	v.blokuje = null
 	var dohled := 12.0 + v.rychlost * 2.5
 	var kandidati: Array = []
 	kandidati.append_array(auta)
@@ -211,6 +212,8 @@ func _prekazka(v: VozProvozu) -> float:
 	for o: Node3D in kandidati:
 		if o == v or not is_instance_valid(o):
 			continue
+		if v.ignoruje_auta > 0.0 and o is VozProvozu:
+			continue
 		var d := o.global_position - poloha
 		if absf(d.y) > 4.0:
 			continue
@@ -219,9 +222,14 @@ func _prekazka(v: VozProvozu) -> float:
 			continue
 		var bokem := absf(d.cross(vpred).y)
 		var sirka := 1.6 if o is VozProvozu or o is Auto else (1.9 if o.get_parent() is VuzMhd else 0.9)
+		# protijedoucí vůz se míjí v protisměru (jinak by se vůz a tramvaj navzájem zablokovaly)
+		if sirka > 1.0 and o.global_basis.z.dot(vpred) < -0.5:
+			sirka = 1.0
 		if bokem < sirka:
 			var delka_o := 2.4 if o is VozProvozu or o is Auto else (6.0 if o.get_parent() is VuzMhd else 0.3)
-			nej = minf(nej, pred - v.delka * 0.5 - delka_o)
+			if pred - v.delka * 0.5 - delka_o < nej:
+				nej = pred - v.delka * 0.5 - delka_o
+				v.blokuje = o
 	return nej
 
 
@@ -269,6 +277,7 @@ func _jed(v: VozProvozu, delta: float) -> void:
 		v.rychlost = maxf(cil, v.rychlost - brzda * delta)
 	if volno <= 0.0:
 		v.rychlost = 0.0
+	_zaklesnuti(v, stop_vzdalenost, delta)
 	v.s += v.rychlost * delta
 	if v.has_meta("motor"):
 		(v.get_meta("motor") as AudioStreamPlayer3D).pitch_scale = Zvuky.ladeni("car", v.rychlost / 20.0)
@@ -277,9 +286,11 @@ func _jed(v: VozProvozu, delta: float) -> void:
 		var predchozi := v.hrana
 		v.hrana = v.dalsi if v.dalsi >= 0 else Zakazky._opacna(graf, predchozi)
 		if v.hrana < 0:
+			# slepý konec bez pokračování: vůz zmizí a provoz doplní jiný
 			v.hrana = predchozi
 			v.s = delka_hrany
 			v.rychlost = 0.0
+			v.na_konci = true
 			break
 		v.dalsi = _vyber_dalsi(v.hrana)
 		v.bok = _bok(v.hrana)
@@ -289,10 +300,29 @@ func _jed(v: VozProvozu, delta: float) -> void:
 	_umisti(v)
 
 
+## Dvě auta, která do sebe zaklesla (každé má to druhé před sebou), nebo kruh čekajících aut
+## by stála navždy. Vzájemné zablokování se řeší hned (jede vůz s menším číslem), dlouhé stání
+## bez semaforu a stopky po 12 s: vůz na 2,5 s přestane vidět ostatní auta provozu a vyjede.
+func _zaklesnuti(v: VozProvozu, stop_vzdalenost: float, delta: float) -> void:
+	v.ignoruje_auta = maxf(0.0, v.ignoruje_auta - delta)
+	if v.rychlost > 0.1 or stop_vzdalenost < 3.0:
+		v.stoji = 0.0
+		return
+	v.stoji += delta
+	var b := v.blokuje as VozProvozu
+	if b == null:
+		return
+	if b.blokuje == v and b.rychlost < 0.1 and v.get_instance_id() < b.get_instance_id() and v.stoji > 1.0:
+		v.ignoruje_auta = 2.5
+	elif v.stoji > 12.0:
+		v.ignoruje_auta = 2.5
+		v.stoji = 0.0
+
+
 func _uklid(stred: Vector3) -> void:
 	for i in range(auta.size() - 1, -1, -1):
 		var v := auta[i]
-		if v.global_position.distance_to(stred) > dosah_aut + 60.0:
+		if v.na_konci or v.global_position.distance_to(stred) > dosah_aut + 60.0:
 			auta.remove_at(i)
 			v.queue_free()
 	for i in range(zaparkovana.size() - 1, -1, -1):
@@ -320,7 +350,12 @@ func _zaparkuj(stred: Vector3) -> void:
 	var trida := graf.trida[silnice]
 	if trida < 9 or trida > 12 or graf.priznaky[silnice] & (Graf.RF_BRIDGE | Graf.RF_TUNNEL | Graf.RF_PRIVATE):
 		return
+	# ne u křižovatky (první a posledních 15 m hrany) a ne na tramvajové trati
+	if h.podel < 15.0 or h.podel > graf.h_delka[e] - 15.0:
+		return
 	var p := graf.bod_na_hrane(e, h.podel, graf.sirka[silnice] * 0.5 + 0.8)
+	if hra.mhd.u_koleji(p.x, p.y):
+		return
 	var bod := Vector3(p.x, Mapa.vyska(p.x, p.y), p.y)
 	for a in zaparkovana:
 		if is_instance_valid(a) and a.global_position.distance_to(bod) < 8.0:

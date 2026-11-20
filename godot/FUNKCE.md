@@ -61,8 +61,8 @@ Stav v Godotu: **hotovo** = funguje a je ověřené zkouškou, **částečně** 
 | # | Funkce v předloze | Godot | Ověření a rozdíly |
 | --- | --- | --- | --- |
 | 35 | Rozvoz jídla a taxi na skutečné adresy | částečně | zakázky se dají vzít (J, menu), trasa a limit z grafu; dokončení zatím neověřené zkouškou, odloženo |
-| 36 | Směny řidiče MHD (tram 1, trolejbus 16, bus 30) | chybí | |
-| 37 | Garáž u hlavního nádraží, koupě vozu, úpravy, oprava | chybí | |
+| 36 | Směny řidiče MHD (tram 1, trolejbus 16, bus 30) | hotovo | stejné okruhy, výběr spoje, plánované časy, jízdní dynamika, dveře F, bodování a výplata jako `shift.js`; zkouška `scenar_smena`: tramvaj 1 Hlavní nádraží → Lékařská fakulta, 6/6 zastávek, 89 bodů, 580 Kč. Semafory na trase se hodnotí podle nejbližšího návěstidla ve směru jízdy; nedání přednosti a STOP se zatím nehodnotí |
+| 37 | Garáž u hlavního nádraží, koupě vozu, úpravy, oprava | hotovo | ceny a pravidla jako `garage.js` (auto 1 350 Kč, brzdy 325, pneumatiky 360, oprava 75 + 5 × poškození); zkouška `scenar_garaz` včetně uložení; bez promáčklin karoserie a špíny |
 | 38 | Peníze, statistiky | částečně | ukazatel peněz |
 | 39 | Ukládání postupu a načtení po restartu | hotovo | scénář `scenar_ulozeni` ve dvou samostatných spuštěních |
 | 40 | 53 míst k objevení | hotovo | do 75 m, 150 Kč a popis; místa jsou upravitelná v oblastech |
@@ -79,7 +79,7 @@ Stav v Godotu: **hotovo** = funguje a je ověřené zkouškou, **částečně** 
 | 46 | Roční období stromů | chybí | |
 | 47 | Prostorový zvuk motorů, klaksonů, hlášení zastávek, vody | částečně | syntetizované motory aut, autobusů, tramvají a trolejbusů (výška tónu podle rychlosti), rotor, klakson H, náraz, zvonek tramvaje, česká hlášení zastávek z předlohy (ověřeno v `scenar_mhd`); bez zvuků vody a hamru |
 | 48 | Nastavení kvality (4 předvolby a automaticky) | částečně | 3 předvolby a automaticky (podle snímků za sekundu) |
-| 49 | Fotorežim (O) | chybí | |
+| 49 | Fotorežim (O) | hotovo | zastavená hra, volná kamera do 100 m (WASD, Q/E, myš nebo prst), zorný úhel místo zaostření (hloubka ostrosti v režimu Compatibility není), uložení PNG (na webu stažení); zkouška `scenar_foto` |
 | 50 | Dotykové ovládání na telefonu | částečně | páčka, tlačítka, kamera tahem |
 | 51 | Menu, nastavení, O hře s licencemi | hotovo | |
 | 52 | Měření výkonu a ladicí režim | chybí | |

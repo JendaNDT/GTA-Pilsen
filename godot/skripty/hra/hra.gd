@@ -34,6 +34,9 @@ var _info_cas := 0.0
 @onready var chodci: Chodci = $Chodci
 @onready var policie: Policie = $Policie
 @onready var zvuky: Zvuky = $Zvuky
+var garaz: Garaz
+var smeny: Smeny
+var fotorezim: Fotorezim
 var _dvere_minule := false
 var _narazy := 0
 ## Heliporty z předlohy: FN Lochotín, pivovar, Bory a náměstí Republiky.
@@ -99,6 +102,21 @@ func _ready() -> void:
 	_sleduj(chodec)
 	dotyk.akce.connect(_akce)
 	zakazky.hra = self
+	garaz = Garaz.new()
+	garaz.name = "Garaz"
+	garaz.hra = self
+	add_child(garaz)
+	smeny = Smeny.new()
+	smeny.name = "Smeny"
+	smeny.hra = self
+	add_child(smeny)
+	fotorezim = Fotorezim.new()
+	fotorezim.name = "Fotorezim"
+	add_child(fotorezim)
+	fotorezim.ukonceno.connect(func() -> void:
+		hud.visible = true
+		mapa.visible = true
+		dotyk.visible = Vstup.aktivni_dotyk)
 	zvuky.hra = self
 	mhd.zvuky = zvuky
 	doprava.hra = self
@@ -114,6 +132,8 @@ func _ready() -> void:
 		zakazky.posledni = {"typ": z.aktivni, "stav": "preruseno", "castka": 0, "poznamka": "Načtení uložené hry"}
 	elif z.get("posledni", {}) is Dictionary:
 		zakazky.posledni = z.get("posledni", {})
+	garaz.nacti(u.get("garaz", {}))
+	smeny.nacti(u.get("smeny", {}))
 	_menu_zakazek()
 	menu.zmena_nastaveni.connect(_zmena_nastaveni)
 	menu.pozadavek.connect(_pozadavek_menu)
@@ -220,6 +240,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		_akce("mapa")
 	elif event.is_action_pressed("zakazka"):
 		_akce("zakazka")
+	elif event.is_action_pressed("fotorezim") and not fotorezim.aktivni:
+		_akce("fotorezim")
+		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("posun_casu"):
 		cas_zivy = false
 		nastav_cas(cas_hodina + 3.0)
@@ -228,6 +251,13 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _akce(nazev: String) -> void:
 	match nazev:
+		"fotorezim":
+			hud.visible = false
+			mapa.visible = false
+			dotyk.visible = false
+			fotorezim.otevri()
+		"nastoupit" when not smeny.aktivni.is_empty():
+			smeny.dvere()
 		"nastoupit":
 			if rezim == "vrtulnik":
 				vystoupit_z_vrtulniku()
@@ -262,7 +292,9 @@ func _akce(nazev: String) -> void:
 		"mapa":
 			mapa.prepni()
 		"zakazka":
-			if not zakazky.zakazka.is_empty():
+			if not smeny.aktivni.is_empty():
+				hud.zprava("Probíhá směna MHD – ukončíš ji v menu.", 3)
+			elif not zakazky.zakazka.is_empty():
 				zakazky.zrus()
 			else:
 				var chyba := zakazky.zacni("jidlo")
@@ -270,6 +302,8 @@ func _akce(nazev: String) -> void:
 					hud.zprava(chyba, 3)
 		"menu":
 			_menu_zakazek()
+			_menu_garaze()
+			_menu_smen()
 			menu.otevri(nastaveni, cas_zivy, cas_hodina, "Peníze: %s Kč · objevená místa: %d/%d" % [
 				Hud._tisice(penize), objevene.size(), (Mapa.mista().get("pamatky", []) as Array).size()])
 
@@ -489,6 +523,8 @@ func _process(delta: float) -> void:
 	elif rezim == "vrtulnik" and vrtulnik:
 		hud.rychlost(vrtulnik.rychlost_kmh())
 		hud.napoveda("Vrtulník · výška %d m%s" % [roundi(vrtulnik.vyska_nad_terenem()), " · F vystoupit" if vrtulnik.pristany else ""])
+	elif rezim == "mhd" and jizda and not smeny.aktivni.is_empty():
+		hud.napoveda("W/S plyn a brzda · mezerník nouzová brzda · F dveře")
 	elif rezim == "mhd" and jizda:
 		# hlášení příští zastávky po zavření dveří, zvonek tramvaje
 		if _dvere_minule and not jizda.dvere_otevrene:
@@ -584,6 +620,8 @@ func stav() -> Dictionary:
 	u.objevene = objevene.keys()
 	u.statistiky = statistiky
 	u.zakazky = {"aktivni": zakazky.zakazka.get("typ", ""), "posledni": zakazky.posledni}
+	u.garaz = garaz.stav()
+	u.smeny = smeny.stav()
 	u.nastaveni = nastaveni
 	u.cas = {"zivy": cas_zivy, "den": cas_den, "hodina": cas_hodina}
 	var p := chodec.global_position
@@ -598,8 +636,9 @@ func stav() -> Dictionary:
 	elif rezim == "vrtulnik" and vrtulnik:
 		p = vrtulnik.global_position
 		p.y = Mapa.vyska(p.x, p.z)
-	u.hrac = {"x": p.x, "y": p.y, "z": p.z, "natoceni": chodec.natoceni, "rezim": rezim if rezim == "auto" else "pesky"}
-	if auto_hrace:
+	var vlastni := auto_hrace != null and auto_hrace.has_meta("garaz")
+	u.hrac = {"x": p.x, "y": p.y, "z": p.z, "natoceni": chodec.natoceni, "rezim": rezim if rezim == "auto" and not vlastni else "pesky"}
+	if auto_hrace and not vlastni:
 		var a := auto_hrace.global_position
 		var z := auto_hrace.global_basis.z
 		u.auto = {"typ": auto_hrace.typ, "barva": auto_hrace.barva.to_html(false), "x": a.x, "y": a.y + 0.1, "z": a.z,
@@ -676,6 +715,9 @@ func _zmena_nastaveni(klic: String, hodnota: Variant) -> void:
 
 func _pozadavek_menu(akce: String) -> void:
 	match akce:
+		"fotorezim":
+			menu.zavri()
+			_akce("fotorezim")
 		"ulozit":
 			if uloz():
 				hud.zprava("Hra uložena", 2)
@@ -686,6 +728,73 @@ func _pozadavek_menu(akce: String) -> void:
 		"konec":
 			uloz()
 			get_tree().quit()
+
+
+## Řidič MHD: hráč sedí ve voze směny (kamera sleduje čelo vozu).
+func ridit_mhd(v: VuzMhd) -> void:
+	if rezim == "mhd" and jizda:
+		jizda.remove_meta("cestujici")
+	nastoupit_mhd(v)
+	hud.zprava("Směna: %s · W plyn, S brzda, F dveře" % v.nazev_spoje(), 4)
+
+
+func _tlacitko_menu(k: Control, text: String, akce: Callable, povoleno := true) -> Button:
+	var b := Button.new()
+	b.text = text
+	b.custom_minimum_size = Vector2(0, 44)
+	b.disabled = not povoleno
+	b.pressed.connect(akce)
+	k.add_child(b)
+	return b
+
+
+func _popisek_menu(k: Control, text: String) -> void:
+	var info := Label.new()
+	info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	info.text = text
+	k.add_child(info)
+
+
+## Karta Garáž: koupě, vyzvednutí, oprava a vylepšení vlastního auta.
+func _menu_garaze() -> void:
+	var k := menu.karta("garaz")
+	for n in k.get_children():
+		n.queue_free()
+	_popisek_menu(k, garaz.popis() + ("" if garaz.blizko() else "\nGaráž je u hlavního nádraží – ukaž cestu tlačítkem níže."))
+	for r: Array in garaz.nabidka():
+		var akce: String = r[1]
+		_tlacitko_menu(k, r[0], func() -> void:
+			hud.zprava(garaz.proved(akce), 3)
+			hud.penize(penize)
+			_menu_garaze(), akce != "")
+	_tlacitko_menu(k, "Navigovat ke garáži", func() -> void:
+		navigace_cil = Garaz.MISTO
+		_navigace_cas = 0.0
+		menu.zavri()
+		hud.zprava("Cíl nastaven · %s – trasa je na minimapě." % Garaz.NAZEV, 3))
+
+
+## Karta Směny MHD: nejbližší odjezdy okruhů tramvaje 1, trolejbusu 16 a autobusu 30.
+func _menu_smen() -> void:
+	var k := menu.karta("smeny")
+	for n in k.get_children():
+		n.queue_free()
+	_popisek_menu(k, "Odřiď skutečný spoj podle jízdního řádu PMDP. Zastav u každého stanoviště, otevři dveře (F) a drž se jízdního řádu." +
+		("\nPoslední: " + Smeny.text_vysledku(smeny.posledni) if not smeny.posledni.is_empty() else ""))
+	if not smeny.aktivni.is_empty():
+		_tlacitko_menu(k, "Ukončit probíhající směnu", func() -> void:
+			menu.zavri()
+			smeny.ukonci("zruseno", "Ukončeno řidičem"))
+		return
+	for n: Dictionary in smeny.nabidky_ted():
+		var id: String = n.id
+		var den := floori(n.odjezd / JizdniRad.DEN)
+		var kdy := JizdniRad.format_cas(n.odjezd) + ("" if den == cas_den else " (zítra)" if den == cas_den + 1 else " (%d. den)" % (den - cas_den))
+		_tlacitko_menu(k, "%s · odjezd %s" % [Smeny.nazev(n), kdy], func() -> void:
+			menu.zavri()
+			var chyba := smeny.zacni(id)
+			if chyba != "":
+				hud.zprava(chyba, 3))
 
 
 ## Karta Zakázky v menu: nabídka a poslední výsledek.

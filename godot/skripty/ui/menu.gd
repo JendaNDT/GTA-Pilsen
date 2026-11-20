@@ -47,6 +47,7 @@ func _ready() -> void:
 	_karta_hra()
 	_obsah_karet["zakazky"] = _karta("Zakázky")
 	_obsah_karet["garaz"] = _karta("Garáž")
+	_obsah_karet["smeny"] = _karta("Směny MHD")
 	_karta_nastaveni()
 	_karta_text("Ovládání", OVLADANI)
 	_karta_text("O hře", O_HRE)
@@ -81,6 +82,7 @@ func _tlacitko(rodic: Control, text: String, akce: Callable) -> Button:
 func _karta_hra() -> void:
 	var v := _karta("Hra")
 	_tlacitko(v, "Pokračovat", zavri)
+	_tlacitko(v, "Fotorežim (O)", func() -> void: pozadavek.emit("fotorezim"))
 	_tlacitko(v, "Uložit hru", func() -> void: pozadavek.emit("ulozit"))
 	_tlacitko(v, "Nová hra (smaže uložený postup)", func() -> void: pozadavek.emit("nova_hra"))
 	if not OS.has_feature("web"):
@@ -193,6 +195,8 @@ myš se stisknutým tlačítkem – otáčení kamery, kolečko přibližuje
 C – vzdálenost kamery
 R – postavit auto zpět na kola
 N – posunout čas o 3 hodiny
+O – fotorežim (WASD a Q/E pohyb, myš otáčí, uložení PNG)
+Ve směně MHD: W/S plyn a brzda, mezerník nouzová brzda, F dveře
 Esc – menu
 
 [b]Na telefonu[/b]

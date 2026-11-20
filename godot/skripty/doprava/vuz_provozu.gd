@@ -15,6 +15,10 @@ var stoji_u_stopky := 0.0
 var projel_stopku := -1.0
 var telo: AnimatableBody3D
 var delka := 4.6
+var blokuje: Node3D            ## nejbližší překážka před vozem
+var stoji := 0.0              ## jak dlouho vůz stojí mimo semafor a stopku (s)
+var ignoruje_auta := 0.0      ## po zaklesnutí chvíli nevidí jiná auta provozu (s)
+var na_konci := false         ## dojel na slepý konec silnice; úklid ho odstraní
 
 
 func priprav(t: String, b: Color) -> void:
