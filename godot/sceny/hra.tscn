@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://skripty/hra/hra.gd" id="1"]
 [ext_resource type="Script" path="res://skripty/hra/prostredi.gd" id="2"]
@@ -12,6 +12,9 @@
 [ext_resource type="Script" path="res://skripty/ui/menu.gd" id="10"]
 [ext_resource type="Script" path="res://skripty/hra/zakazky.gd" id="11"]
 [ext_resource type="Script" path="res://skripty/ui/mapa_ui.gd" id="12"]
+[ext_resource type="Script" path="res://skripty/doprava/doprava.gd" id="13"]
+[ext_resource type="Script" path="res://skripty/doprava/chodci.gd" id="14"]
+[ext_resource type="Script" path="res://skripty/doprava/policie.gd" id="15"]
 
 [node name="Hra" type="Node3D"]
 script = ExtResource("1")
@@ -34,6 +37,15 @@ script = ExtResource("9")
 
 [node name="Zakazky" type="Node3D" parent="."]
 script = ExtResource("11")
+
+[node name="Doprava" type="Node3D" parent="."]
+script = ExtResource("13")
+
+[node name="Chodci" type="Node3D" parent="."]
+script = ExtResource("14")
+
+[node name="Policie" type="Node3D" parent="."]
+script = ExtResource("15")
 
 [node name="Auta" type="Node3D" parent="."]
 

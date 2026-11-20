@@ -16,7 +16,7 @@ Stav v Godotu: **hotovo** = funguje a je ověřené zkouškou, **částečně** 
 | 3 | 103 300 budov s výškou, střechy sedlové, valbové, odsazené, ploché | hotovo | stejný výpočet tvaru jako `buildBuildings` |
 | 4 | Okna fasád podle stylu (dům, panelák, činžák, kanceláře, hala, kostel, radnice), svícení v noci | hotovo | převedený shader, rozvrh rozsvícení oken |
 | 5 | Silnice, chodníky, pěšiny, vodorovné značení, přechody, stopčáry | hotovo | kreslicí příkazy převzaté z předlohy |
-| 6 | 1 179 mostů s mostovkou, pilíři a zábradlím, kamenné oblouky | hotovo | včetně kalibrace mostovek podle měření; Wilsonův most ověřen průjezdem a chůzí |
+| 6 | 1 179 mostů s mostovkou, pilíři a zábradlím, kamenné oblouky | hotovo | včetně kalibrace mostovek podle měření; ověřen průjezd i chůze po Wilsonově mostě a průjezd pod mostem Milénia |
 | 7 | Tunel Valík (dva tubusy, portály, osvětlení) | částečně | tubusy, portály a světla s kolizí; terén nad portálem zatím nemá otvor |
 | 8 | Povrch země: pole, louky, lesy, parky, voda, potoky, štěrk kolejí | hotovo | mapa barev 1 m na pixel |
 | 9 | Letecké snímky otevřené krajiny (ortofoto ČÚZK) | chybí | |
@@ -35,25 +35,25 @@ Stav v Godotu: **hotovo** = funguje a je ověřené zkouškou, **částečně** 
 | 17 | Zábradlí a zídky zastaví chodce | částečně | zábradlí je pevná překážka |
 | 18 | Plavání | chybí | |
 | 19 | Pády postav a sražení autem | chybí | |
-| 20 | Auto: nástup a výstup, jízda, 8 typů | částečně | typy připravené, ve hře zatím jeden vůz |
+| 20 | Auto: nástup a výstup, jízda, 8 typů | hotovo | 8 typů v provozu i zaparkovaných, krádež auta z provozu |
 | 21 | Fyzika auta (odpružení, převodovka, smyk), arkádové a realistické řízení | částečně | vestavěné vozidlo Godotu s fyzikou Jolt, jen arkádové řízení |
 | 22 | Poškození a promáčknutí auta, ztráta dílů | chybí | |
 | 23 | Vrátit auto na kola (R) | hotovo | |
 | 24 | Klakson, dálková světla | chybí | |
-| 25 | Vrtulníky na heliportech, přistání na střechách | chybí | |
+| 25 | Vrtulníky na heliportech, přistání na střechách | částečně | letový model z předlohy, 4 heliporty, ližiny dosednou i na střechu; scénář `scenar_vrtulnik`; chybí poškození při nárazu |
 | 26 | Auto ve vodě plave a potopí se | chybí | |
 
 ## Doprava a MHD
 
 | # | Funkce v předloze | Godot | Ověření a rozdíly |
 | --- | --- | --- | --- |
-| 27 | Provoz aut podle značení, přednosti a stopek | chybí | |
-| 28 | Semafory pro auta, chodce a MHD | chybí | |
+| 27 | Provoz aut podle značení, přednosti a stopek | částečně | auta v pruzích po grafu, stopky, dej přednost, odstup, zatáčky; náraz změní vůz ve fyzikální; zákazy odbočení zatím ne |
+| 28 | Semafory pro auta, chodce a MHD | částečně | 174 skupin s časováním z předlohy, návěstidla; zkouška: 0 průjezdů na červenou; MHD a chodci zatím semafory nerespektují |
 | 29 | Denní rytmus provozu podle měření | chybí | |
-| 30 | Chodci na chodnících a přechodech | chybí | |
+| 30 | Chodci na chodnících a přechodech | částečně | chodí po chodnících, zahýbají, po sražení upadnou; přechody zatím nepoužívají |
 | 31 | MHD PMDP: 51 linek, jízdní řád GTFS, zastávky, odjezdy | hotovo | 370 tras podle jízdního řádu, tabule odjezdů; scénář `scenar_mhd` |
 | 32 | Nástup a výstup z MHD, přestupy, noční spoje | částečně | nástup a výstup ověřené; tabule přestupů chybí |
-| 33 | Policie, hledanost, pokuty | chybí | |
+| 33 | Policie, hledanost, pokuty | hotovo | pravidla z předlohy (hlídky podle hledanosti, ztracení po 11 + 3 × hledanost s, zatčení do 9 m, pokuta); scénář `scenar_doprava` |
 | 34 | Ničitelné lampy, značky, semafory a zábradlí | chybí | |
 
 ## Hra a postup

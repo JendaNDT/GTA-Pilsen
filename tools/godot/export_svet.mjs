@@ -724,5 +724,37 @@ const graf = {
   limitVpred: Uint8Array.from(R.limitForward ?? []), limitVzad: Uint8Array.from(R.limitBackward ?? []),
 };
 await writeFile(path.join(OUT, 'graf.bin'), deflateSync(encodeVariant(graf), { level: 9 }));
+
+// Řízení dopravy z předlohy (src/game/traffic.js): skupiny semaforů s časováním, pravidla na
+// hranách (semafor, stopka, dej přednost), přechody a viditelná návěstidla a značky po dlaždicích.
+const T = world.traffic;
+const skupinaIndex = new Map(T.groups.map((g, i) => [g, i]));
+const DRUH = { signal: 0, stop: 1, yield: 2 };
+const pravidla = [];
+for (const [edge, controls] of T.byEdge) {
+  for (const c of controls) {
+    if (!(c.kind in DRUH)) continue;
+    pravidla.push(edge, Math.round(c.s * 100), DRUH[c.kind], c.group ? skupinaIndex.get(c.group) : -1, c.axis ?? 0);
+  }
+}
+const prechody = [];
+for (const c of T.crossings) prechody.push(c.x, c.z, c.dx, c.dz, c.length, c.group ? skupinaIndex.get(c.group) : -1);
+const hlavy = [], znacky = [];
+const ZNACKA = { stop: 1, yield: 2, noEntry: 3, oneway: 4, speed: 5 };
+for (const entries of T.chunks.values()) {
+  for (const h of entries.heads) {
+    hlavy.push(h.x, world.groundY(h.x, h.z), h.z, h.tx, h.tz, h.axis ?? 0, h.group ? skupinaIndex.get(h.group) : -1, h.kind === 'pedestrian' ? 1 : 0);
+  }
+  for (const z of entries.signs) {
+    znacky.push(z.x, world.groundY(z.x, z.z), z.z, z.tx ?? 0, z.tz ?? 1, ZNACKA[z.kind] ?? 0);
+  }
+}
+const doprava = {
+  verze: 1,
+  skupiny: T.groups.map((g) => [g.greenTime, g.hasSecond ? 1 : 0, g.timeOffset, g.clearance, g.crossings.length, g.x, g.z]),
+  pravidla: Int32Array.from(pravidla), prechody: f32(prechody), hlavy: f32(hlavy), znacky: f32(znacky),
+};
+await writeFile(path.join(OUT, 'doprava.bin'), deflateSync(encodeVariant(doprava), { level: 9 }));
+console.log(`Doprava: ${T.groups.length} skupin semaforů, ${pravidla.length / 5} pravidel, ${T.crossings.length} přechodů, ${hlavy.length / 8} návěstidel, ${znacky.length / 6} značek`);
 console.log(`Hotovo za ${((performance.now() - t0) / 1000).toFixed(0)} s, ${tiles.length} dlaždic`);
 for (const f of files) console.log(`  ${f.name}.pak ${(f.bytes / 1e6).toFixed(2)} MB (nekomprimováno ${(f.raw / 1e6).toFixed(1)} MB)`);

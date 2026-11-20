@@ -187,6 +187,34 @@ func najdi_cestu(a: int, b: int, max_rozbaleni := 9000) -> Variant:
 	return null
 
 
+## Body trasy z místa (x, z) k cílovému bodu. Z úseku, na kterém místo leží, vybere výchozí uzel
+## s nejkratší celkovou délkou (aby vůz nezačínal cestu zpět za sebe).
+func trasa_z_mista(x: float, z: float, cil: Vector2, max_rozbaleni := 9000) -> PackedVector2Array:
+	var cilovy := nejblizsi_uzel(cil.x, cil.y)
+	var h := nejblizsi_hrana(x, z, 120.0)
+	var starty := []
+	if h.is_empty():
+		starty.append(nejblizsi_uzel(x, z))
+	else:
+		starty.append(h_od[h.hrana])
+		starty.append(h_do[h.hrana])
+	var nej := PackedVector2Array()
+	var nej_d := INF
+	for start: int in starty:
+		var cesta: Variant = najdi_cestu(start, cilovy, max_rozbaleni)
+		if cesta == null:
+			continue
+		var d := Vector2(uzel_x[start] - x, uzel_z[start] - z).length()
+		for e: int in cesta:
+			d += h_delka[e]
+		if d < nej_d:
+			nej_d = d
+			nej = PackedVector2Array([Vector2(uzel_x[start], uzel_z[start])])
+			nej.append_array(body_cesty(cesta))
+	nej.append(cil)
+	return nej
+
+
 ## Délka trasy po silnicích mezi dvěma body (s náhradou 1,5 × vzdušná, když trasa nejde najít).
 func delka_trasy(ax: float, az: float, bx: float, bz: float) -> float:
 	var cesta: Variant = najdi_cestu(nejblizsi_uzel(ax, az), nejblizsi_uzel(bx, bz))

@@ -126,3 +126,45 @@ func scenar() -> void:
 	over(hra.chodec.global_position.x <= 165.0, "hráč přešel most pěšky za %.1f s" % t)
 	over(nejnizsi_chodec > MOSTOVKA - 1.0, "hráč nespadl do řeky (nejnižší bod %.2f m)" % nejnizsi_chodec)
 	await snimek("06-zapadni-breh")
+
+	krok("Průjezd pod mostem Milénia (silnice 7,4 m pod mostovkou)")
+	hra._akce("nastoupit")
+	await cekej(0.3)
+	var vuz := hra.auto_hrace
+	var g := Graf.nacti()
+	var h := g.nejblizsi_hrana(492.0, 655.0, 15.0)
+	over(not h.is_empty() and g.trida[g.h_silnice[h.hrana]] <= 13, "pod mostem vede sjízdná silnice")
+	if h.is_empty():
+		return
+	var e: int = h.hrana
+	var pred := g.bod_na_hrane(e, maxf(0.0, h.podel - 45.0))
+	var za := g.bod_na_hrane(e, minf(g.h_delka[e], h.podel + 45.0))
+	var smer := Vector3(za.x - pred.x, 0, za.y - pred.y).normalized()
+	hra.vystoupit(true)
+	await cekej(0.2)
+	vuz.global_transform = Transform3D(Basis.looking_at(-smer, Vector3.UP), Vector3(pred.x, Mapa.vyska(pred.x, pred.y) + 0.5, pred.y))
+	vuz.linear_velocity = Vector3.ZERO
+	hra.chodec.global_position = vuz.global_position + vuz.global_basis.x * 2.2
+	await cekej_na_svet()
+	await cekej(0.5)
+	hra._akce("nastoupit")
+	await cekej(0.5)
+	var cil2 := Vector2(za.x, za.y)
+	var nejvyse := -INF
+	var pod_mostem := false
+	var t2 := 0.0
+	while Vector2(vuz.global_position.x, vuz.global_position.z).distance_to(cil2) > 6.0 and t2 < 25.0:
+		var pa := vuz.global_position
+		var k := Vector3(cil2.x - pa.x, 0, cil2.y - pa.z).normalized()
+		var vp := vuz.global_basis.z
+		var chyba := atan2(vp.cross(k).y, vp.dot(k))
+		Vstup.dotyk_pohyb = Vector2(-clampf(chyba * 2.5, -1, 1), 0.5 if vuz.rychlost_kmh() < 30.0 else 0.0)
+		if Vector2(pa.x - 492.0, pa.z - 655.0).length() < 8.0:
+			pod_mostem = true
+			nejvyse = maxf(nejvyse, pa.y - Mapa.vyska(pa.x, pa.z))
+		await get_tree().physics_frame
+		t2 += 1.0 / Engine.physics_ticks_per_second
+	Vstup.dotyk_pohyb = Vector2.ZERO
+	over(pod_mostem, "auto projelo místem pod mostem")
+	over(nejvyse < 1.5, "auto jelo po silnici pod mostem, ne po mostovce (nejvýš %.2f m nad terénem)" % nejvyse)
+	await snimek("07-pod-mostem")

@@ -30,6 +30,15 @@ var _info_cas := 0.0
 @onready var menu: Menu = $Menu
 @onready var zakazky: Zakazky = $Zakazky
 @onready var mapa: MapaUI = $Mapa
+@onready var doprava: Doprava = $Doprava
+@onready var chodci: Chodci = $Chodci
+@onready var policie: Policie = $Policie
+var _narazy := 0
+## Heliporty z předlohy: FN Lochotín, pivovar, Bory a náměstí Republiky.
+const HELIPORTY := [Vector2(106, -1596), Vector2(984, -396), Vector2(-266, 1314), Vector2(48, 52)]
+var vrtulniky := {}             ## index heliportu -> Vrtulnik
+var vrtulnik: Vrtulnik          ## vrtulník, ve kterém hráč sedí
+var _heliporty_cas := 0.0
 
 var navigace_cil: Variant = null           ## vlastní cíl (Vector2) z mapy
 var navigace_body := PackedVector2Array()  ## trasa k cíli po silnicích
@@ -85,6 +94,9 @@ func _ready() -> void:
 	_sleduj(chodec)
 	dotyk.akce.connect(_akce)
 	zakazky.hra = self
+	doprava.hra = self
+	chodci.hra = self
+	policie.hra = self
 	mapa.hra = self
 	mapa.cil_nastaven.connect(func(b: Vector2, nazev: String) -> void:
 		navigace_cil = b
@@ -167,6 +179,7 @@ func postav_auto(typ: String, bod: Vector3, smer: Vector3, barva: Color) -> Auto
 	a.collision_layer = VRSTVA_VOZIDLA
 	a.collision_mask = VRSTVA_SVET | VRSTVA_HRAC | VRSTVA_VOZIDLA
 	auta.add_child(a)
+	a.body_entered.connect(_naraz.bind(a))
 	smer.y = 0
 	a.global_transform = Transform3D(Basis.looking_at(-smer.normalized(), Vector3.UP), bod + Vector3(0, 0.15, 0))
 	return a
@@ -193,10 +206,25 @@ func _unhandled_input(event: InputEvent) -> void:
 func _akce(nazev: String) -> void:
 	match nazev:
 		"nastoupit":
+			if rezim == "vrtulnik":
+				vystoupit_z_vrtulniku()
+				return
 			if rezim == "pesky":
+				var h := vrtulnik_nablizku()
+				if h:
+					nastoupit_do_vrtulniku(h)
+					return
 				var v := mhd.vuz_k_nastupu(chodec.global_position)
 				if v:
 					nastoupit_mhd(v)
+					return
+				var vp := doprava.vuz_k_sebrani(chodec.global_position)
+				if vp:
+					var ukradene := doprava.narazeno(vp)
+					hud.zprava("„Hej! To je moje auto!“", 2)
+					if randf() < 0.6:
+						prestupek(1, "Krádež auta")
+					nastoupit(ukradene)
 					return
 				var a := auto_nablizku()
 				if a:
@@ -249,10 +277,10 @@ func nastoupit(a: Auto) -> void:
 	rezim_zmenen.emit(rezim)
 
 
-func vystoupit() -> bool:
+func vystoupit(vynutit := false) -> bool:
 	if auto_hrace == null:
 		return false
-	if absf(auto_hrace.rychlost()) > 4.0:
+	if absf(auto_hrace.rychlost()) > 4.0 and not vynutit:
 		hud.zprava("Nejdřív zpomal", 1.5)
 		return false
 	var a := auto_hrace
@@ -309,10 +337,81 @@ func vystoupit_z_mhd(vynutit := false) -> bool:
 	return true
 
 
+func vrtulnik_nablizku() -> Vrtulnik:
+	for h: Vrtulnik in vrtulniky.values():
+		if is_instance_valid(h) and h.global_position.distance_to(chodec.global_position) < 5.5:
+			return h
+	return null
+
+
+func nastoupit_do_vrtulniku(h: Vrtulnik) -> void:
+	vrtulnik = h
+	h.obsazeny = true
+	rezim = "vrtulnik"
+	chodec.aktivni = false
+	chodec.visible = false
+	chodec.collision_layer = 0
+	chodec.collision_mask = 0
+	_sleduj(h)
+	hud.zprava("Vrtulník: Mezerník stoupání, Shift klesání, W/S vpřed a vzad, A/D otáčení", 5)
+	rezim_zmenen.emit(rezim)
+
+
+func vystoupit_z_vrtulniku(vynutit := false) -> bool:
+	if vrtulnik == null:
+		return false
+	if not vynutit and not (vrtulnik.pristany or (vrtulnik.vyska_nad_terenem() < 1.5 and vrtulnik.linear_velocity.length() < 2.0)):
+		hud.zprava("Nejdřív přistaň", 1.5)
+		return false
+	var p := vrtulnik.global_transform * Vector3(2.2, 0.0, 0.5)
+	chodec.global_position = Vector3(p.x, _povrch(p + Vector3(0, 2.0, 0)) + 0.05, p.z)
+	chodec.velocity = Vector3.ZERO
+	chodec.aktivni = true
+	chodec.visible = true
+	chodec.collision_layer = VRSTVA_HRAC
+	chodec.collision_mask = VRSTVA_SVET | VRSTVA_VOZIDLA
+	vrtulnik.obsazeny = false
+	vrtulnik = null
+	rezim = "pesky"
+	_sleduj(chodec)
+	rezim_zmenen.emit(rezim)
+	return true
+
+
+## Vrtulníky se objeví na heliportech, jakmile je v jejich okolí postavený svět s kolizemi.
+func _hlidej_heliporty(delta: float) -> void:
+	_heliporty_cas -= delta
+	if _heliporty_cas > 0.0:
+		return
+	_heliporty_cas = 1.0
+	var p := kamera.cil.global_position
+	for i in HELIPORTY.size():
+		var bod: Vector2 = HELIPORTY[i]
+		var d := Vector2(p.x, p.z).distance_to(bod)
+		if vrtulniky.has(i):
+			if d > 1500.0 and vrtulniky[i] != vrtulnik:
+				vrtulniky[i].queue_free()
+				vrtulniky.erase(i)
+			continue
+		if d > 350.0:
+			continue
+		var y := _povrch(Vector3(bod.x, Mapa.vyska(bod.x, bod.y) + 150.0, bod.y))
+		var h := Vrtulnik.new()
+		h.name = "Vrtulnik%d" % i
+		h.collision_layer = VRSTVA_VOZIDLA
+		h.collision_mask = VRSTVA_SVET | VRSTVA_HRAC | VRSTVA_VOZIDLA
+		auta.add_child(h)
+		h.global_position = Vector3(bod.x, y + 0.2, bod.y)
+		h.rotation.y = i * 1.3
+		vrtulniky[i] = h
+
+
 ## Kamera, načítání mapy, oblastí a MHD sledují hráče nebo jeho vozidlo.
 func _sleduj(uzel: Node3D) -> void:
 	kamera.cil = uzel
 	svet.sledovat = uzel
+	doprava.sledovat = uzel
+	chodci.sledovat = uzel
 	oblasti.sledovat = uzel
 	mhd.sledovat = uzel
 
@@ -320,7 +419,7 @@ func _sleduj(uzel: Node3D) -> void:
 ## Výška pochozího povrchu v bodě (most, střecha i terén) paprskem shora.
 func _povrch(p: Vector3) -> float:
 	var teren := Mapa.vyska(p.x, p.z)
-	var dotaz := PhysicsRayQueryParameters3D.create(Vector3(p.x, p.y + 3.0, p.z), Vector3(p.x, teren - 1.0, p.z), VRSTVA_SVET)
+	var dotaz := PhysicsRayQueryParameters3D.create(Vector3(p.x, maxf(p.y, teren) + 3.0, p.z), Vector3(p.x, teren - 1.0, p.z), VRSTVA_SVET)
 	var hit := get_world_3d().direct_space_state.intersect_ray(dotaz)
 	return maxf(teren, (hit.position as Vector3).y) if not hit.is_empty() else teren
 
@@ -340,6 +439,7 @@ func _process(delta: float) -> void:
 		_ukladani = 20.0
 		uloz()
 	_navigace(delta)
+	_hlidej_heliporty(delta)
 	_mista_cas -= delta
 	if _mista_cas <= 0.0:
 		_mista_cas = 0.5
@@ -360,6 +460,9 @@ func _process(delta: float) -> void:
 	if rezim == "auto" and auto_hrace:
 		hud.rychlost(auto_hrace.rychlost_kmh())
 		hud.napoveda("F – vystoupit" if absf(auto_hrace.rychlost()) < 4.0 else "")
+	elif rezim == "vrtulnik" and vrtulnik:
+		hud.rychlost(vrtulnik.rychlost_kmh())
+		hud.napoveda("Vrtulník · výška %d m%s" % [roundi(vrtulnik.vyska_nad_terenem()), " · F vystoupit" if vrtulnik.pristany else ""])
 	elif rezim == "mhd" and jizda:
 		hud.rychlost(-1)
 		var pristi := jizda.pristi_zastavka()
@@ -391,6 +494,25 @@ func _stav_pro_prohlizec() -> void:
 
 
 # ------------------------------------------------------------------ peníze, objevy, ukládání
+
+## Přestupek zvýší hledanost (policie).
+func prestupek(n: int, duvod: String) -> void:
+	policie.pridej(n, duvod)
+
+
+## Náraz auta: vůz z provozu se stane fyzikálním, opakované nárazy hráče jsou nebezpečná jízda.
+func _naraz(telo: Node, a: Auto) -> void:
+	if a != auto_hrace or rezim != "auto":
+		return
+	if telo.has_meta("vuz_provozu"):
+		doprava.narazeno(telo.get_meta("vuz_provozu"))
+	if telo is Auto or telo.has_meta("vuz_provozu"):
+		if a.linear_velocity.length() > 5.0:
+			_narazy += 1
+			if _narazy >= 3:
+				_narazy = 0
+				prestupek(1, "Nebezpečná jízda")
+
 
 func pridej_penize(kc: int) -> void:
 	penize = maxi(0, penize + kc)
@@ -435,10 +557,16 @@ func stav() -> Dictionary:
 	var p := chodec.global_position
 	if rezim == "auto" and auto_hrace:
 		p = auto_hrace.global_position
+	elif rezim == "vrtulnik" and vrtulnik:
+		hud.rychlost(vrtulnik.rychlost_kmh())
+		hud.napoveda("Vrtulník · výška %d m%s" % [roundi(vrtulnik.vyska_nad_terenem()), " · F vystoupit" if vrtulnik.pristany else ""])
 	elif rezim == "mhd" and jizda:
 		p = jizda.misto_dveri(1.0)
 		p.y = _povrch(p)
-	u.hrac = {"x": p.x, "y": p.y, "z": p.z, "natoceni": chodec.natoceni, "rezim": rezim if rezim != "mhd" else "pesky"}
+	elif rezim == "vrtulnik" and vrtulnik:
+		p = vrtulnik.global_position
+		p.y = Mapa.vyska(p.x, p.z)
+	u.hrac = {"x": p.x, "y": p.y, "z": p.z, "natoceni": chodec.natoceni, "rezim": rezim if rezim == "auto" else "pesky"}
 	if auto_hrace:
 		var a := auto_hrace.global_position
 		var z := auto_hrace.global_basis.z
@@ -572,9 +700,5 @@ func _navigace(delta: float) -> void:
 	if _navigace_cas > 0.0:
 		return
 	_navigace_cas = 2.2
-	var g := Graf.nacti()
-	var cesta: Variant = g.najdi_cestu(g.nejblizsi_uzel(p.x, p.z), g.nejblizsi_uzel(cil.x, cil.y), 18000)
 	navigace_body = PackedVector2Array([Vector2(p.x, p.z)])
-	if cesta != null:
-		navigace_body.append_array(g.body_cesty(cesta))
-	navigace_body.append(cil)
+	navigace_body.append_array(Graf.nacti().trasa_z_mista(p.x, p.z, cil, 18000))

@@ -64,6 +64,7 @@ func _process(delta: float) -> void:
 		_necinnost = 0.0
 	_necinnost += delta
 	var auto := cil as Auto
+	var heli := cil as Vrtulnik
 	var vuz := cil.get_parent() as VuzMhd
 	var vyska := 1.6
 	if vuz:
@@ -72,6 +73,11 @@ func _process(delta: float) -> void:
 			var smer_vozu := atan2(cil.global_basis.z.x, cil.global_basis.z.z)
 			yaw = lerp_angle(yaw, smer_vozu, minf(1.0, delta * 1.5))
 			pitch = lerpf(pitch, 0.32, minf(1.0, delta * 1.5))
+	if heli:
+		vyska = 2.6
+		var vh := heli.linear_velocity
+		if _necinnost > 1.2 and Vector2(vh.x, vh.z).length() > 3.0:
+			yaw = lerp_angle(yaw, atan2(heli.global_basis.z.x, heli.global_basis.z.z), minf(1.0, delta * 1.8))
 	if auto:
 		vyska = 1.9
 		# po chvíli bez zásahu se kamera vrátí za auto
@@ -84,10 +90,12 @@ func _process(delta: float) -> void:
 			pitch = lerpf(pitch, 0.22, minf(1.0, delta * 1.5))
 	var bod := cil.global_position + Vector3(0, vyska, 0)
 	global_position = global_position.lerp(bod, minf(1.0, delta * 14.0)) if global_position.distance_to(bod) < 20.0 else bod
-	var mira := vzdalenost * (1.35 if auto else (2.6 if vuz else 1.0))
+	var mira := vzdalenost * (1.35 if auto else (2.6 if vuz else (2.4 if heli else 1.0)))
 	_rameno.spring_length = lerpf(_rameno.spring_length, mira, minf(1.0, delta * 5.0))
 	# rameno míří za cíl: otočení podle yaw, sklon podle pitch
 	rotation = Vector3(-pitch, yaw + PI, 0)
 	_rameno.rotation = Vector3.ZERO
 	if auto:
 		_rameno.add_excluded_object(auto.get_rid())
+	if heli:
+		_rameno.add_excluded_object(heli.get_rid())
