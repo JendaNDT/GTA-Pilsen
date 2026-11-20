@@ -4,7 +4,9 @@ Větev `etapa/E21` navazuje na E20 sloučenou revizí `623e081`. [Zadání E21](
 
 ## Minuta dne a noci po ověření ranní špičky
 
-Chromium 159 na softwarovém WebGL 2 v okně 400 × 280 na herním kódu `7d9471b` zaznamenalo 21 snímků během minuty. Mez je více než 30. V prostředí současně běžely zkoušky E26. Výsledek je v `data-raw/e21/minuta-po-kolone.log`. Připravené opakování zachovává stejné rozlišení, scénu i kontrolu dne a noci. Oběma dlouhým zkouškám E26 se po dobu měření přidělí společné jádro a softwarový vykreslovač E21 může využít dvě vlákna.
+Chromium 159 na softwarovém WebGL 2 v okně 400 × 280 na herním kódu `7d9471b` zaznamenalo 21 snímků během minuty. Mez je více než 30. V prostředí současně běžely zkoušky E26. Výsledek je v `data-raw/e21/minuta-po-kolone.log`. Při opakování v témže okně se dvěma vlákny Mesa a samostatně přidělenými procesory prošla celá minutová zkouška. Po střídání dne a noci bylo ve sledovaném okně více než 30 snímků a prohlížeč nehlásil chybu ani varování. Záznam je v `data-raw/e21/minuta-dve-jadra.log`.
+
+Po přidání zkoušky objížďky u MHD má výpis Playwrightu 184 případů. Všech 184 má úspěšný výsledek napříč běhy a revizemi. Na herním kódu `7d9471b` prošlo 129 testů JavaScriptu, produkční sestavení, obě desetiminutové ranní špičky a poslední dosud otevřená minutová zkouška. K přijetí etapy zbývá měření deseti fiktivních lamp na autorově počítači s limitem 50 ms na snímek.
 
 ## Uvolnění výjezdu z křižovatky
 
@@ -23,7 +25,7 @@ Na sestavení s objížďkou prošly v Chromiu na WebGL 2 obě cílené zkoušky
 | 5. Následky nárazu | Hotovo. Hledanost, zvuky a společný limit úlomků jsou zapojené do hry. |
 | 6. Auta a garáž | Hotovo. Prošly deformace, odpadnutí dílu, načtení uloženého poškození a oprava v garáži. |
 | 7. Částice | Hotovo. Prošla kontrola výpočtu na WebGPU i náhradního výpočtu na WebGL 2. |
-| 8. Závěrečné ověření | Probíhají závěrečné prohlížečové zkoušky. Snímky a měření ze softwarového vykreslovače jsou v protokolu. Měření na autorově počítači je otevřené. |
+| 8. Závěrečné ověření | Místní funkční zkoušky dokončeny. Snímky a výsledky jsou v protokolu. Zbývá měření na autorově počítači. |
 
 ### Opakování ranní špičky na WebGL 2
 
