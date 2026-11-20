@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Archiv a návrat uloženého postupu s místním zjemněním terénu
+
+Tři podporované verze Node.js sestavily stejný web jako archiv revize `667277b`. Návrat s uloženým postupem do E12 a E25 prošel. Sestavení přímo z rozbalených zdrojů prošlo i po samostatné instalaci závislostí. Zkouška skončila neúspěšně. Řádky tabulky odpovídají skutečně dokončeným návratům. [Dlouhá jízda na předchozí revizi](../E26.md#dlouhá-jízda-na-revizi-d4630eb) · [Velikosti, otisky a výsledky zkoušek](../E26.md#archiv-a-návrat-uloženého-postupu-s-místním-zjemněním-terénu)
+
 ## Počet trojúhelníků u opraveného nájezdu
 
 Ve stejném pohledu na opravený břeh klesl počet trojúhelníků na WebGPU z 59 058 na 28 736. Výšky pro jízdu zůstávají společné s terénem. Na herním kódu `d4630eb` je doloženo 3 z celkem čtyř návratů. Při posledním zaznamenaném návratu bylo 81 textur, 275 geometrií, 887 těles a 0 úlomků. Úplná prohlížečová sada je rozpracovaná. [Měření a minutová zkouška](../E26.md#počet-trojúhelníků-u-opraveného-nájezdu)
