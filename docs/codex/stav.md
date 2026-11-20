@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Ověření ranní špičky a archiv
+
+Na herní revizi `5233937` prošla ranní špička u hlavního nádraží i na Klatovské na WebGL 2 a WebGPU. Nejdelší stání ze všech čtyř běhů dosáhlo 118 s při limitu 120 s. Prošlo také všech 70 cílených prohlížečových případů dopravy. Tři verze Node.js sestavily přesně stejný web jako v archivu. Uložený postup prošel přechodem z E12 i E25 do nové verze a zpět. Zbytek úplné prohlížečové sady pokračuje. [Měření a otisky souborů](../E26.md#špička-na-dvou-místech-a-archiv-po-úpravě-rampy)
+
 ## Rampa u hlavního nádraží
 
 Návrat z předchozího archivu do E12 i E25 prošel. U hlavního nádraží odhalilo pozorování na WebGL 2 stání 181 s. Po úpravě příčného sklonu a brzdění ve sjezdu bylo při opakování nejdelší stání 57 s. Prošlo 185 testů JavaScriptu, 27 testů Pythonu a sestavení. Pokračují prohlížečové zkoušky vydání na obou vykreslovacích cestách. [Povrch rampy, brzdění a provoz](../E26.md#příčný-sklon-nádražní-rampy-a-brzdění-ve-sjezdu)
@@ -144,7 +148,7 @@ Na WebGPU i WebGL 2 prošly obě zkoušky pomalé sítě. Hra se spustila i při
 
 ## Ověřené archivy 0.2.0
 
-Ve složce `data-raw/e26/vydani/` jsou webový a zdrojový ZIP revize `34458c8` a manifest. Všech 815 webových a 1 371 zdrojových položek souhlasí s manifestem. Sestavení z rozbalených zdrojů dalo stejných 815 souborů. Na WebGPU i WebGL 2 prošlo všech šest cílených zkoušek k nálezům kontroly. Zbývající případy běží nad stejným produkčním webem. [Otisky archivů a způsob sestavení](../E26.md)
+Ve složce `data-raw/e26/vydani-34458c8/` jsou webový a zdrojový ZIP revize `34458c8` a manifest. Všech 815 webových a 1 371 zdrojových položek souhlasí s manifestem. Sestavení z rozbalených zdrojů dalo stejných 815 souborů. Na WebGPU i WebGL 2 prošlo všech šest cílených zkoušek k nálezům kontroly. Zbývající případy běží nad stejným produkčním webem. [Otisky archivů a způsob sestavení](../E26.md)
 
 ## Výsledky závěrečné kontroly Astrou
 
