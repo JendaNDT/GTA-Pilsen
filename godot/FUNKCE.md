@@ -23,7 +23,7 @@ Stav v Godotu: **hotovo** = funguje a je ověřené zkouškou, **částečně** 
 | 10 | Stromy (listnaté, jehličnaté, lesy) a lampy veřejného osvětlení | částečně | stromy s ročními obdobími a sněhem; stromy zatím bez kolizí |
 | 11 | Měřené budovy centra (3D model města), stavby, jezy | hotovo | 93 dlaždic městského modelu nahrazuje budovy z OSM, zdi, pilíře a jezy s kolizí |
 | 12 | Tři podrobné úseky ulic s přízemím a mobiliářem | chybí | |
-| 13 | Vodní hamr v Dobřívě s otáčejícími se koly | chybí | |
+| 13 | Vodní hamr v Dobřívě s otáčejícími se koly | hotovo | model postavený kódem předlohy (`mill.js`) v převodníku, kolize budovy, 4 kola se točí 0,72 rad/s od 9 do 17 h; zkouška `scenar_hamr`; bez nočního svícení oken a zvuku bucharu |
 | 14 | Proudící voda, pěna na jezech | částečně | voda se vlní, bez proudu a pěny |
 | 15 | Koleje tramvají a železnice | hotovo | jako pásy a kolejnice |
 
@@ -33,15 +33,15 @@ Stav v Godotu: **hotovo** = funguje a je ověřené zkouškou, **částečně** 
 | --- | --- | --- | --- |
 | 16 | Chůze, běh, skok (2,4 / 6,4 m/s) | hotovo | scénář `scenar_most` |
 | 17 | Zábradlí a zídky zastaví chodce | částečně | zábradlí je pevná překážka |
-| 18 | Plavání | chybí | |
-| 19 | Pády postav a sražení autem | chybí | |
+| 18 | Plavání | hotovo | dno řek pod hladinou podle `riverBed` (převodník volá kód předlohy, mřížka 4 m), plavání 1,7 m/s s hlavou nad vodou, výstup na břeh; zkouška `scenar_voda` v Radbuze u Wilsonova mostu |
+| 19 | Pády postav a sražení autem | částečně | chodci po sražení autem upadnou a po chvíli vstanou, sražení se počítá do statistik; hráč zatím nepadá a nezraní se pádem |
 | 20 | Auto: nástup a výstup, jízda, 8 typů | hotovo | 8 typů v provozu i zaparkovaných, krádež auta z provozu |
 | 21 | Fyzika auta (odpružení, převodovka, smyk), arkádové a realistické řízení | částečně | vestavěné vozidlo Godotu s fyzikou Jolt, jen arkádové řízení |
 | 22 | Poškození a promáčknutí auta, ztráta dílů | částečně | poškození v procentech z nárazu, slabší motor, kouř od 60 %, nepojízdné při 100 %, ztmavnutí laku (zkušebna); bez promáčklin a odpadávajících dílů |
 | 23 | Vrátit auto na kola (R) | hotovo | |
 | 24 | Klakson, dálková světla | hotovo | klakson H se zvukem; v noci svítí reflektory a koncová světla všech aut, hráčovo auto má reflektor, brzdová světla a dálková L (ověřeno snímkem ve 21:30) |
 | 25 | Vrtulníky na heliportech, přistání na střechách | částečně | letový model z předlohy, 4 heliporty, ližiny dosednou i na střechu; scénář `scenar_vrtulnik`; chybí poškození při nárazu |
-| 26 | Auto ve vodě plave a potopí se | chybí | |
+| 26 | Auto ve vodě plave a potopí se | hotovo | vztlak jako `Water.step` (1,95 klesá po 2 s o 0,24 za sekundu, odpor vody), motor ve vodě nejede, po 6 s je auto pod hladinou a leží na dně; zkouška `scenar_voda` |
 
 ## Doprava a MHD
 
@@ -90,3 +90,27 @@ Stav v Godotu: **hotovo** = funguje a je ověřené zkouškou, **částečně** 
 | --- | --- | --- | --- |
 | E1 | Náhled skutečného okolí v editoru | hotovo | scény oblastí ukazují okolí, panel Plzeň hledá místa |
 | E2 | Ruční úpravy zastávek a objektů zachované při novém importu | hotovo | zkouška `test_import`; posunutá zastávka mění i místo zastavení MHD |
+
+## Souhrn stavu (20. 11. 2026)
+
+Z 52 funkcí předlohy je **33 hotových**, **18 částečně** a **1 chybí** (tři podrobné úseky ulic
+s přízemím a mobiliářem). K tomu 2 nové funkce editoru. Rozvoz jídla a taxi jsou podle dohody odložené.
+
+**Zkoušky.** `godot/testy/spust_zkousky.sh` hraje 14 zkoušek celých situací (import oblastí, počasí,
+most a průjezd pod mostem, MHD, nárazy a brzdná dráha, uložení a načtení po restartu, provoz a policie,
+fotorežim, garáž, směna řidiče tramvaje, hamr, voda, vrtulník). Webový export ověřuje
+`tools/godot/zkouska_web.mjs` v emulovaném telefonu (start asi 8 s, dotyková páčka, bez chyb v konzoli).
+Testy původní hry (`npm test`) dál procházejí, původní hra se spouští beze změny.
+
+**Výkon.** Zkoušky běží bez grafické karty (softwarové vykreslování), čísla snímků z nich proto nejsou
+měřítkem. Přehled F3 ukáže skutečné hodnoty na daném zařízení. Na vysoké kvalitě kreslí centrum
+asi 1 500 volání a 500 tisíc trojúhelníků; výkon na telefonu zůstává otevřený, dokud ho autor nevyzkouší.
+Webový balík má 78 MB dat, telefon začíná na nízké kvalitě.
+
+**Známé rozdíly a další kroky.**
+- Podrobné úseky ulic (přízemí, mobiliář) a promáčkliny karoserie zatím chybí.
+- MHD jede podle jízdního řádu, na semafory ani provoz před sebou nereaguje (kromě směny řidiče).
+- Chodci zatím nepoužívají přechody a nečekají na zelenou.
+- Terén nad portály tunelu Valík nemá otvor, stromy nemají kolize.
+- Zábradlí nejde zničit, hráč se nezraní pádem.
+- Řízení je jen arkádové (předloha má i realistický režim).

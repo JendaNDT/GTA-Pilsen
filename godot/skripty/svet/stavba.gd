@@ -92,7 +92,29 @@ static func teren(t: Mapa.Teren) -> Dictionary:
 				p.i[q] = v00; p.i[q + 1] = v10; p.i[q + 2] = v01
 				p.i[q + 3] = v10; p.i[q + 4] = v11; p.i[q + 5] = v01
 				q += 6
-	return {"teren": p, "kolize": trojuhelniky(p)}
+	return {"teren": p, "kolize": _kolize_se_dnem(t) if not t.hl.is_empty() else trojuhelniky(p)}
+
+
+## Kolize terénu s říčním dnem pod hladinou (terrainTriangles v předloze): mřížka 4 m,
+## výška = viditelný terén − hloubka vody. Hladina zůstává jen viditelná.
+static func _kolize_se_dnem(t: Mapa.Teren) -> PackedVector3Array:
+	var body := PackedVector3Array()
+	body.resize(65 * 65)
+	for j in 65:
+		for i in 65:
+			var x := t.x0 + i * 4.0
+			var z := t.z0 + j * 4.0
+			body[j * 65 + i] = Vector3(x, Mapa.vyska(x, z) - t.hl[j * 65 + i] * 0.01, z)
+	var out := PackedVector3Array()
+	out.resize(64 * 64 * 6)
+	var q := 0
+	for j in 64:
+		for i in 64:
+			var v00 := j * 65 + i
+			out[q] = body[v00]; out[q + 1] = body[v00 + 1]; out[q + 2] = body[v00 + 65]
+			out[q + 3] = body[v00 + 1]; out[q + 4] = body[v00 + 66]; out[q + 5] = body[v00 + 65]
+			q += 6
+	return out
 
 
 ## Seznam vrcholů trojúhelníků pro ConcavePolygonShape3D.

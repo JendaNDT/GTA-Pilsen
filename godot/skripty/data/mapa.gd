@@ -117,6 +117,7 @@ class Teren:
 	var n := 33            ## počet bodů na straně
 	var h := PackedFloat32Array()
 	var indexy := PackedInt32Array()   ## jen u výjimečné dlaždice, jinak prázdné
+	var hl := PackedByteArray()        ## hloubka vody pod hladinou v cm, mřížka 65 × 65 po 4 m (jen u vody)
 
 
 ## Výšková síť dlaždice (uchovává se v paměti, je malá).
@@ -149,6 +150,8 @@ static func teren(ci: int) -> Teren:
 			t.h[k] = v * 0.01
 		if d.has("idx"):
 			t.indexy = d.idx
+		if d.has("hl"):
+			t.hl = d.hl
 	_zamek.lock()
 	_teren[ci] = t
 	_zamek.unlock()
@@ -175,6 +178,35 @@ static func vyska(x: float, z: float) -> float:
 		return c + (h[k + 1] - c) * fx + (h[k + t.n] - c) * fz
 	var c2 := h[k + t.n + 1]
 	return c2 + (h[k + t.n] - c2) * (1.0 - fx) + (h[k + 1] - c2) * (1.0 - fz)
+
+
+## Hloubka vody pod viditelnou hladinou (m), riverBed v předloze: od břehu klesá o 0,12 m na metr
+## (prvních 8 m), dál o 0,025 m na metr, nejvýš 2,4 m. Mimo vodu 0.
+static func hloubka(x: float, z: float) -> float:
+	if not nacti():
+		return 0.0
+	var cx := floori((x - min_x) / dlazdice)
+	var cz := floori((z - min_z) / dlazdice)
+	if cx < 0 or cz < 0 or cx >= sloupce or cz >= radky:
+		return 0.0
+	var t := teren(cz * sloupce + cx)
+	if t.hl.is_empty():
+		return 0.0
+	var gx := clampf((x - t.x0) / 4.0, 0.0, 63.999)
+	var gz := clampf((z - t.z0) / 4.0, 0.0, 63.999)
+	var i := int(gx)
+	var j := int(gz)
+	var fx := gx - i
+	var fz := gz - j
+	var k := j * 65 + i
+	var a := lerpf(t.hl[k], t.hl[k + 1], fx)
+	var b := lerpf(t.hl[k + 65], t.hl[k + 66], fx)
+	return lerpf(a, b, fz) * 0.01
+
+
+## Dno pod vodou nebo terén (m).
+static func dno(x: float, z: float) -> float:
+	return vyska(x, z) - hloubka(x, z)
 
 
 ## Normála terénu z okolních výšek.

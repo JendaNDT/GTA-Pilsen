@@ -48,7 +48,8 @@ func _physics_process(delta: float) -> void:
 	var doprava := Vector3(-cos(smer_kamery), 0, sin(smer_kamery))
 	var smer := dopredu * vstup.y + doprava * vstup.x
 	var zem := Mapa.vyska(global_position.x, global_position.z)
-	plave = global_position.y < zem + 0.05 and _je_voda()
+	# plavání: nad vodou hlubší než 0,3 m a nohama u hladiny (ne na mostě)
+	plave = global_position.y < zem + 0.3 and Mapa.hloubka(global_position.x, global_position.z) > 0.3
 	var rychlost := PLAVANI if plave else (BEH if Vstup.beh() else CHUZE)
 	var cil := Vector3.ZERO
 	if smer.length() > 0.05:
@@ -58,14 +59,17 @@ func _physics_process(delta: float) -> void:
 	var k := minf(1.0, delta * (12.0 if is_on_floor() else 2.5))
 	velocity.x += (cil.x - velocity.x) * k
 	velocity.z += (cil.z - velocity.z) * k
-	if is_on_floor():
-		if Vstup.brzda() and not plave:
+	if plave:
+		# hladina drží hráče nahoře (character.js: svislá rychlost k hladině, nejvýš 2 m/s)
+		velocity.y = clampf((zem - global_position.y) * 8.0, -2.0, 2.0)
+	elif is_on_floor():
+		if Vstup.brzda():
 			velocity.y = SKOK
 	else:
 		velocity.y -= GRAVITACE * delta
 	move_and_slide()
-	# pojistka: nikdy nespadnout pod terén (díra v kolizi, nenačtená dlaždice)
-	var pod := Mapa.vyska(global_position.x, global_position.z)
+	# pojistka: nikdy nespadnout pod terén či dno (díra v kolizi, nenačtená dlaždice)
+	var pod := Mapa.dno(global_position.x, global_position.z)
 	if global_position.y < pod - 2.0:
 		global_position.y = pod + 0.1
 		velocity.y = 0.0
@@ -73,7 +77,3 @@ func _physics_process(delta: float) -> void:
 	_postava.position.y = -1.05 if plave else 0.0
 	_postava.animuj(delta, Vector2(velocity.x, velocity.z).length())
 
-
-func _je_voda() -> bool:
-	# hladinu zatím určuje mapa povrchu (barva 0); přesnou vodu řeší fyzika vody později
-	return false

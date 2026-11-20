@@ -32,6 +32,8 @@ var vylepseni := {}
 ## Dálková světla hráčova auta (klávesa L).
 static var dalkova := false
 var _reflektor: SpotLight3D
+var v_vode := 0.0                   ## jak dlouho je auto ve vodě (s)
+var potopene := false
 var _brzdova: StandardMaterial3D
 
 var plyn := 0.0
@@ -138,6 +140,9 @@ func _physics_process(delta: float) -> void:
 		zatoceni = 0.0
 		rucni = true
 	_hlidej_naraz()
+	if _voda(delta):
+		plyn = 0.0
+		zatoceni = 0.0
 	var v := rychlost()
 	var vmax: float = _spec.max
 	# automatická převodovka: dozadu jen ze zastavení
@@ -187,6 +192,28 @@ func _physics_process(delta: float) -> void:
 		apply_central_force(-linear_velocity * linear_velocity.length() * 0.35)
 	if ridi_hrac or _reflektor:
 		_svetla_hrace(ridi_hrac and (brzda > 0.05 or rucni))
+
+
+## Auto ve vodě (Water.step v předloze): vztlak nejdřív auto nese, po 2 s nabírá vodu a po 6 s
+## jde ke dnu. Motor ve vodě nejede. Vrací true, když je auto ve vodě.
+func _voda(delta: float) -> bool:
+	var p := global_position
+	var hl := Mapa.hloubka(p.x, p.z)
+	var hladina := Mapa.vyska(p.x, p.z)
+	var vyska_auta: float = _spec.h
+	if hl < 0.15 or p.y > hladina + 0.2:
+		v_vode = 0.0
+		return false
+	v_vode += delta
+	var vztlak := maxf(0.18, 1.95 - maxf(0.0, v_vode - 2.0) * 0.24)
+	# ponořená část karoserie (spodek 0,3 m nad počátkem auta)
+	var ponor := clampf((hladina - (p.y + 0.3)) / (vyska_auta - 0.3), 0.0, 1.0)
+	apply_central_force(Vector3.UP * mass * 9.81 * vztlak * ponor)
+	linear_velocity *= 1.0 - minf(1.0, 0.65 * delta * ponor)
+	angular_velocity *= 1.0 - minf(1.0, 0.8 * delta * ponor)
+	if v_vode >= 6.0 and p.y + vyska_auta < hladina - 0.02:
+		potopene = true
+	return true
 
 
 ## Reflektor a brzdová světla auta, které řídí hráč (v noci, dálková klávesou L).

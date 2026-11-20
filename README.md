@@ -4,6 +4,10 @@ Skutečná Plzeň jako otevřený svět v prohlížeči. Chodíš, jezdíš aute
 létáš vrtulníkem, rozvážíš jídlo, vozíš zákazníky a ujíždíš policii – to vše v ulicích postavených ze skutečných
 otevřených dat. Běží na počítači i na mobilu, bez instalace.
 
+Ve složce [godot/](godot/README.md) vzniká verze v herním enginu **Godot 4.7.2** ze stejných dat,
+s editorem pro úpravy míst a zastávek. Co z této hry už převedla a jak je to ověřené, ukazuje
+[godot/FUNKCE.md](godot/FUNKCE.md). Webová hra popsaná níže funguje dál beze změny.
+
 ## Co ve hře je
 
 - **Z Plzně až do Dobříva.** Území má 33,2 × 19,7 km (zhruba 653 km²). Do Rokycan dojedeš

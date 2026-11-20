@@ -1,7 +1,7 @@
 {
  "format": 1,
  "zdroj": {
-  "commit": "5289b9049d9e3917c162c108f0624cf89d70cc50",
+  "commit": "1a1019fa244c4da5ec506dd66481a073f24e409a",
   "osm": "2026-11-15T01:07:22Z",
   "popis": "Převedeno z public/ nástrojem tools/godot/export_svet.mjs"
  },
@@ -102,9 +102,9 @@
  "soubory": [
   {
    "name": "teren",
-   "bytes": 8984113,
-   "raw": 27164116,
-   "sha256": "e629f4584622356d571b7f46407a81307c5413785492e83cf559bcac8ba1f4fc"
+   "bytes": 9477546,
+   "raw": 32818204,
+   "sha256": "185ecbd3bd80bdba1011cfcd31f08ffd0c9bee2830d79971401a0ea698432684"
   },
   {
    "name": "povrch",
@@ -120,9 +120,9 @@
   },
   {
    "name": "budovy",
-   "bytes": 10125156,
-   "raw": 20591672,
-   "sha256": "bf2b8178b8d22f6ba61f04713fb249e61c25c421662cb9b098838536586a96eb"
+   "bytes": 10125019,
+   "raw": 20591428,
+   "sha256": "4412c99df6472a6913a1e7191c1f0002920a45c9a3e96e2a75d5be16b531553c"
   },
   {
    "name": "stromy",

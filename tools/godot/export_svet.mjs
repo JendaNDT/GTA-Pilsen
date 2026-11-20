@@ -56,6 +56,7 @@ console.log(`Načtena data: konstrukce ${data.structures ? 'ano' : 'NE'}, úseky
 const { World, SURF } = await import(path.join(ROOT, 'src/world/world.js'));
 const world = new World(data);
 const ch = await import(path.join(ROOT, 'src/world/chunks.js'));
+const { riverBed } = await import(path.join(ROOT, 'src/physics/water.js'));
 const { Districts } = await import(path.join(ROOT, 'src/world/districts.js'));
 const { hash } = await import(path.join(ROOT, 'src/world/hash.js'));
 const { Earcut } = await import('three/src/extras/Earcut.js');
@@ -63,6 +64,9 @@ const { LANDMARK_INFO } = await import(path.join(ROOT, 'src/game/landmarks.js'))
 console.log(`Svět postaven za ${((performance.now() - t0) / 1000).toFixed(1)} s: ${world.cols} × ${world.rows} dlaždic`);
 
 const districts = new Districts(heritageManifest.districts);
+const { buildForge, FORGE } = await import(path.join(ROOT, 'src/world/mill.js'));
+const THREE = await import('three/webgpu');
+const forgeIndex = world.buildingAt(FORGE.x, FORGE.z);
 // Stejné přiřazení zaměřených budov k dlaždicím jako v src/world/heritage.js
 const heritageCells = new Map();
 const buildingLists = new Map();
@@ -124,6 +128,19 @@ function exportTerrain(ci, x0, z0) {
     deltas[k] = d;
   }
   const out = { g: step, n, y0: cm[0], d: deltas };
+  // Dno řek pod viditelnou hladinou (riverBed z src/physics/water.js): hloubka v cm v mřížce 4 m.
+  // Hra z ní staví kolizi terénu, plavání a vztlak aut. Dlaždice bez vody ji nemají.
+  const bed = riverBed(world, x0, z0, CHUNK);
+  if (bed) {
+    const N = CHUNK / 4 + 1, hl = new Uint8Array(N * N);
+    let any = false;
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+      const v = Math.min(255, Math.round(bed(x0 + i * 4, z0 + j * 4) * 100));
+      hl[j * N + i] = v;
+      if (v > 0) any = true;
+    }
+    if (any) out.hl = hl;
+  }
   const idx = geo.index.array;
   // Výjimečná dlaždice s místním dělením sítě (napojení mostovky na břeh)
   if (ci === world.bankTerrainTile) out.idx = Int32Array.from(idx);
@@ -379,6 +396,7 @@ function exportBuildings(ci, includeReplaced) {
   for (const i of buildingsIn(ci)) {
     const flags = B.flags[i];
     if (flags & BF.HAS_PARTS) continue;
+    if (i === forgeIndex) continue;   // vodní hamr má vlastní model (hamr.bin)
     const isReplaced = replaced.has(i);
     if (isReplaced && !includeReplaced) continue;
     const st = ch.styleFor(world, i, districts.at((world.bMinX[i] + world.bMaxX[i]) / 2, (world.bMinZ[i] + world.bMaxZ[i]) / 2));
@@ -710,6 +728,79 @@ const mhd = {
   zdroj: timetable.source,
 };
 await writeFile(path.join(OUT, 'mhd.bin'), deflateSync(encodeVariant(mhd), { level: 9 }));
+
+// Vodní hamr v Dobřívě (src/world/mill.js): model se postaví kódem předlohy a uloží ve světových
+// souřadnicích. Kola zvlášť (jedna geometrie, čtyři osy), ve hře se točí od 9 do 17 hodin.
+if (forgeIndex >= 0) {
+  const meshes = [], wheels = [];
+  const group = new THREE.Group();
+  buildForge(world, forgeIndex, 'blizko', 'daleko', 'voda', (geo, mat) => {
+    if (!geo) return null;
+    const m = new THREE.Mesh(geo);
+    m.userData.druh = typeof mat === 'string' ? mat : 'svetlo';
+    meshes.push(m);
+    return m;
+  }, { base: [], detail: [], wheels, night: [], group, disposables: [] });
+  group.updateMatrixWorld(true);
+  const pack = (geo, matrix) => {
+    const g = geo.index ? geo.toNonIndexed() : geo;
+    const P = g.attributes.position, N = g.attributes.normal, C = g.attributes.color;
+    const nm = new THREE.Matrix3().getNormalMatrix(matrix);
+    const v = new Float32Array(P.count * 3), n = new Float32Array(P.count * 3), c = new Float32Array(P.count * 3);
+    const t = new THREE.Vector3();
+    for (let k = 0; k < P.count; k++) {
+      // obrácené pořadí vrcholů trojúhelníku pro Godot
+      const src = k - (k % 3) + [0, 2, 1][k % 3];
+      t.fromBufferAttribute(P, src).applyMatrix4(matrix); v.set([t.x, t.y, t.z], k * 3);
+      t.fromBufferAttribute(N, src).applyMatrix3(nm).normalize(); n.set([t.x, t.y, t.z], k * 3);
+      if (C) c.set([C.getX(src), C.getY(src), C.getZ(src)], k * 3); else c.set([0.8, 0.8, 0.8], k * 3);
+    }
+    return { v: new Vec3Array(v), n: new Vec3Array(n), c: new ColorArray(c) };
+  };
+  const hamr = { casti: [], kolo: null, osy: [] };
+  for (const m of meshes) {
+    m.updateMatrixWorld(true);
+    hamr.casti.push({ ...pack(m.geometry, m.matrixWorld), druh: m.userData.druh });
+  }
+  if (wheels.length) {
+    const ident = new THREE.Matrix4();
+    const parts = wheels[0].children.map((m) => pack(m.geometry, ident));
+    hamr.kolo = parts;
+    for (const w of wheels) {
+      w.updateMatrixWorld(true);
+      hamr.osy.push(Float32Array.from(w.matrixWorld.elements));
+    }
+  }
+  hamr.stred = [FORGE.x, FORGE.z];
+  await writeFile(path.join(OUT, 'hamr.bin'), deflateSync(encodeVariant(hamr), { level: 9 }));
+  console.log(`Vodní hamr: ${meshes.length} částí, ${wheels.length} kola`);
+}
+
+// Denní rytmus provozu (src/game/traffic-rhythm.js): křivky měřených ulic (dopravní detektory města Plzně)
+// přiřazené hranám grafu stejným výpočtem jako v předloze, odhadové křivky a podklady pro odhad.
+{
+  const { TrafficRhythm } = await import(path.join(ROOT, 'src/game/traffic-rhythm.js'));
+  const rhythm = new TrafficRhythm(world, data.trafficProfiles, null);
+  const krivky = [], index = new Map();
+  const krivka = (c) => {
+    if (!index.has(c)) { index.set(c, krivky.length); krivky.push(Float32Array.from([...c.weekday, ...c.weekend])); }
+    return index.get(c);
+  };
+  const residential = { weekday: [0.12, 0.08, 0.07, 0.07, 0.09, 0.25, 0.59, 0.83, 0.70, 0.58, 0.55, 0.57,
+    0.63, 0.65, 0.72, 0.84, 0.90, 0.82, 0.66, 0.51, 0.35, 0.24, 0.18, 0.14],
+  weekend: [0.15, 0.11, 0.08, 0.07, 0.07, 0.10, 0.20, 0.37, 0.54, 0.66, 0.72, 0.73,
+    0.68, 0.62, 0.63, 0.68, 0.70, 0.67, 0.58, 0.47, 0.34, 0.25, 0.19, 0.16] };
+  krivka(residential); krivka(rhythm.center); krivka(rhythm.arterial);
+  const hrany = new Int32Array(world.edgeCount).fill(-1);
+  for (const [edge, m] of rhythm.measured) hrany[edge] = krivka(m.curve);
+  const zastavba = new Int32Array(world.cols * world.rows);
+  for (let ci = 0; ci < zastavba.length; ci++) zastavba[ci] = world.bChunks[ci]?.length ?? 0;
+  const misto = (p) => p ? [p[0], p[1]] : [1e9, 1e9];
+  const rytmus = { krivky, hrany, zastavba, rokycany: misto(rhythm.rokycany), dobriv: misto(rhythm.dobriv),
+    tridy: { sekundarniSpojka: RC.SECONDARY_LINK, terciarniSpojka: RC.TERTIARY_LINK, obytna: RC.LIVING } };
+  await writeFile(path.join(OUT, 'rytmus.bin'), deflateSync(encodeVariant(rytmus), { level: 9 }));
+  console.log(`Rytmus provozu: ${krivky.length} křivek, ${rhythm.measured.size} měřených hran`);
+}
 
 // Hlášení zastávek (syntetický hlas Piper, viz public/audio/zdroje.txt) se kopírují beze změny.
 const ZVUK = path.join(ROOT, 'godot/data/zvuk');

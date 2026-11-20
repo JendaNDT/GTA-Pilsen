@@ -13,6 +13,9 @@ const DNO_REKY := -12.5
 func scenar() -> void:
 	krok("Start na náměstí Republiky")
 	await cekej_na_svet()
+	# pevný klidný čas (neděle 6:00): zkouška ověřuje mosty, ne hustotu provozu podle denní doby
+	hra.cas_zivy = false
+	hra.nastav_cas(6.0, JizdniRad.den_z_textu("2026-11-22"))
 	await cekej(1.0)
 	var p := hra.chodec.global_position
 	over(Vector2(p.x, p.z).distance_to(Hra.START) < 3.0, "hráč stojí u startu (%.1f, %.1f)" % [p.x, p.z])

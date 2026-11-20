@@ -30,6 +30,10 @@ Postup se ukládá sám každých 20 sekund a při zavření okna.
 - **Počasí** podle ročního období (déšť, sníh, mlha, mokrá vozovka brzdí hůř), den a noc podle
   skutečného času v Plzni. V nastavení jde zapnout „Vždy jasno“.
 - **Fotorežim** (O): hra se zastaví, kamerou se volně létá a snímek se uloží jako PNG.
+- **Řeky** mají dno: do vody se dá vejít a plavat, auto ve vodě chvíli plave a pak se potopí.
+- **Provoz podle denní doby** podle skutečných měření dopravních detektorů Plzně: ráno a odpoledne
+  špička, v noci prázdné ulice. Na tabuli zastávky je i nejbližší přestup.
+- **Vodní hamr v Dobřívě**, jehož kola se točí v pracovní době (9–17 h).
 
 ## Ovládání
 
@@ -42,6 +46,8 @@ Postup se ukládá sám každých 20 sekund a při zavření okna.
 | myš se stisknutým tlačítkem | otáčení kamery, kolečko přibližuje |
 | C | vzdálenost kamery |
 | H | klakson |
+| L | dálková světla (v noci svítí auta sama) |
+| F3 | přehled výkonu: snímky za sekundu, kreslení, paměť |
 | R | postavit auto zpět na kola |
 | M | velká mapa (kliknutím nastavíš cíl) |
 | J | zakázka rozvozu jídla |
@@ -125,7 +131,7 @@ godot/testy/spust_zkousky.sh
 Každá zkouška hraje celou situaci jako hráč: chůze na zastávku a jízda tramvají, přejezd a chůze
 po Wilsonově mostě i průjezd pod mostem Milénia, uložení a načtení po restartu, provoz a semafory,
 policie, let vrtulníkem, nárazy a brzdná dráha na zkušební ploše, garáž, směna řidiče tramvaje,
-fotorežim a výpočet počasí. Každá na konci vypíše `VÝSLEDEK: PROŠLO`. Jednotlivě například:
+fotorežim, výpočet počasí, plavání a auto ve vodě a vodní hamr. Každá na konci vypíše `VÝSLEDEK: PROŠLO`. Jednotlivě například:
 
 ```bash
 godot --headless --path godot testy/scenar_most.tscn

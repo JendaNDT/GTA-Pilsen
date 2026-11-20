@@ -35,6 +35,7 @@ var _info_cas := 0.0
 @onready var policie: Policie = $Policie
 @onready var zvuky: Zvuky = $Zvuky
 var garaz: Garaz
+var hamr: Hamr
 var smeny: Smeny
 var fotorezim: Fotorezim
 var _dvere_minule := false
@@ -102,6 +103,10 @@ func _ready() -> void:
 	_sleduj(chodec)
 	dotyk.akce.connect(_akce)
 	zakazky.hra = self
+	hamr = Hamr.new()
+	hamr.name = "Hamr"
+	hamr.sledovat = kamera.cil
+	add_child(hamr)
 	garaz = Garaz.new()
 	garaz.name = "Garaz"
 	garaz.hra = self
@@ -484,6 +489,8 @@ func _hlidej_heliporty(delta: float) -> void:
 ## Kamera, načítání mapy, oblastí a MHD sledují hráče nebo jeho vozidlo.
 func _sleduj(uzel: Node3D) -> void:
 	kamera.cil = uzel
+	if hamr:
+		hamr.sledovat = uzel
 	svet.sledovat = uzel
 	doprava.sledovat = uzel
 	chodci.sledovat = uzel
@@ -533,6 +540,7 @@ func _process(delta: float) -> void:
 			("%s · " % ctvrt if ctvrt != "" else "") + "%d m n. m." % Mapa.nadmorska_vyska(p.y))
 		prostredi.nastav_hodinu(cas_hodina, cas_den)
 		_obnov_pocasi()
+		hamr.hodina = cas_hodina
 		hud.ladeni(_text_ladeni())
 	if OS.has_feature("web") and _info_cas == 0.5:
 		_stav_pro_prohlizec()
