@@ -99,6 +99,12 @@ npm run dev
 
 Hra pak běží na adrese, kterou příkaz vypíše (obvykle http://localhost:5173).
 
+**Na telefonu** připoj telefon i počítač ke stejné domácí Wi-Fi. Na počítači spusť hru
+příkazem `npm run dev` podle postupu výše a nech terminál otevřený. Do prohlížeče
+v telefonu opiš celou adresu z řádku **Network**, včetně čísla portu. Otoč telefon
+na šířku a klepni na **Hrát**. Objeví se dotyková páčka a tlačítko mapy.
+Spouštěč `Spustit hru.command` na Macu používá adresu dostupnou jen z toho Macu.
+
 Verzi pro nasazení na web vytvoří:
 
 ```bash

@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Spuštění z místní sítě a z disku
+
+V emulaci dotyku hra z rozbaleného archivu přes HTTP automaticky vybrala WebGL 2. Hráč se pohnul páčkou a otevřel mapu. Po sestavení do běžné složky `dist` prošla také opravená příprava zkoušky otevření HTML z disku. Měření na fyzickém telefonu zůstává otevřené. [Podmínky zkoušek](../E26.md#spuštění-na-telefonu-přes-místní-http)
+
 ## Archiv s úplným seznamem modulů
 
 Revize `962291e` má ověřené archivy, sestavení na třech verzích Node.js a oba návraty s uloženým postupem. Hra používá stejných 815 souborů jako při probíhajících zkouškách. [Otisky archivů a rozsah ověření](../E26.md#archiv-s-úplným-seznamem-modulů)
