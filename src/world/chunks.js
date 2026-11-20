@@ -15,6 +15,7 @@ import { treeType } from './tree-models.js';
 import { waterTile } from './water.js';
 import { terrainClassMask } from './terrain-classes.js';
 import { terrainMaskTexture } from './terrain-detail.js';
+import { localGradeIndices } from './terrain-indices.js';
 import { terrainGridStep } from '../physics/terrain.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
 import { CHUNK, QUALITY, PARAMS, BK, BF, RC, RF, LC, DRIVABLE_MAX } from '../config.js';
@@ -990,7 +991,10 @@ function buildTerrain(world, ci, cx0, cz0) {
   g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
   g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
   // Dlaždice sdílejí čísla vrcholů v paměti. Každá ale uvolňuje vlastní atribut ve vykreslovači.
-  g.setIndex(new THREE.BufferAttribute(terrainIndices.get(N), 1));
+  const coarseStep = (world.terrainDetail.has(ci) ? world.tDetailG : world.tG) / G;
+  const indices = ci === world.bankTerrainTile && grade && coarseStep >= 2 && coarseStep % 2 === 0 && N % coarseStep === 0
+    ? localGradeIndices(N, coarseStep, world.gradeTerrain.get(ci)) : terrainIndices.get(N);
+  g.setIndex(new THREE.BufferAttribute(indices, 1));
   g.computeBoundingSphere();
   return g;
 }

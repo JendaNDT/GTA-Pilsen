@@ -101,7 +101,9 @@ export class World {
     }
     // Pravý pruh mostu 2706 přechází na šikmý břeh silnice 33139.
     if (this.gradeStep && (this.r.flags[2706] & RF.BRIDGE)) {
-      for (const [x, z, delta] of bridgeBankOffsets(this, 2706, 33139)) this._setGradeOffset(x, z, delta, true);
+      const offsets = bridgeBankOffsets(this, 2706, 33139);
+      if (offsets.length) this.bankTerrainTile = this.chunkIndex(offsets[0][0], offsets[0][1]);
+      for (const [x, z, delta] of offsets) this._setGradeOffset(x, z, delta, true);
     }
     // V tomto výřezu končí nájezd 2725 u měřeného horního pásu 64.
     this.roadApproach = bridgeApproach(this, 64, 2725);
