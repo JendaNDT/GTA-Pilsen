@@ -30,6 +30,8 @@ var zatoceni := 0.0
 var rucni := false
 var poskozeni := 0.0               ## 0–100 %; při 100 je auto nepojízdné
 var _minula := Vector3.ZERO
+var _naraz_dv := 0.0                ## změna rychlosti během probíhajícího nárazu
+var _naraz_cas := 0.0
 var _kour: CPUParticles3D
 var _kola: Array[VehicleWheel3D] = []
 var _spec := {}
@@ -173,16 +175,29 @@ func _physics_process(delta: float) -> void:
 func _hlidej_naraz() -> void:
 	var dv := (linear_velocity - _minula).length()
 	_minula = linear_velocity
+	var dt := get_physics_process_delta_time()
 	if dv > 2.5 and get_contact_count() > 0:
-		poskozeni = minf(100.0, poskozeni + (dv - 2.5) * 4.0)
-		_kour.emitting = poskozeni >= 60.0
-		var tmavsi := clampf(poskozeni / 100.0, 0.0, 1.0) * 0.45
-		for jmeno in ["Model/Spodek", "Model/Kabina"]:
-			var mi := get_node_or_null(jmeno) as MeshInstance3D
-			if mi and mi.mesh:
-				var mat := (mi.mesh as BoxMesh).material as StandardMaterial3D
-				mat.albedo_color = barva.darkened(tmavsi)
-		naraz.emit(dv, null)
+		# jeden náraz se rozloží do několika kroků fyziky – sečte se celá změna rychlosti
+		_naraz_dv += dv
+		_naraz_cas = 0.3
+	elif _naraz_cas > 0.0:
+		_naraz_cas -= dt
+		if _naraz_cas <= 0.0:
+			_vyhodnot_naraz(_naraz_dv)
+			_naraz_dv = 0.0
+
+
+## Poškození podle síly nárazu: 50 km/h do zdi asi 45 %, nad 100 km/h zničení.
+func _vyhodnot_naraz(dv: float) -> void:
+	poskozeni = minf(100.0, poskozeni + maxf(0.0, dv - 3.0) * 4.0)
+	_kour.emitting = poskozeni >= 60.0
+	var tmavsi := clampf(poskozeni / 100.0, 0.0, 1.0) * 0.45
+	for jmeno in ["Model/Spodek", "Model/Kabina"]:
+		var mi := get_node_or_null(jmeno) as MeshInstance3D
+		if mi and mi.mesh:
+			var mat := (mi.mesh as BoxMesh).material as StandardMaterial3D
+			mat.albedo_color = barva.darkened(tmavsi)
+	naraz.emit(dv, null)
 
 
 ## Dotyk s tělesem: ulomitelná zařízení se zlomí, ostatní nárazy hlásí signál naraz.
