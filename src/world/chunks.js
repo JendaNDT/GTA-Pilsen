@@ -179,7 +179,11 @@ class Buf {
     g.setAttribute('color', new THREE.BufferAttribute(new Uint8Array(this.c.map((v) => Math.min(255, v))), 3, true));
     g.setAttribute('aWin', new THREE.BufferAttribute(new Float32Array(this.w), 3));
     g.setAttribute('aSurface', new THREE.BufferAttribute(new Uint8Array(this.s), 2, true));
-    if (this.layers.length) g.setAttribute('buildingLayer', new THREE.Uint8BufferAttribute(this.layers, 1));
+    if (this.layers.length) {
+      const layers = new THREE.Uint8BufferAttribute(this.layers, 1);
+      layers.gpuType = THREE.IntType;
+      g.setAttribute('buildingLayer', layers);
+    }
     g.setIndex(this.vc > 65535 ? new THREE.BufferAttribute(new Uint32Array(this.i), 1) : new THREE.BufferAttribute(new Uint16Array(this.i), 1));
     g.computeBoundingSphere();
     return g;

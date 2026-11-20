@@ -1,5 +1,11 @@
 # Stav etapy E24
 
+## Číslo materiálu fasády na WebGL 2
+
+Při startu hry na WebGL 2 odmítl ovladač vykreslit část domů. U atributu `buildingLayer` shader očekával celé číslo, zatímco geometrie předávala bajt jako číslo s plovoucí řádovou čárkou. Geometrie nyní výslovně předává celočíselný atribut. Stěny a střechy si zachovávají původní čísla materiálů.
+
+Na této větvi prošlo 166 testů JavaScriptu a produkční sestavení. Chromium 159 na střední předvolbě načetlo atlasy fasád a ověřilo materiál stěn i střech v herní scéně na WebGL 2 a WebGPU. Kontrola nově zachytí i odmítnutí příkazu vykreslení ve WebGL. Výsledky jsou v `data-raw/e24/vrstva-typ-e2e.log`.
+
 ## Klávesové ovládání mapy a fotorežimu
 
 Po stisku O v mapě lze pokračovat klávesou Escape a ze hry pak znovu otevřít fotorežim. Celou posloupnost ověřilo Chromium 159 na WebGL 2 i WebGPU. Prošlo 166 testů JavaScriptu a produkční sestavení. [Protokol E24](../E24.md)
