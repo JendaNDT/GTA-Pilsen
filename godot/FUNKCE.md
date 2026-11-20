@@ -13,7 +13,7 @@ Stav v Godotu: **hotovo** = funguje a je ověřené zkouškou, **částečně** 
 | --- | --- | --- | --- |
 | 1 | Území 33,2 × 19,7 km Plzeň–Rokycany–Dobřív, 10 218 dlaždic 256 m | hotovo | celé území převedeno, načítá se po dlaždicích |
 | 2 | Terén ČÚZK (8 m, 4 m na vybraných místech, zarovnání pod silnicemi) | hotovo | výšky převzaté z výpočtu předlohy, shoda s jejími trojúhelníky |
-| 3 | 103 300 budov s výškou, střechy sedlové, valbové, odsazené, ploché | hotovo | stejný výpočet tvaru jako `buildBuildings` |
+| 3 | 103 300 budov s výškou, střechy sedlové, valbové, odsazené, ploché | hotovo | stejný výpočet tvaru jako `buildBuildings`; oboustranné kolize stěn, hráč se nedostane dovnitř chůzí, startem ani výstupem z auta (zkouška `scenar_budovy`) |
 | 4 | Okna fasád podle stylu (dům, panelák, činžák, kanceláře, hala, kostel, radnice), svícení v noci | hotovo | převedený shader, rozvrh rozsvícení oken |
 | 5 | Silnice, chodníky, pěšiny, vodorovné značení, přechody, stopčáry | hotovo | kreslicí příkazy převzaté z předlohy |
 | 6 | 1 179 mostů s mostovkou, pilíři a zábradlím, kamenné oblouky | hotovo | včetně kalibrace mostovek podle měření; ověřen průjezd i chůze po Wilsonově mostě a průjezd pod mostem Milénia |
@@ -21,7 +21,7 @@ Stav v Godotu: **hotovo** = funguje a je ověřené zkouškou, **částečně** 
 | 8 | Povrch země: pole, louky, lesy, parky, voda, potoky, štěrk kolejí | hotovo | mapa barev 1 m na pixel |
 | 9 | Letecké snímky otevřené krajiny (ortofoto ČÚZK) | hotovo | stejné bloky ČÚZK (2 m na pixel) a stejné míchání „soft-light“ 80 % na polích, loukách, trávě a křovinách uvnitř hrací plochy; vypínač v nastavení; ověřeno snímkem se snímky a bez nich |
 | 10 | Stromy (listnaté, jehličnaté, lesy) a lampy veřejného osvětlení | částečně | stromy s ročními obdobími a sněhem; stromy zatím bez kolizí |
-| 11 | Měřené budovy centra (3D model města), stavby, jezy | hotovo | 93 dlaždic městského modelu nahrazuje budovy z OSM, zdi, pilíře a jezy s kolizí |
+| 11 | Měřené budovy centra (3D model města), stavby, jezy | hotovo | 93 dlaždic městského modelu nahrazuje budovy z OSM, zdi, pilíře a jezy s kolizí. Model má stěny otočené lícem dovnitř a společné zdi sousedních domů v jedné rovině: budovy se proto kreslí z obou stran jako v předloze, líc má přednost před rubem (bez blikání), zevnitř není vidět ven (`scenar_budovy`); místy zůstává úzká spára mezi domy přímo v datech modelu |
 | 12 | Tři podrobné úseky ulic s přízemím a mobiliářem | chybí | |
 | 13 | Vodní hamr v Dobřívě s otáčejícími se koly | hotovo | model postavený kódem předlohy (`mill.js`) v převodníku, kolize budovy, 4 kola se točí 0,72 rad/s od 9 do 17 h; zkouška `scenar_hamr`; bez nočního svícení oken a zvuku bucharu |
 | 14 | Proudící voda, pěna na jezech | částečně | voda se vlní, bez proudu a pěny |
@@ -96,7 +96,7 @@ Stav v Godotu: **hotovo** = funguje a je ověřené zkouškou, **částečně** 
 Z 52 funkcí předlohy je **33 hotových**, **18 částečně** a **1 chybí** (tři podrobné úseky ulic
 s přízemím a mobiliářem). K tomu 2 nové funkce editoru. Rozvoz jídla a taxi jsou podle dohody odložené.
 
-**Zkoušky.** `godot/testy/spust_zkousky.sh` hraje 14 zkoušek celých situací (import oblastí, počasí,
+**Zkoušky.** `godot/testy/spust_zkousky.sh` hraje 15 zkoušek celých situací (import oblastí, počasí, budovy,
 most a průjezd pod mostem, MHD, nárazy a brzdná dráha, uložení a načtení po restartu, provoz a policie,
 fotorežim, garáž, směna řidiče tramvaje, hamr, voda, vrtulník). Webový export ověřuje
 `tools/godot/zkouska_web.mjs` v emulovaném telefonu (start asi 8 s, dotyková páčka, bez chyb v konzoli).

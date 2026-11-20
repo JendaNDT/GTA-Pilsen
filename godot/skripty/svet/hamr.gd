@@ -45,6 +45,7 @@ func _postav() -> void:
 	var mat := StandardMaterial3D.new()
 	mat.vertex_color_use_as_albedo = true
 	mat.roughness = 0.85
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	var voda := StandardMaterial3D.new()
 	voda.albedo_color = Color(0.28, 0.38, 0.4, 0.85)
 	voda.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA

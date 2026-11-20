@@ -87,6 +87,10 @@ func _priprav_materialy() -> void:
 	_mat_pevne.cull_mode = BaseMaterial3D.CULL_DISABLED
 	_mat_budovy = ShaderMaterial.new()
 	_mat_budovy.shader = load("res://materialy/budova.gdshader")
+	# rub budov jako druhý průchod (kreslení z obou stran, líc má přednost)
+	var rub := ShaderMaterial.new()
+	rub.shader = load("res://materialy/budova_rub.gdshader")
+	_mat_budovy.next_pass = rub
 	_mat_strom = ShaderMaterial.new()
 	_mat_strom.shader = load("res://materialy/strom.gdshader")
 	_mat_jehlicnan = ShaderMaterial.new()
@@ -389,7 +393,8 @@ func _krok(d: Dlazdice) -> void:
 				if mi:
 					mi.name = "Budovy"
 					u.add_child(mi)
-				_pridej_kolizi(d, b.kolize, false, "budovy")
+				# oboustranně: stěna zastaví z venku i zevnitř (stejně jako u měřeného modelu)
+				_pridej_kolizi(d, b.kolize, true, "budovy")
 		3:
 			if stromy:
 				var druhy := Stavba.stromy(Mapa.blok("stromy", d.ci), Mapa.roh_dlazdice(d.ci))

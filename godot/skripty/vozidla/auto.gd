@@ -298,9 +298,13 @@ func opravit() -> void:
 
 
 ## Místo vedle levých předních dveří (pro výstup) ve světových souřadnicích.
-func misto_vystupu() -> Vector3:
+## strana: 0 vlevo (u řidiče), 1 vpravo, 2 za autem, 3 před autem.
+func misto_vystupu(strana := 0) -> Vector3:
 	var W: float = _spec.wid
-	return global_transform * Vector3(W / 2.0 + 0.8, 0.1, 0.4)
+	var L: float = _spec.len
+	var mista := [Vector3(W / 2.0 + 0.8, 0.1, 0.4), Vector3(-W / 2.0 - 0.8, 0.1, 0.4),
+		Vector3(0.0, 0.1, -L / 2.0 - 1.0), Vector3(0.0, 0.1, L / 2.0 + 1.0)]
+	return global_transform * (mista[clampi(strana, 0, 3)] as Vector3)
 
 
 ## Vrátí auto na kola na nejbližší místě (klávesa R).

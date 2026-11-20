@@ -154,6 +154,7 @@ func _ready() -> void:
 	svet.postav_hned(start, 300.0)
 	chodec.postav_na(start.x, start.y, float(ulozeny_hrac.get("y", NAN)))
 	chodec.natoceni = float(ulozeny_hrac.get("natoceni", 2.4))
+	_zajisti_venku.call_deferred()
 	var ulozene_auto: Dictionary = u.auto
 	if ulozene_auto.is_empty():
 		_postav_auto_u_startu()
@@ -364,10 +365,21 @@ func vystoupit(vynutit := false) -> bool:
 		hud.zprava("Nejdřív zpomal", 1.5)
 		return false
 	var a := auto_hrace
+	# vystoupit na stranu, kde není zeď ani budova (řidič vlevo, jinak vpravo, za, před autem)
+	var cil: Variant = null
+	for strana in 4:
+		var c := a.misto_vystupu(strana)
+		var q := Vector3(c.x, _povrch(c) + 0.05, c.z)
+		if not _zed_mezi(a.global_position + Vector3(0, 1.0, 0), q + Vector3(0, 1.0, 0)) and not ve_zdi(q) and not uvnitr_budovy(q):
+			cil = q
+			break
+	if cil == null:
+		if not vynutit:
+			hud.zprava("Tady se nedá vystoupit – překáží zeď", 1.5)
+			return false
+		cil = volne_misto(a.misto_vystupu())
 	a.ridi_hrac = false
-	var p := a.misto_vystupu()
-	var y := _povrch(p)
-	chodec.global_position = Vector3(p.x, y + 0.05, p.z)
+	chodec.global_position = cil
 	chodec.velocity = Vector3.ZERO
 	chodec.aktivni = true
 	chodec.visible = true
@@ -444,7 +456,8 @@ func vystoupit_z_vrtulniku(vynutit := false) -> bool:
 		hud.zprava("Nejdřív přistaň", 1.5)
 		return false
 	var p := vrtulnik.global_transform * Vector3(2.2, 0.0, 0.5)
-	chodec.global_position = Vector3(p.x, _povrch(p + Vector3(0, 2.0, 0)) + 0.05, p.z)
+	# na střeše se vystupuje na střechu; vedle budovy nikdy do zdi
+	chodec.global_position = volne_misto(Vector3(p.x, _povrch(p + Vector3(0, 2.0, 0)) + 0.05, p.z))
 	chodec.velocity = Vector3.ZERO
 	chodec.aktivni = true
 	chodec.visible = true
@@ -496,6 +509,95 @@ func _sleduj(uzel: Node3D) -> void:
 	chodci.sledovat = uzel
 	oblasti.sledovat = uzel
 	mhd.sledovat = uzel
+
+
+## Skupina kolize (mesto, budovy, mosty, teren…) zasažená paprskem.
+func _skupina(z: Dictionary) -> String:
+	if z.is_empty() or z.collider == null:
+		return ""
+	var c: Node = z.collider
+	return str(c.get_child(z.shape).name) if z.shape < c.get_child_count() else str(c.name)
+
+
+func _paprsek(a: Vector3, b: Vector3) -> Dictionary:
+	var q := PhysicsRayQueryParameters3D.create(a, b, VRSTVA_SVET)
+	q.hit_back_faces = true
+	return get_world_3d().direct_space_state.intersect_ray(q)
+
+
+func _zed_mezi(a: Vector3, b: Vector3) -> bool:
+	return _skupina(_paprsek(a, b)) in ["mesto", "budovy", "konstrukce"]
+
+
+## Bod je uvnitř budovy: nad hlavou je budova a ve všech 8 směrech stěny do 50 m.
+func uvnitr_budovy(p: Vector3) -> bool:
+	if not _skupina(_paprsek(p + Vector3(0, 0.5, 0), p + Vector3(0, 80, 0))) in ["mesto", "budovy"]:
+		return false
+	var h := p + Vector3(0, 1.2, 0)
+	for k in 8:
+		var s := Vector3(sin(k * PI / 4.0), 0, cos(k * PI / 4.0))
+		if not _skupina(_paprsek(h, h + s * 50.0)) in ["mesto", "budovy"]:
+			return false
+	return true
+
+
+## Hráčova postava by v bodě p (nohy) zasahovala do zdi.
+func ve_zdi(p: Vector3) -> bool:
+	var tvar := CapsuleShape3D.new()
+	tvar.radius = 0.3
+	tvar.height = 1.6
+	var q := PhysicsShapeQueryParameters3D.new()
+	q.shape = tvar
+	q.transform = Transform3D(Basis.IDENTITY, p + Vector3(0, 1.1, 0))
+	q.collision_mask = VRSTVA_SVET
+	for z: Dictionary in get_world_3d().direct_space_state.intersect_shape(q, 4):
+		if z.collider and z.shape < (z.collider as Node).get_child_count() and \
+				str((z.collider as Node).get_child(z.shape).name) in ["mesto", "budovy", "konstrukce"]:
+			return true
+	return false
+
+
+## Volné místo pro hráče u bodu p: když je p v budově nebo ve zdi, chodník nejbližší silnice.
+func volne_misto(p: Vector3) -> Vector3:
+	if not uvnitr_budovy(p) and not ve_zdi(p):
+		return p
+	var u := Mapa.nejblizsi_ulice(p.x, p.z, 200.0, 13)
+	if u.is_empty():
+		return p
+	var bod: Vector3 = u.bod
+	var smer: Vector3 = u.smer
+	var kolmo := Vector3(-smer.z, 0.0, smer.x)
+	if kolmo.dot(p - bod) < 0.0:
+		kolmo = -kolmo
+	for odsazeni: float in [float(u.sirka) / 2.0 + 1.0, -float(u.sirka) / 2.0 - 1.0, 0.0]:
+		var c := bod + kolmo * odsazeni
+		c.y = _povrch(Vector3(c.x, bod.y + 1.0, c.z)) + 0.05
+		if not uvnitr_budovy(c) and not ve_zdi(c):
+			return c
+	# ulice vede pod domem nebo data nesedí: hledat po kruzích kolem bodu na úrovni terénu
+	var r := 2.0
+	while r <= 120.0:
+		for k in 16:
+			var c := Vector3(p.x + sin(k * TAU / 16.0) * r, 0.0, p.z + cos(k * TAU / 16.0) * r)
+			c.y = Mapa.vyska(c.x, c.z) + 0.05
+			if not ve_zdi(c) and not uvnitr_budovy(c):
+				return c
+		r += 2.0
+	return p
+
+
+## Po startu nebo načtení hry hráč nesmí zůstat uvnitř budovy (kolize dlaždic vzniknou o pár kroků později).
+func _zajisti_venku() -> void:
+	for k in 12:
+		await get_tree().physics_frame
+	if rezim != "pesky":
+		return
+	var p := chodec.global_position
+	var v := volne_misto(p)
+	if v.distance_to(p) > 0.01:
+		chodec.global_position = v
+		chodec.velocity = Vector3.ZERO
+		print("Hráč přemístěn z budovy na ulici: (%.1f, %.1f) → (%.1f, %.1f)" % [p.x, p.z, v.x, v.z])
 
 
 ## Výška pochozího povrchu v bodě (most, střecha i terén) paprskem shora.
