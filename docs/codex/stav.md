@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Ověření archivů po opravě rozvozu MHD
+
+Web kandidáta `254ae60` se shoduje po sestavení na všech třech podporovaných verzích Node.js. Oba návraty s uloženou hrou prošly. Samostatný průjezd místem dřívějšího zastavení měřil 1131,61 m. Úplná prohlížečová sada a porovnání zásob při čtvrtém návratu zůstávají otevřené. [Otisky archivů a výsledky průjezdu](../E26.md#ověření-archivů-po-opravě-rozvozu-mhd)
+
 ## Mělčina, hluboká voda a plavání
 
 Na opraveném sestavení prošlo všech osm cílených kontrol na WebGL 2 a WebGPU. Zahrnují rozvoz MHD, dvě fiktivní nádrže a plavání v mapě Radbuzy. Úplná sada nyní obsahuje 360 případů. Otevřená je úplná sada, porovnání třetího a čtvrtého návratu a kontroly na autorových zařízeních. [Výsledky zkoušek vody](../E26.md#mělčina-hluboká-voda-a-plavání)
