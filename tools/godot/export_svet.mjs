@@ -573,5 +573,37 @@ const zastavky = timetable.stops.map(([name, x, z, id], index) => {
     smer: road ? Math.round(Math.atan2(road.dx, road.dz) * 1000) / 1000 : 0 };
 });
 await writeFile(path.join(OUT, 'zastavky.json'), JSON.stringify(zastavky, null, 0) + '\n');
+
+// Jízdní řád MHD pro Godot: trasy s výškovým profilem po 10 m (povrch včetně mostů),
+// zastávky, vzory zastavení, spoje a kalendář. Formát odpovídá src/game/timetable.js.
+const PROFIL_KROK = 10;
+const mhdRoutes = timetable.routes.map((r) => {
+  const path = r.path, cum = [0];
+  for (let i = 1; i < path.length; i++) cum.push(cum[i - 1] + Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]));
+  const length = cum.at(-1), heights = [];
+  let seg = 0, prev = world.heightAt(path[0][0], path[0][1]) + 1;
+  for (let sDist = 0; sDist <= length + PROFIL_KROK; sDist += PROFIL_KROK) {
+    const q = Math.min(sDist, length);
+    while (seg < path.length - 2 && cum[seg + 1] < q) seg++;
+    const l = cum[seg + 1] - cum[seg] || 1, t = (q - cum[seg]) / l;
+    const x = path[seg][0] + (path[seg + 1][0] - path[seg][0]) * t, z = path[seg][1] + (path[seg + 1][1] - path[seg][1]) * t;
+    const y = world.groundY(x, z, prev + 1.5);
+    heights.push(Math.round(y * 100));
+    prev = y;
+  }
+  return { typ: r.type, linka: r.ref, odkud: r.from, kam: r.to, delka: r.length,
+    body: Float32Array.from(path.flat()), zastavky: r.stops.map(([sDist, name]) => [sDist, name]),
+    vysky: Int32Array.from(heights) };
+});
+const mhd = {
+  verze: 1, krok: PROFIL_KROK, kalendar: timetable.calendar, trasy: mhdRoutes,
+  stanoviste: timetable.stops.map(([name, x, z, code]) => [name, x, z, code ?? '']),
+  vzory: timetable.patterns.map(([ri, stops, destination, direction, entry, exit]) =>
+    [ri, Int32Array.from(stops.flat()), destination, String(direction), Boolean(entry), Boolean(exit)]),
+  spoje: timetable.trips.map(([id, service, pattern, values]) => [String(id), service, pattern, Int32Array.from(values)]),
+  prestupy: timetable.transfers.map((t) => Int32Array.from(t)),
+  zdroj: timetable.source,
+};
+await writeFile(path.join(OUT, 'mhd.bin'), deflateSync(encodeVariant(mhd), { level: 9 }));
 console.log(`Hotovo za ${((performance.now() - t0) / 1000).toFixed(0)} s, ${tiles.length} dlaždic`);
 for (const f of files) console.log(`  ${f.name}.pak ${(f.bytes / 1e6).toFixed(2)} MB (nekomprimováno ${(f.raw / 1e6).toFixed(1)} MB)`);

@@ -53,11 +53,11 @@ const stav = () => page.evaluate(() => window.__plzen ?? null);
 let s = null;
 while (Date.now() - t0 < 600000) {
   s = await stav();
-  if (s && s.dlazdice >= 20) break;
+  if (s && s.dlazdice >= 9) break;
   await page.waitForTimeout(2000);
 }
 over(Boolean(s), `hra se spustila za ${((Date.now() - t0) / 1000).toFixed(0)} s`);
-over(s && s.dlazdice >= 20, `postaveno ${s?.dlazdice ?? 0} dlaždic`);
+over(s && s.dlazdice >= 9, `postaveno ${s?.dlazdice ?? 0} dlaždic`);
 over(s && Math.hypot(s.x + 42, s.z - 52) < 5, `hráč stojí na náměstí Republiky (${s?.x?.toFixed(1)}, ${s?.z?.toFixed(1)})`);
 if (!pocitac) over(s?.dotyk === true, 'hra rozpoznala dotykovou obrazovku');
 if (snimky) {

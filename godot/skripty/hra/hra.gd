@@ -26,6 +26,10 @@ var _info_cas := 0.0
 @onready var kamera: KameraHrace = $Kamera
 @onready var auta: Node3D = $Auta
 @onready var oblasti: Oblasti = $Oblasti
+@onready var mhd: Mhd = $Mhd
+
+var jizda: VuzMhd               ## vůz MHD, ve kterém hráč jede
+var _odjezdy_cas := 0.0
 @onready var hud: Hud = $Hud
 @onready var dotyk: Dotyk = $Dotyk
 
@@ -42,6 +46,7 @@ func _ready() -> void:
 	_nastav_cas_ze_systemu()
 	chodec.collision_layer = VRSTVA_HRAC
 	chodec.collision_mask = VRSTVA_SVET | VRSTVA_VOZIDLA
+	mhd.hodiny = ted
 	_sleduj(chodec)
 	dotyk.akce.connect(_akce)
 	hud.nacitani("Načítám Plzeň…")
@@ -53,6 +58,19 @@ func _ready() -> void:
 	_postav_auto_u_startu()
 	hud.nacitani("")
 	hud.zprava("Vítej v Plzni! WASD chůze, F nastoupit, myš otáčí kamerou.", 6)
+
+
+## Herní čas v sekundách od 1. 1. 1970 (místní čas v Plzni), jako clock.now v předloze.
+func ted() -> float:
+	return cas_den * 86400.0 + cas_hodina * 3600.0
+
+
+## Nastaví herní hodinu (a případně den).
+func nastav_cas(hodina: float, den := -1) -> void:
+	if den >= 0:
+		cas_den = den
+	cas_hodina = fposmod(hodina, 24.0)
+	prostredi.nastav_hodinu(cas_hodina, cas_den)
 
 
 func _nastav_cas_ze_systemu() -> void:
@@ -103,11 +121,17 @@ func _akce(nazev: String) -> void:
 	match nazev:
 		"nastoupit":
 			if rezim == "pesky":
+				var v := mhd.vuz_k_nastupu(chodec.global_position)
+				if v:
+					nastoupit_mhd(v)
+					return
 				var a := auto_nablizku()
 				if a:
 					nastoupit(a)
 			elif rezim == "auto":
 				vystoupit()
+			elif rezim == "mhd":
+				vystoupit_z_mhd()
 		"na_silnici":
 			if rezim == "auto" and auto_hrace:
 				auto_hrace.vrat_na_kola()
@@ -162,11 +186,49 @@ func vystoupit() -> bool:
 	return true
 
 
-## Kamera, načítání mapy a oblastí sledují hráče nebo jeho vozidlo.
+## Nástup do vozu MHD s otevřenými dveřmi.
+func nastoupit_mhd(v: VuzMhd) -> void:
+	jizda = v
+	v.set_meta("cestujici", true)
+	rezim = "mhd"
+	chodec.aktivni = false
+	chodec.visible = false
+	chodec.collision_layer = 0
+	chodec.collision_mask = 0
+	_sleduj(v.clanky[0])
+	hud.zprava("Nastoupil(a) jsi: %s" % v.nazev_spoje(), 3)
+	rezim_zmenen.emit(rezim)
+
+
+## Výstup z MHD (jen při otevřených dveřích, na konečné i automaticky).
+func vystoupit_z_mhd(vynutit := false) -> bool:
+	if jizda == null:
+		return false
+	if not jizda.dvere_otevrene and not vynutit:
+		hud.zprava("Vystoupit lze, až vůz zastaví a otevře dveře", 1.5)
+		return false
+	var p := jizda.misto_dveri(1.0)
+	var y := _povrch(p)
+	chodec.global_position = Vector3(p.x, y + 0.05, p.z)
+	chodec.velocity = Vector3.ZERO
+	chodec.aktivni = true
+	chodec.visible = true
+	chodec.collision_layer = VRSTVA_HRAC
+	chodec.collision_mask = VRSTVA_SVET | VRSTVA_VOZIDLA
+	jizda.remove_meta("cestujici")
+	jizda = null
+	rezim = "pesky"
+	_sleduj(chodec)
+	rezim_zmenen.emit(rezim)
+	return true
+
+
+## Kamera, načítání mapy, oblastí a MHD sledují hráče nebo jeho vozidlo.
 func _sleduj(uzel: Node3D) -> void:
 	kamera.cil = uzel
 	svet.sledovat = uzel
 	oblasti.sledovat = uzel
+	mhd.sledovat = uzel
 
 
 ## Výška pochozího povrchu v bodě (most, střecha i terén) paprskem shora.
@@ -202,9 +264,26 @@ func _process(delta: float) -> void:
 	if rezim == "auto" and auto_hrace:
 		hud.rychlost(auto_hrace.rychlost_kmh())
 		hud.napoveda("F – vystoupit" if absf(auto_hrace.rychlost()) < 4.0 else "")
+	elif rezim == "mhd" and jizda:
+		hud.rychlost(-1)
+		var pristi := jizda.pristi_zastavka()
+		hud.napoveda("%s · %s%s" % [jizda.nazev_spoje(), ("zastávka " if jizda.dvere_otevrene else "příští: ") + pristi,
+			" · F vystoupit" if jizda.dvere_otevrene else ""])
+		if jizda.index >= jizda.udalost.spoj.zastaveni.size():
+			vystoupit_z_mhd(true)
 	else:
 		hud.rychlost(-1)
-		hud.napoveda("F – nastoupit do auta" if auto_nablizku() else "")
+		var v := mhd.vuz_k_nastupu(chodec.global_position)
+		if v:
+			hud.napoveda("F – nastoupit · %s" % v.nazev_spoje())
+		else:
+			hud.napoveda("F – nastoupit do auta" if auto_nablizku() else "")
+		_odjezdy_cas -= delta
+		if _odjezdy_cas <= 0.0:
+			_odjezdy_cas = 1.0
+			hud.odjezdy(mhd.odjezdy_u(chodec.global_position))
+	if rezim != "pesky":
+		hud.odjezdy(null)
 
 
 ## Ve webové verzi zapíše stav hry do window.__plzen (pro zkoušky v prohlížeči).
