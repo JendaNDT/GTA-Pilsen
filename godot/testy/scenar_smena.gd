@@ -74,3 +74,4 @@ func scenar() -> void:
 	over(not v.has_meta("smena"), "vůz se vrátil jízdnímu řádu")
 	var u := Ulozeni.nacti()
 	over((u.smeny as Dictionary).get("posledni", {}).get("stav", "") == "vyplaceno", "výsledek je v uložené hře")
+	over(int(hra.statistiky.get("smeny", 0)) == 1 and hra._text_statistik().contains("odřízené směny MHD 1"), "směna je ve statistikách v menu")

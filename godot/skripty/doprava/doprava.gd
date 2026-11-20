@@ -18,6 +18,10 @@ const TYPY_PROVOZU := ["hatch", "sedan", "kombi", "suv", "sedan", "kombi", "van"
 var hra: Hra
 var graf: Graf
 var rizeni: Rizeni
+var rytmus: Rytmus
+## Cílový počet aut podle denního rytmu (pocet_aut je horní mez podle kvality).
+var cil_aut := 0
+var _cas_rytmu := 0.0
 var auta: Array[VozProvozu] = []
 var zaparkovana: Array[Auto] = []
 var nahoda := RandomNumberGenerator.new()
@@ -45,6 +49,7 @@ func _priprav() -> bool:
 	if graf == null:
 		graf = Graf.nacti()
 		rizeni = Rizeni.nacti()
+		rytmus = Rytmus.nacti()
 	return graf != null
 
 
@@ -54,6 +59,12 @@ func _physics_process(delta: float) -> void:
 	rizeni.cas += delta
 	var stred := sledovat.global_position
 	_cas_obnovy -= delta
+	_cas_rytmu -= delta
+	if _cas_rytmu <= 0.0:
+		_cas_rytmu = 2.0
+		# denní rytmus: v noci jezdí málo aut, ve špičce plný počet (target v vehicles.js)
+		var hustota := rytmus.hustota_aut(graf, stred.x, stred.z, hra.cas_den, hra.cas_hodina) if hra else 1.0
+		cil_aut = ceili(pocet_aut * (0.12 + 0.88 * hustota))
 	if _cas_obnovy <= 0.0:
 		_cas_obnovy = 0.5
 		_uklid(stred)
@@ -86,7 +97,7 @@ func _bok(e: int) -> float:
 
 func _dopln(stred: Vector3) -> void:
 	var pokusu := 0
-	while auta.size() < pocet_aut and pokusu < 6:
+	while auta.size() < cil_aut and pokusu < 6:
 		pokusu += 1
 		var uhel := nahoda.randf() * TAU
 		var d := nahoda.randf_range(110.0, dosah_aut - 20.0)
@@ -100,6 +111,8 @@ func _dopln(stred: Vector3) -> void:
 			if o >= 0:
 				e = o
 		if not _provozni(e):
+			continue
+		if hra and nahoda.randf() >= rytmus.vaha_auta(graf, e, hra.cas_den, hra.cas_hodina):
 			continue
 		var s: float = h.podel if e == h.hrana else graf.h_delka[e] - h.podel
 		var p := graf.bod_na_hrane(e, s, _bok(e))
@@ -320,6 +333,16 @@ func _zaklesnuti(v: VozProvozu, stop_vzdalenost: float, delta: float) -> void:
 
 
 func _uklid(stred: Vector3) -> void:
+	# přebytečné auto (po změně denní doby) zmizí daleko za kamerou
+	if auta.size() > cil_aut:
+		var kam := get_viewport().get_camera_3d()
+		for i in range(auta.size() - 1, -1, -1):
+			var v := auta[i]
+			var d := v.global_position - stred
+			if Vector2(d.x, d.z).length() > 190.0 and (kam == null or (v.global_position - kam.global_position).dot(-kam.global_basis.z) < 0.0):
+				auta.remove_at(i)
+				v.queue_free()
+				break
 	for i in range(auta.size() - 1, -1, -1):
 		var v := auta[i]
 		if v.na_konci or v.global_position.distance_to(stred) > dosah_aut + 60.0:

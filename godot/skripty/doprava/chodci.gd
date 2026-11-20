@@ -15,6 +15,9 @@ var graf: Graf
 var nahoda := RandomNumberGenerator.new()
 var chodci: Array = []         ## {uzel, postava, hrana, s, strana, rychlost, pad}
 var _cas := 0.0
+var _rytmus: Rytmus
+## Cílový počet chodců podle denní doby, zastavěnosti a odjezdů MHD (pocet je horní mez).
+var cil := 0
 
 
 func _ready() -> void:
@@ -32,12 +35,23 @@ func _physics_process(delta: float) -> void:
 	_cas -= delta
 	if _cas <= 0.0:
 		_cas = 0.7
+		cil = pocet
+		if hra:
+			if _rytmus == null:
+				_rytmus = Rytmus.nacti()
+			var odjezdu := 0
+			var jr := hra.mhd.jr
+			if jr:
+				var i := jr.nejblizsi(stred.x, stred.z)
+				if i >= 0:
+					odjezdu = (jr.odjezdy(i, hra.ted(), 1200.0, 20).radky as Array).size()
+			cil = ceili(pocet * (0.1 + 0.9 * _rytmus.vaha_chodcu(stred.x, stred.z, hra.cas_den, hra.cas_hodina, odjezdu)))
 		for i in range(chodci.size() - 1, -1, -1):
 			if chodci[i].uzel.global_position.distance_to(stred) > dosah + 50.0:
 				chodci[i].uzel.queue_free()
 				chodci.remove_at(i)
 		for k in 3:
-			if chodci.size() < pocet:
+			if chodci.size() < cil:
 				_pridej(stred)
 	for c: Dictionary in chodci:
 		_krok(c, delta)

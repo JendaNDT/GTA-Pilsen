@@ -1,7 +1,7 @@
 {
  "format": 1,
  "zdroj": {
-  "commit": "604ba7b3f5751e294929144acb0322da30285a34",
+  "commit": "5289b9049d9e3917c162c108f0624cf89d70cc50",
   "osm": "2026-11-15T01:07:22Z",
   "popis": "Převedeno z public/ nástrojem tools/godot/export_svet.mjs"
  },

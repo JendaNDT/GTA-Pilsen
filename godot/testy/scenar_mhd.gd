@@ -46,6 +46,9 @@ func scenar() -> void:
 		"hráč došel na zastávku %s za %.0f s" % [st[0], t])
 	await cekej(1.2)
 	over(hra.hud.text_odjezdu().contains(st[0]), "tabule ukazuje odjezdy ze zastávky")
+	print("  tabule: ", hra.hud.text_odjezdu().replace("\n", " | "))
+	var pr: Dictionary = jr.prestup(nej_i)
+	over(not pr.is_empty() and hra.hud.text_odjezdu().contains("Přestup · " + str(pr.nazev)), "tabule ukazuje přestup (%s, %s m)" % [pr.get("nazev", "—"), str(pr.get("metry", "—"))])
 	await snimek("01-zastavka-odjezdy")
 
 	krok("Čekání na spoj")

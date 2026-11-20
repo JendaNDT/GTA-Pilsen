@@ -49,10 +49,10 @@ Stav v Godotu: **hotovo** = funguje a je ověřené zkouškou, **částečně** 
 | --- | --- | --- | --- |
 | 27 | Provoz aut podle značení, přednosti a stopek | částečně | auta v pruzích po grafu, stopky, dej přednost, odstup, zatáčky; náraz změní vůz ve fyzikální; zákazy odbočení zatím ne |
 | 28 | Semafory pro auta, chodce a MHD | částečně | 174 skupin s časováním z předlohy, návěstidla; zkouška: 0 průjezdů na červenou; MHD a chodci zatím semafory nerespektují |
-| 29 | Denní rytmus provozu podle měření | chybí | |
+| 29 | Denní rytmus provozu podle měření | hotovo | křivky z dopravních detektorů města Plzně přiřazené 714 hranám stejným výpočtem jako `traffic-rhythm.js` (převodník volá přímo kód předlohy), odhad pro ostatní ulice, chodci podle centra a odjezdů MHD; zkouška `scenar_doprava`: u náměstí pátek 16:30 hustota 0,90, 3:30 0,07, v noci cíl 8 aut místo 38 |
 | 30 | Chodci na chodnících a přechodech | částečně | chodí po chodnících, zahýbají, po sražení upadnou; přechody zatím nepoužívají |
 | 31 | MHD PMDP: 51 linek, jízdní řád GTFS, zastávky, odjezdy | hotovo | 370 tras podle jízdního řádu, tabule odjezdů; scénář `scenar_mhd` |
-| 32 | Nástup a výstup z MHD, přestupy, noční spoje | částečně | nástup a výstup ověřené; tabule přestupů chybí |
+| 32 | Nástup a výstup z MHD, přestupy, noční spoje | hotovo | nástup a výstup ověřené (`scenar_mhd`); tabule ukazuje 5 nejbližších odjezdů a nejbližší přestup s nástupištěm a vzdáleností; noční spoje jedou podle jízdního řádu |
 | 33 | Policie, hledanost, pokuty | hotovo | pravidla z předlohy (hlídky podle hledanosti, ztracení po 11 + 3 × hledanost s, zatčení do 9 m, pokuta); scénář `scenar_doprava` |
 | 34 | Ničitelné lampy, značky, semafory a zábradlí | částečně | lampy, značky a semafory se autem ulomí a spadnou, ráno se opraví (zkušebna); zábradlí zatím zničit nejde |
 
@@ -63,7 +63,7 @@ Stav v Godotu: **hotovo** = funguje a je ověřené zkouškou, **částečně** 
 | 35 | Rozvoz jídla a taxi na skutečné adresy | částečně | zakázky se dají vzít (J, menu), trasa a limit z grafu; dokončení zatím neověřené zkouškou, odloženo |
 | 36 | Směny řidiče MHD (tram 1, trolejbus 16, bus 30) | hotovo | stejné okruhy, výběr spoje, plánované časy, jízdní dynamika, dveře F, bodování a výplata jako `shift.js`; zkouška `scenar_smena`: tramvaj 1 Hlavní nádraží → Lékařská fakulta, 6/6 zastávek, 89 bodů, 580 Kč. Semafory na trase se hodnotí podle nejbližšího návěstidla ve směru jízdy; nedání přednosti a STOP se zatím nehodnotí |
 | 37 | Garáž u hlavního nádraží, koupě vozu, úpravy, oprava | hotovo | ceny a pravidla jako `garage.js` (auto 1 350 Kč, brzdy 325, pneumatiky 360, oprava 75 + 5 × poškození); zkouška `scenar_garaz` včetně uložení; bez promáčklin karoserie a špíny |
-| 38 | Peníze, statistiky | částečně | ukazatel peněz |
+| 38 | Peníze, statistiky | hotovo | peníze, objevená místa, rozvozy, taxi, směny, zatčení a sražení chodci v menu; ukládají se |
 | 39 | Ukládání postupu a načtení po restartu | hotovo | scénář `scenar_ulozeni` ve dvou samostatných spuštěních |
 | 40 | 53 míst k objevení | hotovo | do 75 m, 150 Kč a popis; místa jsou upravitelná v oblastech |
 | 41 | Velká mapa, hledání míst, cíl a navigace | částečně | mapa M, hledání bez diakritiky, cíl kliknutím, trasa po silnicích; bez zákazů odbočení |

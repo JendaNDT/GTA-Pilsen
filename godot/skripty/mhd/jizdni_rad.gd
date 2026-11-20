@@ -290,7 +290,24 @@ func odjezdy(stanice: int, ted: float, horizont := 5400.0, pocet := 3) -> Dictio
 				continue
 			radky.append({"cas": plan, "linka": spoj.trasa.linka, "typ": spoj.trasa.typ, "cil": spoj.cil})
 	radky.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.cas < b.cas)
-	return {"stanoviste": stanoviste[stanice][0], "kod": stanoviste[stanice][3], "radky": radky.slice(0, pocet)}
+	return {"stanoviste": stanoviste[stanice][0], "kod": stanoviste[stanice][3], "radky": radky.slice(0, pocet),
+		"prestup": prestup(stanice)}
+
+
+## Nejbližší přestup ze stanoviště (8–220 m, podle minimální doby a vzdálenosti), nebo {}.
+func prestup(stanice: int) -> Dictionary:
+	var nej := {}
+	var st: Array = stanoviste[stanice]
+	for p: Dictionary in prestupy[stanice]:
+		var c: Array = stanoviste[p.kam]
+		var metry := roundi(Vector2(c[1] - st[1], c[2] - st[2]).length())
+		var kod: String = c[3]
+		var nastupiste := kod.get_slice("/", 1) if kod.contains("/") else ""
+		if metry > 220 or metry <= 8 or (c[0] == st[0] and nastupiste == ""):
+			continue
+		if nej.is_empty() or p.minimum < nej.minimum or (p.minimum == nej.minimum and metry < nej.metry):
+			nej = {"nazev": c[0], "nastupiste": nastupiste, "metry": metry, "minimum": p.minimum}
+	return nej
 
 
 static func format_cas(sekundy: float) -> String:

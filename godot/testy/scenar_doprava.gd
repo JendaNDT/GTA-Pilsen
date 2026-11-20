@@ -4,8 +4,10 @@ extends Scenar
 
 
 func scenar() -> void:
-	krok("Provoz se rozjede")
+	krok("Provoz se rozjede (pátek 20. 11. 2026, 16:00)")
 	await cekej_na_svet()
+	hra.cas_zivy = false
+	hra.nastav_cas(16.0, JizdniRad.den_z_textu("2026-11-20"))
 	var d := hra.doprava
 	d.nahoda.seed = 7
 	await cekej(4.0)
@@ -54,3 +56,23 @@ func scenar() -> void:
 		t += 1.0 / Engine.physics_ticks_per_second
 	over(hra.policie.hledanost == 0 and hra.penize < penize, "hráč byl zatčen za %.0f s, pokuta %d Kč" % [t, penize - hra.penize])
 	over(int(hra.statistiky.get("zatceni", 0)) == 1, "statistika zatčení")
+
+	krok("Denní rytmus provozu (měřené ulice a odhad)")
+	var r := Rytmus.nacti()
+	var den := JizdniRad.den_z_textu("2026-11-20")
+	var merene := 0
+	for k in r.hrany:
+		if k >= 0:
+			merene += 1
+	over(merene > 500, "%d hran má křivku z dopravních detektorů" % merene)
+	var spicka := r.hustota_aut(d.graf, -42.0, 52.0, den, 16.5)
+	var noc := r.hustota_aut(d.graf, -42.0, 52.0, den, 3.5)
+	var nedele := r.hustota_aut(d.graf, -42.0, 52.0, den + 2, 7.5)
+	var pondeli := r.hustota_aut(d.graf, -42.0, 52.0, den + 3, 7.5)
+	print("  hustota u náměstí: pátek 16:30 %.2f, 3:30 %.2f; neděle 7:30 %.2f, pondělí 7:30 %.2f" % [spicka, noc, nedele, pondeli])
+	over(spicka > 0.5 and noc < spicka * 0.4, "odpoledne je provoz hustší než v noci")
+	over(nedele < pondeli, "v neděli ráno jezdí méně aut než v pondělí")
+	var cil_den := d.cil_aut
+	hra.nastav_cas(3.5, den)
+	await cekej(3.0)
+	over(d.cil_aut < cil_den * 0.6, "v noci provoz zředí: cíl %d aut místo %d" % [d.cil_aut, cil_den])

@@ -223,4 +223,4 @@ func odjezdy_u(p: Vector3) -> Variant:
 	if jr == null:
 		return null
 	var i := jr.nejblizsi(p.x, p.z)
-	return null if i < 0 else jr.odjezdy(i, ted())
+	return null if i < 0 else jr.odjezdy(i, ted(), 5400.0, 5)

@@ -323,8 +323,7 @@ func _akce(nazev: String) -> void:
 			_menu_zakazek()
 			_menu_garaze()
 			_menu_smen()
-			menu.otevri(nastaveni, cas_zivy, cas_hodina, "Peníze: %s Kč · objevená místa: %d/%d" % [
-				Hud._tisice(penize), objevene.size(), (Mapa.mista().get("pamatky", []) as Array).size()])
+			menu.otevri(nastaveni, cas_zivy, cas_hodina, _text_statistik())
 
 
 ## Nejbližší auto do 4 m od hráče.
@@ -751,6 +750,23 @@ func _pozadavek_menu(akce: String) -> void:
 		"konec":
 			uloz()
 			get_tree().quit()
+
+
+## Přehled postupu v menu: peníze, objevená místa a statistiky (stats v předloze).
+func _text_statistik() -> String:
+	var radky := ["Peníze: %s Kč · objevená místa: %d/%d" % [Hud._tisice(penize), objevene.size(),
+		(Mapa.mista().get("pamatky", []) as Array).size()]]
+	var nazvy := {"rozvozy": "rozvozy jídla", "taxi": "jízdy taxi", "smeny": "odřízené směny MHD",
+		"zatceni": "zatčení", "srazeni": "sražení chodci"}
+	var casti: Array = []
+	for k: String in nazvy:
+		if int(statistiky.get(k, 0)) > 0:
+			casti.append("%s %d" % [nazvy[k], int(statistiky[k])])
+	if not casti.is_empty():
+		radky.append("Statistiky: " + ", ".join(casti))
+	if not garaz.vlastni.is_empty():
+		radky.append(garaz.popis())
+	return "\n".join(radky)
 
 
 ## Řidič MHD: hráč sedí ve voze směny (kamera sleduje čelo vozu).

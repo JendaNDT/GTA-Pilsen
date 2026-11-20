@@ -99,12 +99,17 @@ func napoveda(text: String) -> void:
 
 ## Tabule odjezdů z nejbližšího stanoviště (nebo null = skrýt).
 func odjezdy(data: Variant) -> void:
-	if data == null or (data.radky as Array).is_empty():
+	if data == null:
 		_odjezdy.text = ""
 		return
 	var t := "Zastávka %s\n" % data.stanoviste
 	for r: Dictionary in data.radky:
 		t += "%s  %s → %s\n" % [JizdniRad.format_cas(r.cas), r.linka, r.cil]
+	if (data.radky as Array).is_empty():
+		t += "Bez odjezdu v příštích 90 min\n"
+	var p: Dictionary = data.get("prestup", {})
+	if not p.is_empty():
+		t += "Přestup · %s%s · %d m\n" % [p.nazev, (" (stan. %s)" % p.nastupiste) if p.nastupiste != "" else "", p.metry]
 	_odjezdy.text = t
 
 
