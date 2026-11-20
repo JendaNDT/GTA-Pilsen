@@ -58,7 +58,7 @@ test('síť Jolt odpovídá dotazu na výšku do 5 cm na základním, jemném i 
   }
 });
 
-test('Jolt protne Wilsonův most, Rondel i vozovky a stropy Valíku ve výšce profilu', async () => {
+test('Jolt protne Wilsonův most, Rondel, Valík a nádražní rampu ve výšce profilu', async () => {
   const { RoadStructures } = await import('../src/physics/structures.js');
   const { TUNNEL_HEIGHT } = await import('../src/world/tunnels.js');
   const data = {};
@@ -152,6 +152,20 @@ test('Jolt protne Wilsonův most, Rondel i vozovky a stropy Valíku ve výšce p
       const x = (a.x + b.x) / 2, z = (a.z + b.z) / 2, y = (a.y + b.y) / 2;
       check(x, z, y);
       check(x, z, y + TUNNEL_HEIGHT, false);
+    }
+    // Kola na obou stranách nádražní rampy mají oporu ve stejné vrstvě terénu.
+    const ramp = w.edgePoint(519, 30, 0, {}), tile = w.chunkIndex(ramp.x, ramp.z);
+    const tileX = w.minX + tile % w.cols * 256, tileZ = w.minZ + Math.floor(tile / w.cols) * 256;
+    const surface = [];
+    terrainTriangles(w, tile, tileX, tileZ, 256, (a, b, c) => surface.push(...a, ...b, ...c));
+    staticMeshBody(physics, Float32Array.from(surface));
+    for (let s = 8; s <= 48; s += 2) {
+      label = ['příčný sklon nádražní rampy', s];
+      const left = w.edgePoint(519, s, -1, {}), right = w.edgePoint(519, s, 1, {});
+      const yl = w.heightAt(left.x, left.z), yr = w.heightAt(right.x, right.z);
+      assert.ok(Math.abs(yl - yr) < 0.16, label + ': ' + (yl - yr));
+      check(left.x, left.z, yl);
+      check(right.x, right.z, yr);
     }
     assert.deepEqual(deviations, []);
   } finally {

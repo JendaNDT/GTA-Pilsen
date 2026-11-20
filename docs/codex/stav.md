@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Rampa u hlavního nádraží
+
+Návrat z předchozího archivu do E12 i E25 prošel. U hlavního nádraží odhalilo pozorování na WebGL 2 stání 181 s. Po úpravě příčného sklonu a brzdění ve sjezdu bylo při opakování nejdelší stání 57 s. Prošlo 185 testů JavaScriptu, 27 testů Pythonu a sestavení. Pokračují prohlížečové zkoušky vydání na obou vykreslovacích cestách. [Povrch rampy, brzdění a provoz](../E26.md#příčný-sklon-nádražní-rampy-a-brzdění-ve-sjezdu)
+
 ## Archiv po opravě rozjezdu
 
 Na větvi E26 je oprava `87aba55`. Pět cílených průjezdů křižovatkou prošlo na každé z obou vykreslovacích cest. Z rozbalených zdrojů se na třech verzích Node.js podařilo sestavit přesně stejných 816 webových souborů. Další pozorování špičky, návrat s uloženou hrou a zbytek úplné sady jsou rozpracované. [Archiv a ověřené průjezdy](../E26.md#archiv-a-průjezd-křižovatkou-po-opravě-rozjezdu)

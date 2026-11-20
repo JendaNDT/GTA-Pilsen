@@ -127,6 +127,43 @@ test('malé auto drží na suchém padesátimetrovém kruhu boční zrychlení 0
 
 const { driveRoute } = await import('../src/game/ai-driver.js');
 
+test('dodávka na fiktivní rampě zastaví před čárou a po uvolnění pokračuje', async () => {
+  const { staticMeshBody } = await import('../src/physics/colliders.js');
+  const { Traffic } = await import('../src/game/traffic.js');
+  const physics = new PhysicsWorld(Jolt), dt = 1 / 60;
+  const floor = z => -0.30 * Math.min(12, Math.max(0, z - 12)) - 0.14 * Math.max(0, z - 24);
+  const points = [];
+  for (let z = -4; z < 80; z += 2) {
+    const a = [-8, floor(z), z], b = [8, floor(z), z];
+    const c = [-8, floor(z + 2), z + 2], d = [8, floor(z + 2), z + 2];
+    points.push(...a, ...c, ...b, ...b, ...c, ...d);
+  }
+  staticMeshBody(physics, Float32Array.from(points));
+  const car = { type: CAR_TYPES.van, x: 0, y: 0, z: 0, yaw: 0, vx: 0, vy: 0, vz: 7, speed: 7, steer: 0, health: 100 };
+  const vehicle = new PlayerVehicle(physics, car);
+  const signal = { kind: 'signal' }, line = 27;
+  let red = true, input;
+  const traffic = Object.assign(Object.create(Traffic.prototype), { light: () => red ? 'red' : 'green' });
+  try {
+    for (let i = 0; i < 22 * 60; i++) {
+      red = i < 18 * 60;
+      const gap = line - car.z - car.type.len / 2;
+      let stop = Infinity;
+      const limit = traffic.drivingRule(car, signal, gap - 0.45, dt, 7, [], [], distance => { stop = distance; });
+      input = driveRoute(car, look => ({ x: 0, z: car.z + look, tx: 0, tz: 1 }), limit, stop, input, dt);
+      vehicle.driveAI(input, dt, asphalt);
+      physics.engine.Step(dt, 1);
+      vehicle.read();
+      if (red) assert.ok(car.z + car.type.len / 2 <= line, 'Příď přejela stopčáru.');
+      if (i === 18 * 60 - 1) {
+        assert.ok(gap < 1);
+        assert.ok(Math.abs(car.speed) < 0.05);
+      }
+    }
+    assert.ok(car.z > line + car.type.len);
+  } finally { vehicle.dispose(); physics.dispose(); }
+});
+
 for (const route of ['rovina', 'zatáčka', 'stop čára']) {
   test('řidič AI na fyzikálním voze – ' + route, (t) => {
     const { car, vehicle, close } = track('hatch');

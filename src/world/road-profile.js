@@ -106,3 +106,47 @@ export function bridgeBankOffsets(world, bridge, road) {
   }
   return offsets;
 }
+
+// Příjezdová rampa u nádraží vede po boku náspu. Osa zůstává v původní
+// výšce, v jízdním pruhu ale kola nemají kopírovat příčný svah náspu.
+export function stationRampOffsets(world) {
+  const road = 155, end = world.rOff[road + 1] - 1, start = end - 4;
+  const { rpx: x, rpz: z, gradeStep: step } = world;
+  if (!step || !(start >= world.rOff[road]) || Math.round(x[start] * 10) !== 6666 ||
+      Math.round(z[start] * 10) !== 5933 || Math.round(x[end] * 10) !== 6113 ||
+      Math.round(z[end] * 10) !== 6025) return [];
+
+  const segments = [];
+  let length = 0;
+  for (let k = start; k < end; k++) {
+    const dx = x[k + 1] - x[k], dz = z[k + 1] - z[k];
+    const size = Math.hypot(dx, dz);
+    if (!size) continue;
+    segments.push({ x: x[k], z: z[k], tx: dx / size, tz: dz / size, size, from: length });
+    length += size;
+  }
+  const width = world.r.w[road] / 2;
+  const shoulder = width + 0.5, reach = width + step;
+  const xs = x.subarray(start, end + 1), zs = z.subarray(start, end + 1);
+  const x0 = step * Math.ceil((Math.min(...xs) - reach) / step), x1 = Math.max(...xs) + reach;
+  const z0 = step * Math.ceil((Math.min(...zs) - reach) / step), z1 = Math.max(...zs) + reach;
+  const offsets = [];
+  for (let gx = x0; gx <= x1; gx += step) for (let gz = z0; gz <= z1; gz += step) {
+    let distance = reach, cx, cz, along;
+    for (const segment of segments) {
+      const s = Math.max(0, Math.min(segment.size, (gx - segment.x) * segment.tx + (gz - segment.z) * segment.tz));
+      const px = segment.x + s * segment.tx, pz = segment.z + s * segment.tz;
+      const d = Math.hypot(gx - px, gz - pz);
+      if (d >= distance) continue;
+      distance = d; cx = px; cz = pz; along = segment.from + s;
+    }
+    if (along === undefined) continue;
+    // Za krajnicí ubývá pouze oprava její výšky. Svah dál od vozovky si zachová tvar.
+    const scale = distance > shoulder ? shoulder / distance : 1;
+    const sideY = world.heightAt(cx + (gx - cx) * scale, cz + (gz - cz) * scale);
+    const weight = Math.min(1, (reach - distance) / (reach - shoulder), along / 6, (length - along) / 6);
+    const delta = Math.round(100 * weight * (world.heightAt(cx, cz) - sideY));
+    if (delta) offsets.push([gx, gz, delta]);
+  }
+  return offsets;
+}

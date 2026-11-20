@@ -1,4 +1,4 @@
-import { bridgeApproach, bridgeBankOffsets } from './road-profile.js';
+import { bridgeApproach, bridgeBankOffsets, stationRampOffsets } from './road-profile.js';
 import { streetLamps } from './lamps.js';
 import { breakableId, Breakables } from '../physics/breakables.js';
 // Herní svět: dekódování dat, prostorové indexy, kolize, silniční graf.
@@ -81,6 +81,7 @@ export class World {
         if (start || end) this.tunnelApproaches.set(i, { start, end });
       }
     }
+    for (const [x, z, delta] of stationRampOffsets(this)) this._setGradeOffset(x, z, delta, true);
     this._initGraph();
     this.busContraflow = new Set(data.meta.traffic?.busContraflow);
     this.turns = new TurnRules(this, data.meta.traffic?.restrictions);
