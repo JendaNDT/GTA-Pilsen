@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Pěší cesta k tramvaji při rozvozu MHD
+
+Opravenou trasu k nástupišti prošel hráč na WebGL 2 i WebGPU. V obou případech dokončil přestup a doručil zásilku pěšky. Prošlo 183 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. Úplná sada vydání a čtyři návraty autem jsou dál rozpracované. [Průběh zakázky](../E26.md#pěší-cesta-k-tramvaji-při-rozvozu-mhd)
+
 ## Archiv a návrat uloženého postupu s místním zjemněním terénu
 
 Tři podporované verze Node.js sestavily stejný web jako archiv revize `667277b`. Návrat s uloženým postupem do E12 a E25 prošel. Sestavení přímo z rozbalených zdrojů prošlo i po samostatné instalaci závislostí. Zkouška skončila neúspěšně. Řádky tabulky odpovídají skutečně dokončeným návratům. [Dlouhá jízda na předchozí revizi](../E26.md#dlouhá-jízda-na-revizi-d4630eb) · [Velikosti, otisky a výsledky zkoušek](../E26.md#archiv-a-návrat-uloženého-postupu-s-místním-zjemněním-terénu)
