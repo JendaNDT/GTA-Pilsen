@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Archiv a návrat uloženého postupu po napojení mostovky
+
+Tři podporované verze Node.js sestavily stejný web jako archiv revize `d4630eb`. Návrat s uloženým postupem do E12 a E25 prošel. [Velikosti, otisky a výsledky zkoušek](../E26.md#archiv-a-návrat-uloženého-postupu-po-napojení-mostovky)
+
 ## Plynulý výjezd z mostu na břeh
 
 Řidič při dlouhé jízdě uvízl ve druhém okruhu po 87,72 km. Pomalý průjezd odhalil pod pravými koly pokles o 1,33 m na konci mostovky. Po napojení terénu přes celou šířku vozovky vůz shodným úsekem projel bez couvání. Prošlo 182 testů JavaScriptu, produkční sestavení a kontrola obou směrů jízdy přes Wilsonův most ve WebGL 2 i WebGPU. Nová dlouhá jízda a úplná sada 358 zkoušek pokračují. [Měření břehu a výsledky průjezdů](../E26.md#přechod-z-mostu-na-šikmý-břeh)
