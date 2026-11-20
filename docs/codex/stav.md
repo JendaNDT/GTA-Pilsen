@@ -2,6 +2,10 @@
 
 Větev `etapa/E21` navazuje na E20 sloučenou revizí `623e081`. [Zadání E21](E21.md) · [Protokol předchozí etapy](../E20.md)
 
+## Minuta dne a noci po ověření ranní špičky
+
+Chromium 159 na softwarovém WebGL 2 v okně 400 × 280 na herním kódu `7d9471b` zaznamenalo 21 snímků během minuty. Mez je více než 30. V prostředí současně běžely zkoušky E26. Výsledek je v `data-raw/e21/minuta-po-kolone.log`. Připravené opakování zachovává stejné rozlišení, scénu i kontrolu dne a noci. Oběma dlouhým zkouškám E26 se po dobu měření přidělí společné jádro a softwarový vykreslovač E21 může využít dvě vlákna.
+
 ## Uvolnění výjezdu z křižovatky
 
 V desetiminutové zkoušce na Klatovské třídě čekalo jedno auto 381 sekund. U stojícího vozu v sadech Pětatřicátníků ukázal záznam v čase 376 s zelenou, volný přechod a část vozu MHD ve zvoleném výjezdu. V rekonstrukci zůstával z jeho jízdního pruhu volný ještě jeden povolený výjezd. Další měření na původním sestavení zachytilo po čtyřech minutách čekání až 184,5 s. V této koloně už výjezd blokovala i osobní auta z více směrů. Měření jsme potom ukončili a uvolnili prostředky pro ověření opravy.
