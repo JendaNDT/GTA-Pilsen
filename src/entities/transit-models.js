@@ -4,6 +4,11 @@ import { Parts } from './models.js';
 import { transitMaterial as shellMat } from './transit-material.js';
 import { makeSurfaceMaterial } from '../world/materials.js';
 import { SURFACE } from '../world/material-table.js';
+import { smoothNormals } from './car-body.js';
+import { pageLook } from '../world/daylight.js';
+
+// Nový vzhled: oblé čelo a zaoblené přechody bez viditelných plošek, ostré hrany zůstávají.
+const shade = (geometry) => (pageLook() === 'novy' ? smoothNormals(geometry, 28) : geometry);
 
 const color = (hex) => new THREE.Color(hex).toArray();
 const YELLOW = color(0xf2be25), RED = color(0xc4222a), WHITE = color(0xe5e3db);
@@ -315,7 +320,7 @@ function makeSection(section, style) {
       else body.box(2.41, 2.95, 0.08, 0, 1.75, z - side * 0.04, RUBBER);
     }
     equipment(body, style, section);
-    geometry.set(section, [body.geometry(), lamps.p.length ? lamps.geometry() : null]);
+    geometry.set(section, [shade(body.geometry()), lamps.p.length ? lamps.geometry() : null]);
   }
   const [body, lamps] = geometry.get(section);
   const group = new THREE.Group();
@@ -530,7 +535,7 @@ export function makeTatraCar() {
       panel(leaf, side * 0.024, -0.073, 0.073, 0.54, 0.91, TRAM_GLASS, side);
       panel(leaf, side * 0.024, -0.073, 0.073, 0.14, 0.49, TRAM_GLASS, side);
     }
-    tatraShell = body.geometry();
+    tatraShell = shade(body.geometry());
     tatraLamps = lights.geometry();
     tatraLeaves = leaf.geometry();
   }
