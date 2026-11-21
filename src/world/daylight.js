@@ -60,8 +60,9 @@ export function daylight({ elevation, day, dusk, overcast }, look = 'novy') {
     hemi: 0.95 + day * (1.05 + 0.6 * cloudy),
     hemiSky: [0xc4ccd8, [0xdadcde, cloudy], [0xe6c3a5, dusk * 0.6], [0x6f83c0, 1 - day]],
     hemiGround: [0xb2a48a, [0x343a52, 1 - day]],
-    // Odraz oblohy: auta, sklo a voda; fasády jen nepatrně (viz setFacadeEnvironment).
-    environment: 0.08 * day,
+    // Odraz oblohy zůstává pro vodu, auta a dlažbu stejný jako dřív (modrá řeka, lesk laku).
+    // Fasády ho mají jen nepatrný (viz setFacadeEnvironment), právě u nich vznikal závoj.
+    environment: 0.22 * day,
     facadeEnvironment: 0.012 * day,
     // Jas země pod obzorem v mapě odrazů, zhruba osmina jasu obzoru za jasného dne.
     groundRadiance: { color: [0x8a7f6c, [0x6f6a62, cloudy]], scale: 2.4 * day },

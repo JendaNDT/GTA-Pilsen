@@ -17,8 +17,8 @@ test('původní vzhled zachovává dřívější hodnoty světla', () => {
 test('nový vzhled: za jasného dne slunce převládá a stíny jsou plné', () => {
   const light = daylight(noon);
   assert.ok(light.sun / light.hemi > 1.5, 'slunce má být víc než 1,5× silnější než obloha');
-  assert.ok(light.environment <= 0.1, 'odraz oblohy zůstává slabý');
-  assert.ok(light.facadeEnvironment < light.environment / 4, 'fasády odrážejí oblohu ještě slaběji');
+  assert.equal(light.environment, daylight(noon, 'puvodni').environment, 'voda a auta odrážejí oblohu jako dřív');
+  assert.ok(light.facadeEnvironment < light.environment / 10, 'fasády odrážejí oblohu jen nepatrně');
   assert.ok(light.groundRadiance.scale > 0, 'zem pod obzorem má vlastní jas');
   assert.equal(light.shadow, 1);
   assert.equal(daylight(noon, 'puvodni').facadeEnvironment, null);
