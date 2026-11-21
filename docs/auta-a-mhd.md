@@ -14,5 +14,25 @@ Navazuje na [vzhledovou zkoušku](vzhledova-zkouska.md). Autor chtěl pokračova
 
 - Nové testy v [tests/car-body.test.js](../tests/car-body.test.js) ověřují čtyři věci. Kola mají ve všech devíti typech volný podběh a karoserie nepřesahuje rozměry typu. Díly poškození i skupiny světel jsou na svém místě. Podrobné auto se promáčkne a dveře odpadnou stejně jako u jednoduchého. Vyhlazení zachová ostrou hranu.
 - `npm test`: prošlo 202 testů JavaScriptu.
+- **Prohlížečové testy na WebGL 2:** vzhled aut a světlometů, rozbitné předměty a nárazy, materiály, rozpočet vykreslování pro čtyři předvolby, fyzikální provoz a hra. V prvním běhu prošlo 48 z 49 testů. Neprošel test nočních světlometů. Porovnává jas světla s tmavou plochou pod ním a u nového předku na tom místě byla světlá značka a lak. Přední značka je proto na nárazníku jako u skutečných aut a mezi maskou a nárazníkem přibylo tmavé sání. Test zůstal beze změny a s ostatními testy materiálů a vzhledu aut prošel (8 z 8).
+- WebGPU se v cloudovém prostředí nedá ověřit. Softwarové WebGPU tu hlásí chybu „createBuffer failed“ i na revizi před úpravou (viz [vzhledová zkouška](vzhledova-zkouska.md)).
 
-Prohlížečové testy a snímky před a po doplní další revize.
+## Snímky před a po
+
+Předváděcí plocha na náměstí Republiky, 15. června v 15:00, vysoká předvolba, softwarové WebGL 2. Levé snímky jsou s parametrem `?vzhled=puvodni` (dosavadní modely), pravé bez něj.
+
+| Pohled | Porovnání |
+|---|---|
+| Sedan zblízka | ![Sedan](auta-a-mhd/sedan-zblizka.jpg) |
+| Malé auto | ![Malé auto](auta-a-mhd/hatch-zblizka.jpg) |
+| Řada aut zepředu | ![Řada aut](auta-a-mhd/zezadu.jpg) |
+| Kombi, SUV a dodávka | ![SUV a dodávka](auta-a-mhd/suv-van.jpg) |
+| Tramvaj Škoda | ![Tramvaj](auta-a-mhd/tramvaj.jpg) |
+| Tatra T3 | ![Tatra](auta-a-mhd/tatra.jpg) |
+| Den a noc s novými auty | ![Den a noc](auta-a-mhd/den-noc.jpg) |
+
+## Známé odchylky a další kroky
+
+- Kola se při jízdě neotáčejí, stejně jako dosud.
+- Okna MHD jsou ve dne tmavá. Vnitřek je vidět jen v noci, kdy svítí.
+- Na předváděcí ploše stojí auta i tramvaje mimo provoz. Ve hře je kolem hráče dál doprava podle jízdního řádu a rytmu ulic.
