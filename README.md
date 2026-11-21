@@ -80,6 +80,11 @@ Od vzhledové zkoušky z listopadu 2026 má den silnější slunce, čitelné st
 a fasády už neodrážejí oblohu jako mléčný závoj. Původní světlo pro porovnání zapne parametr
 `?vzhled=puvodni`. [Protokol vzhledové zkoušky](docs/vzhledova-zkouska.md)
 
+Silnice mají od listopadu 2026 hladký podélný profil. Dřív kopírovaly trojúhelníky terénu,
+takže auto v kopcích drncalo a terén místy prorůstal asfaltem. Terén pod vozovkou se profilu
+přizpůsobí, okolí mostů a ručně upravená místa zůstávají beze změny. Původní silnice pro
+porovnání zapne parametr `?silnice=puvodni`. [Rozbor, měření a snímky](docs/silnice.md)
+
 Hra ve výchozím nastavení používá aktuální čas v Plzni. V **Nastavení → Herní čas**
 můžeš zadat konkrétní hodinu a minutu. Herní čas pak plyne stejným tempem jako skutečný
 čas a při pauze stojí. **Použít aktuální čas v Plzni** obnoví živé hodiny. Po změně
