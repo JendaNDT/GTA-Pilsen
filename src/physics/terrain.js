@@ -2,7 +2,7 @@ import { TUNNEL_HEIGHT, TUNNEL_PORTAL_CUT } from '../world/tunnels.js';
 
 import { riverBed } from './water.js';
 import { densePath, pathNormal } from '../world/road-profile.js';
-import { gradeBlend } from '../world/road-grade.js';
+import { gradeBlend, stripLift } from '../world/road-grade.js';
 
 export function terrainGridStep(world, ci) {
   if (world.gradeTerrain.has(ci)) return world.gradeStep;
@@ -61,7 +61,7 @@ export function terrainTriangles(world, ci, x0, z0, size, emit) {
   const vertex = (x, z) => {
     const depth = bed ? bed(x, z) : 0;
     let y = world.heightAt(x, z);
-    const road = roads < Infinity ? world.carriagewayProfileAt(x, z, y) : NaN;
+    const road = roads < Infinity ? world.roadClampAt(x, z, y) : NaN;
     if (road < y) y = road;
     const p = [x, y - depth, z];
     p.wet = depth > 0;
@@ -112,11 +112,11 @@ export function terrainTriangles(world, ci, x0, z0, size, emit) {
 }
 
 /**
- * Povrch vozovek s hladkým profilem (pásy po 2 m po celé šířce). Leží ve výšce profilu, do
- * kterého je srovnaný i terén pod silnicí, takže kola jedou po hladké ploše a výška se shoduje
- * s heightAt() i s napojením na mosty. Vykreslený pás je jako dřív o SURF výš.
+ * Povrch vozovek s hladkým profilem (pásy po 2 m po celé šířce). Terén pod silnicí je srovnaný
+ * do stejného profilu a pás leží jako vykreslený asfalt 5 cm nad ním, takže drobné nerovnosti
+ * sítě terénu kola necítí. Na začátku pásu (za přechodem u chráněných míst) se zvedá plynule.
  */
-export function roadSurfaceTriangles(world, ci, emit, surface = 0) {
+export function roadSurfaceTriangles(world, ci, emit) {
   const grade = world.roadGrade, pieces = world.rPieces?.[ci];
   if (!grade || !pieces) return;
   const { rpx, rpz, rOff } = world;
@@ -134,10 +134,11 @@ export function roadSurfaceTriangles(world, ci, emit, surface = 0) {
       const y = world.roadGradeAt(road, station);
       // ručně doladěná místa (konce mostů, podjezdy) zůstávají jen na terénu
       if (y !== y) { previous = null; continue; }
-      // v přechodu k nim a u volných konců jede auto po plynule upraveném terénu
+      // v přechodu k nim a u nenapojených konců jede auto po plynule upraveném terénu
       if (gradeBlend(grade, road, station) < 1) { previous = null; continue; }
-      const left = [D.x[k] - n.x * hw * scale, y + surface, D.z[k] - n.z * hw * scale];
-      const right = [D.x[k] + n.x * hw * scale, y + surface, D.z[k] + n.z * hw * scale];
+      const top = y + stripLift(grade, road, station);
+      const left = [D.x[k] - n.x * hw * scale, top, D.z[k] - n.z * hw * scale];
+      const right = [D.x[k] + n.x * hw * scale, top, D.z[k] + n.z * hw * scale];
       if (previous) {
         tri(previous[0], previous[1], right);
         tri(previous[0], right, left);

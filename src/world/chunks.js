@@ -999,7 +999,7 @@ function buildTerrain(world, ci, cx0, cz0) {
       const x = cx0 + i * G, z = cz0 + j * G;
       let y = detail ? world.heightAt(x, z) : H(gi, gj);
       // pod vozovkou leží terén vždy pod pásem silnice, aby jím neprorůstal
-      if (roads) { const road = world.carriagewayProfileAt(x, z, y); if (road < y) y = road; }
+      if (roads) { const road = world.roadClampAt(x, z, y); if (road < y) y = road; }
       pos[o] = x; pos[o + 1] = y; pos[o + 2] = z;
       let hx, hz;
       if (detail || world.terrainDetail.size && (i === 0 || i === N || j === 0 || j === N)) {

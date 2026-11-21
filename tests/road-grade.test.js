@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildRoadGrades, corridorWeight, gradeBlend, gradeHeight, gradeSurface, pinProfile, profileAt, smoothProfile } from '../src/world/road-grade.js';
+import { buildRoadGrades, corridorWeight, gradeBlend, gradeHeight, gradeSurface, pinProfile, profileAt, smoothProfile, stripLift, STRIP_LIFT } from '../src/world/road-grade.js';
 
 test('vyhlazení odstraní schody po 8 m a zachová rovnoměrné stoupání', () => {
   // svah 6 % se zuby terénu po 8 m (vzorky po 2 m)
@@ -89,28 +89,54 @@ test('u konce mostu se profil nenapojuje a platí tam původní terén', () => {
   assert.ok(Number.isNaN(gradeHeight(kept, 1, 10)));
 });
 
-test('u volného konce a chráněného místa přechází profil plynule do terénu', () => {
-  // A (0–100) navazuje na B (100–200); B končí volně, v A je chráněné místo kolem x = 20
+test('u nenapojeného konce a chráněného místa přechází profil plynule do terénu', () => {
+  // A (0–100) navazuje na B (100–200); B končí u silnice C bez profilu, A začíná slepě.
+  // Kolem x = 20 je na A ručně upravený terén (2 = chránit i 10 m za ním).
   const world = {
-    rCount: 2,
-    rOff: Int32Array.from([0, 2, 4]),
-    rpx: Float32Array.from([0, 100, 100, 200]),
-    rpz: Float32Array.from([0, 0, 0, 0]),
-    rpy: new Float32Array(4),
+    rCount: 3,
+    rOff: Int32Array.from([0, 2, 4, 6]),
+    rpx: Float32Array.from([0, 100, 100, 200, 200, 260]),
+    rpz: Float32Array.from([0, 0, 0, 0, 0, 0]),
+    rpy: new Float32Array(6),
   };
   const terrain = (x) => (Math.floor(x / 8) % 2 ? 0.2 : 0);
-  const keep = (x) => x < 20;
-  const grades = buildRoadGrades(world, () => true, () => false, terrain, 2, keep);
+  const keep = (x) => (x > 14 && x < 20 ? 2 : 0);
+  const grades = buildRoadGrades(world, (road) => road < 2, () => false, terrain, 2, keep, (road) => road === 2);
   assert.equal(gradeBlend(grades, 0, 100), 1);            // křižovatka A–B: plně na profilu
   assert.equal(gradeBlend(grades, 1, 0), 1);
-  assert.equal(gradeBlend(grades, 1, 100), 0);            // volný konec B: terén
+  assert.equal(gradeBlend(grades, 1, 100), 0);            // napojení na C bez profilu: terén
   assert.ok(gradeBlend(grades, 1, 95) > 0 && gradeBlend(grades, 1, 95) < 1);
   assert.equal(gradeBlend(grades, 1, 50), 1);
   assert.ok(Number.isNaN(gradeHeight(grades, 0, 25)));   // 10 m za chráněným místem stále terén
   assert.ok(gradeBlend(grades, 0, 35) > 0 && gradeBlend(grades, 0, 35) < 1);
   assert.equal(gradeBlend(grades, 0, 45), 1);
+  assert.ok(gradeBlend(grades, 0, 0) < 0.5);              // 4 m před chráněným místem přechod
   // povrch: na profilu jen s plnou vahou, v přechodu a v chráněném místě terén
   assert.equal(gradeSurface(grades, 1, 95, 3), 3);
-  assert.equal(gradeSurface(grades, 0, 10, 3), 3);
+  assert.equal(gradeSurface(grades, 0, 20, 3), 3);
   assert.equal(gradeSurface(grades, 1, 50, 3), gradeHeight(grades, 1, 50));
+});
+
+test('slepý konec zůstává na profilu', () => {
+  const world = { rCount: 1, rOff: Int32Array.from([0, 2]), rpx: Float32Array.from([0, 100]), rpz: new Float32Array(2), rpy: new Float32Array(2) };
+  const grades = buildRoadGrades(world, () => true, () => false, (x) => 0.05 * x, 2, () => 0, () => false);
+  assert.equal(gradeBlend(grades, 0, 0), 1);
+  assert.equal(gradeBlend(grades, 0, 100), 1);
+});
+
+test('pás silnice se u mostovky a na začátku zvedá plynule', () => {
+  // silnice A (0–100) končí na mostě (silnice 1) ve stejné výšce, začátek A je slepý
+  const world = {
+    rCount: 2,
+    rOff: Int32Array.from([0, 2, 4]),
+    rpx: Float32Array.from([0, 100, 100, 140]),
+    rpz: new Float32Array(4),
+    rpy: Float32Array.from([0, 0, 5.1, 5.1]),
+  };
+  const grades = buildRoadGrades(world, (road) => road === 0, (road) => road === 1, (x) => 0.05 * x, 2, () => 0, () => false);
+  assert.ok(Math.abs(profileAt(grades.heights, 0, grades.count[0], 100) - 5.1) < 1e-6);
+  assert.equal(stripLift(grades, 0, 100), 0);              // u mostovky bez schodu
+  assert.equal(stripLift(grades, 0, 50), STRIP_LIFT);
+  assert.ok(stripLift(grades, 0, 97) > 0 && stripLift(grades, 0, 97) < STRIP_LIFT);
+  assert.equal(stripLift(grades, 0, 0), STRIP_LIFT);       // slepý začátek: pás rovnou
 });

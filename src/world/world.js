@@ -15,7 +15,10 @@ import { buildRoadGrades, corridorWeight, gradeBlend, gradeHeight, gradeSurface,
 
 export const SURF = 0.05;    // o kolik nad terénem leží povrch, po kterém se jezdí (kvůli vrstvě asfaltu)
 const ROAD_TERRAIN_STEP = 4;                       // rozteč úprav terénu pod silnicemi (m)
-const STRUCTURE_KEEP = 15;                         // okolí konců mostů a tunelů beze změny terénu (m)
+const STRUCTURE_KEEP = 8;                          // okolí konců mostů a tunelů beze změny terénu (m)
+const ROAD_TILE_CACHE = 512;                       // kolik dlaždic s úpravou terénu držet v paměti
+const CLAMP_PAD = 1.5;                             // terén do této vzdálenosti za okrajem vozovky leží pod ní (m)
+const cellKey = (x, z) => (Math.floor(x / STRUCTURE_KEEP) + 65536) * 131072 + Math.floor(z / STRUCTURE_KEEP) + 65536;
 const ROAD_TERRAIN_STRIDE = CHUNK / ROAD_TERRAIN_STEP + 1;
 const KEY_OFF = 250000;      // posun, aby byly kvantované souřadnice (decimetry) kladné – stačí na ±25 km
 const KEY_MUL = 524288;
@@ -832,40 +835,45 @@ export class World {
     // Ručně doladěná místa (nájezd na horní pás, břeh u mostu, rampa u nádraží, podjezdy) zůstávají.
     const special = new Set([this.roadApproach?.road, 155, 33139, 33140, ...this.tunnelApproaches.keys()]);
     const includeRoad = (road) => include(road) && !special.has(road);
-    // Konce mostů, tunelů a mimoúrovňových ramp mají kalibrované napojení na terén.
+    // Konce měřených a kamenných mostů, tunelů, Rondelu a mimoúrovňových ramp mají kalibrované
+    // napojení na terén. Na běžné mosty z mapy se profil napojí na výšku mostovky.
+    // Každá buňka zná konce ze svého okolí, dotaz tak potřebuje jediné vyhledání.
+    const calibrated = (road) => (R.flags[road] & (RF.TUNNEL | RF.SHARED_DECK)) !== 0 || this.deckCalibrations.has(road) ||
+      this.archedBridges.has(road) || this.tunnelRoads.has(road) || this.rondel?.elevated.has(road) || this.gradeRoads.has(road);
     const ends = new Map();
     for (let road = 0; road < this.rCount; road++) {
-      if (R.cls[road] > DRIVABLE_MAX || !raised(road)) continue;
+      if (R.cls[road] > DRIVABLE_MAX || !calibrated(road)) continue;
       for (const p of [this.rOff[road], this.rOff[road + 1] - 1]) {
-        const key = `${Math.floor(this.rpx[p] / STRUCTURE_KEEP)},${Math.floor(this.rpz[p] / STRUCTURE_KEEP)}`;
-        if (!ends.has(key)) ends.set(key, []);
-        ends.get(key).push(this.rpx[p], this.rpz[p]);
+        const x = this.rpx[p], z = this.rpz[p];
+        for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+          const key = cellKey(x + dx * STRUCTURE_KEEP, z + dz * STRUCTURE_KEEP);
+          if (!ends.has(key)) ends.set(key, []);
+          ends.get(key).push(x, z);
+        }
       }
     }
     this._structureEnds = ends;
+    // Sjízdné silnice bez profilu (ručně doladěné nájezdy): navazující silnice k nim přejdou do terénu.
+    const foreign = (road) => R.cls[road] <= DRIVABLE_MAX && !raised(road) && !includeRoad(road);
     this.roadGrade = buildRoadGrades(this, includeRoad, raised, (x, z) => this.terrainHeightAt(x, z), undefined,
-      (x, z) => this.keepsTerrain(x, z));
+      (x, z) => this.keepsTerrain(x, z), foreign);
     this.roadTerrain = new Map();
+    this.roadClamp = new Map();
     this.roadSteepTiles = new Set();
   }
 
   /**
-   * Ručně doladěné místo, kde silnice dál kopíruje původní terén: úpravy pro mimoúrovňová
-   * křížení a okolí konců mostů, tunelů a ramp.
+   * Ručně doladěné místo, kde silnice dál kopíruje původní terén: 2 = terén upravený pro
+   * mimoúrovňová křížení, 1 = okolí konce mostu, tunelu nebo rampy, 0 = jinde.
    */
   keepsTerrain(x, z) {
-    if (Math.abs(this.gradeOffsetAt(x, z)) > 0.02) return true;
-    const ends = this._structureEnds;
-    if (!ends?.size) return false;
-    const cx = Math.floor(x / STRUCTURE_KEEP), cz = Math.floor(z / STRUCTURE_KEEP);
-    for (let j = cz - 1; j <= cz + 1; j++) for (let i = cx - 1; i <= cx + 1; i++) {
-      const list = ends.get(`${i},${j}`);
-      if (!list) continue;
-      for (let k = 0; k < list.length; k += 2) {
-        if ((list[k] - x) ** 2 + (list[k + 1] - z) ** 2 < STRUCTURE_KEEP * STRUCTURE_KEEP) return true;
-      }
+    if (Math.abs(this.gradeOffsetAt(x, z)) > 0.02) return 2;
+    const list = this._structureEnds?.get(cellKey(x, z));
+    if (!list) return 0;
+    for (let k = 0; k < list.length; k += 2) {
+      if ((list[k] - x) ** 2 + (list[k + 1] - z) ** 2 < STRUCTURE_KEEP * STRUCTURE_KEEP) return 1;
     }
-    return false;
+    return 0;
   }
 
   /** Ruční úprava terénu z mimoúrovňových křížení v bodě (m), 0 mimo upravené dlaždice. */
@@ -928,14 +936,37 @@ export class World {
 
   /**
    * Úprava terénu jedné dlaždice (v cm po 4 m): vozovka a krajnice leží na profilu,
-   * dál se terén plynule vrací k původní výšce. Počítá se při prvním dotazu.
+   * dál se terén plynule vrací k původní výšce. Počítá se při prvním dotazu; v paměti
+   * zůstává nejvýš ROAD_TILE_CACHE naposledy spočtených dlaždic.
    */
   roadTerrainTile(tile) {
     let grid = this.roadTerrain.get(tile);
     if (grid !== undefined) return grid;
+    if (this.roadTerrain.size >= ROAD_TILE_CACHE) {
+      const oldest = this.roadTerrain.keys().next().value;
+      this.roadTerrain.delete(oldest);
+      this.roadClamp.delete(oldest);
+    }
     grid = this._buildRoadTerrain(tile);
     this.roadTerrain.set(tile, grid);
     return grid;
+  }
+
+  /**
+   * Povrch vozovky s profilem nad bodem sítě terénu (NaN mimo ni). V uzlech mřížky po 4 m se
+   * čte z předpočtené tabulky dlaždice, jinde se počítá jako carriagewayProfileAt().
+   */
+  roadClampAt(x, z, ground) {
+    if (!this.roadGrade) return NaN;
+    const tileX = Math.floor((x - this.minX) / CHUNK), tileZ = Math.floor((z - this.minZ) / CHUNK);
+    if (tileX < 0 || tileX >= this.cols || tileZ < 0 || tileZ >= this.rows) return NaN;
+    const fi = (x - this.minX - tileX * CHUNK) / ROAD_TERRAIN_STEP, fz = (z - this.minZ - tileZ * CHUNK) / ROAD_TERRAIN_STEP;
+    const i = Math.round(fi), j = Math.round(fz);
+    if (Math.abs(fi - i) > 1e-6 || Math.abs(fz - j) > 1e-6) return this.carriagewayProfileAt(x, z, ground, CLAMP_PAD);
+    const tile = tileZ * this.cols + tileX;
+    this.roadTerrainTile(tile);
+    const clamp = this.roadClamp.get(tile);
+    return clamp ? clamp[j * ROAD_TERRAIN_STRIDE + i] : NaN;
   }
 
   _buildRoadTerrain(tile) {
@@ -945,6 +976,8 @@ export class World {
     const reach = this.maxRoadHalfWidth + CORRIDOR_MARGIN + CORRIDOR_FALLOFF;
     const weight = new Float32Array(W * W), target = new Float32Array(W * W), carriageway = new Uint8Array(W * W);
     const fade = new Float32Array(W * W);
+    const clamp = new Float32Array(W * W).fill(NaN);
+    let clamped = false;
     const distance = new Float32Array(W * W), halfWidth = new Float32Array(W * W);
     const seen = new Set();
     const c0 = Math.max(0, Math.floor((x0 - reach - this.minX) / COLL_CELL)), c1 = Math.min(this.gcols - 1, Math.floor((x0 + CHUNK + reach - this.minX) / COLL_CELL));
@@ -969,8 +1002,16 @@ export class World {
           const d = Math.hypot(ax + ex * t - x, az + ez * t - z);
           const w = corridorWeight(d, hw);
           const index = jj * W + ii;
-          if (w <= weight[index]) continue;
           const station = grade.station[k] + t * (grade.station[k + 1] - grade.station[k]);
+          // nejnižší vozovka na profilu nad uzlem (terén pod ní nesmí prorůstat)
+          if (d <= hw + CLAMP_PAD) {
+            const surface = gradeSurface(grade, road, station, NaN);
+            if (surface < clamp[index] || (clamp[index] !== clamp[index] && surface === surface)) {
+              clamp[index] = surface;
+              clamped = true;
+            }
+          }
+          if (w <= weight[index]) continue;
           const goal = gradeHeight(grade, road, station);
           if (goal !== goal) continue;                    // ručně doladěný úsek
           fade[index] = gradeBlend(grade, road, station);
@@ -1010,6 +1051,7 @@ export class World {
         }
       }
     }
+    this.roadClamp.set(tile, clamped ? clamp : null);
     let any = false;
     const grid = new Int16Array(W * W);
     for (let jj = 0; jj < W; jj++) for (let ii = 0; ii < W; ii++) {

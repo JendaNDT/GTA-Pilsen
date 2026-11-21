@@ -11,6 +11,8 @@ export const CORRIDOR_FALLOFF = 3.5;    // plynulý přechod do původního ter�
 export const PIN_REACH = 40;            // jak daleko od křižovatky sahá oprava výšky (m)
 export const GRADE_TAPER = 15;          // přechod profilu do původního terénu u chráněných míst a volných konců (m)
 export const KEEP_MARGIN = 10;          // kolik silnice za ručně doladěným místem zůstane také beze změny (m)
+export const STRIP_LIFT = 0.05;         // pás jízdního povrchu leží jako vykreslený asfalt nad terénem (m)
+export const STRIP_RAMP = 6;            // na začátku pásu se zvedá z terénu plynule (m)
 
 /**
  * Klouzavý průměr; tři průchody dají téměř Gaussovo vyhlazení. Za konci se profil prodlužuje
@@ -101,13 +103,33 @@ export function gradeHeight(grade, road, station) {
  * plynule ztrácí a vozovka tam leží na takto upraveném terénu.
  */
 export function gradeBlend(grade, road, station) {
+  const t = Math.min(1, gradeReach(grade, road, station) / GRADE_TAPER);
+  return t * t * (3 - 2 * t);
+}
+
+/** Vzdálenost po silnici k nejbližšímu chráněnému místu nebo nenapojenému konci (m). */
+export function gradeReach(grade, road, station) {
   const start = grade.start[road];
   if (start < 0) return 0;
   const count = grade.count[road];
   const f = Math.max(0, Math.min(count - 1, station / grade.step));
   const i = Math.min(count - 2, Math.floor(f));
-  const a = grade.blend[start + i], b = grade.blend[start + i + 1];
+  const a = grade.reach[start + i], b = grade.reach[start + i + 1];
   return a + (b - a) * (f - i);
+}
+
+/**
+ * Výška pásu jízdního povrchu nad profilem: STRIP_LIFT, na začátku pásu a u napojení na mostovku
+ * plynule od nuly, aby kola nenarazila na schod.
+ */
+export function stripLift(grade, road, station) {
+  const start = grade.start[road];
+  if (start < 0) return 0;
+  const count = grade.count[road];
+  const f = Math.max(0, Math.min(count - 1, station / grade.step));
+  const i = Math.min(count - 2, Math.floor(f));
+  const rise = grade.rise[start + i] + (grade.rise[start + i + 1] - grade.rise[start + i]) * (f - i);
+  return STRIP_LIFT * Math.max(0, Math.min(1, rise / STRIP_RAMP));
 }
 
 /** Výška povrchu silnice: profil s plnou vahou, jinak terén ground (přechod nese terén). */
@@ -129,12 +151,15 @@ export function corridorWeight(distance, halfWidth, margin = CORRIDOR_MARGIN, fa
  * Profily všech zahrnutých silnic.
  * world: rCount, rOff, rpx, rpz, rpy; include(road) → bool; pinned(road) → bool (mosty, tunely);
  * baseHeight(x, z) → výška terénu bez úprav silnic.
- * keep(x, z) → bool: ručně doladěné místo, kde profil kopíruje původní terén a nenapojuje se.
+ * keep(x, z) → 0/1/2: ručně doladěné místo, kde profil kopíruje původní terén a nenapojuje se
+ * (2 = i KEEP_MARGIN za ním); foreign(road) → bool: sjízdná silnice bez profilu, ke které
+ * navazující silnice přejdou do terénu.
  * Vrací { start (Int32Array, −1 = bez profilu), count (Int32Array), heights (Float32Array),
- * kept (Uint8Array, 1 = vzorek v ručně doladěném místě), blend (Float32Array, váha profilu),
- * step, station }.
+ * kept (Uint8Array, 1 = vzorek v ručně doladěném místě), reach (Float32Array, vzdálenost
+ * k chráněnému místu nebo nenapojenému konci), rise (Float32Array, vzdálenost od začátku pásu
+ * nebo od napojení na mostovku), step, station }.
  */
-export function buildRoadGrades(world, include, pinned, baseHeight, step = GRADE_STEP, keep = null) {
+export function buildRoadGrades(world, include, pinned, baseHeight, step = GRADE_STEP, keep = null, foreign = null) {
   const { rCount, rOff, rpx, rpz, rpy } = world;
   const start = new Int32Array(rCount).fill(-1), count = new Int32Array(rCount);
   const station = new Float64Array(rpx.length);
@@ -169,13 +194,15 @@ export function buildRoadGrades(world, include, pinned, baseHeight, step = GRADE
         while (p < b - 2 && station[p + 1] < s) p++;
         const seg = station[p + 1] - station[p];
         const t = seg > 0 ? (s - station[p]) / seg : 0;
-        if (keep(rpx[p] + (rpx[p + 1] - rpx[p]) * t, rpz[p] + (rpz[p + 1] - rpz[p]) * t)) flags[i] = any = 1;
+        flags[i] = keep(rpx[p] + (rpx[p + 1] - rpx[p]) * t, rpz[p] + (rpz[p + 1] - rpz[p]) * t);
+        if (flags[i]) any = true;
       }
       if (any) {
         const margin = Math.round(KEEP_MARGIN / step), grown = new Uint8Array(n);
         for (let i = 0; i < n; i++) {
           if (!flags[i]) continue;
-          for (let j = Math.max(0, i - margin); j <= Math.min(n - 1, i + margin); j++) grown[j] = 1;
+          const reach = flags[i] > 1 ? margin : 0;
+          for (let j = Math.max(0, i - reach); j <= Math.min(n - 1, i + reach); j++) grown[j] = 1;
         }
         const kept = [], indices = [];
         for (let i = 0; i < n; i++) if (grown[i]) { kept.push([Math.min(length, i * step), samples[i]]); indices.push(i); }
@@ -190,7 +217,7 @@ export function buildRoadGrades(world, include, pinned, baseHeight, step = GRADE
   for (let road = 0; road < rCount; road++) {
     const a = rOff[road], b = rOff[road + 1];
     const isPinned = pinned(road);
-    if (!raw[road] && !isPinned) continue;
+    if (!raw[road] && !isPinned && !foreign?.(road)) continue;
     for (let p = a; p < b; p++) {
       // u mostů a tunelů rozhoduje jen výška jejich konců
       if (isPinned && p !== a && p !== b - 1) continue;
@@ -200,13 +227,22 @@ export function buildRoadGrades(world, include, pinned, baseHeight, step = GRADE
     }
   }
   const constraints = new Map();
-  // Konec napojený na jinou silnici s profilem nebo na most ve stejné výšce.
-  const startLinked = new Uint8Array(rCount), endLinked = new Uint8Array(rCount);
+  // Konec, který se nedá napojit (jiná výška, silnice bez profilu), přejde plynule do terénu.
+  const startFree = new Uint8Array(rCount), endFree = new Uint8Array(rCount);
+  const joints = new Map();          // silnice → staničení napojení na mostovku
+  const free = (road, p) => {
+    if (p === rOff[road]) startFree[road] = 1;
+    if (p === rOff[road + 1] - 1) endFree[road] = 1;
+  };
   for (const members of nodes.values()) {
     if (members.length < 2) continue;
     // V ručně doladěném místě (konec mostu, podjezd) a těsně za ním zůstává původní napojení.
     if (keep && keep(rpx[members[0][1]], rpz[members[0][1]])) continue;
     if (members.some(([road, p]) => keptFlags.get(road)?.[Math.min(count[road] - 1, Math.round(station[p] / step))])) continue;
+    if (foreign && members.some(([road]) => !raw[road] && !pinned(road))) {
+      for (const [road, p] of members) if (raw[road]) free(road, p);
+      continue;
+    }
     const fixed = members.filter(([road]) => pinned(road));
     let target;
     if (fixed.length) target = Math.max(...fixed.map(([, p]) => rpy[p]));
@@ -219,30 +255,37 @@ export function buildRoadGrades(world, include, pinned, baseHeight, step = GRADE
       if (!raw[road]) continue;
       const here = profileAt(raw[road], 0, raw[road].length, station[p], step);
       // neobvyklý skok (rampa k mostu, jiná úroveň): silnice zůstane na terénu
-      if (Math.abs(target - here) > (fixed.length ? 0.4 : 2)) continue;
+      if (Math.abs(target - here) > (fixed.length ? 0.4 : 2)) { free(road, p); continue; }
       if (!constraints.has(road)) constraints.set(road, []);
       constraints.get(road).push([station[p], target]);
-      if (p === rOff[road]) startLinked[road] = 1;
-      if (p === rOff[road + 1] - 1) endLinked[road] = 1;
+      if (fixed.length) {
+        if (!joints.has(road)) joints.set(road, []);
+        joints.get(road).push(station[p]);
+      }
     }
   }
-  const heights = new Float32Array(total), kept = new Uint8Array(total), blend = new Float32Array(total);
+  const heights = new Float32Array(total), kept = new Uint8Array(total), reach = new Float32Array(total);
+  const rise = new Float32Array(total);
   for (let road = 0; road < rCount; road++) {
     if (!raw[road]) continue;
     const pins = [...(constraints.get(road) ?? []), ...(keptSamples.get(road) ?? [])];
     const pinnedProfile = pinProfile(raw[road], step, pins);
     heights.set(pinnedProfile, start[road]);
-    // Vzdálenost k nejbližšímu chráněnému vzorku nebo volnému konci určí váhu profilu.
+    // Vzdálenost k nejbližšímu chráněnému vzorku nebo nenapojenému konci určí váhu profilu.
+    // Slepý konec se nenapojuje na nic a zůstává na profilu.
     const n = count[road], distance = new Float64Array(n).fill(Infinity);
     for (const i of keptIndices.get(road) ?? []) { kept[start[road] + i] = 1; distance[i] = 0; }
-    if (!startLinked[road]) distance[0] = 0;
-    if (!endLinked[road]) distance[n - 1] = 0;
+    if (startFree[road]) distance[0] = 0;
+    if (endFree[road]) distance[n - 1] = 0;
     for (let i = 1; i < n; i++) distance[i] = Math.min(distance[i], distance[i - 1] + step);
     for (let i = n - 2; i >= 0; i--) distance[i] = Math.min(distance[i], distance[i + 1] + step);
-    for (let i = 0; i < n; i++) {
-      const t = Math.min(1, distance[i] / GRADE_TAPER);
-      blend[start[road] + i] = t * t * (3 - 2 * t);
-    }
+    for (let i = 0; i < n; i++) reach[start[road] + i] = Math.min(1e4, distance[i]);
+    // Pás začíná za přechodem (reach = GRADE_TAPER) a u mostovky; odtud se zvedá.
+    const up = new Float64Array(n).fill(Infinity);
+    for (const s of joints.get(road) ?? []) up[Math.max(0, Math.min(n - 1, Math.round(s / step)))] = 0;
+    for (let i = 1; i < n; i++) up[i] = Math.min(up[i], up[i - 1] + step);
+    for (let i = n - 2; i >= 0; i--) up[i] = Math.min(up[i], up[i + 1] + step);
+    for (let i = 0; i < n; i++) rise[start[road] + i] = Math.min(1e4, up[i], Math.max(0, distance[i] - GRADE_TAPER));
   }
-  return { start, count, heights, kept, blend, step, station };
+  return { start, count, heights, kept, reach, rise, step, station };
 }
