@@ -314,7 +314,10 @@ function detailedCarGeometry(type) {
   det.box(wid * 0.97, 0.17, 0.13, 0, ride + 0.11, rz - 0.01, DARK, 0.98, 0.8);
   // maska, značky, zrcátka, kliky, prahy a spáry dveří
   det.box(wid * 0.4, 0.12, 0.05, 0, lampY - 0.03, fz + 0.005, DARK);
-  det.box(0.52, 0.12, 0.03, 0, ride + 0.28, fz + 0.015, PLATE);
+  // spodní sání mezi maskou a nárazníkem
+  const intakeTop = lampY - 0.09, intakeBottom = ride + 0.2;
+  det.box(wid * 0.52, intakeTop - intakeBottom, 0.04, 0, (intakeTop + intakeBottom) / 2, fz + 0.005, DARK, 0.96, 1);
+  det.box(0.52, 0.12, 0.03, 0, ride + 0.11, fz + 0.09, PLATE);   // přední značka na nárazníku
   det.box(0.52, 0.12, 0.03, 0, ride + 0.33, rz - 0.015, PLATE);
   for (const sx of [-1, 1]) {
     det.box(0.07, 0.1, 0.17, sx * (wid / 2 + 0.07), belt + 0.11, cab.front - 0.16, DARK, 1, 0.8);
