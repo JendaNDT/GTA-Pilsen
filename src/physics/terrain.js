@@ -1,6 +1,7 @@
 import { TUNNEL_HEIGHT, TUNNEL_PORTAL_CUT } from '../world/tunnels.js';
 
 import { riverBed } from './water.js';
+import { densePath, pathNormal } from '../world/road-profile.js';
 
 export function terrainGridStep(world, ci) {
   if (world.gradeTerrain.has(ci)) return world.gradeStep;
@@ -51,11 +52,17 @@ function portalPlanes(p) {
 
 export function terrainTriangles(world, ci, x0, z0, size, emit) {
   const bed = riverBed(world, x0, z0, size);
-  const step = Math.min(terrainGridStep(world, ci), bed ? 4 : Infinity);
+  // Pod silnicemi je terén srovnaný do jejich profilu po 4 m; fyzika ho sleduje stejně jemně,
+  // aby nevystupoval nad pás vozovky.
+  const roads = world.roadTerrain && world.roadTerrainTile(ci) ? 4 : Infinity;
+  const step = Math.min(terrainGridStep(world, ci), bed ? 4 : Infinity, roads);
   const holes = world.tunnels.flatMap((t) => t.portalCuts(x0, z0, size)).flatMap(portalPlanes);
   const vertex = (x, z) => {
     const depth = bed ? bed(x, z) : 0;
-    const p = [x, world.heightAt(x, z) - depth, z];
+    let y = world.heightAt(x, z);
+    const road = roads < Infinity ? world.carriagewayProfileAt(x, z) : NaN;
+    if (road < y) y = road;
+    const p = [x, y - depth, z];
     p.wet = depth > 0;
     return p;
   };
@@ -100,5 +107,36 @@ export function terrainTriangles(world, ci, x0, z0, size, emit) {
       lowerLeft = lowerRight;
     }
     row[row.length - 1] = lowerLeft;
+  }
+}
+
+/**
+ * Povrch vozovek s hladkým profilem (pásy po 2 m po celé šířce). Leží 5 cm nad terénem,
+ * který je pod silnicí srovnaný do stejného profilu, takže kola jedou po hladké ploše.
+ */
+export function roadSurfaceTriangles(world, ci, emit, surface = 0.05) {
+  const grade = world.roadGrade, pieces = world.rPieces?.[ci];
+  if (!grade || !pieces) return;
+  const { rpx, rpz, rOff } = world;
+  const up = (a, b, c) => ((b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2])) >= 0;
+  const tri = (a, b, c) => (up(a, b, c) ? emit(a, b, c) : emit(a, c, b));
+  for (let q = 0; q < pieces.length; q += 3) {
+    const road = pieces[q], s = pieces[q + 1], e = pieces[q + 2];
+    if (grade.start[road] < 0) continue;
+    const hw = world.r.w[road] / 2;
+    const D = densePath(rpx, rpz, null, s, e, rOff[road], rOff[road + 1] - 1, 2);
+    let station = grade.station[s], previous = null;
+    for (let k = 0; k < D.n; k++) {
+      if (k) station += Math.hypot(D.x[k] - D.x[k - 1], D.z[k] - D.z[k - 1]);
+      const n = pathNormal(D, k), scale = Math.min(n.scale, 1.5);
+      const y = world.roadGradeAt(road, station) + surface;
+      const left = [D.x[k] - n.x * hw * scale, y, D.z[k] - n.z * hw * scale];
+      const right = [D.x[k] + n.x * hw * scale, y, D.z[k] + n.z * hw * scale];
+      if (previous) {
+        tri(previous[0], previous[1], right);
+        tri(previous[0], right, left);
+      }
+      previous = [left, right];
+    }
   }
 }

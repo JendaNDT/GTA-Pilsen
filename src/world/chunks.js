@@ -518,6 +518,17 @@ function trimApproach(D, start, end) {
 
 
 
+/** Výšky hladkého profilu silnice pro zahuštěnou čáru (vozovka i značení leží na profilu). */
+function gradeDense(world, D, road, s) {
+  if (!(world.roadGrade?.start[road] >= 0)) return;
+  let station = world.roadGrade.station[s] + Math.hypot(D.x[0] - world.rpx[s], D.z[0] - world.rpz[s]);
+  D.y = new Array(D.n);
+  for (let k = 0; k < D.n; k++) {
+    if (k) station += Math.hypot(D.x[k] - D.x[k - 1], D.z[k] - D.z[k - 1]);
+    D.y[k] = world.roadGradeAt(road, station) + SURF;
+  }
+}
+
 /** Pás položený na terén (nebo na mostovku). center = přidat středovou řadu bodů (lépe kopíruje terén). */
 function ribbon(world, buf, D, hw, col, lateral, lift, capStart, capEnd, center, road) {
   const n = D.n;
@@ -825,6 +836,7 @@ function buildRoads(world, ci, manager) {
       const approach = world.tunnelApproaches.get(i);
       const start = s === a && approach?.start, end = e === b && approach?.end;
       if ((start || end) && !trimApproach(D, start, end)) continue;
+      if (!raised) gradeDense(world, D, i, s);
       const col = ring ? COL.asphalt : bridge && cls <= DRIVABLE_MAX ? COL.bridge : roadColor(cls);
       const surfaceWidth = measured === undefined ? hw : measured - (ring ? 0.16 : 0.12);
       const curb = manager.roadVerge[i] && !raised && cls !== RC.PRIMARY_LINK && cls !== RC.SECONDARY_LINK;
@@ -950,8 +962,12 @@ const terrainIndices = new Map();
 /** Síť terénu jedné dlaždice (sdílí uzly se sousedy, takže na sebe navazuje beze spár). */
 function buildTerrain(world, ci, cx0, cz0) {
   const grade = world.gradeTerrain.has(ci);
-  const detail = world.terrainDetail.has(ci) || grade;
-  const G = terrainGridStep(world, ci);
+  // Pod silnicemi je terén srovnaný do jejich profilu, výšky proto čteme přes heightAt.
+  const roads = !!world.roadTerrain && !!world.roadTerrainTile(ci);
+  const detail = world.terrainDetail.has(ci) || grade || roads;
+  // Kde svah těsně u vozovky stoupá nad silnici, je síť jemnější (4 m), aby do ní nezasahoval.
+  const G = roads && QUALITY.terrainDetail && world.roadSteepTiles.has(ci)
+    ? Math.min(4, terrainGridStep(world, ci)) : terrainGridStep(world, ci);
   const N = CHUNK / G, n1 = N + 1;
   const pos = new Float32Array(n1 * n1 * 3), nor = new Float32Array(n1 * n1 * 3), uv = new Float32Array(n1 * n1 * 2);
   const gi0 = Math.round((cx0 - world.tX0) / G), gj0 = Math.round((cz0 - world.tZ0) / G);
@@ -962,10 +978,13 @@ function buildTerrain(world, ci, cx0, cz0) {
     for (let i = 0; i <= N; i++) {
       const gi = gi0 + i, gj = gj0 + j;
       const x = cx0 + i * G, z = cz0 + j * G;
-      pos[o] = x; pos[o + 1] = detail ? world.heightAt(x, z) : H(gi, gj); pos[o + 2] = z;
+      let y = detail ? world.heightAt(x, z) : H(gi, gj);
+      // pod vozovkou leží terén vždy pod pásem silnice, aby jím neprorůstal
+      if (roads) { const road = world.carriagewayProfileAt(x, z); if (road < y) y = road; }
+      pos[o] = x; pos[o + 1] = y; pos[o + 2] = z;
       let hx, hz;
       if (detail || world.terrainDetail.size && (i === 0 || i === N || j === 0 || j === N)) {
-        const step = grade ? world.gradeStep : world.tDetailG;
+        const step = grade ? world.gradeStep : world.tDetailG ?? 4;
         hx = (world.heightAt(x + step, z) - world.heightAt(x - step, z)) / (2 * step);
         hz = (world.heightAt(x, z + step) - world.heightAt(x, z - step)) / (2 * step);
       } else {
@@ -1262,7 +1281,8 @@ function drawGround(mgr, ci, S, tile, bitmap) {
           width = R.w[i]; style = roadHex(cls);
         } else {                    // podklad vozovek (přesnou geometrii kreslí síť silnic)
           if (cls > RC.PEDESTRIAN) continue;
-          width = Math.max(1.5, R.w[i] - 1.2); style = roadHex(cls);      // užší než přesná síť, ať zpod ní nevyčuhuje rozmazaný okraj
+          // S hladkým profilem silnic v plné šíři: kde terén vystoupí nad pás, vypadá jako vozovka.
+          width = world.roadGrade ? R.w[i] : Math.max(1.5, R.w[i] - 1.2); style = roadHex(cls);
         }
         g.strokeStyle = style; g.lineWidth = width;
         g.beginPath();
