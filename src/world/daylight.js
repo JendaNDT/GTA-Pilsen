@@ -57,8 +57,9 @@ export function daylight({ elevation, day, dusk, overcast }, look = 'novy') {
   return {
     sun: 3.1 * (1 - overcast * 1.2) * rise,
     sunColor: [0xffeed2, [0xff9a52, dusk]],
-    hemi: 0.95 + day * (1.05 + 0.6 * cloudy),
-    hemiSky: [0xc4ccd8, [0xdadcde, cloudy], [0xe6c3a5, dusk * 0.6], [0x6f83c0, 1 - day]],
+    hemi: 0.95 + day * (1.25 + 0.6 * cloudy),
+    // Teplé světlo oblohy jako dřív: dlažba a omítky si ve stínu drží svou barvu.
+    hemiSky: [0xffe9d5, [0xe6e8ea, cloudy], [0x6f83c0, 1 - day]],
     hemiGround: [0xb2a48a, [0x343a52, 1 - day]],
     // Odraz oblohy zůstává pro vodu, auta a dlažbu stejný jako dřív (modrá řeka, lesk laku).
     // Fasády ho mají jen nepatrný (viz setFacadeEnvironment), právě u nich vznikal závoj.

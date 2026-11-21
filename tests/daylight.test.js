@@ -16,14 +16,14 @@ test('původní vzhled zachovává dřívější hodnoty světla', () => {
 
 test('nový vzhled: za jasného dne slunce převládá a stíny jsou plné', () => {
   const light = daylight(noon);
-  assert.ok(light.sun / light.hemi > 1.5, 'slunce má být víc než 1,5× silnější než obloha');
+  assert.ok(light.sun / light.hemi > 1.3, 'slunce má být víc než 1,3× silnější než obloha');
   assert.equal(light.environment, daylight(noon, 'puvodni').environment, 'voda a auta odrážejí oblohu jako dřív');
   assert.ok(light.facadeEnvironment < light.environment / 10, 'fasády odrážejí oblohu jen nepatrně');
   assert.ok(light.groundRadiance.scale > 0, 'zem pod obzorem má vlastní jas');
   assert.equal(light.shadow, 1);
   assert.equal(daylight(noon, 'puvodni').facadeEnvironment, null);
   const old = daylight(noon, 'puvodni');
-  assert.ok(light.sun / light.hemi > 1.7 * (old.sun / old.hemi), 'kontrast je výrazně vyšší než dřív');
+  assert.ok(light.sun / light.hemi > 1.5 * (old.sun / old.hemi), 'kontrast je výrazně vyšší než dřív');
 });
 
 test('nový vzhled: noc se nemění', () => {
@@ -68,8 +68,8 @@ test('vzhled stránky se čte z adresy a v Node je nový', async () => {
   }
 });
 
-test('nový vzhled: za soumraku je světlo oblohy teplejší', () => {
-  const light = daylight({ elevation: 0.02, day: 0.6, dusk: 1, overcast: 0 });
-  const warm = light.hemiSky.find((stop) => Array.isArray(stop) && stop[0] === 0xe6c3a5);
-  assert.ok(warm && warm[1] > 0.5);
+test('nový vzhled: světlo oblohy je ve dne teplé, aby dlažba ve stínu neztratila barvu', () => {
+  const [first] = daylight(noon).hemiSky;
+  const red = first >> 16, blue = first & 255;
+  assert.ok(red - blue > 30);
 });
