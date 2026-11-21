@@ -74,6 +74,10 @@ Na dotykové obrazovce se objeví páčka a tlačítka. Telefon automaticky pou�
 kvalitu. Na počítači ji lze zapnout parametrem `?quality=low`. Ve vyšší kvalitě zobrazí `?wet=1`
 tlumené odlesky na mokré dlažbě v obou ukázkových lokalitách.
 
+Od vzhledové zkoušky z listopadu 2026 má den silnější slunce, čitelné stíny a sytější omítky
+a fasády už neodrážejí oblohu jako mléčný závoj. Původní světlo pro porovnání zapne parametr
+`?vzhled=puvodni`. [Protokol vzhledové zkoušky](docs/vzhledova-zkouska.md)
+
 Hra ve výchozím nastavení používá aktuální čas v Plzni. V **Nastavení → Herní čas**
 můžeš zadat konkrétní hodinu a minutu. Herní čas pak plyne stejným tempem jako skutečný
 čas a při pauze stojí. **Použít aktuální čas v Plzni** obnoví živé hodiny. Po změně

@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Vzhledová zkouška (mimo etapu, na přání autora)
+
+Na větvi `claude/lucid-bohr-y3rlwb` vznikla vzhledová zkouška webové verze: silnější slunce, slabší odraz oblohy na fasádách, tmavší zem v mapě odrazů, sytější omítky a oblé koruny stromů. Původní světlo zapne `?vzhled=puvodni`. Autor rozhodne podle zveřejněné zkoušky, zda se vzhled převezme. [Protokol a snímky](../vzhledova-zkouska.md)
+
 ## Rampa u hlavního nádraží
 
 Návrat z předchozího archivu do E12 i E25 prošel. U hlavního nádraží odhalilo pozorování na WebGL 2 stání 181 s. Po úpravě příčného sklonu a brzdění ve sjezdu bylo při opakování nejdelší stání 57 s. Prošlo 185 testů JavaScriptu, 27 testů Pythonu a sestavení. Pokračují prohlížečové zkoušky vydání na obou vykreslovacích cestách. [Povrch rampy, brzdění a provoz](../E26.md#příčný-sklon-nádražní-rampy-a-brzdění-ve-sjezdu)
