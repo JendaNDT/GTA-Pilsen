@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildRoadGrades, corridorWeight, pinProfile, profileAt, smoothProfile } from '../src/world/road-grade.js';
+import { buildRoadGrades, corridorWeight, gradeBlend, gradeHeight, gradeSurface, pinProfile, profileAt, smoothProfile } from '../src/world/road-grade.js';
 
 test('vyhlazení odstraní schody po 8 m a zachová rovnoměrné stoupání', () => {
   // svah 6 % se zuby terénu po 8 m (vzorky po 2 m)
@@ -65,4 +65,52 @@ test('ručně doladěný terén zůstane v profilu beze změny', () => {
   assert.ok(Math.abs(profileAt(grades.heights, 0, grades.count[0], 100) + 2) < 1e-6);
   const smoothOnly = buildRoadGrades(world, () => true, () => false, terrain);
   assert.ok(profileAt(smoothOnly.heights, 0, smoothOnly.count[0], 100) > -1.9, 'bez ochrany by se podjezd zploštil');
+});
+
+test('u konce mostu se profil nenapojuje a platí tam původní terén', () => {
+  // silnice A končí u mostu (silnice 1) s mostovkou o 0,3 m výš než terén
+  const world = {
+    rCount: 2,
+    rOff: Int32Array.from([0, 2, 4]),
+    rpx: Float32Array.from([0, 100, 100, 140]),
+    rpz: Float32Array.from([0, 0, 0, 0]),
+    rpy: Float32Array.from([0, 0, 5.3, 5.3]),
+  };
+  const terrain = (x) => 0.05 * x;
+  const nearEnd = (x, z) => Math.hypot(x - 100, z) < 15;
+  const kept = buildRoadGrades(world, (road) => road === 0, (road) => road === 1, terrain, 2, nearEnd);
+  // bez ochrany by se konec srovnal na mostovku
+  const pinned = buildRoadGrades(world, (road) => road === 0, (road) => road === 1, terrain);
+  assert.ok(Math.abs(profileAt(pinned.heights, 0, pinned.count[0], 100) - 5.3) < 1e-6);
+  // s ochranou zůstane terén (5,0 m) a výška profilu tam není k dispozici
+  assert.ok(Math.abs(profileAt(kept.heights, 0, kept.count[0], 100) - 5) < 1e-6);
+  assert.ok(Number.isNaN(gradeHeight(kept, 0, 95)));
+  assert.ok(Math.abs(gradeHeight(kept, 0, 50) - 2.5) < 1e-6);
+  assert.ok(Number.isNaN(gradeHeight(kept, 1, 10)));
+});
+
+test('u volného konce a chráněného místa přechází profil plynule do terénu', () => {
+  // A (0–100) navazuje na B (100–200); B končí volně, v A je chráněné místo kolem x = 20
+  const world = {
+    rCount: 2,
+    rOff: Int32Array.from([0, 2, 4]),
+    rpx: Float32Array.from([0, 100, 100, 200]),
+    rpz: Float32Array.from([0, 0, 0, 0]),
+    rpy: new Float32Array(4),
+  };
+  const terrain = (x) => (Math.floor(x / 8) % 2 ? 0.2 : 0);
+  const keep = (x) => x < 20;
+  const grades = buildRoadGrades(world, () => true, () => false, terrain, 2, keep);
+  assert.equal(gradeBlend(grades, 0, 100), 1);            // křižovatka A–B: plně na profilu
+  assert.equal(gradeBlend(grades, 1, 0), 1);
+  assert.equal(gradeBlend(grades, 1, 100), 0);            // volný konec B: terén
+  assert.ok(gradeBlend(grades, 1, 95) > 0 && gradeBlend(grades, 1, 95) < 1);
+  assert.equal(gradeBlend(grades, 1, 50), 1);
+  assert.ok(Number.isNaN(gradeHeight(grades, 0, 25)));   // 10 m za chráněným místem stále terén
+  assert.ok(gradeBlend(grades, 0, 35) > 0 && gradeBlend(grades, 0, 35) < 1);
+  assert.equal(gradeBlend(grades, 0, 45), 1);
+  // povrch: na profilu jen s plnou vahou, v přechodu a v chráněném místě terén
+  assert.equal(gradeSurface(grades, 1, 95, 3), 3);
+  assert.equal(gradeSurface(grades, 0, 10, 3), 3);
+  assert.equal(gradeSurface(grades, 1, 50, 3), gradeHeight(grades, 1, 50));
 });

@@ -2,6 +2,7 @@ import { TUNNEL_HEIGHT, TUNNEL_PORTAL_CUT } from '../world/tunnels.js';
 
 import { riverBed } from './water.js';
 import { densePath, pathNormal } from '../world/road-profile.js';
+import { gradeBlend } from '../world/road-grade.js';
 
 export function terrainGridStep(world, ci) {
   if (world.gradeTerrain.has(ci)) return world.gradeStep;
@@ -60,7 +61,7 @@ export function terrainTriangles(world, ci, x0, z0, size, emit) {
   const vertex = (x, z) => {
     const depth = bed ? bed(x, z) : 0;
     let y = world.heightAt(x, z);
-    const road = roads < Infinity ? world.carriagewayProfileAt(x, z) : NaN;
+    const road = roads < Infinity ? world.carriagewayProfileAt(x, z, y) : NaN;
     if (road < y) y = road;
     const p = [x, y - depth, z];
     p.wet = depth > 0;
@@ -111,10 +112,11 @@ export function terrainTriangles(world, ci, x0, z0, size, emit) {
 }
 
 /**
- * Povrch vozovek s hladkým profilem (pásy po 2 m po celé šířce). Leží 5 cm nad terénem,
- * který je pod silnicí srovnaný do stejného profilu, takže kola jedou po hladké ploše.
+ * Povrch vozovek s hladkým profilem (pásy po 2 m po celé šířce). Leží ve výšce profilu, do
+ * kterého je srovnaný i terén pod silnicí, takže kola jedou po hladké ploše a výška se shoduje
+ * s heightAt() i s napojením na mosty. Vykreslený pás je jako dřív o SURF výš.
  */
-export function roadSurfaceTriangles(world, ci, emit, surface = 0.05) {
+export function roadSurfaceTriangles(world, ci, emit, surface = 0) {
   const grade = world.roadGrade, pieces = world.rPieces?.[ci];
   if (!grade || !pieces) return;
   const { rpx, rpz, rOff } = world;
@@ -129,9 +131,13 @@ export function roadSurfaceTriangles(world, ci, emit, surface = 0.05) {
     for (let k = 0; k < D.n; k++) {
       if (k) station += Math.hypot(D.x[k] - D.x[k - 1], D.z[k] - D.z[k - 1]);
       const n = pathNormal(D, k), scale = Math.min(n.scale, 1.5);
-      const y = world.roadGradeAt(road, station) + surface;
-      const left = [D.x[k] - n.x * hw * scale, y, D.z[k] - n.z * hw * scale];
-      const right = [D.x[k] + n.x * hw * scale, y, D.z[k] + n.z * hw * scale];
+      const y = world.roadGradeAt(road, station);
+      // ručně doladěná místa (konce mostů, podjezdy) zůstávají jen na terénu
+      if (y !== y) { previous = null; continue; }
+      // v přechodu k nim a u volných konců jede auto po plynule upraveném terénu
+      if (gradeBlend(grade, road, station) < 1) { previous = null; continue; }
+      const left = [D.x[k] - n.x * hw * scale, y + surface, D.z[k] - n.z * hw * scale];
+      const right = [D.x[k] + n.x * hw * scale, y + surface, D.z[k] + n.z * hw * scale];
       if (previous) {
         tri(previous[0], previous[1], right);
         tri(previous[0], right, left);

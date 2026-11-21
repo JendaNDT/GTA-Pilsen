@@ -23,6 +23,7 @@ import { makeBuildingMaterial, makeDecalMaterial, makeAsphaltMaterial, makeSurfa
 import { SURFACE } from './material-table.js';
 import { Parts, getDetailMaterial } from '../entities/models.js';
 import { SURF } from './world.js';
+import { gradeBlend } from './road-grade.js';
 import { TUNNEL_HEIGHT } from './tunnels.js';
 import { buildTrafficMeshes } from './traffic-meshes.js';
 import { detailRequestLimit, Heritage, pavingChunk } from './heritage.js';
@@ -519,14 +520,31 @@ function trimApproach(D, start, end) {
 
 
 /** Výšky hladkého profilu silnice pro zahuštěnou čáru (vozovka i značení leží na profilu). */
+// V ručně doladěných místech zůstane NaN a pás tam kopíruje terén jako dřív.
 function gradeDense(world, D, road, s) {
-  if (!(world.roadGrade?.start[road] >= 0)) return;
-  let station = world.roadGrade.station[s] + Math.hypot(D.x[0] - world.rpx[s], D.z[0] - world.rpz[s]);
+  const grade = world.roadGrade;
+  if (!(grade?.start[road] >= 0)) return;
+  let station = grade.station[s] + Math.hypot(D.x[0] - world.rpx[s], D.z[0] - world.rpz[s]);
   D.y = new Array(D.n);
+  D.blend = new Array(D.n);
   for (let k = 0; k < D.n; k++) {
     if (k) station += Math.hypot(D.x[k] - D.x[k - 1], D.z[k] - D.z[k - 1]);
     D.y[k] = world.roadGradeAt(road, station) + SURF;
+    D.blend[k] = gradeBlend(grade, road, station);
   }
+}
+
+/**
+ * Výška pásu v bodě (x, z) mezi body k a k+1 husté cesty (t = poloha mezi nimi): z profilu,
+ * v přechodu k chráněným místům, u volných konců a bez profilu z terénu.
+ */
+function denseY(world, D, k, t, x, z) {
+  if (!D.y) return world.heightAt(x, z) + SURF;
+  const k1 = Math.min(D.n - 1, k + 1);
+  const y = D.y[k] + (D.y[k1] - D.y[k]) * t;
+  if (y !== y) return world.heightAt(x, z) + SURF;
+  const b = D.blend ? Math.min(D.blend[k], D.blend[k1]) : 1;
+  return b >= 1 ? y : world.heightAt(x, z) + SURF;
 }
 
 /** Pás položený na terén (nebo na mostovku). center = přidat středovou řadu bodů (lépe kopíruje terén). */
@@ -535,7 +553,7 @@ function ribbon(world, buf, D, hw, col, lateral, lift, capStart, capEnd, center,
   let pL = -1, pC = -1, pR = -1;
   let along = road?.start ?? 0;
   for (let k = 0; k < n; k++) {
-    const yFn = D.y ? () => D.y[k] + lift : (x, z) => world.heightAt(x, z) + SURF + lift;
+    const yFn = (x, z) => denseY(world, D, k, 0, x, z) + lift;
     const nr = pathNormal(D, k);
     const nx = nr.x, nz = nr.z, sc = nr.scale;
     if (road && k) along += Math.hypot(D.x[k]-D.x[k-1],D.z[k]-D.z[k-1]);
@@ -564,7 +582,7 @@ function dashes(world, buf, D, hw, col, dash, gap, lateral, lift) {
     if (len < 1e-4) continue;
     dx /= len; dz /= len;
     const nx = -dz, nz = dx;
-    const yAt = (x, z, t) => (D.y ? D.y[k] + (D.y[k + 1] - D.y[k]) * t : world.heightAt(x, z) + SURF) + lift;
+    const yAt = (x, z, t) => denseY(world, D, k, t, x, z) + lift;
     let s = -acc;
     while (s < len) {
       const s0 = Math.max(0, s), s1 = Math.min(len, s + dash);
@@ -681,7 +699,8 @@ function rondelMarkings(world, marks, path, laneWidth, surfaceWidth, lanes) {
     const dx = path.x[k] - x, dz = path.z[k] - z, length = Math.hypot(dx, dz);
     if (length < 0.001) continue;
     const tx = dx / length, tz = dz / length;
-    const y = path.y[k - 1] + LIFT_MARK, slope = (path.y[k] - path.y[k - 1]) / length;
+    const y0 = denseY(world, path, k - 1, 0, x, z), y1 = denseY(world, path, k, 0, path.x[k], path.z[k]);
+    const y = y0 + LIFT_MARK, slope = (y1 - y0) / length;
     const vertex = (along, across) => marks.v(x + tx * along - tz * across,
       y + slope * along, z + tz * along + tx * across, COL.mark);
     while (spacing + 0.85 < length) {
@@ -980,7 +999,7 @@ function buildTerrain(world, ci, cx0, cz0) {
       const x = cx0 + i * G, z = cz0 + j * G;
       let y = detail ? world.heightAt(x, z) : H(gi, gj);
       // pod vozovkou leží terén vždy pod pásem silnice, aby jím neprorůstal
-      if (roads) { const road = world.carriagewayProfileAt(x, z); if (road < y) y = road; }
+      if (roads) { const road = world.carriagewayProfileAt(x, z, y); if (road < y) y = road; }
       pos[o] = x; pos[o + 1] = y; pos[o + 2] = z;
       let hx, hz;
       if (detail || world.terrainDetail.size && (i === 0 || i === N || j === 0 || j === N)) {
