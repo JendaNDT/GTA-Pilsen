@@ -3897,9 +3897,9 @@
       "sha256": "6d3ec13fb2d9261aa08f727f1717f454a029d2e4b788c96eb2f908431ccb2273"
     },
     "models/vegetation/stromy.png": {
-      "bytes": 97787,
-      "fingerprint": "a9d9aa23",
-      "sha256": "877ed0f8f3ef4d7a1d0ee70c121674c003406d5115cb12b8d03bac2e1f0e9c4f"
+      "bytes": 93425,
+      "fingerprint": "fc3f7a57",
+      "sha256": "811fa6765091a7aa6cf48fbb5b384552c6db7d5ab5edcc8c0451764e9596ef89"
     },
     "textures/facades/barva.webp": {
       "bytes": 2241236,

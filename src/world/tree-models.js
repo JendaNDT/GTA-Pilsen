@@ -13,6 +13,8 @@ import {
 export const TREE_TYPES = ['listnaty', 'jehlicnaty', 'ker', 'ovocny'];
 export const TREE_PIVOT = 4;
 export const TREE_FRAME = 10;
+// Podíl oblé normály koruny (0 = ostré plochy jako dřív, 1 = hladká koule).
+export const CROWN_SOFTNESS = 0.8;
 const colors = [0x689746, 0x406e48, 0x62863e, 0x789442];
 const crowns = [
   [
@@ -47,16 +49,28 @@ export function treeModel(type) {
     rgb = [],
     leaf = [];
   const tint = new Color(colors[type]);
-  function add(geo, foliage) {
+  const normal = new Vector3(),
+    radial = new Vector3();
+  // Koruna má měkké stínování: normála míří převážně od středu koule, takže stejný počet
+  // trojúhelníků působí oble. Odstín se mění plynule po povrchu, ne skokem po plochách.
+  function add(geo, foliage, center = null) {
     const g = geo.index ? geo.toNonIndexed() : geo;
     const p = g.attributes.position,
       n = g.attributes.normal;
     for (let i = 0; i < p.count; i += 3) {
-      const shade = foliage ? 0.72 + 0.036 * p.getY(i) + 0.075 * Math.sin(i * 12.9898) : 1;
+      const faceShade = foliage ? 0.72 + 0.036 * p.getY(i) + 0.075 * Math.sin(i * 12.9898) : 1;
       const c = foliage ? tint : wood;
       for (let j = i; j < i + 3; j++) {
-        pos.push(p.getX(j), p.getY(j), p.getZ(j));
-        nor.push(n.getX(j), n.getY(j), n.getZ(j));
+        const x = p.getX(j), y = p.getY(j), z = p.getZ(j);
+        normal.set(n.getX(j), n.getY(j), n.getZ(j));
+        let shade = faceShade;
+        if (foliage && center) {
+          radial.set(x - center[0], y - center[1], z - center[2]).normalize();
+          normal.lerp(radial, CROWN_SOFTNESS).normalize();
+          shade = 0.72 + 0.036 * y + 0.045 * Math.sin(x * 2.7 + z * 1.9 + y * 1.3);
+        }
+        pos.push(x, y, z);
+        nor.push(normal.x, normal.y, normal.z);
         rgb.push(c.r * shade, c.g * shade, c.b * shade);
         leaf.push(foliage ? 1 : 0);
       }
@@ -86,7 +100,8 @@ export function treeModel(type) {
     }
   for (const [x, y, z, r] of crowns[type]) {
     const g = type === 1 ? new ConeGeometry(r, 2.1 + r * 0.72, 7) : new IcosahedronGeometry(r);
-    add(g.translate(x, y, z), true);
+    // u jehličnanu leží „střed“ níž, aby normály kužele mířily víc do stran
+    add(g.translate(x, y, z), true, type === 1 ? [x, y - (2.1 + r * 0.72) * 0.45, z] : [x, y, z]);
   }
   const geo = new BufferGeometry();
   geo.setAttribute('position', new Float32BufferAttribute(pos, 3));
