@@ -982,7 +982,7 @@ const terrainIndices = new Map();
 function buildTerrain(world, ci, cx0, cz0) {
   const grade = world.gradeTerrain.has(ci);
   // Pod silnicemi je terén srovnaný do jejich profilu, výšky proto čteme přes heightAt.
-  const roads = !!world.roadTerrain && !!world.roadTerrainTile(ci);
+  const roads = !!world.roadTerrain && world.hasRoadTerrain(ci);
   const detail = world.terrainDetail.has(ci) || grade || roads;
   // Kde svah těsně u vozovky stoupá nad silnici, je síť jemnější (4 m), aby do ní nezasahoval.
   const G = roads && QUALITY.terrainDetail && world.roadSteepTiles.has(ci)

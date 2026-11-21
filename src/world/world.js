@@ -18,6 +18,7 @@ const ROAD_TERRAIN_STEP = 4;                       // rozteč úprav terénu pod
 const STRUCTURE_KEEP = 8;                          // okolí konců mostů a tunelů beze změny terénu (m)
 const ROAD_TILE_CACHE = 512;                       // kolik dlaždic s úpravou terénu držet v paměti
 const CLAMP_PAD = 1.5;                             // terén do této vzdálenosti za okrajem vozovky leží pod ní (m)
+const NEAR_PAD = 3;                                // pás kolem vozovky, kde má fyzika jemnou síť terénu (m)
 const cellKey = (x, z) => (Math.floor(x / STRUCTURE_KEEP) + 65536) * 131072 + Math.floor(z / STRUCTURE_KEEP) + 65536;
 const ROAD_TERRAIN_STRIDE = CHUNK / ROAD_TERRAIN_STEP + 1;
 const KEY_OFF = 250000;      // posun, aby byly kvantované souřadnice (decimetry) kladné – stačí na ±25 km
@@ -859,6 +860,7 @@ export class World {
       (x, z) => this.keepsTerrain(x, z), foreign);
     this.roadTerrain = new Map();
     this.roadClamp = new Map();
+    this.roadNear = new Map();
     this.roadSteepTiles = new Set();
   }
 
@@ -946,10 +948,27 @@ export class World {
       const oldest = this.roadTerrain.keys().next().value;
       this.roadTerrain.delete(oldest);
       this.roadClamp.delete(oldest);
+      this.roadNear.delete(oldest);
     }
     grid = this._buildRoadTerrain(tile);
     this.roadTerrain.set(tile, grid);
     return grid;
+  }
+
+  /** Má dlaždice úpravy terénu nebo vozovku s profilem? */
+  hasRoadTerrain(tile) {
+    if (!this.roadTerrain) return false;
+    return this.roadTerrainTile(tile) !== null || !!this.roadClamp.get(tile);
+  }
+
+  /**
+   * Uzly mřížky po 4 m (ROAD_TERRAIN_STRIDE × ROAD_TERRAIN_STRIDE) do NEAR_PAD od vozovky
+   * s profilem, nebo null. Fyzika podle nich zjemní síť terénu jen podél silnic.
+   */
+  roadNearTile(tile) {
+    if (!this.roadTerrain) return null;
+    this.roadTerrainTile(tile);
+    return this.roadNear.get(tile) ?? null;
   }
 
   /**
@@ -976,7 +995,7 @@ export class World {
     const reach = this.maxRoadHalfWidth + CORRIDOR_MARGIN + CORRIDOR_FALLOFF;
     const weight = new Float32Array(W * W), target = new Float32Array(W * W), carriageway = new Uint8Array(W * W);
     const fade = new Float32Array(W * W);
-    const clamp = new Float32Array(W * W).fill(NaN);
+    const clamp = new Float32Array(W * W).fill(NaN), near = new Uint8Array(W * W);
     let clamped = false;
     const distance = new Float32Array(W * W), halfWidth = new Float32Array(W * W);
     const seen = new Set();
@@ -1004,9 +1023,10 @@ export class World {
           const index = jj * W + ii;
           const station = grade.station[k] + t * (grade.station[k + 1] - grade.station[k]);
           // nejnižší vozovka na profilu nad uzlem (terén pod ní nesmí prorůstat)
-          if (d <= hw + CLAMP_PAD) {
+          if (d <= hw + NEAR_PAD) {
             const surface = gradeSurface(grade, road, station, NaN);
-            if (surface < clamp[index] || (clamp[index] !== clamp[index] && surface === surface)) {
+            if (surface === surface) near[index] = 1;
+            if (d <= hw + CLAMP_PAD && (surface < clamp[index] || (clamp[index] !== clamp[index] && surface === surface))) {
               clamp[index] = surface;
               clamped = true;
             }
@@ -1052,6 +1072,7 @@ export class World {
       }
     }
     this.roadClamp.set(tile, clamped ? clamp : null);
+    this.roadNear.set(tile, clamped ? near : null);
     let any = false;
     const grid = new Int16Array(W * W);
     for (let jj = 0; jj < W; jj++) for (let ii = 0; ii < W; ii++) {

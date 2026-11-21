@@ -4,6 +4,8 @@ import { riverBed } from './water.js';
 import { densePath, pathNormal } from '../world/road-profile.js';
 import { gradeBlend, stripLift } from '../world/road-grade.js';
 
+const ROAD_STEP = 4;                   // rozteč jemné sítě terénu podél vozovek (m)
+
 export function terrainGridStep(world, ci) {
   if (world.gradeTerrain.has(ci)) return world.gradeStep;
   return world.terrainDetail.has(ci) ? world.tDetailG : world.tG;
@@ -53,10 +55,12 @@ function portalPlanes(p) {
 
 export function terrainTriangles(world, ci, x0, z0, size, emit) {
   const bed = riverBed(world, x0, z0, size);
-  // Pod silnicemi je terén srovnaný do jejich profilu po 4 m; fyzika ho sleduje stejně jemně,
-  // aby nevystupoval nad pás vozovky.
-  const roads = world.roadTerrain && world.roadTerrainTile(ci) ? 4 : Infinity;
-  const step = Math.min(terrainGridStep(world, ci), bed ? 4 : Infinity, roads);
+  // Pod silnicemi je terén srovnaný do jejich profilu po 4 m; fyzika ho podél vozovek sleduje
+  // stejně jemně, aby nevystupoval nad pás vozovky. Jinde zůstává původní síť.
+  const roads = world.roadTerrain && world.hasRoadTerrain(ci) ? ROAD_STEP : Infinity;
+  const base = Math.min(terrainGridStep(world, ci), bed ? 4 : Infinity);
+  const near = roads < Infinity && base > ROAD_STEP && size === 256 ? world.roadNearTile(ci) : null;
+  const step = near ? base : Math.min(base, roads);
   const holes = world.tunnels.flatMap((t) => t.portalCuts(x0, z0, size)).flatMap(portalPlanes);
   const vertex = (x, z) => {
     const depth = bed ? bed(x, z) : 0;
@@ -96,6 +100,7 @@ export function terrainTriangles(world, ci, x0, z0, size, emit) {
     triangle(p, b, c);
     triangle(p, c, q);
   };
+  if (near) return refinedGrid(near, base, x0, z0, size, vertex, surface);
   const row = [];
   for (let x = x0; x <= x0 + size; x += step) row.push(vertex(x, z0));
   for (let z = z0 + step; z <= z0 + size; z += step) {
@@ -108,6 +113,66 @@ export function terrainTriangles(world, ci, x0, z0, size, emit) {
       lowerLeft = lowerRight;
     }
     row[row.length - 1] = lowerLeft;
+  }
+}
+
+/**
+ * Síť terénu s buňkami `base`, z nichž buňky u vozovek (a jejich sousedé) mají jemnou síť
+ * po ROAD_STEP. Uprostřed hran mezi jemnou a hrubou buňkou leží bod přesně na hrubé hraně,
+ * takže síť nemá díry. Úhlopříčky mají stejný směr jako dotaz na výšku terénu.
+ */
+function refinedGrid(near, base, x0, z0, size, vertex, surface) {
+  const N = Math.round(size / base), r = Math.round(base / ROAD_STEP), stride = Math.round(size / ROAD_STEP) + 1;
+  const mask = new Uint8Array(N * N);
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    for (let b = 0; b <= r && !mask[j * N + i]; b++) for (let a = 0; a <= r; a++) {
+      if (near[(j * r + b) * stride + i * r + a]) { mask[j * N + i] = 1; break; }
+    }
+  }
+  const fine = new Uint8Array(N * N);
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    if (!mask[j * N + i]) continue;
+    for (let b = Math.max(0, j - 1); b <= Math.min(N - 1, j + 1); b++) for (let a = Math.max(0, i - 1); a <= Math.min(N - 1, i + 1); a++) fine[b * N + a] = 1;
+  }
+  const nodes = new Map();
+  const node = (fi, fj) => {
+    const key = fj * stride + fi;
+    let p = nodes.get(key);
+    if (p) return p;
+    const ci = Math.min(N - 1, Math.floor(fi / r)), cj = Math.min(N - 1, Math.floor(fj / r));
+    // bod na hraně jemné buňky s hrubou sousední: na přímce mezi rohy hrubé hrany
+    const onX = fi % r !== 0, onZ = fj % r !== 0;
+    let coarse = false;
+    if (onX !== onZ) {
+      const ai = onX ? ci : fi / r, aj = onZ ? cj : fj / r;
+      const left = onX ? [ai, aj - 1] : [ai - 1, aj], right = onX ? [ai, aj] : [ai, aj];
+      const fineAt = ([i, j]) => i >= 0 && j >= 0 && i < N && j < N && fine[j * N + i];
+      coarse = !(fineAt(left) && fineAt(right)) && (fineAt(left) || fineAt(right)) &&
+        left[0] >= 0 && left[1] >= 0 && right[0] < N && right[1] < N;
+    }
+    if (coarse) {
+      const a = onX ? node(fi - (fi % r), fj) : node(fi, fj - (fj % r));
+      const b = onX ? node(fi - (fi % r) + r, fj) : node(fi, fj - (fj % r) + r);
+      const t = onX ? (fi % r) / r : (fj % r) / r;
+      p = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+      p.wet = a.wet && b.wet;
+    } else p = vertex(x0 + fi * ROAD_STEP, z0 + fj * ROAD_STEP);
+    nodes.set(key, p);
+    return p;
+  };
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    if (!fine[j * N + i]) {
+      const ul = node(i * r, j * r), ur = node(i * r + r, j * r), ll = node(i * r, j * r + r), lr = node(i * r + r, j * r + r);
+      surface(ul, ll, ur);
+      surface(ur, ll, lr);
+      continue;
+    }
+    for (let b = 0; b < r; b++) for (let a = 0; a < r; a++) {
+      const fi = i * r + a, fj = j * r + b;
+      const ul = node(fi, fj), ur = node(fi + 1, fj), ll = node(fi, fj + 1), lr = node(fi + 1, fj + 1);
+      surface(ul, ll, ur);
+      surface(ur, ll, lr);
+    }
   }
 }
 
