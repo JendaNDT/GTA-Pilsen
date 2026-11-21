@@ -27,7 +27,9 @@ s editorem pro úpravy míst a zastávek. Co z této hry už převedla a jak je 
   nastoupíš klávesou F u otevřených dveří. Tabule zohledňuje polohu viditelných vozů.
 - **Prostorový zvuk.** Každý motor, klakson a hlášení zastávky zní od svého vozidla.
   U vody je slyšet tok nebo jez. U hamru zní mechanismus během práce kol. Zvuk lze vypnout v nastavení.
-- **Auta**: zaparkovaná i v provozu, osm typů, jízdní fyzika se smykem a poškozením.
+- **Auta**: zaparkovaná i v provozu, osm typů, jízdní fyzika se smykem a poškozením. Od střední
+  kvality mají oblou karoserii s podběhy, okny a ráfky, na nízké kvalitě zůstávají jednodušší.
+  [Nové modely aut a MHD](docs/auta-a-mhd.md)
 - **Dopravní značení**: navigace i provoz respektují jednosměrky, zákazy vjezdu a odbočení.
   Auta dávají přednost a zastavují u stopek. Světla pro chodce, auta a MHD na křižovatce mají
   společný herní cyklus. U rychloměru se zobrazuje doložený limit pro směr jízdy.
