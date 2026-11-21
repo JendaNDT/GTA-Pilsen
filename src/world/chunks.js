@@ -544,7 +544,13 @@ function denseY(world, D, k, t, x, z) {
   const y = D.y[k] + (D.y[k1] - D.y[k]) * t;
   if (y !== y) return world.heightAt(x, z) + SURF;
   const b = D.blend ? Math.min(D.blend[k], D.blend[k1]) : 1;
-  return b >= 1 ? y : world.heightAt(x, z) + SURF;
+  if (b < 1) return world.heightAt(x, z) + SURF;
+  // v křižovatce společná výška všech vozovek (jen u silnic s profilem)
+  if (D.blend && world.inJunction(x, z)) {
+    const shared = world.junctionSurfaceAt(x, z);
+    if (shared === shared) return shared + SURF;
+  }
+  return y;
 }
 
 /** Pás položený na terén (nebo na mostovku). center = přidat středovou řadu bodů (lépe kopíruje terén). */

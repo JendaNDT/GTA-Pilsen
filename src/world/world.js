@@ -19,6 +19,9 @@ const STRUCTURE_KEEP = 8;                          // okolí konců mostů a tun
 const ROAD_TILE_CACHE = 512;                       // kolik dlaždic s úpravou terénu držet v paměti
 const CLAMP_PAD = 1.5;                             // terén do této vzdálenosti za okrajem vozovky leží pod ní (m)
 const NEAR_PAD = 3;                                // pás kolem vozovky, kde má fyzika jemnou síť terénu (m)
+const JUNCTION_CELL = 32;                          // mřížka pro hledání křižovatek (m)
+const JUNCTION_BLEND = 6;                         // vedlejší silnice se napojí na okraj hlavní během (m)
+const junctionKey = (x, z) => (Math.floor(x / JUNCTION_CELL) + 65536) * 131072 + Math.floor(z / JUNCTION_CELL) + 65536;
 const cellKey = (x, z) => (Math.floor(x / STRUCTURE_KEEP) + 65536) * 131072 + Math.floor(z / STRUCTURE_KEEP) + 65536;
 const ROAD_TERRAIN_STRIDE = CHUNK / ROAD_TERRAIN_STEP + 1;
 const KEY_OFF = 250000;      // posun, aby byly kvantované souřadnice (decimetry) kladné – stačí na ±25 km
@@ -862,6 +865,92 @@ export class World {
     this.roadClamp = new Map();
     this.roadNear = new Map();
     this.roadSteepTiles = new Set();
+    // Plocha křižovatky: kruh přes nejširší vozovku, každá buňka zná křižovatky ze svého okolí.
+    const junctions = new Map();
+    for (const { p, roads, dirs } of this.roadGrade.junctions) {
+      const x = this.rpx[p], z = this.rpz[p];
+      // Kruh musí pokrýt celé překrytí vozovek; pod ostrým úhlem sahá dál od společného bodu.
+      let radius = 0;
+      for (let a = 0; a < roads.length; a++) for (let b = a + 1; b < roads.length; b++) {
+        const sin = Math.abs(dirs[a][0] * dirs[b][1] - dirs[a][1] * dirs[b][0]);
+        radius = Math.max(radius, ((R.w[roads[a]] + R.w[roads[b]]) / 2 + JUNCTION_BLEND) / Math.max(sin, 0.25));
+      }
+      radius = Math.min(50, radius) + 1;
+      const reach = Math.ceil(radius / JUNCTION_CELL);
+      for (let dz = -reach; dz <= reach; dz++) for (let dx = -reach; dx <= reach; dx++) {
+        const key = junctionKey(x + dx * JUNCTION_CELL, z + dz * JUNCTION_CELL);
+        if (!junctions.has(key)) junctions.set(key, []);
+        junctions.get(key).push(x, z, radius);
+      }
+    }
+    this._junctions = junctions;
+  }
+
+  /** Leží bod v ploše křižovatky silnic s profilem? */
+  inJunction(x, z) {
+    const list = this._junctions?.get(junctionKey(x, z));
+    if (!list) return false;
+    for (let k = 0; k < list.length; k += 3) {
+      if ((list[k] - x) ** 2 + (list[k + 1] - z) ** 2 < list[k + 2] * list[k + 2]) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Společná výška vozovek v křižovatce. Na vozovce důležitější silnice (vyšší třída, širší,
+   * při shodě nižší číslo) platí její profil; méně důležitá silnice se k jejímu okraji napojí
+   * plynule během JUNCTION_BLEND. Pásy, asfalt i provoz se tak v křižovatce potkají ve stejné
+   * výšce a hlavní silnice si zachová svůj sklon. NaN mimo vozovku s plným profilem.
+   */
+  junctionSurfaceAt(x, z) {
+    const grade = this.roadGrade;
+    if (!grade) return NaN;
+    const R = this.r;
+    const cx = Math.floor((x - this.minX) / COLL_CELL), cz = Math.floor((z - this.minZ) / COLL_CELL);
+    const found = this._junctionRoads ??= [];
+    found.length = 0;
+    for (let row = Math.max(0, cz - 1); row <= Math.min(this.grows - 1, cz + 1); row++) {
+      for (let col = Math.max(0, cx - 1); col <= Math.min(this.gcols - 1, cx + 1); col++) {
+        const cell = row * this.gcols + col;
+        for (let j = this.segCellStart[cell]; j < this.segCellStart[cell + 1]; j++) {
+          const k = this.segCellItems[j], road = this.roadOfPt[k];
+          if (grade.start[road] < 0) continue;
+          const ax = this.rpx[k], az = this.rpz[k], ex = this.rpx[k + 1] - ax, ez = this.rpz[k + 1] - az, l2 = ex * ex + ez * ez;
+          if (!l2) continue;
+          const t = Math.max(0, Math.min(1, ((x - ax) * ex + (z - az) * ez) / l2));
+          const d = Math.hypot(ax + ex * t - x, az + ez * t - z);
+          if (d > R.w[road] / 2 + JUNCTION_BLEND) continue;
+          let index = -1;
+          for (let q = 0; q < found.length; q += 3) if (found[q] === road) { index = q; break; }
+          if (index >= 0 && found[index + 1] <= d) continue;
+          const y = gradeSurface(grade, road, grade.station[k] + t * (grade.station[k + 1] - grade.station[k]), NaN);
+          if (y !== y) continue;
+          if (index >= 0) { found[index + 1] = d; found[index + 2] = y; }
+          else found.push(road, d, y);
+        }
+      }
+    }
+    // od nejméně důležité silnice k nejdůležitější: každá přepíše výšku na své vozovce
+    const order = this._junctionOrder ??= [];
+    order.length = 0;
+    for (let q = 0; q < found.length; q += 3) order.push(q);
+    const rank = (q) => [R.cls[found[q]], -R.w[found[q]], found[q]];
+    order.sort((a, b) => {
+      const ra = rank(a), rb = rank(b);
+      return rb[0] - ra[0] || rb[1] - ra[1] || rb[2] - ra[2];
+    });
+    let surface = NaN;
+    for (const q of order) {
+      const road = found[q], d = found[q + 1], y = found[q + 2], hw = R.w[road] / 2;
+      if (surface !== surface) {
+        if (d <= hw + 0.01) surface = y;
+        continue;
+      }
+      const u = Math.max(0, Math.min(1, 1 - (d - hw) / JUNCTION_BLEND));
+      const weight = u * u * (3 - 2 * u);
+      surface += weight * (y - surface);
+    }
+    return surface;
   }
 
   /**
@@ -1108,7 +1197,12 @@ export class World {
     if (graded !== graded) terrain = this.heightAt(x, z) + SURF;
     else {
       const grade = this.roadGrade, b = gradeBlend(grade, road, grade.station[seg] + t * (grade.station[seg + 1] - grade.station[seg]));
-      terrain = (b >= 1 ? graded : this.heightAt(x, z)) + SURF;
+      let surface = b >= 1 ? graded : this.heightAt(x, z);
+      if (b >= 1 && this.inJunction(x, z)) {
+        const shared = this.junctionSurfaceAt(x, z);
+        if (shared === shared) surface = shared;
+      }
+      terrain = surface + SURF;
     }
     const apron = this.roadApproach;
     if (apron?.road === road && apron.seg === seg && t >= apron.startT) {

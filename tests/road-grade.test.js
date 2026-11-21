@@ -140,3 +140,21 @@ test('pás silnice se u mostovky a na začátku zvedá plynule', () => {
   assert.ok(stripLift(grades, 0, 97) > 0 && stripLift(grades, 0, 97) < STRIP_LIFT);
   assert.equal(stripLift(grades, 0, 0), STRIP_LIFT);       // slepý začátek: pás rovnou
 });
+
+test('křižovatka se pozná, pouhé pokračování silnice ne', () => {
+  // A (0,0)–(100,0) pokračuje rovně silnicí B do (200,0); v (100,0) odbočuje C na sever
+  const world = {
+    rCount: 3,
+    rOff: Int32Array.from([0, 2, 4, 6]),
+    rpx: Float32Array.from([0, 100, 100, 200, 100, 100]),
+    rpz: Float32Array.from([0, 0, 0, 0, 0, -80]),
+    rpy: new Float32Array(6),
+  };
+  const flat = () => 1;
+  const all = buildRoadGrades(world, () => true, () => false, flat, 2, () => 0, () => false);
+  assert.deepEqual(all.junctions.map(({ roads }) => roads.sort()), [[0, 1, 2]]);
+  const [junction] = all.junctions;
+  assert.equal(junction.dirs.length, 3);
+  const straight = buildRoadGrades(world, (road) => road < 2, () => false, flat, 2, () => 0, () => false);
+  assert.equal(straight.junctions.length, 0);
+});

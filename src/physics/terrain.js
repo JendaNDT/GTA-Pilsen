@@ -5,6 +5,7 @@ import { densePath, pathNormal } from '../world/road-profile.js';
 import { gradeBlend, stripLift } from '../world/road-grade.js';
 
 const ROAD_STEP = 4;                   // rozteč jemné sítě terénu podél vozovek (m)
+const JUNCTION_PARTS = 4;              // na kolik dílů se pás napříč dělí v křižovatce
 
 export function terrainGridStep(world, ci) {
   if (world.gradeTerrain.has(ci)) return world.gradeStep;
@@ -201,14 +202,40 @@ export function roadSurfaceTriangles(world, ci, emit) {
       if (y !== y) { previous = null; continue; }
       // v přechodu k nim a u nenapojených konců jede auto po plynule upraveném terénu
       if (gradeBlend(grade, road, station) < 1) { previous = null; continue; }
-      const top = y + stripLift(grade, road, station);
-      const left = [D.x[k] - n.x * hw * scale, top, D.z[k] - n.z * hw * scale];
-      const right = [D.x[k] + n.x * hw * scale, top, D.z[k] + n.z * hw * scale];
-      if (previous) {
-        tri(previous[0], previous[1], right);
-        tri(previous[0], right, left);
+      const lift = stripLift(grade, road, station);
+      // V křižovatce leží pás ve společné výšce všech vozovek. Aby se překrývající pásy
+      // různých silnic shodovaly, dělí se tam napříč na JUNCTION_PARTS dílů.
+      const junction = world.inJunction(D.x[k], D.z[k]) ||
+        world.inJunction(D.x[k] - n.x * hw * scale, D.z[k] - n.z * hw * scale) ||
+        world.inJunction(D.x[k] + n.x * hw * scale, D.z[k] + n.z * hw * scale);
+      const parts = junction ? JUNCTION_PARTS : 1;
+      const points = [];
+      for (let i = 0; i <= parts; i++) {
+        const u = -1 + (2 * i) / parts;
+        const x = D.x[k] + n.x * hw * scale * u, z = D.z[k] + n.z * hw * scale * u;
+        let h = y;
+        if (junction && world.inJunction(x, z)) {
+          const shared = world.junctionSurfaceAt(x, z);
+          if (shared === shared) h = shared;
+        }
+        points.push([x, h + lift, z]);
       }
-      previous = [left, right];
+      const section = { points, parts };
+      if (previous) {
+        // spojení úseků s různým dělením: chybějící body leží na přímce mezi krajními
+        const count = Math.max(previous.parts, parts);
+        const at = (sec, i) => {
+          if (sec.parts === count) return sec.points[i];
+          const a = sec.points[0], b = sec.points[sec.parts], t = i / count;
+          return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+        };
+        for (let i = 0; i < count; i++) {
+          const p0 = at(previous, i), p1 = at(previous, i + 1), c0 = at(section, i), c1 = at(section, i + 1);
+          tri(p0, p1, c1);
+          tri(p0, c1, c0);
+        }
+      }
+      previous = section;
     }
   }
 }
