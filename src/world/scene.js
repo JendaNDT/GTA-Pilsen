@@ -11,12 +11,23 @@ import {
   Fn, If, float, Loop, mix, positionLocal, renderGroup, screenUV, smoothstep, step, uniform, vec2, vec4,
 } from 'three/tsl';
 import { QUALITY, PARAMS } from '../config.js';
-import { env, getPoolMaterial, makeSurfaceMaterial } from './materials.js';
+import { env, getPoolMaterial, makeSurfaceMaterial, setFacadeEnvironment } from './materials.js';
 import { SURFACE } from './material-table.js';
 import { hash21, valueNoise } from './material-noise.js';
 import { pragueOffset, solarDirection } from './solar.js';
 import { SkyLight } from './sky-light.js';
 import { lutWeights } from './color-luts.js';
+import { daylight, pageLook } from './daylight.js';
+
+const LOOK = pageLook();
+const stopColor = new THREE.Color();
+
+// Přechod barev z daylight(): první barva a dvojice [barva, podíl] míchané jako Color.lerp.
+function blendStops(target, [first, ...stops]) {
+  target.setHex(first);
+  for (const [hex, amount] of stops) target.lerp(stopColor.setHex(hex), amount);
+  return target;
+}
 
 export const GROUND_HEX = 0x9aa873;
 
@@ -93,7 +104,8 @@ export class Environment {
     };
     this.clouds = QUALITY.shadowCascades >= 3 && PARAMS.get('clouds') !== '0' ? new CloudLayer(renderer) : null;
     this.sky = makeSky(this.skyColors, atmosphere, this.clouds);
-    this.skyLight = atmosphere ? new SkyLight(renderer, scene) : null;
+    this.skyLight = atmosphere ? new SkyLight(renderer, scene, { ground: LOOK === 'novy' }) : null;
+    this.facadeEnvironment = null;
     scene.add(this.sky);
     this.hemi = new THREE.HemisphereLight(0xffffff, 0x777766, 1);
     scene.add(this.hemi);
@@ -168,20 +180,22 @@ export class Environment {
     env.sky.value.copy(hor);
     env.sunDir.value.copy(dir);
 
-    this.sun.color.setHex(0xfff0d8).lerp(new THREE.Color(0xffa05a), dusk);
-    this.sun.intensity = 1.85 * (1 - overcast * 1.2) * THREE.MathUtils.smoothstep(elev, -0.06, 0.19);
+    const light = daylight({ elevation: elev, day, dusk, overcast }, LOOK);
+    blendStops(this.sun.color, light.sunColor);
+    this.sun.intensity = light.sun;
     this.sun.position.copy(dir).multiplyScalar(700);
     this.moon.intensity = 0.62 * night;
-    const shadowIntensity = 0.43 + 0.48 * day * (1 - dusk * 0.50);
-    this.sun.shadow.intensity = shadowIntensity;
+    this.sun.shadow.intensity = light.shadow;
     for (const { shadow } of this.csm?.lights ?? []) {
-      shadow.intensity = shadowIntensity;
+      shadow.intensity = light.shadow;
       shadow.autoUpdate = this.sun.intensity > 0;
     }
-    this.hemi.color.copy(new THREE.Color(0xffe9d5).lerp(new THREE.Color(0x6f83c0), 1 - day));
-    this.hemi.groundColor.copy(new THREE.Color(0x9a927c).lerp(new THREE.Color(0x343a52), 1 - day));
-    this.hemi.intensity = 0.95 + 1.18 * day;
-    this.scene.environmentIntensity = 0.22 * day;
+    blendStops(this.hemi.color, light.hemiSky);
+    blendStops(this.hemi.groundColor, light.hemiGround);
+    this.hemi.intensity = light.hemi;
+    this.scene.environmentIntensity = light.environment;
+    this.facadeEnvironment = light.facadeEnvironment;
+    if (this.skyLight?.ground) blendStops(this.skyLight.ground.value, light.groundRadiance.color).multiplyScalar(light.groundRadiance.scale);
 
     // světla lamp nejsou osvětlená scénou – sílí s nocí
     this.poolMat.visible = night > 0.03;
@@ -193,6 +207,9 @@ export class Environment {
     if (!this.skyLight) return;
     try {
       this.skyLight.update(this.sunDir, this.date * 1440 + this.hour * 60);
+      if (this.facadeEnvironment !== null && this.scene.environment) {
+        setFacadeEnvironment(this.scene.environment, this.facadeEnvironment);
+      }
     } catch (error) {
       this.scene.environment = null;
       this.skyLight.dispose();

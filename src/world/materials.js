@@ -44,7 +44,32 @@ export function makeBatchedSurfaceMaterial(opts = {}) {
 export function makeBuildingMaterial({ textures = false, heritage = false, street = false } = {}) {
   const key = `${textures}/${heritage}/${street}`;
   if (!facadeNodes.has(key)) facadeNodes.set(key, buildingNodes(env.night, env.windows, env.cam, env.sky, textures, heritage, street));
-  return makeSurfaceMaterial(SURFACE.plaster, facadeNodes.get(key));
+  const material = makeSurfaceMaterial(SURFACE.plaster, facadeNodes.get(key));
+  facadeMaterials.add(material);
+  material.addEventListener('dispose', () => facadeMaterials.delete(material));
+  applyFacadeEnvironment(material);
+  return material;
+}
+
+// Fasády odrážejí oblohu slaběji než zbytek scény. V ulici by ji zakrývaly protější domy;
+// plný odraz oblohy na drsné omítce dával při pohledu podél ulice mléčný závoj.
+const facadeMaterials = new Set();
+const facadeEnvironment = { texture: null, intensity: 1 };
+
+function applyFacadeEnvironment(material) {
+  if (!facadeEnvironment.texture) return;
+  if (material.envMap !== facadeEnvironment.texture) {
+    material.envMap = facadeEnvironment.texture;
+    material.needsUpdate = true;
+  }
+  material.envMapIntensity = facadeEnvironment.intensity;
+}
+
+/** Vlastní mapa a síla odrazu oblohy pro fasády. Bez mapy fasády používají prostředí scény. */
+export function setFacadeEnvironment(texture, intensity) {
+  facadeEnvironment.texture = texture;
+  facadeEnvironment.intensity = intensity;
+  for (const material of facadeMaterials) applyFacadeEnvironment(material);
 }
 
 const decalColor = Fn(() => {

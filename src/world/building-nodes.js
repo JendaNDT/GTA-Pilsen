@@ -7,6 +7,7 @@ import {
 } from 'three/tsl';
 import { hash21, valueNoise } from './material-noise.js';
 import { SURFACE } from './material-table.js';
+import { pageLook, WALL_SATURATION, wallLift } from './daylight.js';
 
 function softRange(value, min, max, width) {
   return smoothstep(float(min).sub(width), float(min).add(width), value)
@@ -15,7 +16,15 @@ function softRange(value, min, max, width) {
 
 const windowData = attribute('aWin', 'vec3');
 const surfaceProperties = attribute('aSurface', 'vec2');
-const wallColor = vertexColor().rgb;
+const LOOK = pageLook();
+// Nový vzhled: omítky jsou o něco světlejší a sytější, tmavé barvy se zvednou víc než světlé.
+// Se silnějším sluncem a slabším světlem oblohy by jinak stěny ve stínu zčernaly.
+const wallColor = LOOK === 'novy' ? Fn(() => {
+  const c = vertexColor().rgb.toVar();
+  const lift = wallLift(c.dot(vec3(0.2126, 0.7152, 0.0722)));
+  const gray = vec3(c.dot(vec3(0.2126, 0.7152, 0.0722)));
+  return mix(gray, c, WALL_SATURATION).mul(lift).clamp(0, 0.9);
+})() : vertexColor().rgb;
 const buildingSurface = struct({ color: 'vec3', illumination: 'float', glass: 'float' });
 
 function facade(color, illumination, glazing, cell, code, style, width, night, schedule, heritage, rooms, camera, sky) {
@@ -214,7 +223,10 @@ export function buildingNodes(night, schedule, camera, sky, textures, heritage, 
       const edge = front.x.div(front.z).mul(bays).fract().sub(.5).abs();
       const glass = edge.lessThan(.40).and(front.y.greaterThan(.48), front.y.lessThan(height.sub(.48)),
         front.z.greaterThan(1.8));
-      color.assign(mix(color, vec3(.10,.16,.18), glass.select(.85,0)));
+      // V novém vzhledu fasády skoro neodrážejí oblohu z mapy prostředí; výloha proto
+      // dostane slabý odlesk barvy obzoru přímo zde (za soumraku oranžový).
+      const shopGlass = LOOK === 'novy' ? mix(vec3(.10,.16,.18), sky, .22) : vec3(.10,.16,.18);
+      color.assign(mix(color, shopGlass, glass.select(.85,0)));
       glazing.assign(glass.select(.9,0));
       illumination.assign(glass.select(night.mul(.19),0));
       If(front.y.lessThan(.38), () => {
