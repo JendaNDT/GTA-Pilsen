@@ -50,6 +50,9 @@ export function staticMeshBody(physics, triangles, layer = layers.STATIC, triang
   list.resize(count);
   const mesh = new Jolt.MeshShapeSettings(list);
   mesh.mPerTriangleUserData = !!triangleIds;
+  // Rychlejší stavba stromu zkrátí přípravu dlaždice zhruba na polovinu; dotazy kol na povrch
+  // tím podle měření nezpomalí (100 000 paprsků: 285 ms proti 300 ms).
+  mesh.mBuildQuality = Jolt.MeshShapeSettings_EBuildQuality_FavorBuildSpeed;
   Jolt.destroy(list);
   const result = mesh.Create();
   try {
