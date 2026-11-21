@@ -1,0 +1,35 @@
+{
+  "__vite-browser-external": {
+    "file": "assets/__vite-browser-external-ChxjNH0q.js",
+    "name": "__vite-browser-external",
+    "src": "__vite-browser-external",
+    "isDynamicEntry": true,
+    "imports": [
+      "node_modules/jolt-physics/dist/jolt-physics.wasm-compat.js"
+    ]
+  },
+  "index.html": {
+    "file": "assets/index-B3J_Z4-9.js",
+    "name": "index",
+    "src": "index.html",
+    "isEntry": true,
+    "dynamicImports": [
+      "node_modules/jolt-physics/dist/jolt-physics.wasm-compat.js"
+    ],
+    "css": [
+      "assets/index-DVo1ZVNb.css"
+    ]
+  },
+  "node_modules/jolt-physics/dist/jolt-physics.wasm-compat.js": {
+    "file": "assets/jolt-physics.wasm-compat-jC_acpzD.js",
+    "name": "jolt-physics.wasm-compat",
+    "src": "node_modules/jolt-physics/dist/jolt-physics.wasm-compat.js",
+    "isDynamicEntry": true,
+    "imports": [
+      "index.html"
+    ],
+    "dynamicImports": [
+      "__vite-browser-external"
+    ]
+  }
+}

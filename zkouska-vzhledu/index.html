@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>Plzeň naplno – skutečná Plzeň jako otevřený svět</title>
+  <meta name="description" content="Projeď se po skutečné Plzni: ulice, domy, tramvaje i katedrála podle otevřených dat. Zdarma v prohlížeči, na počítači i na mobilu." />
+  <meta name="theme-color" content="#101820" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23101820'/%3E%3Cpath d='M30 8l4 0 3 22h8l2 26H17l2-26h8z' fill='%23f2b632'/%3E%3C/svg%3E" />
+  <style>#file-launch{box-sizing:border-box;color:#f5f1e6;background:#101820;border:1px solid #52606c;border-radius:1rem;width:min(34rem,100% - 2rem);margin:10vh auto;padding:1.5rem;font:1rem/1.5 system-ui,sans-serif}#file-launch h1{margin-top:0}#file-launch a{color:#f2b632}</style>
+  <script type="module" crossorigin src="./assets/index-B3J_Z4-9.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-DVo1ZVNb.css">
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div id="photo-controls" aria-label="Fotorežim" hidden>
+    <label>Zaostření <input id="photo-focus" type="range" min="2" max="150" value="32" aria-label="Vzdálenost zaostření v metrech"></label>
+    <button id="photo-forward">Vpřed</button><button id="photo-back">Vzad</button>
+    <button id="photo-save">Uložit PNG</button><button id="photo-exit">Zpět</button>
+  </div>
+  <div id="hud" class="hidden">
+    <div id="topleft">
+      <div id="money">0 Kč</div>
+      <div id="wanted" title="Hledanost"></div>
+      <div id="health"><i></i></div>
+    </div>
+    <div id="mapwrap">
+      <canvas id="minimap" width="220" height="220"></canvas>
+      <div id="clock" aria-label="Herní čas">
+        <time id="clock-time" datetime="09:00">09:00</time>
+        <span id="clock-day">pondělí</span>
+      </div>
+      <section id="stop-board" class="hidden" aria-label="Nejbližší zastávka">
+        <h2 id="stop-name"></h2>
+        <ul id="stop-departures"></ul>
+        <p id="stop-transfer" hidden></p>
+      </section>
+    </div>
+    <div id="place"><b id="street"></b><span id="district"></span></div>
+    <div id="mission" class="hidden"></div>
+    <div id="toast"></div>
+    <div id="prompt" class="hidden"></div>
+    <div id="speedo" class="hidden"><small id="speedlimit" class="hidden" aria-label="Rychlostní limit"></small><b id="kmh">0</b><span>km/h</span><em id="vehname"></em></div>
+    <div id="touch" class="hidden">
+      <div id="stick"><i></i></div>
+      <button id="tb-act" class="tb">F</button>
+      <button id="tb-gas" class="tb">▲</button>
+      <button id="tb-brake" class="tb">▼</button>
+      <button id="tb-hand" class="tb">⎵</button>
+      <button id="tb-job" class="tb">✉</button>
+      <button id="tb-map" class="tb">🗺</button>
+    </div>
+    <button id="btn-menu" title="Menu">☰</button>
+  </div>
+
+  <div id="bigmap" class="hidden">
+    <div id="bigmap-controls">
+      <form id="bigmap-search" role="search">
+        <input id="bigmap-query" type="search" aria-label="Najít obec, památku nebo zastávku"
+          placeholder="Najít obec, památku nebo zastávku" autocomplete="off" enterkeyhint="go">
+        <ul id="bigmap-results" aria-label="Výsledky hledání" aria-live="polite"></ul>
+      </form>
+      <button id="bigmap-close">Zavřít mapu</button>
+    </div>
+    <div id="bigmap-date"><time></time></div>
+    <canvas id="bigmap-canvas"></canvas>
+    <div id="bigmap-legend"></div>
+  </div>
+
+  <div id="menu">
+    <div id="menu-card">
+      <h1>Plzeň <span>naplno</span></h1>
+      <p class="sub">Skutečná Plzeň jako otevřený svět</p>
+      <div id="loading">
+        <div id="bar"><i></i></div>
+        <div id="loadtext">Načítám město…</div>
+      </div>
+      <div id="menu-buttons" class="hidden">
+        <button id="btn-photo">Fotorežim</button>
+        <button id="btn-play" class="primary">Hrát</button>
+        <button id="btn-jobs" aria-controls="panel-jobs" aria-expanded="false">Zakázky</button>
+        <button id="btn-garage" aria-controls="panel-garage" aria-expanded="false">Garáž</button>
+        <button id="btn-shifts" aria-controls="panel-shifts" aria-expanded="false">Směny MHD</button>
+        <button id="btn-help">Ovládání</button>
+        <button id="btn-about">O hře</button>
+        <button id="btn-settings" aria-controls="panel-settings" aria-expanded="false">Nastavení</button>
+        <button id="btn-reset" class="ghost">Začít od začátku</button>
+      </div>
+      <div id="rotate-tip">Tip: otoč telefon na šířku, hraje se to líp.</div>
+      <div id="panel-help" class="panel hidden"></div>
+      <div id="panel-about" class="panel hidden"></div>
+      <section id="panel-jobs" class="panel hidden" aria-labelledby="jobs-heading">
+        <h3 id="jobs-heading">Zakázky</h3>
+        <p id="job-result" aria-live="polite"></p>
+        <div class="work-actions" id="job-offers">
+          <button data-job="taxi">Vzít taxi jízdu</button>
+          <button data-job="food">Vzít rozvoz jídla</button>
+        </div>
+        <div id="job-demo">
+          <h3>Rozvoz k Boleváku</h3>
+          <p>Z Dřevěné přes Lochotín a Bolevec k rybníku. Pěšky předej jídlo na adrese U Velkého rybníka 2315/3.</p>
+          <div class="work-actions">
+            <button data-job="car">Rozvézt autem</button>
+            <button data-job="transit">Rozvézt MHD</button>
+          </div>
+        </div>
+        <div class="work-actions">
+          <button id="job-cancel" hidden>Zrušit zakázku</button>
+          <button id="job-retry" hidden>Znovu uložit odměnu</button>
+        </div>
+        <p id="job-feedback" class="work-feedback" role="status"></p>
+        <button class="work-resume" data-work-resume>Zpět do hry</button>
+      </section>
+      <section id="panel-garage" class="panel hidden" aria-labelledby="garage-heading">
+        <h3 id="garage-heading">Garáž u hlavního nádraží</h3>
+        <p id="garage-balance"></p>
+        <p id="garage-car"></p>
+        <div id="garage-actions" class="work-actions">
+          <button data-garage="navigate">Najít garáž na mapě</button>
+          <button data-garage="buy"></button>
+          <button data-garage="retrieve">Vyjet s autem</button>
+          <button data-garage="store">Uložit auto do garáže</button>
+          <button data-garage="repair"></button>
+          <button data-garage="brakes"></button>
+          <button data-garage="tires"></button>
+        </div>
+        <p id="garage-feedback" class="work-feedback" role="status"></p>
+        <button class="work-resume" data-work-resume>Zpět do hry</button>
+      </section>
+      <section id="panel-shifts" class="panel hidden" aria-labelledby="shift-heading">
+        <h3 id="shift-heading">Směny MHD</h3>
+        <div id="shift-summary" aria-live="polite" hidden>
+          <p id="shift-result"></p>
+          <p id="shift-score"></p>
+          <p id="shift-traffic"></p>
+        </div>
+        <div id="shift-select">
+          <label for="shift-offer">Nejbližší nástupy podle jízdního řádu</label>
+          <select id="shift-offer"></select>
+          <p id="shift-direction"></p>
+          <p>Hra tě přesune do vozu před odjezdem. Řídíš rozjezd, brzdy a dveře, vozidlo sleduje trasu spoje.</p>
+        </div>
+        <div class="work-actions">
+          <button id="shift-start">Nastoupit do směny</button>
+          <button id="shift-cancel" hidden>Zrušit směnu</button>
+          <button id="shift-retry" hidden>Znovu uložit výsledek</button>
+        </div>
+        <p id="shift-feedback" class="work-feedback" role="status"></p>
+        <button class="work-resume" data-work-resume>Zpět do hry</button>
+      </section>
+      <div id="panel-settings" class="panel hidden">
+        <h3>Rozhraní</h3>
+        <label class="setting">Řízení
+          <select id="steering">
+            <option value="arcade">Arkádové</option>
+            <option value="realistic">Realistické</option>
+          </select>
+        </label>
+        <label class="setting"><input id="heli-assist" type="checkbox" checked /> Vyrovnání vrtulníku a držení výšky</label>
+        <label class="setting">Kvalita grafiky
+          <select id="graphics-quality">
+            <option value="auto">Automaticky</option>
+            <option value="ultra">Ultra</option>
+            <option value="high">Vysoká</option>
+            <option value="medium">Střední</option>
+            <option value="low">Nízká</option>
+          </select>
+        </label>
+        <p id="graphics-status" role="status"></p>
+        <label class="setting"><input id="sun-flare" type="checkbox"> Odlesk slunce v objektivu</label>
+        <label class="setting"><input id="motion-blur" type="checkbox"> Pohybové rozmazání (s časovým vyhlazováním)</label>
+        <label class="setting">Počasí <select id="weather-mode"><option value="variable">Proměnlivé</option><option value="clear">Vždy jasno</option></select></label>
+        <label class="setting"><input id="show-clock" type="checkbox" checked /> Zobrazovat herní hodiny</label>
+        <form id="clock-settings">
+          <label for="game-time">Herní čas</label>
+          <input id="game-time" type="time" required />
+          <button type="submit">Nastavit čas</button>
+          <button id="use-prague-time" type="button">Použít aktuální čas v Plzni</button>
+          <p id="clock-status" role="status"></p>
+        </form>
+        <label class="setting"><input id="particles-enabled" type="checkbox" checked /> Jiskry, střepy, prach a kouř</label>
+        <label class="setting"><input id="falls-enabled" type="checkbox" checked /> Fyzikální pády postav</label>
+        <label class="setting"><input id="sound-enabled" type="checkbox" checked /> Zvuk hry</label>
+        <label class="setting"><input id="orthophoto-enabled" type="checkbox" checked /> Letecké snímky krajiny</label>
+      </div>
+    </div>
+    <div id="credits">Mapová data © přispěvatelé OpenStreetMap (ODbL) · Výškopis © ČÚZK</div>
+  </div>
+  <main id="file-launch" hidden>
+    <h1>Plzeň naplno</h1>
+    <p>Hra se spouští přes místní server. Na Macu otevři ve Finderu soubor <strong>Spustit hru.command</strong>
+      v hlavní složce projektu.</p>
+    <p><a href="http://localhost:5173/">Otevřít běžící hru</a></p>
+  </main>
+  <script>
+    if (location.protocol === 'file:') {
+      const launch = document.getElementById('file-launch');
+      document.body.replaceChildren(launch);
+      launch.hidden = false;
+    }
+  </script>
+</body>
+</html>
