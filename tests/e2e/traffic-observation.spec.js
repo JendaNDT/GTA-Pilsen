@@ -1,3 +1,4 @@
+import { waitForGame } from './ready.js';
 import { writeFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
 import { gameUrl } from './game-url.js';
@@ -10,7 +11,7 @@ for (const site of ['Klatovská', 'hlavní nádraží']) {
       Math.random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32);
     });
     await page.goto(gameUrl('/?debug&quality=high&adapt=0&date=2026-11-09&hour=7.5'));
-    await page.waitForFunction(() => window.__ready);
+    await waitForGame(page);
     const result = await page.evaluate(async (site) => {
       __play();
       __freeze(true);
