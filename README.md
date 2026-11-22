@@ -89,6 +89,10 @@ Městské ulice mají od střední předvolby chodník s obrubníkem 10 cm nad a
 drcne a chodci chodí po chodníku. Na nízké předvolbě zůstává chodník v textuře země, parametr
 `?chodniky=0` ho vypne i jinde. [Popis a snímky](docs/chodniky.md)
 
+Rohy křižovatek a ostré ohyby silnic jsou zaoblené obloukem o poloměru 4–12 m podle šířky ulic,
+obrubník i chodník ho obcházejí. Líc obrubníku je zkosený, takže při seříznutí zatáčky auto
+přes obrubník přejede. Ostré rohy pro porovnání vrátí `?rohy=0`. [Popis a snímky](docs/rohy.md)
+
 Hra ve výchozím nastavení používá aktuální čas v Plzni. V **Nastavení → Herní čas**
 můžeš zadat konkrétní hodinu a minutu. Herní čas pak plyne stejným tempem jako skutečný
 čas a při pauze stojí. **Použít aktuální čas v Plzni** obnoví živé hodiny. Po změně

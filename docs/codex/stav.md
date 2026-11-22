@@ -4,6 +4,10 @@
 
 Na větvi `claude/lucid-bohr-y3rlwb` vznikla vzhledová zkouška webové verze: silnější slunce, slabší odraz oblohy na fasádách, tmavší zem v mapě odrazů, sytější omítky a oblé koruny stromů. Původní světlo zapne `?vzhled=puvodni`. Autor rozhodne podle zveřejněné zkoušky, zda se vzhled převezme. [Protokol a snímky](../vzhledova-zkouska.md)
 
+## Zaoblené rohy křižovatek (mimo etapu, na přání autora)
+
+Každý roh křižovatky a vnitřní strana ostrého ohybu silnice má asfaltový oblouk o poloměru 4–12 m podle šířky ulic (17 950 oblouků, typicky 7,8 m). Obrubník a chodník ho obcházejí, líc obrubníku je zkosený, aby přes něj auto přejelo. Asfalt oblouku má i fyzika. Vypne je `?rohy=0`. Prošlo 225 testů JavaScriptu a 109 ze 111 prohlížečových zkoušek (Wilsonův most selhává dlouhodobě, odbočení z Kardinála Berana bylo náhodné a samostatně prošlo třikrát). [Popis a snímky](../rohy.md)
+
 ## Chodníky a obrubníky (mimo etapu, na přání autora)
 
 Podél městských ulic vzniká od střední předvolby chodník s obrubníkem 10 cm nad asfaltem; vykreslení, fyzika i chodci používají stejné řezy. Chodník se kreslí do 380 m od kamery, aby se vešel do rozpočtu vykreslování. Vypne ho `?chodniky=0`. Prošlo 218 testů JavaScriptu a 104 ze 105 prohlížečových zkoušek (neprošel jen dlouhodobě selhávající Wilsonův most). [Popis a snímky](../chodniky.md)

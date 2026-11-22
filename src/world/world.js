@@ -1362,7 +1362,12 @@ export class World {
       }
     }
     // terén pod asfaltem zaobleného rohu leží pod ním (a fyzika tam má jemnou síť)
-    for (const corner of this.corners ?? []) {
+    const col = tile % this.cols, row = Math.floor(tile / this.cols), nearby = [];
+    for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
+      if (col + dx < 0 || row + dz < 0 || col + dx >= this.cols || row + dz >= this.rows) continue;
+      nearby.push(...(this.cornerTiles?.get((row + dz) * this.cols + col + dx) ?? []));
+    }
+    for (const corner of nearby) {
       const [cx0, cz0, cx1, cz1] = corner.box;
       if (cx1 < x0 || cx0 > x0 + CHUNK || cz1 < z0 || cz0 > z0 + CHUNK) continue;
       const i0 = Math.max(0, Math.floor((cx0 - x0) / S)), i1 = Math.min(W - 1, Math.ceil((cx1 - x0) / S));
