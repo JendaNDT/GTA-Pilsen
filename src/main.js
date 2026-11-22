@@ -14,6 +14,7 @@ import { resultText } from './game/missions.js';
 import { createFrameProfiler } from './game/frame-profiler.js';
 import { initPerfPanel } from './game/perf-panel.js';
 import { QUALITY, IS_TOUCH, IS_MOBILE, DEBUG, PARAMS } from './config.js';
+import { profilePixelRatio } from './world/image-quality.js';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('game');
@@ -126,7 +127,7 @@ async function boot() {
   }
   const rendering = renderer.backend.isWebGPUBackend ? 'WebGPU' : 'WebGL 2';
   renderer.info.autoReset = false;
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, QUALITY.pixelRatio));
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, profilePixelRatio(QUALITY.pixelRatio, IS_MOBILE)));
   renderer.setSize(innerWidth, innerHeight);
   renderer.shadowMap.enabled = QUALITY.shadows;
   renderer.shadowMap.type = THREE.PCFShadowMap;

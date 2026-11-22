@@ -31,6 +31,7 @@ import { detailRequestLimit, Heritage, pavingChunk } from './heritage.js';
 import { FORGE, forgeXZ } from './mill.js';
 import { Districts } from './districts.js';
 import { Orthophoto, orthophotoTile } from './orthophoto.js';
+import { decalOrder, groundAnisotropy, ORIGINAL_IMAGE } from './image-quality.js';
 
 const _c = new THREE.Color();
 function lin(hex) { _c.setHex(hex); return [_c.r, _c.g, _c.b]; }
@@ -883,6 +884,25 @@ function buildRoads(world, ci, manager) {
   const R = world.r, px = world.rpx, pz = world.rpz, py = world.rpy, off = world.rOff;
   const asphalt = QUALITY.roadDetail ? new RoadBuf() : new DecalBuf(), marks = new DecalBuf(), solid = new SolidBuf();
   const surfaceStep = world.gradeTerrain.has(ci) ? world.gradeStep : 4;
+  // Koleje: osy po metrech. Tramvajový pás se kreslí před silnicemi, aby ho tam, kde tramvaj jede
+  // po vozovce, překryl asfalt ulice (jinak vedle něj zůstával pruh jiného asfaltu). ?obraz=puvodni
+  // vrací původní pořadí.
+  const rails = world.railChunks[ci];
+  const railPaths = new Map();
+  const railPath = (ri) => {
+    if (!railPaths.has(ri)) {
+      const rail = world.rails[ri];
+      const n = rail.pts.length / 2;
+      const rx = new Float32Array(n), rz = new Float32Array(n);
+      for (let k = 0; k < n; k++) { rx[k] = rail.pts[k * 2]; rz[k] = rail.pts[k * 2 + 1]; }
+      railPaths.set(ri, densePath(rx, rz, rail.y, 0, n - 1, 0, n - 1, rail.y ? 1e9 : surfaceStep));
+    }
+    return railPaths.get(ri);
+  };
+  // Pás má vlastní síť kreslenou pod asfaltem: kolej často leží v sousední dlaždici než ulice.
+  const beds = ORIGINAL_IMAGE ? asphalt : QUALITY.roadDetail ? new RoadBuf() : new DecalBuf();
+  const tramBed = (ri) => ribbon(world, beds, railPath(ri), 1.25, COL.tramBed, 0, 0.004);
+  if (rails && !ORIGINAL_IMAGE) for (const ri of rails) if (world.rails[ri].cls === 0) tramBed(ri);
   if (pieces) {
     for (let q = 0; q < pieces.length; q += 3) {
       const i = pieces[q], s = pieces[q + 1], e = pieces[q + 2];
@@ -986,15 +1006,11 @@ function buildRoads(world, ci, manager) {
   rondelAbutments(world, solid, ci);
   for (const underpass of world.trackUnderpasses.get(ci) ?? []) buildTrackUnderpass(world, solid, underpass);
   // koleje
-  const rails = world.railChunks[ci];
   if (rails) {
     for (const ri of rails) {
       const rail = world.rails[ri];
-      const n = rail.pts.length / 2;
-      const rx = new Float32Array(n), rz = new Float32Array(n);
-      for (let k = 0; k < n; k++) { rx[k] = rail.pts[k * 2]; rz[k] = rail.pts[k * 2 + 1]; }
-      const D = densePath(rx, rz, rail.y, 0, n - 1, 0, n - 1, rail.y ? 1e9 : surfaceStep);
-      if (rail.cls === 0) ribbon(world, asphalt, D, 1.25, COL.tramBed, 0, 0.004);
+      const D = railPath(ri);
+      if (rail.cls === 0) { if (ORIGINAL_IMAGE) tramBed(ri); }
       else if (rail.y) ribbon(world, asphalt, D, 1.7, COL.ballast, 0, 0.004);
       ribbon(world, marks, D, 0.07, COL.rail, 0.7175, LIFT_RAIL);
       ribbon(world, marks, D, 0.07, COL.rail, -0.7175, LIFT_RAIL);
@@ -1012,7 +1028,7 @@ function buildRoads(world, ci, manager) {
   }
   const traffic = world.traffic.chunks.get(ci);
   if (traffic) drawTrafficMarkings(world, marks, traffic);
-  return { asphalt: asphalt.geometry(), marks: marks.geometry(), solid: solid.geometry(), furniture };
+  return { asphalt: asphalt.geometry(), beds: beds === asphalt ? null : beds.geometry(), marks: marks.geometry(), solid: solid.geometry(), furniture };
 }
 
 function drawTrafficMarkings(world, buf, traffic) {
@@ -1662,7 +1678,7 @@ export class ChunkManager {
     } else if (world.sidewalks === undefined) world.sidewalks = null;
     this.scratch = new Map();
     this.orthoScratch = new Map();
-    this.aniso = Math.min(4, renderer.getMaxAnisotropy());
+    this.aniso = groundAnisotropy(QUALITY.name, renderer.getMaxAnisotropy());
     this.texNear = QUALITY.groundTex; this.texFar = QUALITY.groundTexFar;
     this.lastCenter = -1;
     this.pending = 0;
@@ -1689,6 +1705,7 @@ export class ChunkManager {
     this.lastCenter = -1;
     this.texNear = QUALITY.groundTex;
     this.texFar = QUALITY.groundTexFar;
+    this.aniso = groundAnisotropy(QUALITY.name, this.renderer.getMaxAnisotropy());
     this.orthophotoPrepared = false;
     if (this.orthophoto) this.orthophoto.capacity = QUALITY.groundTex === 256 ? 12 : 24;
     if (this.paintedBuildings !== this.buildingMat) this.paintedBuildings.dispose();
@@ -1761,8 +1778,13 @@ export class ChunkManager {
       if (roads.solid) { const m = new THREE.Mesh(roads.solid, this.solidMat); m.castShadow = true; m.receiveShadow = true; add(m, roads.solid); }
       if (roads.furniture.length) ch.roadFurniture = attachRoadFurniture(w.breakables, ch.group,
         roads.solid, this.solidMat, roads.furniture);
-      if (roads.asphalt) { const m = new THREE.Mesh(roads.asphalt, this.asphaltMat); m.renderOrder = 14; m.receiveShadow = true; add(m, roads.asphalt); ch.asphalt = m; }
-      if (roads.marks) { const m = new THREE.Mesh(roads.marks, this.marksMat); m.renderOrder = 16; m.receiveShadow = true; add(m, roads.marks); ch.marks = m; }
+      // Ploché povrchy se kreslí bez hloubky v pořadí renderOrder, při shodě podle vzdálenosti
+      // od kamery. Překryv sousedních dlaždic by se pak za jízdy prohazoval a blikal: sousedé
+      // proto mají pevné pořadí podle šachovnice (decalOrder).
+      const order = (base) => ORIGINAL_IMAGE ? base : decalOrder(base, ci, w.cols);
+      if (roads.beds) { const m = new THREE.Mesh(roads.beds, this.asphaltMat); m.renderOrder = order(13); m.receiveShadow = true; add(m, roads.beds); ch.beds = m; }
+      if (roads.asphalt) { const m = new THREE.Mesh(roads.asphalt, this.asphaltMat); m.renderOrder = order(14); m.receiveShadow = true; add(m, roads.asphalt); ch.asphalt = m; }
+      if (roads.marks) { const m = new THREE.Mesh(roads.marks, this.marksMat); m.renderOrder = order(16); m.receiveShadow = true; add(m, roads.marks); ch.marks = m; }
       const entries = w.traffic.chunks.get(ci);
       if (entries && (entries.signs.length || entries.heads.length || entries.posts?.length)) {
         ch.traffic = buildTrafficMeshes(w, entries);
@@ -1895,6 +1917,7 @@ export class ChunkManager {
       if (ch.lamps) { ch.lamps.poles.visible = d < 560; ch.lamps.pools.visible = night && d < 1100; }
       // v dálce stačí silnice nakreslené v textuře země; přesná síť a čáry jen poblíž
       if (ch.asphalt) ch.asphalt.visible = d < 800;
+      if (ch.beds) ch.beds.visible = d < 800;
       if (ch.marks) ch.marks.visible = d < 480;
       if (ch.sidewalks) ch.sidewalks.visible = d < SIDEWALK_VIEW;
       else if (ch.sidewalkPending && d < SIDEWALK_BUILD && (!sidewalkJob || d < sidewalkJob.dist)) sidewalkJob = ch;

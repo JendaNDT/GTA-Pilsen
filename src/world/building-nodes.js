@@ -6,6 +6,7 @@ import {
   vertexColor,
 } from 'three/tsl';
 import { hash21, valueNoise } from './material-noise.js';
+import { detailFadeRange, ORIGINAL_IMAGE } from './image-quality.js';
 import { SURFACE } from './material-table.js';
 import { pageLook, WALL_SATURATION, wallLift } from './daylight.js';
 
@@ -177,26 +178,50 @@ function facade(color, illumination, glazing, cell, code, style, width, night, s
   glazing.assign(window.mul(bars.oneMinus(), door.oneMinus(), detail));
 }
 
+// Buňky vzorů fasády: tahy štětce asi 0,58 m, zrno omítky 0,14 m. Spáry bloků a prken se měří
+// v jednotkách bloku: spára je asi 4 % bloku (na obou stranách), u prken 6 %.
+export const BRUSH_FADE = detailFadeRange(1 / 1.71);
+export const GRAIN_FADE = detailFadeRange(1 / 7.1);
+export const BLOCK_FADE = detailFadeRange(1);
+export const SEAM_WIDTH = 0.073, PLANK_SEAM_WIDTH = 0.06;
+export const SEAM_FADE = [SEAM_WIDTH / 2, SEAM_WIDTH];
+export const PLANK_SEAM_FADE = [PLANK_SEAM_WIDTH / 2, PLANK_SEAM_WIDTH];
+// průměrná tmavost spár v ploše bloku, kterou spára předá, když zmizí
+export const SEAM_AVERAGE = 1 - (1 - SEAM_WIDTH) ** 2, PLANK_SEAM_AVERAGE = PLANK_SEAM_WIDTH;
+
 function addSurfaceDetail(color, facadePoint, cell, code) {
   const pixel = facadePoint.x.fwidth().max(facadePoint.y.fwidth(), facadePoint.z.fwidth());
   const near = smoothstep(0.10, 0.48, pixel).oneMinus().toVar();
-  const brush = valueNoise(facadePoint.xz.add(facadePoint.yy.mul(0.49)).mul(vec2(1.12, 1.71)));
+  // Vzory mizí podle velikosti své buňky (image-quality.js), jinak za jízdy blikají.
+  const brushFade = ORIGINAL_IMAGE ? float(1) : smoothstep(...BRUSH_FADE, pixel).oneMinus();
+  const grainFade = ORIGINAL_IMAGE ? near : smoothstep(...GRAIN_FADE, pixel).oneMinus();
+  const brush = mix(0.5, valueNoise(facadePoint.xz.add(facadePoint.yy.mul(0.49)).mul(vec2(1.12, 1.71))), brushFade);
   const grain = valueNoise(facadePoint.xz.add(facadePoint.yy.mul(0.71)).mul(7.1)).sub(0.5);
-  color.mulAssign(brush.mul(0.08).add(grain.mul(0.075, near), 0.97));
+  color.mulAssign(brush.mul(0.08).add(grain.mul(0.075, grainFade), 0.97));
   If(code.equal(-1).or(code.equal(-2)), () => {
     // Tašky a šindel mají úzké překryvy, kdežto na zdivu jsou spáry širší.
     const blocks = cell.mul(select(code.equal(-1), vec2(3.1, 3.55), vec2(1.34, 2.35))).toVar();
     blocks.x.addAssign(blocks.y.floor().mod(2).mul(0.5));
     const uv = blocks.fract().toVar();
     const edge = uv.x.min(uv.x.oneMinus(), uv.y, uv.y.oneMinus());
-    const seam = smoothstep(0.016, 0.057, edge).oneMinus();
-    color.mulAssign(hash21(blocks.floor()).sub(0.5).mul(0.16).sub(seam.mul(0.20)).mul(near).add(1));
+    const sharpSeam = smoothstep(0.016, 0.057, edge).oneMinus();
+    // Pixel v jednotkách bloku: spára (asi 4 % bloku) se nad svou šířkou nahradí průměrnou tmavostí.
+    const blockPixel = blocks.y.fwidth().max(cell.x.fwidth().mul(select(code.equal(-1), 3.1, 1.34)));
+    const seam = ORIGINAL_IMAGE ? sharpSeam
+      : mix(SEAM_AVERAGE, sharpSeam, smoothstep(...SEAM_FADE, blockPixel).oneMinus());
+    const vary = ORIGINAL_IMAGE ? float(1) : smoothstep(...BLOCK_FADE, blockPixel).oneMinus();
+    const fade = ORIGINAL_IMAGE ? near : float(1);
+    color.mulAssign(hash21(blocks.floor()).sub(0.5).mul(0.16, vary).sub(seam.mul(0.20)).mul(fade).add(1));
   });
   If(code.equal(-4), () => {
     const plank = cell.x.mul(6.2).toVar();
-    const grain = hash21(vec2(plank.floor(), 4)).sub(0.5).mul(0.19);
-    const seam = smoothstep(0.02, 0.10, plank.fract()).oneMinus();
-    color.mulAssign(grain.sub(seam.mul(near, 0.14)).add(1));
+    const plankPixel = plank.fwidth();
+    const vary = ORIGINAL_IMAGE ? float(1) : smoothstep(...BLOCK_FADE, plankPixel).oneMinus();
+    const grain = hash21(vec2(plank.floor(), 4)).sub(0.5).mul(0.19, vary);
+    const sharpSeam = smoothstep(0.02, 0.10, plank.fract()).oneMinus();
+    const seam = ORIGINAL_IMAGE ? sharpSeam.mul(near)
+      : mix(PLANK_SEAM_AVERAGE, sharpSeam, smoothstep(...PLANK_SEAM_FADE, plankPixel).oneMinus());
+    color.mulAssign(grain.sub(seam.mul(0.14)).add(1));
   });
 }
 

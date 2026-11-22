@@ -44,6 +44,7 @@ import { GameClock, HOUR_SECONDS, formatDay, parseDay } from './clock.js';
 import { roadWear } from '../world/road-surface.js';
 import { TrafficRhythm } from './traffic-rhythm.js';
 import { automaticQuality, PROFILES, resolutionScale, SAVE_KEY } from './graphics-quality.js';
+import { profilePixelRatio } from '../world/image-quality.js';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
 const _road = {};
@@ -231,7 +232,7 @@ export class Game {
     this.graphicsTime = 0;
     this.resolutionTime = 0;
     this.resolutionScale = 1;
-    this.pixelRatio = Math.min(devicePixelRatio || 1, QUALITY.pixelRatio);
+    this.pixelRatio = Math.min(devicePixelRatio || 1, profilePixelRatio(QUALITY.pixelRatio, IS_MOBILE));
     this.garage = new Garage(this);
     this.jobs = new Jobs(this);
     this.shifts = new Shifts(this);
@@ -1121,7 +1122,7 @@ export class Game {
   }
 
   setResolutionScale(scale) {
-    const ratio = Math.min(devicePixelRatio || 1, QUALITY.pixelRatio) * scale;
+    const ratio = Math.min(devicePixelRatio || 1, profilePixelRatio(QUALITY.pixelRatio, IS_MOBILE)) * scale;
     this.resolutionScale = scale;
     if (ratio === this.pixelRatio) return;
     this.pixelRatio = ratio;
