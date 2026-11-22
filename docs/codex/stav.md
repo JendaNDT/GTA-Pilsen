@@ -1,5 +1,24 @@
 # Stav etapy E26
 
+## Propad nájezdu na Wilsonův most (mimo etapu, na přání autora)
+
+Na větvi `claude/modest-ramanujan-wvjl2i` (revize `faa1a84`) selhávala zkouška „kola unesou auto přes Wilsonův most v obou směrech“: auto dojelo se zdravím 100, ale jedno kolo leželo 5,3 cm pod vozovkou (mez 5 cm). Oprava je na větvi `claude/determined-volta-o7e9t2`.
+
+**Vypínače.** Odchylku pod mez sníží jen `?sklon=0` (5,31 → 2,55 cm). `?chodniky=0` ani `?rohy=0` nic nemění: na nízké předvolbě zkoušky chodníky nejsou a u konců mostů se rohy nedělají.
+
+**Příčina.** Nejhorší kolo stálo 1,2 m před mostovkou na nájezdu z Americké. Tam silnice leží přímo na terénu kalibrovaném podle měření a pás fyziky nemá. Sousední Anglické nábřeží od křižovatky prudce klesá k řece. Terén do 1,5 m za okrajem vozovky se srovnával pod vlastní profil a příčný sklon každé silnice, ne pod společnou výšku křižovatky, ve které pás i asfalt skutečně leží. Okraj nábřeží tak stáhl uzel sítě terénu na nájezdu o 39 cm (bez sklonu o 19 cm). Ve hře měl nájezd skrytou jámu: v ose až 35 cm, u severního okraje až 57 cm pod vykreslenou vozovkou. Zkouška ji zachytila jen okrajově, protože auto startuje na mostovce.
+
+**Oprava** (`src/world/world.js`). V křižovatce se terén srovnává podle společné výšky pásů. U konců mostů, tunelů a ramp okraj sousedního pásu terén nesnižuje. Dotaz na společnou výšku je rychlejší a dává bit po bitu stejný výsledek. Mez zkoušky se nemění.
+
+**Ověření.**
+- Zkouška Wilsonova mostu: odchylka kola 5,31 → 0,001 cm v obou směrech, zdraví 100. Oba nájezdy jsou v celé šířce do 0,9 cm od vozovky.
+- Nový test v Node hlídá výšku fyziky na nájezdu v šířce ±3 m (na původním kódu selže s rozdílem 57 cm).
+- `npm test` 229 z 229, `npm run build` prošlo, `npm run test:e2e -- physics-roads.spec.js physics.spec.js --trace off` 22 z 22 (WebGL 2 i WebGPU).
+- Ve městě ubylo míst, kde terén ve fyzice prorůstá nad pás o víc než 5 cm, z 2 871 na 794. Propady pod vozovku nad 20 cm zmizely. Příprava fyziky dlaždice +1 až 3 %.
+- Širší sada 21 souborů prohlížečových zkoušek na WebGL 2 (jízda, provoz, MHD, chodci, asfalt, mimoúrovňová křížení, Rondel, Prazdroj, řeka, jemný terén, stopy kol, rozpočet): průběžně, výsledek doplním.
+
+**Návrhy mimo úkol.** Profil Anglického nábřeží severně od mostu leží až 2,5 m pod terénem (výškový model u břehu nejspíš zachytil koryto) a body sítě na břehové čáře řeky se pod pás nesrovnávají. Na samém okraji nábřeží u nájezdu vystoupí terén až 15 cm nad pás, mimo stopu kol. [Měření, tabulky a návrhy](../sklon.md#dodatek-proč-kolo-klesalo-pod-nájezd-wilsonova-mostu)
+
 ## Jasné počasí ve všech prohlížečových zkouškách (mimo etapu, na přání autora)
 
 Větev `claude/modest-ramanujan-wvjl2i` spojuje `claude/lucid-bohr-y3rlwb` (chodníky, rohy a příčný sklon) s `claude/exciting-cannon-kzvgbu` (pevné datum zkoušek). Obě vycházejí z revize `35f7265` a sloučily se bez konfliktu.
