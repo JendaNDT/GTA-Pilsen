@@ -1,5 +1,21 @@
 # Stav etapy E26
 
+## Jasné počasí ve všech prohlížečových zkouškách (mimo etapu, na přání autora)
+
+Větev `claude/modest-ramanujan-wvjl2i` spojuje `claude/lucid-bohr-y3rlwb` (chodníky, rohy a příčný sklon) s `claude/exciting-cannon-kzvgbu` (pevné datum zkoušek). Obě vycházejí z revize `35f7265` a sloučily se bez konfliktu.
+
+**Příčina.** Hra bez parametru `weather` losuje počasí podle herního času po tříhodinových úsecích. Bez data v adrese bere čas počítače. V neděli 22. 11. 2026 v 11.00 v Plzni (10.00 UTC) ve hře sněží, sníh pokrývá vozovku celý a přilnavost kol klesne na 0,35. Pomocník `gameUrl` v `tests/e2e/game-url.js` počasí ani datum nenastavoval. Na větvi `claude/lucid-bohr-y3rlwb` proto selhávaly jízdní zkoušky v `game.spec.js` a `physical-traffic.spec.js`. Ve stejný čas na původním kódu zastavil policejní vůz 2,63 m před chodcem, zkouška žádá více než 3 m.
+
+**Úprava zkoušek.** Herní kód se nemění.
+
+- `gameUrl` doplní `weather=clear`, pokud adresa počasí sama nenastavuje. Zkoušky počasí si ho dál nastavují samy: `weather` (sníh), `precipitation` (déšť, potom sníh), `clouds` (zataženo). `asphalt` používá vlastní parametr `wet=1`.
+- Když adresa nastaví jen hodinu, `gameUrl` doplní datum pondělí 9. 11. 2026. Když nastaví jen datum, doplní 10.00. Chybějící část by jinak hra vzala z hodin počítače.
+- Zkoušky referenčních pohledů (`exposure`, `reference`, `budget`, `materials`) mají pevné datum 17. 11. 2026. Volbou `gameUrl(…, { weather: null })` si ponechají počasí podle tohoto data, protože stejné pohledy fotí a měří `tools/reference_views.mjs`.
+- `physical-traffic.spec.js`: zkoušky bez data běžely v aktuálním čase s MHD a provozem podle dne. Výchozí hodnota pomocníka `start` je teď pondělí 9. 11. 2026 v 10.00, jako ve zkouškách provozu. Zkoušky s vlastním datem a hodinou se nemění.
+- Zkoušky bez data a hodiny, které záměrně používají hodiny prohlížeče (`clock`, `page.clock.setFixedTime`), nebo uloženou hru, zůstávají v aktuálním čase. Mají jen jasno.
+
+**Ověření (průběžně).** Prošlo 228 z 228 testů JavaScriptu a produkční sestavení. Celá sada 179 prohlížečových zkoušek na WebGL 2 právě běží v čase se sněžením. Po ní následuje ověření dotčených souborů v jiných časech spuštění pomocí `faketime`. Výsledky doplním sem.
+
 ## Vzhledová zkouška (mimo etapu, na přání autora)
 
 Na větvi `claude/lucid-bohr-y3rlwb` vznikla vzhledová zkouška webové verze: silnější slunce, slabší odraz oblohy na fasádách, tmavší zem v mapě odrazů, sytější omítky a oblé koruny stromů. Původní světlo zapne `?vzhled=puvodni`. Autor rozhodne podle zveřejněné zkoušky, zda se vzhled převezme. [Protokol a snímky](../vzhledova-zkouska.md)

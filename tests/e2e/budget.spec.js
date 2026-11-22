@@ -14,7 +14,8 @@ for (const quality of ['ultra', 'high', 'medium', 'low']) {
     const all = JSON.parse(await readFile(budgetFile, 'utf8'));
     const baseline = all[quality];
     const measured = {};
-    const url = new URL(gameUrl(baseURL));
+    // Stejné počasí podle pevného data jako při měření pohledů nástrojem tools/reference_views.mjs.
+    const url = new URL(gameUrl(baseURL, { weather: null }));
     url.searchParams.set('quality', quality);
     await openReferenceGame(page, url.href);
     for (const id of viewIds) {

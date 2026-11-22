@@ -5,7 +5,7 @@ import { gameUrl } from './game-url.js';
 test.use({ viewport: reference.viewport, deviceScaleFactor: 1 });
 
 async function openMaterialGame(page, baseURL) {
-  await openReferenceGame(page, gameUrl(baseURL));
+  await openReferenceGame(page, gameUrl(baseURL, { weather: null }));
   // Stejné světlo a procedurální obloha jako při pořízení předloh materiálů E15.
   await page.evaluate(() => window.__game.setWeatherMode('clear'));
 }

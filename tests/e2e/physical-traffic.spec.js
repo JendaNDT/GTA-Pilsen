@@ -23,7 +23,9 @@ test('E20 – při odbočení linky 41 z Klatovské do Husovy zůstává dráha 
   expect(jump).toBeLessThan(0.05);
 });
 
-async function start(page, options = '') {
+// Bez data by zkouška běžela v aktuálním čase: podle dne a hodiny se v herní smyčce mění
+// jízdní řád MHD a hustota provozu. Výchozí je proto pondělí v 10.00 jako ve zkouškách provozu.
+async function start(page, options = '&date=2026-11-09&hour=10') {
   await page.goto(gameUrl('/?debug&quality=low' + options));
   await page.waitForFunction(() => window.__ready);
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
