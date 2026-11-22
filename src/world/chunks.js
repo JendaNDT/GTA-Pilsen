@@ -573,6 +573,9 @@ const SIDEWALK_COLORS = {
   paving: lin(0x928c82), asphalt: lin(0x76797e),
 };
 
+// Okraj asfaltu zaobleného rohu leží pod pásem vozovky o tolik (m).
+const CORNER_UNDER = 0.02;
+
 // Chodníky se kreslí jen poblíž; dál stačí chodník v textuře země.
 const SIDEWALK_VIEW = 380, SIDEWALK_BUILD = 500;
 
@@ -944,11 +947,16 @@ function buildRoads(world, ci, manager) {
   // zaoblené rohy křižovatek a ohybů: asfaltový vějíř z rohu přes oblouk
   for (const corner of world.cornerTiles?.get(ci) ?? []) {
     const col = roadColor(Math.min(R.cls[corner.a.road], R.cls[corner.b.road]));
-    const points = corner.polygon;
-    const ids = points.map(([x, z]) => asphalt.v(x, world.cornerY(corner, x, z), z, col, 0, 0, null));
+    // Okraje zasahují pod pás vozovek (o 2 cm níž), aby mezi asfaltem nezůstala spára.
+    const points = corner.draw ?? corner.polygon;
+    const ids = points.map(([x, z, under]) => asphalt.v(x, world.cornerY(corner, x, z) - (under ? CORNER_UNDER : 0), z, col, 0, 0, null));
     // líc nahoru (vějíř může vzniknout v obou směrech oběhu)
-    const [a, b, c] = points;
-    const up = (b[1] - a[1]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[1] - a[1]) > 0;
+    let area = 0;
+    for (let k = 0; k < points.length; k++) {
+      const p = points[k], q = points[(k + 1) % points.length];
+      area += p[0] * q[1] - q[0] * p[1];
+    }
+    const up = area < 0;
     for (let k = 1; k + 1 < ids.length; k++) {
       if (up) asphalt.i.push(ids[0], ids[k], ids[k + 1]); else asphalt.i.push(ids[0], ids[k + 1], ids[k]);
     }

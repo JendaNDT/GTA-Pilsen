@@ -18,6 +18,7 @@ export const CURB_DEPTH = 0.08;         // líc obrubníku sahá pod asfalt, aby
 export const CURB_SLOPE = 0.06;         // líc je zkosený, auto přes obrubník přejede bez zaseknutí (m)
 export const SIDEWALK_STEP = 8;         // nejdelší rozteč příčných řezů podél silnice (m)
 export const MIN_SIDEWALK = 0.6;        // užší zbytek chodníku u domu se nekreslí (m)
+export const SIDEWALK_MIN_RUN = 3;      // kratší souvislý kus chodníku (zbytek v ostrůvku) se nekreslí (m)
 const MAX_RISE = 0.08, MAX_FALL = 0.06; // největší příčný sklon chodníku nahoru a dolů
 
 /**
@@ -101,6 +102,7 @@ export function wallDistance(x, z, ox, oz, max, walls) {
  * (směr ven), width, road, profile, terrain }. quad(a, b, c, d, part) dostane rohy v pořadí
  * kolem plochy; part: 'face' líc obrubníku, 'curb' jeho horní plocha, 'walk' chodník,
  * 'skirt' sokl k nižšímu terénu, 'cap' čelo na konci chodníku; section = řez se směrem ven.
+ * Souvislý kus kratší než SIDEWALK_MIN_RUN (zbytky v ostrůvcích složitých křižovatek) se vynechá.
  */
 export function sidewalkQuads(sections, quad) {
   const point = (sec, d, y) => [sec.cx + sec.ox * d, y, sec.cz + sec.oz * d];
@@ -111,9 +113,18 @@ export function sidewalkQuads(sections, quad) {
     quad(point(sec, CURB_WIDTH, bottom), point(sec, CURB_WIDTH, sec.profile.curb), point(sec, sec.width, sec.profile.outer),
       point(sec, sec.width, Math.min(sec.terrain, sec.profile.outer) - 0.02), 'cap', sec);
   };
+  // délka souvislých kusů podél obrubníku
+  const run = new Float64Array(sections.length);
+  for (let i = 0; i < sections.length;) {
+    if (!sections[i].valid) { i++; continue; }
+    let j = i, length = 0;
+    while (sections[j + 1]?.valid) { length += Math.hypot(sections[j + 1].cx - sections[j].cx, sections[j + 1].cz - sections[j].cz); j++; }
+    for (let k = i; k <= j; k++) run[k] = length;
+    i = j + 1;
+  }
   for (let i = 0; i < sections.length; i++) {
     const a = sections[i], b = sections[i + 1];
-    if (!a.valid) continue;
+    if (!a.valid || run[i] < SIDEWALK_MIN_RUN) continue;
     const startsRun = i === 0 || !sections[i - 1].valid;
     if (startsRun) cap(a);
     if (!b?.valid) { cap(a); continue; }

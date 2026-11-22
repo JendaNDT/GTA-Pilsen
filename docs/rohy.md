@@ -53,3 +53,32 @@ Levé snímky jsou s `?rohy=0`, pravé bez něj. 15. června ve 12:00, vysoká p
 - Ve složitých křižovatkách s tramvajemi a ostrůvky zůstávají v ostrůvcích drobné kousky chodníku.
 - Auta řízená hrou zatáčejí po stejných obloucích jako dřív. Širší roh jim dává víc místa, jejich dráhy se ale podle něj zatím neupravují.
 - Výpočet oblouků přidá ke startu hry asi 0,3 s.
+
+## Doladění rohů
+
+Na přání autora navázalo na [příčný sklon silnic](sklon.md). Tři známé odchylky z předchozí části jsou opravené:
+
+- **Spára na hraně oblouku.** Vykreslený asfalt oblouku nyní zasahuje 0,3 m pod pás obou vozovek a leží tam o 2 cm níž. Mezi obloukem a vozovkou tak nezůstane světlá mezera, kterou prosvítala zem. Fyzika používá původní plochu oblouku.
+- **Zbytky chodníku v ostrůvcích.** Souvislý kus chodníku kratší než 3 m se nekreslí a nemá ani obrubník ve fyzice. Takové kousky vznikaly hlavně ve složitých křižovatkách s tramvají a ostrůvky.
+- **Auta řízená hrou využijí širší roh.** Při odbočení vpravo v zaobleném rohu jede auto po oblouku soustředném s obrubníkem, ve stejné vzdálenosti od okraje jako ve svém pruhu. Poloměr je větší než dřív (u dvou obytných ulic asi 9,3 m místo 5 m), auto proto nevybočuje k protisměru a zatáčí plynuleji a rychleji. Širší oblouk se použije, jen když silnice u křižovatky vede ve směru ramene rohu (odchylka do 5,7°), dráha zůstane od obrubníku aspoň na půl šířky auta a 0,3 m a celá šířka auta po celé dráze leží na asfaltu. Jinak zůstává původní ostré zatočení. Ze 30 237 možných odbočení vpravo ve městě má zaoblený roh 12 683 a 7 272 z nich auta projedou širším obloukem.
+
+- **Asfalt rohu je vozovka.** Hra ho nyní počítá do vozovky i při rozmisťování lamp, značek a semaforů, parkujících aut a trávy. Nic z toho tak nezůstane stát na asfaltu oblouku a auto, které jede přes oblouk, neplatí za auto mimo silnici.
+
+Výška asfaltu v oblouku na vozovce ramene se počítá z vozovky v daném bodě, takže sedí i na silnici s příčným sklonem.
+
+### Ověření doladění
+
+- Nové testy: vykreslený asfalt oblouku zasahuje o 0,3 m pod obě vozovky a oblouk zůstává ([tests/corners.test.js](../tests/corners.test.js)). Osamocený řez a kus chodníku kratší než 3 m se nekreslí ([tests/sidewalks.test.js](../tests/sidewalks.test.js)). Auto v rohu odbočí po oblouku soustředném s obrubníkem a ostré zatočení zůstane bez rohu, u rohu těsně u dráhy, když by auto opustilo asfalt a když se silnice před rohem stáčí ([tests/ai-turn.test.js](../tests/ai-turn.test.js)).
+- `npm test`: prošlo všech 230 testů JavaScriptu. `npm run build` prošlo.
+- **Prohlížečové testy na WebGL 2:** 17 souborů zkoušek (rozpočet vykreslování, hra, chodci, srážky s vybavením ulic, podrobnosti ulic, rozvoz, rozbitné předměty, fyzika, fyzikální provoz, doprava, postava, stavby, MHD, směny, fyzika silnic, mimoúrovňová křížení a Rondel). Ze 97 případů prošlo 96, neprošel jen dlouhodobě vadný Wilsonův most. Hra bere počasí podle skutečného času a během zkoušek v herní Plzni sněžilo; na kluzké silnici pak jízdní zkoušky padají bez ohledu na změnu kódu. Zkoušky proto běžely s jasným počasím (`weather=clear`, úprava zkoušek se neukládá) a ustálení počasí ve zkouškách je navržené jako samostatný úkol.
+- Při první zkoušce dodávka na Americké na okamžik projela pěticentimetrovou spárou mezi okrajem vozovky a plochou rohu. Plocha rohu se proto do vozovky počítá i s překrytím přes okraje a širší oblouk se použije jen tam, kde silnice u křižovatky vede ve směru ramene rohu.
+
+### Snímky doladění
+
+| Místo | Porovnání |
+|---|---|
+| Jungmannova, pohled řidiče: světlá čára na hraně oblouku zmizela | ![Jungmannova](rohy/dolazeni-jungmannova.jpg) |
+| Habrmannova, pohled řidiče | ![Habrmannova](rohy/dolazeni-habrmannova.jpg) |
+| Prešovská shora: drobné kousky chodníku v ostrůvku zmizely | ![Prešovská](rohy/dolazeni-presovska.jpg) |
+
+Snímek před doladěním vznikl ještě bez příčného sklonu silnic, proto se může nepatrně lišit i výška pohledu.

@@ -4,6 +4,10 @@
 
 Na větvi `claude/lucid-bohr-y3rlwb` vznikla vzhledová zkouška webové verze: silnější slunce, slabší odraz oblohy na fasádách, tmavší zem v mapě odrazů, sytější omítky a oblé koruny stromů. Původní světlo zapne `?vzhled=puvodni`. Autor rozhodne podle zveřejněné zkoušky, zda se vzhled převezme. [Protokol a snímky](../vzhledova-zkouska.md)
 
+## Doladění zaoblených rohů (mimo etapu, na přání autora)
+
+Asfalt oblouku zasahuje 0,3 m pod pás vozovek (zmizela světlá spára), kusy chodníku kratší než 3 m (zbytky v ostrůvcích) se nekreslí a auta řízená hrou odbočují vpravo v rohu po oblouku soustředném s obrubníkem (7 272 z 12 683 odbočení v rozích, typicky 9,3 m místo 5 m), pokud celá šířka auta zůstane na asfaltu. Asfalt rohu se počítá do vozovky i pro rozmístění vybavení, parkování a trávy. Prošlo 230 testů JavaScriptu a 96 z 97 prohlížečových zkoušek (Wilsonův most selhává dlouhodobě); zkoušky běžely s `weather=clear`, protože ve skutečném čase v herní Plzni sněžilo. [Popis a snímky](../rohy.md#doladění-rohů)
+
 ## Příčný sklon silnic (mimo etapu, na přání autora)
 
 Silnice s hladkým profilem jsou napříč skloněné podle svahu vedle silnice (nejvýš 4 %). Zatáčky silnic mimo obytné ulice jsou klopené podle křivosti (nejvýš 6 %), klopení mizí u křižovatek, na koncích a mezi domy. Navazující silnice mají ve společném bodě stejný sklon, na mostovky se napojí bez sklonu. Sklon platí pro asfalt, fyziku, auta, chodníky, rohy i křižovatky. Terén se na nižší straně srovnává od roviny vozovky a dlaždice se zářezem nad 0,3 m má jemnější síť terénu. Vypne ho `?sklon=0`. Drncání mezi křižovatkami +2 %, v křižovatkách −16 %, prosvítání terénu u okraje 3,44 % → 2,62 %. Start hry asi +0,5 s. Prošlo 228 testů JavaScriptu a 110 ze 111 prohlížečových zkoušek (Wilsonův most selhává dlouhodobě). [Popis, měření a snímky](../sklon.md)

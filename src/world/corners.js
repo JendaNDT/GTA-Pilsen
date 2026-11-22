@@ -68,6 +68,17 @@ export function cornerPolygon(fillet) {
   return [fillet.apex, ...fillet.arc];
 }
 
+/**
+ * Mnohoúhelník asfaltu oblouku pro vykreslení: u obou vozovek zasahuje o d pod jejich pás
+ * (stejnolehlost se středem oblouku posune roh a body dotyku o d dovnitř vozovek), aby mezi
+ * obloukem a vozovkou nezůstala světlá spára. Vrací [[x, z, pod pásem vozovky], …].
+ */
+export function cornerOverlap(fillet, d) {
+  const [cx, cz] = fillet.center, k = (fillet.radius + d) / fillet.radius;
+  const inside = ([x, z]) => [cx + (x - cx) * k, cz + (z - cz) * k, true];
+  return [inside(fillet.apex), inside(fillet.ta), ...fillet.arc.map(([x, z]) => [x, z, false]), inside(fillet.tb)];
+}
+
 /** Leží bod uvnitř mnohoúhelníku (pole [x, z])? Body na hraně se nepočítají přesně. */
 export function insidePolygon(points, x, z) {
   let inside = false;
