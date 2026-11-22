@@ -518,6 +518,20 @@ V Chromiu na WebGL 2 i WebGPU prošel rozvoz na adresy ve všech třech úsecíc
 
 # Stav etapy E24
 
+## Zrnitost povrchu v dálce
+
+U vzdálených povrchů nyní shader přeskočí výpočet jemné nebo střední zrnitosti v místech, kde by její váha byla nulová. Výpočet šířky pixelu zůstává mimo obě podmínky, aby měl stejnou hodnotu i na jejich hranicích.
+
+Na softwarovém WebGPU splnila nízká předvolba limit zpomalení vůči E23 v obou měřených pohledech. U Wilsonova mostu byl medián času snímku do dokončení o 3,8 % kratší, na nočním náměstí o 1,0 % delší. Měření vysoké předvolby v dešti na autorově počítači a ovládání na skutečném telefonu zůstávají otevřené. [Výsledky obou porovnání](../E24.md#zrnitost-povrchu-v-dálce)
+
+Na E24 prošlo 166 testů JavaScriptu, produkční sestavení a čtyři prohlížečové kontroly terénu. WebGL 2 i WebGPU vykreslily nízkou předvolbu bez atlasů a střední s barevnou a normálovou texturou.
+
+## Číslo materiálu fasády na WebGL 2
+
+Při startu hry na WebGL 2 odmítl ovladač vykreslit část domů. U atributu `buildingLayer` shader očekával celé číslo, zatímco geometrie předávala bajt jako číslo s plovoucí řádovou čárkou. Geometrie nyní výslovně předává celočíselný atribut. Stěny a střechy si zachovávají původní čísla materiálů.
+
+Na této větvi prošlo 166 testů JavaScriptu a produkční sestavení. Chromium 159 na střední předvolbě načetlo atlasy fasád a ověřilo materiál stěn i střech v herní scéně na WebGL 2 a WebGPU. Kontrola nově zachytí i odmítnutí příkazu vykreslení ve WebGL. Výsledky jsou v `data-raw/e24/vrstva-typ-e2e.log`.
+
 ## Klávesové ovládání mapy a fotorežimu
 
 Po stisku O v mapě lze pokračovat klávesou Escape a ze hry pak znovu otevřít fotorežim. Celou posloupnost ověřilo Chromium 159 na WebGL 2 i WebGPU. Prošlo 166 testů JavaScriptu a produkční sestavení. [Protokol E24](../E24.md)
