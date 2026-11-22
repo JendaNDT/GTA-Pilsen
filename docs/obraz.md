@@ -78,8 +78,8 @@ Střední předvolba, 32 dlaždic do 800 m od středu, 27 008 míst na okrajích
 | Stavba 32 dlaždic (celkem, všechny kroky) | 12,50 s | 12,43 s |
 
 Na vysoké předvolbě v okruhu 1,8 km (156 dlaždic, 116 489 míst) leželo před úpravou nad asfaltem
-0,94 % okrajů (0,21 % o víc než 5 cm). Polovina zbylých míst leží v křižovatkách a na okrajích
-dlaždic, kde se uzly kvůli navázání sousedů nemění.
+0,94 % okrajů (0,21 % o víc než 5 cm), z toho asi polovina v křižovatkách. Po úpravě zůstávají
+místa hlavně tam, kde se uzly nemění (okraje dlaždic), a v křižovatkách.
 
 ### Ostrost a zubatost proti ideálu
 
@@ -88,7 +88,30 @@ v běžném rozlišení a ve dvojnásobném rozlišení zmenšeném na stejnou v
 průměrný rozdíl jasu sousedních pixelů proti ideálu (1,00 = stejně ostré). Odchylky jsou podíl
 pixelů, které se od ideálu liší o víc než 48 úrovní (součet RGB): zuby, třpyt a chybějící tenké detaily.
 
-Měření probíhá, výsledky se doplní.
+| Nízká předvolba | Původně | Po úpravě |
+|---|---:|---:|
+| Ostrost proti ideálu | 0,82 | 0,93 |
+| Odchylky od ideálu | 2,41 % | 1,17 % |
+
+Původní nízká předvolba kreslila ve 3/4 rozlišení, nová v plném. Na střední předvolbě vyšla ostrost
+proti ideálu 1,00 → 0,92 při stejných odchylkách 1,47 %. To není rozmazání: ideál ve dvojnásobném
+rozlišení má poloviční pixel, takže jemné zrno v něm zůstává, zatímco v běžném obraze už zmizí.
+Měřítko pak bere třpyt zrna jako ostrost. Blikání proto měří třepot níže.
+
+### Třepot při nepatrném pohybu
+
+Kamera se posune o 6 mm do strany (asi půl pixelu 7 m před autem) a měří se průměrná změna
+pixelu (0–255 v každé barvě). Klidný obraz se při tak malém posunu skoro nezmění, blikající zrno
+ano. Střední předvolba, stejné čtyři pohledy.
+
+| Střední předvolba | Původně | Po úpravě |
+|---|---:|---:|
+| Průměrná změna pixelu na vozovce (spodní polovina obrazu) | 0,80 | 0,48 |
+| Průměrná změna pixelu v celém obraze | 0,57 | 0,41 |
+| Pixely se změnou nad 20 úrovní | 0,33 % | 0,30 % |
+
+Na vozovce je obraz o 40 % klidnější, v celém obraze o 28 %. Pixely s velkou změnou leží hlavně
+na hranách domů, sloupů a čar, které vyhlazení hotového obrazu (SMAA) nezklidní.
 
 ### Ostrost za jízdy
 
@@ -96,7 +119,15 @@ Kamera jede 50 km/h (30 snímků za sekundu) Husovou, Prešovskou a Mikulášsko
 Po 24 snímcích se obraz uloží a porovná se se stejným místem, kde kamera stála a obraz se ustálil
 (původní obraz bez doostření). Vysoká předvolba, horní tři čtvrtiny obrazu.
 
-Měření probíhá, výsledky se doplní.
+| Vysoká předvolba | Původně | Po úpravě |
+|---|---:|---:|
+| Ostrost za jízdy proti původnímu obrazu vestoje (průměr tří ulic) | 0,93 | 1,22 |
+| z toho Prešovská | 0,88 | 1,20 |
+| Ostrost vestoje proti původnímu obrazu vestoje | 1,00 | 1,34 |
+
+Za jízdy je obraz po úpravě ostřejší než dřív vestoje. Doostření má sílu 0,35 (SharpenNode
+používá výchozí 0,2, menší číslo znamená silnější doostření). Na výřezech nejsou světlé lemy kolem
+hran. Kdyby obraz působil přeostřeně, vypne doostření `?ostreni=0`.
 
 ## Snímky
 
@@ -105,11 +136,16 @@ obrubníku zmizel, koleje leží v asfaltu ulice a asfalt je v pár metrech pře
 
 ![Prešovská před a po](obraz/presovska.jpg)
 
+Prešovská na vysoké předvolbě, výřez fasád a vozovky. Vlevo nahoře původně vestoje, vpravo nahoře
+původně za jízdy (rozmazané), vlevo dole po úpravě za jízdy, vpravo dole po úpravě vestoje.
+
+![Ostrost za jízdy](obraz/jizda.jpg)
+
 
 
 ## Výsledky zkoušek
 
-Měření probíhá, výsledky se doplní.
+Zkoušky a měření výkonu probíhají, výsledky se doplní.
 
 ## Známé odchylky a návrhy
 
