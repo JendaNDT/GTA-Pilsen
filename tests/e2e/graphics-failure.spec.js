@@ -17,7 +17,8 @@ test('E26 – poškozená barevná tabulka a nedostupné textury dovolí pokrač
     await route.fulfill({status:404,body:''});
   });
   await page.setViewportSize({width:400,height:280});
-  await page.goto(gameUrl('/?debug&quality=medium&adapt=0&view=300&hour=10'));
+  // Pevné datum: počasí podle dne mění efekty prvního herního snímku.
+  await page.goto(gameUrl('/?debug&quality=medium&adapt=0&view=300&date=2026-11-09&hour=10'));
   await waitForGame(page);
   await page.getByRole('button',{name:'Hrát',exact:true}).click();
   const state=await page.evaluate(async()=>{

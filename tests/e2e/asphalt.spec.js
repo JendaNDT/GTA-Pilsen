@@ -7,7 +7,8 @@ test('E23 – mokrý povrch vozovky používá provozní profil a samostatné zn
   page.on('console',m=>{
     if(/shader.*error|error.*shader|validation error|invalid shader module/i.test(m.text())) errors.push(m.text());
   });
-  await page.goto(gameUrl('/?debug&quality=medium&adapt=0&view=350&wet=1'));
+  // Pevné datum a hodina: noc, mlha a srážky podle dne mění, které efekty se vykreslí a jejichž chyby zkouška hlídá.
+  await page.goto(gameUrl('/?debug&quality=medium&adapt=0&view=350&wet=1&date=2026-11-09&hour=10'));
   await page.waitForFunction(()=>window.__ready);
   const result=await page.evaluate(async()=>{
     const g=__game;

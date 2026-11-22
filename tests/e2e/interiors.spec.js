@@ -19,7 +19,8 @@ test('E24 – obsah místnosti za stejným oknem reaguje na změnu úhlu pohledu
     await route.continue();
   });
   try {
-    await page.goto(gameUrl('/?debug&quality=medium&view=300&adapt=0&hour=10'));
+    // Pevné datum a jasno: srovnání barev okna nesmí ovlivnit slunce, mlha ani sníh podle dne.
+    await page.goto(gameUrl('/?debug&quality=medium&view=300&adapt=0&weather=clear&date=2026-11-09&hour=10'));
     await page.waitForFunction(() => window.__ready);
     await page.evaluate(() => {
       __freeze(true);

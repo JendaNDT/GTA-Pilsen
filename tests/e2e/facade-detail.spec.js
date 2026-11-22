@@ -8,7 +8,8 @@ test('E24 – detailní povrchy budov se načtou a vykreslí na střední předv
       errors.push(m.text());
   });
   await page.setViewportSize({ width: 480, height: 320 });
-  await page.goto(gameUrl('/?debug&quality=medium&view=350&hour=10&adapt=0'));
+  // Pevné datum: déšť nebo sníh podle dne přidávají do snímku další efekty.
+  await page.goto(gameUrl('/?debug&quality=medium&view=350&date=2026-11-09&hour=10&adapt=0'));
   await page.waitForFunction(() => window.__ready);
   await page.waitForFunction(
     () =>

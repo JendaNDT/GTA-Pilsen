@@ -7,7 +7,8 @@ for (const [label, road] of [
   ['E18 – kola unesou auto oběma tubusy Valíku', null]
 ]) {
   test(label, async ({ page }, info) => {
-    await page.goto(gameUrl('/?debug&quality=low&adapt=0&hour=10'));
+    // Pevné datum: jízdní řád MHD, hustota provozu i počasí (mokrá vozovka) se mění podle dne.
+    await page.goto(gameUrl('/?debug&quality=low&adapt=0&date=2026-11-09&hour=10'));
     await page.waitForFunction(() => window.__ready);
     const voyages = await page.evaluate(road => {
       const bridgeOnly = road !== null;
@@ -21,6 +22,14 @@ for (const [label, road] of [
       g._enterCar(car);
       g.paused = false;
       g.vehicles.spawnTimer = g.peds.timer = 100000;
+      // Zkouška měří jen povrch mostovky a tunelu. Auto jede po ose silnice, a proto by
+      // zasáhlo protijedoucí vůz v jeho pruhu. O víkendu tak v 10.00 narazí do trolejbusu 12 na Wilsonově mostě.
+      // Stejně jako ve zkouškách srážek proto MHD a cizí auta odstavíme.
+      g.transit._dispatch = () => {};
+      for (const vehicle of g.transit.vehicles) g.transit._dispose(vehicle);
+      g.transit.vehicles.length = 0;
+      g.transit.active.clear();
+      for (const other of [...g.vehicles.cars]) if (other !== car) g.vehicles.remove(other);
       const results = [];
       const routes = bridgeOnly ? [bridge, [...bridge].reverse()] : w.tunnels.map(t => t.points);
       for (const path of routes) {

@@ -2,8 +2,12 @@ import { expect, test, devices } from '@playwright/test';
 import packageInfo from '../../package.json' with { type: 'json' };
 import { gameUrl } from './game-url.js';
 
-async function boot(page) {
-  await page.goto(gameUrl('/?debug&view=620&shadows=0'));
+// Pevné datum a hodina pro zkoušky s herní smyčkou nebo jízdou auta: podle dne se mění
+// jízdní řád MHD, hustota provozu a přilnavost kol na mokru a sněhu.
+const FIXED_DAY = '&date=2026-11-09&hour=10';
+
+async function boot(page, clock = '') {
+  await page.goto(gameUrl('/?debug&view=620&shadows=0' + clock));
   await page.waitForFunction(() => window.__ready);
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
   await page.evaluate(() => window.__freeze(true));
@@ -43,7 +47,7 @@ test('chůze, navigace, auto, vrtulník a dokončení rozvozu', async ({ page })
       failed.push([response.url(), response.status()]);
     }
   });
-  await boot(page);
+  await boot(page, FIXED_DAY);
   const start = await page.evaluate(() => ({ x: __game.player.x, z: __game.player.z }));
   await page.keyboard.down('w');
   await advanceFrames(page, 120);
@@ -215,7 +219,7 @@ test('uložení verze 1 a kontrolní trasy E01', async ({ page }) => {
 
 test('silniční trasy spojují Plzeň, Rokycany, Hrádek a Dobřív v obou směrech', async ({ page }, testInfo) => {
   test.setTimeout(Math.max(test.info().timeout, 210_000));
-  await boot(page);
+  await boot(page, FIXED_DAY);
   await action(page, 'KeyM');
   const query = page.getByRole('searchbox', { name: 'Najít obec, památku nebo zastávku' });
   await query.pressSequentially('rokycany');
@@ -343,7 +347,7 @@ test('silniční trasy spojují Plzeň, Rokycany, Hrádek a Dobřív v obou smě
 });
 
 test('E03 – pěší přístup k hamru, mosty a hranice pro chůzi, jízdu a let', async ({ page }, testInfo) => {
-  await boot(page);
+  await boot(page, FIXED_DAY);
   await action(page, 'KeyM');
   await page.getByRole('searchbox').fill('vodni hamr');
   await page.getByRole('button', { name: 'Vodní hamr Dobřív', exact: true }).click();
@@ -495,7 +499,7 @@ test('E03 – oba tubusy Valíku mají vlastní vozovku, stěny a kameru pod ter
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (msg) => { if (msg.type() === 'error') errors.push(msg.text()); });
-  await boot(page);
+  await boot(page, FIXED_DAY);
   const results = await page.evaluate(() => {
     const g = __game, w = g.world, car = g.player.lastCar;
     g._enterCar(car);
@@ -558,7 +562,7 @@ test('mobilní ovládání pohybuje hráčem a otevírá mapu', async ({ browser
   const context = await browser.newContext({ ...devices['iPhone 13'], viewport: { width: 844, height: 390 } });
   const page = await context.newPage(), errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await boot(page);
+  await boot(page, FIXED_DAY);
   await expect(page.locator('#stick')).toBeVisible();
   expect(await page.evaluate(() => __game.renderer.shadowMap.enabled)).toBe(false);
   expect(await page.evaluate(() => __game.chunks.paintedBuildings === __game.chunks.buildingMat)).toBe(true);

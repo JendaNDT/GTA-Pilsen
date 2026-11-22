@@ -9,7 +9,8 @@ test('E24 – vysoká předvolba přeprojektuje čtvrtinový obraz oblaků @webg
     if (/invalid shader module|validation error|error.*shader|shader.*error/i.test(m.text())) errors.push(m.text());
   });
   await page.setViewportSize({width:400,height:280});
-  await page.goto(gameUrl('/?debug&quality=high&view=300&adapt=0&weather=cloudy&hour=12'));
+  // Pevné datum: poloha slunce a barva oblohy se mění podle dne. Počasí je vynucené.
+  await page.goto(gameUrl('/?debug&quality=high&view=300&adapt=0&weather=cloudy&date=2026-11-09&hour=12'));
   await waitForGame(page);
   const result = await page.evaluate(async () => {
     __freeze(true);

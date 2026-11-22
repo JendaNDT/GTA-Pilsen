@@ -12,7 +12,8 @@ for (const quality of ['medium', 'ultra']) {
       )
         errors.push(m.text());
     });
-    await page.goto(gameUrl('/?debug&adapt=0&view=350&quality=' + quality));
+    // Pevné datum a hodina: noc, mlha a srážky podle dne mění, které efekty se vykreslí a jejichž chyby zkouška hlídá.
+    await page.goto(gameUrl('/?debug&adapt=0&view=350&date=2026-11-09&hour=10&quality=' + quality));
     await page.waitForFunction(() => window.__ready);
     const result = await page.evaluate(async () => {
       __freeze(true);

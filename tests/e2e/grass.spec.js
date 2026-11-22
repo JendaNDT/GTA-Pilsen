@@ -8,7 +8,8 @@ test('E23 – stébla v parku respektují cestu a mizí vysoko nad zemí @webgpu
       errors.push(m.text());
   });
   await page.setViewportSize({ width: 480, height: 320 });
-  await page.goto(gameUrl('/?debug&quality=medium&view=350&adapt=0'));
+  // Pevné datum a hodina: noc, mlha a srážky podle dne mění, které efekty se vykreslí a jejichž chyby zkouška hlídá.
+  await page.goto(gameUrl('/?debug&quality=medium&view=350&adapt=0&date=2026-11-09&hour=10'));
   await page.waitForFunction(() => window.__ready);
   const result = await page.evaluate(async () => {
     __freeze(true);
