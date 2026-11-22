@@ -1,0 +1,158 @@
+{
+ "format": 1,
+ "zdroj": {
+  "commit": "1a1019fa244c4da5ec506dd66481a073f24e409a",
+  "osm": "2026-11-15T01:07:22Z",
+  "popis": "Převedeno z public/ nástrojem tools/godot/export_svet.mjs"
+ },
+ "dlazdice": 256,
+ "sloupce": 131,
+ "radky": 78,
+ "minX": -8960,
+ "minZ": -11008,
+ "hraniceHry": {
+  "minX": -8835,
+  "maxX": 24321,
+  "minZ": -10858,
+  "maxZ": 8842
+ },
+ "pocatek": {
+  "lat": 49.7475,
+  "lon": 13.3776,
+  "kx": 72066,
+  "ky": 111224
+ },
+ "nadmorskaVyska": 313.2,
+ "povrchNad": 0.05,
+ "povrchPx": 256,
+ "paleta": [
+  "#000000",
+  "#9aa873",
+  "#9ea878",
+  "#a1a87d",
+  "#a5a783",
+  "#a8a788",
+  "#aca78d",
+  "#b8aa81",
+  "#4a684b",
+  "#607344",
+  "#577982",
+  "#6a6259",
+  "#92947b",
+  "#7f7257",
+  "#4b4e54",
+  "#b7ae78",
+  "#9dab77",
+  "#56744e",
+  "#55585d",
+  "#9fa975",
+  "#aeb078",
+  "#9ca465",
+  "#bdb47e",
+  "#5a784d",
+  "#aba774",
+  "#a5b581",
+  "#a2ae85",
+  "#6f9353",
+  "#8da16c",
+  "#8a7a5e",
+  "#5e6164",
+  "#507050",
+  "#857f76",
+  "#adb383",
+  "#86b560",
+  "#a39f95",
+  "#8fb25e",
+  "#62656a",
+  "#9a9da1",
+  "#8a8a8a",
+  "#55764e",
+  "#657c43",
+  "#6fae62",
+  "#a69d79",
+  "#a6aa92",
+  "#9bad74",
+  "#83ad62",
+  "#c9b98a",
+  "#7f9f6a",
+  "#8faa6a",
+  "#9b9995",
+  "#8c5b52",
+  "#d9c998",
+  "#a59a84",
+  "#b3ab9c",
+  "#b7b0a2",
+  "#a8a399",
+  "#818071",
+  "#8e8776",
+  "#a9a89d",
+  "#a9a6a3",
+  "#b9ae9c"
+ ],
+ "oblast": null,
+ "pocetDlazdic": 10218,
+ "mapa": {
+  "soubor": "mapa.png",
+  "sirka": 4096,
+  "vyska": 2439,
+  "krok": 8.1875,
+  "x0": -8960,
+  "z0": -11008
+ },
+ "soubory": [
+  {
+   "name": "teren",
+   "bytes": 9477546,
+   "raw": 32818204,
+   "sha256": "185ecbd3bd80bdba1011cfcd31f08ffd0c9bee2830d79971401a0ea698432684"
+  },
+  {
+   "name": "povrch",
+   "bytes": 12526258,
+   "raw": 670137312,
+   "sha256": "4f19cbbc0aca2fef0b7ed225561077afdbd9a5a8327b92fb45f6428221ec623f"
+  },
+  {
+   "name": "silnice",
+   "bytes": 8968741,
+   "raw": 30842136,
+   "sha256": "037f601a60b6cb0c8ae6e4c514d5a9fad72c30527a1735f10ec201e678519d14"
+  },
+  {
+   "name": "budovy",
+   "bytes": 10125019,
+   "raw": 20591428,
+   "sha256": "4412c99df6472a6913a1e7191c1f0002920a45c9a3e96e2a75d5be16b531553c"
+  },
+  {
+   "name": "stromy",
+   "bytes": 7076757,
+   "raw": 7223456,
+   "sha256": "1197edad0a576905acf8f39b309df668169be60245d4fff0097ba8992b356bc4"
+  },
+  {
+   "name": "lampy",
+   "bytes": 1118233,
+   "raw": 1496944,
+   "sha256": "90a0ba376213a40448ff3bc0d558ba71dca8c4816a717cc51cc351c273963d82"
+  },
+  {
+   "name": "ulice",
+   "bytes": 3356530,
+   "raw": 5876664,
+   "sha256": "33c1f0b7cee51934be2cb25a6da7a1c80fd97a43ab4428ebf2e9fed0bc91e436"
+  },
+  {
+   "name": "mesto",
+   "bytes": 6551678,
+   "raw": 42481264,
+   "sha256": "fb454263af6c7714ed0b066bb295614dfe2e0ab6d72005a22aba1b6d08acdbee"
+  },
+  {
+   "name": "konstrukce",
+   "bytes": 498275,
+   "raw": 2249708,
+   "sha256": "6d81583924f177e1054b8142ddeb4ec96bdc95f69c1758202873badbfcd3eca5"
+  }
+ ]
+}

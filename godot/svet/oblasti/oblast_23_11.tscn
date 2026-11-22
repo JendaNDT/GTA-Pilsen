@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_sqgnv"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="2_lo004"]
+
+[node name="Oblast_23_11" type="Node3D" unique_id=2035754273]
+script = ExtResource("1_sqgnv")
+bunka = Vector2i(23, 11)
+stred = Vector2(15104, 768)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=471480790]
+
+[node name="Mista" type="Node3D" parent="." unique_id=692914285]
+
+[node name="Masarykovo_náměstí_(Rokycany)_pamatka-50" type="Node3D" parent="Mista" unique_id=1015522676]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 505.4, 48.17, -232.1)
+script = ExtResource("2_lo004")
+popis = "Historické centrum Rokycan s klasicistní radnicí a kamennou kašnou."
+id = "pamatka-50"
+nazev = "Masarykovo náměstí (Rokycany)"
+poradi = 50
+gen_pozice = Vector3(505.4, 48.17, -232.1)
+gen_nazev = "Masarykovo náměstí (Rokycany)"
+
+[node name="Nádraží_Rokycany_pamatka-51" type="Node3D" parent="Mista" unique_id=1616425396]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 358.4, 54.55, 10.2)
+script = ExtResource("2_lo004")
+popis = "Železniční stanice na trati z Plzně do Prahy. Vedle budovy je autobusové nádraží."
+id = "pamatka-51"
+nazev = "Nádraží Rokycany"
+poradi = 51
+gen_pozice = Vector3(358.4, 54.55, 10.2)
+gen_nazev = "Nádraží Rokycany"

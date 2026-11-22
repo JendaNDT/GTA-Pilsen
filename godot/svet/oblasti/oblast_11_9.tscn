@@ -1,0 +1,83 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_njbbg"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_vxo55"]
+
+[node name="Oblast_11_9" type="Node3D" unique_id=2106633428]
+script = ExtResource("1_njbbg")
+bunka = Vector2i(11, 9)
+stred = Vector2(2816, -1280)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1894146507]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1191478687]
+
+[node name="Doubravka_47344-5" type="Node3D" parent="Zastavky" unique_id=1437719972]
+transform = Transform3D(0.27808154, 0, -0.96055746, 0, 1, 0, 0.96055746, 0, 0.27808154, 484.6, 11.03, -15.9)
+script = ExtResource("2_vxo55")
+id = "47344/5"
+nazev = "Doubravka"
+poradi = 320
+gen_pozice = Vector3(484.6, 11.03, -15.9)
+gen_natoceni = -1.289
+gen_nazev = "Doubravka"
+
+[node name="Habrmannovo_nám__50731-1" type="Node3D" parent="Zastavky" unique_id=307565157]
+transform = Transform3D(0.93833977, 0, -0.34571436, 0, 1, 0, 0.34571436, 0, 0.93833977, 305.9, 13.15, 183.5)
+script = ExtResource("2_vxo55")
+id = "50731/1"
+nazev = "Habrmannovo nám."
+poradi = 321
+gen_pozice = Vector3(305.9, 13.15, 183.5)
+gen_natoceni = -0.353
+gen_nazev = "Habrmannovo nám."
+
+[node name="Poliklinika_Doubravka_57092-3" type="Node3D" parent="Zastavky" unique_id=708257643]
+transform = Transform3D(0.6432966, 0, 0.7656171, 0, 1, 0, -0.7656171, 0, 0.6432966, 38.5, 11.33, 447)
+script = ExtResource("2_vxo55")
+id = "57092/3"
+nazev = "Poliklinika Doubravka"
+poradi = 322
+gen_pozice = Vector3(38.5, 11.33, 447)
+gen_natoceni = 0.872
+gen_nazev = "Poliklinika Doubravka"
+
+[node name="Husův_park_57086-1" type="Node3D" parent="Zastavky" unique_id=1044821912]
+transform = Transform3D(0.31152397, 0, 0.9502383, 0, 1, 0, -0.9502383, 0, 0.31152397, -275.6, -5.89, 210.2)
+script = ExtResource("2_vxo55")
+id = "57086/1"
+nazev = "Husův park"
+poradi = 323
+gen_pozice = Vector3(-275.6, -5.89, 210.2)
+gen_natoceni = 1.254
+gen_nazev = "Husův park"
+
+[node name="Husův_park_57086-2" type="Node3D" parent="Zastavky" unique_id=1555344287]
+transform = Transform3D(0.5511955, 0, 0.83437616, 0, 1, 0, -0.83437616, 0, 0.5511955, -230.3, -3.53, 239.1)
+script = ExtResource("2_vxo55")
+id = "57086/2"
+nazev = "Husův park"
+poradi = 339
+gen_pozice = Vector3(-230.3, -3.53, 239.1)
+gen_natoceni = 0.987
+gen_nazev = "Husův park"
+
+[node name="Poliklinika_Doubravka_57092-2" type="Node3D" parent="Zastavky" unique_id=650849300]
+transform = Transform3D(0.7635522, 0, -0.6457461, 0, 1, 0, 0.6457461, 0, 0.7635522, 132.9, 13.51, 436.8)
+script = ExtResource("2_vxo55")
+id = "57092/2"
+nazev = "Poliklinika Doubravka"
+poradi = 340
+gen_pozice = Vector3(132.9, 13.51, 436.8)
+gen_natoceni = -0.702
+gen_nazev = "Poliklinika Doubravka"
+
+[node name="Habrmannovo_nám__50731-2" type="Node3D" parent="Zastavky" unique_id=1894315945]
+transform = Transform3D(0.9171208, 0, -0.3986093, 0, 1, 0, 0.3986093, 0, 0.9171208, 350.6, 13.22, 110.9)
+script = ExtResource("2_vxo55")
+id = "50731/2"
+nazev = "Habrmannovo nám."
+poradi = 341
+gen_pozice = Vector3(350.6, 13.22, 110.9)
+gen_natoceni = -0.41
+gen_nazev = "Habrmannovo nám."

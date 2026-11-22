@@ -234,3 +234,12 @@ body.touch #prompt { bottom: 46%; }
   #place { top: max(72px, env(safe-area-inset-top)); width: calc(100% - 142px); left: 8px;
     transform: none; text-align: left; }
 }
+
+#photo-controls:not([hidden]) {
+  position: fixed; z-index: 30; bottom: max(1rem, env(safe-area-inset-bottom)); left: 50%;
+  transform: translateX(-50%); display: flex; flex-wrap: wrap; justify-content: center;
+  gap: .5rem; align-items: center; width: max-content; max-width: 94vw;
+  padding: .55rem .8rem; border-radius: .6rem; background: #13222be8; color: white;
+}
+#photo-controls input { vertical-align: middle; width: 6rem; }
+#photo-controls button { cursor: pointer; touch-action: none; }

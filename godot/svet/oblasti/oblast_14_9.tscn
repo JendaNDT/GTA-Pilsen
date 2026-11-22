@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_qdu5p"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_g84b1"]
+
+[node name="Oblast_14_9" type="Node3D" unique_id=455559857]
+script = ExtResource("1_qdu5p")
+bunka = Vector2i(14, 9)
+stred = Vector2(5888, -1280)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=468257771]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=159724855]
+
+[node name="Červený_Hrádek_26966-1" type="Node3D" parent="Zastavky" unique_id=1597918675]
+transform = Transform3D(-0.590924, 0, 0.80672723, 0, 1, 0, -0.80672723, 0, -0.590924, -36.2, 63.15, 101.2)
+script = ExtResource("2_g84b1")
+id = "26966/1"
+nazev = "Červený Hrádek"
+poradi = 458
+gen_pozice = Vector3(-36.2, 63.15, 101.2)
+gen_natoceni = 2.203
+gen_nazev = "Červený Hrádek"
+
+[node name="Červený_Hrádek_26966-2" type="Node3D" parent="Zastavky" unique_id=265741634]
+transform = Transform3D(-0.590924, 0, 0.80672723, 0, 1, 0, -0.80672723, 0, -0.590924, -145.8, 53.47, 243.3)
+script = ExtResource("2_g84b1")
+id = "26966/2"
+nazev = "Červený Hrádek"
+poradi = 459
+gen_pozice = Vector3(-145.8, 53.47, 243.3)
+gen_natoceni = 2.203
+gen_nazev = "Červený Hrádek"

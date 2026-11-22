@@ -12,7 +12,7 @@ const { VehicleManager } = await import('../src/entities/vehicles.js');
 const Jolt = await loadJolt();
 const asphalt = () => 1;
 
-function track(type, angle = 0) {
+function track(type, angle = 0, surface = asphalt) {
   const physics = new PhysicsWorld(Jolt);
   const addBox = (x, y, z, halfSizes, tilt = 0) => {
     const half = new Jolt.Vec3(...halfSizes), pos = new Jolt.RVec3(x, y, z);
@@ -26,7 +26,7 @@ function track(type, angle = 0) {
     vx: 0, vy: 0, vz: 0, speed: 0, steer: 0, health: 100 };
   const vehicle = new PlayerVehicle(physics, car);
   const tick = (throttle = 0, steer = 0, brake = false, arcade = true) => {
-    vehicle.drive(1 / 60, throttle, steer, brake, arcade, asphalt);
+    vehicle.drive(1 / 60, throttle, steer, brake, arcade, surface);
     physics.engine.Step(1 / 60, 1);
     vehicle.read();
   };
@@ -126,6 +126,43 @@ test('malé auto drží na suchém padesátimetrovém kruhu boční zrychlení 0
 });
 
 const { driveRoute } = await import('../src/game/ai-driver.js');
+
+test('dodávka na fiktivní rampě zastaví před čárou a po uvolnění pokračuje', async () => {
+  const { staticMeshBody } = await import('../src/physics/colliders.js');
+  const { Traffic } = await import('../src/game/traffic.js');
+  const physics = new PhysicsWorld(Jolt), dt = 1 / 60;
+  const floor = z => -0.30 * Math.min(12, Math.max(0, z - 12)) - 0.14 * Math.max(0, z - 24);
+  const points = [];
+  for (let z = -4; z < 80; z += 2) {
+    const a = [-8, floor(z), z], b = [8, floor(z), z];
+    const c = [-8, floor(z + 2), z + 2], d = [8, floor(z + 2), z + 2];
+    points.push(...a, ...c, ...b, ...b, ...c, ...d);
+  }
+  staticMeshBody(physics, Float32Array.from(points));
+  const car = { type: CAR_TYPES.van, x: 0, y: 0, z: 0, yaw: 0, vx: 0, vy: 0, vz: 7, speed: 7, steer: 0, health: 100 };
+  const vehicle = new PlayerVehicle(physics, car);
+  const signal = { kind: 'signal' }, line = 27;
+  let red = true, input;
+  const traffic = Object.assign(Object.create(Traffic.prototype), { light: () => red ? 'red' : 'green' });
+  try {
+    for (let i = 0; i < 22 * 60; i++) {
+      red = i < 18 * 60;
+      const gap = line - car.z - car.type.len / 2;
+      let stop = Infinity;
+      const limit = traffic.drivingRule(car, signal, gap - 0.45, dt, 7, [], [], distance => { stop = distance; });
+      input = driveRoute(car, look => ({ x: 0, z: car.z + look, tx: 0, tz: 1 }), limit, stop, input, dt);
+      vehicle.driveAI(input, dt, asphalt);
+      physics.engine.Step(dt, 1);
+      vehicle.read();
+      if (red) assert.ok(car.z + car.type.len / 2 <= line, 'Příď přejela stopčáru.');
+      if (i === 18 * 60 - 1) {
+        assert.ok(gap < 1);
+        assert.ok(Math.abs(car.speed) < 0.05);
+      }
+    }
+    assert.ok(car.z > line + car.type.len);
+  } finally { vehicle.dispose(); physics.dispose(); }
+});
 
 for (const route of ['rovina', 'zatáčka', 'stop čára']) {
   test('řidič AI na fyzikálním voze – ' + route, (t) => {
@@ -245,4 +282,57 @@ test('odklizení nabouraného auta vyžaduje celou minutu stání a celý vůz m
   assert.equal(manager.clearWreck(wreck, 1), true);
   wreck.crashed = false;
   assert.equal(manager.clearWreck(wreck, 100), false);
+});
+
+test('u stojícího vraku se při uspání a odjezdu vynuluje rychlost, pohybující se vrak dál dojíždí', async () => {
+  const { TrafficBodies } = await import('../src/physics/traffic-bodies.js');
+  for (const moving of [false, true]) {
+    const { vehicle, car } = track('sedan', Math.atan(0.13));
+    const physics = vehicle.physics, traffic = new TrafficBodies(physics);
+    Object.assign(car, { mode: 'parked', crashed: true, vx: 0, vy: 0, vz: 0.318, speed: 0.318 });
+    traffic.keepCar(vehicle);
+    try {
+      const id = vehicle.body.GetID();
+      if (moving) {
+        physics.bodies.ActivateBody(id);
+        vehicle.velocity.Set(0, 0, 0.318);
+        physics.bodies.SetLinearVelocity(id, vehicle.velocity);
+      } else {
+        physics.bodies.DeactivateBody(id);
+        traffic.read({});
+        assert.deepEqual([car.speed, car.vx, car.vy, car.vz], [0, 0, 0, 0]);
+      }
+      traffic.selectCars({ focus: { x: 310, z: 310 }, vehicles: { cars: [car] },
+        world: { chunkIndex: () => 0 }, colliders: { tiles: new Set([0]) } });
+      assert.equal(car.physical, null);
+      assert.equal(car.mode, moving ? 'loose' : 'parked');
+      assert.ok(moving ? car.vz > 0.3 : car.speed === 0);
+    } finally {
+      if (car.physical) traffic.removeCar(car);
+      Jolt.destroy(traffic.pos);
+      Jolt.destroy(traffic.rotation);
+      physics.dispose();
+    }
+  }
+});
+
+
+test('na stejné smyšlené rovině vůz při dešti a sněhu potřebuje delší brzdnou dráhu', async () => {
+  const { Weather } = await import('../src/world/weather.js');
+  const distances = [];
+  for (const kind of ['clear', 'rain', 'snow']) {
+    const weather = new Weather(kind);
+    weather.update(Date.UTC(2026, 0, 15) / 1000);
+    const { car, vehicle, tick, close } = track('hatch', 0, (x, z) => weather.surfaceGrip(x, z));
+    try {
+      car.vz = car.speed = 16;
+      vehicle.teleport();
+      const start = car.z;
+      for (let i = 0; i < 900 && car.speed > .7; i++) tick(-1);
+      assert.ok(car.speed <= .7);
+      distances.push(car.z - start);
+    } finally { close(); }
+  }
+  assert.ok(distances[1] > distances[0] * 1.05 && distances[2] > distances[1] * 1.1,
+    'Brzdné dráhy pro sucho, déšť a sníh: ' + distances.map(n => n.toFixed(2)).join(', '));
 });

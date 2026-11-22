@@ -1,0 +1,143 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_kjfhl"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_138ge"]
+
+[node name="Oblast_7_7" type="Node3D" unique_id=117049003]
+script = ExtResource("1_kjfhl")
+bunka = Vector2i(7, 7)
+stred = Vector2(-1280, -3328)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1886756645]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1378164027]
+
+[node name="Severka_57144-2" type="Node3D" parent="Zastavky" unique_id=1546165037]
+transform = Transform3D(0.9122716, 0, -0.4095858, 0, 1, 0, 0.4095858, 0, 0.9122716, 496.6, 64.85, 316.3)
+script = ExtResource("2_138ge")
+id = "57144/2"
+nazev = "Severka"
+poradi = 93
+gen_pozice = Vector3(496.6, 64.85, 316.3)
+gen_natoceni = -0.422
+gen_nazev = "Severka"
+
+[node name="Hokejová_hala_57083-2" type="Node3D" parent="Zastavky" unique_id=1301208727]
+transform = Transform3D(-0.4494983, 0, 0.89328116, 0, 1, 0, -0.89328116, 0, -0.4494983, -451, 96.09, 322.6)
+script = ExtResource("2_138ge")
+id = "57083/2"
+nazev = "Hokejová hala"
+poradi = 213
+gen_pozice = Vector3(-451, 96.09, 322.6)
+gen_natoceni = 2.037
+gen_nazev = "Hokejová hala"
+
+[node name="Krašovská_57101-2" type="Node3D" parent="Zastavky" unique_id=1007284130]
+transform = Transform3D(-0.21061465, 0, 0.97756916, 0, 1, 0, -0.97756916, 0, -0.21061465, -227.6, 92.3, 250.5)
+script = ExtResource("2_138ge")
+id = "57101/2"
+nazev = "Krašovská"
+poradi = 214
+gen_pozice = Vector3(-227.6, 92.3, 250.5)
+gen_natoceni = 1.783
+gen_nazev = "Krašovská"
+
+[node name="Žlutická_53163-2" type="Node3D" parent="Zastavky" unique_id=108320312]
+transform = Transform3D(0.017795414, 0, 0.99984163, 0, 1, 0, -0.99984163, 0, 0.017795414, 199.7, 78.86, 207.2)
+script = ExtResource("2_138ge")
+id = "53163/2"
+nazev = "Žlutická"
+poradi = 215
+gen_pozice = Vector3(199.7, 78.86, 207.2)
+gen_natoceni = 1.553
+gen_nazev = "Žlutická"
+
+[node name="Severka_57144-3" type="Node3D" parent="Zastavky" unique_id=1679983954]
+transform = Transform3D(-0.07214096, 0, -0.99739444, 0, 1, 0, 0.99739444, 0, -0.07214096, 454.2, 67.36, 200.4)
+script = ExtResource("2_138ge")
+id = "57144/3"
+nazev = "Severka"
+poradi = 225
+gen_pozice = Vector3(454.2, 67.36, 200.4)
+gen_natoceni = -1.643
+gen_nazev = "Severka"
+
+[node name="Žlutická_53163-1" type="Node3D" parent="Zastavky" unique_id=258175137]
+transform = Transform3D(0.104604654, 0, -0.99451387, 0, 1, 0, 0.99451387, 0, 0.104604654, 34, 84.17, 191.5)
+script = ExtResource("2_138ge")
+id = "53163/1"
+nazev = "Žlutická"
+poradi = 226
+gen_pozice = Vector3(34, 84.17, 191.5)
+gen_natoceni = -1.466
+gen_nazev = "Žlutická"
+
+[node name="Krašovská_57101-1" type="Node3D" parent="Zastavky" unique_id=1764848501]
+transform = Transform3D(0.24235876, 0, -0.9701867, 0, 1, 0, 0.9701867, 0, 0.24235876, -268, 93.52, 229.3)
+script = ExtResource("2_138ge")
+id = "57101/1"
+nazev = "Krašovská"
+poradi = 227
+gen_pozice = Vector3(-268, 93.52, 229.3)
+gen_natoceni = -1.326
+gen_nazev = "Krašovská"
+
+[node name="Hokejová_hala_57083-1" type="Node3D" parent="Zastavky" unique_id=242283923]
+transform = Transform3D(0.38092488, 0, -0.92460597, 0, 1, 0, 0.92460597, 0, 0.38092488, -389.8, 95.52, 275.1)
+script = ExtResource("2_138ge")
+id = "57083/1"
+nazev = "Hokejová hala"
+poradi = 228
+gen_pozice = Vector3(-389.8, 95.52, 275.1)
+gen_natoceni = -1.18
+gen_nazev = "Hokejová hala"
+
+[node name="Sídliště_Košutka_53170-3" type="Node3D" parent="Zastavky" unique_id=1616969407]
+transform = Transform3D(-0.9692596, 0, -0.24604023, 0, 1, 0, 0.24604023, 0, -0.9692596, -377.5, 99.41, -21)
+script = ExtResource("2_138ge")
+id = "53170/3"
+nazev = "Sídliště Košutka"
+poradi = 303
+gen_pozice = Vector3(-377.5, 99.41, -21)
+gen_natoceni = -2.893
+gen_nazev = "Sídliště Košutka"
+
+[node name="Sídliště_Košutka_53170-4" type="Node3D" parent="Zastavky" unique_id=1616702089]
+transform = Transform3D(0.9684157, 0, 0.2493413, 0, 1, 0, -0.2493413, 0, 0.9684157, -354.4, 99.84, -25.3)
+script = ExtResource("2_138ge")
+id = "53170/4"
+nazev = "Sídliště Košutka"
+poradi = 304
+gen_pozice = Vector3(-354.4, 99.84, -25.3)
+gen_natoceni = 0.252
+gen_nazev = "Sídliště Košutka"
+
+[node name="Sídliště_Košutka_53170-1" type="Node3D" parent="Zastavky" unique_id=1801779064]
+transform = Transform3D(0.9151163, 0, 0.40318993, 0, 1, 0, -0.40318993, 0, 0.9151163, -355.2, 100.75, -58.8)
+script = ExtResource("2_138ge")
+id = "53170/1"
+nazev = "Sídliště Košutka"
+poradi = 393
+gen_pozice = Vector3(-355.2, 100.75, -58.8)
+gen_natoceni = 0.415
+gen_nazev = "Sídliště Košutka"
+
+[node name="Sídliště_Košutka_53170-2" type="Node3D" parent="Zastavky" unique_id=1697673285]
+transform = Transform3D(-0.9630761, 0, -0.2692293, 0, 1, 0, 0.2692293, 0, -0.9630761, -382.5, 99.22, -5.3)
+script = ExtResource("2_138ge")
+id = "53170/2"
+nazev = "Sídliště Košutka"
+poradi = 401
+gen_pozice = Vector3(-382.5, 99.22, -5.3)
+gen_natoceni = -2.869
+gen_nazev = "Sídliště Košutka"
+
+[node name="Severka_57144-4" type="Node3D" parent="Zastavky" unique_id=1050194044]
+transform = Transform3D(0.91186154, 0, -0.41049787, 0, 1, 0, 0.41049787, 0, 0.91186154, 484.4, 64.84, 301.4)
+script = ExtResource("2_138ge")
+id = "57144/4"
+nazev = "Severka"
+poradi = 430
+gen_pozice = Vector3(484.4, 64.84, 301.4)
+gen_natoceni = -0.423
+gen_nazev = "Severka"

@@ -1,3 +1,4 @@
+import { writePack } from './write_pack.mjs';
 // Offline tessellation, footprint matching and asset packing for all four city sheets.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -135,26 +136,6 @@ for (const rec of records) {
   rec.owner = ci;
 }
 for (const [i, index] of agreements) tiles.get(records[index].owner).replaced.push(i);
-
-function writePack(file, fields, arrays) {
-  const arrayInfo = {};
-  const payload = [];
-  let offset = 0;
-  for (const [name, [dtype, array]] of Object.entries(arrays)) {
-    const pad = (4 - offset % 4) % 4;
-    if (pad) { payload.push(Buffer.alloc(pad)); offset += pad; }
-    arrayInfo[name] = { dtype, offset, length: array.length };
-    payload.push(Buffer.from(array.buffer));
-    offset += array.byteLength;
-  }
-  const header = Buffer.from(JSON.stringify({ ...fields, arrays: arrayInfo }));
-  const length = (header.length + 3) & ~3;
-  const prefix = Buffer.alloc(8 + length, 32);
-  prefix.write('PLZ1');
-  prefix.writeUInt32LE(length, 4);
-  header.copy(prefix, 8);
-  fs.writeFileSync(file, Buffer.concat([prefix, ...payload]));
-}
 
 function packMesh(mesh, cx, cz, prefix = '') {
   const index = mesh.p.length / 3 <= 65535 ? Uint16Array : Uint32Array;

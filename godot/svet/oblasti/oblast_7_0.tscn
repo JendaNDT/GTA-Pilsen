@@ -1,0 +1,23 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_2tm4d"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="2_hyytk"]
+
+[node name="Oblast_7_0" type="Node3D" unique_id=1532027442]
+script = ExtResource("1_2tm4d")
+bunka = Vector2i(7, 0)
+stred = Vector2(-1280, -10496)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=242574208]
+
+[node name="Mista" type="Node3D" parent="." unique_id=1218001576]
+
+[node name="Radnice_v_Horní_Bříze_pamatka-47" type="Node3D" parent="Mista" unique_id=231759117]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -203.4, 68.1, 75.7)
+script = ExtResource("2_hyytk")
+popis = "Město známé těžbou kaolinu a keramickými závody."
+id = "pamatka-47"
+nazev = "Radnice v Horní Bříze"
+poradi = 47
+gen_pozice = Vector3(-203.4, 68.1, 75.7)
+gen_nazev = "Radnice v Horní Bříze"

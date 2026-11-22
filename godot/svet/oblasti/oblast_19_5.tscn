@@ -1,0 +1,23 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_dcscb"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_1kiun"]
+
+[node name="Oblast_19_5" type="Node3D" unique_id=1785992896]
+script = ExtResource("1_dcscb")
+bunka = Vector2i(19, 5)
+stred = Vector2(11008, -5376)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1801151435]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1557735915]
+
+[node name="Bušovice_3565-3" type="Node3D" parent="Zastavky" unique_id=1689593889]
+transform = Transform3D(-0.9976484, 0, 0.06853893, 0, 1, 0, -0.06853893, 0, -0.9976484, 97.4, 56.95, -36.3)
+script = ExtResource("2_1kiun")
+id = "3565/3"
+nazev = "Bušovice"
+poradi = 510
+gen_pozice = Vector3(97.4, 56.95, -36.3)
+gen_natoceni = 3.073
+gen_nazev = "Bušovice"

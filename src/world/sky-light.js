@@ -1,9 +1,10 @@
 import * as THREE from 'three/webgpu';
+import { Fn, mix, positionLocal, smoothstep, uniform, vec4 } from 'three/tsl';
 import { SkyMesh } from 'three/addons/objects/SkyMesh.js';
 import { skyProbeDue } from './solar.js';
 
 export class SkyLight {
-  constructor(renderer, scene) {
+  constructor(renderer, scene, { ground = false } = {}) {
     this.renderer = renderer;
     this.scene = scene;
     this.source = new THREE.CubeRenderTarget(32, { type: THREE.HalfFloatType, depthBuffer: false });
@@ -16,6 +17,18 @@ export class SkyLight {
     this.sky.scale.setScalar(40);
     this.sky.frustumCulled = false;
     this.sky.material.depthTest = false;
+    // SkyMesh kreslí pod obzorem stejně jasnou oblohu jako nad ním. Stěny pak dostávaly
+    // silné světlo i odrazy zespodu. S volbou `ground` je pod obzorem tmavší zem.
+    this.ground = null;
+    if (ground) {
+      this.ground = uniform(new THREE.Color(0, 0, 0));
+      const scattering = this.sky.material.colorNode;
+      const groundColor = this.ground;
+      this.sky.material.colorNode = Fn(() => {
+        const below = smoothstep(0.02, -0.12, positionLocal.normalize().y);
+        return vec4(mix(scattering.rgb, groundColor, below), 1);
+      })();
+    }
     this.capture = new THREE.Scene();
     this.capture.add(this.sky);
     this.pmrem = new THREE.PMREMGenerator(renderer);

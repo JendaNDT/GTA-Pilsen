@@ -4,6 +4,10 @@ Skutečná Plzeň jako otevřený svět v prohlížeči. Chodíš, jezdíš aute
 létáš vrtulníkem, rozvážíš jídlo, vozíš zákazníky a ujíždíš policii – to vše v ulicích postavených ze skutečných
 otevřených dat. Běží na počítači i na mobilu, bez instalace.
 
+Ve složce [godot/](godot/README.md) vzniká verze v herním enginu **Godot 4.7.2** ze stejných dat,
+s editorem pro úpravy míst a zastávek. Co z této hry už převedla a jak je to ověřené, ukazuje
+[godot/FUNKCE.md](godot/FUNKCE.md). Webová hra popsaná níže funguje dál beze změny.
+
 ## Co ve hře je
 
 - **Z Plzně až do Dobříva.** Území má 33,2 × 19,7 km (zhruba 653 km²). Do Rokycan dojedeš
@@ -14,12 +18,18 @@ otevřených dat. Běží na počítači i na mobilu, bez instalace.
   tubusy tunelu Valík. Auta se naklánějí podle svahu, do kopce zpomalují. Pěšího hráče u okraje mostu zastaví zábradlí nebo historická kamenná zídka.
 - **Krajina mezi obcemi.** Na vybraných svazích a v údolích má terén hustší výškovou síť.
   Po celé mapě se střídají povrchy polí, luk, lesů, břehů a obcí podle mapových ploch.
+- **Počasí a fotorežim.** Déšť prodlužuje brzdnou dráhu, sníh pokrývá střechy a dlažbu. Počasí můžeš v nastavení přepnout na vždy jasno. Fotorežim zastaví čas a uloží vlastní snímek PNG. [Ovládání a ověření E24](docs/E24.md)
+
+- **Tři úseky města při chůzi.** Na Americké, v Dřevěné a u hlavního nádraží mají vybraná průčelí vlastní přízemí. Dlažba a městský mobiliář respektují prostor pro dopravu a pěší. [Rozsah a předlohy E25](docs/E25.md)
+- **Roční období a noční město.** Druhy stromů se liší tvarem i podzimním listím. Voda pod Wilsonovým mostem proudí, na jezech se tvoří pěna a v noci lampy osvětlují okolí. [Snímky a měření E23](docs/E23.md)
 - **Kompletní síť PMDP.** Tramvaje, trolejbusy i denní a noční autobusy obsluhují 51 linek z vybraného
   jízdního řádu. V mapě najdeš jednotlivá stanoviště a u nich odjezdy s cílem spoje. Do vozu
   nastoupíš klávesou F u otevřených dveří. Tabule zohledňuje polohu viditelných vozů.
 - **Prostorový zvuk.** Každý motor, klakson a hlášení zastávky zní od svého vozidla.
   U vody je slyšet tok nebo jez. U hamru zní mechanismus během práce kol. Zvuk lze vypnout v nastavení.
-- **Auta**: zaparkovaná i v provozu, osm typů, jízdní fyzika se smykem a poškozením.
+- **Auta**: zaparkovaná i v provozu, osm typů, jízdní fyzika se smykem a poškozením. Od střední
+  kvality mají oblou karoserii s podběhy, okny a ráfky, na nízké kvalitě zůstávají jednodušší.
+  [Nové modely aut a MHD](docs/auta-a-mhd.md)
 - **Dopravní značení**: navigace i provoz respektují jednosměrky, zákazy vjezdu a odbočení.
   Auta dávají přednost a zastavují u stopek. Světla pro chodce, auta a MHD na křižovatce mají
   společný herní cyklus. U rychloměru se zobrazuje doložený limit pro směr jízdy.
@@ -43,6 +53,8 @@ otevřených dat. Běží na počítači i na mobilu, bez instalace.
   uzavírky na okraji mapy. Hra střídá den a noc, ukazuje den v týdnu a ukládá datum i postup.
   Hodiny u minimapy lze skrýt v nastavení.
 
+Větev vydání 0.2.0 obsahuje společnou fyziku vozidel v Joltu, kontrolu stažených mapových podkladů a možnost obnovit předchozí vydání se stejným uloženým postupem. [Ověření kandidáta a postup návratu](docs/E26.md)
+
 ## Ovládání
 
 | Klávesa | Co dělá |
@@ -51,14 +63,46 @@ otevřených dat. Běží na počítači i na mobilu, bez instalace.
 | Shift | běh (ve vrtulníku klesání) |
 | Mezerník | ruční brzda, skok, ve vrtulníku stoupání |
 | F nebo E | nastoupit / vystoupit, ve směně MHD dveře |
+| L | přepnout v autě dálková světla |
+| O | fotorežim, uložit snímek lze i přes menu na telefonu |
 | J | vzít rychlý rozvoz jídla nebo zrušit rozpracovanou zakázku |
 | M | velká mapa (vyhledej místo nebo kliknutím nastav cíl) |
-| C · H · R | kamera · klakson · vrátit na silnici |
+| C · H · L · R | kamera · klakson · dálková světla · vrátit na silnici |
+| O | otevřít nebo zavřít fotorežim |
+| F8 · F9 | v režimu `?debug` zobrazit kolize nebo otevřít měření výkonu |
 | N · Esc | posunout čas o 3 hodiny · menu se zakázkami, garáží a směnami MHD |
 
 Na dotykové obrazovce se objeví páčka a tlačítka. Telefon automaticky použije nižší grafickou
 kvalitu. Na počítači ji lze zapnout parametrem `?quality=low`. Ve vyšší kvalitě zobrazí `?wet=1`
 tlumené odlesky na mokré dlažbě v obou ukázkových lokalitách.
+
+Od vzhledové zkoušky z listopadu 2026 má den silnější slunce, čitelné stíny a sytější omítky
+a fasády už neodrážejí oblohu jako mléčný závoj. Původní světlo pro porovnání zapne parametr
+`?vzhled=puvodni`. [Protokol vzhledové zkoušky](docs/vzhledova-zkouska.md)
+
+Silnice mají od listopadu 2026 hladký podélný profil. Dřív kopírovaly trojúhelníky terénu,
+takže auto v kopcích drncalo a terén místy prorůstal asfaltem. Terén pod vozovkou se profilu
+přizpůsobí, okolí mostů a ručně upravená místa zůstávají beze změny. Původní silnice pro
+porovnání zapne parametr `?silnice=puvodni`. [Rozbor, měření a snímky](docs/silnice.md)
+
+Městské ulice mají od střední předvolby chodník s obrubníkem 10 cm nad asfaltem. Auto o obrubník
+drcne a chodci chodí po chodníku. Na nízké předvolbě zůstává chodník v textuře země, parametr
+`?chodniky=0` ho vypne i jinde. [Popis a snímky](docs/chodniky.md)
+
+Rohy křižovatek a ostré ohyby silnic jsou zaoblené obloukem o poloměru 4–12 m podle šířky ulic,
+obrubník i chodník ho obcházejí. Líc obrubníku je zkosený, takže při seříznutí zatáčky auto
+přes obrubník přejede. Auta řízená hrou v rozích odbočují vpravo plynulejším obloukem podél
+obrubníku. Ostré rohy pro porovnání vrátí `?rohy=0`. [Popis a snímky](docs/rohy.md)
+
+Silnice jsou napříč skloněné podle svahu (nejvýš 4 %) a zatáčky mimo zástavbu jsou klopené
+(nejvýš 6 %), aby v nich auto lépe drželo. Navazující silnice mají stejný sklon, takže
+v křižovatkách méně drncá. Vodorovné silnice pro porovnání vrátí `?sklon=0`.
+[Popis, měření a snímky](docs/sklon.md)
+
+Silnice na hraně břehu (Anglické a Denisovo nábřeží, Mlýnské nábřeží, Karlovarská nad zatopeným
+lomem a několik cest u vody) leží na ulici nad nábřežní zdí. Výškový model po 8 m tam zeď
+rozmazal do svahu přes celou vozovku, takže Anglické nábřeží dřív leželo v jámě až 6 m pod
+ulicí. Původní profil pro porovnání vrátí `?nabrezi=0`. [Rozbor a měření](docs/nabrezi.md)
 
 Hra ve výchozím nastavení používá aktuální čas v Plzni. V **Nastavení → Herní čas**
 můžeš zadat konkrétní hodinu a minutu. Herní čas pak plyne stejným tempem jako skutečný
@@ -88,6 +132,12 @@ npm run dev
 ```
 
 Hra pak běží na adrese, kterou příkaz vypíše (obvykle http://localhost:5173).
+
+**Na telefonu** připoj telefon i počítač ke stejné domácí Wi-Fi. Na počítači spusť hru
+příkazem `npm run dev` podle postupu výše a nech terminál otevřený. Do prohlížeče
+v telefonu opiš celou adresu z řádku **Network**, včetně čísla portu. Otoč telefon
+na šířku a klepni na **Hrát**. Objeví se dotyková páčka a tlačítko mapy.
+Spouštěč `Spustit hru.command` na Macu používá adresu dostupnou jen z toho Macu.
 
 Verzi pro nasazení na web vytvoří:
 
@@ -129,8 +179,7 @@ volba **Automaticky** přizpůsobí kvalitu zařízení podle prvních deseti se
 [E18 přidává odpružení, pneumatiky a automatickou převodovku auta](docs/E18.md).
 V **Nastavení → Řízení** si zvolíš arkádový nebo realistický režim. Klávesa **R**
 vrátí auto na nejbližší silnici. Pokud hru uložíš za volantem, při návratu
-najdeš stojící auto na uloženém místě. Původní jízdu můžeš porovnat přidáním
-`?physics=old` k adrese hry. V režimu `?debug` zobrazí **F8** povrchy pro
+najdeš stojící auto na uloženém místě. V režimu `?debug` zobrazí **F8** povrchy pro
 fyziku a **F9** měření včetně otáček a prokluzu jednotlivých kol.
 
 [E19 přidává fyzikální chůzi a pády postav](docs/E19.md). Pěšky vyjdeš schod,
@@ -140,6 +189,10 @@ ve směru nárazu a zase vstane. Volba **Nastavení → Fyzikální pády postav
 se zachová i při dalším spuštění hry.
 
 V E20 můžeš autem odstrčit zaparkovaný vůz nebo pocítit náraz tramvaje. Vrtulník při dlouhém přímém letu dosáhne přibližně 300 km/h. Když sjedeš autem do Radbuzy u Wilsonova mostu, vůz chvíli plave, nabere vodu a dosedne na mělčinu. Můžeš vystoupit a doplavat ke břehu. [Protokol E20, snímky a zkoušky ve hře](docs/E20.md).
+
+Na vývojové větvi E21 reagují na náraz také lampy, dopravní značky, semafory a zábradlí. Auto se promáčkne v místě nárazu a může ztratit díl. Garáž si pamatuje poškození vlastního vozu a umí ho opravit. [Protokol E21 a snímky](docs/E21.md).
+
+Na větvi E22 mají Wilsonův most a vybrané lávky a železniční mosty půdorys podle městského měření. Na nábřeží a ve svazích přibyly zdi, pilíře a protihlukové stěny. U vody se vykreslují čtyři části jezů. Měřenou vrstvu lze vypnout parametrem `?structures=0`. [Srovnávací snímky, inventura a ověření E22](docs/E22.md).
 
 Regresní testy kolizí, terénu, silničního grafu a distribuovaných dat:
 
@@ -173,8 +226,7 @@ kompatibility spusť na Node.js 20.19, 22.12 a 24 příkazy `npm ci`, `npm test`
 `npm run test:python`, `python3 -m py_compile tools/*.py`,
 `npm audit --audit-level=moderate` a `npm run build`. Testy JavaScriptu zahrnují
 i odkazy v dokumentaci. Prohlížečové testy spusť na Node.js 24 podle postupu výše.
-V E18 ověř na Macu také původní fyziku příkazem
-`PLZEN_TEST_PHYSICS=old npm run test:e2e -- --trace off`. Snímky při selhání najdeš
+Snímky při selhání najdeš
 v místní složce `test-results/`.
 
 ## Odkud jsou data a jak je obnovit
@@ -294,10 +346,14 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
   Pro další ulice a pro chodce hra používá odhad. [Dopravní detektory](https://opendata.plzen.eu/public/opendata/detail/160) ·
   [Hodinové profily PoliVisu](https://polivisuapi.plzen.eu/api/)
 
-- Měřené budovy centra a profil lávky U Prazdroje vycházejí z dat města Plzně z roku 2024 od GEOREAL – Vybíral. Plochy jsou
+- Fotografické materiály fasád poskytla knihovna Poly Haven (CC0). Normály, drsnost a barva stěn se balí do atlasů spolu s pěti vlastními vzory střech. Projekt vytvořil také osm variant interiérů za okny. [Sedm materiálů a otisky](tools/facade-textures.json) · [Licence Poly Haven](https://polyhaven.com/license)
+- Čtyři modely stromů a atlas jejich sezónních pohledů vznikají přímo z geometrie projektu. Druh olistění vychází ze značek OpenStreetMap pod licencí ODbL. [Převod značek](tools/build_tree_types.py) · [Vykreslení atlasu](tools/build_impostors.mjs)
+- Detail trávy, hlíny, štěrku, brázd, písku a lesního listí používá fotografie a normálové mapy z knihovny Poly Haven pod licencí CC0. [Šest použitých materiálů a jejich otisky](tools/terrain-textures.json) · [Licence Poly Haven](https://polyhaven.com/license)
+- Měřené budovy centra, stavební objekty včetně mostů a jezů a profil lávky U Prazdroje vycházejí z dat města Plzně z roku 2024 od GEOREAL – Vybíral. Plochy jsou
   převedené do herních souřadnic a doplněné vlastními materiály. Hranice městských částí určují
   místní palety. [3D budovy centra Plzně](https://opendata.plzen.eu/public/opendata/detail/37) ·
   [Městské části](https://opendata.plzen.eu/public/opendata/detail/108)
+  Město u sady 3D uvádí, že neobsahuje autorská díla a databáze nepodléhá autorskoprávní ochraně ani zvláštnímu právu pořizovatele. [Podmínky užití v katalogu města](https://opendata.plzen.eu/public/opendata/dataset/37)
 - Odjezdy tramvají, trolejbusů a autobusů vycházejí z GTFS Plzeňských městských dopravních podniků, a.s.
   Hra přiřazuje zastávky ke kolejím a silnicím OpenStreetMap a ořezává spoje na okraji herního území.
   [Jízdní řády PMDP](https://opendata.plzen.eu/public/opendata/detail/187) ·

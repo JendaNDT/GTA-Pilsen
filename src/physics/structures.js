@@ -1,6 +1,7 @@
+import {segmentHalfWidth} from '../world/rail-deck.js';
 import { CHUNK, COLL_CELL, RF } from '../config.js';
 import { prazdrojThickness } from '../world/prazdroj-bridge.js';
-import { BRIDGE_THICKNESS, densePath, pathNormal } from '../world/road-profile.js';
+import { BRIDGE_THICKNESS, densePath, offsetDeck, pathNormal } from '../world/road-profile.js';
 import { TUNNEL_HEIGHT } from '../world/tunnels.js';
 
 export class RoadStructures {
@@ -11,20 +12,21 @@ export class RoadStructures {
       const flags = world.r.flags[i];
       if (flags & RF.SHARED_DECK || (!(flags & RF.BRIDGE) && !world.rondel?.elevated.has(i))) continue;
       const a = world.rOff[i], b = world.rOff[i + 1] - 1;
-      this.strip(densePath(world.rpx, world.rpz, world.rpy, a, b, a, b, 4), world.deckHalfWidth(i),
+      const path = densePath(world.rpx, world.rpz, world.rpy, a, b, a, b, 4);
+      this.strip(offsetDeck(path, world.deckCalibrations.get(i)), world.deckHalfWidth(i),
         null, i === world.prazdrojRoad ? prazdrojThickness : undefined);
     }
+    if (world.roadApproach) this.strip(world.roadApproach.path, world.roadApproach.halfWidth, null);
     for (const rail of world.rails) if (rail.y) {
       const xs = [], zs = [];
       for (let i = 0; i < rail.pts.length; i += 2) { xs.push(rail.pts[i]); zs.push(rail.pts[i + 1]); }
-      this.strip(densePath(xs, zs, rail.y, 0, xs.length - 1, 0, xs.length - 1, 4), rail.cls === 1 ? 2.4 : 1.7);
+      this.strip(rail.deck ?? densePath(xs, zs, rail.y, 0, xs.length - 1, 0, xs.length - 1, 4), rail.cls === 1 ? 2.4 : 1.7);
     }
     for (const tunnel of world.tunnels) {
       const pts = tunnel.points, end = pts.length - 1;
       const path = densePath(pts.map((p) => p.x), pts.map((p) => p.z), pts.map((p) => p.y), 0, end, 0, end, 4);
       this.strip(path, tunnel.halfWidth, tunnel);
     }
-    for (const closure of world.roadClosures) this.barrier(closure);
   }
 
   quad(a, b, c, d) {
@@ -50,7 +52,7 @@ export class RoadStructures {
       const t = ((x - ax) * dx + (z - az) * dz) / length2;
       if (t < -0.0001 || t > 1.0001) continue;
       const d2 = (ax + t * dx - x) ** 2 + (az + t * dz - z) ** 2;
-      if (d2 > segments[s + 6] ** 2) continue;
+      if (d2 > segmentHalfWidth(w,s,t) ** 2) continue;
       const height = segments[s + 2] + t * (segments[s + 5] - segments[s + 2]);
       if (Math.abs(height - y) > 0.5) continue;
       const weight = 1 / (0.0025 + d2) ** 2;
@@ -88,7 +90,8 @@ export class RoadStructures {
       const { x, z, scale } = pathNormal(path, k);
       const point = (side, lift) => [path.x[k] + x * side * scale, path.y[k] + lift, path.z[k] + z * side * scale];
       const h = tunnel ? TUNNEL_HEIGHT : -thickness;
-      const section = [point(-width, 0), point(width, 0), point(-width, h), point(width, h)];
+      const hw = path.widths?.[k] ?? width;
+      const section = [point(-hw, 0), point(hw, 0), point(-hw, h), point(hw, h)];
       if (previous) {
         const [a, b, c, d] = previous, [e, f, g, j] = section;
         if (tunnel) this.quad(a, b, f, e);
@@ -108,22 +111,6 @@ export class RoadStructures {
       }
       previous = section;
     }
-  }
-
-  barrier([x, z, dx, dz, width]) {
-    const point = (side, ahead, lift) => {
-      const px = x - dz * side + dx * ahead, pz = z + dx * side + dz * ahead;
-      return [px, this.world.heightAt(px, pz) + lift, pz];
-    };
-    const half = (width + 0.5) / 2;
-    const ends = [[-half, -0.24], [-half, 0.24], [half, 0.24], [half, -0.24]];
-    const top = ends.map(([s, a]) => point(s, a, 0.88));
-    const base = ends.map(([s, a]) => point(s, a, 0.28));
-    for (let i = 0; i < 4; i++) {
-      const j = (i + 1) % 4;
-      this.quad(base[j], base[i], top[i], top[j]);
-    }
-    this.quad(top[3], top[2], top[1], top[0]);
   }
 
   emit(ci, triangle) {

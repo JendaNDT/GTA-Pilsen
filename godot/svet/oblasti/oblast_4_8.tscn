@@ -1,0 +1,63 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_n3t1u"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_38kbi"]
+
+[node name="Oblast_4_8" type="Node3D" unique_id=1730707422]
+script = ExtResource("1_n3t1u")
+bunka = Vector2i(4, 8)
+stred = Vector2(-4352, -2304)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1250627894]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=574285215]
+
+[node name="Pod_Kyjovem_60204-2" type="Node3D" parent="Zastavky" unique_id=1478593661]
+transform = Transform3D(-0.46195993, 0, -0.8869008, 0, 1, 0, 0.8869008, 0, -0.46195993, -84.4, 0.21, 275.3)
+script = ExtResource("2_38kbi")
+id = "60204/2"
+nazev = "Pod Kyjovem"
+poradi = 209
+gen_pozice = Vector3(-84.4, 0.21, 275.3)
+gen_natoceni = -2.051
+gen_nazev = "Pod Kyjovem"
+
+[node name="Radčice_26976-2" type="Node3D" parent="Zastavky" unique_id=550849023]
+transform = Transform3D(-0.3794518, 0, -0.9252115, 0, 1, 0, 0.9252115, 0, -0.3794518, 472.7, 3.75, 507.8)
+script = ExtResource("2_38kbi")
+id = "26976/2"
+nazev = "Radčice"
+poradi = 210
+gen_pozice = Vector3(472.7, 3.75, 507.8)
+gen_natoceni = -1.96
+gen_nazev = "Radčice"
+
+[node name="Radčice_26976-1" type="Node3D" parent="Zastavky" unique_id=2134880464]
+transform = Transform3D(-0.32139632, 0, -0.9469448, 0, 1, 0, 0.9469448, 0, -0.32139632, 492.9, 3.67, 504.5)
+script = ExtResource("2_38kbi")
+id = "26976/1"
+nazev = "Radčice"
+poradi = 244
+gen_pozice = Vector3(492.9, 3.67, 504.5)
+gen_natoceni = -1.898
+gen_nazev = "Radčice"
+
+[node name="Pod_Kyjovem_60204-1" type="Node3D" parent="Zastavky" unique_id=1963492334]
+transform = Transform3D(-0.46195993, 0, -0.8869008, 0, 1, 0, 0.8869008, 0, -0.46195993, -115.4, 0.76, 248.6)
+script = ExtResource("2_38kbi")
+id = "60204/1"
+nazev = "Pod Kyjovem"
+poradi = 245
+gen_pozice = Vector3(-115.4, 0.76, 248.6)
+gen_natoceni = -2.051
+gen_nazev = "Pod Kyjovem"
+
+[node name="Radčice_26976-3" type="Node3D" parent="Zastavky" unique_id=364451198]
+transform = Transform3D(-0.3794518, 0, -0.9252115, 0, 1, 0, 0.9252115, 0, -0.3794518, 475.5, 3.75, 507.8)
+script = ExtResource("2_38kbi")
+id = "26976/3"
+nazev = "Radčice"
+poradi = 562
+gen_pozice = Vector3(475.5, 3.75, 507.8)
+gen_natoceni = -1.96
+gen_nazev = "Radčice"

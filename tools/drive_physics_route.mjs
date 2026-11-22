@@ -1,38 +1,75 @@
 // Souvislý průjezd hráčova vozu po trasách E12. Pro opakovatelný test povrchu
 // jede vůz sám. Řidič smí používat pouze volant, plyn, brzdu a zpátečku.
 import { chromium } from '@playwright/test';
+import { webgpuFlags } from '../tests/e2e/browser-flags.js';
+import { appendFile } from 'node:fs/promises';
+import assert from 'node:assert/strict';
+
+const loops = process.argv.includes('--okruhy');
+const log = process.argv.find(arg => arg.startsWith('--zaznam='))?.slice(9);
 
 const target = new URL(process.argv[2] ?? 'http://127.0.0.1:4173/');
-for (const [key, value] of Object.entries({ debug: '', quality: 'low', adapt: '0', hour: '10' })) target.searchParams.set(key, value);
-const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH });
+for (const [key, value] of Object.entries({ debug: '', quality: 'low', adapt: '0', date: '2026-11-17', hour: '10', weather: 'clear' })) target.searchParams.set(key, value);
+const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
+  ...(process.argv.includes('--software-webgpu') && { channel: 'chromium', args: webgpuFlags }) });
 try {
-  const page = await browser.newPage();
+  const page = await browser.newPage(loops ? { viewport: { width: 320, height: 192 } } : {});
+  page.setDefaultTimeout(300000);
+  if (loops) await page.exposeFunction('recordDrive', async entry => {
+    const line = JSON.stringify(entry) + '\n';
+    if (log) await appendFile(log, line);
+    else process.stdout.write(line);
+  });
+  if (loops) await page.addInitScript(() => {
+    let seed = 1729;
+    Math.random = () => ((seed = (Math.imul(1664525, seed) + 1013904223) >>> 0) / 2 ** 32);
+  });
   await page.goto(target.href);
   await page.waitForFunction(() => window.__ready);
-  const report = await page.evaluate((reverse) => {
+  const report = await page.evaluate(async ({reverse,loops}) => {
     const game = window.__game, world = game.world, car = game.player.lastCar;
-    const locations = [[game.player.x, game.player.z], world.meta.places.find((p) => p[2] === 'Klabava'),
-      world.meta.landmarks.find((p) => p[2] === 'Masarykovo náměstí (Rokycany)'),
-      world.meta.places.find((p) => p[2] === 'Hrádek'), world.meta.walkingApproaches['Vodní hamr Dobřív']];
+    const city = [game.player.x, game.player.z];
+    const place = (name) => world.meta.places.find(p => p[2] === name);
+    // Dva průjezdní body v Dobřívě dovolují objet blok a vrátit se bez otáčení na místě.
+    const locations = loops
+      ? [city, place('Rokycany'), [22462.5, 3546.4], [22336.9, 3448.8], city]
+      : [city, place('Klabava'), world.meta.landmarks.find(p => p[2] === 'Masarykovo náměstí (Rokycany)'),
+        place('Hrádek'), world.meta.walkingApproaches['Vodní hamr Dobřív']];
     if (reverse) locations.reverse();
     const nodes = locations.map(([x, z]) => world.nearestNode(x, z, 250));
+    const ends = [], samples = [];
+    if (loops) window.__freeze(true);
     const points = [];
-    for (let leg = 1; leg < nodes.length; leg++) {
-      for (const edge of world.findPath(nodes[leg - 1], nodes[leg], 12000)) {
+    const cruise = loops ? 7.5 : 14;
+    const legs = nodes.length - 1;
+    let incoming = -1;
+    for (let leg = 0; leg < (loops ? 4 : 1) * legs; leg++) {
+      const i = leg % legs;
+      const route = world.findPath(nodes[i], nodes[i + 1], 30000, loops ? incoming : -1);
+      if (!route?.length) throw new Error('Plánovač nenašel úsek ' + (i + 1));
+      incoming = route.at(-1);
+      for (const edge of route) {
+        const lane = loops ? Math.min(0.6, game.vehicles._laneFor(edge, 1)) : 0;
         for (let d = 0; d < world.eLen[edge]; d += 2) {
-          const p = world.edgePoint(edge, d, 0, {});
+          const p = world.edgePoint(edge, d, lane, {});
+          // U odboček nech místnímu provozu prostor a brzdi už před křižovatkou.
+          const junction = loops && ((d < 12 && world.junctionArms[world.eFrom[edge]] > 2)
+            || (world.eLen[edge] - d < 12 && world.junctionArms[world.eTo[edge]] > 2));
+          p.limit = junction ? 4 : cruise;
           if (!points.length || Math.hypot(p.x - points.at(-1).x, p.z - points.at(-1).z) > 0.8) points.push(p);
         }
       }
+      if (loops && (leg + 1) % legs === 0) ends.push(points.length - 1);
     }
+    if (points.length < 2) throw new Error('Plánovač nenašel trasu pro zkušební jízdu.');
     const end = points.at(-1);
     end.safeSpeed = 0;
     for (let i = points.length - 2; i >= 0; i--) {
       const p = points[i], next = points[i + 1];
       const length = Math.hypot(p.x - next.x, p.z - next.z);
       const turn = Math.acos(Math.max(-1, Math.min(1, p.tx * next.tx + p.tz * next.tz)));
-      p.safeSpeed = Math.min(14, Math.sqrt(next.safeSpeed ** 2 + 5 * length),
-        Math.sqrt(2.5 * Math.max(0.4, length) / Math.max(0.001, turn)));
+      p.safeSpeed = Math.min(p.limit, Math.sqrt(next.safeSpeed ** 2 + (loops ? 3 : 5) * length),
+        Math.sqrt((loops ? 1.8 : 2.5) * Math.max(0.4, length) / Math.max(0.001, turn)));
     }
 
     const start = points[0];
@@ -47,56 +84,133 @@ try {
     const vehicle = game.driver;
     const input = (value) => Math.max(-1, Math.min(1, value));
     let index = 0, distance = 0, maxDrop = 0, lastAdvance = 0, reverseTurn = 0, backing = 0, attempts = 0;
-    for (let tick = 0; tick < 300000; tick++) {
+    let recoveryStart = 0, repeatedAttempts = 0, recoveryDistance = 0;
+    const recent = [];
+    for (let tick = 0; tick < (loops ? 8 * 300000 : 300000); tick++) {
       let nearest = index, best = Infinity;
       for (let k = index; k < Math.min(index + 16, points.length); k++) {
         const d = Math.hypot(points[k].x - car.x, points[k].z - car.z);
         if (d < best) { best = d; nearest = k; }
       }
-      if (nearest !== index) lastAdvance = tick;
+      if (nearest !== index) {
+        lastAdvance = tick;
+        recoveryDistance = 0;
+      } else if (loops && !backing && recoveryDistance - best >= 0.5) {
+        // Po couvání se vůz nejprve vrací k poslednímu bodu. I to je měřitelný postup.
+        lastAdvance = tick;
+        recoveryDistance = best;
+      }
       index = nearest;
       let aim = index;
       const look = 3.5 + Math.max(0, car.speed) * 0.32;
       while (aim + 1 < points.length && Math.hypot(points[aim].x - car.x, points[aim].z - car.z) < look) aim++;
+      // Po vyjetí ze středu směruj před vůz po trase, aby se neotáčel k bodu za sebou.
+      if (loops && best > 2.5) {
+        aim = index;
+        let ahead = 0;
+        while (aim + 1 < points.length && ahead < look) {
+          ahead += Math.hypot(points[aim + 1].x - points[aim].x, points[aim + 1].z - points[aim].z);
+          aim++;
+        }
+      }
       const dx = points[aim].x - car.x, dz = points[aim].z - car.z;
       const relativeAngle = (yaw) => Math.atan2(Math.sin(yaw - car.yaw), Math.cos(yaw - car.yaw));
       const angle = relativeAngle(Math.atan2(dx, dz));
       const limit = Math.min(1, 0.13 + 32 / (32 + car.speed ** 2));
-      let steer = input(-Math.atan2(2 * vehicle.spec.wheelbase * Math.sin(angle), Math.hypot(dx, dz)) / (0.62 * limit));
+      // Mimo pruh dlouhá spojnice k trase příliš rozevře oblouk návratu.
+      const targetDistance = Math.hypot(dx, dz);
+      const turnDistance = loops && best > 2.5 ? Math.min(targetDistance, look) : targetDistance;
+      let steer = input(-Math.atan2(2 * vehicle.spec.wheelbase * Math.sin(angle), turnDistance) / (0.62 * limit));
       const ahead = points[Math.min(points.length - 1, index + 8)];
       const bend = Math.abs(relativeAngle(Math.atan2(ahead.tx, ahead.tz)));
-      const speed = Math.min(points[index].safeSpeed, 14 / (1 + 3 * bend));
+      const speed = Math.min(points[index].safeSpeed, cruise / (1 + 3 * bend), loops && best > 2.5 ? 2.5 : Infinity);
       let throttle = input((speed - car.speed) * 0.6);
-      if (!reverseTurn && Math.abs(angle) > 2.55) reverseTurn = Math.sign(angle);
+      if (!reverseTurn && Math.abs(angle) > (loops ? 2.1 : 2.55)) reverseTurn = Math.sign(angle);
       if (reverseTurn && Math.abs(angle) < 1.65) reverseTurn = 0;
-      if (reverseTurn && best < 7) { steer = reverseTurn; throttle = input((-2.5 - car.speed) * 0.85); }
-      if (tick - lastAdvance > 100 && Math.abs(car.speed) < 0.45 && !backing) {
-        backing = 100; lastAdvance = tick; attempts++;
+      if (reverseTurn && (loops || best < 7)) { steer = reverseTurn; throttle = input((-2.5 - car.speed) * 0.85); }
+      const canBack = best < 7 && (loops || Math.abs(angle) > 0.35);
+      if (backing && !canBack) {
+        // Při dosažení meze dostane vůz stejný čas na jízdu vpřed jako po celém couvání.
+        backing = 0;
+        if (loops) { lastAdvance = tick; recoveryDistance = best; }
       }
-      if (backing && best < 7 && Math.abs(angle) > 0.35) {
-        backing--; throttle = input((-3.5 - car.speed) * 0.8); steer = Math.sign(angle);
-      } else backing = 0;
+      if (canBack && tick - lastAdvance > 100 && Math.abs(car.speed) < 0.45 && !backing) {
+        backing = 100; lastAdvance = tick; attempts++;
+        if (index - recoveryStart > 20) { recoveryStart = index; repeatedAttempts = 0; }
+        repeatedAttempts++;
+      }
+      // Rozjetí vzad potřebuje několik kroků i s volantem blízko přímého směru.
+      if (backing) {
+        backing--;
+        if (loops) {
+          recoveryDistance = best;
+          // Čas na další pokus počítáme od přeřazení vpřed, až po dokončení couvání.
+          if (!backing) lastAdvance = tick;
+        }
+        throttle = input((-3.5 - car.speed) * 0.8);
+        steer = loops ? input(angle) : Math.sign(angle);
+      }
 
       const { x, z } = car;
-      game.colliders.update(x, z);
-      vehicle.drive(1 / 60, throttle, steer, false, true, game.tireSurface);
-      game.physics.engine.Step(1 / 60, 1);
-      vehicle.read();
-      if (vehicle.impactSpeed > 0) game.onCrash(car, vehicle.applyImpact(), null);
+      if (loops) {
+        window.__setInput(steer, throttle);
+        game.update(1 / 60);
+        if (tick % 300 === 0) {
+          game.render();
+          await new Promise(resolve => setTimeout(resolve, 0));
+        }
+      } else {
+        game.colliders.update(x, z);
+        vehicle.drive(1 / 60, throttle, steer, false, true, game.tireSurface);
+        game.physics.engine.Step(1 / 60, 1);
+        vehicle.read();
+        if (vehicle.impactSpeed > 0) game.onCrash(car, vehicle.applyImpact(), null);
+      }
       maxDrop = Math.max(maxDrop, world.groundY(car.x, car.z, car.y + 1) - car.y);
       distance += Math.hypot(car.x - x, car.z - z);
       const seconds = (tick + 1) / 60;
-      if (game.car !== car || tick - lastAdvance > 360 || attempts > 25 || best > 12 || maxDrop > 1) {
-        throw new Error(JSON.stringify({ seconds, distance, maxDrop, x: car.x, z: car.z, best, attempts }));
+      if (loops && tick % 60 === 0) {
+        const point = points[index];
+        const lateralSpeed = car.vx * point.tz - car.vz * point.tx;
+        recent.push({ index, offset: best, speed: car.speed, lateralSpeed, angle, steer, throttle, desired: speed, backing });
+        if (recent.length > 8) recent.shift();
+      }
+      if (game.car !== car || tick - lastAdvance > 360 || (loops ? repeatedAttempts : attempts) > 25 || best > 12 || maxDrop > 1) {
+        throw new Error(JSON.stringify({ seconds, distance, maxDrop, x: car.x, z: car.z, best, attempts, index, aim, angle,
+          speed: car.speed, desired: speed, steer, health: car.health, target: [points[aim].x, points[aim].z],
+          driving: game.car === car, mode: game.mode, floodTime: car.floodTime, ticksSinceAdvance: tick - lastAdvance,
+          repeatedAttempts, recent }));
+      }
+      if (loops && tick % 3600 === 0) {
+        await window.recordDrive({ kind: 'prujezd', seconds, distance, maxDrop, index, attempts, health: car.health });
+      }
+      if (loops && index >= ends[samples.length] - 2) {
+        game.render();
+        await game.renderer.backend.device?.queue.onSubmittedWorkDone();
+        const { textures, geometries } = window.__perf.renderStats();
+        const sample = {
+          kind: 'navrat', lap: samples.length + 1, seconds, distance, maxDrop, health: car.health, textures, geometries,
+          bodies: game.physics.system.GetNumBodies(), debris: game.physics.debris.items.size,
+        };
+        samples.push(sample);
+        await window.recordDrive(sample);
       }
       if (index >= points.length - 2 && Math.hypot(car.x - end.x, car.z - end.z) < 4) {
-        return { reverse, seconds, distance, maxDrop, health: car.health, attempts };
+        return { reverse, seconds, distance, maxDrop, health: car.health, attempts, ...(loops && {samples}) };
       }
     }
     throw new Error('Řidič nedojel do cíle ve stanoveném čase.');
-  }, process.argv.includes('--zpet'));
+  }, { reverse: process.argv.includes('--zpet'), loops });
   console.log(JSON.stringify(report, null, 2));
-  if (report.seconds < 1800 || report.distance < 24000) process.exitCode = 1;
+  if (loops) {
+    const samples = report.samples;
+    assert.equal(samples.length, 4, 'Chybí návrat do výchozího místa.');
+    for (const key of ['textures', 'geometries', 'bodies', 'debris']) {
+      assert.ok(samples[3][key] <= samples[2][key],
+        `Mezi třetím a čtvrtým návratem vzrostl počet ${key} z ${samples[2][key]} na ${samples[3][key]}.`);
+    }
+  }
+  assert.ok(report.seconds >= 1800 && report.distance >= 24000, 'Zkušební jízda byla příliš krátká.');
 } finally {
   await browser.close();
 }

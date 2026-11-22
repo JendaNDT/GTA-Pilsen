@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_is8q1"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_crfai"]
+
+[node name="Oblast_12_7" type="Node3D" unique_id=1404248757]
+script = ExtResource("1_is8q1")
+bunka = Vector2i(12, 7)
+stred = Vector2(3840, -3328)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=121010065]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=495328198]
+
+[node name="Chlumek_57087-1" type="Node3D" parent="Zastavky" unique_id=467549637]
+transform = Transform3D(0.4774905, 0, 0.8786369, 0, 1, 0, -0.8786369, 0, 0.4774905, -241.7, 19.09, 309.5)
+script = ExtResource("2_crfai")
+id = "57087/1"
+nazev = "Chlumek"
+poradi = 314
+gen_pozice = Vector3(-241.7, 19.09, 309.5)
+gen_natoceni = 1.073
+gen_nazev = "Chlumek"
+
+[node name="Chlumek_57087-2" type="Node3D" parent="Zastavky" unique_id=495252027]
+transform = Transform3D(0.45092043, 0, 0.8925642, 0, 1, 0, -0.8925642, 0, 0.45092043, -128.6, 19.77, 362.9)
+script = ExtResource("2_crfai")
+id = "57087/2"
+nazev = "Chlumek"
+poradi = 348
+gen_pozice = Vector3(-128.6, 19.77, 362.9)
+gen_natoceni = 1.103
+gen_nazev = "Chlumek"

@@ -1,0 +1,146 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_yfjp1"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_7o8eo"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="3_ea33j"]
+
+[node name="Oblast_8_13" type="Node3D" unique_id=1987024687]
+script = ExtResource("1_yfjp1")
+bunka = Vector2i(8, 13)
+stred = Vector2(-256, 2816)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1760970737]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=229642725]
+
+[node name="U_Luny_47354-2" type="Node3D" parent="Zastavky" unique_id=1735271553]
+transform = Transform3D(-0.9899925, 0, -0.14112, 0, 1, 0, 0.14112, 0, -0.9899925, 34.7, 35.72, -167.8)
+script = ExtResource("2_7o8eo")
+id = "47354/2"
+nazev = "U Luny"
+poradi = 155
+gen_pozice = Vector3(34.7, 35.72, -167.8)
+gen_natoceni = -3.0
+gen_nazev = "U Luny"
+
+[node name="U_Teplárny_53216-2" type="Node3D" parent="Zastavky" unique_id=1391460350]
+transform = Transform3D(-0.65350336, 0, -0.7569236, 0, 1, 0, 0.7569236, 0, -0.65350336, 179.6, 36.36, -403.7)
+script = ExtResource("2_7o8eo")
+id = "53216/2"
+nazev = "U Teplárny"
+poradi = 157
+gen_pozice = Vector3(179.6, 36.36, -403.7)
+gen_natoceni = -2.283
+gen_nazev = "U Teplárny"
+
+[node name="U_Teplárny_53216-1" type="Node3D" parent="Zastavky" unique_id=1617289268]
+transform = Transform3D(-0.6250563, 0, -0.7805796, 0, 1, 0, 0.7805796, 0, -0.6250563, 149.3, 36.18, -449.1)
+script = ExtResource("2_7o8eo")
+id = "53216/1"
+nazev = "U Teplárny"
+poradi = 190
+gen_pozice = Vector3(149.3, 36.18, -449.1)
+gen_natoceni = -2.246
+gen_nazev = "U Teplárny"
+
+[node name="U_Luny_47354-1" type="Node3D" parent="Zastavky" unique_id=1807596183]
+transform = Transform3D(-0.99027276, 0, -0.13913965, 0, 1, 0, 0.13913965, 0, -0.99027276, 33.3, 35.53, -134.2)
+script = ExtResource("2_7o8eo")
+id = "47354/1"
+nazev = "U Luny"
+poradi = 191
+gen_pozice = Vector3(33.3, 35.53, -134.2)
+gen_natoceni = -3.002
+gen_nazev = "U Luny"
+
+[node name="Sídliště_Bory_57065-1" type="Node3D" parent="Zastavky" unique_id=302174977]
+transform = Transform3D(0.1502255, 0, -0.98865175, 0, 1, 0, 0.98865175, 0, 0.1502255, -0.6, 33.04, 195.9)
+script = ExtResource("2_7o8eo")
+id = "57065/1"
+nazev = "Sídliště Bory"
+poradi = 395
+gen_pozice = Vector3(-0.6, 33.04, 195.9)
+gen_natoceni = -1.42
+gen_nazev = "Sídliště Bory"
+
+[node name="Šimerova_57176-1" type="Node3D" parent="Zastavky" unique_id=648649123]
+transform = Transform3D(-0.99095607, 0, -0.13418669, 0, 1, 0, 0.13418669, 0, -0.99095607, 235.8, 36.13, -298.9)
+script = ExtResource("2_7o8eo")
+id = "57176/1"
+nazev = "Šimerova"
+poradi = 396
+gen_pozice = Vector3(235.8, 36.13, -298.9)
+gen_natoceni = -3.007
+gen_nazev = "Šimerova"
+
+[node name="Šimerova_57176-2" type="Node3D" parent="Zastavky" unique_id=745193731]
+transform = Transform3D(0.99116856, 0, 0.13260823, 0, 1, 0, -0.13260823, 0, 0.99116856, 234.4, 35.85, -207.6)
+script = ExtResource("2_7o8eo")
+id = "57176/2"
+nazev = "Šimerova"
+poradi = 398
+gen_pozice = Vector3(234.4, 35.85, -207.6)
+gen_natoceni = 0.133
+gen_nazev = "Šimerova"
+
+[node name="Sídliště_Bory_57065-2" type="Node3D" parent="Zastavky" unique_id=2036070127]
+transform = Transform3D(0.12546475, 0, -0.9920981, 0, 1, 0, 0.9920981, 0, 0.12546475, -38, 32.49, 191.6)
+script = ExtResource("2_7o8eo")
+id = "57065/2"
+nazev = "Sídliště Bory"
+poradi = 399
+gen_pozice = Vector3(-38, 32.49, 191.6)
+gen_natoceni = -1.445
+gen_nazev = "Sídliště Bory"
+
+[node name="U_Luny_47354-3" type="Node3D" parent="Zastavky" unique_id=573122563]
+transform = Transform3D(-0.9899925, 0, -0.14112, 0, 1, 0, 0.14112, 0, -0.9899925, 34.7, 35.72, -167.8)
+script = ExtResource("2_7o8eo")
+id = "47354/3"
+nazev = "U Luny"
+poradi = 467
+gen_pozice = Vector3(34.7, 35.72, -167.8)
+gen_natoceni = -3.0
+gen_nazev = "U Luny"
+
+[node name="Tyršův_most_47078-3" type="Node3D" parent="Zastavky" unique_id=553033470]
+transform = Transform3D(-0.79633033, 0, -0.604862, 0, 1, 0, 0.604862, 0, -0.79633033, 496.7, 9.74, 300.7)
+script = ExtResource("2_7o8eo")
+id = "47078/3"
+nazev = "Tyršův most"
+poradi = 604
+gen_pozice = Vector3(496.7, 9.74, 300.7)
+gen_natoceni = -2.492
+gen_nazev = "Tyršův most"
+
+[node name="Gigant_57078-1" type="Node3D" parent="Zastavky" unique_id=1990664557]
+transform = Transform3D(-0.857918, 0, -0.51378655, 0, 1, 0, 0.51378655, 0, -0.857918, 382.9, 21.42, 38)
+script = ExtResource("2_7o8eo")
+id = "57078/1"
+nazev = "Gigant"
+poradi = 605
+gen_pozice = Vector3(382.9, 21.42, 38)
+gen_natoceni = -2.602
+gen_nazev = "Gigant"
+
+[node name="Gigant_57078-2" type="Node3D" parent="Zastavky" unique_id=1834470157]
+transform = Transform3D(-0.857918, 0, -0.51378655, 0, 1, 0, 0.51378655, 0, -0.857918, 387.2, 19.92, 63.5)
+script = ExtResource("2_7o8eo")
+id = "57078/2"
+nazev = "Gigant"
+poradi = 608
+gen_pozice = Vector3(387.2, 19.92, 63.5)
+gen_natoceni = -2.602
+gen_nazev = "Gigant"
+
+[node name="Mista" type="Node3D" parent="." unique_id=1715773571]
+
+[node name="Borský_park_pamatka-14" type="Node3D" parent="Mista" unique_id=1497197012]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -354.8, 18.56, 216.2)
+script = ExtResource("3_ea33j")
+popis = "Velký park na jihu města, oblíbený mezi běžci a bruslaři."
+id = "pamatka-14"
+nazev = "Borský park"
+poradi = 14
+gen_pozice = Vector3(-354.8, 18.56, 216.2)
+gen_nazev = "Borský park"

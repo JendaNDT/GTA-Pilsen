@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_cp4bp"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_x2off"]
+
+[node name="Oblast_17_5" type="Node3D" unique_id=1442246374]
+script = ExtResource("1_cp4bp")
+bunka = Vector2i(17, 5)
+stred = Vector2(8960, -5376)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1045796412]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1111112824]
+
+[node name="Chrást,_Lidový_dům_53188-3" type="Node3D" parent="Zastavky" unique_id=604668120]
+transform = Transform3D(0.8424402, 0, -0.53878987, 0, 1, 0, 0.53878987, 0, 0.8424402, -364.7, 26.61, -267.6)
+script = ExtResource("2_x2off")
+id = "53188/3"
+nazev = "Chrást, Lidový dům"
+poradi = 509
+gen_pozice = Vector3(-364.7, 26.61, -267.6)
+gen_natoceni = -0.569
+gen_nazev = "Chrást, Lidový dům"
+
+[node name="Chrást,_Lidový_dům_53188-2" type="Node3D" parent="Zastavky" unique_id=2058126728]
+transform = Transform3D(0.8309407, 0, -0.556361, 0, 1, 0, 0.556361, 0, 0.8309407, -338, 25.46, -321)
+script = ExtResource("2_x2off")
+id = "53188/2"
+nazev = "Chrást, Lidový dům"
+poradi = 513
+gen_pozice = Vector3(-338, 25.46, -321)
+gen_natoceni = -0.59
+gen_nazev = "Chrást, Lidový dům"

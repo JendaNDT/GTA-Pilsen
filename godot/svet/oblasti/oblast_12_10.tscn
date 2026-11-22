@@ -1,0 +1,76 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_cvxvy"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_1eib0"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="3_vfps2"]
+
+[node name="Oblast_12_10" type="Node3D" unique_id=1116100446]
+script = ExtResource("1_cvxvy")
+bunka = Vector2i(12, 10)
+stred = Vector2(3840, -256)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=957807972]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1207177382]
+
+[node name="Ústřední_hřbitov_50409-1" type="Node3D" parent="Zastavky" unique_id=943405646]
+transform = Transform3D(-0.25920948, 0, 0.96582115, 0, 1, 0, -0.96582115, 0, -0.25920948, 298.1, 83.77, 436.2)
+script = ExtResource("2_1eib0")
+id = "50409/1"
+nazev = "Ústřední hřbitov"
+poradi = 658
+gen_pozice = Vector3(298.1, 83.77, 436.2)
+gen_natoceni = 1.833
+gen_nazev = "Ústřední hřbitov"
+
+[node name="U_Václava_50369-1" type="Node3D" parent="Zastavky" unique_id=721912933]
+transform = Transform3D(-0.013203281, 0, -0.99991286, 0, 1, 0, 0.99991286, 0, -0.013203281, 63.8, 75.74, 322.9)
+script = ExtResource("2_1eib0")
+id = "50369/1"
+nazev = "U Václava"
+poradi = 659
+gen_pozice = Vector3(63.8, 75.74, 322.9)
+gen_natoceni = -1.584
+gen_nazev = "U Václava"
+
+[node name="Hřbitovní_57085-1" type="Node3D" parent="Zastavky" unique_id=777938479]
+transform = Transform3D(-0.10799267, 0, -0.9941517, 0, 1, 0, 0.9941517, 0, -0.10799267, -327.5, 69.2, 289.4)
+script = ExtResource("2_1eib0")
+id = "57085/1"
+nazev = "Hřbitovní"
+poradi = 660
+gen_pozice = Vector3(-327.5, 69.2, 289.4)
+gen_natoceni = -1.679
+gen_nazev = "Hřbitovní"
+
+[node name="Hřbitovní_57085-2" type="Node3D" parent="Zastavky" unique_id=1452477872]
+transform = Transform3D(0.10758762, 0, 0.9941956, 0, 1, 0, -0.9941956, 0, 0.10758762, -322.5, 69.76, 321.6)
+script = ExtResource("2_1eib0")
+id = "57085/2"
+nazev = "Hřbitovní"
+poradi = 663
+gen_pozice = Vector3(-322.5, 69.76, 321.6)
+gen_natoceni = 1.463
+gen_nazev = "Hřbitovní"
+
+[node name="Ústřední_hřbitov_50409-2" type="Node3D" parent="Zastavky" unique_id=1200509790]
+transform = Transform3D(0.024793781, 0, 0.99969256, 0, 1, 0, -0.99969256, 0, 0.024793781, 188.5, 76.85, 349.6)
+script = ExtResource("2_1eib0")
+id = "50409/2"
+nazev = "Ústřední hřbitov"
+poradi = 664
+gen_pozice = Vector3(188.5, 76.85, 349.6)
+gen_natoceni = 1.546
+gen_nazev = "Ústřední hřbitov"
+
+[node name="Mista" type="Node3D" parent="." unique_id=1982063380]
+
+[node name="Ústřední_hřbitov_pamatka-28" type="Node3D" parent="Mista" unique_id=1365559601]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 300.3, 83.63, 435.8)
+script = ExtResource("3_vfps2")
+popis = "Hlavní městský hřbitov na východě Plzně."
+id = "pamatka-28"
+nazev = "Ústřední hřbitov"
+poradi = 28
+gen_pozice = Vector3(300.3, 83.63, 435.8)
+gen_nazev = "Ústřední hřbitov"

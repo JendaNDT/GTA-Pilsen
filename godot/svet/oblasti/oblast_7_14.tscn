@@ -1,0 +1,73 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_olat6"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_ckvql"]
+
+[node name="Oblast_7_14" type="Node3D" unique_id=529173719]
+script = ExtResource("1_olat6")
+bunka = Vector2i(7, 14)
+stred = Vector2(-1280, 3840)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1669053919]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1996652871]
+
+[node name="U_Přehrady_47346-1" type="Node3D" parent="Zastavky" unique_id=1305613198]
+transform = Transform3D(0.021794576, 0, -0.9997625, 0, 1, 0, 0.9997625, 0, 0.021794576, -167.1, 11.23, -256.2)
+script = ExtResource("2_ckvql")
+id = "47346/1"
+nazev = "U Přehrady"
+poradi = 140
+gen_pozice = Vector3(-167.1, 11.23, -256.2)
+gen_natoceni = -1.549
+gen_nazev = "U Přehrady"
+
+[node name="Tyršův_sad_57167-1" type="Node3D" parent="Zastavky" unique_id=1357550884]
+transform = Transform3D(-0.99421746, 0, 0.10738527, 0, 1, 0, -0.10738527, 0, -0.99421746, -219.7, 27.03, 202)
+script = ExtResource("2_ckvql")
+id = "57167/1"
+nazev = "Tyršův sad"
+poradi = 141
+gen_pozice = Vector3(-219.7, 27.03, 202)
+gen_natoceni = 3.034
+gen_nazev = "Tyršův sad"
+
+[node name="Višňovka_51892-2" type="Node3D" parent="Zastavky" unique_id=1579213747]
+transform = Transform3D(-0.9972933, 0, 0.07352617, 0, 1, 0, -0.07352617, 0, -0.9972933, -234.1, 31.74, 510.9)
+script = ExtResource("2_ckvql")
+id = "51892/2"
+nazev = "Višňovka"
+poradi = 149
+gen_pozice = Vector3(-234.1, 31.74, 510.9)
+gen_natoceni = 3.068
+gen_nazev = "Višňovka"
+
+[node name="Tyršův_sad_57167-2" type="Node3D" parent="Zastavky" unique_id=993876452]
+transform = Transform3D(-0.99421746, 0, 0.10738527, 0, 1, 0, -0.10738527, 0, -0.99421746, -208.2, 27.36, 160.9)
+script = ExtResource("2_ckvql")
+id = "57167/2"
+nazev = "Tyršův sad"
+poradi = 150
+gen_pozice = Vector3(-208.2, 27.36, 160.9)
+gen_natoceni = 3.034
+gen_nazev = "Tyršův sad"
+
+[node name="U_Přehrady_47346-2" type="Node3D" parent="Zastavky" unique_id=678599778]
+transform = Transform3D(-0.98337626, 0, 0.18157962, 0, 1, 0, -0.18157962, 0, -0.98337626, -154.1, 11.86, -215.1)
+script = ExtResource("2_ckvql")
+id = "47346/2"
+nazev = "U Přehrady"
+poradi = 151
+gen_pozice = Vector3(-154.1, 11.86, -215.1)
+gen_natoceni = 2.959
+gen_nazev = "U Přehrady"
+
+[node name="Na_Rozhraní_66981-1" type="Node3D" parent="Zastavky" unique_id=975999755]
+transform = Transform3D(-0.7140062, 0, 0.7001394, 0, 1, 0, -0.7001394, 0, -0.7140062, 472.2, 39.44, 231.7)
+script = ExtResource("2_ckvql")
+id = "66981/1"
+nazev = "Na Rozhraní"
+poradi = 466
+gen_pozice = Vector3(472.2, 39.44, 231.7)
+gen_natoceni = 2.366
+gen_nazev = "Na Rozhraní"

@@ -1,0 +1,109 @@
+{
+  "parts": {
+    "00000002021000213-265e2383af644593": {
+      "role": "pillar",
+      "reason": "Pilotní měřený pilíř. Kontrola herních tras nehlásí průnik. Pata pokračuje pod herní terén u řeky, horní plocha končí pod jízdním povrchem. Zachovat zdrojovou výšku."
+    }
+  },
+  "bridges": [
+    {
+      "road": 19,
+      "deck": "00000002021000450-8b5e397e409799da",
+      "rails": [
+        "00000002021000069-8b5c9e4c3df5a1c4",
+        "00000002021000070-7290c2d5833f446a"
+      ],
+      "clearWidth": 15,
+      "railHeight": 1.15,
+      "reason": "Horní městské plochy určují osu a obě hrany chodníku. Pět příčných řezů určuje posun a výškovou opravu herního profilu. Horní plochu městské desky nepřidávat do kolizí, slouží již jízdní profil.",
+      "pier": "00000002021000213-265e2383af644593"
+    }
+  ],
+  "districts": [
+    1,
+    2,
+    3
+  ],
+  "footbridges": [
+    {
+      "road": 1921,
+      "type": "lávka",
+      "deck": "00000002021000458-098dc959ba456ba6",
+      "reason": "Pět příčných řezů potvrzuje šířku a polohu konstrukce. Výškový rozdíl kolem 1,6 m vyžaduje návazné měření obou přístupů. Zachovat pěší profil."
+    },
+    {
+      "road": 1845,
+      "type": "lávka",
+      "deck": "00000002021000459-54e6ac2bfe4ad324",
+      "reason": "Stálá šířka a osa mezi městskými hranami v pěti řezech. Herní výškový profil zatím zachovat včetně obou napojení. Rozdíl činí přibližně jeden metr."
+    }
+  ],
+  "roadBridges": [
+    {
+      "road": 1831,
+      "type": "silnice",
+      "deck": "00000002021000457-5ffadeeea50de31b",
+      "walkway": 28147,
+      "reason": "Deska nese jednu vozovku a v souběhu pěší trasu. Pět řezů měří šířku kolem osmi metrů. Pěší trasa zůstává napojená. Výšku zachovat, dokud nebude ověřen rozdíl přes jeden metr u nájezdů."
+    }
+  ],
+  "railBridges": [
+    {
+      "rail": 8,
+      "deck": "00000002021000444-8c69f1b223a3f330",
+      "reason": "Pět městských řezů určuje šířku a osu konstrukce pod jedinou herní tratí. Na krajích měřené oblasti navazuje dosavadní deska. Koleje a výškový profil se zachovávají."
+    },
+    {
+      "rail": 21,
+      "deck": "00000002021000447-50a7a9ac656d667d",
+      "reason": "Pět městských řezů určuje šířku a osu konstrukce pod jedinou herní tratí. Na krajích měřené oblasti navazuje dosavadní deska. Koleje a výškový profil se zachovávají."
+    }
+  ],
+  "pending": {
+    "00000002021000451-5f749d9b2f6f5db5": "Navržený půdorys trati 6 zasahuje okrajem do průchozího profilu pěší cesty a kolejí. Ponechat dosavadní mostovku."
+  },
+  "waterParts": {
+    "00000000024061110-aa1a392042612cda": {
+      "reason": "Ponechat mimo hru kvůli překryvu s herní budovou a vozovkou."
+    },
+    "00000000024061115-b78f7bda61034101": {
+      "reason": "Ponechat mimo hru kvůli zásahu do pěší trasy."
+    },
+    "00000000024062334-643118d3144dda88": {
+      "reason": "Část nízkého objektu leží ve vodním polygonu. Podoba na břehu čeká na ověření."
+    },
+    "00000000024062336-d275c1b5abeb5858": {
+      "reason": "Nízký objekt zasahuje do břehu. Před převzetím ověřit viditelný tvar."
+    },
+    "00000000024062338-650f2fc4956eca8d": {
+      "reason": "Všechny vrcholy nádrže jsou pod herním terénem a půdorys se překrývá s budovou.",
+      "status": "nevhodný"
+    },
+    "00000000024062339-7dd53e4af39b95ad": {
+      "reason": "Nádrž částečně leží ve vodním polygonu. Nad herním povrchem je vidět jen malá část. Ověřit obrys na břehu."
+    },
+    "00000000024062345-650c6585f53bdc22": {
+      "reason": "Část členitého objektu leží na suchu a část ve vodním polygonu. Ověřit podobu břehu."
+    },
+    "00000000024062477-113e1e5dfcba66e9": {
+      "reason": "Nejvyšší vrchol vyčnívá nad herní povrch jen o 2 cm. Samostatný model vynechat.",
+      "status": "nevhodný"
+    },
+    "00000002023003248-8eab812036e4c8a7": {
+      "reason": "Přidat měřený jez v místě zvuku vody. Všechny vzorky leží ve vodním polygonu.",
+      "role": "weir"
+    },
+    "00000002023003254-97ead4acf1c1da4b": {
+      "reason": "Přidat boční díl jezu na hranici herního vodního polygonu u zvuku vody.",
+      "role": "weir"
+    },
+    "00000002023003256-6891c9e9c1ca7294": {
+      "reason": "Přidat díl jezu ve vodním polygonu u zvuku vody.",
+      "role": "weir"
+    },
+    "00000002023003259-5f244e0d363d803f": {
+      "reason": "Přidat boční díl jezu u břehu a existujícího zvuku vody.",
+      "role": "weir"
+    }
+  }
+}

@@ -1,0 +1,69 @@
+[gd_scene load_steps=17 format=3]
+
+[ext_resource type="Script" path="res://skripty/hra/hra.gd" id="1"]
+[ext_resource type="Script" path="res://skripty/hra/prostredi.gd" id="2"]
+[ext_resource type="Script" path="res://skripty/svet/svet.gd" id="3"]
+[ext_resource type="Script" path="res://skripty/hrac/chodec.gd" id="4"]
+[ext_resource type="Script" path="res://skripty/kamera/kamera.gd" id="5"]
+[ext_resource type="Script" path="res://skripty/ui/hud.gd" id="6"]
+[ext_resource type="Script" path="res://skripty/ui/dotyk.gd" id="7"]
+[ext_resource type="Script" path="res://skripty/svet/oblasti.gd" id="8"]
+[ext_resource type="Script" path="res://skripty/mhd/mhd.gd" id="9"]
+[ext_resource type="Script" path="res://skripty/ui/menu.gd" id="10"]
+[ext_resource type="Script" path="res://skripty/hra/zakazky.gd" id="11"]
+[ext_resource type="Script" path="res://skripty/ui/mapa_ui.gd" id="12"]
+[ext_resource type="Script" path="res://skripty/doprava/doprava.gd" id="13"]
+[ext_resource type="Script" path="res://skripty/doprava/chodci.gd" id="14"]
+[ext_resource type="Script" path="res://skripty/doprava/policie.gd" id="15"]
+[ext_resource type="Script" path="res://skripty/hra/zvuky.gd" id="16"]
+
+[node name="Hra" type="Node3D"]
+script = ExtResource("1")
+
+[node name="Prostredi" type="Node3D" parent="."]
+script = ExtResource("2")
+
+[node name="Svet" type="Node3D" parent="."]
+script = ExtResource("3")
+nahled_zapnout = false
+
+[node name="Chodec" type="CharacterBody3D" parent="."]
+script = ExtResource("4")
+
+[node name="Oblasti" type="Node3D" parent="."]
+script = ExtResource("8")
+
+[node name="Mhd" type="Node3D" parent="."]
+script = ExtResource("9")
+
+[node name="Zakazky" type="Node3D" parent="."]
+script = ExtResource("11")
+
+[node name="Doprava" type="Node3D" parent="."]
+script = ExtResource("13")
+
+[node name="Chodci" type="Node3D" parent="."]
+script = ExtResource("14")
+
+[node name="Policie" type="Node3D" parent="."]
+script = ExtResource("15")
+
+[node name="Zvuky" type="Node3D" parent="."]
+script = ExtResource("16")
+
+[node name="Auta" type="Node3D" parent="."]
+
+[node name="Kamera" type="Node3D" parent="."]
+script = ExtResource("5")
+
+[node name="Hud" type="CanvasLayer" parent="."]
+script = ExtResource("6")
+
+[node name="Dotyk" type="CanvasLayer" parent="."]
+script = ExtResource("7")
+
+[node name="Mapa" type="CanvasLayer" parent="."]
+script = ExtResource("12")
+
+[node name="Menu" type="CanvasLayer" parent="."]
+script = ExtResource("10")

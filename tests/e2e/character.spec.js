@@ -2,7 +2,8 @@ import { expect, test } from '@playwright/test';
 import { gameUrl } from './game-url.js';
 
 test('E19 – vystoupení na mostě, v tunelu a po přistání na střeše', { tag: '@webgpu' }, async ({ page }) => {
-  await page.goto(gameUrl('/?debug&quality=low&adapt=0&hour=10'));
+  // Pevné datum: přistání vrtulníku běží v herní smyčce, kde MHD a provoz jezdí podle dne.
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0&date=2026-11-09&hour=10'));
   await page.waitForFunction(() => window.__ready);
   const results = await page.evaluate(() => {
     const g = window.__game, w = g.world, player = g.player, car = player.lastCar;
@@ -37,10 +38,12 @@ test('E19 – vystoupení na mostě, v tunelu a po přistání na střeše', { t
       if (w.bTop[i] - w.heightAt(x, z) < 6 || g.colliders.replaced.has(i)) continue;
       if (![0, 2.2, 5.2].every(offset => w.buildingAt(x + offset, z) === i)) continue;
       const h = g.helis[0];
+      for (let j = 0; j < 25; j++) g.colliders.update(x, z);
+      h.x = x; h.z = z; h.y = w.bTop[i] + 0.3; h.yaw = 0; h.vy = -1; h.landed = false;
       g._enterHeli(h);
       const seated = !player.character;
-      h.x = x; h.z = z; h.y = w.bTop[i] + 0.3; h.yaw = 0; h.vy = -1;
-      for (let j = 0; j < 120 && (j === 0 || !h.landed); j++) h.update(1 / 60, 0, 0, -1);
+      g.paused = false;
+      for (let j = 0; j < 120 && !h.landed; j++) g.update(1 / 60);
       g.doAction();
       results.push({ seated, landed: h.landed, expected: w.bTop[i], ...walk(1, 0) });
       break;
@@ -98,16 +101,16 @@ async function runAtEdges(page, bridges) {
         const alongNormal = (player.x - x) * nx + (player.z - z) * nz;
         const deck = w.deckAt(player.x, player.z, y + 0.7);
         // Na sdílené ploše může být vnější hrana až za sousední vozovkou.
-        // Měříme podepsanou vzdálenost k viditelné vnější stěně v místě zastavení.
+        // U měřených vystupujících říms porovnáme kapsli s vnitřní stěnou chodníku.
         let gap = Infinity;
         for (const tile of colliders.tiles.keys()) for (const edge of w.bridgeEdges.get(tile) ?? []) {
-          const [a, b] = edge.corners, sx = b[0] - a[0], sz = b[2] - a[2], len = Math.hypot(sx, sz);
+          const a = edge.corners[edge.measured ? 3 : 0], b = edge.corners[edge.measured ? 2 : 1], sx = b[0] - a[0], sz = b[2] - a[2], len = Math.hypot(sx, sz);
           const t = ((player.x - a[0]) * sx + (player.z - a[2]) * sz) / (len * len);
           if (t < 0 || t > 1 || Math.abs(a[1] + t * (b[1] - a[1]) - deck) > 0.5) continue;
           const signed = ((player.x - a[0]) * sz - (player.z - a[2]) * sx) / len;
           if (Math.abs(signed) < Math.abs(gap)) gap = signed;
         }
-        results.push({ road, side, gap, pressed, travel: alongNormal * side,
+        results.push({ road, side, gap, measured: w.deckCalibrations.has(road), pressed, travel: alongNormal * side,
           grounded: player.grounded, height: player.y - deck, stone: w.archedBridges.has(road) });
       }
     }
@@ -123,8 +126,8 @@ test('E19 – kamenné ohrazení zastaví běžce na obou stranách Švédského
     expect(s.pressed, JSON.stringify(s)).toBe(120);
     expect(s.grounded, JSON.stringify(s)).toBe(true);
     expect(Math.abs(s.height)).toBeLessThan(0.15);
-    expect(s.gap).toBeGreaterThan(0.7);
-    expect(s.gap).toBeLessThan(1.05);
+    expect(s.gap, JSON.stringify(s)).toBeGreaterThan(s.measured ? 0.32 : 0.7);
+    expect(s.gap, JSON.stringify(s)).toBeLessThan(s.measured ? 0.45 : 1.05);
   }
 });
 

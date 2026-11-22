@@ -28,7 +28,9 @@ export function driveRoute(car, pointAt, speedLimit, stopGap, previous, dt) {
   const integral = targetSpeed < 0.12 ? 0 : clamp((previous?.integral ?? 0) + error * dt, -1, 1);
   const stopping = Number.isFinite(room) && targetSpeed < speedLimit;
   const deceleration = stopping ? Math.min(3, 1.8 * speed) : 0;
-  const effort = -deceleration + 1.6 * error + 0.45 * integral + 0.12 * clamp(derivative, -10, 10);
+  // V brzdné dráze přidáme sílu potřebnou k udržení auta na sjezdu.
+  const downhill = room <= speed * speed / 6 + car.type.len ? 9.81 * Math.max(0, Math.sin(car.pitch ?? 0)) : 0;
+  const effort = -deceleration - downhill + 1.6 * error + 0.45 * integral + 0.12 * clamp(derivative, -10, 10);
   const hold = atLine || targetSpeed < 0.12 && speed < 0.18;
   return { targetSpeed, steer, throttle: hold ? 0 : clamp(effort / 3.5, 0, 1),
     brake: hold ? 1 : clamp(-effort / 8, 0, 1),

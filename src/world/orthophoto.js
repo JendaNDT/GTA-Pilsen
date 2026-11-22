@@ -1,3 +1,4 @@
+import { fetchGraphicResponse } from './graphic-asset.js';
 // Mapové bloky se slaďují se stejným počátkem a stejnými podklady jako terén.
 const CHUNKS_PER_BLOCK = 4;
 const METERS_PER_PIXEL = 2;
@@ -37,7 +38,7 @@ export function orthophotoBlocks(manifest, { origin, chunk, cols, rows, fingerpr
 export class Orthophoto {
   constructor(grid, capacity, {
     base = `${import.meta.env?.BASE_URL || '/'}detail/orthophoto/`,
-    fetchFile = (url, options) => fetch(url, options),
+    fetchFile = (url, options) => fetchGraphicResponse('detail/orthophoto/' + url.slice(base.length), url, options),
     decode = (blob) => createImageBitmap(blob),
     availableRequests = () => REQUEST_LIMIT,
   } = {}) {
@@ -52,6 +53,7 @@ export class Orthophoto {
     this.cache = new Map();
     this.pending = new Set();
     this.failed = new Set();
+    this.timedOut = new Set();
     this.wanted = new Set();
     this.loading = false;
     this.revision = 0;
@@ -93,6 +95,7 @@ export class Orthophoto {
       if (wanted.size >= this.capacity) break;
     }
     this.wanted = wanted;
+    for (const key of this.timedOut) if (!wanted.has(key)) this.timedOut.delete(key);
     for (const [key, bitmap] of this.cache) {
       if (wanted.has(key)) continue;
       bitmap.close();
@@ -118,7 +121,8 @@ export class Orthophoto {
   async fetchBitmap(key) {
     try {
       const response = await this.fetchFile(this.base + this.blocks.get(key), {
-        signal: AbortSignal.timeout(8000),
+        // Blok přichází během jízdy a přípravy dalších dlaždic na stejném vlákně.
+        signal: AbortSignal.timeout(60_000),
       });
       if (!response.ok) throw new Error(`Ortofoto ${response.status}`);
       const bitmap = await this.decode(await response.blob());
@@ -130,6 +134,7 @@ export class Orthophoto {
         bitmap.close();
         return;
       }
+      this.timedOut.delete(key);
       this.cache.set(key, bitmap);
       this.revision++;
       if (this.cache.size > this.capacity) {
@@ -137,8 +142,11 @@ export class Orthophoto {
         unused.close();
         this.cache.delete(oldest);
       }
-    } catch {
-      if (this.wanted.has(key)) this.failed.add(key);
+    } catch (error) {
+      if (this.wanted.has(key)) {
+        if (error?.name === 'TimeoutError' && !this.timedOut.has(key)) this.timedOut.add(key);
+        else this.failed.add(key);
+      }
     } finally {
       this.pending.delete(key);
       this.pump();

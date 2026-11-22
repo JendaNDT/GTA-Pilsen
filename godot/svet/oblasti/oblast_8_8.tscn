@@ -1,0 +1,173 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_kago0"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_22d5u"]
+
+[node name="Oblast_8_8" type="Node3D" unique_id=227943354]
+script = ExtResource("1_kago0")
+bunka = Vector2i(8, 8)
+stred = Vector2(-256, -2304)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1583729104]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=836953084]
+
+[node name="U_Gery_57170-1" type="Node3D" parent="Zastavky" unique_id=134138193]
+transform = Transform3D(-0.8548199, 0, 0.51892483, 0, 1, 0, -0.51892483, 0, -0.8548199, -38.7, 35.65, 155.3)
+script = ExtResource("2_22d5u")
+id = "57170/1"
+nazev = "U Gery"
+poradi = 13
+gen_pozice = Vector3(-38.7, 35.65, 155.3)
+gen_natoceni = 2.596
+gen_nazev = "U Gery"
+
+[node name="Mozartova_57122-1" type="Node3D" parent="Zastavky" unique_id=1870774592]
+transform = Transform3D(-0.9140679, 0, 0.40556118, 0, 1, 0, -0.40556118, 0, -0.9140679, 111.2, 41.29, -123.1)
+script = ExtResource("2_22d5u")
+id = "57122/1"
+nazev = "Mozartova"
+poradi = 14
+gen_pozice = Vector3(111.2, 41.29, -123.1)
+gen_natoceni = 2.724
+gen_nazev = "Mozartova"
+
+[node name="Majakovského_57113-1" type="Node3D" parent="Zastavky" unique_id=1036004821]
+transform = Transform3D(-0.9172832, 0, 0.39823562, 0, 1, 0, -0.39823562, 0, -0.9172832, 209.2, 38.41, -349.6)
+script = ExtResource("2_22d5u")
+id = "57113/1"
+nazev = "Majakovského"
+poradi = 15
+gen_pozice = Vector3(209.2, 38.41, -349.6)
+gen_natoceni = 2.732
+gen_nazev = "Majakovského"
+
+[node name="Majakovského_57113-2" type="Node3D" parent="Zastavky" unique_id=1663995272]
+transform = Transform3D(-0.9172832, 0, 0.39823562, 0, 1, 0, -0.39823562, 0, -0.9172832, 194.1, 39.16, -317.4)
+script = ExtResource("2_22d5u")
+id = "57113/2"
+nazev = "Majakovského"
+poradi = 22
+gen_pozice = Vector3(194.1, 39.16, -317.4)
+gen_natoceni = 2.732
+gen_nazev = "Majakovského"
+
+[node name="Mozartova_57122-2" type="Node3D" parent="Zastavky" unique_id=1555780630]
+transform = Transform3D(-0.8971186, 0, 0.4417897, 0, 1, 0, -0.4417897, 0, -0.8971186, 58.5, 38.45, -14.9)
+script = ExtResource("2_22d5u")
+id = "57122/2"
+nazev = "Mozartova"
+poradi = 23
+gen_pozice = Vector3(58.5, 38.45, -14.9)
+gen_natoceni = 2.684
+gen_nazev = "Mozartova"
+
+[node name="U_Gery_57170-2" type="Node3D" parent="Zastavky" unique_id=1723655873]
+transform = Transform3D(-0.8548199, 0, 0.51892483, 0, 1, 0, -0.51892483, 0, -0.8548199, -58.2, 35.3, 185.4)
+script = ExtResource("2_22d5u")
+id = "57170/2"
+nazev = "U Gery"
+poradi = 24
+gen_pozice = Vector3(-58.2, 35.3, 185.4)
+gen_natoceni = 2.596
+gen_nazev = "U Gery"
+
+[node name="K_Nemocnici_53161-1" type="Node3D" parent="Zastavky" unique_id=689367573]
+transform = Transform3D(0.51224464, 0, 0.8588396, 0, 1, 0, -0.8588396, 0, 0.51224464, -6.4, 33.95, 265.2)
+script = ExtResource("2_22d5u")
+id = "53161/1"
+nazev = "K Nemocnici"
+poradi = 258
+gen_pozice = Vector3(-6.4, 33.95, 265.2)
+gen_natoceni = 1.033
+gen_nazev = "K Nemocnici"
+
+[node name="Nemocnice_Lochotín_53160-1" type="Node3D" parent="Zastavky" unique_id=1565622298]
+transform = Transform3D(-0.114949, 0, -0.99337137, 0, 1, 0, 0.99337137, 0, -0.114949, 411.6, 29.75, 457.8)
+script = ExtResource("2_22d5u")
+id = "53160/1"
+nazev = "Nemocnice Lochotín"
+poradi = 259
+gen_pozice = Vector3(411.6, 29.75, 457.8)
+gen_natoceni = -1.686
+gen_nazev = "Nemocnice Lochotín"
+
+[node name="U_Gery_57170-3" type="Node3D" parent="Zastavky" unique_id=1871745733]
+transform = Transform3D(-0.87049335, 0, 0.49218023, 0, 1, 0, -0.49218023, 0, -0.87049335, 34.1, 36.45, 66.2)
+script = ExtResource("2_22d5u")
+id = "57170/3"
+nazev = "U Gery"
+poradi = 260
+gen_pozice = Vector3(34.1, 36.45, 66.2)
+gen_natoceni = 2.627
+gen_nazev = "U Gery"
+
+[node name="Majakovského_57113-4" type="Node3D" parent="Zastavky" unique_id=2128406281]
+transform = Transform3D(-0.90955156, 0, 0.41559112, 0, 1, 0, -0.41559112, 0, -0.90955156, 199.8, 39.36, -295.3)
+script = ExtResource("2_22d5u")
+id = "57113/4"
+nazev = "Majakovského"
+poradi = 261
+gen_pozice = Vector3(199.8, 39.36, -295.3)
+gen_natoceni = 2.713
+gen_nazev = "Majakovského"
+
+[node name="Úřad_Lochotín_51618-1" type="Node3D" parent="Zastavky" unique_id=430948371]
+transform = Transform3D(-0.4892274, 0, -0.87215626, 0, 1, 0, 0.87215626, 0, -0.4892274, -156.2, 37.07, 145.1)
+script = ExtResource("2_22d5u")
+id = "51618/1"
+nazev = "Úřad Lochotín"
+poradi = 262
+gen_pozice = Vector3(-156.2, 37.07, 145.1)
+gen_natoceni = -2.082
+gen_nazev = "Úřad Lochotín"
+
+[node name="Majakovského_57113-3" type="Node3D" parent="Zastavky" unique_id=1257676116]
+transform = Transform3D(0.91471267, 0, -0.40410486, 0, 1, 0, 0.40410486, 0, 0.91471267, 212.8, 37.27, -394.2)
+script = ExtResource("2_22d5u")
+id = "57113/3"
+nazev = "Majakovského"
+poradi = 273
+gen_pozice = Vector3(212.8, 37.27, -394.2)
+gen_natoceni = -0.416
+gen_nazev = "Majakovského"
+
+[node name="U_Gery_57170-4" type="Node3D" parent="Zastavky" unique_id=1842180507]
+transform = Transform3D(0.8493731, 0, -0.52779293, 0, 1, 0, 0.52779293, 0, 0.8493731, -19.3, 35.87, 94.2)
+script = ExtResource("2_22d5u")
+id = "57170/4"
+nazev = "U Gery"
+poradi = 274
+gen_pozice = Vector3(-19.3, 35.87, 94.2)
+gen_natoceni = -0.556
+gen_nazev = "U Gery"
+
+[node name="K_Nemocnici_53161-2" type="Node3D" parent="Zastavky" unique_id=926215838]
+transform = Transform3D(0.51224464, 0, 0.8588396, 0, 1, 0, -0.8588396, 0, 0.51224464, -7, 33.95, 266.4)
+script = ExtResource("2_22d5u")
+id = "53161/2"
+nazev = "K Nemocnici"
+poradi = 275
+gen_pozice = Vector3(-7, 33.95, 266.4)
+gen_natoceni = 1.033
+gen_nazev = "K Nemocnici"
+
+[node name="Nemocnice_Lochotín_53160-2" type="Node3D" parent="Zastavky" unique_id=2005600891]
+transform = Transform3D(-0.13875458, 0, -0.9903268, 0, 1, 0, 0.9903268, 0, -0.13875458, 396.5, 30.4, 454.4)
+script = ExtResource("2_22d5u")
+id = "53160/2"
+nazev = "Nemocnice Lochotín"
+poradi = 276
+gen_pozice = Vector3(396.5, 30.4, 454.4)
+gen_natoceni = -1.71
+gen_nazev = "Nemocnice Lochotín"
+
+[node name="Úřad_Lochotín_51618-2" type="Node3D" parent="Zastavky" unique_id=1256395664]
+transform = Transform3D(0.51310325, 0, 0.8583269, 0, 1, 0, -0.8583269, 0, 0.51310325, -151.2, 36.07, 173.9)
+script = ExtResource("2_22d5u")
+id = "51618/2"
+nazev = "Úřad Lochotín"
+poradi = 433
+gen_pozice = Vector3(-151.2, 36.07, 173.9)
+gen_natoceni = 1.032
+gen_nazev = "Úřad Lochotín"

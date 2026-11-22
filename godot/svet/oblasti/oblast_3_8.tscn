@@ -1,0 +1,46 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_i53oi"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_dc583"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="3_prrdl"]
+
+[node name="Oblast_3_8" type="Node3D" unique_id=77218835]
+script = ExtResource("1_i53oi")
+bunka = Vector2i(3, 8)
+stred = Vector2(-5376, -2304)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1228422380]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=85443838]
+
+[node name="Malesice_20225-2" type="Node3D" parent="Zastavky" unique_id=654865588]
+transform = Transform3D(-0.5031187, 0, 0.8642173, 0, 1, 0, -0.8642173, 0, -0.5031187, -377.7, 6.16, -244)
+script = ExtResource("2_dc583")
+id = "20225/2"
+nazev = "Malesice"
+poradi = 454
+gen_pozice = Vector3(-377.7, 6.16, -244)
+gen_natoceni = 2.098
+gen_nazev = "Malesice"
+
+[node name="Malesice_20225-1" type="Node3D" parent="Zastavky" unique_id=1469436271]
+transform = Transform3D(0.36701337, 0, -0.93021566, 0, 1, 0, 0.93021566, 0, 0.36701337, -346.8, 6.63, -270.7)
+script = ExtResource("2_dc583")
+id = "20225/1"
+nazev = "Malesice"
+poradi = 560
+gen_pozice = Vector3(-346.8, 6.63, -270.7)
+gen_natoceni = -1.195
+gen_nazev = "Malesice"
+
+[node name="Mista" type="Node3D" parent="." unique_id=1688656028]
+
+[node name="Zámek_Malesice_pamatka-39" type="Node3D" parent="Mista" unique_id=1992202842]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22.7, 17.77, -302.5)
+script = ExtResource("3_prrdl")
+popis = "Barokní zámek ve vsi nad řekou Mží."
+id = "pamatka-39"
+nazev = "Zámek Malesice"
+poradi = 39
+gen_pozice = Vector3(-22.7, 17.77, -302.5)
+gen_nazev = "Zámek Malesice"

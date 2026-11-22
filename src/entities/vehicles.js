@@ -1,4 +1,6 @@
 // Auta: jízdní fyzika hráče, běžný provoz, zaparkovaná auta a policie.
+import { enginePower, steeringPull, releasePanels } from './damage.js';
+import { trackCarDirt } from './car-appearance.js';
 import { driveRoute } from '../game/ai-driver.js';
 import { opposingLeftTurns, laneTurn, oncomingDistance, pathClearance, turnDistance, turnPoint } from '../game/ai-turn.js';
 import * as THREE from 'three/webgpu';
@@ -24,6 +26,7 @@ export class Car {
     this.skid = 0;
     this.mode = 'parked';        // parked | ai | player | loose | police
     this.health = 100;
+    this.dirt = this.dirtX = this.dirtZ = 0;
     this.edge = -1; this.s = 0; this.next = -1; this.lane = 0; this.nextLane = 0; this.turnSlow = 99;
     this.exitPlan = [];
     this.blocked = 0; this.temper = 0.8 + Math.random() * 0.25;
@@ -42,6 +45,8 @@ export class Car {
 
   /** Postaví auto na místo; bez výšky na zem (hint = výška, ze které se hledá povrch, např. pro most). */
   place(x, z, yaw, hint = null) {
+    this.dirtX = x; this.dirtZ = z;
+    this.brakeLights = false; this.turnSignal = 0;
     this.enteredSignal = null;
     this.junctionMovement = null;
     this.nextDetourCheck = 0;
@@ -83,6 +88,7 @@ export class VehicleManager {
     this.cars = [];
     this.spawnTimer = 0;
     this.obstacles = [];       // další překážky pro provoz (tramvaje, hráč pěšky): {x, y, z, vx, vz, halfLen, radius}
+    this.downhillGrades = new Map();
     this.crashPoints = 0;
     this.view = new THREE.Frustum();
     this.viewMatrix = new THREE.Matrix4();
@@ -146,6 +152,7 @@ export class VehicleManager {
     this.game.garage?.onRemove(car);
     this.game.audio.remove(car);
     this.scene.remove(car.mesh);
+    releasePanels(car);
     if (car.mesh.userData.beacons) for (const b of car.mesh.userData.beacons) b.material.dispose();
   }
 
@@ -161,17 +168,18 @@ export class VehicleManager {
       car.offroadCheck = 0.25;
       car.offroad = w.isSoft(car.x, car.z) && !w.onRoad(car.x, car.z, 1.0);
     }
-    const damage = car.health < 30 ? 0.55 + car.health / 66 : 1;
+    const damage = enginePower(car);
     const maxSpeed = t.maxSpeed * (car.offroad ? 0.5 : 1) * damage;
     let fx = Math.sin(car.yaw), fz = Math.cos(car.yaw);
     let vF = car.vx * fx + car.vz * fz;
 
     // řízení
     const sp = Math.abs(vF);
+    car.brakeLights = handbrake || (throttle * vF < 0 && sp > 0.65);
     // čím rychleji auto jede, tím méně se dají stočit kola (omezení bočního přetížení)
     const wb = t.len * 0.62;
     const maxSteer = Math.min(0.62, Math.atan((wb * (handbrake ? 26 : 17)) / Math.max(1, sp * sp)));
-    const target = steerIn * maxSteer;
+    const target = clamp(steerIn + steeringPull(car), -1, 1) * maxSteer;
     car.steer += (target - car.steer) * Math.min(1, dt * (Math.abs(target) > Math.abs(car.steer) ? 7 : 11));
     const wheelbase = t.len * 0.62;
     const yawRate = (vF / wheelbase) * Math.tan(car.steer) * (handbrake && sp > 6 ? 1.35 : 1);
@@ -182,21 +190,22 @@ export class VehicleManager {
     let vL = car.vx * lx + car.vz * lz;
 
     // motor a brzdy
-    const brake = car.upgrades?.brakes ? 21 : 16;
+    const surfaceGrip = this.game.weather?.surfaceGrip(car.x, car.z) ?? 1;
+    const brake = (car.upgrades?.brakes ? 21 : 16) * surfaceGrip;
     if (throttle > 0) {
       if (vF < -0.6) vF = Math.min(0, vF + brake * dt * throttle);
-      else vF += t.accel * throttle * Math.max(0, 1 - Math.pow(Math.max(0, vF) / maxSpeed, 1.6)) * dt;
+      else if (damage) vF += t.accel * throttle * damage * Math.max(0, 1 - Math.pow(Math.max(0, vF) / maxSpeed, 1.6)) * dt;
     } else if (throttle < 0) {
       if (vF > 0.6) vF = Math.max(0, vF + brake * dt * throttle);
-      else if (vF > -9) vF += t.accel * 0.7 * throttle * dt;
+      else if (vF > -9) vF += t.accel * damage * 0.7 * throttle * dt;
     } else {
       const dec = 1.1 * dt;
       vF = Math.abs(vF) < dec ? 0 : vF - Math.sign(vF) * dec;
     }
     vF -= vF * (0.06 + 0.0028 * Math.abs(vF) + (car.offroad ? 0.5 : 0)) * dt;
     if (vF > maxSpeed) vF -= (vF - maxSpeed) * Math.min(1, dt * 2);
-    if (handbrake) { const dec = 9 * dt; vF = Math.abs(vF) < dec ? 0 : vF - Math.sign(vF) * dec; }
-    const grip = (handbrake ? 1.6 : t.grip * (car.upgrades?.tires ? 1.25 : 1)) * (car.offroad ? 0.6 : 1);
+    if (handbrake) { const dec = 9 * dt * surfaceGrip; vF = Math.abs(vF) < dec ? 0 : vF - Math.sign(vF) * dec; }
+    const grip = (handbrake ? 1.6 : t.grip * (car.upgrades?.tires ? 1.25 : 1)) * (car.offroad ? 0.6 : 1) * surfaceGrip;
     const slip = Math.abs(vL);
     vL *= Math.exp(-grip * dt);
     car.skid = slip > 3.5 && sp > 5 ? Math.min(1, slip / 9) : 0;
@@ -342,15 +351,21 @@ export class VehicleManager {
     return this._moveTo(e, lane, pick);
   }
 
-  _detourAroundWreck(car) {
+  _detourAroundBlockage(car) {
     const w = this.world, traffic = w.traffic, state = car.trafficStop, rule = state?.rule;
     if (!rule || rule.edge !== car.edge || car.finishingTurn || car.enteredSignal && car.enteredSignal.group === rule.group ||
         traffic.time < car.nextDetourCheck) return;
     const gap = rule.s - car.s - car.halfLen;
     if (gap < 0 || gap > 4 || w.eLen[car.edge] - rule.s > 27) return;
     car.nextDetourCheck = traffic.time + 2;
-    if (!this.cars.some(other => other.crashed && (other.mode === 'loose' || other.mode === 'parked') &&
-        Math.hypot(other.x - car.x, other.z - car.z) < 65 && traffic.exitBlocked(car, rule, [other], []))) return;
+    const wreck = this.cars.some(other => other.crashed && (other.mode === 'loose' || other.mode === 'parked') &&
+        Math.hypot(other.x - car.x, other.z - car.z) < 65 && traffic.exitBlocked(car, rule, [other], []));
+    // Linkový vůz může zůstat stát napříč výjezdem i přes další zelenou.
+    // Řidič hledá objížďku až po minutě stání obou vozů mimo nástup cestujících.
+    const longWait = 60;
+    if (!wreck && !(car.blocked >= longWait && rule.directedHead && traffic.light(rule) === 'green' &&
+        this.obstacles.some(section => section.stoppedInTraffic >= longWait &&
+          traffic.exitBlocked(car, rule, [], [section])))) return;
 
     // Projdeme povolené výjezdy ze stávajícího pruhu. Křižovatka může mít
     // více krátkých spojek před místem, kde se za odbočením vejde celé auto.
@@ -420,10 +435,13 @@ export class VehicleManager {
     let edge = car.next, lane = car.nextLane, distance = w.eLen[edge];
     let context = w.turnContext(car.edge, edge, car.turnContext);
     // Stejná rozhodnutí použije auto při průjezdu, i když spojka sama nepojme celé auto.
-    while (distance < 42 && car.exitPlan.length < 3) {
-      const move = this._nextMove(edge, context, lane);
+    for (let index = 0; distance < 42 && index < 3; index++) {
+      let move = car.exitPlan[index];
+      if (!move) {
+        move = this._nextMove(edge, context, lane);
+        car.exitPlan.push(move);
+      }
       this._planTurn(car, edge, lane, move);
-      car.exitPlan.push(move);
       if (move.to < 0) break;
       context = w.turnContext(edge, move.to, context);
       edge = move.to;
@@ -525,9 +543,35 @@ export class VehicleManager {
     return Math.max(0, room);
   }
 
+  _downhillLimit(edge, progress, limit) {
+    const w = this.world, length = w.eLen[edge], road = w.eRoad[edge];
+    let grades = this.downhillGrades.get(edge);
+    if (!grades) {
+      grades = [];
+      this.downhillGrades.set(edge, grades);
+    }
+    const height = s => {
+      const p = w.edgePoint(edge, s, 0, _pt2);
+      return w.roadSurfaceY(road, p.seg, p.t, p.x, p.z);
+    };
+    // Odebíráme vzorky jen tak daleko, kam se ještě promítne brzdění.
+    const reach = progress + limit ** 2 / 6 + 2;
+    for (let i = Math.max(0, Math.floor((progress - 2) / 3)); i * 3 < Math.min(reach, length); i++) {
+      const start = i * 3, end = Math.min(start + 3, length);
+      if (progress > end + 2) continue;
+      if (grades[i] === undefined) {
+        const grade = (height(start) - height(end)) / Math.max(1, end - start);
+        grades[i] = grade > 0.22 ? Math.max(3.5, 7.3 - 10 * (grade - 0.22)) : Infinity;
+      }
+      // Na ostrém sjezdu přibrzdíme ještě s koly na rovině.
+      limit = Math.min(limit, Math.sqrt(grades[i] ** 2 + 6 * Math.max(0, start - progress - 2)));
+    }
+    return limit;
+  }
+
   stepAI(car, dt, physical = null) {
     const w = this.world;
-    if (car.blocked > 2 && Math.abs(car.speed) < 0.3) this._detourAroundWreck(car);
+    if (car.blocked > 2 && Math.abs(car.speed) < 0.3) this._detourAroundBlockage(car);
     if (car.finishingTurn && car.finishingTurn.to !== car.edge) car.finishingTurn = null;
     let turn = car.finishingTurn ?? car.plannedTurn;
     let arcDistance = 0;
@@ -570,12 +614,18 @@ export class VehicleManager {
     const roadLimit = w.roadSpeed(road, w.eA[car.edge] < w.eB[car.edge]) / 3.6;
     let vmax = Math.min(roadLimit, Math.min(roadLimit, 15) * car.temper);
     const remain = len - car.s;
+    if (physical) vmax = this._downhillLimit(car.edge, car.s, vmax);
     let leftTurn = turn?.sign < 0 && arcDistance < turn.radius * 0.3 ? turn : null;
     let leftDistance = -arcDistance;
     if (car.next >= 0) {
       const nextLimit = w.roadSpeed(w.eRoad[car.next], w.eA[car.next] < w.eB[car.next]) / 3.6;
       vmax = Math.min(vmax, Math.sqrt(nextLimit ** 2 + 8 * Math.max(0, remain)));
-      if (remain < 50 && w.eLen[car.next] < 42 && !car.exitPlan.length) {
+      if (physical && remain < 35) vmax = this._downhillLimit(car.next, -remain, vmax);
+      // Dřívější plán může končit uprostřed dělené křižovatky. Před stopčárou
+      // doplníme i následné odbočení, aby protisměr znal celý zamýšlený průjezd.
+      const lastMove = car.exitPlan.at(-1);
+      const shortExit = !lastMove || (lastMove.to >= 0 && w.eLen[lastMove.to] < 12 && car.exitPlan.length < 3);
+      if (remain < 50 && w.eLen[car.next] < 42 && shortExit) {
         this._planJunctionExit(car);
       }
       let distance = remain, lane = car.nextLane;
@@ -593,6 +643,7 @@ export class VehicleManager {
         vmax = Math.min(vmax, Math.sqrt(move.slow ** 2 + 5 * Math.max(0, distance - 8)));
       }
     }
+    car.turnSignal = turn && arcDistance > -26 ? turn.sign : 0;
     if (remain < 24 && car.turnSlow < vmax) vmax = car.turnSlow + (vmax - car.turnSlow) * Math.max(0, (remain - 6) / 18);
     if (turn) vmax = Math.min(vmax, Math.sqrt(3 * turn.radius + 6 * Math.max(0, -arcDistance)));
     const pointAt = (look) => {
@@ -612,6 +663,7 @@ export class VehicleManager {
         ? w.edgePoint(car.edge, Math.min(len, car.s + look), car.lane, _pt)
         : w.edgePoint(car.next, car.s + look - len, car.nextLane, _pt);
     };
+    vmax *= Math.sqrt(this.game.weather?.surfaceGrip(car.x, car.z) ?? 1);
     let limit = this._obstacleLimit(car, vmax, null, pointAt);
     car.pathBlocked = limit < 0.4;
     const upcomingLeft = leftTurn ?? (turn?.sign < 0 ? turn : null);
@@ -630,7 +682,9 @@ export class VehicleManager {
       physical.driveAI(physical.input, dt, this.game.tireSurface);
       return;
     }
-    if (car.speed < limit) car.speed = Math.min(limit, car.speed + 2.6 * dt);
+    car.brakeLights = limit + 0.25 < car.speed || (car.pathBlocked && car.speed < 1);
+    limit *= enginePower(car);
+    if (car.speed < limit) car.speed = Math.min(limit, car.speed + 2.6 * enginePower(car) * dt);
     else car.speed = Math.max(limit, car.speed - 8 * dt);
     let stopGap = Infinity;
     car.speed = w.traffic.drivingLimit(car, dt, car.speed, this.cars, this.obstacles,
@@ -756,6 +810,7 @@ export class VehicleManager {
     vmax = 7 + (vmax - 7) * Math.max(0, Math.cos(diff)) ** 2;
     if (!target.isCar) vmax = Math.min(vmax, Math.sqrt(2 * 8 * Math.max(0, dist - 7)));   // chodce nepřejíždět: včas dobrzdit a zastavit u něj
     else if (dist < 14) vmax = Math.min(vmax, Math.max(4, Math.hypot(target.vx || 0, target.vz || 0) + dist * 0.6));
+    vmax *= Math.sqrt(this.game.weather?.surfaceGrip(car.x, car.z) ?? 1);
     let limit = this._obstacleLimit(car, vmax, target);
     if (car.blocked > 1.2) limit = Math.max(limit, 4);
     car.policeDist = dist;
@@ -772,7 +827,8 @@ export class VehicleManager {
       car.blocked = car.speed < 0.5 ? car.blocked + dt : 0;
       return;
     }
-    if (car.speed < limit) car.speed = Math.min(limit, car.speed + car.type.accel * 0.8 * dt);
+    limit *= enginePower(car);
+    if (car.speed < limit) car.speed = Math.min(limit, car.speed + car.type.accel * enginePower(car) * 0.8 * dt);
     else car.speed = Math.max(limit, car.speed - 17 * dt);
     car.blocked = car.speed < 0.5 ? car.blocked + dt : 0;
     const maxTurn = 2.9 * dt * Math.min(1, car.speed / 3 + 0.15);
@@ -1060,7 +1116,17 @@ export class VehicleManager {
       } else if (c.mode === 'parked') {
         if (!c.crashed && d2 > 330 * 330 && c !== this.game.player?.lastCar && c !== this.game.garage?.active) { this.remove(c); continue; }
       }
-      if (c.mesh.userData.light) c.mesh.userData.light.visible = QUALITY.carLights && lightsOn && c.mode !== 'parked' && !c.noLights && d2 < 300 * 300;
+      if (c.mode !== 'parked') trackCarDirt(c, this.world);
+      c.mesh.userData.batches.body.userData.dirt = c.dirt;
+      const running = !c.noLights && c.mode !== 'parked';
+      c.mesh.userData.batches.detail.userData.carSignals.set(
+        running && lightsOn ? (c.highBeam && c.mode === 'player' ? 3 : 1.6) : 0,
+        running ? (c.brakeLights ? 3 : lightsOn ? 0.65 : 0) : 0,
+        running && (c.speed < -0.4 || (c.physical && c.gear < 0)) ? 2 : 0, 0);
+      const blink = Math.floor(this.game.time * 2.5) % 2 === 0;
+      for (let i = 0; i < 2; i++) c.mesh.userData.indicators[i].visible =
+        running && c.mode === 'ai' && blink && c.turnSignal === (i === 0 ? 1 : -1);
+      if (c.mesh.userData.light) c.mesh.userData.light.visible = c.mode !== 'player' && QUALITY.carLights && lightsOn && c.mode !== 'parked' && !c.noLights && d2 < 300 * 300;
       if (c.mesh.userData.beacons) {
         const on = c.mode === 'police';
         const ph = Math.floor(this.game.time / 0.16) % 2;

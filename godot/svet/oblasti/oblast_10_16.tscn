@@ -1,0 +1,113 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_06bso"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_ie3di"]
+
+[node name="Oblast_10_16" type="Node3D" unique_id=1704967278]
+script = ExtResource("1_06bso")
+bunka = Vector2i(10, 16)
+stred = Vector2(1792, 5888)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=570266583]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=905200538]
+
+[node name="Radobyčická_náves_53208-1" type="Node3D" parent="Zastavky" unique_id=2087893642]
+transform = Transform3D(0.0996308, 0, 0.9950245, 0, 1, 0, -0.9950245, 0, 0.0996308, -377.3, 18.97, -238.8)
+script = ExtResource("2_ie3di")
+id = "53208/1"
+nazev = "Radobyčická náves"
+poradi = 162
+gen_pozice = Vector3(-377.3, 18.97, -238.8)
+gen_natoceni = 1.471
+gen_nazev = "Radobyčická náves"
+
+[node name="Nad_Úhlavou_53206-1" type="Node3D" parent="Zastavky" unique_id=996444562]
+transform = Transform3D(0.46337178, 0, -0.88616395, 0, 1, 0, 0.88616395, 0, 0.46337178, -61.6, 6, 227.9)
+script = ExtResource("2_ie3di")
+id = "53206/1"
+nazev = "Nad Úhlavou"
+poradi = 163
+gen_pozice = Vector3(-61.6, 6, 227.9)
+gen_natoceni = -1.089
+gen_nazev = "Nad Úhlavou"
+
+[node name="Podhájí_53207-1" type="Node3D" parent="Zastavky" unique_id=831524482]
+transform = Transform3D(0.02679309, 0, -0.999641, 0, 1, 0, 0.999641, 0, 0.02679309, -2.6, 16.5, 467.2)
+script = ExtResource("2_ie3di")
+id = "53207/1"
+nazev = "Podhájí"
+poradi = 164
+gen_pozice = Vector3(-2.6, 16.5, 467.2)
+gen_natoceni = -1.544
+gen_nazev = "Podhájí"
+
+[node name="Kruhová_62927-1" type="Node3D" parent="Zastavky" unique_id=216516204]
+transform = Transform3D(-0.88299435, 0, -0.46938357, 0, 1, 0, 0.46938357, 0, -0.88299435, -13.4, 6.58, 237.3)
+script = ExtResource("2_ie3di")
+id = "62927/1"
+nazev = "Kruhová"
+poradi = 165
+gen_pozice = Vector3(-13.4, 6.58, 237.3)
+gen_natoceni = -2.653
+gen_nazev = "Kruhová"
+
+[node name="Rozcestí_Podhájí_53215-1" type="Node3D" parent="Zastavky" unique_id=107871336]
+transform = Transform3D(-0.09804593, 0, 0.9951819, 0, 1, 0, -0.9951819, 0, -0.09804593, 40.7, 8.05, 169.4)
+script = ExtResource("2_ie3di")
+id = "53215/1"
+nazev = "Rozcestí Podhájí"
+poradi = 166
+gen_pozice = Vector3(40.7, 8.05, 169.4)
+gen_natoceni = 1.669
+gen_nazev = "Rozcestí Podhájí"
+
+[node name="Rozcestí_Podhájí_53215-2" type="Node3D" parent="Zastavky" unique_id=1757499632]
+transform = Transform3D(-0.22622816, 0, 0.97407436, 0, 1, 0, -0.97407436, 0, -0.22622816, 68.8, 8.05, 153.7)
+script = ExtResource("2_ie3di")
+id = "53215/2"
+nazev = "Rozcestí Podhájí"
+poradi = 181
+gen_pozice = Vector3(68.8, 8.05, 153.7)
+gen_natoceni = 1.799
+gen_nazev = "Rozcestí Podhájí"
+
+[node name="Nad_Úhlavou_53206-2" type="Node3D" parent="Zastavky" unique_id=1715008874]
+transform = Transform3D(0.46337178, 0, -0.88616395, 0, 1, 0, 0.88616395, 0, 0.46337178, -61.6, 6, 227.9)
+script = ExtResource("2_ie3di")
+id = "53206/2"
+nazev = "Nad Úhlavou"
+poradi = 182
+gen_pozice = Vector3(-61.6, 6, 227.9)
+gen_natoceni = -1.089
+gen_nazev = "Nad Úhlavou"
+
+[node name="Podhájí_53207-2" type="Node3D" parent="Zastavky" unique_id=766178660]
+transform = Transform3D(0.02679309, 0, -0.999641, 0, 1, 0, 0.999641, 0, 0.02679309, -2.6, 16.5, 467.2)
+script = ExtResource("2_ie3di")
+id = "53207/2"
+nazev = "Podhájí"
+poradi = 183
+gen_pozice = Vector3(-2.6, 16.5, 467.2)
+gen_natoceni = -1.544
+gen_nazev = "Podhájí"
+
+[node name="Kruhová_62927-2" type="Node3D" parent="Zastavky" unique_id=1496689190]
+transform = Transform3D(-0.88299435, 0, -0.46938357, 0, 1, 0, 0.46938357, 0, -0.88299435, -13.4, 6.58, 237.3)
+script = ExtResource("2_ie3di")
+id = "62927/2"
+nazev = "Kruhová"
+poradi = 184
+gen_pozice = Vector3(-13.4, 6.58, 237.3)
+gen_natoceni = -2.653
+gen_nazev = "Kruhová"
+
+[node name="Radobyčická_náves_53208-2" type="Node3D" parent="Zastavky" unique_id=1893575010]
+transform = Transform3D(0.23361732, 0, 0.9723286, 0, 1, 0, -0.9723286, 0, 0.23361732, -482.6, 21.03, -266.8)
+script = ExtResource("2_ie3di")
+id = "53208/2"
+nazev = "Radobyčická náves"
+poradi = 185
+gen_pozice = Vector3(-482.6, 21.03, -266.8)
+gen_natoceni = 1.335
+gen_nazev = "Radobyčická náves"

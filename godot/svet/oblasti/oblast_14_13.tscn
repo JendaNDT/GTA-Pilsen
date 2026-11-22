@@ -1,0 +1,23 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_0m4re"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="2_obq8r"]
+
+[node name="Oblast_14_13" type="Node3D" unique_id=896494441]
+script = ExtResource("1_0m4re")
+bunka = Vector2i(14, 13)
+stred = Vector2(5888, 2816)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=279145591]
+
+[node name="Mista" type="Node3D" parent="." unique_id=1601541341]
+
+[node name="Letiště_Letkov_pamatka-48" type="Node3D" parent="Mista" unique_id=1302262313]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -409.6, 105.83, -144.1)
+script = ExtResource("2_obq8r")
+popis = "Sportovní letiště na východním okraji Plzně."
+id = "pamatka-48"
+nazev = "Letiště Letkov"
+poradi = 48
+gen_pozice = Vector3(-409.6, 105.83, -144.1)
+gen_nazev = "Letiště Letkov"

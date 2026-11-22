@@ -1,0 +1,73 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_rworr"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_t53ly"]
+
+[node name="Oblast_11_13" type="Node3D" unique_id=1763680313]
+script = ExtResource("1_rworr")
+bunka = Vector2i(11, 13)
+stred = Vector2(2816, 2816)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=690922686]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=705040908]
+
+[node name="Hasičská_stanice_50736-1" type="Node3D" parent="Zastavky" unique_id=585179619]
+transform = Transform3D(-0.9415505, 0, -0.33687183, 0, 1, 0, 0.33687183, 0, -0.9415505, 0.4, 31.89, 237)
+script = ExtResource("2_t53ly")
+id = "50736/1"
+nazev = "Hasičská stanice"
+poradi = 621
+gen_pozice = Vector3(0.4, 31.89, 237)
+gen_natoceni = -2.798
+gen_nazev = "Hasičská stanice"
+
+[node name="Pekárna_50735-1" type="Node3D" parent="Zastavky" unique_id=808195371]
+transform = Transform3D(-0.99453515, 0, -0.10440212, 0, 1, 0, 0.10440212, 0, -0.99453515, -101.3, 32.31, -169.9)
+script = ExtResource("2_t53ly")
+id = "50735/1"
+nazev = "Pekárna"
+poradi = 622
+gen_pozice = Vector3(-101.3, 32.31, -169.9)
+gen_natoceni = -3.037
+gen_nazev = "Pekárna"
+
+[node name="Jasmínová_57163-1" type="Node3D" parent="Zastavky" unique_id=1128237562]
+transform = Transform3D(-0.9859892, 0, -0.16680925, 0, 1, 0, 0.16680925, 0, -0.9859892, -220.9, 35.41, -28.6)
+script = ExtResource("2_t53ly")
+id = "57163/1"
+nazev = "Jasmínová"
+poradi = 625
+gen_pozice = Vector3(-220.9, 35.41, -28.6)
+gen_natoceni = -2.974
+gen_nazev = "Jasmínová"
+
+[node name="Pekárna_50735-2" type="Node3D" parent="Zastavky" unique_id=725096328]
+transform = Transform3D(-0.99366814, 0, -0.11235487, 0, 1, 0, 0.11235487, 0, -0.99366814, -112.1, 32.03, -202.1)
+script = ExtResource("2_t53ly")
+id = "50735/2"
+nazev = "Pekárna"
+poradi = 629
+gen_pozice = Vector3(-112.1, 32.03, -202.1)
+gen_natoceni = -3.029
+gen_nazev = "Pekárna"
+
+[node name="Hasičská_stanice_50736-2" type="Node3D" parent="Zastavky" unique_id=1789951015]
+transform = Transform3D(0.9961305, 0, 0.08788647, 0, 1, 0, -0.08788647, 0, 0.9961305, 22.7, 29.5, 461.9)
+script = ExtResource("2_t53ly")
+id = "50736/2"
+nazev = "Hasičská stanice"
+poradi = 630
+gen_pozice = Vector3(22.7, 29.5, 461.9)
+gen_natoceni = 0.088
+gen_nazev = "Hasičská stanice"
+
+[node name="Jasmínová_57163-2" type="Node3D" parent="Zastavky" unique_id=1724378131]
+transform = Transform3D(-0.9859892, 0, -0.16680925, 0, 1, 0, 0.16680925, 0, -0.9859892, -217.3, 35.94, -1)
+script = ExtResource("2_t53ly")
+id = "57163/2"
+nazev = "Jasmínová"
+poradi = 634
+gen_pozice = Vector3(-217.3, 35.94, -1)
+gen_natoceni = -2.974
+gen_nazev = "Jasmínová"

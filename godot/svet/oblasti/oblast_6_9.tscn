@@ -1,0 +1,73 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_5gxr3"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_d60hd"]
+
+[node name="Oblast_6_9" type="Node3D" unique_id=166172528]
+script = ExtResource("1_5gxr3")
+bunka = Vector2i(6, 9)
+stred = Vector2(-2304, -1280)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1843537485]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1702878457]
+
+[node name="Vinice_57186-1" type="Node3D" parent="Zastavky" unique_id=56049794]
+transform = Transform3D(0.99907565, 0, 0.04298675, 0, 1, 0, -0.04298675, 0, 0.99907565, 300.6, 53.24, -34.6)
+script = ExtResource("2_d60hd")
+id = "57186/1"
+nazev = "Vinice"
+poradi = 468
+gen_pozice = Vector3(300.6, 53.24, -34.6)
+gen_natoceni = 0.043
+gen_nazev = "Vinice"
+
+[node name="Slupská_57151-1" type="Node3D" parent="Zastavky" unique_id=2061636345]
+transform = Transform3D(0.7978958, 0, 0.6027954, 0, 1, 0, -0.6027954, 0, 0.7978958, 185.2, 52.21, -267.1)
+script = ExtResource("2_d60hd")
+id = "57151/1"
+nazev = "Slupská"
+poradi = 469
+gen_pozice = Vector3(185.2, 52.21, -267.1)
+gen_natoceni = 0.647
+gen_nazev = "Slupská"
+
+[node name="Slupská_57151-2" type="Node3D" parent="Zastavky" unique_id=162045936]
+transform = Transform3D(0.7978958, 0, 0.6027954, 0, 1, 0, -0.6027954, 0, 0.7978958, 168.7, 52.44, -263.7)
+script = ExtResource("2_d60hd")
+id = "57151/2"
+nazev = "Slupská"
+poradi = 474
+gen_pozice = Vector3(168.7, 52.44, -263.7)
+gen_natoceni = 0.647
+gen_nazev = "Slupská"
+
+[node name="Vinice_57186-2" type="Node3D" parent="Zastavky" unique_id=1842428207]
+transform = Transform3D(0.1502255, 0, -0.98865175, 0, 1, 0, 0.98865175, 0, 0.1502255, 335.9, 53.5, 35.4)
+script = ExtResource("2_d60hd")
+id = "57186/2"
+nazev = "Vinice"
+poradi = 475
+gen_pozice = Vector3(335.9, 53.5, 35.4)
+gen_natoceni = -1.42
+gen_nazev = "Vinice"
+
+[node name="Pod_Zámečkem_26977-1" type="Node3D" parent="Zastavky" unique_id=987111368]
+transform = Transform3D(-0.43154398, 0, -0.9020919, 0, 1, 0, 0.9020919, 0, -0.43154398, -115.2, -2.07, 271.3)
+script = ExtResource("2_d60hd")
+id = "26977/1"
+nazev = "Pod Zámečkem"
+poradi = 657
+gen_pozice = Vector3(-115.2, -2.07, 271.3)
+gen_natoceni = -2.017
+gen_nazev = "Pod Zámečkem"
+
+[node name="Pod_Zámečkem_26977-2" type="Node3D" parent="Zastavky" unique_id=749881344]
+transform = Transform3D(-0.43154398, 0, -0.9020919, 0, 1, 0, 0.9020919, 0, -0.43154398, -118.1, -2.13, 277.7)
+script = ExtResource("2_d60hd")
+id = "26977/2"
+nazev = "Pod Zámečkem"
+poradi = 665
+gen_pozice = Vector3(-118.1, -2.13, 277.7)
+gen_natoceni = -2.017
+gen_nazev = "Pod Zámečkem"

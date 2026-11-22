@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_2pydm"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_bh31j"]
+
+[node name="Oblast_5_10" type="Node3D" unique_id=935175331]
+script = ExtResource("1_2pydm")
+bunka = Vector2i(5, 10)
+stred = Vector2(-3328, -256)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=705666469]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=168446730]
+
+[node name="Zadní_Skvrňany_59518-1" type="Node3D" parent="Zastavky" unique_id=926053625]
+transform = Transform3D(0.38369688, 0, 0.9234591, 0, 1, 0, -0.9234591, 0, 0.38369688, -322.1, 19.13, 332.6)
+script = ExtResource("2_bh31j")
+id = "59518/1"
+nazev = "Zadní Skvrňany"
+poradi = 205
+gen_pozice = Vector3(-322.1, 19.13, 332.6)
+gen_natoceni = 1.177
+gen_nazev = "Zadní Skvrňany"
+
+[node name="Zadní_Skvrňany_59518-2" type="Node3D" parent="Zastavky" unique_id=957557548]
+transform = Transform3D(0.35675907, 0, 0.9341964, 0, 1, 0, -0.9341964, 0, 0.35675907, -329.4, 19.3, 307.6)
+script = ExtResource("2_bh31j")
+id = "59518/2"
+nazev = "Zadní Skvrňany"
+poradi = 229
+gen_pozice = Vector3(-329.4, 19.3, 307.6)
+gen_natoceni = 1.206
+gen_nazev = "Zadní Skvrňany"

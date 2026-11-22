@@ -1,0 +1,23 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_sv3sp"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_w6360"]
+
+[node name="Oblast_14_12" type="Node3D" unique_id=1137299070]
+script = ExtResource("1_sv3sp")
+bunka = Vector2i(14, 12)
+stred = Vector2(5888, 1792)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=661857008]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=2085298486]
+
+[node name="Letkov_17886-3" type="Node3D" parent="Zastavky" unique_id=1902087652]
+transform = Transform3D(0.83919233, 0, 0.5438348, 0, 1, 0, -0.5438348, 0, 0.83919233, 240.7, 75.75, 166.4)
+script = ExtResource("2_w6360")
+id = "17886/3"
+nazev = "Letkov"
+poradi = 504
+gen_pozice = Vector3(240.7, 75.75, 166.4)
+gen_natoceni = 0.575
+gen_nazev = "Letkov"

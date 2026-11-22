@@ -1,0 +1,66 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_xi68e"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_8w2t2"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="3_ns8xs"]
+
+[node name="Oblast_12_15" type="Node3D" unique_id=1466423505]
+script = ExtResource("1_xi68e")
+bunka = Vector2i(12, 15)
+stred = Vector2(3840, 4864)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=335161481]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1534619674]
+
+[node name="NC_Černice_53194-1" type="Node3D" parent="Zastavky" unique_id=1721493065]
+transform = Transform3D(0.6478787, 0, -0.76174355, 0, 1, 0, 0.76174355, 0, 0.6478787, -284.9, 54.16, 466.4)
+script = ExtResource("2_8w2t2")
+id = "53194/1"
+nazev = "NC Černice"
+poradi = 417
+gen_pozice = Vector3(-284.9, 54.16, 466.4)
+gen_natoceni = -0.866
+gen_nazev = "NC Černice"
+
+[node name="NC_Černice_53194-2" type="Node3D" parent="Zastavky" unique_id=1438608823]
+transform = Transform3D(0.6494009, 0, -0.76044625, 0, 1, 0, 0.76044625, 0, 0.6494009, -299.5, 54.52, 474.4)
+script = ExtResource("2_8w2t2")
+id = "53194/2"
+nazev = "NC Černice"
+poradi = 420
+gen_pozice = Vector3(-299.5, 54.52, 474.4)
+gen_natoceni = -0.864
+gen_nazev = "NC Černice"
+
+[node name="U_Přivaděče_68505-1" type="Node3D" parent="Zastavky" unique_id=496835275]
+transform = Transform3D(0.41668564, 0, 0.90905064, 0, 1, 0, -0.90905064, 0, 0.41668564, -316.7, 39.94, -429.5)
+script = ExtResource("2_8w2t2")
+id = "68505/1"
+nazev = "U Přivaděče"
+poradi = 627
+gen_pozice = Vector3(-316.7, 39.94, -429.5)
+gen_natoceni = 1.141
+gen_nazev = "U Přivaděče"
+
+[node name="U_Přivaděče_68505-2" type="Node3D" parent="Zastavky" unique_id=2005896424]
+transform = Transform3D(0.41668564, 0, 0.90905064, 0, 1, 0, -0.90905064, 0, 0.41668564, -316.7, 39.94, -429.5)
+script = ExtResource("2_8w2t2")
+id = "68505/2"
+nazev = "U Přivaděče"
+poradi = 635
+gen_pozice = Vector3(-316.7, 39.94, -429.5)
+gen_natoceni = 1.141
+gen_nazev = "U Přivaděče"
+
+[node name="Mista" type="Node3D" parent="." unique_id=507650083]
+
+[node name="Nákupní_centrum_Olympia_pamatka-49" type="Node3D" parent="Mista" unique_id=721701565]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -335.9, 51.45, 274)
+script = ExtResource("3_ns8xs")
+popis = "Velké nákupní centrum na jihovýchodním okraji Plzně."
+id = "pamatka-49"
+nazev = "Nákupní centrum Olympia"
+poradi = 49
+gen_pozice = Vector3(-335.9, 51.45, 274)
+gen_nazev = "Nákupní centrum Olympia"

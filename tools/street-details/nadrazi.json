@@ -1,0 +1,266 @@
+{
+  "id": "nadrazi",
+  "name": "Veřejný prostor u hlavního nádraží",
+  "outline": [
+    [
+      562,
+      222
+    ],
+    [
+      787,
+      222
+    ],
+    [
+      787,
+      377
+    ],
+    [
+      562,
+      377
+    ]
+  ],
+  "axis": [
+    [
+      606.1,
+      259.1
+    ],
+    [
+      598.1,
+      314.7
+    ],
+    [
+      708.4,
+      337.2
+    ],
+    [
+      748.8,
+      335.9
+    ]
+  ],
+  "citySha256": "825dc3e395044b1f5a47e27c812cc4189829e9134cc027865ffc8fcb3e7bb9ac",
+  "fronts": [
+    {
+      "building": "00000000000306326",
+      "edge": [
+        [
+          636.15,
+          244.7
+        ],
+        [
+          636.76,
+          246.85
+        ]
+      ],
+      "bottom": 307.69,
+      "top": 323.46,
+      "sha256": "0496fd8283be176c28f36ba1c852492dd4372a5a989c464810052e845e674a83"
+    },
+    {
+      "building": "00000000000306328",
+      "edge": [
+        [
+          631.81,
+          271.01
+        ],
+        [
+          632.79,
+          276.39
+        ]
+      ],
+      "bottom": 309.07,
+      "top": 318.71,
+      "sha256": "763c4a747d8ebcca7c326f4ef18b6cb761f8fa7c2ebe8ad50406bc9d88c7cec2",
+      "entrance": 1.26
+    },
+    {
+      "building": "00000000000306328",
+      "edge": [
+        [
+          632.24,
+          270.59
+        ],
+        [
+          635.02,
+          269.95
+        ]
+      ],
+      "bottom": 309.02,
+      "top": 321,
+      "sha256": "9accc64385497dfaccf33f1ff92fbba4953fe7dfb25e4d6af6a710c82df61b29"
+    },
+    {
+      "building": "00000000000306332",
+      "edge": [
+        [
+          628.64,
+          312.42
+        ],
+        [
+          628.75,
+          323.05
+        ]
+      ],
+      "bottom": 311.59,
+      "top": 328.39,
+      "sha256": "2fce6e954068a2368cfa0ab64c9b36e877d24e65b619eb7c156c5d8ad484fdb1",
+      "entrance": 2.45
+    },
+    {
+      "building": "00000000000307246",
+      "edge": [
+        [
+          687.94,
+          331.35
+        ],
+        [
+          690.79,
+          330.45
+        ]
+      ],
+      "bottom": 312.18,
+      "top": 317.15,
+      "sha256": "6ce26b4212cdc5b06e6f7bd0cd65c74076c2f627c9ad0d66cbfdb19c78aa00fa"
+    },
+    {
+      "building": "00000000000307246",
+      "edge": [
+        [
+          689.01,
+          324.81
+        ],
+        [
+          690.79,
+          330.45
+        ]
+      ],
+      "bottom": 311.98,
+      "top": 317.15,
+      "sha256": "cc5710f236812790b3fbda4e70873c297dec5d0aa86bca2491fd536495be8e9f",
+      "entrance": 1.36
+    },
+    {
+      "building": "00000002023200010",
+      "edge": [
+        [
+          613.41,
+          337.03
+        ],
+        [
+          613.54,
+          349.22
+        ]
+      ],
+      "bottom": 310.55,
+      "top": 315.18,
+      "sha256": "90dd9184c931efc3b1a592ede8c125a9281c1b65807f962dfa6affa31b03becd",
+      "entrance": 2.8
+    }
+  ],
+  "furniture": [
+    {
+      "id": "node-13472860629",
+      "kind": "bin",
+      "x": 687.23,
+      "z": 338.9,
+      "yaw": 0
+    },
+    {
+      "id": "node-13580712680",
+      "kind": "bin",
+      "x": 700.34,
+      "z": 360.32,
+      "yaw": 0
+    },
+    {
+      "id": "node-13861366829",
+      "kind": "bin",
+      "x": 652.28,
+      "z": 354.43,
+      "yaw": 0
+    },
+    {
+      "id": "node-13866528715",
+      "kind": "bench",
+      "x": 692.19,
+      "z": 342.34,
+      "yaw": 0
+    },
+    {
+      "id": "node-13866542383",
+      "kind": "bin",
+      "x": 724,
+      "z": 347.26,
+      "yaw": 0
+    },
+    {
+      "id": "node-13866551005",
+      "kind": "bin",
+      "x": 703.64,
+      "z": 335.66,
+      "yaw": 0
+    },
+    {
+      "id": "node-13866644136",
+      "kind": "bin",
+      "x": 675.43,
+      "z": 373.5,
+      "yaw": 0
+    },
+    {
+      "id": "platform-332361606",
+      "kind": "shelter",
+      "x": 723.43,
+      "z": 326.89,
+      "yaw": -0.4096
+    }
+  ],
+  "paving": [
+    {
+      "outline": [
+        [
+          706,
+          339
+        ],
+        [
+          721,
+          339
+        ],
+        [
+          721,
+          342
+        ],
+        [
+          706,
+          342
+        ]
+      ]
+    },
+    {
+      "outline": [
+        [
+          594,
+          296
+        ],
+        [
+          596,
+          296
+        ],
+        [
+          596.9,
+          310
+        ],
+        [
+          594.9,
+          310
+        ]
+      ]
+    }
+  ],
+  "source": {
+    "furniture": "OpenStreetMap",
+    "date": "2026-11-15T01:07:22Z",
+    "paving": "Pracovní obrys herního chodníku k ověření podle fotek.",
+    "shelters": "OSM uvádí zastřešení na nástupištích. Poloha a podoba modelu jsou pracovní do kontroly podle fotografií.",
+    "entrances": "Pracovní poloha dveří na vybraném průčelí. Ověřit z autorovy fotografie."
+  }
+}

@@ -1,5 +1,6 @@
 // Měří běžnou smyčku hry v Chromiu. Jízda a let mají pevné výchozí body.
 import { chromium } from '@playwright/test';
+import { webgpuFlags } from '../tests/e2e/browser-flags.js';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
@@ -19,6 +20,7 @@ if (work) {
   if (!url.searchParams.has('hour')) url.searchParams.set('hour', rush ? '7.5' : '10');
 }
 const workFlags = args.includes('--paced') ? [] : ['--disable-gpu-vsync', '--disable-frame-rate-limit'];
+if (args.includes('--software-webgpu')) workFlags.push(...webgpuFlags);
 const browser = await chromium.launch({
   executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
   // Plná verze Chromia může používat skutečný GPU i bez viditelného okna.
@@ -55,7 +57,8 @@ try {
       requestAnimationFrame(ready);
     });
     await page.goto(url.href);
-    await page.waitForFunction(() => window.readyAt, null, { timeout: 60_000 });
+    // I pomalý první start je výsledek měření. Doba přípravy nepatří do desetisekundového vzorku jízdy.
+    await page.waitForFunction(() => window.readyAt, null, { timeout: 300_000 });
     const startup = await page.evaluate(async () => {
       const webgpu = window.__game.renderer.backend?.isWebGPUBackend === true;
       const adapter = webgpu ? await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' }) : null;
@@ -98,13 +101,18 @@ try {
         if (work) {
           window.__freeze(true);
           window.__setInput(0, 0);
-          const deadline = performance.now() + 45_000;
+          let previousState, lastProgress = performance.now();
           let built;
           do {
             built = game.chunks.update(focus.x, focus.z, game.camera.far / 1.35, 40, focus.y);
-            await new Promise(requestAnimationFrame);
-            if (performance.now() > deadline) throw new Error('Okolí měření se nestihlo dostavět.');
-          } while (built || game.chunks.pending || game.chunks.heritage.fetching || game.chunks.orthophotoPending);
+            const state = [game.chunks.pending, game.chunks.heritage.fetching, game.chunks.orthophoto?.revision,
+              game.chunks.orthophoto?.requests, game.chunks.orthophotoPending, game.world.structures?.loading].join('/');
+            if (built || state !== previousState) lastProgress = performance.now();
+            previousState = state;
+            if (performance.now() - lastProgress > 90_000) throw new Error('Stavba okolí měření se zastavila: ' + state);
+            // Příprava dlaždic nepotřebuje pro každý krok vykreslit město ve Full HD.
+            await new Promise(resolve => setTimeout(resolve, 0));
+          } while (built || game.chunks.pending || game.chunks.heritage.fetching || game.chunks.orthophotoPending || game.world.structures?.loading);
           window.__step(1 / 60);
           if (mode === 'traffic') {
             // Po načtení okolí necháme přijet běžný ranní provoz. Měření začne při plném počtu aut.

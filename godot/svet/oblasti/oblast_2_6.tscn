@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_5axuu"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_ycie2"]
+
+[node name="Oblast_2_6" type="Node3D" unique_id=375153912]
+script = ExtResource("1_5axuu")
+bunka = Vector2i(2, 6)
+stred = Vector2(-6400, -4352)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1483926209]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1544475281]
+
+[node name="Dolní_Vlkýš_65041-1" type="Node3D" parent="Zastavky" unique_id=28836504]
+transform = Transform3D(-0.8772983, 0, 0.47994554, 0, 1, 0, -0.47994554, 0, -0.8772983, -121.2, 60.52, 255.8)
+script = ExtResource("2_ycie2")
+id = "65041/1"
+nazev = "Dolní Vlkýš"
+poradi = 703
+gen_pozice = Vector3(-121.2, 60.52, 255.8)
+gen_natoceni = 2.641
+gen_nazev = "Dolní Vlkýš"
+
+[node name="Dolní_Vlkýš_65041-2" type="Node3D" parent="Zastavky" unique_id=1762532831]
+transform = Transform3D(-0.8772983, 0, 0.47994554, 0, 1, 0, -0.47994554, 0, -0.8772983, -121.2, 60.52, 255.8)
+script = ExtResource("2_ycie2")
+id = "65041/2"
+nazev = "Dolní Vlkýš"
+poradi = 704
+gen_pozice = Vector3(-121.2, 60.52, 255.8)
+gen_natoceni = 2.641
+gen_nazev = "Dolní Vlkýš"

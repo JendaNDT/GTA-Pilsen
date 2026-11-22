@@ -1,6 +1,7 @@
 import * as THREE from 'three/webgpu';
 import { makeSurfaceMaterial } from './materials.js';
 import { SURFACE } from './material-table.js';
+import { trafficFurniture } from './traffic-furniture.js';
 
 const BOX = new THREE.BoxGeometry(1, 1, 1);
 const FACE = new THREE.PlaneGeometry(1, 1);
@@ -9,6 +10,17 @@ const PROPS = makeSurfaceMaterial(SURFACE.metal);
 const LIGHTS = new THREE.MeshBasicMaterial({ toneMapped: false });
 const materials = new Map();
 const transform = new THREE.Object3D();
+const hiddenScale = new THREE.Vector3(0, 0, 0);
+const unitScale = new THREE.Vector3(1, 1, 1);
+const bendPosition = new THREE.Vector3();
+const bendRotation = new THREE.Quaternion();
+const bendMatrix = new THREE.Matrix4();
+const instanceMatrix = new THREE.Matrix4();
+const steel = new THREE.Color(0x73787a), housing = new THREE.Color(0x25272a);
+const poleMaterial = PROPS.clone();
+const housingMaterial = PROPS.clone();
+poleMaterial.color.copy(steel);
+housingMaterial.color.copy(housing);
 
 function signMaterial(kind, speed) {
   const key = kind + (speed ?? '');
@@ -67,28 +79,86 @@ function instance(mesh, index, x, y, z, yaw, width, height, depth) {
   mesh.setMatrixAt(index, transform.matrix);
 }
 
+function furnitureInstance(mesh, index, fixture, part) {
+  instance(mesh, index, fixture.x + part.x, fixture.y + part.y, fixture.z + part.z,
+    part.yaw, part.width, part.height, part.depth);
+}
+
+export function trafficFragment(fixture, name) {
+  const part = fixture[name];
+  const face = name === 'panel' && fixture.type === 'sign';
+  const { kind, speed } = fixture.entry;
+  const material = face ? signMaterial(kind, speed) : name === 'pole' ? poleMaterial : housingMaterial;
+  const mesh = new THREE.Mesh(face ? FACE : BOX, material);
+  mesh.scale.set(part.width, part.height, part.depth);
+  return mesh;
+}
+
 export function buildTrafficMeshes(world, entries) {
   const group = new THREE.Group();
-  const poles = new THREE.InstancedMesh(BOX, PROPS, entries.signs.length + entries.heads.length * 2);
+  const poles = new THREE.InstancedMesh(BOX, PROPS, entries.signs.length + entries.heads.length * 2 + (entries.posts?.length ?? 0));
   let pole = 0;
   const bySign = new Map();
+  const visuals = [];
+  const remember = (fixture, instances) => {
+    const { id, x, y, z } = fixture;
+    const toOrigin = new THREE.Matrix4().makeTranslation(-x, -y, -z);
+    const originals = instances.map(([mesh, i]) => {
+      const matrix = new THREE.Matrix4();
+      mesh.getMatrixAt(i, matrix);
+      return matrix;
+    });
+    let intact = true;
+    const visual = {
+      id,
+      show(show) {
+        if (intact && show) return;
+        intact = show;
+        const pose = world.breakables.damaged.get(id)?.pose;
+        if (pose) {
+          bendPosition.set(pose.x, pose.y, pose.z);
+          bendRotation.set(pose.qx, pose.qy, pose.qz, pose.qw);
+          bendMatrix.compose(bendPosition, bendRotation, unitScale).multiply(toOrigin);
+        }
+        instances.forEach(([mesh, i], j) => {
+          const source = originals[j];
+          if (show) mesh.setMatrixAt(i, source);
+          else {
+            instanceMatrix.copy(source);
+            if (pose) instanceMatrix.premultiply(bendMatrix);
+            else instanceMatrix.scale(hiddenScale);
+            mesh.setMatrixAt(i, instanceMatrix);
+          }
+          mesh.instanceMatrix.needsUpdate = true;
+        });
+      },
+    };
+    world.breakables.attach(visual);
+    visuals.push(visual);
+  };
   for (const sign of entries.signs) {
     const material = signMaterial(sign.kind, sign.speed);
     if (!bySign.has(material)) bySign.set(material, []);
     bySign.get(material).push(sign);
   }
-  const steel = new THREE.Color(0x73787a), housing = new THREE.Color(0x25272a);
-  const setPole = (x, y, z, h) => {
-    instance(poles, pole, x, y + h / 2, z, 0, 0.065, h, 0.065);
+  const setPole = (fixture) => {
+    furnitureInstance(poles, pole, fixture, fixture.pole);
     poles.setColorAt(pole++, steel);
   };
+  for (const entry of entries.posts ?? []) {
+    const fixture = trafficFurniture(world, entry, 'bollard');
+    const i = pole;
+    setPole(fixture);
+    remember(fixture, [[poles, i]]);
+  }
   for (const [mat, signs] of bySign) {
     const faces = new THREE.InstancedMesh(FACE, mat, signs.length);
-    signs.forEach(({ x, z, tx, tz, kind }, i) => {
-      const y = world.groundY(x, z), yaw = Math.atan2(-tx, -tz);
-      const size = kind === 'stop' ? 0.83 : 0.68;
-      setPole(x, y, z, 2.32);
-      instance(faces, i, x - tx * 0.045, y + 2.36, z - tz * 0.045, yaw, size, size, 1);
+    signs.forEach((sign, i) => {
+      const fixture = trafficFurniture(world, sign, 'sign');
+      const from = pole;
+      setPole(fixture);
+      furnitureInstance(faces, i, fixture, fixture.panel);
+      remember(fixture, [[poles, from], [faces, i]]);
     });
     group.add(faces);
   }
@@ -96,21 +166,23 @@ export function buildTrafficMeshes(world, entries) {
   const heads = [];
   let lens = 0;
   for (const head of entries.heads) {
-    const { x, z, tx, tz, kind } = head;
-    const y = world.groundY(x, z), yaw = Math.atan2(-tx, -tz);
+    const { tx, tz, kind } = head;
+    const fixture = trafficFurniture(world, head, 'signal');
+    const { x, y, z, panel } = fixture;
     const pedestrian = kind === 'pedestrian';
-    const height = pedestrian ? 2.45 : 3.3;
     const lights = pedestrian ? ['red', 'green'] : ['red', 'amber', 'green'];
-    setPole(x, y, z, height);
-    instance(poles, pole, x - tx * 0.11, y + height, z - tz * 0.11, yaw,
-      pedestrian ? 0.27 : 0.35, pedestrian ? 0.54 : 0.96, 0.18);
+    const instances = [[poles, pole], [poles, pole + 1]];
+    setPole(fixture);
+    furnitureInstance(poles, pole, fixture, panel);
     poles.setColorAt(pole++, housing);
     heads.push({ head, from: lens, lights, color: '' });
     for (let j = 0; j < lights.length; j++) {
       const dy = ((lights.length - 1) / 2 - j) * (pedestrian ? 0.25 : 0.28);
       const radius = pedestrian ? 0.086 : 0.105;
-      instance(bulbs, lens++, x - tx * 0.208, y + height + dy, z - tz * 0.208, yaw, radius, radius, 1);
+      instances.push([bulbs, lens]);
+      instance(bulbs, lens++, x - tx * 0.208, y + panel.y + dy, z - tz * 0.208, panel.yaw, radius, radius, 1);
     }
+    remember(fixture, instances);
   }
   if (pole) group.add(poles);
   if (lens) group.add(bulbs);
@@ -128,6 +200,7 @@ export function buildTrafficMeshes(world, entries) {
   };
   update();
   return { group, update, dispose: () => {
+    for (const visual of visuals) world.breakables.detach(visual);
     for (const mesh of group.children) mesh.dispose();
   } };
 }

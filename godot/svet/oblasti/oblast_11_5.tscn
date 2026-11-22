@@ -1,0 +1,53 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_jrufn"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_l4lqn"]
+
+[node name="Oblast_11_5" type="Node3D" unique_id=1635783456]
+script = ExtResource("1_jrufn")
+bunka = Vector2i(11, 5)
+stred = Vector2(2816, -5376)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1546111060]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=255231355]
+
+[node name="Zruč_-_Senec,_V_koutě_42131-2" type="Node3D" parent="Zastavky" unique_id=946962083]
+transform = Transform3D(-0.9690131, 0, -0.24700929, 0, 1, 0, 0.24700929, 0, -0.9690131, -383.8, 64.61, 324.3)
+script = ExtResource("2_l4lqn")
+id = "42131/2"
+nazev = "Zruč - Senec, V koutě"
+poradi = 118
+gen_pozice = Vector3(-383.8, 64.61, 324.3)
+gen_natoceni = -2.892
+gen_nazev = "Zruč - Senec, V koutě"
+
+[node name="Zruč_-_Senec,_U_pomníku_42130-2" type="Node3D" parent="Zastavky" unique_id=366005706]
+transform = Transform3D(-0.7161034, 0, 0.69799423, 0, 1, 0, -0.69799423, 0, -0.7161034, -96.2, 66.08, -243)
+script = ExtResource("2_l4lqn")
+id = "42130/2"
+nazev = "Zruč - Senec, U pomníku"
+poradi = 119
+gen_pozice = Vector3(-96.2, 66.08, -243)
+gen_natoceni = 2.369
+gen_nazev = "Zruč - Senec, U pomníku"
+
+[node name="Zruč_-_Senec,_U_pomníku_42130-1" type="Node3D" parent="Zastavky" unique_id=683280287]
+transform = Transform3D(-0.7161034, 0, 0.69799423, 0, 1, 0, -0.69799423, 0, -0.7161034, -91.2, 66.15, -254)
+script = ExtResource("2_l4lqn")
+id = "42130/1"
+nazev = "Zruč - Senec, U pomníku"
+poradi = 135
+gen_pozice = Vector3(-91.2, 66.15, -254)
+gen_natoceni = 2.369
+gen_nazev = "Zruč - Senec, U pomníku"
+
+[node name="Zruč_-_Senec,_V_koutě_42131-1" type="Node3D" parent="Zastavky" unique_id=615272632]
+transform = Transform3D(0.907711, 0, 0.4195958, 0, 1, 0, -0.4195958, 0, 0.907711, -401.8, 67.05, 395.6)
+script = ExtResource("2_l4lqn")
+id = "42131/1"
+nazev = "Zruč - Senec, V koutě"
+poradi = 136
+gen_pozice = Vector3(-401.8, 67.05, 395.6)
+gen_natoceni = 0.433
+gen_nazev = "Zruč - Senec, V koutě"

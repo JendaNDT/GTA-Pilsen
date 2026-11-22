@@ -1,3 +1,5 @@
+import { panelLevels, restorePanels } from '../entities/damage.js';
+import { dirtLevel } from '../entities/car-appearance.js';
 import { Car } from '../entities/vehicles.js';
 
 export const GARAGE = { x: 833, z: 254, yaw: -2.49, name: 'Garáž u hlavního nádraží' };
@@ -23,12 +25,15 @@ export class Garage {
     this.owned = {
       model: 'hatch',
       health: condition(saved.health),
+      damage: panelLevels(saved.damage),
+      dirt: dirtLevel(saved.dirt),
       upgrades: { brakes: saved.upgrades?.brakes === true, tires: saved.upgrades?.tires === true },
     };
   }
 
   snapshot() {
-    return this.owned && { ...this.owned, health: condition(this.active?.health ?? this.owned.health) };
+    return this.owned && { ...this.owned, dirt: dirtLevel(this.active?.dirt ?? this.owned.dirt), damage: panelLevels(this.active ? this.active.damage : this.owned.damage),
+      health: condition(this.active?.health ?? this.owned.health) };
   }
 
   get near() {
@@ -65,6 +70,8 @@ export class Garage {
       }
       const car = new Car(owned.model, 0x397f70);
       car.health = owned.health;
+      car.dirt = dirtLevel(owned.dirt);
+      restorePanels(car, owned.damage);
       car.upgrades = owned.upgrades;
       car.place(GARAGE.x, GARAGE.z, GARAGE.yaw);
       this.active = g.vehicles.add(car);
@@ -80,7 +87,7 @@ export class Garage {
     if (action === 'repair' && this.repairPrice) {
       const price = this.repairPrice;
       if (g.money < price) return 'Na opravu nemáš dost peněz.';
-      return g.commitAccount({ money: g.money - price, garage: { ...owned, health: 100 } })
+      return g.commitAccount({ money: g.money - price, garage: { ...owned, damage: {}, health: 100 } })
         ? `Opraveno za ${price} Kč.` : g.saveError;
     }
     const upgrade = Object.hasOwn(UPGRADES, action) && UPGRADES[action];

@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_00rq6"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_3d16i"]
+
+[node name="Oblast_0_9" type="Node3D" unique_id=957661094]
+script = ExtResource("1_00rq6")
+bunka = Vector2i(0, 9)
+stred = Vector2(-8448, -1280)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1756451972]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=2061552316]
+
+[node name="Kozolupy,_u_Jána_15910-2" type="Node3D" parent="Zastavky" unique_id=2142326928]
+transform = Transform3D(0.20042957, 0, 0.97970814, 0, 1, 0, -0.97970814, 0, 0.20042957, -303.7, 22.5, -489.4)
+script = ExtResource("2_3d16i")
+id = "15910/2"
+nazev = "Kozolupy, u Jána"
+poradi = 493
+gen_pozice = Vector3(-303.7, 22.5, -489.4)
+gen_natoceni = 1.369
+gen_nazev = "Kozolupy, u Jána"
+
+[node name="Kozolupy,_u_Jána_15910-1" type="Node3D" parent="Zastavky" unique_id=1234655842]
+transform = Transform3D(0.23167221, 0, 0.9727939, 0, 1, 0, -0.9727939, 0, 0.23167221, -52.9, 19.93, -420.7)
+script = ExtResource("2_3d16i")
+id = "15910/1"
+nazev = "Kozolupy, u Jána"
+poradi = 494
+gen_pozice = Vector3(-52.9, 19.93, -420.7)
+gen_natoceni = 1.337
+gen_nazev = "Kozolupy, u Jána"

@@ -5,7 +5,8 @@ import { gameUrl } from './game-url.js';
 test('E17 – expozice reaguje na jas uvnitř a venku u Valíku', { tag: '@webgpu' }, async ({ page, baseURL }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await openReferenceGame(page, gameUrl(baseURL));
+  // Referenční pohledy mají pevné datum a počasí podle něj, stejně jako snímky z tools/reference_views.mjs.
+  await openReferenceGame(page, gameUrl(baseURL, { weather: null }));
   await renderReferenceView(page, reference.views.find(({ id }) => id === 'valik-zapad'));
   const observed = await page.evaluate(async () => {
     const game = window.__game, eye = game.postfx.exposure;
@@ -15,11 +16,12 @@ test('E17 – expozice reaguje na jas uvnitř a venku u Valíku', { tag: '@webgp
     const read = async () => {
       // Odečet měří nový snímek až po dokončení předchozího pohledu a jeho stínů.
       await queue?.onSubmittedWorkDone();
+      while (eye.pending) await afterFrame();
       eye.update(0.20);
       game.render();
-      const finish = performance.now() + 10_000;
-      while (eye.pending && performance.now() < finish) await afterFrame();
-      if (eye.pending || eye.brightness === null) throw new Error('Chybí odečet průměrného jasu.');
+      if (!eye.pending) throw new Error('Odečet nového pohledu se nespustil.');
+      while (eye.pending) await afterFrame();
+      if (eye.disposed || eye.brightness === null) throw new Error('Chybí odečet průměrného jasu.');
       return eye.brightness;
     };
     const outside = await read();

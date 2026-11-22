@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_bhkd0"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_ujwh3"]
+
+[node name="Oblast_12_4" type="Node3D" unique_id=1900959494]
+script = ExtResource("1_bhkd0")
+bunka = Vector2i(12, 4)
+stred = Vector2(3840, -6400)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=856227073]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=865500528]
+
+[node name="Zruč_-_Senec_50745-2" type="Node3D" parent="Zastavky" unique_id=1462319076]
+transform = Transform3D(0.005796237, 0, 0.9999832, 0, 1, 0, -0.9999832, 0, 0.005796237, 130.8, 39.21, -470.2)
+script = ExtResource("2_ujwh3")
+id = "50745/2"
+nazev = "Zruč - Senec"
+poradi = 122
+gen_pozice = Vector3(130.8, 39.21, -470.2)
+gen_natoceni = 1.565
+gen_nazev = "Zruč - Senec"
+
+[node name="Zruč_-_Senec_50745-1" type="Node3D" parent="Zastavky" unique_id=1742931802]
+transform = Transform3D(0.005796237, 0, 0.9999832, 0, 1, 0, -0.9999832, 0, 0.005796237, 131.5, 39.21, -465.9)
+script = ExtResource("2_ujwh3")
+id = "50745/1"
+nazev = "Zruč - Senec"
+poradi = 132
+gen_pozice = Vector3(131.5, 39.21, -465.9)
+gen_natoceni = 1.565
+gen_nazev = "Zruč - Senec"

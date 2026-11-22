@@ -1,6 +1,12 @@
 import { TUNNEL_HEIGHT, TUNNEL_PORTAL_CUT } from '../world/tunnels.js';
 
 import { riverBed } from './water.js';
+import { densePath, pathNormal } from '../world/road-profile.js';
+import { gradeBlend, gradeCross, stripLift } from '../world/road-grade.js';
+import { cornerSidewalkSections, sidewalkFacing, sidewalkQuads, sidewalkSections, SIDEWALK_RAISED } from '../world/sidewalks.js';
+
+const ROAD_STEP = 4;                   // rozteč jemné sítě terénu podél vozovek (m)
+const JUNCTION_PARTS = 4;              // na kolik dílů se pás napříč dělí v křižovatce
 
 export function terrainGridStep(world, ci) {
   if (world.gradeTerrain.has(ci)) return world.gradeStep;
@@ -51,11 +57,22 @@ function portalPlanes(p) {
 
 export function terrainTriangles(world, ci, x0, z0, size, emit) {
   const bed = riverBed(world, x0, z0, size);
-  const step = Math.min(terrainGridStep(world, ci), bed ? 4 : Infinity);
+  // Pod silnicemi je terén srovnaný do jejich profilu po 4 m; fyzika ho podél vozovek sleduje
+  // stejně jemně, aby nevystupoval nad pás vozovky. Jinde zůstává původní síť.
+  const roads = world.roadTerrain && world.hasRoadTerrain(ci) ? ROAD_STEP : Infinity;
+  const base = Math.min(terrainGridStep(world, ci), bed ? 4 : Infinity);
+  const near = roads < Infinity && base > ROAD_STEP && size === 256 ? world.roadNearTile(ci) : null;
+  const step = near ? base : Math.min(base, roads);
   const holes = world.tunnels.flatMap((t) => t.portalCuts(x0, z0, size)).flatMap(portalPlanes);
+  // terén pod pásem vozovky a do CLAMP_PAD za jejím okrajem leží pod pásem (viz roadClampAt)
+  const dryHeight = (x, z) => {
+    const y = world.heightAt(x, z);
+    const road = roads < Infinity ? world.roadClampAt(x, z, y) : NaN;
+    return road < y ? road : y;
+  };
   const vertex = (x, z) => {
     const depth = bed ? bed(x, z) : 0;
-    const p = [x, world.heightAt(x, z) - depth, z];
+    const p = [x, dryHeight(x, z) - depth, z];
     p.wet = depth > 0;
     return p;
   };
@@ -75,7 +92,8 @@ export function terrainTriangles(world, ci, x0, z0, size, emit) {
       else lo = t;
     }
     const x = dry[0] + lo * dx, z = dry[2] + lo * dz;
-    return [x, world.heightAt(x, z), z];
+    // bod na břehové čáře se srovná pod pás vozovky stejně jako vrcholy sítě
+    return [x, dryHeight(x, z), z];
   };
   const surface = (a, b, c) => {
     if (a.wet === b.wet && a.wet === c.wet) return triangle(a, b, c);
@@ -88,6 +106,7 @@ export function terrainTriangles(world, ci, x0, z0, size, emit) {
     triangle(p, b, c);
     triangle(p, c, q);
   };
+  if (near) return refinedGrid(near, base, x0, z0, size, vertex, surface);
   const row = [];
   for (let x = x0; x <= x0 + size; x += step) row.push(vertex(x, z0));
   for (let z = z0 + step; z <= z0 + size; z += step) {
@@ -100,5 +119,174 @@ export function terrainTriangles(world, ci, x0, z0, size, emit) {
       lowerLeft = lowerRight;
     }
     row[row.length - 1] = lowerLeft;
+  }
+}
+
+/**
+ * Síť terénu s buňkami `base`, z nichž buňky u vozovek (a jejich sousedé) mají jemnou síť
+ * po ROAD_STEP. Uprostřed hran mezi jemnou a hrubou buňkou leží bod přesně na hrubé hraně,
+ * takže síť nemá díry. Úhlopříčky mají stejný směr jako dotaz na výšku terénu.
+ */
+function refinedGrid(near, base, x0, z0, size, vertex, surface) {
+  const N = Math.round(size / base), r = Math.round(base / ROAD_STEP), stride = Math.round(size / ROAD_STEP) + 1;
+  const mask = new Uint8Array(N * N);
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    for (let b = 0; b <= r && !mask[j * N + i]; b++) for (let a = 0; a <= r; a++) {
+      if (near[(j * r + b) * stride + i * r + a]) { mask[j * N + i] = 1; break; }
+    }
+  }
+  const fine = new Uint8Array(N * N);
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    if (!mask[j * N + i]) continue;
+    for (let b = Math.max(0, j - 1); b <= Math.min(N - 1, j + 1); b++) for (let a = Math.max(0, i - 1); a <= Math.min(N - 1, i + 1); a++) fine[b * N + a] = 1;
+  }
+  const nodes = new Map();
+  const node = (fi, fj) => {
+    const key = fj * stride + fi;
+    let p = nodes.get(key);
+    if (p) return p;
+    const ci = Math.min(N - 1, Math.floor(fi / r)), cj = Math.min(N - 1, Math.floor(fj / r));
+    // bod na hraně jemné buňky s hrubou sousední: na přímce mezi rohy hrubé hrany
+    const onX = fi % r !== 0, onZ = fj % r !== 0;
+    let coarse = false;
+    if (onX !== onZ) {
+      const ai = onX ? ci : fi / r, aj = onZ ? cj : fj / r;
+      const left = onX ? [ai, aj - 1] : [ai - 1, aj], right = onX ? [ai, aj] : [ai, aj];
+      const fineAt = ([i, j]) => i >= 0 && j >= 0 && i < N && j < N && fine[j * N + i];
+      coarse = !(fineAt(left) && fineAt(right)) && (fineAt(left) || fineAt(right)) &&
+        left[0] >= 0 && left[1] >= 0 && right[0] < N && right[1] < N;
+    }
+    if (coarse) {
+      const a = onX ? node(fi - (fi % r), fj) : node(fi, fj - (fj % r));
+      const b = onX ? node(fi - (fi % r) + r, fj) : node(fi, fj - (fj % r) + r);
+      const t = onX ? (fi % r) / r : (fj % r) / r;
+      p = [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+      p.wet = a.wet && b.wet;
+    } else p = vertex(x0 + fi * ROAD_STEP, z0 + fj * ROAD_STEP);
+    nodes.set(key, p);
+    return p;
+  };
+  for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+    if (!fine[j * N + i]) {
+      const ul = node(i * r, j * r), ur = node(i * r + r, j * r), ll = node(i * r, j * r + r), lr = node(i * r + r, j * r + r);
+      surface(ul, ll, ur);
+      surface(ur, ll, lr);
+      continue;
+    }
+    for (let b = 0; b < r; b++) for (let a = 0; a < r; a++) {
+      const fi = i * r + a, fj = j * r + b;
+      const ul = node(fi, fj), ur = node(fi + 1, fj), ll = node(fi, fj + 1), lr = node(fi + 1, fj + 1);
+      surface(ul, ll, ur);
+      surface(ur, ll, lr);
+    }
+  }
+}
+
+/**
+ * Povrch vozovek s hladkým profilem (pásy po 2 m po celé šířce). Terén pod silnicí je srovnaný
+ * do stejného profilu a pás leží jako vykreslený asfalt 5 cm nad ním, takže drobné nerovnosti
+ * sítě terénu kola necítí. Na začátku pásu (za přechodem u chráněných míst) se zvedá plynule.
+ * Napříč má pás stejný sklon jako vykreslená vozovka (podle svahu a klopení v zatáčce).
+ */
+export function roadSurfaceTriangles(world, ci, emit) {
+  const grade = world.roadGrade, pieces = world.rPieces?.[ci];
+  if (!grade || !pieces) return;
+  const { rpx, rpz, rOff } = world;
+  const up = (a, b, c) => ((b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2])) >= 0;
+  const tri = (a, b, c) => (up(a, b, c) ? emit(a, b, c) : emit(a, c, b));
+  for (let q = 0; q < pieces.length; q += 3) {
+    const road = pieces[q], s = pieces[q + 1], e = pieces[q + 2];
+    if (grade.start[road] < 0) continue;
+    const hw = world.r.w[road] / 2;
+    const D = densePath(rpx, rpz, null, s, e, rOff[road], rOff[road + 1] - 1, 2);
+    let station = grade.station[s], previous = null;
+    for (let k = 0; k < D.n; k++) {
+      if (k) station += Math.hypot(D.x[k] - D.x[k - 1], D.z[k] - D.z[k - 1]);
+      const n = pathNormal(D, k), scale = Math.min(n.scale, 1.5);
+      const y = world.roadGradeAt(road, station);
+      // ručně doladěná místa (konce mostů, podjezdy) zůstávají jen na terénu
+      if (y !== y) { previous = null; continue; }
+      // v přechodu k nim a u nenapojených konců jede auto po plynule upraveném terénu
+      if (gradeBlend(grade, road, station) < 1) { previous = null; continue; }
+      const lift = stripLift(grade, road, station), slope = gradeCross(grade, road, station) * hw;
+      // V křižovatce leží pás ve společné výšce všech vozovek. Aby se překrývající pásy
+      // různých silnic shodovaly, dělí se tam napříč na JUNCTION_PARTS dílů.
+      const junction = world.inJunction(D.x[k], D.z[k]) ||
+        world.inJunction(D.x[k] - n.x * hw * scale, D.z[k] - n.z * hw * scale) ||
+        world.inJunction(D.x[k] + n.x * hw * scale, D.z[k] + n.z * hw * scale);
+      const parts = junction ? JUNCTION_PARTS : 1;
+      const points = [];
+      for (let i = 0; i <= parts; i++) {
+        const u = -1 + (2 * i) / parts;
+        const x = D.x[k] + n.x * hw * scale * u, z = D.z[k] + n.z * hw * scale * u;
+        let h = y + slope * u;              // příčný sklon (u = −1 levý, +1 pravý okraj)
+        if (junction && world.inJunction(x, z)) {
+          const shared = world.junctionSurfaceAt(x, z);
+          if (shared === shared) h = shared;
+        }
+        points.push([x, h + lift, z]);
+      }
+      const section = { points, parts };
+      if (previous) {
+        // spojení úseků s různým dělením: chybějící body leží na přímce mezi krajními
+        const count = Math.max(previous.parts, parts);
+        const at = (sec, i) => {
+          if (sec.parts === count) return sec.points[i];
+          const a = sec.points[0], b = sec.points[sec.parts], t = i / count;
+          return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+        };
+        for (let i = 0; i < count; i++) {
+          const p0 = at(previous, i), p1 = at(previous, i + 1), c0 = at(section, i), c1 = at(section, i + 1);
+          tri(p0, p1, c1);
+          tri(p0, c1, c0);
+        }
+      }
+      previous = section;
+    }
+  }
+}
+
+/** Chodníky s obrubníkem v dlaždici (stejné řezy jako vykreslení, viz sidewalks.js). */
+export function sidewalkTriangles(world, ci, emit) {
+  const pieces = world.rPieces?.[ci] ?? [];
+  if (!world.sidewalks) return;
+  const oriented = (a, b, c, normal) => {
+    const nx = (b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]);
+    const ny = (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]);
+    const nz = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+    if (nx * normal[0] + ny * normal[1] + nz * normal[2] >= 0) emit(a, b, c); else emit(a, c, b);
+  };
+  const all = [];
+  for (let q = 0; q < pieces.length; q += 3) {
+    const road = pieces[q];
+    if (!world.sidewalks[road] || (world.r.flags[road] & SIDEWALK_RAISED)) continue;
+    const sides = sidewalkSections(world, road, pieces[q + 1], pieces[q + 2]);
+    if (sides) all.push(...sides);
+  }
+  for (const corner of world.cornerTiles?.get(ci) ?? []) {
+    const sections = cornerSidewalkSections(world, corner);
+    if (sections) all.push(sections);
+  }
+  {
+    for (const sections of all) {
+      sidewalkQuads(sections, (a, b, c, d, part, section) => {
+        for (const normal of sidewalkFacing(part, section)) {
+          oriented(a, b, c, normal);
+          oriented(a, c, d, normal);
+        }
+      });
+    }
+  }
+}
+
+/** Asfalt zaoblených rohů v dlaždici (vějíř z rohu přes oblouk), ve výšce pásu vozovky. */
+export function cornerTriangles(world, ci, emit) {
+  for (const corner of world.cornerTiles?.get(ci) ?? []) {
+    const points = corner.polygon.map(([x, z]) => [x, world.cornerY(corner, x, z), z]);
+    const up = (a, b, c) => ((b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2])) >= 0;
+    for (let k = 1; k + 1 < points.length; k++) {
+      const a = points[0], b = points[k], c = points[k + 1];
+      if (up(a, b, c)) emit(a, b, c); else emit(a, c, b);
+    }
   }
 }

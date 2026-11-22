@@ -4,7 +4,12 @@ import { step, vertexColor } from 'three/tsl';
 import { env, getPoolMaterial, makeBatchedSurfaceMaterial, makeSurfaceMaterial } from '../world/materials.js';
 import { SURFACE } from '../world/material-table.js';
 import { parts as ragdollParts } from '../physics/ragdoll.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { transitMaterial } from './transit-material.js';
+import { carPaint, carLenses } from './car-appearance.js';
 import { QUALITY } from '../config.js';
+import { carProfile, extrudeProfile, tumblehome } from './car-body.js';
+import { pageLook } from '../world/daylight.js';
 
 const _c = new THREE.Color();
 const lin = (hex) => { _c.setHex(hex); return [_c.r, _c.g, _c.b]; };
@@ -72,6 +77,31 @@ export class Parts {
     }
     return this;
   }
+  /** Přidá hotovou neindexovanou geometrii (pozice a normály) jednou barvou. */
+  mesh(geometry, col, surface) {
+    const p = geometry.attributes.position.array, n = geometry.attributes.normal.array;
+    for (let i = 0; i < p.length; i += 3) this.vertex(p[i], p[i + 1], p[i + 2], n[i], n[i + 1], n[i + 2], col, surface);
+    geometry.dispose();
+    return this;
+  }
+  /** Rovinný mnohoúhelník (body v pořadí po obvodu) s danou normálou. */
+  polygon(points, normal, col, surface) {
+    for (let i = 1; i < points.length - 1; i++) {
+      for (const q of [points[0], points[i], points[i + 1]]) this.vertex(q[0], q[1], q[2], ...normal, col, surface);
+    }
+    return this;
+  }
+  /** Mezikruží v rovině kolmé na osu x (kolo), od poloměru r0 do r1, normála ve směru `side`. */
+  ring(r0, r1, x, y, z, side, col, seg, surface) {
+    for (let s = 0; s < seg; s++) {
+      const a0 = (s / seg) * Math.PI * 2, a1 = ((s + 1) / seg) * Math.PI * 2;
+      const p = (r, a) => [x, y + Math.cos(a) * r, z + Math.sin(a) * r];
+      // pořadí proti směru hodinových ručiček při pohledu ze strany `side`
+      const loop = r0 <= 0 ? [p(0, a0), p(r1, a0), p(r1, a1)] : [p(r0, a0), p(r1, a0), p(r1, a1), p(r0, a1)];
+      this.polygon(side > 0 ? loop : loop.reverse(), [side, 0, 0], col, surface);
+    }
+    return this;
+  }
   geometry() {
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.Float32BufferAttribute(this.p, 3));
@@ -123,17 +153,203 @@ for (const [k, t] of Object.entries(CAR_TYPES)) {
 
 export const CAR_COLORS = [0xd9dadb, 0x9da3a8, 0x2b2e33, 0x1f3a5f, 0x8f1d1d, 0xb8b0a0, 0x3d6b4f, 0x5b7fa6, 0xc8922e, 0x6b4a2f, 0xf2f2ef, 0x4a4d52];
 
+function shellPanels(body, type, ride, height, parts) {
+  const { wid, len, hood } = type;
+  const front = len / 2, rear = -front;
+  const cuts = [rear, rear + Math.max(0.45, type.trunk), front - hood, front];
+  const p = (side, z, top) => [side * wid / 2 * (top ? 0.96 : 1),
+    ride + (top ? height : 0), z * (top ? 0.985 : 1)];
+  const quad = (points, normal, name) => {
+    const start = body.p.length / 3;
+    for (const i of [0, 1, 2, 0, 2, 3]) body.vertex(...points[i], ...normal, WHITE);
+    if (name) parts[name] = { batch: 'body', start, count: 6 };
+  };
+  for (let i = 1; i < cuts.length; i++) {
+    const a = cuts[i-1], b = cuts[i];
+    quad([p(-1,a,1), p(-1,b,1), p(1,b,1), p(1,a,1)], [0,1,0], i === 3 ? 'hood' : null);
+    quad([p(1,a,0), p(1,a,1), p(1,b,1), p(1,b,0)], [1,0,0], i === 2 ? 'rightDoor' : null);
+    quad([p(-1,b,0), p(-1,b,1), p(-1,a,1), p(-1,a,0)], [-1,0,0], i === 2 ? 'leftDoor' : null);
+  }
+  quad([p(-1,rear,0), p(1,rear,0), p(1,front,0), p(-1,front,0)], [0,-1,0]);
+  quad([p(-1,front,0), p(1,front,0), p(1,front,1), p(-1,front,1)], [0,0,1]);
+  quad([p(1,rear,0), p(-1,rear,0), p(-1,rear,1), p(1,rear,1)], [0,0,-1]);
+}
+
 const carGeo = new Map();
+// Podrobná karoserie se zaoblením na vyšších předvolbách, na nízké a s ?vzhled=puvodni zůstávají kvádry.
 function carGeometry(type) {
-  let g = carGeo.get(type.id);
-  if (g) return g;
+  const detailed = QUALITY.name !== 'low' && pageLook() === 'novy';
+  const key = `${detailed ? 'detail' : 'simple'}/${type.id}`;
+  let g = carGeo.get(key);
+  if (!g) {
+    g = detailed ? detailedCarGeometry(type) : simpleCarGeometry(type);
+    carGeo.set(key, g);
+  }
+  return g;
+}
+
+/** Společné dokončení: světla a směrovky ve stejném pořadí, jaké čtou materiály a poškození. */
+/** Geometrie auta bez materiálů a světel scény (pro testy a převody). */
+export function buildCarGeometry(typeId, detailed = true) {
+  const type = CAR_TYPES[typeId];
+  return detailed ? detailedCarGeometry(type) : simpleCarGeometry(type);
+}
+
+function finishCarGeometry(body, det, panels, firstLamp, type, ride, lampY, wheelR) {
+  const { wid, len } = type;
+  const hazards = new Parts(SURFACE.lamp);
+  for (const side of [-1, 1]) for (const end of [-1, 1]) {
+    hazards.box(0.14, 0.12, 0.08, side * wid * 0.42, lampY, end * len * 0.495, [1, 0.38, 0.01]);
+  }
+  const g = { panels, body: body.geometry(), detail: det.geometry(), hazards: hazards.geometry(), wheelR };
+  const lenses = new Float32Array(g.detail.attributes.position.count);
+  for (let i = 0; i < 3; i++) lenses.fill(i + 1, firstLamp + 72 * i, firstLamp + 72 * (i + 1));
+  g.detail.setAttribute('aLens', new THREE.BufferAttribute(lenses, 1));
+  g.body.setAttribute('aScratch', new THREE.BufferAttribute(new Float32Array(g.body.attributes.position.count), 1));
+  // Samostatné poloviny směrovek používají jeden společný geometrický buffer.
+  g.indicators = [-1, 1].map((side, i) => {
+    const geometry = new THREE.BufferGeometry();
+    for (const [name, attr] of Object.entries(g.hazards.attributes)) geometry.setAttribute(name, attr);
+    geometry.setDrawRange(i * 72, 72);
+    geometry.boundingSphere = g.hazards.boundingSphere;
+    return geometry;
+  });
+  return g;
+}
+
+/** Kolo s pneumatikou, ráfkem s pěti paprsky a nábojem. Vnější strana míří ve směru `side`. */
+function detailedWheel(det, r, w, x, y, z, side) {
+  const seg = 14;
+  const outer = x + side * w / 2, inner = x - side * w / 2;
+  for (let s = 0; s < seg; s++) {
+    const a0 = (s / seg) * Math.PI * 2, a1 = ((s + 1) / seg) * Math.PI * 2, am = (a0 + a1) / 2;
+    const p = (px, a, rr) => [px, y + Math.cos(a) * rr, z + Math.sin(a) * rr];
+    // běhoun, mírně zaoblený k bokům
+    const tread = [p(inner, a0, r * 0.97), p(outer, a0, r * 0.97), p(outer, a1, r * 0.97), p(inner, a1, r * 0.97)];
+    const n = [0, Math.cos(am), Math.sin(am)];
+    det.polygon(side > 0 ? [tread[0], tread[3], tread[2], tread[1]] : tread, n, TIRE, SURFACE.rubber);
+  }
+  // bok pneumatiky, ráfek a vnitřní strana
+  det.ring(r * 0.66, r * 0.97, outer, y, z, side, TIRE, seg, SURFACE.rubber);
+  det.ring(r * 0.58, r * 0.66, outer + side * 0.004, y, z, side, RIM, seg, SURFACE.metal);
+  det.ring(0, r * 0.58, outer - side * 0.03, y, z, side, DARK, seg, SURFACE.rubber);
+  det.ring(0, r * 0.97, inner, y, z, -side, TIRE, 8, SURFACE.rubber);
+  for (let k = 0; k < 5; k++) {
+    const a = (k / 5) * Math.PI * 2, da = 0.2;
+    const q = (rr, aa) => [outer - side * 0.012, y + Math.cos(aa) * rr, z + Math.sin(aa) * rr];
+    const spoke = [q(r * 0.14, a - da * 1.6), q(r * 0.6, a - da * 0.55), q(r * 0.6, a + da * 0.55), q(r * 0.14, a + da * 1.6)];
+    det.polygon(side > 0 ? spoke : spoke.reverse(), [side, 0, 0], RIM, SURFACE.metal);
+  }
+  det.ring(0, r * 0.16, outer - side * 0.008, y, z, side, CHROME, 8, SURFACE.metal);
+}
+
+function detailedCarGeometry(type) {
+  const prof = carProfile(type);
+  const { ride, wheelR, belt, wheelZ, wheelX, cab } = prof;
+  const { wid, h, len, id } = type;
+  const fz = len / 2, rz = -len / 2;
+  const body = new Parts(), det = new Parts(SURFACE.rubber, carSurfaces);
+  const panels = {};
+  // spodek karoserie s podběhy a kabina zúžená ke střeše
+  body.mesh(extrudeProfile(prof.lower, wid, { bevel: 0.07, segments: 3 }), WHITE);
+  const cabW = wid - 0.1;
+  const narrow = (y) => tumblehome(y, belt, h, 0.82);
+  body.mesh(extrudeProfile(prof.cabin, cabW, { bevel: 0.05, segments: 2, narrow }), WHITE);
+  const roof = h - 0.035;
+  const along = (z0, z1, y) => z0 + (z1 - z0) * (y - belt) / (roof - belt);
+  const halfCab = (y) => cabW / 2 * narrow(y);
+  const slope = (cabW / 2) * 0.18 / Math.max(0.1, h - belt);
+  const sideNormal = (s) => { const k = Math.hypot(1, slope); return [s / k, slope / k, 0]; };
+  // kapota jako samostatný díl (může při nárazu odpadnout)
+  const [[hzA, hyA], [hzB, hyB]] = prof.hood;
+  const hoodY = (z) => hyA + (hyB - hyA) * (z - hzA) / (hzB - hzA) + 0.008;
+  const hz0 = hzA - 0.02, hz1 = hzB - 0.04, hw = wid / 2 - 0.15;
+  panels.hood = { batch: 'body', start: body.p.length / 3, count: 6 };
+  body.polygon([[-hw, hoodY(hz0), hz0], [hw, hoodY(hz0), hz0], [hw, hoodY(hz1), hz1], [-hw, hoodY(hz1), hz1]], [0, 1, 0], WHITE);
+  // dveře: dva samostatné díly na bocích
+  const fourDoors = !['sport', 'pickup', 'van'].includes(id);
+  const yb = belt + 0.07, yt = roof - 0.075;
+  const zF = (y) => along(cab.front, cab.roofFront, y) - 0.12;
+  const zR = id === 'van' ? () => cab.front - 1.3 : (y) => along(cab.rear, cab.roofRear, y) + 0.12;
+  const zB = fourDoors ? (zF(yb) + zR(yb)) / 2 + 0.08 : zR(yb);
+  const doorFront = cab.front - 0.06, doorRear = fourDoors ? zB - 0.03 : Math.max(zR(yb), cab.front - 1.25);
+  const dy0 = ride + 0.14, dy1 = belt - 0.04;
+  for (const [name, s] of [['rightDoor', 1], ['leftDoor', -1]]) {
+    panels[name] = { batch: 'body', start: body.p.length / 3, count: 6 };
+    const x = s * (wid / 2 + 0.005);
+    const door = [[x, dy0, doorFront], [x, dy0, doorRear], [x, dy1, doorRear], [x, dy1, doorFront]];
+    body.polygon(s > 0 ? door : door.reverse(), [s, 0, 0], WHITE);
+  }
+  // boční okna (s prostředním sloupkem u čtyřdveřových), čelní a zadní sklo
+  const windows = fourDoors
+    ? [[zF, () => zB + 0.05], [() => zB - 0.05, zR]]
+    : [[zF, zR]];
+  for (const s of [1, -1]) {
+    for (const [front, rear] of windows) {
+      const pts = [[front(yb), yb], [rear(yb), yb], [rear(yt), yt], [front(yt), yt]]
+        .map(([z, y]) => [s * (halfCab(y) + 0.004), y, z]);
+      if (pts[0][2] - pts[1][2] < 0.15) continue;
+      det.polygon(s > 0 ? pts : pts.reverse(), sideNormal(s), GLASS);
+    }
+  }
+  const pane = (z0, z1, sign) => {
+    const dz = z1 - z0, dy = roof - belt, l = Math.hypot(dz, dy);
+    const n = sign > 0 ? [0, -dz / l, dy / l] : [0, dz / l, -dy / l];
+    const y0 = belt + 0.06, y1 = roof - 0.05;
+    const corner = (sx, y) => [sx * (halfCab(y) - 0.085), y + n[1] * 0.006, along(z0, z1, y) + n[2] * 0.006];
+    const quad = [corner(-1, y0), corner(1, y0), corner(1, y1), corner(-1, y1)];
+    det.polygon(sign > 0 ? quad : [quad[1], quad[0], quad[3], quad[2]], n, GLASS);
+  };
+  pane(cab.front, cab.roofFront, 1);
+  if (id !== 'van') pane(cab.rear, cab.roofRear, -1);
+  // světla: dvě přední, dvě zadní, dvě couvací (pořadí čte materiál světel)
+  const lampY = belt - (id === 'van' ? 0.13 : 0.19);
+  const firstLamp = det.p.length / 3;
+  for (const sx of [1, -1]) det.box(0.4, 0.1, 0.06, sx * wid * 0.33, lampY, fz - 0.01, HEAD, 0.92, 0.7);
+  for (const sx of [1, -1]) det.box(0.42, 0.11, 0.06, sx * wid * 0.33, lampY + 0.01, rz + 0.005, TAIL, 0.94, 0.8);
+  for (const sx of [1, -1]) det.box(0.1, 0.08, 0.06, sx * wid * 0.17, lampY + 0.01, rz + 0.0, WHITE);
+  panels.frontBumper = { batch: 'detail', start: det.p.length / 3, count: 36 };
+  det.box(wid * 0.97, 0.17, 0.13, 0, ride + 0.11, fz + 0.01, DARK, 0.98, 0.8);
+  panels.rearBumper = { batch: 'detail', start: det.p.length / 3, count: 36 };
+  det.box(wid * 0.97, 0.17, 0.13, 0, ride + 0.11, rz - 0.01, DARK, 0.98, 0.8);
+  // maska, značky, zrcátka, kliky, prahy a spáry dveří
+  det.box(wid * 0.4, 0.12, 0.05, 0, lampY - 0.03, fz + 0.005, DARK);
+  // spodní sání mezi maskou a nárazníkem
+  const intakeTop = lampY - 0.09, intakeBottom = ride + 0.2;
+  det.box(wid * 0.52, intakeTop - intakeBottom, 0.04, 0, (intakeTop + intakeBottom) / 2, fz + 0.005, DARK, 0.96, 1);
+  det.box(0.52, 0.12, 0.03, 0, ride + 0.11, fz + 0.09, PLATE);   // přední značka na nárazníku
+  det.box(0.52, 0.12, 0.03, 0, ride + 0.33, rz - 0.015, PLATE);
+  for (const sx of [-1, 1]) {
+    det.box(0.07, 0.1, 0.17, sx * (wid / 2 + 0.07), belt + 0.11, cab.front - 0.16, DARK, 1, 0.8);
+    det.box(0.02, 0.035, 0.15, sx * (wid / 2 + 0.012), belt - 0.11, doorFront - 0.35, CHROME);
+    if (fourDoors) det.box(0.02, 0.035, 0.15, sx * (wid / 2 + 0.012), belt - 0.11, zB - 0.35, CHROME);
+    det.box(0.05, 0.09, Math.max(0.3, 2 * wheelZ - 2 * (wheelR + 0.07) - 0.12), sx * (wid / 2 - 0.005), ride + 0.05, 0, DARK);
+    for (const z of [doorFront + 0.01, doorRear - 0.01, ...(fourDoors ? [zR(yb) - 0.02] : [])]) {
+      det.box(0.012, belt - ride - 0.14, 0.014, sx * (wid / 2 + 0.006), (belt + ride) / 2 + 0.01, z, DARK);
+    }
+  }
+  if (type.bed) det.box(wid * 0.8, 0.02, (cab.rear - rz) - 0.35, 0, belt + 0.075, (cab.rear + rz) / 2, DARK);
+  if (type.sign) det.box(0.5, 0.16, 0.22, 0, h + 0.12, (cab.roofFront + cab.roofRear) / 2, lin(0xf2c230));
+  if (type.police) {
+    const zc = (cab.roofFront + cab.roofRear) / 2;
+    det.box(wid * 0.55, 0.1, 0.26, 0, h + 0.09, zc, DARK);
+    det.box(wid * 1.012, 0.16, len * 0.62, 0, ride + (belt - ride) * 0.5, -0.1, lin(0x1e56b3));
+    det.box(wid * 1.016, 0.05, len * 0.62, 0, ride + (belt - ride) * 0.5, -0.1, lin(0xd8d820));
+  }
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) detailedWheel(det, wheelR, 0.24, sx * wheelX, wheelR, sz * wheelZ, sx);
+  return finishCarGeometry(body, det, panels, firstLamp, type, ride, lampY, wheelR);
+}
+
+function simpleCarGeometry(type) {
+  let g;
   const { len, wid, h, hood, trunk } = type;
   const ride = 0.3 + (type.ride || 0);
   const bodyH = Math.min(0.62, h * 0.42);
   const body = new Parts(), det = new Parts(SURFACE.rubber, carSurfaces);
   const wheelR = type.id === 'van' || type.ride > 0.1 ? 0.37 : 0.32;
   // karoserie
-  body.box(wid, bodyH, len, 0, ride + bodyH / 2, 0, WHITE, 0.96, 0.985);
+  const panels = {};
+  shellPanels(body, type, ride, bodyH, panels);
   const cabL = len - hood - trunk - 0.25;
   const cabZ = (trunk - hood) / 2 * -1 + 0;      // posun kabiny: kapota vpředu (+z)
   const cabY = ride + bodyH;
@@ -157,11 +373,15 @@ function carGeometry(type) {
   }
   // světla, nárazníky, kola
   const fz = len / 2, lz = -len / 2;
+  const firstLamp = det.p.length / 3;
   det.box(0.34, 0.14, 0.06, wid * 0.33, ride + bodyH * 0.72, fz * 0.985, HEAD);
   det.box(0.34, 0.14, 0.06, -wid * 0.33, ride + bodyH * 0.72, fz * 0.985, HEAD);
   det.box(0.32, 0.13, 0.06, wid * 0.34, ride + bodyH * 0.74, lz * 0.985, TAIL);
   det.box(0.32, 0.13, 0.06, -wid * 0.34, ride + bodyH * 0.74, lz * 0.985, TAIL);
+  for (const side of [-1, 1]) det.box(0.09, 0.09, 0.07, side * wid * 0.22, ride + bodyH * 0.74, lz * 0.985, WHITE);
+  panels.frontBumper = { batch: 'detail', start: det.p.length / 3, count: 36 };
   det.box(wid * 0.98, 0.14, 0.1, 0, ride + 0.09, fz * 0.99, DARK);
+  panels.rearBumper = { batch: 'detail', start: det.p.length / 3, count: 36 };
   det.box(wid * 0.98, 0.14, 0.1, 0, ride + 0.09, lz * 0.99, DARK);
   det.box(wid * 0.5, 0.12, 0.05, 0, ride + bodyH * 0.45, fz * 0.99, DARK);
   const wx = wid / 2 - 0.12, wz = len / 2 - 0.82;
@@ -176,8 +396,19 @@ function carGeometry(type) {
   for (const side of [-1, 1]) for (const end of [-1, 1]) {
     hazards.box(0.14, 0.12, 0.08, side * wid * 0.42, ride + bodyH * 0.73, end * len * 0.495, [1, 0.38, 0.01]);
   }
-  g = { body: body.geometry(), detail: det.geometry(), hazards: hazards.geometry(), wheelR };
-  carGeo.set(type.id, g);
+  g = { panels, body: body.geometry(), detail: det.geometry(), hazards: hazards.geometry(), wheelR };
+  const lenses = new Float32Array(g.detail.attributes.position.count);
+  for (let i = 0; i < 3; i++) lenses.fill(i + 1, firstLamp + 72 * i, firstLamp + 72 * (i + 1));
+  g.detail.setAttribute('aLens', new THREE.BufferAttribute(lenses, 1));
+  g.body.setAttribute('aScratch', new THREE.BufferAttribute(new Float32Array(g.body.attributes.position.count), 1));
+  // Samostatné poloviny směrovek používají jeden společný geometrický buffer.
+  g.indicators = [-1, 1].map((side, i) => {
+    const geometry = new THREE.BufferGeometry();
+    for (const [name, attr] of Object.entries(g.hazards.attributes)) geometry.setAttribute(name, attr);
+    geometry.setDrawRange(i * 72, 72);
+    geometry.boundingSphere = g.hazards.boundingSphere;
+    return geometry;
+  });
   return g;
 }
 
@@ -194,18 +425,35 @@ export function addCarLight(group, type) {
   group.userData.light = light;
 }
 
+export function setCarAppearanceQuality(group) {
+  const { body, detail } = group.userData.batches;
+  body.material = QUALITY.carLights ? carPaint(group.userData.paint) : getBodyMaterial(group.userData.paint);
+  detail.material = QUALITY.carLights ? carLenses() : getDetailMaterial();
+}
+
 /** Vytvoří 3D objekt auta. */
 export function makeCarMesh(typeId, colorHex) {
   const type = CAR_TYPES[typeId];
   const g = carGeometry(type);
   const group = new THREE.Group();
-  const body = new THREE.Mesh(g.body, getBodyMaterial(type.police ? 0xdfe3e6 : type.sign ? 0xe0b020 : colorHex));
+  group.userData.paint = type.police ? 0xdfe3e6 : type.sign ? 0xe0b020 : colorHex;
+  const body = new THREE.Mesh(g.body, getBodyMaterial(group.userData.paint));
   const detail = new THREE.Mesh(g.detail, getDetailMaterial());
+  detail.userData.carSignals = new THREE.Vector4();
+  group.userData.panels = g.panels;
+  group.userData.batches = { body, detail };
   body.castShadow = true; detail.castShadow = true;
   const hazards = new THREE.Mesh(g.hazards, getDetailMaterial());
   hazards.visible = false;
   group.userData.hazards = hazards;
   group.add(body, detail, hazards);
+  group.userData.indicators = g.indicators.map(geometry => {
+    const lamp = new THREE.Mesh(geometry, getDetailMaterial());
+    lamp.visible = false;
+    group.add(lamp);
+    return lamp;
+  });
+  setCarAppearanceQuality(group);
   if (QUALITY.carLights) addCarLight(group, type);
   if (type.police) {
     if (!beaconGeo) beaconGeo = new THREE.BoxGeometry(0.34, 0.12, 0.24);
@@ -240,7 +488,7 @@ export function makeTrolleybus() {
     p.box(0.9, 0.5, 0.5, 0, 3.2, 1.2, DARK);
     trolleyGeo = p.geometry();
   }
-  const mesh = new THREE.Mesh(trolleyGeo, getDetailMaterial());
+  const mesh = new THREE.Mesh(trolleyGeo, transitMaterial);
   mesh.castShadow = true;
   return mesh;
 }
@@ -252,53 +500,66 @@ const PANTS = [0x2b3a55, 0x3a3a3a, 0x5a4a3a, 0x1f2933, 0x6a6f75].map(lin);
 let pedMat = null;
 const pedGeoCache = new Map();
 
-/** Postava ze čtyř dílů (tělo s hlavou a rukama, dvě nohy) – nohy se při chůzi kývou. */
-export function makePedMesh(variant, hero = false) {
-  pedMat = pedMat || new THREE.MeshLambertMaterial({ vertexColors: true });
+const joints = ragdollParts.map(part => part.joint ?? [part.x, part.y]);
+const jointIndex = new Map(ragdollParts.map((part, i) => [part.name, i]));
+
+function pedestrianShape(variant, hero) {
   const key = hero ? 'hero' : variant % 40;
-  let geo = pedGeoCache.get(key);
-  if (!geo) {
-    const shirt = hero ? lin(0xf2b632) : SHIRTS[variant % SHIRTS.length];
-    const pants = hero ? lin(0x26323c) : PANTS[(variant >> 2) % PANTS.length];
-    const skin = SKIN[variant % SKIN.length];
-    const hair = hero ? lin(0x3a2a1e) : [lin(0x2a2018), lin(0x6b4a2f), lin(0xb8a070), lin(0x8a8a8a)][(variant >> 1) % 4];
-    const body = new Parts();
-    body.box(0.46, 0.62, 0.26, 0, 1.14, 0, shirt, 0.95, 1);
-    body.box(0.24, 0.26, 0.24, 0, 1.6, 0, skin);
-    body.box(0.26, 0.09, 0.26, 0, 1.76, -0.01, hair);
-    const arm = new Parts();
-    arm.box(0.12, 0.56, 0.14, 0, -0.26, 0, shirt);
-    arm.box(0.1, 0.1, 0.12, 0, -0.58, 0, skin);
-    const leg = new Parts();
-    leg.box(0.17, 0.78, 0.19, 0, -0.39, 0, pants);
-    leg.box(0.17, 0.08, 0.26, 0, -0.8, 0.04, lin(0x1a1a1a));
-    geo = { body: body.geometry(), arm: arm.geometry(), leg: leg.geometry(), colors: { shirt, pants, skin, hair } };
-    pedGeoCache.set(key, geo);
-  }
-  const g = new THREE.Group();
-  const body = new THREE.Mesh(geo.body, pedMat);
-  const legL = new THREE.Mesh(geo.leg, pedMat), legR = new THREE.Mesh(geo.leg, pedMat);
-  legL.position.set(0.12, 0.84, 0); legR.position.set(-0.12, 0.84, 0);
-  const armL = new THREE.Mesh(geo.arm, pedMat), armR = new THREE.Mesh(geo.arm, pedMat);
-  armL.position.set(0.3, 1.42, 0); armR.position.set(-0.3, 1.42, 0);
-  g.add(body, legL, legR, armL, armR);
-  for (const m of g.children) m.castShadow = true;
-  g.userData = { legL, legR, armL, armR, body, geo };
-  return g;
+  if (pedGeoCache.has(key)) return pedGeoCache.get(key);
+  const skin = SKIN[variant % SKIN.length], hair = lin([0x30251e, 0x725237, 0xc6ac7d, 0x908a89][(variant >> 1) % 4]);
+  const colors = { shirt: hero ? lin(0xf2b632) : SHIRTS[variant % SHIRTS.length],
+    pants: hero ? lin(0x26323c) : PANTS[(variant >> 2) % PANTS.length], skin };
+  const style = hero ? 1 : variant % 4;
+  const fallen = ragdollParts.map(part => {
+    const p = new Parts(), name = part.name;
+    const shortSleeve = style === 0 && name.startsWith('predlokti');
+    p.box(...part.size, 0, 0, 0, shortSleeve ? skin : colors[part.color]);
+    if (name === 'hlava') {
+      p.box(0.26, 0.09, 0.26, 0, 0.14, -0.01, hair);
+      if (style === 3) p.box(0.28, 0.11, 0.31, 0, 0.18, 0.015, colors.shirt);
+    } else if (name === 'hrudnik') {
+      if (style === 1) p.box(0.14, 0.4, 0.016, 0, 0.01, 0.135, lin(0xddd6c7));
+      if (style === 2) p.box(0.4, 0.36, 0.16, 0, -0.01, -0.17, lin(0x34464a));
+    } else if (name.startsWith('predlokti')) p.box(0.1, 0.1, 0.12, 0, -0.15, 0, skin);
+    else if (name.startsWith('lytko')) p.box(0.17, 0.08, 0.26, 0, -0.19, 0.04, lin(0x1a1a1a));
+    return p.geometry();
+  });
+  const walking = fallen.map((geometry, i) => {
+    const part = ragdollParts[i], g = geometry.clone().translate(part.x, part.y, 0);
+    const n = g.attributes.position.count;
+    const indices = new Uint16Array(n * 4), weights = new Float32Array(n * 4);
+    for (let v = 0; v < n * 4; v += 4) { indices[v] = i; weights[v] = 1; }
+    g.setAttribute('skinIndex', new THREE.BufferAttribute(indices, 4));
+    g.setAttribute('skinWeight', new THREE.BufferAttribute(weights, 4));
+    return g;
+  });
+  const geo = { body: mergeGeometries(walking), fallen };
+  pedGeoCache.set(key, geo);
+  return geo;
+}
+
+export function makePedMesh(variant, hero = false) {
+  pedMat ??= new THREE.MeshLambertMaterial({ vertexColors: true });
+  const geo = pedestrianShape(variant, hero);
+  const mesh = new THREE.SkinnedMesh(geo.body, pedMat);
+  const bones = ragdollParts.map(() => new THREE.Bone());
+  ragdollParts.forEach(({ name, parent }, i) => {
+    const start = joints[i], base = joints[parent] ?? [0, 0];
+    bones[i].name = name;
+    bones[i].position.set(start[0] - base[0], start[1] - base[1], 0);
+    (bones[parent] ?? mesh).add(bones[i]);
+  });
+  mesh.bind(new THREE.Skeleton(bones));
+  mesh.castShadow = true;
+  // Sdílená mez zahrnuje krajní polohy rukou, nohou i čepice.
+  mesh.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 0.91, 0), 1.14);
+  mesh.userData.geo = geo;
+  return mesh;
 }
 
 export function makeFallenMesh(walkingMesh) {
-  const geo = walkingMesh.userData.geo;
-  geo.fallen ??= ragdollParts.map(part => {
-    const p = new Parts();
-    p.box(...part.size, 0, 0, 0, geo.colors[part.color]);
-    if (part.name === 'hlava') p.box(0.26, 0.09, 0.26, 0, 0.14, -0.01, geo.colors.hair);
-    if (part.name.startsWith('predlokti')) p.box(0.1, 0.1, 0.12, 0, -0.15, 0, geo.colors.skin);
-    if (part.name.startsWith('lytko')) p.box(0.17, 0.08, 0.26, 0, -0.19, 0.04, lin(0x1a1a1a));
-    return p.geometry();
-  });
   const group = new THREE.Group();
-  for (const geometry of geo.fallen) {
+  for (const geometry of walkingMesh.userData.geo.fallen) {
     const limb = new THREE.Mesh(geometry, pedMat);
     limb.castShadow = true;
     group.add(limb);
@@ -307,10 +568,15 @@ export function makeFallenMesh(walkingMesh) {
 }
 
 export function animatePed(mesh, phase, amount) {
-  const u = mesh.userData;
-  const s = Math.sin(phase) * amount;
-  u.legL.rotation.x = s * 0.75; u.legR.rotation.x = -s * 0.75;
-  u.armL.rotation.x = -s * 0.6; u.armR.rotation.x = s * 0.6;
+  const bones = mesh.skeleton.bones, swing = Math.sin(phase) * amount;
+  for (const side of [1, -1]) {
+    const s = swing * side;
+    bones[jointIndex.get('stehno' + side)].rotation.x = s * 0.65;
+    bones[jointIndex.get('lytko' + side)].rotation.x = Math.max(0, -s) * 0.66;
+    bones[jointIndex.get('paze' + side)].rotation.x = -s * 0.58;
+    bones[jointIndex.get('predlokti' + side)].rotation.x = -Math.max(0, s) * 0.32;
+  }
+  bones[0].position.y = joints[0][1] + Math.abs(swing) * 0.025;
 }
 
 // ------------------------------------------------------------- vrtulník ----

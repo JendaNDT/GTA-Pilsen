@@ -248,6 +248,156 @@ test('před levým odbočením řidič nechá projet rozjetý protisměr a vedle
   assert.equal(waiting(head, -1.8, false), first);
   assert.equal(waiting(head, 1.8, false), undefined);
   assert.equal(waiting(opposite, 1.8, false), undefined);
+  Object.assign(leader, { edge: 2, s: 1, plannedTurn: { from: 2, to: 3, sign: -1, entry: 2 } });
+  assert.equal(waiting(opposite, 1.8, false), undefined);
+  leader.s = 2.1;
+  assert.equal(waiting(opposite, 1.8, false), first);
   leader.junctionMovement = null;
   assert.equal(waiting(opposite, 1.8, true), undefined);
+});
+
+test('příčná zelená vyčká na záď posledního vozu z předchozí fáze', () => {
+  const traffic = Object.create(Traffic.prototype), group = { x: 0, z: 0, radius: 20 };
+  const previous = { group, axis: 0, tx: 0, tz: 1 };
+  const current = { group, axis: 1, tx: 1, tz: 0 };
+  const movement = { control: previous, edge: 3, left: false, clearAt: 8 };
+  const car = { mode: 'ai', edge: 3, s: 7.9, halfLen: 2, enteredSignal: previous, junctionMovement: movement };
+  const driver = { type: { wid: 1.8 } };
+  const wait = control => traffic.turnInProgress(driver, { control, edge: 4, left: false }, [car]);
+  traffic.updateJunction(car, 2, 1);
+  assert.equal(wait(current), movement);
+  assert.equal(wait({ ...current, group: {} }), undefined);
+  car.s = 8;
+  traffic.updateJunction(car, 2, 1);
+  assert.equal(wait(current), undefined);
+});
+
+test('před zúžením do jednoho pruhu řidič nechá místo sousednímu autu, které už vjíždí', () => {
+  const traffic = Object.create(Traffic.prototype);
+  const control = { group: {}, edge: 1, s: 40, tx: 0, tz: 1 };
+  const entering = { control, edge: 2, lane: 1.8, exitLane: 0, left: false };
+  const other = { mode: 'ai', edge: 1, s: 37, halfLen: 2, trafficStop: { entering: true, movement: entering } };
+  const driver = { type: { wid: 1.8 } };
+  const waiting = exitLane => traffic.turnInProgress(driver, { ...entering, lane: -1.8, exitLane }, [other]);
+  assert.equal(waiting(0), entering);
+  assert.equal(waiting(-1.8), undefined);
+  other.trafficStop.entering = false;
+  assert.equal(waiting(0), undefined);
+  other.junctionMovement = entering;
+  assert.equal(waiting(0), entering);
+});
+
+test('levé odbočení počká na protijedoucí vůz rozjíždějící se od čáry', () => {
+  const traffic = Object.assign(Object.create(Traffic.prototype), { light: () => 'green', exitBlocked: () => false });
+  const group = {};
+  const west = { kind: 'signal', directedHead: true, group, axis: 0, edge: 1, s: 20, tx: 1, tz: 0 };
+  const east = { kind: 'signal', directedHead: true, group, axis: 0, edge: 2, s: 25, tx: -1, tz: 0 };
+  const mine = { control: west, left: true };
+  const theirs = { control: east, left: true };
+  const atLine = movement => ({
+    mode: 'ai', type: { wid: 1.8 }, edge: movement.control.edge, s: movement.control.s - 3, halfLen: 2,
+    speed: 0, trafficStop: { rule: movement.control, movement },
+  });
+  const driver = atLine(mine), other = atLine(theirs);
+  const cars = [driver, other];
+  for (const car of [other, driver]) traffic.drivingRule(car, car.trafficStop.rule, 0.55, 1 / 60, 4, cars, [], null, true);
+  assert.equal(other.trafficStop.entering, true);
+  assert.equal(driver.trafficStop.entering, false);
+  const wait = () => traffic.turnInProgress(driver, mine, [other]);
+  assert.equal(wait(), theirs);
+  mine.left = false;
+  assert.equal(wait(), undefined);
+  mine.left = true;
+  other.trafficStop.entering = false;
+  assert.equal(wait(), undefined);
+  other.trafficStop.entering = true;
+  other.edge = 3;
+  assert.equal(wait(), undefined);
+});
+
+test('po obnovení dlaždice má každý semafor a značka stejné vlastní ID a zachová poškození', async () => {
+  const { Breakables } = await import('../src/physics/breakables.js');
+  const registry = new Breakables();
+  const rebuild = (tiles) => {
+    const traffic = Object.create(Traffic.prototype);
+    traffic.world = { chunkIndex: x => x };
+    traffic.chunks = new Map();
+    for (const tile of tiles) {
+      for (const kind of ['signs', 'heads', 'signs']) {
+        traffic.addVisual(tile, 0, kind, { x: tile + 1, z: 0 });
+      }
+    }
+    return traffic.chunks;
+  };
+  const ids = tile => [...tile.signs, ...tile.heads].map(entry => entry.breakableId);
+  const initial = rebuild([7, 8]);
+  const [first, second, head] = ids(initial.get(7));
+  assert.equal(new Set([...ids(initial.get(7)), ...ids(initial.get(8))]).size, 6);
+  const hour = 3600;
+  assert.equal(registry.damage(first, 'bent', 2 * hour), true);
+  assert.equal(registry.damage(first, 'broken', 3 * hour), true);
+  assert.equal(registry.damage(first, 'bent', 4 * hour), false);
+  assert.equal(registry.damage(first, 'broken', 27 * hour), false);
+  const restored = ids(rebuild([8, 7]).get(7));
+  assert.deepEqual(restored, [first, second, head]);
+  assert.deepEqual(restored.map(id => registry.state(id)), ['broken', 'intact', 'intact']);
+  assert.deepEqual(registry.repairDue(28 * hour - 1), []);
+  assert.deepEqual(registry.repairDue(28 * hour), [first]);
+  assert.equal(registry.state(first), 'intact');
+  assert.deepEqual(registry.repairDue(29 * hour), []);
+});
+
+test('po zhasnutí semaforů řidič zpomalí a dá přednost zprava až do opravy', async () => {
+  const { Breakables } = await import('../src/physics/breakables.js');
+  const registry = new Breakables(), traffic = Object.create(Traffic.prototype);
+  Object.assign(traffic, { time: 3, users: new Map(), world: { breakables: registry }, exitBlocked: () => false });
+  const group = { x: 0, z: 0, greenTime: 15, hasSecond: true, crossings: [], clearance: 0, timeOffset: 0,
+    fixtures: ['signal/1/0', 'signal/1/1'] };
+  const approach = { kind: 'signal', group, axis: 0, tx: 0, tz: -1, edge: 1 };
+  const rightHead = { kind: 'signal', group, axis: 1 };
+  const driver = { x: 0, y: 0, z: 12, speed: 0 };
+  const fromRight = { x: 10, y: 0, z: 0, vx: -4, vz: 0 };
+  const fromLeft = { x: -10, y: 0, z: 0, vx: 4, vz: 0 };
+  const solve = other => traffic.drivingRule(driver, approach, 0, 1 / 60, 12, [other]);
+  assert.equal(solve(fromRight), 12);
+  assert.equal(traffic.light(rightHead), 'red');
+  registry.damage('signal/1/1', 'broken', 0);
+  assert.equal(traffic.light(approach), 'off');
+  assert.equal(traffic.light(rightHead), 'off');
+  assert.equal(solve(fromRight), 0);
+  assert.equal(solve({ ...fromRight, vx: 4 }), 5.5);
+  assert.equal(solve(fromLeft), 5.5);
+  assert.equal(solve({ ...fromLeft, x: -1 }), 0);
+  registry.repairDue(28 * 3600);
+  assert.equal(solve(fromRight), 12);
+  assert.equal(traffic.light(approach), 'green');
+});
+
+test('zničení pěšího semaforu vypne jen jeho křižovatku až do ranní opravy', async () => {
+  const { Breakables } = await import('../src/physics/breakables.js');
+  const registry = new Breakables();
+  const traffic = new Traffic({ chunkIndex: x => x, rpx: [], edgeCount: 0, breakables: registry });
+  const group = () => ({ timeOffset: 0, greenTime: 15, crossings: [], clearance: 0 });
+  const junction = group();
+  const road = traffic.addVisual(1, 0, 'heads', { kind: 'signal', group: junction });
+  const crossing = traffic.addVisual(2, 0, 'heads', { kind: 'pedestrian', group: junction });
+  const adjacent = traffic.addVisual(2, 0, 'heads', { kind: 'signal', group: group() });
+  registry.damage(crossing.breakableId, 'broken', 0);
+  assert.equal(traffic.light(road), 'off');
+  assert.equal(traffic.light(crossing), 'off');
+  assert.equal(traffic.light(adjacent), 'green');
+  registry.repairDue(28 * 3600);
+  assert.equal(traffic.light(road), 'green');
+  assert.equal(traffic.light(crossing), 'red');
+});
+
+test('dráha se stejným pořadovým číslem jako silniční lávka použije své vlastní body', () => {
+  const sample = {cols:1,rows:1,prazdrojRoad:0,chunkIndex:()=>0};
+  World.prototype._initRails.call(sample,{
+    header:{count:1},start:[0,1],x0:[100],z0:[200],dx:[30],dz:[40],
+    cls:[1],flags:[0],bridgeOff:[0],bridgeY:[100,125]
+  });
+  assert.deepEqual([...sample.rails[0].pts],[10,20,13,24]);
+  assert.deepEqual([...sample.rails[0].y],[2,2.5]);
+  assert.deepEqual(sample.railChunks[0],[0]);
 });

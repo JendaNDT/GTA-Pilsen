@@ -1,0 +1,23 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_b1ar3"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="2_25u17"]
+
+[node name="Oblast_14_5" type="Node3D" unique_id=1147959655]
+script = ExtResource("1_b1ar3")
+bunka = Vector2i(14, 5)
+stred = Vector2(5888, -5376)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=2043966306]
+
+[node name="Mista" type="Node3D" parent="." unique_id=381776848]
+
+[node name="Zřícenina_Věžka_pamatka-45" type="Node3D" parent="Mista" unique_id=1618107360]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -256.1, -1.11, 97.6)
+script = ExtResource("2_25u17")
+popis = "Zbytky hradu na skále nad řekou Berounkou u Druztové."
+id = "pamatka-45"
+nazev = "Zřícenina Věžka"
+poradi = 45
+gen_pozice = Vector3(-256.1, -1.11, 97.6)
+gen_nazev = "Zřícenina Věžka"

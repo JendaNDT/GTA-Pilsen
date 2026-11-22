@@ -1,0 +1,74 @@
+{
+  "grass_ground": {
+    "Diffuse": {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/grass_ground/grass_ground_diff_1k.jpg",
+      "sha256": "a79cc5ed65af0f80261b39a383b64a8c5272c5144d724deb43dbc29f0e4cd19b",
+      "bytes": 876584
+    },
+    "nor_gl": {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/grass_ground/grass_ground_nor_gl_1k.jpg",
+      "sha256": "7000e2ccd479bb7b66dcdf4faef7b47554324566886314ca620cbf03e274e826",
+      "bytes": 1310516
+    }
+  },
+  "brown_mud": {
+    "Diffuse": {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_mud/brown_mud_diff_1k.jpg",
+      "sha256": "df3f135c899f10a3b018738343b222cbc67d13e7c76c5d8da834a3d34c984417",
+      "bytes": 501955
+    },
+    "nor_gl": {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/brown_mud/brown_mud_nor_gl_1k.jpg",
+      "sha256": "ac517ca39eb507ae0f27e2b3db431c60888f9b5c3c52bec49d2c0775da0920cb",
+      "bytes": 1011780
+    }
+  },
+  "gravel": {
+    "Diffuse": {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/gravel/gravel_diff_1k.jpg",
+      "sha256": "9f668e7926d2e8347eddc9090360da26848b55a12ba306e332cd08ac98c534cf",
+      "bytes": 925640
+    },
+    "nor_gl": {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/gravel/gravel_nor_gl_1k.jpg",
+      "sha256": "c991b6a99a0f29c5096d2d502b33a8bd98ff643c536987427ef31276c6183f04",
+      "bytes": 1527382
+    }
+  },
+  "farm_furrows": {
+    "Diffuse": {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/farm_furrows/farm_furrows_diff_1k.jpg",
+      "sha256": "991caba24cc555a968b98092bd0dd3a35da849e553012830062eab158c32bb22",
+      "bytes": 717703
+    },
+    "nor_gl": {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/farm_furrows/farm_furrows_nor_gl_1k.jpg",
+      "sha256": "5e65f903ca3c4ab6199cb31b47fc76dbb247ea6e76027cc0708d72c166b20268",
+      "bytes": 1247756
+    }
+  },
+  "damp_beach_sand": {
+    "Diffuse": {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/damp_beach_sand/damp_beach_sand_diff_1k.jpg",
+      "sha256": "99420d879aa16e6f262a83048bca7cd022e2b41533916d21cb5ccb97b1d3ff0c",
+      "bytes": 686694
+    },
+    "nor_gl": {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/damp_beach_sand/damp_beach_sand_nor_gl_1k.jpg",
+      "sha256": "91e167ebe090703dc05861c296fa897e9e3ddb53227f108e29cc46688bf248b2",
+      "bytes": 684809
+    }
+  },
+  "leaves_forest_ground": {
+    "Diffuse": {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/leaves_forest_ground/leaves_forest_ground_diff_1k.jpg",
+      "sha256": "e4aa2be8f80192378bc8aca363fc01b1f01639ebea5a87a3973c549861a01b7a",
+      "bytes": 1135712
+    },
+    "nor_gl": {
+      "url": "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k/leaves_forest_ground/leaves_forest_ground_nor_gl_1k.jpg",
+      "sha256": "78b24836c2a1ddcfbd81a493de89ee0722319187b39016022a21e63d710c9284",
+      "bytes": 1380468
+    }
+  }
+}

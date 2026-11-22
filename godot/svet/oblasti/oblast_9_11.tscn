@@ -1,0 +1,216 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_3uj1y"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_scb0s"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="3_qgjc4"]
+
+[node name="Oblast_9_11" type="Node3D" unique_id=1844002897]
+script = ExtResource("1_3uj1y")
+bunka = Vector2i(9, 11)
+stred = Vector2(768, 768)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=568124249]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=594788502]
+
+[node name="Mikulášské_náměstí_57119-1" type="Node3D" parent="Zastavky" unique_id=1264822018]
+transform = Transform3D(0.8658247, 0, 0.50034744, 0, 1, 0, -0.50034744, 0, 0.8658247, -55.2, 9.56, 260.7)
+script = ExtResource("2_scb0s")
+id = "57119/1"
+nazev = "Mikulášské náměstí"
+poradi = 6
+gen_pozice = Vector3(-55.2, 9.56, 260.7)
+gen_natoceni = 0.524
+gen_nazev = "Mikulášské náměstí"
+
+[node name="Hlavní_nádraží_53408-3" type="Node3D" parent="Zastavky" unique_id=1092806475]
+transform = Transform3D(0.9999595, 0, 0.008999879, 0, 1, 0, -0.008999879, 0, 0.9999595, -161.9, -2.17, -508.9)
+script = ExtResource("2_scb0s")
+id = "53408/3"
+nazev = "Hlavní nádraží"
+poradi = 7
+gen_pozice = Vector3(-161.9, -2.17, -508.9)
+gen_natoceni = 0.009
+gen_nazev = "Hlavní nádraží"
+
+[node name="Hlavní_nádraží_53408-4" type="Node3D" parent="Zastavky" unique_id=282504263]
+transform = Transform3D(0.9999595, 0, 0.008999879, 0, 1, 0, -0.008999879, 0, 0.9999595, -169.9, -1.12, -453.3)
+script = ExtResource("2_scb0s")
+id = "53408/4"
+nazev = "Hlavní nádraží"
+poradi = 30
+gen_pozice = Vector3(-169.9, -1.12, -453.3)
+gen_natoceni = 0.009
+gen_nazev = "Hlavní nádraží"
+
+[node name="Mikulášské_náměstí_57119-2" type="Node3D" parent="Zastavky" unique_id=1834004040]
+transform = Transform3D(0.86532396, 0, 0.50121295, 0, 1, 0, -0.50121295, 0, 0.86532396, -26.5, 10.28, 330.7)
+script = ExtResource("2_scb0s")
+id = "57119/2"
+nazev = "Mikulášské náměstí"
+poradi = 31
+gen_pozice = Vector3(-26.5, 10.28, 330.7)
+gen_natoceni = 0.525
+gen_nazev = "Mikulášské náměstí"
+
+[node name="U_Duhy_53081-1" type="Node3D" parent="Zastavky" unique_id=466724926]
+transform = Transform3D(-0.72580475, 0, 0.6879007, 0, 1, 0, -0.6879007, 0, -0.72580475, 190.5, 12.49, 172.9)
+script = ExtResource("2_scb0s")
+id = "53081/1"
+nazev = "U Duhy"
+poradi = 43
+gen_pozice = Vector3(190.5, 12.49, 172.9)
+gen_natoceni = 2.383
+gen_nazev = "U Duhy"
+
+[node name="Mikulášské_náměstí_57119-3" type="Node3D" parent="Zastavky" unique_id=2029599455]
+transform = Transform3D(-0.69340473, 0, -0.72054833, 0, 1, 0, 0.72054833, 0, -0.69340473, -106.4, 9.06, 140.7)
+script = ExtResource("2_scb0s")
+id = "57119/3"
+nazev = "Mikulášské náměstí"
+poradi = 44
+gen_pozice = Vector3(-106.4, 9.06, 140.7)
+gen_natoceni = -2.337
+gen_nazev = "Mikulášské náměstí"
+
+[node name="U_Duhy_53081-2" type="Node3D" parent="Zastavky" unique_id=1194805313]
+transform = Transform3D(0.69814, 0, 0.7159612, 0, 1, 0, -0.7159612, 0, 0.69814, 320.9, 14.57, 176.3)
+script = ExtResource("2_scb0s")
+id = "53081/2"
+nazev = "U Duhy"
+poradi = 67
+gen_pozice = Vector3(320.9, 14.57, 176.3)
+gen_natoceni = 0.798
+gen_nazev = "U Duhy"
+
+[node name="Hlavní_nádraží_53408-1" type="Node3D" parent="Zastavky" unique_id=1280412299]
+transform = Transform3D(0.3956691, 0, -0.91839314, 0, 1, 0, 0.91839314, 0, 0.3956691, -59.6, 2.99, -430.8)
+script = ExtResource("2_scb0s")
+id = "53408/1"
+nazev = "Hlavní nádraží"
+poradi = 428
+gen_pozice = Vector3(-59.6, 2.99, -430.8)
+gen_natoceni = -1.164
+gen_nazev = "Hlavní nádraží"
+
+[node name="Pařížská_48984-1" type="Node3D" parent="Zastavky" unique_id=240760411]
+transform = Transform3D(-0.4441305, 0, 0.8959621, 0, 1, 0, -0.8959621, 0, -0.4441305, -251.3, -0.93, -335.4)
+script = ExtResource("2_scb0s")
+id = "48984/1"
+nazev = "Pařížská"
+poradi = 429
+gen_pozice = Vector3(-251.3, -0.93, -335.4)
+gen_natoceni = 2.031
+gen_nazev = "Pařížská"
+
+[node name="Pařížská_48984-2" type="Node3D" parent="Zastavky" unique_id=107714996]
+transform = Transform3D(-0.23984252, 0, 0.9708118, 0, 1, 0, -0.9708118, 0, -0.23984252, -282.3, -1.2, -303.1)
+script = ExtResource("2_scb0s")
+id = "48984/2"
+nazev = "Pařížská"
+poradi = 436
+gen_pozice = Vector3(-282.3, -1.2, -303.1)
+gen_natoceni = 1.813
+gen_nazev = "Pařížská"
+
+[node name="Hlavní_nádraží_53408-2" type="Node3D" parent="Zastavky" unique_id=2046576850]
+transform = Transform3D(-0.40337625, 0, 0.91503423, 0, 1, 0, -0.91503423, 0, -0.40337625, -19.2, 5.17, -432.1)
+script = ExtResource("2_scb0s")
+id = "53408/2"
+nazev = "Hlavní nádraží"
+poradi = 437
+gen_pozice = Vector3(-19.2, 5.17, -432.1)
+gen_natoceni = 1.986
+gen_nazev = "Hlavní nádraží"
+
+[node name="Petrohrad_53082-1" type="Node3D" parent="Zastavky" unique_id=1189173533]
+transform = Transform3D(-0.72442764, 0, 0.68935084, 0, 1, 0, -0.68935084, 0, -0.72442764, 478.8, 11.67, -119.4)
+script = ExtResource("2_scb0s")
+id = "53082/1"
+nazev = "Petrohrad"
+poradi = 673
+gen_pozice = Vector3(478.8, 11.67, -119.4)
+gen_natoceni = 2.381
+gen_nazev = "Petrohrad"
+
+[node name="U_Duhy_53081-3" type="Node3D" parent="Zastavky" unique_id=1208591792]
+transform = Transform3D(-0.6832495, 0, -0.73018503, 0, 1, 0, 0.73018503, 0, -0.6832495, 230.9, 12.6, 74.9)
+script = ExtResource("2_scb0s")
+id = "53081/3"
+nazev = "U Duhy"
+poradi = 674
+gen_pozice = Vector3(230.9, 12.6, 74.9)
+gen_natoceni = -2.323
+gen_nazev = "U Duhy"
+
+[node name="Mikulášská_53092-1" type="Node3D" parent="Zastavky" unique_id=1136285408]
+transform = Transform3D(-0.03619576, 0, -0.9993447, 0, 1, 0, 0.9993447, 0, -0.03619576, -83.6, 8.76, 0.7)
+script = ExtResource("2_scb0s")
+id = "53092/1"
+nazev = "Mikulášská"
+poradi = 675
+gen_pozice = Vector3(-83.6, 8.76, 0.7)
+gen_natoceni = -1.607
+gen_nazev = "Mikulášská"
+
+[node name="Mikulášská_53092-2" type="Node3D" parent="Zastavky" unique_id=1568424804]
+transform = Transform3D(-0.03619576, 0, -0.9993447, 0, 1, 0, 0.9993447, 0, -0.03619576, -73.3, 9.04, 13)
+script = ExtResource("2_scb0s")
+id = "53092/2"
+nazev = "Mikulášská"
+poradi = 683
+gen_pozice = Vector3(-73.3, 9.04, 13)
+gen_natoceni = -1.607
+gen_nazev = "Mikulášská"
+
+[node name="U_Duhy_53081-4" type="Node3D" parent="Zastavky" unique_id=1080422742]
+transform = Transform3D(-0.7292353, 0, 0.68426305, 0, 1, 0, -0.68426305, 0, -0.7292353, 300, 13.1, 83.8)
+script = ExtResource("2_scb0s")
+id = "53081/4"
+nazev = "U Duhy"
+poradi = 684
+gen_pozice = Vector3(300, 13.1, 83.8)
+gen_natoceni = 2.388
+gen_nazev = "U Duhy"
+
+[node name="Petrohrad_53082-2" type="Node3D" parent="Zastavky" unique_id=1692095261]
+transform = Transform3D(-0.7312848, 0, 0.6820723, 0, 1, 0, -0.6820723, 0, -0.7312848, 465.8, 11.83, -99.5)
+script = ExtResource("2_scb0s")
+id = "53082/2"
+nazev = "Petrohrad"
+poradi = 685
+gen_pozice = Vector3(465.8, 11.83, -99.5)
+gen_natoceni = 2.391
+gen_nazev = "Petrohrad"
+
+[node name="Mista" type="Node3D" parent="." unique_id=745084632]
+
+[node name="Hlavní_nádraží_pamatka-9" type="Node3D" parent="Mista" unique_id=1275707190]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.7, 6.83, -305.7)
+script = ExtResource("3_qgjc4")
+popis = "Plzeň je jedním z nejdůležitějších železničních uzlů v zemi."
+id = "pamatka-9"
+nazev = "Hlavní nádraží"
+poradi = 9
+gen_pozice = Vector3(1.7, 6.83, -305.7)
+gen_nazev = "Hlavní nádraží"
+
+[node name="DEPO2015_pamatka-16" type="Node3D" parent="Mista" unique_id=1389558184]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -463.4, -1.51, 307.9)
+script = ExtResource("3_qgjc4")
+popis = "Kreativní zóna v bývalé vozovně dopravních podniků."
+id = "pamatka-16"
+nazev = "DEPO2015"
+poradi = 16
+gen_pozice = Vector3(-463.4, -1.51, 307.9)
+gen_nazev = "DEPO2015"
+
+[node name="Papírna_pamatka-29" type="Node3D" parent="Mista" unique_id=1281649590]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -192.7, -1.08, 482.5)
+script = ExtResource("3_qgjc4")
+popis = "Kulturní prostor v areálu bývalé papírny."
+id = "pamatka-29"
+nazev = "Papírna"
+poradi = 29
+gen_pozice = Vector3(-192.7, -1.08, 482.5)
+gen_nazev = "Papírna"

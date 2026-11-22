@@ -1,0 +1,66 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_3nsb0"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_pjafx"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="3_ukevo"]
+
+[node name="Oblast_11_4" type="Node3D" unique_id=1906110126]
+script = ExtResource("1_3nsb0")
+bunka = Vector2i(11, 4)
+stred = Vector2(2816, -6400)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=193976219]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1504602430]
+
+[node name="Zruč_-_Senec,_u_Drudíků_42128-2" type="Node3D" parent="Zastavky" unique_id=1864796519]
+transform = Transform3D(-0.919656, 0, 0.39272496, 0, 1, 0, -0.39272496, 0, -0.919656, 141.6, 69.53, 278.2)
+script = ExtResource("2_pjafx")
+id = "42128/2"
+nazev = "Zruč - Senec, u Drudíků"
+poradi = 120
+gen_pozice = Vector3(141.6, 69.53, 278.2)
+gen_natoceni = 2.738
+gen_nazev = "Zruč - Senec, u Drudíků"
+
+[node name="Zruč_-_Senec,_rozc__47371-2" type="Node3D" parent="Zastavky" unique_id=1961092280]
+transform = Transform3D(-0.9714347, 0, 0.23730698, 0, 1, 0, -0.23730698, 0, -0.9714347, 316, 57.94, -301.3)
+script = ExtResource("2_pjafx")
+id = "47371/2"
+nazev = "Zruč - Senec, rozc."
+poradi = 121
+gen_pozice = Vector3(316, 57.94, -301.3)
+gen_natoceni = 2.902
+gen_nazev = "Zruč - Senec, rozc."
+
+[node name="Zruč_-_Senec,_rozc__47371-1" type="Node3D" parent="Zastavky" unique_id=818745513]
+transform = Transform3D(-0.9714347, 0, 0.23730698, 0, 1, 0, -0.23730698, 0, -0.9714347, 316.3, 57.79, -304.3)
+script = ExtResource("2_pjafx")
+id = "47371/1"
+nazev = "Zruč - Senec, rozc."
+poradi = 133
+gen_pozice = Vector3(316.3, 57.79, -304.3)
+gen_natoceni = 2.902
+gen_nazev = "Zruč - Senec, rozc."
+
+[node name="Zruč_-_Senec,_u_Drudíků_42128-1" type="Node3D" parent="Zastavky" unique_id=540239727]
+transform = Transform3D(-0.919656, 0, 0.39272496, 0, 1, 0, -0.39272496, 0, -0.919656, 136.5, 69.45, 271.5)
+script = ExtResource("2_pjafx")
+id = "42128/1"
+nazev = "Zruč - Senec, u Drudíků"
+poradi = 134
+gen_pozice = Vector3(136.5, 69.45, 271.5)
+gen_natoceni = 2.738
+gen_nazev = "Zruč - Senec, u Drudíků"
+
+[node name="Mista" type="Node3D" parent="." unique_id=1736312495]
+
+[node name="Air_Park_Zruč_pamatka-44" type="Node3D" parent="Mista" unique_id=2104928773]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -118.4, 60.03, -432.3)
+script = ExtResource("3_ukevo")
+popis = "Soukromé muzeum letadel a vojenské techniky ve Zruči-Senci."
+id = "pamatka-44"
+nazev = "Air Park Zruč"
+poradi = 44
+gen_pozice = Vector3(-118.4, 60.03, -432.3)
+gen_nazev = "Air Park Zruč"

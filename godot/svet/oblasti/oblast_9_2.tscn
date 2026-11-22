@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_ikf73"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_4n747"]
+
+[node name="Oblast_9_2" type="Node3D" unique_id=1765987130]
+script = ExtResource("1_ikf73")
+bunka = Vector2i(9, 2)
+stred = Vector2(768, -8448)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=682750097]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=597505756]
+
+[node name="Třemošná,_ves_36813-1" type="Node3D" parent="Zastavky" unique_id=1605146723]
+transform = Transform3D(-0.5705732, 0, -0.82124674, 0, 1, 0, 0.82124674, 0, -0.5705732, 136.4, 26.39, -91.8)
+script = ExtResource("2_4n747")
+id = "36813/1"
+nazev = "Třemošná, ves"
+poradi = 443
+gen_pozice = Vector3(136.4, 26.39, -91.8)
+gen_natoceni = -2.178
+gen_nazev = "Třemošná, ves"
+
+[node name="Třemošná,_ves_36813-2" type="Node3D" parent="Zastavky" unique_id=612889310]
+transform = Transform3D(-0.07214096, 0, -0.99739444, 0, 1, 0, 0.99739444, 0, -0.07214096, 135, 26.6, -95.1)
+script = ExtResource("2_4n747")
+id = "36813/2"
+nazev = "Třemošná, ves"
+poradi = 446
+gen_pozice = Vector3(135, 26.6, -95.1)
+gen_natoceni = -1.643
+gen_nazev = "Třemošná, ves"

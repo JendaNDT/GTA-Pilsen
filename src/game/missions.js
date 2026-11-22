@@ -158,7 +158,10 @@ export class Jobs {
   }
 
   _clear() {
-    if (this.passenger) this.game.scene.remove(this.passenger);
+    if (this.passenger) {
+      this.passenger.skeleton.dispose();
+      this.game.scene.remove(this.passenger);
+    }
     this.passenger = null;
     this.job = null;
     this.routeTimer = 0;

@@ -1,0 +1,113 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_6hfis"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_ninnm"]
+
+[node name="Oblast_6_12" type="Node3D" unique_id=374010066]
+script = ExtResource("1_6hfis")
+bunka = Vector2i(6, 12)
+stred = Vector2(-2304, 1792)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1844626707]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=621559642]
+
+[node name="Technická_66653-2" type="Node3D" parent="Zastavky" unique_id=1187290572]
+transform = Transform3D(0.04777813, 0, 0.998858, 0, 1, 0, -0.998858, 0, 0.04777813, 470.7, 36.45, 448.1)
+script = ExtResource("2_ninnm")
+id = "66653/2"
+nazev = "Technická"
+poradi = 106
+gen_pozice = Vector3(470.7, 36.45, 448.1)
+gen_natoceni = 1.523
+gen_nazev = "Technická"
+
+[node name="NC_Borská_pole_50370-2" type="Node3D" parent="Zastavky" unique_id=1625054499]
+transform = Transform3D(0.030791497, 0, 0.99952585, 0, 1, 0, -0.99952585, 0, 0.030791497, -59.8, 40.95, 87.9)
+script = ExtResource("2_ninnm")
+id = "50370/2"
+nazev = "NC Borská pole"
+poradi = 354
+gen_pozice = Vector3(-59.8, 40.95, 87.9)
+gen_natoceni = 1.54
+gen_nazev = "NC Borská pole"
+
+[node name="Goldscheiderova_63237-1" type="Node3D" parent="Zastavky" unique_id=1227889403]
+transform = Transform3D(-0.18512951, 0, -0.9827141, 0, 1, 0, 0.9827141, 0, -0.18512951, 481.5, 39.39, 99.7)
+script = ExtResource("2_ninnm")
+id = "63237/1"
+nazev = "Goldscheiderova"
+poradi = 381
+gen_pozice = Vector3(481.5, 39.39, 99.7)
+gen_natoceni = -1.757
+gen_nazev = "Goldscheiderova"
+
+[node name="NC_Borská_pole_50370-1" type="Node3D" parent="Zastavky" unique_id=1679092790]
+transform = Transform3D(-0.025200961, 0, -0.9996824, 0, 1, 0, 0.9996824, 0, -0.025200961, -25.9, 40.85, 64.5)
+script = ExtResource("2_ninnm")
+id = "50370/1"
+nazev = "NC Borská pole"
+poradi = 382
+gen_pozice = Vector3(-25.9, 40.85, 64.5)
+gen_natoceni = -1.596
+gen_nazev = "NC Borská pole"
+
+[node name="Ke_Karlovu_57097-1" type="Node3D" parent="Zastavky" unique_id=1992494759]
+transform = Transform3D(0.78070694, 0, -0.6248973, 0, 1, 0, 0.6248973, 0, 0.78070694, 87.2, 39.82, -19.1)
+script = ExtResource("2_ninnm")
+id = "57097/1"
+nazev = "Ke Karlovu"
+poradi = 419
+gen_pozice = Vector3(87.2, 39.82, -19.1)
+gen_natoceni = -0.675
+gen_nazev = "Ke Karlovu"
+
+[node name="Ke_Karlovu_57097-2" type="Node3D" parent="Zastavky" unique_id=2109811797]
+transform = Transform3D(0.78070694, 0, -0.6248973, 0, 1, 0, 0.6248973, 0, 0.78070694, 122.6, 39.53, -44.5)
+script = ExtResource("2_ninnm")
+id = "57097/2"
+nazev = "Ke Karlovu"
+poradi = 422
+gen_pozice = Vector3(122.6, 39.53, -44.5)
+gen_natoceni = -0.675
+gen_nazev = "Ke Karlovu"
+
+[node name="Karlov_53205-3" type="Node3D" parent="Zastavky" unique_id=860355418]
+transform = Transform3D(0.99428093, 0, -0.106795944, 0, 1, 0, 0.106795944, 0, 0.99428093, 399.6, 26.14, -488.8)
+script = ExtResource("2_ninnm")
+id = "53205/3"
+nazev = "Karlov"
+poradi = 582
+gen_pozice = Vector3(399.6, 26.14, -488.8)
+gen_natoceni = -0.107
+gen_nazev = "Karlov"
+
+[node name="Karlov_53205-1" type="Node3D" parent="Zastavky" unique_id=1264632661]
+transform = Transform3D(0.32668716, 0, -0.94513255, 0, 1, 0, 0.94513255, 0, 0.32668716, 296.9, 32.53, -392.9)
+script = ExtResource("2_ninnm")
+id = "53205/1"
+nazev = "Karlov"
+poradi = 613
+gen_pozice = Vector3(296.9, 32.53, -392.9)
+gen_natoceni = -1.238
+gen_nazev = "Karlov"
+
+[node name="Karlov_53205-2" type="Node3D" parent="Zastavky" unique_id=1942756512]
+transform = Transform3D(0.32668716, 0, -0.94513255, 0, 1, 0, 0.94513255, 0, 0.32668716, 374.8, 29.22, -407.3)
+script = ExtResource("2_ninnm")
+id = "53205/2"
+nazev = "Karlov"
+poradi = 616
+gen_pozice = Vector3(374.8, 29.22, -407.3)
+gen_natoceni = -1.238
+gen_nazev = "Karlov"
+
+[node name="Škoda_VIII__brána_53212-3" type="Node3D" parent="Zastavky" unique_id=22311704]
+transform = Transform3D(0.9988957, 0, -0.0469827, 0, 1, 0, 0.0469827, 0, 0.9988957, 272.5, 28.54, -473)
+script = ExtResource("2_ninnm")
+id = "53212/3"
+nazev = "Škoda VIII. brána"
+poradi = 624
+gen_pozice = Vector3(272.5, 28.54, -473)
+gen_natoceni = -0.047
+gen_nazev = "Škoda VIII. brána"

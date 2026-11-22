@@ -1,0 +1,176 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_qjfrn"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_jieg0"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="3_dsaxx"]
+
+[node name="Oblast_7_8" type="Node3D" unique_id=1617441505]
+script = ExtResource("1_qjfrn")
+bunka = Vector2i(7, 8)
+stred = Vector2(-1280, -2304)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=621956167]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=922881151]
+
+[node name="Boženy_Němcové_57179-1" type="Node3D" parent="Zastavky" unique_id=1261180339]
+transform = Transform3D(0.94796956, 0, 0.31836098, 0, 1, 0, -0.31836098, 0, 0.94796956, 359, 25.23, 474.3)
+script = ExtResource("2_jieg0")
+id = "57179/1"
+nazev = "Boženy Němcové"
+poradi = 82
+gen_pozice = Vector3(359, 25.23, 474.3)
+gen_natoceni = 0.324
+gen_nazev = "Boženy Němcové"
+
+[node name="U_Družby_57169-1" type="Node3D" parent="Zastavky" unique_id=718167116]
+transform = Transform3D(0.99490386, 0, 0.10082837, 0, 1, 0, -0.10082837, 0, 0.99490386, 219.9, 49.3, 14.8)
+script = ExtResource("2_jieg0")
+id = "57169/1"
+nazev = "U Družby"
+poradi = 83
+gen_pozice = Vector3(219.9, 49.3, 14.8)
+gen_natoceni = 0.101
+gen_nazev = "U Družby"
+
+[node name="Sokolovská_57152-1" type="Node3D" parent="Zastavky" unique_id=304130360]
+transform = Transform3D(0.9122716, 0, -0.4095858, 0, 1, 0, 0.4095858, 0, 0.9122716, 367.6, 63.65, -416.7)
+script = ExtResource("2_jieg0")
+id = "57152/1"
+nazev = "Sokolovská"
+poradi = 84
+gen_pozice = Vector3(367.6, 63.65, -416.7)
+gen_natoceni = -0.422
+gen_nazev = "Sokolovská"
+
+[node name="Sokolovská_57152-2" type="Node3D" parent="Zastavky" unique_id=1762113693]
+transform = Transform3D(0.9122716, 0, -0.4095858, 0, 1, 0, 0.4095858, 0, 0.9122716, 338.1, 62.94, -355.6)
+script = ExtResource("2_jieg0")
+id = "57152/2"
+nazev = "Sokolovská"
+poradi = 94
+gen_pozice = Vector3(338.1, 62.94, -355.6)
+gen_natoceni = -0.422
+gen_nazev = "Sokolovská"
+
+[node name="U_Družby_57169-2" type="Node3D" parent="Zastavky" unique_id=516372763]
+transform = Transform3D(0.9883183, 0, 0.15240377, 0, 1, 0, -0.15240377, 0, 0.9883183, 219.9, 47.57, 51.7)
+script = ExtResource("2_jieg0")
+id = "57169/2"
+nazev = "U Družby"
+poradi = 95
+gen_pozice = Vector3(219.9, 47.57, 51.7)
+gen_natoceni = 0.153
+gen_nazev = "U Družby"
+
+[node name="U_Družby_57169-3" type="Node3D" parent="Zastavky" unique_id=1666667776]
+transform = Transform3D(0.079711616, 0, -0.99681795, 0, 1, 0, 0.99681795, 0, 0.079711616, 348.9, 45.5, 94.2)
+script = ExtResource("2_jieg0")
+id = "57169/3"
+nazev = "U Družby"
+poradi = 263
+gen_pozice = Vector3(348.9, 45.5, 94.2)
+gen_natoceni = -1.491
+gen_nazev = "U Družby"
+
+[node name="Nemocnice_Privamed_57129-1" type="Node3D" parent="Zastavky" unique_id=21929832]
+transform = Transform3D(-0.83172286, 0, -0.5551911, 0, 1, 0, 0.5551911, 0, -0.83172286, 132, 34.89, 297.4)
+script = ExtResource("2_jieg0")
+id = "57129/1"
+nazev = "Nemocnice Privamed"
+poradi = 299
+gen_pozice = Vector3(132, 34.89, 297.4)
+gen_natoceni = -2.553
+gen_nazev = "Nemocnice Privamed"
+
+[node name="Tleskačova_57165-1" type="Node3D" parent="Zastavky" unique_id=1507065125]
+transform = Transform3D(-0.8857947, 0, -0.46407735, 0, 1, 0, 0.46407735, 0, -0.8857947, -146.2, 70.97, -168.5)
+script = ExtResource("2_jieg0")
+id = "57165/1"
+nazev = "Tleskačova"
+poradi = 300
+gen_pozice = Vector3(-146.2, 70.97, -168.5)
+gen_natoceni = -2.659
+gen_nazev = "Tleskačova"
+
+[node name="Skautská_57145-1" type="Node3D" parent="Zastavky" unique_id=1041738543]
+transform = Transform3D(-0.33273622, 0, -0.9430199, 0, 1, 0, 0.9430199, 0, -0.33273622, -410, 88.68, -370)
+script = ExtResource("2_jieg0")
+id = "57145/1"
+nazev = "Skautská"
+poradi = 301
+gen_pozice = Vector3(-410, 88.68, -370)
+gen_natoceni = -1.91
+gen_nazev = "Skautská"
+
+[node name="Skautská_57145-2" type="Node3D" parent="Zastavky" unique_id=1462676303]
+transform = Transform3D(-0.29093477, 0, -0.9567429, 0, 1, 0, 0.9567429, 0, -0.29093477, -461.1, 91.14, -376.4)
+script = ExtResource("2_jieg0")
+id = "57145/2"
+nazev = "Skautská"
+poradi = 306
+gen_pozice = Vector3(-461.1, 91.14, -376.4)
+gen_natoceni = -1.866
+gen_nazev = "Skautská"
+
+[node name="Tleskačova_57165-2" type="Node3D" parent="Zastavky" unique_id=1412916664]
+transform = Transform3D(-0.8695072, 0, -0.4939203, 0, 1, 0, 0.4939203, 0, -0.8695072, -142.6, 70.01, -150.6)
+script = ExtResource("2_jieg0")
+id = "57165/2"
+nazev = "Tleskačova"
+poradi = 307
+gen_pozice = Vector3(-142.6, 70.01, -150.6)
+gen_natoceni = -2.625
+gen_nazev = "Tleskačova"
+
+[node name="Nemocnice_Privamed_57129-2" type="Node3D" parent="Zastavky" unique_id=1922064493]
+transform = Transform3D(-0.83172286, 0, -0.5551911, 0, 1, 0, 0.5551911, 0, -0.83172286, 150, 31.84, 333)
+script = ExtResource("2_jieg0")
+id = "57129/2"
+nazev = "Nemocnice Privamed"
+poradi = 308
+gen_pozice = Vector3(150, 31.84, 333)
+gen_natoceni = -2.553
+gen_nazev = "Nemocnice Privamed"
+
+[node name="Sokolovská_57152-3" type="Node3D" parent="Zastavky" unique_id=95662624]
+transform = Transform3D(-0.91161805, 0, 0.41103828, 0, 1, 0, -0.41103828, 0, -0.91161805, 306.4, 60.38, -244)
+script = ExtResource("2_jieg0")
+id = "57152/3"
+nazev = "Sokolovská"
+poradi = 427
+gen_pozice = Vector3(306.4, 60.38, -244)
+gen_natoceni = 2.718
+gen_nazev = "Sokolovská"
+
+[node name="Sokolovská_57152-4" type="Node3D" parent="Zastavky" unique_id=280934395]
+transform = Transform3D(0.91949594, 0, -0.3930995, 0, 1, 0, 0.3930995, 0, 0.91949594, 264.6, 59.48, -227.4)
+script = ExtResource("2_jieg0")
+id = "57152/4"
+nazev = "Sokolovská"
+poradi = 431
+gen_pozice = Vector3(264.6, 59.48, -227.4)
+gen_natoceni = -0.404
+gen_nazev = "Sokolovská"
+
+[node name="U_Družby_57169-4" type="Node3D" parent="Zastavky" unique_id=1373949755]
+transform = Transform3D(-0.21452318, 0, 0.9767189, 0, 1, 0, -0.9767189, 0, -0.21452318, 304.9, 44.38, 119.6)
+script = ExtResource("2_jieg0")
+id = "57169/4"
+nazev = "U Družby"
+poradi = 432
+gen_pozice = Vector3(304.9, 44.38, 119.6)
+gen_natoceni = 1.787
+gen_nazev = "U Družby"
+
+[node name="Mista" type="Node3D" parent="." unique_id=1580923937]
+
+[node name="Košutecké_jezírko_pamatka-31" type="Node3D" parent="Mista" unique_id=592722259]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -138.7, 77.3, -467.7)
+script = ExtResource("3_dsaxx")
+popis = "Jezírko v lesoparku na Košutce."
+id = "pamatka-31"
+nazev = "Košutecké jezírko"
+poradi = 31
+gen_pozice = Vector3(-138.7, 77.3, -467.7)
+gen_nazev = "Košutecké jezírko"

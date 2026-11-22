@@ -1,3 +1,4 @@
+import { graphicAsset } from './graphic-asset.js';
 import { Data3DTexture, LinearFilter } from 'three/webgpu';
 
 export const LUT_NAMES = ['den', 'soumrak', 'noc'];
@@ -48,10 +49,11 @@ export function blendLutData(target, tables, weights) {
 }
 
 export async function loadColorLuts(base) {
+  // Na tabulky čeká start hry. Atlasy načítané do běžící scény se mohou doplnit později.
+  const signal = AbortSignal.timeout(12000);
   const luts = await Promise.all(LUT_NAMES.map(async (name) => {
-    const reply = await fetch(`${base}luts/${name}.cube`);
-    if (!reply.ok) throw new Error(`Barevná tabulka ${name} je nedostupná.`);
-    return parseColorLut(await reply.text());
+    const blob = await graphicAsset('luts/' + name + '.cube', base, signal);
+    return parseColorLut(await blob.text());
   }));
   if (luts.some(({ size }) => size !== luts[0].size)) throw new Error('Barevné tabulky mají různé rozměry.');
   return luts;

@@ -1,0 +1,76 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_c1ui8"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_ml38q"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="3_p5d1c"]
+
+[node name="Oblast_10_11" type="Node3D" unique_id=270597467]
+script = ExtResource("1_c1ui8")
+bunka = Vector2i(10, 11)
+stred = Vector2(1792, 768)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1607642790]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1390351390]
+
+[node name="Bazén_Slovany_57080-1" type="Node3D" parent="Zastavky" unique_id=1596403659]
+transform = Transform3D(-0.77467674, 0, -0.6323575, 0, 1, 0, 0.6323575, 0, -0.77467674, -472.5, 20.03, 398.6)
+script = ExtResource("2_ml38q")
+id = "57080/1"
+nazev = "Bazén Slovany"
+poradi = 42
+gen_pozice = Vector3(-472.5, 20.03, 398.6)
+gen_natoceni = -2.457
+gen_nazev = "Bazén Slovany"
+
+[node name="Bazén_Slovany_57080-2" type="Node3D" parent="Zastavky" unique_id=1294185929]
+transform = Transform3D(0.8202205, 0, 0.57204753, 0, 1, 0, -0.57204753, 0, 0.8202205, -417.7, 21.17, 487.7)
+script = ExtResource("2_ml38q")
+id = "57080/2"
+nazev = "Bazén Slovany"
+poradi = 68
+gen_pozice = Vector3(-417.7, 21.17, 487.7)
+gen_natoceni = 0.609
+gen_nazev = "Bazén Slovany"
+
+[node name="Nádraží_Slovany_26939-3" type="Node3D" parent="Zastavky" unique_id=1374556812]
+transform = Transform3D(0.79182804, 0, 0.6107441, 0, 1, 0, -0.6107441, 0, 0.79182804, 171.1, 18.95, 507.7)
+script = ExtResource("2_ml38q")
+id = "26939/3"
+nazev = "Nádraží Slovany"
+poradi = 671
+gen_pozice = Vector3(171.1, 18.95, 507.7)
+gen_natoceni = 0.657
+gen_nazev = "Nádraží Slovany"
+
+[node name="Stadion_Lokomotivy_53083-1" type="Node3D" parent="Zastavky" unique_id=1419211301]
+transform = Transform3D(0.7404881, 0, 0.6720695, 0, 1, 0, -0.6720695, 0, 0.7404881, -69.6, 17.06, 225.1)
+script = ExtResource("2_ml38q")
+id = "53083/1"
+nazev = "Stadion Lokomotivy"
+poradi = 672
+gen_pozice = Vector3(-69.6, 17.06, 225.1)
+gen_natoceni = 0.737
+gen_nazev = "Stadion Lokomotivy"
+
+[node name="Stadion_Lokomotivy_53083-2" type="Node3D" parent="Zastavky" unique_id=1952282664]
+transform = Transform3D(0.7411598, 0, 0.67132866, 0, 1, 0, -0.67132866, 0, 0.7411598, -12, 17.53, 294.3)
+script = ExtResource("2_ml38q")
+id = "53083/2"
+nazev = "Stadion Lokomotivy"
+poradi = 686
+gen_pozice = Vector3(-12, 17.53, 294.3)
+gen_natoceni = 0.736
+gen_nazev = "Stadion Lokomotivy"
+
+[node name="Mista" type="Node3D" parent="." unique_id=1668305005]
+
+[node name="Lobezský_park_pamatka-27" type="Node3D" parent="Mista" unique_id=251863454]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 409.8, -3.02, -122.8)
+script = ExtResource("3_p5d1c")
+popis = "Park u řeky Úslavy v Lobzích."
+id = "pamatka-27"
+nazev = "Lobezský park"
+poradi = 27
+gen_pozice = Vector3(409.8, -3.02, -122.8)
+gen_nazev = "Lobezský park"

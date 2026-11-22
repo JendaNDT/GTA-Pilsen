@@ -60,3 +60,38 @@ test('měření práce snímku přiřadí jen skutečně dokončený vzorek GPU'
   assert.equal(perf.summary().frames, 0);
   assert.equal(perf.summary().gpuSamples, 0);
 });
+
+test('záložní WebGL započítá jen dokončený platný dotaz a uvolní jej i při přerušení', async t => {
+  let nextFrame, disjoint = false, available = false;
+  const deleted = [];
+  const original = globalThis.requestAnimationFrame;
+  globalThis.requestAnimationFrame = callback => { nextFrame = callback; };
+  t.after(() => {
+    if (original) globalThis.requestAnimationFrame = original;
+    else delete globalThis.requestAnimationFrame;
+  });
+  const gl = {
+    QUERY_RESULT_AVAILABLE: 1, QUERY_RESULT: 2,
+    createQuery: () => ({}), beginQuery() {}, endQuery() {},
+    isContextLost: () => false, getParameter: () => disjoint,
+    getQueryParameter: (query, key) => key === 1 ? available : 2_500_000,
+    deleteQuery: query => deleted.push(query),
+  };
+  const renderer = {
+    backend: { gl, disjoint: { TIME_ELAPSED_EXT: 3, GPU_DISJOINT_EXT: 4 } },
+    info: { render: {}, memory: {} }, getPixelRatio: () => 1, shadowMap: { enabled: false },
+  };
+  const perf = createFrameProfiler({ renderer, update() {}, render() {} });
+  const poll = async () => { nextFrame(); await new Promise(resolve => setImmediate(resolve)); };
+  perf.frame(1 / 60);
+  await poll();
+  assert.equal(perf.summary().gpuSamples, 0);
+  available = true;
+  await poll();
+  assert.equal(perf.summary().gpuMs.median, 2.5);
+  disjoint = true;
+  perf.frame(1 / 60);
+  await poll();
+  assert.equal(perf.summary().gpuSamples, 1);
+  assert.equal(new Set(deleted).size, 2);
+});

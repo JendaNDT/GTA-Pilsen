@@ -43,3 +43,110 @@ export function pathNormal(D, k) {
   _nrm.x = nx; _nrm.z = nz; _nrm.scale = scale; _nrm.dot = dot;
   return _nrm;
 }
+
+/** Posun konstrukce vůči ose jízdních pruhů zachová návaznost uličního grafu. */
+export function offsetDeck(path, calibration) {
+  if (!calibration) return path;
+  const {shiftX, shiftZ} = calibration;
+  return {...path, x:path.x.map(x => x + shiftX), z:path.z.map(z => z + shiftZ),
+    px:path.px + shiftX, pz:path.pz + shiftZ, nx:path.nx + shiftX, nz:path.nz + shiftZ};
+}
+
+// Na krátkém přechodu k měřené mostovce může terén patřit spodní cestě.
+// Horní jízdní pás zůstává samostatný, aby pod ním zůstal průchod.
+export function bridgeApproach(world, bridge, road) {
+  if (!world.gradeRoads.has(bridge)) return null;
+  const start = world.rOff[bridge], end = world.rOff[road + 1] - 1;
+  const { rpx: x, rpz: z, rpy: y } = world;
+  if (x[start] !== x[end] || z[start] !== z[end]) return null;
+  const dx = x[end - 1] - x[end], dz = z[end - 1] - z[end];
+  const segmentLength = Math.hypot(dx, dz);
+  const bridgeLength = Math.hypot(x[start + 1] - x[start], z[start + 1] - z[start]);
+  if (!segmentLength || !bridgeLength || y[start] - world.heightAt(x[end], z[end]) < 0.75) return null;
+  const slope = (y[start] - y[start + 1]) / bridgeLength;
+  for (let reach = 2; reach <= Math.min(segmentLength, 16); reach += 2) {
+    const t = reach / segmentLength, bx = x[end] + dx * t, bz = z[end] + dz * t;
+    const top = y[start] + reach * slope;
+    if (world.heightAt(bx, bz) < top) continue;
+    const path = densePath([x[end], bx], [z[end], bz], [y[start], top], 0, 1, 0, 1, 2);
+    return { road, seg: end - 1, startT: 1 - t, path, halfWidth: world.r.w[road] / 2,
+      tile: world.chunkIndex((x[end] + bx) / 2, (z[end] + bz) / 2) };
+  }
+  return null;
+}
+
+// Vyrovná povrch vozovky u opěry. Pod středem mostu zůstane původní koryto.
+export function bridgeBankOffsets(world, bridge, road) {
+  const head = world.rOff[bridge], end = world.rOff[road + 1] - 1;
+  const { rpx, rpz, rpy, gradeStep } = world;
+  const x0 = rpx[head], z0 = rpz[head];
+  if (rpx[end] !== x0 || rpz[end] !== z0) return [];
+  const length = Math.hypot(rpx[end - 1] - x0, rpz[end - 1] - z0);
+  if (!length) return [];
+  const dx = (rpx[end - 1] - x0) / length, dz = (rpz[end - 1] - z0) / length;
+  const width = world.r.w[road] / 2;
+  const startY = rpy[head] - 0.05;
+  const reach = Math.min(20, length);
+  const endY = world.heightAt(x0 + reach * dx, z0 + reach * dz);
+  const smooth = value => {
+    const t = Math.max(0, Math.min(1, value));
+    return t * t * (3 - 2 * t);
+  };
+  const radius = reach + width + 6, offsets = [];
+  for (let x = gradeStep * Math.floor((x0 - radius) / gradeStep); x <= x0 + radius; x += gradeStep) {
+    for (let z = gradeStep * Math.floor((z0 - radius) / gradeStep); z <= z0 + radius; z += gradeStep) {
+      const along = (x - x0) * dx + (z - z0) * dz;
+      const across = Math.abs((z - z0) * dx - (x - x0) * dz);
+      const weight = smooth((width + 4 - across) / 4) * smooth((along + 5) / 3) * smooth((reach + 5 - along) / 5);
+      if (!weight) continue;
+      const target = startY + (endY - startY) * Math.max(0, Math.min(1, along / reach));
+      const delta = Math.round(100 * weight * (target - world.heightAt(x, z)));
+      if (delta) offsets.push([x, z, delta]);
+    }
+  }
+  return offsets;
+}
+
+// Příjezdová rampa u nádraží vede po boku náspu. Osa zůstává v původní
+// výšce, v jízdním pruhu ale kola nemají kopírovat příčný svah náspu.
+export function stationRampOffsets(world) {
+  const road = 155, end = world.rOff[road + 1] - 1, start = end - 4;
+  const { rpx: x, rpz: z, gradeStep: step } = world;
+  if (!step || !(start >= world.rOff[road]) || Math.round(x[start] * 10) !== 6666 ||
+      Math.round(z[start] * 10) !== 5933 || Math.round(x[end] * 10) !== 6113 ||
+      Math.round(z[end] * 10) !== 6025) return [];
+
+  const segments = [];
+  let length = 0;
+  for (let k = start; k < end; k++) {
+    const dx = x[k + 1] - x[k], dz = z[k + 1] - z[k];
+    const size = Math.hypot(dx, dz);
+    if (!size) continue;
+    segments.push({ x: x[k], z: z[k], tx: dx / size, tz: dz / size, size, from: length });
+    length += size;
+  }
+  const width = world.r.w[road] / 2;
+  const shoulder = width + 0.5, reach = width + step;
+  const xs = x.subarray(start, end + 1), zs = z.subarray(start, end + 1);
+  const x0 = step * Math.ceil((Math.min(...xs) - reach) / step), x1 = Math.max(...xs) + reach;
+  const z0 = step * Math.ceil((Math.min(...zs) - reach) / step), z1 = Math.max(...zs) + reach;
+  const offsets = [];
+  for (let gx = x0; gx <= x1; gx += step) for (let gz = z0; gz <= z1; gz += step) {
+    let distance = reach, cx, cz, along;
+    for (const segment of segments) {
+      const s = Math.max(0, Math.min(segment.size, (gx - segment.x) * segment.tx + (gz - segment.z) * segment.tz));
+      const px = segment.x + s * segment.tx, pz = segment.z + s * segment.tz;
+      const d = Math.hypot(gx - px, gz - pz);
+      if (d >= distance) continue;
+      distance = d; cx = px; cz = pz; along = segment.from + s;
+    }
+    if (along === undefined) continue;
+    // Za krajnicí ubývá pouze oprava její výšky. Svah dál od vozovky si zachová tvar.
+    const scale = distance > shoulder ? shoulder / distance : 1;
+    const sideY = world.heightAt(cx + (gx - cx) * scale, cz + (gz - cz) * scale);
+    const weight = Math.min(1, (reach - distance) / (reach - shoulder), along / 6, (length - along) / 6);
+    const delta = Math.round(100 * weight * (world.heightAt(cx, cz) - sideY));
+    if (delta) offsets.push([gx, gz, delta]);
+  }
+  return offsets;
+}

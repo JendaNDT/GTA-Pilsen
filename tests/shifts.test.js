@@ -98,3 +98,17 @@ test('směna omezuje ryv při rozjezdu a změně pedálu a nouzově zastaví dř
     assert.ok(distances[1] + 3 < distances[0]);
   }
 });
+
+test('ve směně se u zhasnutého návěstidla zobrazí výpadek semaforu', () => {
+  let message = '';
+  const shifts = new Shifts({ clock: { now: 20 }, hud: { mission(html) { message = html; } } });
+  shifts.active = {
+    offer: { type: 'bus', ref: '30' },
+    stops: [{ name: 'Hlavní nádraží', s: 100, depart: 100, arrive: 90 }],
+    index: 0,
+    signal: { color: 'off', distance: 13.4 },
+    vehicle: { s: 10, v: 3, doorsOpen: false },
+  };
+  shifts.show();
+  assert.match(message, /Semafor mimo provoz · 14 m/);
+});

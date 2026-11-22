@@ -1,0 +1,22 @@
+Plzeň naplno – syntetická česká hlášení zastávek
+
+Klipy jsou vytvořené pro tuto hru pomocí Piper 1.5.0. Texty jsou názvy
+stanovišť ze zdroje PMDP (CC BY 4.0). Při tvorbě byly rozepsány některé
+zkratky. Syntetizované klipy byly oříznuty, upraveny na stejnou vrcholovou
+úroveň a zapsány jako mono MP3 s časovým indexem ve stops.json.
+
+Jízdní řády Plzeňských městských dopravních podniků, a.s.
+https://opendata.plzen.eu/public/opendata/detail/187
+https://creativecommons.org/licenses/by/4.0/
+
+Piper cs_CZ-jirka-medium, Michael Hansen a přispěvatelé Piper / OHF-Voice.
+Česká tréninková data Jirka byla zveřejněna jako CC0.
+https://github.com/OHF-Voice/voice-datasets
+Karta použité verze
+https://huggingface.co/rhasspy/piper-voices/blob/2f358b6a560e3a913ebf509b2f3344f20b367f94/cs/cs_CZ/jirka/medium/MODEL_CARD
+
+Základ hlasového modelu používá hlas Cori Samuel (čtenářka 92) ze souboru
+Hi-Fi Multi-Speaker English TTS Dataset autorů Evelina Bakhturina,
+Vitaly Lavrukhin, Boris Ginsburg a Yang Zhang (2021), CC BY 4.0.
+https://www.openslr.org/109/
+https://creativecommons.org/licenses/by/4.0/

@@ -207,7 +207,8 @@ export class Shifts {
     else if (run.departure && g.clock.now < run.departure.time) {
       action = `Odjezd za ${Math.ceil(run.departure.time - g.clock.now)} s`;
     }
-    const signal = { red: 'Červená', amber: 'Žlutá', green: 'Zelená', stop: 'STOP', yield: 'Dej přednost' };
+    const signal = { red: 'Červená', amber: 'Žlutá', green: 'Zelená', stop: 'STOP', yield: 'Dej přednost',
+      off: 'Semafor mimo provoz' };
     const next = !v.doorsOpen && run.signal?.distance > 0
       ? `<br>${signal[run.signal.color]} · ${Math.ceil(run.signal.distance)} m` : '';
     const gap = !v.doorsOpen && run.gap != null ? `<br>Provoz vpředu · ${run.gap} m` : '';

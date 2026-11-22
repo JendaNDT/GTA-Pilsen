@@ -1,0 +1,73 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_srxmc"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_qk3lf"]
+
+[node name="Oblast_9_14" type="Node3D" unique_id=1871168837]
+script = ExtResource("1_srxmc")
+bunka = Vector2i(9, 14)
+stred = Vector2(768, 3840)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=952546713]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1368750506]
+
+[node name="U_Hřbitova_47079-1" type="Node3D" parent="Zastavky" unique_id=1518617633]
+transform = Transform3D(0.9226113, 0, 0.38573098, 0, 1, 0, -0.38573098, 0, 0.9226113, -326.2, 23.22, -66.1)
+script = ExtResource("2_qk3lf")
+id = "47079/1"
+nazev = "U Hřbitova"
+poradi = 159
+gen_pozice = Vector3(-326.2, 23.22, -66.1)
+gen_natoceni = 0.396
+gen_nazev = "U Hřbitova"
+
+[node name="V_Zahradách_47080-1" type="Node3D" parent="Zastavky" unique_id=1266033162]
+transform = Transform3D(0.87806153, 0, 0.47854772, 0, 1, 0, -0.47854772, 0, 0.87806153, -120.1, 36.15, 290.7)
+script = ExtResource("2_qk3lf")
+id = "47080/1"
+nazev = "V Zahradách"
+poradi = 160
+gen_pozice = Vector3(-120.1, 36.15, 290.7)
+gen_natoceni = 0.499
+gen_nazev = "V Zahradách"
+
+[node name="V_Zahradách_47080-2" type="Node3D" parent="Zastavky" unique_id=365025352]
+transform = Transform3D(0.87806153, 0, 0.47854772, 0, 1, 0, -0.47854772, 0, 0.87806153, -139.6, 35.58, 241.9)
+script = ExtResource("2_qk3lf")
+id = "47080/2"
+nazev = "V Zahradách"
+poradi = 187
+gen_pozice = Vector3(-139.6, 35.58, 241.9)
+gen_natoceni = 0.499
+gen_nazev = "V Zahradách"
+
+[node name="U_Hřbitova_47079-2" type="Node3D" parent="Zastavky" unique_id=1178570812]
+transform = Transform3D(0.9226113, 0, 0.38573098, 0, 1, 0, -0.38573098, 0, 0.9226113, -319, 23.11, -66.1)
+script = ExtResource("2_qk3lf")
+id = "47079/2"
+nazev = "U Hřbitova"
+poradi = 188
+gen_pozice = Vector3(-319, 23.11, -66.1)
+gen_natoceni = 0.396
+gen_nazev = "U Hřbitova"
+
+[node name="Hradiště_57084-1" type="Node3D" parent="Zastavky" unique_id=371787125]
+transform = Transform3D(-0.8490601, 0, 0.5282962, 0, 1, 0, -0.5282962, 0, -0.8490601, 473.7, 2.11, 418.8)
+script = ExtResource("2_qk3lf")
+id = "57084/1"
+nazev = "Hradiště"
+poradi = 410
+gen_pozice = Vector3(473.7, 2.11, 418.8)
+gen_natoceni = 2.585
+gen_nazev = "Hradiště"
+
+[node name="Hradiště_57084-2" type="Node3D" parent="Zastavky" unique_id=1641719838]
+transform = Transform3D(-0.95662963, 0, 0.29130688, 0, 1, 0, -0.29130688, 0, -0.95662963, 480.9, 2.16, 415.4)
+script = ExtResource("2_qk3lf")
+id = "57084/2"
+nazev = "Hradiště"
+poradi = 411
+gen_pozice = Vector3(480.9, 2.16, 415.4)
+gen_natoceni = 2.846
+gen_nazev = "Hradiště"

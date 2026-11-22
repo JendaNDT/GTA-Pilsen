@@ -64,3 +64,30 @@ test('počet požadavků i bitmap je omezený a vzdálené bitmapy se uvolní', 
   assert.ok(ortho.get('0_1'));
   assert.equal(ortho.pending.size, 0);
 });
+
+test('časově vypršený přenos se zkusí znovu jednou, další chyba uvolní místo ostatním', async () => {
+  const attempts = new Map();
+  const ortho = new Orthophoto(grid,2,{
+    base:'',
+    fetchFile:async file => {
+      if (file === 'index.json') return {ok:true,json:()=>manifest};
+      const count = (attempts.get(file) ?? 0)+1;
+      attempts.set(file,count);
+      if (file === '0_0.webp' || count === 1) throw new DOMException('Přenos vypršel','TimeoutError');
+      return {ok:true,blob:()=>file};
+    },
+    decode:async () => ({width:512,height:512,close() {}})
+  });
+  await ortho.load();
+  ortho.prefetch(keys.slice(0,2));
+  await setImmediate();
+  assert.equal(attempts.get('0_0.webp'),2);
+  assert.equal(attempts.get('1_0.webp'),2);
+  assert.equal(ortho.requests,0);
+  assert.equal(ortho.get('0_0'),null);
+  assert.ok(ortho.get('1_0'));
+  ortho.prefetch([]);
+  ortho.prefetch(['0_0']);
+  await setImmediate();
+  assert.equal(attempts.get('0_0.webp'),4);
+});

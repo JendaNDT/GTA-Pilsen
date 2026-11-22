@@ -6,23 +6,27 @@ test('E05 – pilotní památky se vykreslí, přepnou detail a uvolní dlaždic
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (entry) => { if (entry.type() === 'error') errors.push(entry.text()); });
   const response = page.waitForResponse('**/detail/city/index.json');
-  await page.goto(gameUrl('/?debug&view=620&wet=1'));
+  // Pevné datum a hodina: zkouška čeká ve 21.48 úplnou noc, která v Plzni od konce května
+  // do konce července ještě nenastane. Noc, mlha a srážky také mění vykreslené efekty.
+  await page.goto(gameUrl('/?debug&view=620&wet=1&date=2026-11-09&hour=10'));
   const data = await (await response).json();
   expect(data.sha256).toBe("825dc3e395044b1f5a47e27c812cc4189829e9134cc027865ffc8fcb3e7bb9ac");
   expect(data.buildings).toBe(5697);
   expect(data.tiles).toHaveLength(93);
-  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  await page.waitForFunction(() => window.__ready);
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
   await page.evaluate(() => window.__freeze(true));
   await page.waitForFunction(() => {
     const g = window.__game;
     g.chunks.update(5, 5, 620, 8);
-    return [...g.chunks.chunks.values()].some((ch) => ch.heritage?.city && ch.heritage.detail.length);
+    // Vyčkáme na původní detail památky i na měřenou dlaždici v místě dotazu na střechu.
+    const landmark = g.chunks.chunks.get(g.world.chunkIndex(-128, 128))?.heritage;
+    const roof = g.chunks.chunks.get(g.world.chunkIndex(-22.8, -9.7))?.heritage;
+    return landmark?.city && landmark.detail.length > 0 && roof?.city;
   });
   const city = await page.evaluate(() => {
     const g = window.__game, heritage = g.chunks.heritage;
-    const index = [...heritage.cells.keys()].find((i) => g.chunks.chunks.get(i)?.heritage?.detail.length);
-    const ch = g.chunks.chunks.get(index);
+    const ch = g.chunks.chunks.get(g.world.chunkIndex(-128, 128));
     const detail = ch.heritage.detail[0], base = ch.heritage.base[0];
     const near = detail.visible && base.material === heritage.cityClose;
     g.chunks.update(5, 5, 620, 0, 450);
@@ -79,7 +83,7 @@ test('měřené budovy se stahují podle polohy a po selhání zůstane vidět p
     localStorage.setItem('plzen-naplno-v1', JSON.stringify({ v: 1, x: -1100, z: -2650, hour: 10 }));
   });
   await page.goto(gameUrl('/?debug&view=620&shadows=0'));
-  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  await page.waitForFunction(() => window.__ready);
   expect(requests).toBe(0);
   await page.getByRole('button', { name: 'Pokračovat', exact: true }).click();
   await page.evaluate(() => window.__freeze(true));

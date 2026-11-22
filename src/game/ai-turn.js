@@ -1,3 +1,5 @@
+const CORNER_ALIGN = 0.995;             // směr silnice a ramene rohu se liší nejvýš o 5,7°
+
 // Kružnicový oblouk spojuje tečny obou jízdních pruhů. Jejich osy se protínají
 // jinde než středové čáry silnic, zvlášť u ostrého odbočení doprava.
 export function laneTurn(world, car) {
@@ -11,6 +13,8 @@ export function laneTurn(world, car) {
   const turnRadius = car.type.len * 0.64 / Math.tan(0.62) + 1;
   let entryLane = car.lane, exitLane = car.nextLane;
   if (cross > 0) {
+    const wide = cornerTurn(world, car, length, angle, sign, cross, turnRadius);
+    if (wide) return wide;
     // Vnitřní bok potřebuje zůstat na asfaltu alespoň jedné z obou ulic.
     // Vzdálenost oblouku od jeho tečny je R·(1 − cos úhlu). Potřebné místo
     // získáme nejdřív na příjezdu, aby vůz zatáčku dokončil ve svém pruhu.
@@ -30,8 +34,52 @@ export function laneTurn(world, car) {
     entryLane -= entryShift;
     exitLane -= Math.min(Math.max(0, exitLane - half - 0.25), Math.max(0, needed(entryRoom + entryShift) - exitRoom));
   }
-  world.edgePoint(car.edge, length, entryLane, a);
-  world.edgePoint(car.next, 0, exitLane, b);
+  return arcTurn(world, car, length, entryLane, exitLane, turnRadius, angle, sign, cross);
+}
+
+/**
+ * Odbočení vpravo v zaobleném rohu: vůz jede po oblouku soustředném s obrubníkem, ve stejné
+ * vzdálenosti od okraje jako v pruhu. Poloměr je větší než nejostřejší zatočení, vůz proto
+ * nevybočuje do protisměru a zatáčí rychleji. Null, když roh chybí, když by dráha byla
+ * k obrubníku blíž než půl šířky vozu a 0,3 m, nebo když vůz (vnitřní bok, střed nebo vnější
+ * bok) cestou opustí asfalt (silnice se před rohem stáčí a oblouk s okrajem přesně nelícuje).
+ */
+function cornerTurn(world, car, length, angle, sign, cross, turnRadius) {
+  if (!world.cornerBetween) return null;
+  const node = world.edgePoint(car.edge, length, 0, {}), out = world.edgePoint(car.next, 0, 0, {});
+  const corner = world.cornerBetween(node.x, node.z, -node.tx, -node.tz, out.tx, out.tz);
+  if (!corner) return null;
+  // Oblouk rohu sedí na okraje jen tam, kde silnice u křižovatky vede rovně ve směru ramene.
+  const aligned = (arm, dx, dz) => arm.dx * dx + arm.dz * dz > CORNER_ALIGN;
+  if (!((aligned(corner.a, -node.tx, -node.tz) && aligned(corner.b, out.tx, out.tz)) ||
+    (aligned(corner.a, out.tx, out.tz) && aligned(corner.b, -node.tx, -node.tz)))) return null;
+  const roomA = world.r.w[world.eRoad[car.edge]] / 2 - car.lane, roomB = world.r.w[world.eRoad[car.next]] / 2 - car.nextLane;
+  const radius = corner.radius + Math.min(roomA, roomB);
+  if (!(radius > turnRadius)) return null;
+  const turn = arcTurn(world, car, length, car.lane, car.nextLane, radius, angle, sign, cross);
+  if (!turn) return null;
+  const margin = car.type.wid / 2 + 0.3;
+  const gap = turn.radius - corner.radius - Math.hypot(turn.cx - corner.center[0], turn.cz - corner.center[1]);
+  if (gap < margin) return null;
+  if (world.onCarriageway) {
+    const arc = turn.radius * turn.angle, p = {};
+    const steps = Math.max(2, Math.ceil(arc / 0.75));
+    for (let i = 0; i <= steps; i++) {
+      turnPoint(turn, arc * i / steps, p);
+      for (const offset of [-margin, -margin / 2, 0, car.type.wid / 2]) {
+        const k = (turn.radius + offset) / turn.radius;
+        const x = turn.cx + (p.x - turn.cx) * k, z = turn.cz + (p.z - turn.cz) * k;
+        if (!world.onCarriageway(x, z, world.heightAt(x, z))) return null;
+      }
+    }
+  }
+  return turn;
+}
+
+/** Kružnicový oblouk poloměru nejvýš turnRadius mezi pruhy entryLane a exitLane (null, když se nevejde). */
+function arcTurn(world, car, length, entryLane, exitLane, turnRadius, angle, sign, cross) {
+  const a = world.edgePoint(car.edge, length, entryLane, {});
+  const b = world.edgePoint(car.next, 0, exitLane, {});
   const dx = b.x - a.x, dz = b.z - a.z;
   const alongA = (dx * b.tz - dz * b.tx) / cross;
   const alongB = (dx * a.tz - dz * a.tx) / cross;

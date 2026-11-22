@@ -1,0 +1,183 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_f58dw"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_tyhfc"]
+
+[node name="Oblast_8_12" type="Node3D" unique_id=1538794468]
+script = ExtResource("1_f58dw")
+bunka = Vector2i(8, 12)
+stred = Vector2(-256, 1792)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=2095928263]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=2073091587]
+
+[node name="Dvořákova_57076-1" type="Node3D" parent="Zastavky" unique_id=1489743123]
+transform = Transform3D(-0.769593, 0, 0.6385347, 0, 1, 0, -0.6385347, 0, -0.769593, -399.8, 34.2, 330.1)
+script = ExtResource("2_tyhfc")
+id = "57076/1"
+nazev = "Dvořákova"
+poradi = 75
+gen_pozice = Vector3(-399.8, 34.2, 330.1)
+gen_natoceni = 2.449
+gen_nazev = "Dvořákova"
+
+[node name="Náměstí_Míru_57128-1" type="Node3D" parent="Zastavky" unique_id=815612631]
+transform = Transform3D(-0.9986694, 0, 0.051569853, 0, 1, 0, -0.051569853, 0, -0.9986694, -288.1, 31.35, 18.7)
+script = ExtResource("2_tyhfc")
+id = "57128/1"
+nazev = "Náměstí Míru"
+poradi = 76
+gen_pozice = Vector3(-288.1, 31.35, 18.7)
+gen_natoceni = 3.09
+gen_nazev = "Náměstí Míru"
+
+[node name="Dobrovského_52926-3" type="Node3D" parent="Zastavky" unique_id=555578476]
+transform = Transform3D(-0.9988196, 0, 0.0485736, 0, 1, 0, -0.0485736, 0, -0.9988196, -260, 24.73, -450.6)
+script = ExtResource("2_tyhfc")
+id = "52926/3"
+nazev = "Dobrovského"
+poradi = 77
+gen_pozice = Vector3(-260, 24.73, -450.6)
+gen_natoceni = 3.093
+gen_nazev = "Dobrovského"
+
+[node name="Dobrovského_52926-4" type="Node3D" parent="Zastavky" unique_id=127045245]
+transform = Transform3D(-0.9983991, 0, 0.056562413, 0, 1, 0, -0.056562413, 0, -0.9983991, -274.4, 27.77, -323.7)
+script = ExtResource("2_tyhfc")
+id = "52926/4"
+nazev = "Dobrovského"
+poradi = 101
+gen_pozice = Vector3(-274.4, 27.77, -323.7)
+gen_natoceni = 3.085
+gen_nazev = "Dobrovského"
+
+[node name="Náměstí_Míru_57128-2" type="Node3D" parent="Zastavky" unique_id=1391181733]
+transform = Transform3D(-0.9986694, 0, 0.051569853, 0, 1, 0, -0.051569853, 0, -0.9986694, -292.4, 31.55, 66.6)
+script = ExtResource("2_tyhfc")
+id = "57128/2"
+nazev = "Náměstí Míru"
+poradi = 102
+gen_pozice = Vector3(-292.4, 31.55, 66.6)
+gen_natoceni = 3.09
+gen_nazev = "Náměstí Míru"
+
+[node name="Dvořákova_57076-2" type="Node3D" parent="Zastavky" unique_id=1630067184]
+transform = Transform3D(-0.7702313, 0, 0.6377647, 0, 1, 0, -0.6377647, 0, -0.7702313, -478.4, 35.92, 421.3)
+script = ExtResource("2_tyhfc")
+id = "57076/2"
+nazev = "Dvořákova"
+poradi = 103
+gen_pozice = Vector3(-478.4, 35.92, 421.3)
+gen_natoceni = 2.45
+gen_nazev = "Dvořákova"
+
+[node name="Poliklinika_Bory_62925-1" type="Node3D" parent="Zastavky" unique_id=1234918363]
+transform = Transform3D(0.13637006, 0, 0.990658, 0, 1, 0, -0.990658, 0, 0.13637006, -133.8, 30.68, 186.7)
+script = ExtResource("2_tyhfc")
+id = "62925/1"
+nazev = "Poliklinika Bory"
+poradi = 357
+gen_pozice = Vector3(-133.8, 30.68, 186.7)
+gen_natoceni = 1.434
+gen_nazev = "Poliklinika Bory"
+
+[node name="Poliklinika_Bory_62925-2" type="Node3D" parent="Zastavky" unique_id=946730314]
+transform = Transform3D(0.13637006, 0, 0.990658, 0, 1, 0, -0.990658, 0, 0.13637006, -100, 30.42, 179.1)
+script = ExtResource("2_tyhfc")
+id = "62925/2"
+nazev = "Poliklinika Bory"
+poradi = 378
+gen_pozice = Vector3(-100, 30.42, 179.1)
+gen_natoceni = 1.434
+gen_nazev = "Poliklinika Bory"
+
+[node name="Náměstí_Míru_57128-3" type="Node3D" parent="Zastavky" unique_id=1460442980]
+transform = Transform3D(-0.014203234, 0, -0.99989915, 0, 1, 0, 0.99989915, 0, -0.014203234, -373.8, 32.55, 155.7)
+script = ExtResource("2_tyhfc")
+id = "57128/3"
+nazev = "Náměstí Míru"
+poradi = 379
+gen_pozice = Vector3(-373.8, 32.55, 155.7)
+gen_natoceni = -1.585
+gen_nazev = "Náměstí Míru"
+
+[node name="Dobrovského_52926-1" type="Node3D" parent="Zastavky" unique_id=1412122113]
+transform = Transform3D(0.022794375, 0, 0.9997402, 0, 1, 0, -0.9997402, 0, 0.022794375, -205.3, 26.59, -380.6)
+script = ExtResource("2_tyhfc")
+id = "52926/1"
+nazev = "Dobrovského"
+poradi = 522
+gen_pozice = Vector3(-205.3, 26.59, -380.6)
+gen_natoceni = 1.548
+gen_nazev = "Dobrovského"
+
+[node name="Nemocnice_Bory_47073-1" type="Node3D" parent="Zastavky" unique_id=1010273877]
+transform = Transform3D(-0.9490489, 0, -0.31512898, 0, 1, 0, 0.31512898, 0, -0.9490489, 109.7, 30.01, 6.4)
+script = ExtResource("2_tyhfc")
+id = "47073/1"
+nazev = "Nemocnice Bory"
+poradi = 523
+gen_pozice = Vector3(109.7, 30.01, 6.4)
+gen_natoceni = -2.821
+gen_nazev = "Nemocnice Bory"
+
+[node name="Adelova_26959-1" type="Node3D" parent="Zastavky" unique_id=1867602161]
+transform = Transform3D(-0.9714347, 0, -0.23730698, 0, 1, 0, 0.23730698, 0, -0.9714347, 232.2, 32.1, 384.9)
+script = ExtResource("2_tyhfc")
+id = "26959/1"
+nazev = "Adelova"
+poradi = 524
+gen_pozice = Vector3(232.2, 32.1, 384.9)
+gen_natoceni = -2.902
+gen_nazev = "Adelova"
+
+[node name="Adelova_26959-2" type="Node3D" parent="Zastavky" unique_id=237370618]
+transform = Transform3D(-0.9933266, 0, -0.11533538, 0, 1, 0, 0.11533538, 0, -0.9933266, 262.5, 34.73, 463.8)
+script = ExtResource("2_tyhfc")
+id = "26959/2"
+nazev = "Adelova"
+poradi = 525
+gen_pozice = Vector3(262.5, 34.73, 463.8)
+gen_natoceni = -3.026
+gen_nazev = "Adelova"
+
+[node name="Nemocnice_Bory_47073-2" type="Node3D" parent="Zastavky" unique_id=456929725]
+transform = Transform3D(-0.9487332, 0, -0.31607804, 0, 1, 0, 0.31607804, 0, -0.9487332, 70.1, 30.45, -159.1)
+script = ExtResource("2_tyhfc")
+id = "47073/2"
+nazev = "Nemocnice Bory"
+poradi = 526
+gen_pozice = Vector3(70.1, 30.45, -159.1)
+gen_natoceni = -2.82
+gen_nazev = "Nemocnice Bory"
+
+[node name="Dobrovského_52926-2" type="Node3D" parent="Zastavky" unique_id=834570033]
+transform = Transform3D(0.020794876, 0, 0.99978375, 0, 1, 0, -0.99978375, 0, 0.020794876, -209.6, 26.55, -395)
+script = ExtResource("2_tyhfc")
+id = "52926/2"
+nazev = "Dobrovského"
+poradi = 527
+gen_pozice = Vector3(-209.6, 26.55, -395)
+gen_natoceni = 1.55
+gen_nazev = "Dobrovského"
+
+[node name="U_Plynárny_57174-1" type="Node3D" parent="Zastavky" unique_id=838181050]
+transform = Transform3D(-0.99344146, 0, 0.11434207, 0, 1, 0, -0.11434207, 0, -0.99344146, 261.8, 11.89, -277)
+script = ExtResource("2_tyhfc")
+id = "57174/1"
+nazev = "U Plynárny"
+poradi = 567
+gen_pozice = Vector3(261.8, 11.89, -277)
+gen_natoceni = 3.027
+gen_nazev = "U Plynárny"
+
+[node name="U_Plynárny_57174-2" type="Node3D" parent="Zastavky" unique_id=1186334051]
+transform = Transform3D(-0.9577872, 0, 0.28747812, 0, 1, 0, -0.28747812, 0, -0.9577872, 294.2, 8.58, -362.7)
+script = ExtResource("2_tyhfc")
+id = "57174/2"
+nazev = "U Plynárny"
+poradi = 574
+gen_pozice = Vector3(294.2, 8.58, -362.7)
+gen_natoceni = 2.85
+gen_nazev = "U Plynárny"

@@ -4,7 +4,7 @@ import { gameUrl } from './game-url.js';
 
 for (const site of ['Klatovská', 'hlavní nádraží']) {
   test('E20 – deset minut ranní špičky, ' + site, async ({ page }, info) => {
-    test.setTimeout(240_000);
+    test.setTimeout(Math.max(info.timeout, 240_000));
     await page.addInitScript(() => {
       let seed = 20261118;
       Math.random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32);
@@ -30,6 +30,20 @@ for (const site of ['Klatovská', 'hlavní nádraží']) {
 
       const seen = new Map(), flow = [], departures = [];
       let longestStop = 0, stoppedAt = null, peak = 0, samples = 0;
+      const queues = [];
+      const movement = move => move && ({
+        signal: move.control.id, lane: move.lane, exit: move.edge, exitLane: move.exitLane, left: move.left,
+      });
+      const describe = car => ({
+        type: car.typeId, mode: car.mode, edge: car.edge, next: car.next, lane: car.lane,
+        x: car.x, y: car.y, z: car.z, yaw: car.yaw, s: car.s, speed: car.speed,
+        halfLen: car.halfLen, radius: car.radius, crashed: car.crashed,
+        pathBlocked: car.pathBlocked, target: car.physical?.input?.targetSpeed,
+        turn: car.upcomingLeft?.to, following: car.exitPlan?.map(move => move.to),
+        junction: movement(car.junctionMovement), waitingFor: movement(car.trafficStop?.yieldingTo),
+        signal: car.trafficStop?.rule.id, entering: car.trafficStop?.entering,
+        planned: movement(car.trafficStop?.movement),
+      });
       for (let minute = 0; minute < 10; minute++) {
         let distance = 0;
         for (let frame = 0; frame < 1800; frame++) {
@@ -52,6 +66,18 @@ for (const site of ['Klatovská', 'hlavní nádraží']) {
                 street: w.roadNames[w.r.name[w.eRoad[car.edge]]],
                 targetSpeed: body.input?.targetSpeed, rule: car.trafficStop?.rule.kind };
             }
+            // Po dvou periodách už samotný bod na mapě neukáže příčinu fronty.
+            if (stopped === 120 && queues.length < 12) {
+              const rule = car.trafficStop?.rule;
+              const near = o => o !== car && Math.hypot(o.x - car.x, o.z - car.z) < 45;
+              queues.push({ time, car: describe(car), input: { ...body.input }, rule: rule?.id,
+                light: rule?.group && w.traffic.light(rule),
+                neighbours: g.vehicles.cars.filter(near).map(describe),
+                obstacles: g.vehicles.obstacles.filter(near).map(describe),
+                lamps: [...g.lampBodies.nearby.values()].filter(near).map(l => [l.id, l.x, l.z]),
+                fixtures: [...g.trafficFurniture.nearby.values()].filter(near).map(f => [f.id, f.x, f.z]),
+              });
+            }
             distance += moved;
             samples++;
             if (departures.length < 10 && car.speed > 0.5 && body.input?.throttle > 0 &&
@@ -64,7 +90,7 @@ for (const site of ['Klatovská', 'hlavní nádraží']) {
         flow.push(Math.round(distance));
         await new Promise(requestAnimationFrame);
       }
-      return { site, cars: seen.size, peak, samples, flow, longestStop, stoppedAt, departures };
+      return { site, cars: seen.size, peak, samples, flow, longestStop, stoppedAt, departures, queues };
     }, site);
     await writeFile(info.outputPath('pozorovani.json'), JSON.stringify(result, null, 2));
     expect(result.cars).toBeGreaterThan(0);

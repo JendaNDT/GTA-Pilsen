@@ -1,0 +1,53 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_1uw1u"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_83p5q"]
+
+[node name="Oblast_11_15" type="Node3D" unique_id=193546904]
+script = ExtResource("1_1uw1u")
+bunka = Vector2i(11, 15)
+stred = Vector2(2816, 4864)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1081081473]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1156944529]
+
+[node name="Generála_Lišky_53200-2" type="Node3D" parent="Zastavky" unique_id=213028079]
+transform = Transform3D(-0.94841665, 0, -0.31702653, 0, 1, 0, 0.31702653, 0, -0.94841665, 10.4, 39.65, 137.8)
+script = ExtResource("2_83p5q")
+id = "53200/2"
+nazev = "Generála Lišky"
+poradi = 169
+gen_pozice = Vector3(10.4, 39.65, 137.8)
+gen_natoceni = -2.819
+gen_nazev = "Generála Lišky"
+
+[node name="Fialková_53198-2" type="Node3D" parent="Zastavky" unique_id=894746165]
+transform = Transform3D(-0.9917433, 0, -0.12823853, 0, 1, 0, 0.12823853, 0, -0.9917433, -61.6, 32.18, -222.1)
+script = ExtResource("2_83p5q")
+id = "53198/2"
+nazev = "Fialková"
+poradi = 170
+gen_pozice = Vector3(-61.6, 32.18, -222.1)
+gen_natoceni = -3.013
+gen_nazev = "Fialková"
+
+[node name="Fialková_53198-1" type="Node3D" parent="Zastavky" unique_id=30588733]
+transform = Transform3D(-0.9917433, 0, -0.12823853, 0, 1, 0, 0.12823853, 0, -0.9917433, -70.5, 32.15, -219.8)
+script = ExtResource("2_83p5q")
+id = "53198/1"
+nazev = "Fialková"
+poradi = 176
+gen_pozice = Vector3(-70.5, 32.15, -219.8)
+gen_natoceni = -3.013
+gen_nazev = "Fialková"
+
+[node name="Generála_Lišky_53200-1" type="Node3D" parent="Zastavky" unique_id=1429085160]
+transform = Transform3D(-0.9672603, 0, -0.25378624, 0, 1, 0, 0.25378624, 0, -0.9672603, 31.4, 39.63, 243.4)
+script = ExtResource("2_83p5q")
+id = "53200/1"
+nazev = "Generála Lišky"
+poradi = 177
+gen_pozice = Vector3(31.4, 39.63, 243.4)
+gen_natoceni = -2.885
+gen_nazev = "Generála Lišky"

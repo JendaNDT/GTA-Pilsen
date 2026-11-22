@@ -6,7 +6,7 @@ const VEHICLES = {
 };
 
 export const effectRange = {
-  horn: 150, bell: 110, open: 39, close: 39, door: 31, crash: 83, splash: 66, speech: 41,
+  horn: 150, bell: 110, open: 39, close: 39, door: 31, crash: 83, metal: 83, glass: 65, stone: 76, splash: 66, speech: 41,
 };
 
 export function soundChannel(ctx, target) {

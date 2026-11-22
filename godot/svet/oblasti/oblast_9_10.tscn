@@ -1,0 +1,136 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_ckfqq"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_qw16t"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="3_f2ked"]
+
+[node name="Oblast_9_10" type="Node3D" unique_id=1240438447]
+script = ExtResource("1_ckfqq")
+bunka = Vector2i(9, 10)
+stred = Vector2(768, -256)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1212718524]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=889883982]
+
+[node name="Anglické_nábřeží_54720-3" type="Node3D" parent="Zastavky" unique_id=282912362]
+transform = Transform3D(-0.16149339, 0, -0.9868738, 0, 1, 0, 0.9868738, 0, -0.16149339, -445.9, -8.12, 362.8)
+script = ExtResource("2_qw16t")
+id = "54720/3"
+nazev = "Anglické nábřeží"
+poradi = 8
+gen_pozice = Vector3(-445.9, -8.12, 362.8)
+gen_natoceni = -1.733
+gen_nazev = "Anglické nábřeží"
+
+[node name="Anglické_nábřeží_54720-4" type="Node3D" parent="Zastavky" unique_id=472422915]
+transform = Transform3D(0.14725886, 0, 0.989098, 0, 1, 0, -0.989098, 0, 0.14725886, -414.9, -7.98, 380.6)
+script = ExtResource("2_qw16t")
+id = "54720/4"
+nazev = "Anglické nábřeží"
+poradi = 29
+gen_pozice = Vector3(-414.9, -7.98, 380.6)
+gen_natoceni = 1.423
+gen_nazev = "Anglické nábřeží"
+
+[node name="Gambrinus_53199-1" type="Node3D" parent="Zastavky" unique_id=120760237]
+transform = Transform3D(0.24429862, 0, -0.96970004, 0, 1, 0, 0.96970004, 0, 0.24429862, 439.8, 7.15, 226.1)
+script = ExtResource("2_qw16t")
+id = "53199/1"
+nazev = "Gambrinus"
+poradi = 327
+gen_pozice = Vector3(439.8, 7.15, 226.1)
+gen_natoceni = -1.324
+gen_nazev = "Gambrinus"
+
+[node name="Prazdroj_26958-1" type="Node3D" parent="Zastavky" unique_id=2030504917]
+transform = Transform3D(0.30581692, 0, -0.9520903, 0, 1, 0, 0.9520903, 0, 0.30581692, 52.1, 3.01, 327.1)
+script = ExtResource("2_qw16t")
+id = "26958/1"
+nazev = "Prazdroj"
+poradi = 328
+gen_pozice = Vector3(52.1, 3.01, 327.1)
+gen_natoceni = -1.26
+gen_nazev = "Prazdroj"
+
+[node name="Na_Rychtářce_57126-2" type="Node3D" parent="Zastavky" unique_id=1225387020]
+transform = Transform3D(0.650161, 0, 0.75979644, 0, 1, 0, -0.75979644, 0, 0.650161, -413.5, -6.03, 87)
+script = ExtResource("2_qw16t")
+id = "57126/2"
+nazev = "Na Rychtářce"
+poradi = 332
+gen_pozice = Vector3(-413.5, -6.03, 87)
+gen_natoceni = 0.863
+gen_nazev = "Na Rychtářce"
+
+[node name="Prazdroj_26958-2" type="Node3D" parent="Zastavky" unique_id=1519815497]
+transform = Transform3D(-0.40977165, 0, 0.9121881, 0, 1, 0, -0.9121881, 0, -0.40977165, -43, -1.1, 392.9)
+script = ExtResource("2_qw16t")
+id = "26958/2"
+nazev = "Prazdroj"
+poradi = 333
+gen_pozice = Vector3(-43, -1.1, 392.9)
+gen_natoceni = 1.993
+gen_nazev = "Prazdroj"
+
+[node name="Švihovská_47077-2" type="Node3D" parent="Zastavky" unique_id=108571439]
+transform = Transform3D(-0.23790045, 0, 0.9712895, 0, 1, 0, -0.9712895, 0, -0.23790045, 258.2, 7.56, 308.5)
+script = ExtResource("2_qw16t")
+id = "47077/2"
+nazev = "Švihovská"
+poradi = 334
+gen_pozice = Vector3(258.2, 7.56, 308.5)
+gen_natoceni = 1.811
+gen_nazev = "Švihovská"
+
+[node name="Anglické_nábřeží_54720-1" type="Node3D" parent="Zastavky" unique_id=505108114]
+transform = Transform3D(-0.4690402, 0, 0.8831768, 0, 1, 0, -0.8831768, 0, -0.4690402, -404, -6.45, 454)
+script = ExtResource("2_qw16t")
+id = "54720/1"
+nazev = "Anglické nábřeží"
+poradi = 592
+gen_pozice = Vector3(-404, -6.45, 454)
+gen_natoceni = 2.059
+gen_nazev = "Anglické nábřeží"
+
+[node name="Anglické_nábřeží_54720-2" type="Node3D" parent="Zastavky" unique_id=656362590]
+transform = Transform3D(-0.4690402, 0, 0.8831768, 0, 1, 0, -0.8831768, 0, -0.4690402, -403.4, -6.63, 462.9)
+script = ExtResource("2_qw16t")
+id = "54720/2"
+nazev = "Anglické nábřeží"
+poradi = 596
+gen_pozice = Vector3(-403.4, -6.63, 462.9)
+gen_natoceni = 2.059
+gen_nazev = "Anglické nábřeží"
+
+[node name="Železniční_poliklinika_62950-2" type="Node3D" parent="Zastavky" unique_id=86184526]
+transform = Transform3D(-0.9704777, 0, -0.24119076, 0, 1, 0, 0.24119076, 0, -0.9704777, 211.3, 9.08, 423)
+script = ExtResource("2_qw16t")
+id = "62950/2"
+nazev = "Železniční poliklinika"
+poradi = 611
+gen_pozice = Vector3(211.3, 9.08, 423)
+gen_natoceni = -2.898
+gen_nazev = "Železniční poliklinika"
+
+[node name="Mista" type="Node3D" parent="." unique_id=1033562369]
+
+[node name="Plzeňský_Prazdroj_pamatka-3" type="Node3D" parent="Mista" unique_id=133602328]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -74.2, -3.77, 335.8)
+script = ExtResource("3_f2ked")
+popis = "Pivovar, ve kterém se roku 1842 poprvé uvařil světlý ležák plzeňského typu."
+id = "pamatka-3"
+nazev = "Plzeňský Prazdroj"
+poradi = 3
+gen_pozice = Vector3(-74.2, -3.77, 335.8)
+gen_nazev = "Plzeňský Prazdroj"
+
+[node name="Stadion_ve_Štruncových_sadech_pamatka-4" type="Node3D" parent="Mista" unique_id=765819638]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -263.9, -7.35, -15.9)
+script = ExtResource("3_f2ked")
+popis = "Domácí stadion fotbalové Viktorie Plzeň."
+id = "pamatka-4"
+nazev = "Stadion ve Štruncových sadech"
+poradi = 4
+gen_pozice = Vector3(-263.9, -7.35, -15.9)
+gen_nazev = "Stadion ve Štruncových sadech"

@@ -103,7 +103,7 @@ test('zábradlí zastaví běžící kapsli při sto různých úhlech náběhu'
   const physics = new PhysicsWorld(await loadJolt());
   const pairs = physics.engine.GetObjectLayerPairFilter();
   assert.equal(pairs.ShouldCollide(layers.CHARACTER, layers.RAILING), true);
-  assert.equal(pairs.ShouldCollide(layers.VEHICLE, layers.RAILING), false);
+  assert.equal(pairs.ShouldCollide(layers.VEHICLE, layers.RAILING), true);
   const floor = staticMeshBody(physics, Float32Array.from([
     -25, 0, -4, -25, 0, 4, 25, 0, -4, 25, 0, -4, -25, 0, 4, 25, 0, 4,
   ]));
@@ -134,4 +134,17 @@ test('zábradlí zastaví běžící kapsli při sto různých úhlech náběhu'
   physics.bodies.RemoveBody(floor.GetID());
   physics.bodies.DestroyBody(floor.GetID());
   physics.dispose();
+});
+
+test('kamera se zastaví na viditelné zkušební zídce, nad ní a po odebrání má volný výhled', async () => {
+  const {cameraRailFraction} = await import('../src/world/camera-railings.js');
+  const edge = {id:'zkouska', x:256, y:0.5, z:4, height:1,
+    corners:[[255,0,3],[257,0,3],[257,0,5],[255,0,5]]};
+  let state = 'intact';
+  const world = {minX:0,minZ:0,cols:2,rows:1,bridgeEdges:new Map([[1,[edge]]]),breakables:{state:()=>state}};
+  assert.equal(cameraRailFraction(world,250,0.6,4,260,0.6,4),0.5);
+  assert.equal(cameraRailFraction(world,250,1.5,4,260,2,4),1);
+  assert.equal(cameraRailFraction(world,256,3,4,256,-1,4),0.5);
+  state = 'broken';
+  assert.equal(cameraRailFraction(world,250,0.6,4,260,0.6,4),1);
 });

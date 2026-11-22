@@ -1,9 +1,18 @@
+import { wheelTrail } from '../fx/wheel-trails.js';
+import { NightLights } from '../world/night-lights.js';
+import { Particles } from '../fx/particles.js';
+import { restorePanels } from '../entities/damage.js';
+import { CarFragments } from '../physics/car-fragments.js';
+import { DebrisBudget } from '../physics/debris.js';
+import { LampBodies } from '../physics/lamp-bodies.js';
+import { TrafficFurnitureBodies } from '../physics/traffic-furniture.js';
 import { Water } from '../physics/water.js';
 import { Falls } from './falls.js';
 import { HelicopterBody } from '../physics/heli.js';
 import { TransitBodies } from '../physics/transit-bodies.js';
 import { TrafficBodies } from '../physics/traffic-bodies.js';
 import { PlayerVehicle } from '../physics/vehicle.js';
+import { cameraRailFraction } from '../world/camera-railings.js';
 import { TileColliders } from '../physics/colliders.js';
 import { CollisionView } from '../physics/debug.js';
 // Řízení hry: stav hráče, kamera, pravidla (hledanost, zdraví, peníze), ukládání.
@@ -17,7 +26,11 @@ import { Environment } from '../world/scene.js';
 import { createPostFX } from '../world/postfx.js';
 import { env } from '../world/materials.js';
 import { VehicleManager, Car, wrapAngle } from '../entities/vehicles.js';
-import { addCarLight, CAR_TYPES } from '../entities/models.js';
+import { snowDepth, weatherFog, cloudCover } from '../world/weather-surfaces.js';
+import { Precipitation } from '../fx/precipitation.js';
+import { Weather } from '../world/weather.js';
+import { dirtLevel } from '../entities/car-appearance.js';
+import { addCarLight, CAR_TYPES, setCarAppearanceQuality } from '../entities/models.js';
 import { Player, PedManager } from '../entities/player.js';
 import { TRANSIT_NAME, TransitManager } from '../entities/transit.js';
 import { Heli } from '../entities/heli.js';
@@ -28,6 +41,7 @@ import { Shifts } from './shift.js';
 import { GameAudio } from './audio.js';
 import { input, pollInput, endFrame } from './input.js';
 import { GameClock, HOUR_SECONDS, formatDay, parseDay } from './clock.js';
+import { roadWear } from '../world/road-surface.js';
 import { TrafficRhythm } from './traffic-rhythm.js';
 import { automaticQuality, PROFILES, resolutionScale, SAVE_KEY } from './graphics-quality.js';
 
@@ -40,7 +54,6 @@ const plain = (text) => String(text).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '
 export class Game {
   constructor(renderer, data, physics) {
     this.physics = physics;
-    this.oldPhysics = PARAMS.get('physics') === 'old';
     this.steering = 'arcade';
     this.heliAssist = true;
     this.driver = null;
@@ -48,11 +61,13 @@ export class Game {
     this.water = new Water(physics);
     this.trafficBodies = new TrafficBodies(physics, QUALITY);
     this.transitBodies = new TransitBodies(physics);
+    this.weather = new Weather(DEBUG ? PARAMS.get('weather') : null);
     this.tireSurface = (x, z) => {
-      if (x > -66 && x < 75 && z > -60 && z < 68) return 0.9;
+      const grip = this.weather.surfaceGrip(x, z);
+      if (x > -66 && x < 75 && z > -60 && z < 68) return .9 * grip;
       const w = this.world;
-      if (w.onRoad(x, z)) return w.r.cls[w._tmpRoad.road] >= RC.TRACK ? 0.6 : 1;
-      return w.isSoft(x, z) ? 0.5 : 0.6;
+      if (w.onRoad(x, z)) return (w.r.cls[w._tmpRoad.road] >= RC.TRACK ? .6 : 1) * grip;
+      return (w.isSoft(x, z) ? .5 : .6) * grip;
     };
     this.pedHits = new Map();
     physics.onPedContact = (walker, vehicle) => {
@@ -64,9 +79,12 @@ export class Game {
         ? this.car : this.trafficBodies.carForBody(carID);
       if (ped && car) this.queuePedHit(ped, car, vehicle.GetLinearVelocity());
     };
-    physics.onImpact = (first, second, impulse) => {
-      this.driver?.recordImpact(first, second, impulse);
-      this.trafficBodies.recordImpact(first, second, impulse);
+    physics.onImpact = (first, second, impulse, manifold) => {
+      this.colliders.roadFurniture.bump(first, second, impulse);
+      this.lampBodies.contact(first, second, impulse);
+      this.trafficFurniture.contact(first, second, impulse);
+      this.driver?.recordImpact(first, second, impulse, manifold);
+      this.trafficBodies.recordImpact(first, second, impulse, manifold);
       const flight = this.heli?.physical;
       if (flight) {
         const id = flight.body.GetID().GetIndexAndSequenceNumber();
@@ -80,7 +98,7 @@ export class Game {
       const start = DEBUG ? performance.now() : 0;
       this.transitBodies.update(this.transit.vehicles, this.focus, dt);
       this.trafficBodies.drive(this, dt);
-      if (!this.oldPhysics) for (const h of this.helis) {
+      for (const h of this.helis) {
         if (!h.physical) continue;
         h.spinRotor(dt);
         const touchLift = IS_TOUCH && input.touchDrive;
@@ -106,6 +124,11 @@ export class Game {
         if (this.water.step(vehicle, this.world, dt)) this.audio.splash(car);
       }
       physics.engine.Step(dt, 1);
+      const budget = physics.debris.step(20);
+      const roadBudget = this.colliders.roadFurniture.step(this.clock.now, budget);
+      const remaining = this.trafficFurniture.step(this.clock.now, roadBudget);
+      const panelBudget = this.lampBodies.step(this.clock.now, remaining);
+      this.fragments.step(panelBudget, this.focus);
       this.driver?.read();
       this.trafficBodies.read(this);
       for (const h of this.helis) if (h.physical) {
@@ -123,27 +146,71 @@ export class Game {
     };
     this.renderer = renderer;
     this.scene = new THREE.Scene();
+    this.particles = new Particles(this.scene, renderer, () => QUALITY.particles);
+    this.fragments = new CarFragments(physics, this.scene);
+    physics.onCarFragment = this.fragments.queue.bind(this.fragments);
     this.camera = new THREE.PerspectiveCamera(62, innerWidth / innerHeight, 0.4, QUALITY.view * 1.35);
+    const view = new THREE.Frustum(), matrix = new THREE.Matrix4(), sphere = new THREE.Sphere();
+    physics.debris = new DebrisBudget(() => QUALITY.debris, body => {
+      matrix.multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
+      view.setFromProjectionMatrix(matrix, this.camera.coordinateSystem, this.camera.reversedDepth);
+      const p = body.GetPosition();
+      sphere.center.set(p.GetX(), p.GetY(), p.GetZ());
+      sphere.radius = body.GetShape().GetInnerRadius() + 3;
+      return view.intersectsSphere(sphere);
+    });
+    let nextSparks = 0;
+    physics.onMetalScrape = (x, y, z) => {
+      if (this.time < nextSparks || Math.hypot(x - this.focus.x, z - this.focus.z) > 90) return;
+      nextSparks = this.time + 0.08;
+      this.particles.emit('sparks', x, y, z, 4);
+    };
+    this.propertyHits = new Set();
+    this.lastPropertyHit = -Infinity;
+    physics.onFurnitureDamage = (fixture, hit, material) => {
+      this.particles.emit(material === 'metal' ? 'sparks' : material === 'stone' ? 'dust' : 'glass',
+        fixture.x, fixture.y + 0.6, fixture.z, 12);
+      this.audio.crash(Math.max(4, hit.impulse / 900), fixture, material);
+      if (hit.car !== this.driver?.body.GetID().GetIndexAndSequenceNumber()) return;
+      if (this.time - this.lastPropertyHit > 5) this.propertyHits.clear();
+      this.lastPropertyHit = this.time;
+      if (this.propertyHits.has(fixture.id)) return;
+      this.propertyHits.add(fixture.id);
+      if (this.propertyHits.size === 1 || this.propertyHits.size % 3 === 0) {
+        this.addWanted(1, 'Poškození veřejného majetku', true);
+      }
+    };
     this.world = new World(data);
+    const trailRoad = {};
+    this.particles.wheelSurface = (x, z, y) => wheelTrail(this.world, x, z, y, env.wetPaving.value, trailRoad);
     if (this.world.tunnels.length) {
       this.tunnelLight = new THREE.PointLight(0xffe0b0, 35, 22);
       this.tunnelLight.visible = false;
       this.scene.add(this.tunnelLight);
     }
+    this.nightLights = QUALITY.pointLights ? new NightLights(renderer, this.scene, QUALITY.pointLights, QUALITY.headLights) : null;
+    this.precipitation = new Precipitation(this.scene);
     this.env = new Environment(this.scene, renderer);
-    this.postfx = createPostFX(renderer, this.scene, this.camera, this.world);
-    this.chunks = new ChunkManager(this.scene, this.world, renderer, data.heritage, data.orthophotoSources);
-    this.colliders = new TileColliders(physics, this.world, data, DEBUG ? new CollisionView(this.scene) : null);
+    this.postfx = createPostFX(renderer, this.scene, this.camera, this.world, this.env);
+    this.chunks = new ChunkManager(this.scene, this.world, renderer, data.heritage, data.orthophotoSources, data.soundPlaces);
+    this.lampBodies = new LampBodies(physics, this.world.breakables, this.scene);
+    this.trafficFurniture = new TrafficFurnitureBodies(physics, this.world, this.scene);
+    this.colliders = new TileColliders(physics, this.world, data, DEBUG ? new CollisionView(this.scene) : null,
+      this.lampBodies, this.trafficFurniture);
+    physics.onRailingHit = (rail, car, subshape, impulse) => this.colliders.roadFurniture.contact(rail, car, subshape, impulse);
     this.hud = new Hud(this.world);
     this.soundPlaces = data.soundPlaces;
+    this.particles.weirs = data.soundPlaces.map(([x, z]) => [x, this.world.heightAt(x, z), z]);
     this.audio = new GameAudio(this);
     this.vehicles = new VehicleManager(this.scene, this.world, this);
     this.peds = new PedManager(this.scene, this.world, this);
     this.transit = new TransitManager(this.scene, this.world, this, data.timetable);
     this.clock = new GameClock();
     this.trafficRhythm = new TrafficRhythm(this.world, data.trafficProfiles, this.transit.timetable);
+    this.chunks.roadWear = roadWear(this.world, this.trafficRhythm.measured);
     this.clockVisible = true;
     this.orthophotoEnabled = true;
+    this.flareEnabled = this.motionEnabled = false;
     this.player = new Player(this.scene, this.world, physics, this.colliders);
     // vrtulníky: heliporty z mapy (FN Lochotín, pivovar, Bory) a jeden na náměstí Republiky
     this.helis = [[106, -1596], [984, -396], [-266, 1314], [48, 52]].map(([x, z], i) => {
@@ -154,7 +221,7 @@ export class Game {
     this.focus = this.player;
     this.money = 500; this.wanted = 0; this.cool = 0; this.bust = 0;
     this.stats = {};
-    this.time = 0; this.envTimer = 0; this.placeTimer = 0; this.promptTimer = 0; this.saveTimer = 20; this.waterTimer = 0;
+    this.time = 0; this.envTimer = 0; this.placeTimer = 0; this.promptTimer = 0; this.saveTimer = 20;
     this.camYaw = 2.4; this.camPitch = 0.3; this.zoom = 1; this.camDist = 6; this.lookIdle = 9; this.camMode = 0;
     this.shake = 0; this.crashCool = 0; this.wantedCool = 0;
     this.paused = true; this.mapOpen = false;
@@ -169,6 +236,7 @@ export class Game {
     this.jobs = new Jobs(this);
     this.shifts = new Shifts(this);
     this._load();
+    this.applyOptics();
     this.chunks.setOrthophotoEnabled(this.orthophotoEnabled);
     this.player.yaw = this.camYaw;
     if (!this.car) this._spawnStarterCar();
@@ -195,7 +263,11 @@ export class Game {
   }
 
   syncClock(reposition = false) {
+    const repaired = this.lampBodies.repair(this.clock.now);
+    this.trafficFurniture.repair(repaired);
+    this.colliders.roadFurniture.repair(repaired);
     if (reposition) {
+      if (this.env.clouds) this.env.clouds.valid = false;
       this.postfx?.resetHistory();
       if (this.ride) this._alight(true);
       this.audio.resetWorld();
@@ -205,10 +277,33 @@ export class Game {
       this.peds.timer = 0;
     }
     this.chunks.heritage.updateForge(this.hour, 0);
+    this.updateWeather();
     this.env.setHour(this.hour, this.clock.day);
     this.hud.clock(this.clock, this.clockVisible);
     this.updateDepartures();
     this.envTimer = 0.4;
+  }
+
+  applyOptics() {
+    this.env.setFlare(this.flareEnabled);
+    if (this.postfx) this.postfx.motion.value = this.motionEnabled;
+  }
+
+  updateWeather() {
+    this.weather.update(this.clock.now);
+    snowDepth.value = this.weather.snow;
+    weatherFog.value = this.weather.fog;
+    const variable = this.weather.mode !== 'clear';
+    cloudCover.value = variable ? this.weather.cloud : .41;
+    if (this.env.clouds) this.env.clouds.enabled.value = variable;
+    env.wetPaving.value = PARAMS.get('wet') === '1' ? 1 : this.weather.wet;
+  }
+
+  setWeatherMode(mode) {
+    this.weather.mode = mode === 'clear' ? 'clear' : 'variable';
+    this.updateWeather();
+    this.env.setHour(this.hour, this.clock.day);
+    this.save();
   }
 
   setClockVisible(visible) {
@@ -243,7 +338,11 @@ export class Game {
       const day = s.clockMode === 'manual' ? parseDay(s.date) : null;
       if (day !== null && Number.isFinite(s.hour) && s.hour >= 0 && s.hour < 24) this.clock.set(day, s.hour);
       this.clockVisible = s.v === 1 || s.clockVisible !== false;
+      this.particles.enabled = s.particlesEnabled !== false;
+      this.flareEnabled = s.flareEnabled === true;
+      this.motionEnabled = s.motionEnabled === true;
       this.falls.enabled = s.fallsEnabled !== false;
+      this.weather.mode = s.weatherMode === 'clear' ? 'clear' : 'variable';
       this.orthophotoEnabled = s.orthophotoEnabled !== false;
       this.audio.setMuted(s.soundEnabled === false);
       const w = this.world;
@@ -275,8 +374,10 @@ export class Game {
     if (saved.owned === true && owned?.model !== saved.model) return;
     const car = new Car(saved.model, Number.isInteger(saved.color) ? saved.color : 0xc8922e);
     car.place(saved.x, saved.z, saved.yaw, saved.y);
+    car.dirt = dirtLevel(owned?.dirt ?? saved.dirt);
     car.health = owned?.health ?? (Number.isFinite(saved.health) ? clamp(saved.health, 0, 100) : 100);
     if (owned) {
+      restorePanels(car, owned.damage);
       car.upgrades = owned.upgrades;
       this.garage.active = car;
     }
@@ -293,10 +394,10 @@ export class Game {
         v: 2, money: this.money, date: formatDay(this.clock.day), hour: this.hour, clockVisible: this.clockVisible,
         clockMode: this.clock.followsPrague ? 'prague' : 'manual',
         soundEnabled: !this.audio.muted, orthophotoEnabled: this.orthophotoEnabled,
-        fallsEnabled: this.falls.enabled, graphics: this.graphics, steering: this.steering, heliAssist: this.heliAssist,
+        flareEnabled: this.flareEnabled, motionEnabled: this.motionEnabled, weatherMode: this.weather.mode, particlesEnabled: this.particles.enabled, fallsEnabled: this.falls.enabled, graphics: this.graphics, steering: this.steering, heliAssist: this.heliAssist,
         car: this.mode === 'car' ? {
           model: f.typeId, color: f.color, x: f.x, z: f.z, y: f.y, yaw: f.yaw,
-          health: f.health, owned: f === this.garage.active,
+          health: f.health, dirt: f.dirt, owned: f === this.garage.active,
         } : null,
         stats: this.stats, x: Math.round(safe.x), z: Math.round(safe.z),
         found: this.jobs.landmarks.filter((l) => l.found).map((l) => l.name),
@@ -356,20 +457,44 @@ export class Game {
     const w = this.world, p = this.player;
     const r = w.nearestRoad(p.x, p.z, 120, RC.LIVING, RC.TERTIARY, {});
     if (!r) return;
-    const hw = w.r.w[r.road] / 2;
-    const x = r.x - r.dz * (hw + 0.8), z = r.z + r.dx * (hw + 0.8);
-    if (w.blocked(x, z, 2.2, 0.3, 1.5)) return;
-    const car = this.vehicles.add(new Car('hatch', 0xc8922e));
-    car.mode = 'parked';
-    car.place(x, z, Math.atan2(r.dx, r.dz));
-    this.player.lastCar = car;
+    const type = CAR_TYPES.hatch;
+    const owner = w.chunkIndex(r.x, r.z), col = owner % w.cols, row = Math.floor(owner / w.cols);
+    const lamps = [];
+    // Vůz se parkuje dřív, než se do scény načtou stožáry z okolních dlaždic.
+    for (let j = Math.max(0, row - 1); j <= Math.min(w.rows - 1, row + 1); j++) {
+      for (let i = Math.max(0, col - 1); i <= Math.min(w.cols - 1, col + 1); i++) {
+        lamps.push(...w.lampsInTile(j * w.cols + i));
+      }
+    }
+    const off = w.r.w[r.road] / 2 + 0.8;
+    for (const shift of [0, 6, -6, 12, -12, 18, -18]) {
+      const at = shift ? w.nearestRoad(r.x + r.dx * shift, r.z + r.dz * shift, 5, RC.LIVING, RC.TERTIARY, {}) : r;
+      if (!at || at.road !== r.road) continue;
+      const x = at.x - at.dz * off, z = at.z + at.dx * off;
+      if (w.blocked(x, z, 2.2, 0.3, 1.5) || w.isWater(x, z)) continue;
+      const y = w.heightAt(x, z);
+      // Před nárazníkem nech místo, aby řidič mohl od obrubníku vyjet.
+      const lampInPath = lamps.some(lamp => {
+        const dx = lamp.x - x, dz = lamp.z - z;
+        const along = dx * at.dx + dz * at.dz;
+        return lamp.y < y + type.h && lamp.y + lamp.height > y &&
+          along > -type.len / 2 - 0.15 && along < type.len / 2 + 8 &&
+          Math.abs(dx * at.dz - dz * at.dx) < type.wid / 2 + 0.35;
+      });
+      if (lampInPath) continue;
+      const car = this.vehicles.add(new Car('hatch', 0xc8922e));
+      car.mode = 'parked';
+      car.place(x, z, Math.atan2(at.dx, at.dz));
+      this.player.lastCar = car;
+      return;
+    }
   }
 
   // -------------------------------------------------------------- akce ----
   addMoney(n) { this.money = Math.max(0, this.money + n); this.hud.money(this.money); }
 
-  addWanted(n, reason) {
-    if (this.wantedCool > 0) return;
+  addWanted(n, reason, separateEvent = false) {
+    if (this.wantedCool > 0 && !separateEvent) return;
     this.wantedCool = 2.5;
     const before = this.wanted;
     this.wanted = Math.min(5, this.wanted + n);
@@ -525,6 +650,7 @@ export class Game {
     const mine = !!this.car && (car === this.car || other === this.car);
     const f = this.focus;
     if ((car.x - f.x) ** 2 + (car.z - f.z) ** 2 < 70 * 70 && this.crashCool <= 0) {
+      this.particles.emit('sparks', car.x, car.y + 0.35, car.z, 6);
       this.audio.crash(impact * (mine ? 1 : 0.5), car);
       this.crashCool = 0.18;
     }
@@ -714,6 +840,15 @@ export class Game {
         if (over > 0) camY += over / u;
       }
     }
+    const rail = cameraRailFraction(w, f.x, ty-0.18, f.z, camX, camY-0.18, camZ);
+    if (rail < 1) {
+      const length = Math.hypot(camX-f.x, camY-ty, camZ-f.z);
+      const fraction = Math.max(0, rail - 0.18/length);
+      camX = f.x + (camX-f.x)*fraction;
+      camY = ty + (camY-ty)*fraction;
+      camZ = f.z + (camZ-f.z)*fraction;
+      this.camDist = Math.min(this.camDist, length*fraction);
+    }
     cam.position.set(camX, camY, camZ);
     if (this.shake > 0.01) {
       cam.position.x += (Math.random() - 0.5) * this.shake * 0.5;
@@ -744,6 +879,7 @@ export class Game {
     if (input.pressed.has('job')) this.jobs.toggle();
     if (input.pressed.has('camera')) this.camMode = (this.camMode + 1) % 2;
     if (input.pressed.has('reset')) this.unstuck();
+    if (input.pressed.has('beams') && this.mode === 'car') this.car.highBeam = !this.car.highBeam;
     if (input.pressed.has('horn') && this.mode === 'car') this.audio.horn(this.car);
     if (input.pressed.has('horn') && this.shifts.active) {
       if (this.ride.isTram) this.audio.bell(this.ride); else this.audio.horn(this.ride);
@@ -768,20 +904,18 @@ export class Game {
     env.time.value = this.time;
 
     if (this.driver && (this.mode !== 'car' || this.car !== this.driver.car)) {
-      if (!this.oldPhysics && this.vehicles.cars.includes(this.driver.car)) this.trafficBodies.keepCar(this.driver);
+      if (this.vehicles.cars.includes(this.driver.car)) this.trafficBodies.keepCar(this.driver);
       else this.driver.dispose();
       this.driver = null;
     }
-    if (!this.oldPhysics || this.mode === 'foot') this.colliders.update(this.focus.x, this.focus.z);
+    this.colliders.update(this.focus.x, this.focus.z);
     this.player.setWalking(this.mode === 'foot' && !this.falls.active.has(this.player));
-    if (!this.oldPhysics) {
-      if (this.mode === 'car' && !this.driver) this.driver = this.trafficBodies.takeCar(this.car) ?? new PlayerVehicle(this.physics, this.car);
-      if (this.car?.physicsTeleport && this.driver) {
-        this.driver.teleport();
-        this.car.physicsTeleport = false;
-      }
+    if (this.mode === 'car' && !this.driver) this.driver = this.trafficBodies.takeCar(this.car) ?? new PlayerVehicle(this.physics, this.car);
+    if (this.car?.physicsTeleport && this.driver) {
+      this.driver.teleport();
+      this.car.physicsTeleport = false;
     }
-    if (!this.oldPhysics) for (const h of this.helis) {
+    for (const h of this.helis) {
       const near = h === this.heli || Math.hypot(h.x - this.focus.x, h.z - this.focus.z) <= 150;
       if (near && this.colliders.tiles.has(this.world.chunkIndex(h.x, h.z))) {
         if (!h.physical) h.physical = new HelicopterBody(this.physics, h);
@@ -823,26 +957,7 @@ export class Game {
     } else if (this.mode === 'car') {
       const car = this.car;
       car.reverseTime = car.speed < -1 ? (car.reverseTime || 0) + dt : 0;
-      if (this.oldPhysics) this.vehicles.stepDynamic(car, dt, input.moveY, input.moveX, input.handbrake);
-      this.waterTimer -= dt;
-      if (this.oldPhysics && this.waterTimer <= 0) {
-        this.waterTimer = 0.3;
-        const w = this.world;
-        if (car.y < w.heightAt(car.x, car.z) + 0.8 && !car.air && w.isWater(car.x, car.z) && !w.onRoad(car.x, car.z, 2.5)) {
-          this.hud.toast('Auto skončilo ve vodě.', 'bad');
-          const x = car.x, z = car.z;
-          if (car === this.garage.active) car.health = 0;
-          this.car = null; this.vehicles.remove(car);
-          this.audio.splash({ x, z, y: car.y });
-          this.mode = 'foot'; this.focus = p; p.place(x, z); p.mesh.visible = true;
-        }
-      }
-    } else if (this.mode === 'heli' && this.oldPhysics) {
-      const lift = (input.handbrake ? 1 : 0) - (input.down ? 1 : 0) + (IS_TOUCH && input.touchDrive ? input.moveY : 0);
-      const impact = this.heli.update(dt, IS_TOUCH && input.touchDrive ? 0 : input.moveY, input.moveX, clamp(lift, -1, 1));
-      if (impact > 0) { this.audio.crash(impact, this.heli); this._hurt(impact * 3); }
     }
-    if (this.oldPhysics) for (const h of this.helis) if (h !== this.heli) h.update(dt, 0, 0, 0);
 
     // svět
     const onFoot = this.mode === 'foot';
@@ -866,6 +981,7 @@ export class Game {
     this._updateWanted(dt);
     this._updateCamera(dt);
     this.chunks.heritage.updateForge(this.hour, dt);
+    this.particles.update(dt, this.vehicles.cars, this.focus, QUALITY.waterDetail);
     this.audio.update(dt, input.moveY);
     this.env.update(this.camera);
     const fast = Math.hypot(this.focus.vx || 0, this.focus.vz || 0) > 18;
@@ -970,7 +1086,13 @@ export class Game {
 
   render() {
     this.renderer.info.reset();
+    const cam = this.camera.position;
+    this.precipitation.update(this.weather, QUALITY.particles, !this.particles.enabled ||
+      ((this.weather.rain || this.weather.flakes) && this.world.tunnelAt(cam.x, cam.z, cam.y)?.inside));
+    if (this.postfx) this.postfx.motion.value = this.motionEnabled;
+    this.env.clouds?.render(this.camera);
     this.env.updateSkyLight();
+    this.nightLights?.update(this.camera, this.chunks.chunks, this.vehicles.cars, this.env.night, this.mode === 'car' ? this.car : null);
     if (this.postfx) this.postfx.render();
     else this.renderer.render(this.scene, this.camera);
   }
@@ -1038,7 +1160,9 @@ export class Game {
     this.postfx?.dispose();
     this.postfx = null;
     this.env.dispose();
+    this.nightLights?.dispose();
     applyQualityProfile(profile);
+    this.nightLights = QUALITY.pointLights ? new NightLights(this.renderer, this.scene, QUALITY.pointLights, QUALITY.headLights) : null;
     this.falls.limit(QUALITY.ragdolls);
     this.renderer.shadowMap.enabled = QUALITY.shadows;
     this.camera.far = QUALITY.view * 1.35;
@@ -1046,13 +1170,16 @@ export class Game {
     this.setResolutionScale(1);
     this.chunks.applyQuality();
     for (const car of this.vehicles.cars) {
+      setCarAppearanceQuality(car.mesh);
       if (QUALITY.carLights) addCarLight(car.mesh, car.type);
       else if (car.mesh.userData.light) car.mesh.userData.light.visible = false;
     }
     this.env = new Environment(this.scene, this.renderer);
+    this.env.setFlare(this.flareEnabled);
+    this.updateWeather();
     this.env.setHour(this.hour, this.clock.day);
     this.env.update(this.camera);
-    this.postfx = createPostFX(this.renderer, this.scene, this.camera, this.world);
+    this.postfx = createPostFX(this.renderer, this.scene, this.camera, this.world, this.env);
     const { x, y, z } = this.focus;
     this.chunks.update(x, z, QUALITY.view, 0, y);
     while (this.chunks.pendingStart > 0) {

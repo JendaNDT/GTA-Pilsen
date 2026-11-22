@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_v7bsg"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_fjrvj"]
+
+[node name="Oblast_9_16" type="Node3D" unique_id=647461741]
+script = ExtResource("1_v7bsg")
+bunka = Vector2i(9, 16)
+stred = Vector2(768, 5888)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1117085396]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=90284853]
+
+[node name="Radobyčice_47081-1" type="Node3D" parent="Zastavky" unique_id=2120212962]
+transform = Transform3D(0.9800666, 0, -0.19866933, 0, 1, 0, 0.19866933, 0, 0.9800666, 336, 27.72, -334.7)
+script = ExtResource("2_fjrvj")
+id = "47081/1"
+nazev = "Radobyčice"
+poradi = 161
+gen_pozice = Vector3(336, 27.72, -334.7)
+gen_natoceni = -0.2
+gen_nazev = "Radobyčice"
+
+[node name="Radobyčice_47081-2" type="Node3D" parent="Zastavky" unique_id=127455846]
+transform = Transform3D(0.98722726, 0, -0.15931821, 0, 1, 0, 0.15931821, 0, 0.98722726, 356.2, 27.58, -355.9)
+script = ExtResource("2_fjrvj")
+id = "47081/2"
+nazev = "Radobyčice"
+poradi = 186
+gen_pozice = Vector3(356.2, 27.58, -355.9)
+gen_natoceni = -0.16
+gen_nazev = "Radobyčice"

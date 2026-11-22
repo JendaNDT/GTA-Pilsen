@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_fdibn"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_crr4f"]
+
+[node name="Oblast_6_7" type="Node3D" unique_id=871040244]
+script = ExtResource("1_fdibn")
+bunka = Vector2i(6, 7)
+stred = Vector2(-2304, -3328)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1748734148]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1813293232]
+
+[node name="NC_Úněšovská_57182-1" type="Node3D" parent="Zastavky" unique_id=470157087]
+transform = Transform3D(-0.62349385, 0, 0.7818282, 0, 1, 0, -0.7818282, 0, -0.62349385, 236.5, 93.47, 119.4)
+script = ExtResource("2_crr4f")
+id = "57182/1"
+nazev = "NC Úněšovská"
+poradi = 302
+gen_pozice = Vector3(236.5, 93.47, 119.4)
+gen_natoceni = 2.244
+gen_nazev = "NC Úněšovská"
+
+[node name="NC_Úněšovská_57182-2" type="Node3D" parent="Zastavky" unique_id=472476141]
+transform = Transform3D(-0.32518148, 0, 0.94565165, 0, 1, 0, -0.94565165, 0, -0.32518148, 312.1, 93.6, 118.1)
+script = ExtResource("2_crr4f")
+id = "57182/2"
+nazev = "NC Úněšovská"
+poradi = 305
+gen_pozice = Vector3(312.1, 93.6, 118.1)
+gen_natoceni = 1.902
+gen_nazev = "NC Úněšovská"

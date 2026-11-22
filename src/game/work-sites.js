@@ -5,7 +5,7 @@ export const DEMO_ADDRESS = 'U Velkého rybníka 2315/3';
 export const DEMO_DROP = { x: 1465.5, z: -2584.6 };
 export const DEMO_STOPS = [
   { type: 'tram', line: '1', from: '54717/1', to: '57061/1', direction: 'směr Bolevec',
-    walk: [94.1, 39.6, 65, 39, 59, 22, 63, -20, 66, -39, 76, -51, 118.9, -55.7] },
+    walk: [94.1, 39.6, 65, 39, 59, 22, 63, -20, 66, -39, 78, -48, 90, -48, 118.9, -55.7] },
   { type: 'bus', line: '30', from: '57061/4', to: '57125/2', direction: 'přes Bolevecký rybník',
     walk: [123.7, -3040.6, 131, -3065, 144, -3110, 169, -3165, 206.8, -3200.1] },
 ];

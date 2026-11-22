@@ -1,7 +1,7 @@
-import { railingFaces } from './railings.js';
+import { RoadFurnitureBodies } from './road-furniture.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
 import { CHUNK } from '../config.js';
-import { terrainTriangles } from './terrain.js';
+import { cornerTriangles, roadSurfaceTriangles, sidewalkTriangles, terrainTriangles } from './terrain.js';
 import { RoadStructures } from './structures.js';
 import { layers } from './world.js';
 import { forgeRoofFaces } from '../world/mill.js';
@@ -36,7 +36,7 @@ function building(world, i, measured, emit) {
   for (let k = 0; k < indices.length; k += 3) roof(emit, ...indices.slice(k, k + 3).map((id) => top[id]));
 }
 
-export function staticMeshBody(physics, triangles, layer = layers.STATIC) {
+export function staticMeshBody(physics, triangles, layer = layers.STATIC, triangleIds = null) {
   const { Jolt, bodies } = physics;
   // Zápis do jednoho předem velkého pole vynechá volání do WASM pro každý vrchol.
   const count = triangles.length / 9;
@@ -46,8 +46,13 @@ export function staticMeshBody(physics, triangles, layer = layers.STATIC) {
   const offset = address(0), stride = address(1) - offset;
   const heap = Jolt.HEAPF32;
   for (let i = 0; i < count; i++) heap.set(triangles.subarray(i * 9, i * 9 + 9), offset + stride * i);
+  if (triangleIds) for (let i = 0; i < count; i++) list.at(i).mUserData = triangleIds[i];
   list.resize(count);
   const mesh = new Jolt.MeshShapeSettings(list);
+  mesh.mPerTriangleUserData = !!triangleIds;
+  // Rychlejší stavba stromu zkrátí přípravu dlaždice zhruba na polovinu; dotazy kol na povrch
+  // tím podle měření nezpomalí (100 000 paprsků: 285 ms proti 300 ms).
+  mesh.mBuildQuality = Jolt.MeshShapeSettings_EBuildQuality_FavorBuildSpeed;
   Jolt.destroy(list);
   const result = mesh.Create();
   try {
@@ -68,15 +73,20 @@ export function staticMeshBody(physics, triangles, layer = layers.STATIC) {
 }
 
 export class TileColliders {
-  constructor(physics, world, data, debug) {
+  constructor(physics, world, data, debug, lamps, trafficFurniture) {
     this.physics = physics;
     this.world = world;
     this.debug = debug;
+    this.lamps = lamps;
+    this.trafficFurniture = trafficFurniture;
+    this.roadFurniture = new RoadFurnitureBodies(physics, world, staticMeshBody, debug);
+    this.lampTiles = new Map();
     this.tiles = new Map();
     this.structures = new RoadStructures(world);
     this.roofs = new Map();
     this.replaced = new Set();
-    if (data.heritage.sha256 !== data.collisionRoofs.source) throw new Error('Nesouhlasí verze měřených střech.');
+    // Pokud chybí odpovídající sada, běžné budovy včetně střech zůstanou fyzicky pevné.
+    if (!data.heritage.tiles.length || data.heritage.sha256 !== data.collisionRoofs.source) return;
     const valid = new Map(data.heritage.tiles.map(([x, z, , , ids]) => [world.chunkIndex(x, z), ids]));
     for (const tile of data.collisionRoofs.tiles) {
       const ci = world.chunkIndex(tile[0], tile[1]);
@@ -92,6 +102,9 @@ export class TileColliders {
     const triangles = [];
     const emit = (a, b, c) => triangles.push(...a, ...b, ...c);
     terrainTriangles(w, ci, x, z, CHUNK, emit);
+    roadSurfaceTriangles(w, ci, emit);
+    cornerTriangles(w, ci, emit);
+    sidewalkTriangles(w, ci, emit);
     for (const i of w.bChunks[ci] ?? []) building(w, i, this.replaced.has(i) || i === w.heritage.forgeIndex, emit);
     if (ci === w.heritage.forgeChunk) forgeRoofFaces(w, w.heritage.forgeIndex, (a, b, c) => roof(emit, a, b, c));
     const tile = this.roofs.get(ci);
@@ -101,18 +114,19 @@ export class TileColliders {
       for (let k = 0; k < indices.length; k += 3) roof(emit, vertex(indices[k]), vertex(indices[k + 1]), vertex(indices[k + 2]));
     }
     this.structures.emit(ci, emit);
+    const measured = w.structures?.positionsFor(ci);
+    if (measured) for (const coordinate of measured) triangles.push(coordinate);
     const positions = Float32Array.from(triangles);
     const body = staticMeshBody(this.physics, positions);
     const bodies = [body];
     this.tiles.set(ci, bodies);
-    const edges = w.bridgeEdges.get(ci);
-    if (edges?.length) {
-      const rails = [];
-      for (const edge of edges) railingFaces(edge, (a, b, c, d) => rails.push(...a, ...b, ...c, ...a, ...c, ...d));
-      const railPositions = Float32Array.from(rails);
-      bodies.push(staticMeshBody(this.physics, railPositions, layers.RAILING));
-      this.debug?.add(ci, railPositions);
+    if (this.lamps) {
+      const lamps = w.lampsInTile(ci);
+      this.lampTiles.set(ci, lamps);
+      this.lamps.load(lamps);
     }
+    this.trafficFurniture?.load(ci);
+    this.roadFurniture.load(ci);
     this.debug?.add(ci, positions);
   }
 
@@ -156,6 +170,12 @@ export class TileColliders {
         this.physics.bodies.RemoveBody(id);
         this.physics.bodies.DestroyBody(id);
       }
+      if (this.lamps) {
+        this.lamps.unload(this.lampTiles.get(ci));
+        this.lampTiles.delete(ci);
+      }
+      this.trafficFurniture?.unload(ci);
+      this.roadFurniture.unload(ci);
       this.tiles.delete(ci);
       this.debug?.remove(ci);
     }

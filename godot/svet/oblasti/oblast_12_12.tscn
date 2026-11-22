@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_hq3jx"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_8vco5"]
+
+[node name="Oblast_12_12" type="Node3D" unique_id=94751110]
+script = ExtResource("1_hq3jx")
+bunka = Vector2i(12, 12)
+stred = Vector2(3840, 1792)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=121954137]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=2000179341]
+
+[node name="K_Bukové_53093-1" type="Node3D" parent="Zastavky" unique_id=306539729]
+transform = Transform3D(0.16799596, 0, 0.9857877, 0, 1, 0, -0.9857877, 0, 0.16799596, -103.4, 37.18, -73.8)
+script = ExtResource("2_8vco5")
+id = "53093/1"
+nazev = "K Bukové"
+poradi = 682
+gen_pozice = Vector3(-103.4, 37.18, -73.8)
+gen_natoceni = 1.402
+gen_nazev = "K Bukové"
+
+[node name="K_Bukové_53093-2" type="Node3D" parent="Zastavky" unique_id=506274833]
+transform = Transform3D(0.18669441, 0, 0.98241806, 0, 1, 0, -0.98241806, 0, 0.18669441, -16.9, 42.19, -47.1)
+script = ExtResource("2_8vco5")
+id = "53093/2"
+nazev = "K Bukové"
+poradi = 697
+gen_pozice = Vector3(-16.9, 42.19, -47.1)
+gen_natoceni = 1.383
+gen_nazev = "K Bukové"

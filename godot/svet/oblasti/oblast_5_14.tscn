@@ -1,0 +1,53 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_lrv0b"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_2l4c7"]
+
+[node name="Oblast_5_14" type="Node3D" unique_id=998478927]
+script = ExtResource("1_lrv0b")
+bunka = Vector2i(5, 14)
+stred = Vector2(-3328, 3840)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1797011715]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1263113428]
+
+[node name="Nádraží_Valcha_53218-1" type="Node3D" parent="Zastavky" unique_id=501802486]
+transform = Transform3D(0.9573817, 0, -0.2888257, 0, 1, 0, 0.2888257, 0, 0.9573817, 418, 16.92, 60.7)
+script = ExtResource("2_2l4c7")
+id = "53218/1"
+nazev = "Nádraží Valcha"
+poradi = 278
+gen_pozice = Vector3(418, 16.92, 60.7)
+gen_natoceni = -0.293
+gen_nazev = "Nádraží Valcha"
+
+[node name="U_Prodejny_53220-1" type="Node3D" parent="Zastavky" unique_id=1597065709]
+transform = Transform3D(0.35395485, 0, -0.9352625, 0, 1, 0, 0.9352625, 0, 0.35395485, 20.2, 5.96, 505.4)
+script = ExtResource("2_2l4c7")
+id = "53220/1"
+nazev = "U Prodejny"
+poradi = 279
+gen_pozice = Vector3(20.2, 5.96, 505.4)
+gen_natoceni = -1.209
+gen_nazev = "U Prodejny"
+
+[node name="Nádraží_Valcha_53218-2" type="Node3D" parent="Zastavky" unique_id=53284746]
+transform = Transform3D(0.9650925, 0, -0.26190925, 0, 1, 0, 0.26190925, 0, 0.9650925, 435.2, 16.37, 31.9)
+script = ExtResource("2_2l4c7")
+id = "53218/2"
+nazev = "Nádraží Valcha"
+poradi = 294
+gen_pozice = Vector3(435.2, 16.37, 31.9)
+gen_natoceni = -0.265
+gen_nazev = "Nádraží Valcha"
+
+[node name="Špačková_68017-1" type="Node3D" parent="Zastavky" unique_id=1955967098]
+transform = Transform3D(0.1442909, 0, -0.98953533, 0, 1, 0, 0.98953533, 0, 0.1442909, -459.8, 25.54, 248.7)
+script = ExtResource("2_2l4c7")
+id = "68017/1"
+nazev = "Špačková"
+poradi = 480
+gen_pozice = Vector3(-459.8, 25.54, 248.7)
+gen_natoceni = -1.426
+gen_nazev = "Špačková"

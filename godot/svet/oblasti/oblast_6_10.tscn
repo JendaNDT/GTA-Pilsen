@@ -1,0 +1,73 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_dc4nv"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_xn7c0"]
+
+[node name="Oblast_6_10" type="Node3D" unique_id=2136086957]
+script = ExtResource("1_dc4nv")
+bunka = Vector2i(6, 10)
+stred = Vector2(-2304, -256)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1690682635]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1460316901]
+
+[node name="Přední_Skvrňany_57104-1" type="Node3D" parent="Zastavky" unique_id=155608608]
+transform = Transform3D(-0.47521085, 0, 0.87987196, 0, 1, 0, -0.87987196, 0, -0.47521085, 388.5, -0.41, 475.2)
+script = ExtResource("2_xn7c0")
+id = "57104/1"
+nazev = "Přední Skvrňany"
+poradi = 48
+gen_pozice = Vector3(388.5, -0.41, 475.2)
+gen_natoceni = 2.066
+gen_nazev = "Přední Skvrňany"
+
+[node name="Přední_Skvrňany_57104-2" type="Node3D" parent="Zastavky" unique_id=345283885]
+transform = Transform3D(-0.35807344, 0, 0.9336934, 0, 1, 0, -0.9336934, 0, -0.35807344, 317.9, 0.32, 507.4)
+script = ExtResource("2_xn7c0")
+id = "57104/2"
+nazev = "Přední Skvrňany"
+poradi = 63
+gen_pozice = Vector3(317.9, 0.32, 507.4)
+gen_natoceni = 1.937
+gen_nazev = "Přední Skvrňany"
+
+[node name="U_Apolla_47345-2" type="Node3D" parent="Zastavky" unique_id=1152067483]
+transform = Transform3D(-0.29857922, 0, 0.95438486, 0, 1, 0, -0.95438486, 0, -0.29857922, 122.6, 7.02, 375.9)
+script = ExtResource("2_xn7c0")
+id = "47345/2"
+nazev = "U Apolla"
+poradi = 471
+gen_pozice = Vector3(122.6, 7.02, 375.9)
+gen_natoceni = 1.874
+gen_nazev = "U Apolla"
+
+[node name="Sulislavská_53210-2" type="Node3D" parent="Zastavky" unique_id=1601527529]
+transform = Transform3D(0.04078504, 0, 0.9991679, 0, 1, 0, -0.9991679, 0, 0.04078504, -350.9, 13.4, 406)
+script = ExtResource("2_xn7c0")
+id = "53210/2"
+nazev = "Sulislavská"
+poradi = 472
+gen_pozice = Vector3(-350.9, 13.4, 406)
+gen_natoceni = 1.53
+gen_nazev = "Sulislavská"
+
+[node name="Sulislavská_53210-1" type="Node3D" parent="Zastavky" unique_id=807360037]
+transform = Transform3D(0.03378995, 0, 0.9994289, 0, 1, 0, -0.9994289, 0, 0.03378995, -334.3, 13.75, 416.2)
+script = ExtResource("2_xn7c0")
+id = "53210/1"
+nazev = "Sulislavská"
+poradi = 478
+gen_pozice = Vector3(-334.3, 13.75, 416.2)
+gen_natoceni = 1.537
+gen_nazev = "Sulislavská"
+
+[node name="U_Apolla_47345-1" type="Node3D" parent="Zastavky" unique_id=432010362]
+transform = Transform3D(-0.28039318, 0, 0.95988524, 0, 1, 0, -0.95988524, 0, -0.28039318, 151.4, 6.85, 382.7)
+script = ExtResource("2_xn7c0")
+id = "47345/1"
+nazev = "U Apolla"
+poradi = 479
+gen_pozice = Vector3(151.4, 6.85, 382.7)
+gen_natoceni = 1.855
+gen_nazev = "U Apolla"

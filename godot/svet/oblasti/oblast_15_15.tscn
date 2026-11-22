@@ -1,0 +1,46 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_i7ibt"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_fgv8h"]
+[ext_resource type="Script" path="res://skripty/svet/misto.gd" id="3_tt2f1"]
+
+[node name="Oblast_15_15" type="Node3D" unique_id=757151572]
+script = ExtResource("1_i7ibt")
+bunka = Vector2i(15, 15)
+stred = Vector2(6912, 4864)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=395832275]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1129313124]
+
+[node name="Starý_Plzenec,_Malá_Strana_50749-2" type="Node3D" parent="Zastavky" unique_id=462088550]
+transform = Transform3D(-0.5507009, 0, -0.8347027, 0, 1, 0, 0.8347027, 0, -0.5507009, -296.3, 19.1, 252.3)
+script = ExtResource("2_fgv8h")
+id = "50749/2"
+nazev = "Starý Plzenec, Malá Strana"
+poradi = 503
+gen_pozice = Vector3(-296.3, 19.1, 252.3)
+gen_natoceni = -2.154
+gen_nazev = "Starý Plzenec, Malá Strana"
+
+[node name="Starý_Plzenec,_Malá_Strana_50749-1" type="Node3D" parent="Zastavky" unique_id=1857180410]
+transform = Transform3D(-0.5355877, 0, -0.84447956, 0, 1, 0, 0.84447956, 0, -0.5355877, -240.2, 21.21, 301.1)
+script = ExtResource("2_fgv8h")
+id = "50749/1"
+nazev = "Starý Plzenec, Malá Strana"
+poradi = 646
+gen_pozice = Vector3(-240.2, 21.21, 301.1)
+gen_natoceni = -2.136
+gen_nazev = "Starý Plzenec, Malá Strana"
+
+[node name="Mista" type="Node3D" parent="." unique_id=1355127561]
+
+[node name="Rotunda_sv__Petra_a_Pavla_pamatka-34" type="Node3D" parent="Mista" unique_id=1011428907]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 97.2, 83.37, 26.7)
+script = ExtResource("3_tt2f1")
+popis = "Rotunda z 10. století na hradišti Hůrka, kde stávala původní Plzeň."
+id = "pamatka-34"
+nazev = "Rotunda sv. Petra a Pavla"
+poradi = 34
+gen_pozice = Vector3(97.2, 83.37, 26.7)
+gen_nazev = "Rotunda sv. Petra a Pavla"

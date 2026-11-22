@@ -17,6 +17,9 @@ const ONE_SHOTS = {
   door: (beep, air) => [air(0.105, 740, 0.28), beep('triangle', 100, 46, 0.11, 0.17)],
   crash: (beep, air, power) => [air(0.19 + power * 0.4, 440 + power * 1100, 0.27 + power * 0.44),
     beep('triangle', 130, 39, 0.15 + power * 0.06, 0.2 * power)],
+  metal: (beep, air, power) => [beep('triangle', 710, 230, 0.32, 0.15 + power * 0.15), air(0.12, 1700, 0.24)],
+  glass: (beep, air, power) => [air(0.28, 4800, 0.14 + power * 0.28), beep('sine', 2300, 1400, 0.15, 0.13)],
+  stone: (beep, air, power) => [air(0.26, 560, 0.21 + power * 0.3), beep('triangle', 110, 48, 0.16, 0.19)],
   splash: (beep, air) => [air(0.72, 1400, 0.65)],
 };
 
@@ -117,6 +120,13 @@ export class GameAudio {
   }
 
   resetWorld() {
+    if (this.rainVoice) {
+      this.rainVoice.source.stop();
+      this.rainVoice.source.disconnect();
+      this.rainVoice.filter.disconnect();
+      this.rainVoice.gain.disconnect();
+      this.rainVoice = null;
+    }
     for (const voice of this.loops.values()) voice.dispose();
     this.loops.clear();
     for (const effect of this.effects) this.stopEffect(effect);
@@ -150,6 +160,31 @@ export class GameAudio {
     const elapsed = Math.max(0.07, 0.075 - this.timer);
     this.timer = 0.075;
     const g = this.game, listener = soundListener(g), t = this.ctx.currentTime;
+    const rain = g.weather?.rain ?? 0;
+    if (rain > .01 && !this.rainVoice) {
+      const source = this.ctx.createBufferSource();
+      source.buffer = this.buffers.noise;
+      source.loop = true;
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 1700;
+      filter.Q.value = .45;
+      const gain = this.ctx.createGain();
+      gain.gain.value = 0;
+      source.connect(filter).connect(gain).connect(this.master);
+      source.start();
+      this.rainVoice = { source, filter, gain };
+    }
+    if (this.rainVoice) {
+      this.rainVoice.gain.gain.setTargetAtTime(rain * (g.tunnelLight?.visible ? .013 : .12), t, .25);
+      if (rain === 0 && this.rainVoice.gain.gain.value < .0001) {
+        this.rainVoice.source.stop();
+        this.rainVoice.source.disconnect();
+        this.rainVoice.filter.disconnect();
+        this.rainVoice.gain.disconnect();
+        this.rainVoice = null;
+      }
+    }
     const candidates = [];
     const add = (source, kind, range, state, priority = 0) => {
       const distance = Math.hypot(source.x - listener.x, source.y - listener.y, source.z - listener.z);
@@ -278,7 +313,7 @@ export class GameAudio {
     });
   }
 
-  crash(power, source) { this.effect('crash', source, Math.max(0, Math.min(1, power / 18))); }
+  crash(power, source, material = 'crash') { this.effect(material, source, Math.max(0, Math.min(1, power / 18))); }
   horn(source) { this.effect('horn', source); }
   bell(source) { this.effect('bell', source); }
   door(source) { this.effect('door', source); }

@@ -1,6 +1,10 @@
 // Měřené městské dlaždice a vlastní model vodního hamru.
 import * as THREE from 'three/webgpu';
 import { CHUNK, QUALITY } from '../config.js';
+import { SolidBuf } from './solid-buffer.js';
+import { attachRoadFurniture } from './road-furniture.js';
+import { drawStreetFixture, installStreetPaving, streetFixtures } from './street-furniture.js';
+import { StreetDetails } from './street-details.js';
 import { loadCityTile } from '../data.js';
 import { HeritageRoofs } from './heritage-geometry.js';
 import { env, makeBuildingMaterial, makeMillraceMaterial, makeSurfaceMaterial } from './materials.js';
@@ -24,6 +28,10 @@ function cityMesh(pack, prefix) {
   geometry.setAttribute('normal', new THREE.BufferAttribute(pack[prefix + 'n'], 3, true));
   geometry.setAttribute('color', new THREE.BufferAttribute(pack[prefix + 'c'], 3, true));
   if (!prefix) {
+    if (pack.street) {
+      geometry.setAttribute('aStreet', new THREE.BufferAttribute(pack.street, 4));
+      geometry.setAttribute('aEntrance', new THREE.BufferAttribute(pack.entrances, 1));
+    }
     const win = Float32Array.from(pack.win, (v, i) => i % 3 === 2 ? v : v / 32);
     geometry.setAttribute('aWin', new THREE.BufferAttribute(win, 3));
   }
@@ -34,12 +42,14 @@ function cityMesh(pack, prefix) {
 export class Heritage {
   constructor(world, manifest) {
     this.world = world;
+    this.streets = world.streetDetails ? new StreetDetails(world.streetDetails) : null;
     world.heritage = this;
     this.cells = new Map();
     this.roofCells = new Map();
     this.replaced = new Set();
     this.buildingLists = new Map();
     this.fetching = 0;
+    this.streetSections = new Map();
     for (const [x, z, name, bounds, replacements] of manifest.tiles) {
       const ci = world.chunkIndex(x, z);
       if (ci >= 0) this.cells.set(ci, { name, x, z, bounds, replacements });
@@ -69,6 +79,8 @@ export class Heritage {
     if (forge >= 0) this.replaced.add(forge);
     this.forgeChunk = world.chunkIndex(FORGE.x, FORGE.z);
     this.far = makeSurfaceMaterial(SURFACE.timber, { vertexColors: true });
+    this.streetGlass = makeSurfaceMaterial(SURFACE.glass, {vertexColors:true, transparent:true,
+      opacity:.30, depthWrite:false, side:THREE.DoubleSide});
     this.cityFar = makeSurfaceMaterial(SURFACE.plaster, { vertexColors: true, side: THREE.DoubleSide });
     this.applyQuality();
   }
@@ -76,10 +88,13 @@ export class Heritage {
   applyQuality() {
     this.close?.dispose();
     this.cityClose?.dispose();
+    this.streetClose?.dispose();
     this.water?.dispose();
     this.close = makeBuildingMaterial({ textures: QUALITY.heritageDetail, heritage: true });
     this.cityClose = makeBuildingMaterial({ textures: QUALITY.heritageDetail, heritage: true });
     this.cityClose.side = THREE.DoubleSide;
+    this.streetClose = makeBuildingMaterial({ textures: QUALITY.heritageDetail, heritage: true, street: true });
+    this.streetClose.side = THREE.DoubleSide;
     this.water = makeMillraceMaterial(QUALITY.heritageDetail);
   }
 
@@ -97,13 +112,21 @@ export class Heritage {
       ch.cityRequest = controller;
       this.fetching++;
       const tile = this.cells.get(ch.ci);
-      loadCityTile(tile.name, controller.signal).then((pack) => {
+      const hasStreet = this.streets?.tiles.has(tile.name);
+      loadCityTile(tile.name, controller.signal, hasStreet).then(async (pack) => {
         if (controller.signal.aborted) return;
         const { version, cx, cz } = pack.header;
         const n = pack.p?.length;
         if (version === 1 && cx === tile.x && cz === tile.z && n && n % 3 === 0
             && pack.n?.length === n && pack.c?.length === n && pack.win?.length === n
-            && pack.i?.length && pack.i.length % 3 === 0 && pack.roof?.length % 3 === 0) ch.cityData = pack;
+            && pack.i?.length && pack.i.length % 3 === 0 && pack.roof?.length % 3 === 0) {
+          if (hasStreet) {
+            pack.scenery = [];
+            pack.entrances = new Float32Array(n / 3);
+            pack.street = await this.streets.forTile(tile.name, pack.fileHash, n / 3, pack.scenery, pack.entrances);
+          }
+          if (!controller.signal.aborted) ch.cityData = pack;
+        }
       }).catch(() => {
         // Při chybě zůstane na místě původní zástavba. Znovu se zkusí při návratu do dlaždice.
       }).finally(() => {
@@ -141,7 +164,38 @@ export class Heritage {
     if (city) {
       const pack = owner.cityData;
       const geometry = cityMesh(pack, '');
-      add(geometry, this.cityClose, base);
+      const layers = [{ solid:new SolidBuf(), ranges:[], material:this.cityFar },
+        { solid:new SolidBuf(), ranges:[], material:this.streetGlass }];
+      for (const section of pack.scenery ?? []) {
+        let fixtures = this.streetSections.get(section.id);
+        if (!fixtures) {
+          fixtures = section.items.flatMap(item => streetFixtures(item, this.world));
+          this.streetSections.set(section.id, fixtures);
+          const touched = new Set();
+          for (const fixture of fixtures) {
+            const tiles = this.world.streetFixtures;
+            if (!tiles.has(fixture.tile)) tiles.set(fixture.tile, []);
+            tiles.get(fixture.tile).push(fixture);
+            touched.add(fixture.tile);
+          }
+          for (const tile of touched) this.world.refreshStreetCollision?.(tile);
+          installStreetPaving(this.world, section.paving);
+        }
+        for (const fixture of fixtures) {
+          const {solid,ranges} = layers[fixture.piece === 'sklo' ? 1 : 0];
+          const start = solid.p.length;
+          drawStreetFixture(solid, fixture, QUALITY.heritageDetail);
+          ranges.push({fixture, start, end:solid.p.length});
+        }
+      }
+      owner.streetVisuals = [];
+      for (const {solid,ranges,material} of layers) {
+        if (!ranges.length) continue;
+        const props = solid.geometry();
+        add(props, material, detail);
+        owner.streetVisuals.push(...attachRoadFurniture(this.world.breakables, group, props, material, ranges));
+      }
+      add(geometry, pack.street ? this.streetClose : this.cityClose, base);
       add(cityMesh(pack, 'd'), this.cityFar, detail);
       roofs = new HeritageRoofs();
       roofs.add({ p: geometry.attributes.position.array, indices: pack.roof }, 0);
@@ -167,6 +221,7 @@ export class Heritage {
 
   dispose(ch) {
     ch.cityRequest?.abort();
+    for (const visual of ch.streetVisuals ?? []) this.world.breakables.detach(visual);
     if (!ch.heritage?.city) return;
     for (const key of ch.heritage.roofChunks) {
       const cell = this.roofCells.get(key);
@@ -187,7 +242,7 @@ export class Heritage {
     const near = distance < (QUALITY.heritageDetail ? 260 : 175);
     const mat = chunk.city ? (near ? this.cityClose : this.cityFar) : (near ? this.close : this.far);
     for (const mesh of chunk.base) {
-      mesh.material = mat;
+      mesh.material = chunk.city && near && mesh.geometry.hasAttribute('aStreet') ? this.streetClose : mat;
       if (chunk.city) mesh.castShadow = distance < 560;
     }
     for (const mesh of chunk.detail) mesh.visible = near;

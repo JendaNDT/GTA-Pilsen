@@ -1,0 +1,13 @@
+díl	druh	vzorky	vzorky ve vodě	vzorky v budovách	nejnižší vrchol vůči povrchu (m)	nejvyšší vrchol vůči povrchu (m)	vzdálenost ke zvuku jezu (m)	střet s trasou	posouzení
+00000000024061110-aa1a392042612cda	Ostatni	43	0	6	-2.49	2.59	878	vozovka	Ponechat mimo hru kvůli překryvu s herní budovou a vozovkou.
+00000000024061115-b78f7bda61034101	Ostatni	23	0	0	-6.88	1.28	558	pěší cesta	Ponechat mimo hru kvůli zásahu do pěší trasy.
+00000000024062334-643118d3144dda88	Ostatni	17	5	0	-0.45	0.94	614		Část nízkého objektu leží ve vodním polygonu. Podoba na břehu čeká na ověření.
+00000000024062336-d275c1b5abeb5858	Ostatni	17	7	0	-0.55	0.55	629		Nízký objekt zasahuje do břehu. Před převzetím ověřit viditelný tvar.
+00000000024062338-650f2fc4956eca8d	Nadrz	17	0	11	-1.87	-0.03	445		Všechny vrcholy nádrže jsou pod herním terénem a půdorys se překrývá s budovou.
+00000000024062339-7dd53e4af39b95ad	Nadrz	17	11	0	-4.18	0.32	494		Nádrž částečně leží ve vodním polygonu. Nad herním povrchem je vidět jen malá část. Ověřit obrys na břehu.
+00000000024062345-650c6585f53bdc22	Ostatni	206	125	0	-0.56	0.48	238		Část členitého objektu leží na suchu a část ve vodním polygonu. Ověřit podobu břehu.
+00000000024062477-113e1e5dfcba66e9	Ostatni	97	0	0	-0.75	0.02	334		Nejvyšší vrchol vyčnívá nad herní povrch jen o 2 cm. Samostatný model vynechat.
+00000002023003248-8eab812036e4c8a7	Jez	7	7	0	-4.06	0.36	0		Přidat měřený jez v místě zvuku vody. Všechny vzorky leží ve vodním polygonu.
+00000002023003254-97ead4acf1c1da4b	Jez	9	5	0	-2.15	0.71	8		Přidat boční díl jezu na hranici herního vodního polygonu u zvuku vody.
+00000002023003256-6891c9e9c1ca7294	Jez	9	9	0	-1.66	0.79	4		Přidat díl jezu ve vodním polygonu u zvuku vody.
+00000002023003259-5f244e0d363d803f	Jez	9	5	0	-1.96	0.77	12		Přidat boční díl jezu u břehu a existujícího zvuku vody.

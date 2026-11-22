@@ -1,258 +1,943 @@
-# Stav etapy E20
+# Stav etapy E26
 
-Větev `etapa/E20` vychází ze sloučené etapy E19 na revizi `10832b4`. [Zadání E20](E20.md)
+## Anglické nábřeží pod terénem (mimo etapu, na přání autora)
+
+Na větvi `claude/stoic-hopper-46xgy0`, která navazuje na opravu nájezdu Wilsonova mostu (`claude/determined-volta-o7e9t2`, revize `6e3e924`). Oprava je v revizi `ada32f9`. [Rozbor, tabulky a měření](../nabrezi.md)
+
+**Směr.** Zadání i dřívější zápis mluví o úseku „severně od mostu“. Herní z ale roste k jihu: úsek z 458–519 vede od Americké na jih po levém břehu Radbuzy (bod (165; 490) = 49,74309° s. š., 13,37989° v. d.).
+
+**Příčina (ověřeno).** Profil silnice vzniká z výšek výškového modelu v ose. Model má body po 8 m a mezi ulicí nad Radbuzou (asi −3 m) a řekou (asi −12 m) je nábřežní zeď. Jeden uzel sítě leží na ulici, sousední o 8 m dál u vody, a výška mezi nimi klesá rovnoměrně. Celá vozovka Anglického nábřeží (silnice 13188) tak ležela na rozmazané zdi: v z 505 je osa na −9,7 m, terasa začíná 7 m od osy na −3,2 m a voda 7,3 m od osy na −11,4 m. Model tedy nezachytil koryto přímo v ose, ale pád terénu z ulice k řece. Podle mapy je mezi silnicí a vodou jen chodník.
+
+**Druhá chyba se potvrdila jinde.** Body na břehové čáře ve fyzice (`shore()`) se opravdu nesrovnávaly pod pás. Ve 239 dlaždicích s vodou a silnicemi prorůstalo nad pás 14 z 34 235 takových bodů, nejvíc o 19 cm u Radbuzy pod Tyršovou (568; 94). Na Anglickém nábřeží žádný takový bod nebyl. Naměřené prorůstání o 2,2 m u (161,7; 486,5) způsoboval uzel sítě fyziky (160; 488) 4,7 m od osy na ulici (−2,9 m). Ten už leží za pásem 1,5 m od okraje vozovky, který se srovnává pod pás, a trojúhelník od něj k propadlé vozovce (−6,7 m) vystupoval u okraje nad pás.
+
+**Oprava.**
+- `src/world/road-grade.js`, `src/world/world.js`: vzorek profilu silnice, která vede z boku podél vody (nejvýš 8 m za okrajem), se zvedne na terasu nad zdí, když terén u osy nebo k terase prudce stoupá (25–50 % na metr) a za terasou už nestoupá. Na úbočí kopce zůstává výška v ose. Zvednutá vozovka je napříč rovná a terén se pod ni dosype i u domů a směrem k vodě (ne do ní). Vypne se `?nabrezi=0`.
+- `src/physics/terrain.js`: body na břehové čáře se srovnávají pod pás stejně jako ostatní vrcholy (`roadClampAt`).
+
+**Výsledek na Anglickém nábřeží.** Profil −9,06 … −2,08 m → −3,41 … −2,05 m. Asfalt v z 505 −9,01 → −3,02 m. Asfalt v z 470–515 leží nejvýš 0,00 m pod okolním terénem (dřív 5,72 m), fyzika terénu je v celé šířce aspoň 5 cm pod pásem (dřív o 2,25 m nad ním). Ve městě se zvedlo 14 silnic, všechny na hraně břehu nebo nad zatopeným lomem (Anglické a Denisovo nábřeží, Mlýnské nábřeží, Karlovarská, Pražská, Doubravecká, K Valše, Ke Krkavci a pět účelových cest u vody). Sestavení profilů při startu +0,15 s (1 180 → 1 333 ms v Node).
+
+**Ověření.**
+- Dva nové testy v Node (`tests/physics-terrain.test.js`): Anglické nábřeží v z 470–515 (asfalt nejvýš 0,3 m pod okolním terénem, fyzika pod pásem, profil kolísá méně než 1,6 m; s `?nabrezi=0` selže s 5,72 m) a body na břehové čáře pod pásem (na původním `terrain.js` selže s 0,186 m). Testovací svět v Node má nově vodní plochy (`_initWater`).
+- `npm test` 231 z 231, `npm run build` prošlo.
+- Prohlížečové zkoušky `physics-roads.spec.js physics.spec.js river-detail.spec.js water.spec.js --trace off` (vzor zahrnuje i `structure-water.spec.js`): prošlo 32 z 34. WebGL 2 17 z 17 včetně Wilsonova mostu v obou směrech. Na WebGPU selhaly obě zkoušky `river-detail.spec.js` (medium, ultra) hned při prvním dotazu do stránky chybou `OperationError: A valid external Instance reference no longer exists` (ztráta softwarového zařízení WebGPU). Na původní revizi `6e3e924` bez opravy selhávají v tomto prostředí stejně, opakovaně. Oprava je tedy nezpůsobila.
+- Jízda ve hře (nízká předvolba, WebGL 2, 9. 11. 2026 v 10.00, bez MHD a cizích aut) po celém úseku od Americké na jih do 43 km/h: s opravou auto dojelo se zdravím 100, kola se od asfaltu lišila nejvýš o 5 mm a nikdy neztratila dotyk. S `?nabrezi=0` auto nedojelo, zdraví kleslo na 90, kolo se od asfaltu vzdálilo o 1,61 m a kola 13 270krát ztratila dotyk. Snímky před a po jsou v protokolu.
+
+**Otevřené a návrhy.** Čistší oprava by byla v sestavení terénu (`tools/terrain.py`, `burn_lines`), surová data DMR 5G ale v tomto prostředí nejsou. Dům 1545 u nábřeží stojí na průměrné výšce původního modelu a může být o něco níž než ulice. Nábřežní zeď se nevykresluje, k vodě klesá terén strmým svahem.
+
+## Propad nájezdu na Wilsonův most (mimo etapu, na přání autora)
+
+Na větvi `claude/modest-ramanujan-wvjl2i` (revize `faa1a84`) selhávala zkouška „kola unesou auto přes Wilsonův most v obou směrech“: auto dojelo se zdravím 100, ale jedno kolo leželo 5,3 cm pod vozovkou (mez 5 cm). Oprava je na větvi `claude/determined-volta-o7e9t2`.
+
+**Vypínače.** Odchylku pod mez sníží jen `?sklon=0` (5,31 → 2,55 cm). `?chodniky=0` ani `?rohy=0` nic nemění: na nízké předvolbě zkoušky chodníky nejsou a u konců mostů se rohy nedělají.
+
+**Příčina.** Nejhorší kolo stálo 1,2 m před mostovkou na nájezdu z Americké. Tam silnice leží přímo na terénu kalibrovaném podle měření a pás fyziky nemá. Sousední Anglické nábřeží od křižovatky prudce klesá k řece. Terén do 1,5 m za okrajem vozovky se srovnával pod vlastní profil a příčný sklon každé silnice, ne pod společnou výšku křižovatky, ve které pás i asfalt skutečně leží. Okraj nábřeží tak stáhl uzel sítě terénu na nájezdu o 39 cm (bez sklonu o 19 cm). Ve hře měl nájezd skrytou jámu: v ose až 35 cm, u severního okraje až 57 cm pod vykreslenou vozovkou. Zkouška ji zachytila jen okrajově, protože auto startuje na mostovce.
+
+**Oprava** (`src/world/world.js`). V křižovatce se terén srovnává podle společné výšky pásů. U konců mostů, tunelů a ramp okraj sousedního pásu terén nesnižuje. Dotaz na společnou výšku je rychlejší a dává bit po bitu stejný výsledek. Mez zkoušky se nemění.
+
+**Ověření.**
+- Zkouška Wilsonova mostu: odchylka kola 5,31 → 0,001 cm v obou směrech, zdraví 100. Oba nájezdy jsou v celé šířce do 0,9 cm od vozovky.
+- Nový test v Node hlídá výšku fyziky na nájezdu v šířce ±3 m (na původním kódu selže s rozdílem 57 cm).
+- `npm test` 229 z 229, `npm run build` prošlo, `npm run test:e2e -- physics-roads.spec.js physics.spec.js --trace off` 22 z 22 (WebGL 2 i WebGPU).
+- Ve městě ubylo míst, kde terén ve fyzice prorůstá nad pás o víc než 5 cm, z 2 871 na 794. Propady pod vozovku nad 20 cm zmizely. Příprava fyziky dlaždice +1 až 3 %.
+- Širší sada 21 souborů prohlížečových zkoušek na WebGL 2 (rozpočet vykreslování, hra, chodci, srážky s vybavením ulic, rozvoz, podrobnosti ulic, rozbitné předměty, fyzikální provoz, doprava, postava, stavby, MHD, směny, asfalt, materiály, mimoúrovňová křížení, Rondel, Prazdroj, řeka, jemný terén, stopy kol): 100 ze 100.
+
+**Návrhy mimo úkol.** Profil Anglického nábřeží severně od mostu leží až 2,5 m pod terénem (výškový model u břehu nejspíš zachytil koryto) a body sítě na břehové čáře řeky se pod pás nesrovnávají. Na samém okraji nábřeží u nájezdu vystoupí terén až 15 cm nad pás, mimo stopu kol. [Měření, tabulky a návrhy](../sklon.md#dodatek-proč-kolo-klesalo-pod-nájezd-wilsonova-mostu)
+
+Oba návrhy jsou provedené v části „Anglické nábřeží pod terénem“ výše. Úsek ve skutečnosti leží jižně od mostu (z ve hře roste k jihu).
+
+## Jasné počasí ve všech prohlížečových zkouškách (mimo etapu, na přání autora)
+
+Větev `claude/modest-ramanujan-wvjl2i` spojuje `claude/lucid-bohr-y3rlwb` (chodníky, rohy a příčný sklon) s `claude/exciting-cannon-kzvgbu` (pevné datum zkoušek). Obě vycházejí z revize `35f7265` a sloučily se bez konfliktu.
+
+**Příčina.** Hra bez parametru `weather` losuje počasí podle herního času po tříhodinových úsecích. Bez data v adrese bere čas počítače. V neděli 22. 11. 2026 v 11.00 v Plzni (10.00 UTC) ve hře sněží, sníh pokrývá vozovku celý a přilnavost kol klesne na 0,35. Pomocník `gameUrl` v `tests/e2e/game-url.js` počasí ani datum nenastavoval. Na větvi `claude/lucid-bohr-y3rlwb` proto selhávaly jízdní zkoušky v `game.spec.js` a `physical-traffic.spec.js`. Ve stejný čas na původním kódu zastavil policejní vůz 2,63 m před chodcem, zkouška žádá více než 3 m.
+
+**Úprava zkoušek.** Herní kód se nemění.
+
+- `gameUrl` doplní `weather=clear`, pokud adresa počasí sama nenastavuje. Zkoušky počasí si ho dál nastavují samy: `weather` (sníh), `precipitation` (déšť, potom sníh), `clouds` (zataženo). `asphalt` používá vlastní parametr `wet=1`.
+- Když adresa nastaví jen hodinu, `gameUrl` doplní datum pondělí 9. 11. 2026. Když nastaví jen datum, doplní 10.00. Chybějící část by jinak hra vzala z hodin počítače.
+- Zkoušky referenčních pohledů (`exposure`, `reference`, `budget`, `materials`) mají pevné datum 17. 11. 2026. Volbou `gameUrl(…, { weather: null })` si ponechají počasí podle tohoto data, protože stejné pohledy fotí a měří `tools/reference_views.mjs`.
+- `physical-traffic.spec.js`: zkoušky bez data běžely v aktuálním čase s MHD a provozem podle dne. Výchozí hodnota pomocníka `start` je teď pondělí 9. 11. 2026 v 10.00, jako ve zkouškách provozu. Zkoušky s vlastním datem a hodinou se nemění.
+- Zkoušky bez data a hodiny, které záměrně používají hodiny prohlížeče (`clock`, `page.clock.setFixedTime`), nebo uloženou hru, zůstávají v aktuálním čase. Mají jen jasno.
+
+**Ověření.** Prošlo 228 z 228 testů JavaScriptu a produkční sestavení. Herní kód se mezi revizemi `3e8f5ee` (bez úpravy) a `faa1a84` (s úpravou) neliší, oba běhy používají stejné sestavení.
+
+Celá sada na WebGL 2 běžela v neděli 22. 11. 2026 od 11.13 do 12.19 v Plzni, kdy ve hře sněžilo a přilnavost byla 0,35. Prošlo 176 ze 179 zkoušek za 1,1 hodiny. U všech tří neúspěšných zkoušek rozhodlo opakování na obou revizích:
+
+| Zkouška | Bez úpravy | S úpravou | Závěr |
+|---|---|---|---|
+| `physics-roads` · Wilsonův most v obou směrech | odchylka kola 0,05306 m (mez 0,05 m) | stejná odchylka 0,05306 m | Nezávisí na počasí ani čase. Zkouška má pevné datum a přilnavost je v obou případech 1,0. Dřív ji zakrývala srážka s trolejbusem 12. Na `claude/exciting-cannon-kzvgbu` bez chodníků a sklonu prošla. Na samostatnou opravu čeká návrh úkolu. Místo: x = 170,20, z = 456,99, kolo 5,3 cm pod mostovkou. |
+| `renderer` · minuta hraní ve dne i v noci | 21 snímků za 30 s (mez > 30) | 20 snímků | Vykreslování v tomto prostředí běží jen na procesoru a je na zkoušku pomalé. |
+| `traffic-observation` · ranní špička na Klatovské | stání 205 s (mez 120 s) | v celé sadě 343 s, při opakování prošla | Kolísání provozu, jako dřív v E20. Mlha a oblaka mění jen obraz, ne řidiče. |
+
+Dotčené soubory jsem spustil i v jiných časech: `game`, `physical-traffic`, `weather`, `precipitation`, `clouds` a `asphalt`, celkem 34 zkoušek. Čas spuštění nastavují hodiny prohlížeče (`page.clock.setFixedTime`) v dočasné kopii zkoušek mimo repozitář. Nástroj `faketime` pro celý systém se nehodil, hra se pod ním v prohlížeči nenačetla.
+
+| Čas spuštění (Plzeň) | Počasí ve hře | Bez úpravy | S úpravou |
+|---|---|---|---|
+| neděle 22. 11. 2026, 11.00 | sněžení, sníh 1,0, přilnavost 0,35 | policejní vůz 2,63 m před chodcem (mez > 3 m) | 34 z 34 |
+| sobota 14. 11. 2026, 22.00 | noc, sněžení, sníh 0,96, přilnavost 0,38 | policejní vůz i dodávka prošly | 34 z 34 |
+| neděle 21. 6. 2026, 21.45 | letní soumrak, polojasno | – | 34 z 34 |
+| pondělí 23. 11. 2026, 7.30 | ranní špička, déšť, přilnavost 0,70 | – | 34 z 34 |
+
+Simulace zopakovala selhání policejního vozu s přesně stejnou vzdáleností jako skutečný běh v neděli v 11.10, tedy 2,62743664949375 m. Zkoušky `weather`, `precipitation`, `clouds` a `asphalt` jsem spustil také na WebGPU. Prošla jen `weather`. Ostatní tři selhaly s chybou „A valid external Instance reference no longer exists“ stejně i na revizi bez úpravy. Softwarový adaptér WebGPU je v tomto prostředí nespolehlivý. Záznamy běhů zůstaly jen v dočasném adresáři prostředí.
+
+**Návrh mimo tento úkol.** Zkoušky bez data a hodiny v `traffic`, `transit`, `work` a `breakables` mají teď jasno. Jízdní řád MHD, hustota provozu a noc se v nich ale dál řídí dnem spuštění. Předchozí rozbor 29 souborů je nezahrnul, protože v jiné zkoušce stejného souboru datum je. Doporučuji projít je stejným postupem jako `physical-traffic`.
+
+## Vzhledová zkouška (mimo etapu, na přání autora)
+
+Na větvi `claude/lucid-bohr-y3rlwb` vznikla vzhledová zkouška webové verze: silnější slunce, slabší odraz oblohy na fasádách, tmavší zem v mapě odrazů, sytější omítky a oblé koruny stromů. Původní světlo zapne `?vzhled=puvodni`. Autor rozhodne podle zveřejněné zkoušky, zda se vzhled převezme. [Protokol a snímky](../vzhledova-zkouska.md)
+
+## Doladění zaoblených rohů (mimo etapu, na přání autora)
+
+Asfalt oblouku zasahuje 0,3 m pod pás vozovek (zmizela světlá spára), kusy chodníku kratší než 3 m (zbytky v ostrůvcích) se nekreslí a auta řízená hrou odbočují vpravo v rohu po oblouku soustředném s obrubníkem (7 272 z 12 683 odbočení v rozích, typicky 9,3 m místo 5 m), pokud celá šířka auta zůstane na asfaltu. Asfalt rohu se počítá do vozovky i pro rozmístění vybavení, parkování a trávy. Prošlo 230 testů JavaScriptu a 96 z 97 prohlížečových zkoušek (Wilsonův most selhává dlouhodobě); zkoušky běžely s `weather=clear`, protože ve skutečném čase v herní Plzni sněžilo. [Popis a snímky](../rohy.md#doladění-rohů)
+
+## Příčný sklon silnic (mimo etapu, na přání autora)
+
+Silnice s hladkým profilem jsou napříč skloněné podle svahu vedle silnice (nejvýš 4 %). Zatáčky silnic mimo obytné ulice jsou klopené podle křivosti (nejvýš 6 %), klopení mizí u křižovatek, na koncích a mezi domy. Navazující silnice mají ve společném bodě stejný sklon, na mostovky se napojí bez sklonu. Sklon platí pro asfalt, fyziku, auta, chodníky, rohy i křižovatky. Terén se na nižší straně srovnává od roviny vozovky a dlaždice se zářezem nad 0,3 m má jemnější síť terénu. Vypne ho `?sklon=0`. Drncání mezi křižovatkami +2 %, v křižovatkách −16 %, prosvítání terénu u okraje 3,44 % → 2,62 %. Start hry asi +0,5 s. Prošlo 228 testů JavaScriptu a 110 ze 111 prohlížečových zkoušek (Wilsonův most selhává dlouhodobě). [Popis, měření a snímky](../sklon.md)
+
+## Zaoblené rohy křižovatek (mimo etapu, na přání autora)
+
+Každý roh křižovatky a vnitřní strana ostrého ohybu silnice má asfaltový oblouk o poloměru 4–12 m podle šířky ulic (17 950 oblouků, typicky 7,8 m). Obrubník a chodník ho obcházejí, líc obrubníku je zkosený, aby přes něj auto přejelo. Asfalt oblouku má i fyzika. Vypne je `?rohy=0`. Prošlo 225 testů JavaScriptu a 109 ze 111 prohlížečových zkoušek (Wilsonův most selhává dlouhodobě, odbočení z Kardinála Berana bylo náhodné a samostatně prošlo třikrát). [Popis a snímky](../rohy.md)
+
+## Chodníky a obrubníky (mimo etapu, na přání autora)
+
+Podél městských ulic vzniká od střední předvolby chodník s obrubníkem 10 cm nad asfaltem; vykreslení, fyzika i chodci používají stejné řezy. Chodník se kreslí do 380 m od kamery, aby se vešel do rozpočtu vykreslování. Vypne ho `?chodniky=0`. Prošlo 218 testů JavaScriptu a 104 ze 105 prohlížečových zkoušek (neprošel jen dlouhodobě selhávající Wilsonův most). [Popis a snímky](../chodniky.md)
+
+## Hladký profil silnic (mimo etapu, na přání autora)
+
+Autor si stěžoval na hrbolaté silnice v kopcích. Na větvi `claude/lucid-bohr-y3rlwb` má každá silnice hladký podélný profil, terén pod vozovkou se mu přizpůsobí a fyzika jede po pásu silnice. Okolí měřených mostů, tunelů a ručně upravených křížení zůstává beze změny, v křižovatkách platí výška důležitější silnice. Původní silnice zapne `?silnice=puvodni`. Ve fyzice hry klesl počet rázů mezi křižovatkami ze 180 na 51 na km, v kopcích ze 464 na 79; v křižovatkách zůstává hrbolatost zhruba stejná. [Protokol, měření a snímky](../silnice.md)
+
+Zkouška Wilsonova mostu selhávala o víkendu kvůli srážce s trolejbusem 12. Zkušební auto jede po ose mostu a v 10.00 se čelně srazilo s víkendovým trolejbusem 12 v protisměru. Vozidla se překrývala asi o 0,25 m. V pátek i v pondělí zkouška procházela. Most, profil silnic ani fyzika kol chybu nezpůsobily. Zkouška má nyní pevné datum a před měřením odstaví MHD a cizí auta. Prošlo všech 11 případů `physics-roads.spec.js` a `physics.spec.js` na WebGL 2, 212 testů JavaScriptu a sestavení. Deset dalších souborů prohlížečových zkoušek nemělo pevné datum. Jejich úprava je popsaná v následující části. [Měření a oprava](../silnice.md#dodatek-proč-selhávala-zkouška-wilsonova-mostu)
+
+## Pevné datum v dalších prohlížečových zkouškách (mimo etapu, navazuje na opravu Wilsonova mostu)
+
+Deset souborů prohlížečových zkoušek nastavovalo hodinu bez data, takže hra brala den spuštění. Podle data se ve hře mění jízdní řád MHD pro všední den a víkend, hustota aut a chodců, počasí, poloha slunce a roční období stromů. Počasí se losuje po tříhodinových úsecích. Například v 10.00 je 9. 11. 2026 zataženo a sucho, 21. 11. je mokro, 22. 11. sněží a 14. 11. leží téměř souvislý sníh.
+
+Na větvi `claude/epic-goodall-4sf609`, která navazuje na `claude/sweet-carson-xmt7sk`, má všech 11 zkoušek s nastavenou hodinou pevné datum pondělí 9. 11. 2026, stejně jako zkoušky provozu. Zkouška interiérů má navíc jasné počasí. Ostatní zkoušky v těchto souborech nenastavují hodinu ani datum a na dni nezávisí, proto zůstaly beze změny. Očekávání zkoušek ani herní kód se nemění.
+
+### Co podle dne mění jednotlivé zkoušky
+
+| Soubor · zkouška | Co se podle dne mění | Úprava |
+|---|---|---|
+| `prazdroj` · průjezd pod lávkou U Prazdroje (10.00) | Mokro a sníh snižují přilnavost kol, ve všední den jezdí dvakrát víc vozů MHD. Na sněhu trval průjezd 5,83 s z povolených 6 s, výsledek se tedy může změnit. | datum |
+| `interiors` · místnost za stejným oknem (10.00) | Zkouška porovnává barvy okna. Slunce, oblačnost, mlha a sníh mění jejich jas, výsledek se tedy může změnit. | datum a jasno |
+| `sky-depth` · obloha na nízké předvolbě (10.00, jasno) | Poloha slunce a barva stromů mění barvy oblohy i ulic, které zkouška počítá. | datum |
+| `character` · vystoupení na mostě, v tunelu a na střeše (10.00) | Při přistání vrtulníku běží 120 kroků hry s MHD a provozem podle dne. | datum |
+| `flight` · let rychlostí 300 km/h (10.00) | Během 2 550 kroků letu hra kolem vrtulníku simuluje MHD a provoz podle dne. | datum |
+| `car-appearance` · světla auta (22.00) | Ve 22.00 je v Plzni po celý rok tma, světla se tedy rozsvítí vždy. Déšť, mlha a sníh ale mění, které efekty se vykreslí a jejichž chyby zkouška hlídá. | datum |
+| `facade-detail` · povrchy budov (10.00) | Déšť nebo sníh přidají do snímku další efekty. | datum |
+| `graphics-failure` · poškozená barevná tabulka a textury (10.00) | Počasí mění efekty prvního herního snímku. | datum |
+| `clouds` · obraz oblaků (12.00, vynuceně oblačno) | Krytí a tvar oblaků na datu nezávisí, mění se jen poloha slunce a barva oblohy. Datum zajistí stejný obraz při opakování. | datum |
+| `photo-mode` · fotorežim z menu a paprsky na ultra (12.00, jasno) | Mění se poloha slunce, do kterého míří kamera, a roční období stromů. V poledne je slunce po celý rok nad obzorem. | datum |
+
+### Zkoušky ponechané bez data
+
+- `character`, čtyři zkoušky chůze u zábradlí, po chodníku a pod mosty: hra stojí v menu a posouvá se jen chodec mezi pevnými kolizemi. Tělesa MHD a aut vznikají až v kroku hry, který tyto zkoušky nespouštějí. Počasí chůzi neovlivňuje.
+- `flight`, přistání na FN Lochotín a na heliportu: zkouška vypíná auta i chodce. Ze všech 370 tras MHD vede nejbližší 160 m od střechy a 414 m od heliportu, takže se vůz MHD k místu přistání nedostane blíž. Počasí let neovlivňuje.
+- `flight`, načtení vypnuté letové asistence: ověřuje jen uložené nastavení.
+- `graphics-failure`, porucha katalogů (dvě zkoušky) a pomalá síť (dvě zkoušky): ověřují, co se stáhne a zda lze začít hrát. Na datu to nezávisí.
+- `photo-mode`, klávesa fotorežimu v mapě: ověřuje jen přepínání oken a ovládání.
+
+### Ověření
+
+V Chromiu na WebGL 2 prošlo ve čtyřech bězích všech 22 případů deseti souborů:
+
+- původní zkoušky dnes, v neděli 22. 11. 2026, kdy v 10.00 sněží: 22 z 22,
+- upravené zkoušky s pevným datem 9. 11. 2026 předepsaným příkazem: 22 z 22,
+- upravené zkoušky s datem posunutým na sobotu 21. 11. 2026: 22 z 22,
+- upravené zkoušky s datem posunutým na pondělí 23. 11. 2026 s mokrou vozovkou: 22 z 22.
+
+Prošlo také 212 testů JavaScriptu (`npm test`) a sestavení (`npm run build`).
+
+Samostatné měření průjezdu U Prazdroje ukazuje, jak velký je rozdíl mezi dny. Zkouška povoluje na 28 m nejvýše 6 s.
+
+| Datum | Den | Počasí v 10.00 | Přilnavost kol | Průjezd tam / zpět | Vozů MHD | Nejbližší vůz MHD |
+|---|---|---|---:|---:|---:|---:|
+| 9. 11. 2026 | pondělí | zataženo, sucho | 1,00 | 4,62 / 3,62 s | 83 | 40 m |
+| 14. 11. 2026 | sobota | jasno, sníh 0,97 | 0,37 | 5,83 / 5,25 s | 41 | 189 m |
+| 21. 11. 2026 | sobota | polojasno, mokro 0,86 | 0,74 | 4,60 / 3,87 s | 41 | 189 m |
+| 22. 11. 2026 | neděle | sněžení, sníh 0,49 | 0,68 | 4,63 / 4,02 s | 41 | 189 m |
+| 23. 11. 2026 | pondělí | jasno, mokro 0,83 | 0,75 | 4,65 / 3,85 s | 83 | 40 m |
+
+Zdraví auta zůstalo ve všech dnech 100 a kola se od terénu vzdálila nejvýše o 0,073 m.
+
+### Návrh mimo tento úkol
+
+Dalších 29 souborů prohlížečových zkoušek nikde nenastavuje datum: `asphalt`, `budget`, `exposure`, `game`, `grade-separations`, `graphics-quality`, `grass`, `heritage`, `orthophoto`, `particles`, `pedestrians`, `performance`, `postfx`, `reference`, `release`, `river-detail`, `rondel`, `shadows`, `shifts`, `solar`, `sound`, `startup`, `street-collision`, `street-delivery`, `structure-water`, `structures`, `terrain-detail`, `water` a `wheel-trails`. Hodinu nastavují jen `game`, `shadows`, `solar` a `sound`, ostatních 25 souborů běží v aktuálním čase. Doporučuji je projít stejným postupem.
+
+Návrh je proveden v následující části. Výčet platil jen pro zápis `date=` přímo v adrese. Šest z těchto souborů nastavuje datum jinak a tři další u některých zkoušek pevně nastavují hodiny prohlížeče, viz níže.
+
+## Pevné datum ve zbývajících prohlížečových zkouškách (mimo etapu, navazuje na předchozí část)
+
+Na větvi `claude/exciting-cannon-kzvgbu`, která navazuje na `claude/epic-goodall-4sf609`, jsem prošel všech 29 souborů. Zkouška závisí na dni, pokud během ní běží herní smyčka s MHD a provozem, auto jede s přilnavostí podle počasí nebo se vykresluje snímek, jehož efekty mění noc, mlha a srážky. Bez parametru `hour=` totiž zkouška běží v aktuálním čase. Při ověření v neděli 22. 11. ve 3.20 tak hra kreslila noční Plzeň v mlze.
+
+Pevné datum pondělí 9. 11. 2026 a hodinu 10.00 má nyní 17 zkoušek v 9 souborech. Ostatní zkoušky zůstaly beze změny a důvod je uveden u každé z nich. Žádná z upravených zkoušek neporovnává barvy obrazu, proto jasné počasí (`weather=clear`) nepřibylo nikde. Jas porovnává jen zkouška expozice a ta má datum, hodinu i počasí pevné z referenčních pohledů. Očekávání zkoušek ani herní kód se nemění.
+
+### Upravené zkoušky
+
+| Soubor · zkouška | Co se podle dne nebo hodiny mění | Úprava |
+|---|---|---|
+| `heritage` · pilotní památky | Zkouška nastaví 21.48 a čeká úplnou noc (`night = 1`). Den ale bere z kalendáře. Od konce května do konce července v tu dobu v Plzni ještě není úplná tma: 21. 6. je noc jen 0,59, 15. 7. 0,72. Zkouška by tedy v létě selhala. Hlídá také chyby vykreslení s mokrou dlažbou. | datum a hodina |
+| `asphalt` · mokrý povrch vozovky | Zkouška vykreslí snímek a hlídá chyby shaderů. V noci přibudou světla lamp a aut, mlha a srážky přidají další efekty. | datum a hodina |
+| `grass` · stébla v parku | jako `asphalt` | datum a hodina |
+| `terrain-detail` · blízký terén (low, medium) | jako `asphalt` | datum a hodina |
+| `river-detail` · proud a odrazy u jezu (medium, ultra) | jako `asphalt`, navíc počítá odrážející plochy vody | datum a hodina |
+| `game` · chůze, navigace, auto, vrtulník a rozvoz | 960 kroků hry s MHD a provozem podle dne. Rozjezd auta závisí na přilnavosti kol. | datum a hodina |
+| `game` · silniční trasy do Rokycan, Hrádku a Dobřívi | Počítačem řízené auto jezdí na mokru a sněhu pomaleji (rychlost se násobí odmocninou přilnavosti). Na sněhu nestihne dvě nejdelší trasy v limitu kroků. | datum a hodina |
+| `game` · E03 hamr, mosty a hranice mapy | 820 kroků letu s MHD a provozem podle dne, jízda přes Wilsonův most s přilnavostí podle počasí. | datum a hodina |
+| `game` · oba tubusy Valíku | Auto zatáčí tunelem. S menší přilnavostí může víc klouzat ke stěnám. Zkouška také vykresluje a hlídá chyby. | datum a hodina |
+| `game` · mobilní ovládání | 120 kroků hry na náměstí s MHD a provozem podle dne. | datum a hodina |
+| `pedestrians` · náraz auta do chodce, auto srazí pěšího hráče | Zkušební plocha vypne MHD i nová auta, přilnavost kol jedoucího auta se ale mění s počasím. | datum a hodina |
+| `rondel` · průjezd okruhem a pod mosty | Auto zatáčí po okruhu, mokro a sníh snižují boční přilnavost. | datum a hodina |
+| `water` · mělčina a hluboká nádrž | Auto vjíždí z břehu do nádrže s přilnavostí podle počasí. Herní smyčka běží 1 100 kroků. | datum a hodina |
+
+V `game.spec.js` přidává datum a hodinu společná funkce `boot(page, FIXED_DAY)`. Zkoušky, které datum nepotřebují, volají `boot(page)` jako dosud.
+
+### Zkoušky, které už datum mají jiným způsobem
+
+- `budget`, `exposure`, `reference`: pomocník `openReferenceGame` nastaví 17. 11. 2026, hodinu podle pohledu a pevnou řadu náhodných čísel.
+- `shadows` (17. 11. 2026, 10.00) a `solar` (19. 10. 2026, 10.00): datum a hodinu nastavují přes `searchParams`.
+- `postfx`, pohyb dveří tramvaje pro TRAA: datum 9. 11. 2026 přes `searchParams`. Na hodině nezáleží. Hra se neposouvá, tramvaj se postaví do zastávky bez ohledu na čas a zkouška počítá jen pohyb dveří, ne světlo. Běží jen na WebGPU.
+- Pevné hodiny prohlížeče (`page.clock.setFixedTime`): `game` · tramvaj a uložený postup, `game` · uložení verze 1 (záměrně ověřuje převzetí času v Plzni, 11.20), `shifts` · změna času přeruší směnu a tři celé směny, `sound` · stereo tramvaje.
+
+### Zkoušky ponechané bez data
+
+- `game` · jemný terén u Klabavy: posouvá se jen chodec po terénu, MHD ani auta se nepočítají.
+- `grade-separations`, Bolevec a Wenzigova, D5 u Šlovic: auto jede rovně bez řízení a bez brzdy. Přilnavost podle počasí tlumí jen boční smyk, který bez zatáčení nevzniká. Obě zkoušky prošly i v sobotu 14. 11. 2026 v 10.00 na sněhu s přilnavostí 0,37.
+- `graphics-quality` (2): volba a uložení předvolby grafiky.
+- `heritage` · měřené budovy po selhání stahování: ověřuje stahování a náhradní zástavbu.
+- `orthophoto` (4): stahování a nastavení leteckých snímků.
+- `particles`, `wheel-trails`: výpočet částic. Povrch pod koly si zkouška `wheel-trails` určuje sama.
+- `pedestrians` · pád z výšky: zkušební plocha vypne MHD i nová auta, auto se nepoužije a pád postavy na počasí nezávisí. `pedestrians` · vypnutí pádů: jen nastavení.
+- `performance` (3): ověřuje, že měření existuje a panel jde otevřít.
+- `postfx` (4 předvolby): nastavení vyhlazení a více než 10 vykreslovacích volání.
+- `release`: objevení Krkavce, pokuta a garáž nezávisí na čase. Hlídka se zkouší postavit až na 60 místech, MHD ji tedy nezablokuje.
+- `shifts` · zrušení, přerušení a pokuta: hra nabídne nejbližší odjezd tramvaje 1, která jezdí každý den. Zkouška ověřuje jen zrušení, přerušení a pokutu.
+- `sound` · klakson: zkouška před měřením odebere ostatní auta i všechna vozidla MHD. `sound` · hamr: kola hamru se točí od 9 do 17 hodin a hodinu 16.59.59 si zkouška nastaví sama.
+- `startup`: stránka otevřená z disku, hra se nespustí.
+- `street-collision`: vlastní fyzikální svět s pevnou přilnavostí 1.
+- `street-delivery`: rozvoz nezávisí na hodinách, chůze hráče nezávisí na počasí.
+- `structure-water`, `structures` (7): tvar, kolize a start bez měřených objektů.
+- `water` · plavec v Radbuze: jen plavání a chůze.
+
+### Ověření
+
+V Chromiu na WebGL 2:
+
+| Běh | Datum a čas ve hře | Počasí ve hře | Výsledek |
+|---|---|---|---|
+| 9 souborů před úpravou | aktuální čas, neděle 22. 11. 2026 od 3.18 | v noci mlha, sucho | 25 z 25 (včetně `structure-water`) |
+| všech 29 souborů po úpravě | upravené 9. 11. 2026 v 10.00, ostatní v aktuálním čase (neděle 3.27–3.46) | upravené zataženo a sucho, ostatní v noci mlha | 72 z 72 za 18,2 min |
+| 9 upravených souborů | sobota 21. 11. 2026, 10.00 | polojasno, mokro 0,86, přilnavost 0,74 | 24 z 24 |
+| 9 upravených souborů | pondělí 23. 11. 2026, 10.00 | jasno, mokro 0,83, přilnavost 0,75 | 24 z 24 |
+| `heritage` | neděle 21. 6. 2026, 10.00 | – | 1 z 2. Pilotní památky selhaly na `night = 1`, ve 21.48 vyšla noc 0,589. Potvrzuje letní chybu. |
+| `grade-separations`, bez úpravy | sobota 14. 11. 2026, 10.00 | jasno, sníh 0,97, přilnavost 0,37 | 2 z 2 |
+| `game`, `pedestrians`, `rondel`, `water` | sobota 14. 11. 2026, 10.00 | jasno, sníh 0,97, přilnavost 0,37 | 14 z 16, viz níže |
+
+Pro posunuté běhy jsem dočasně přepsal `date=2026-11-09` v adrese upravených zkoušek a soubory potom vrátil z gitu. Pevné hodiny prohlížeče (`page.clock`) zůstaly beze změny. Na WebGPU jsem zkoušky nespouštěl. Prošlo také 212 testů JavaScriptu (`npm test`) a sestavení (`npm run build`).
+
+Na sněhu 14. 11. selhaly dvě zkoušky, které před úpravou běžely v aktuálním čase. Za takového počasí by tedy selhaly i bez posunu data:
+
+- `game` · chůze, navigace, auto, vrtulník a rozvoz: auto se za 2 s rozjelo jen na 3,0 m/s, zkouška žádá více než 5 m/s.
+- `game` · silniční trasy: počítačem řízené auto nedojelo za 100 000 kroků do cíle na dvou nejdelších trasách (29,9 km). Na cestě k hamru mu chybělo 2 671 m, na zpáteční cestě 1 056 m. Čtyři kratší trasy dojely. Za sucha 9. 11. dojelo všech šest tras nejvýše 2,3 m od cíle.
+
+U zkoušek vody sníh výsledek změnil jen málo, daleko od mezí. V hluboké nádrži trvalo potopení 6,93 s místo 6,95 s, auto skončilo o 0,25 m dál. Na mělčině zůstala střecha 0,418 m nad vodou místo 0,428 m.
+
+Chování na sněhu je věrohodné a herní kód zůstává beze změny. Pokud má hra ověřovat i jízdu na sněhu, navrhuji pro ni samostatnou zkoušku s vlastními mezemi, například s datem 14. 11. 2026.
+
+## Rampa u hlavního nádraží
+
+Návrat z předchozího archivu do E12 i E25 prošel. U hlavního nádraží odhalilo pozorování na WebGL 2 stání 181 s. Po úpravě příčného sklonu a brzdění ve sjezdu bylo při opakování nejdelší stání 57 s. Prošlo 185 testů JavaScriptu, 27 testů Pythonu a sestavení. Pokračují prohlížečové zkoušky vydání na obou vykreslovacích cestách. [Povrch rampy, brzdění a provoz](../E26.md#příčný-sklon-nádražní-rampy-a-brzdění-ve-sjezdu)
+
+## Archiv po opravě rozjezdu
+
+Na větvi E26 je oprava `87aba55`. Pět cílených průjezdů křižovatkou prošlo na každé z obou vykreslovacích cest. Z rozbalených zdrojů se na třech verzích Node.js podařilo sestavit přesně stejných 816 webových souborů. Další pozorování špičky, návrat s uloženou hrou a zbytek úplné sady jsou rozpracované. [Archiv a ověřené průjezdy](../E26.md#archiv-a-průjezd-křižovatkou-po-opravě-rozjezdu)
+
+## Rozjezd na protější zelenou
+
+Řidič odbočující vlevo nyní počká na vůz rozjíždějící se z protější čáry. Na softwarovém WebGPU prošlo deset minut ranní špičky na Klatovské. Nejdelší stání bylo 117,5 s při limitu 120 s. Prošlo také všech 184 testů JavaScriptu, 27 testů Pythonu a sestavení. Další ověřování dopravy a celého vydání pokračuje. [Výsledky a rozsah měření](../E26.md#rozjezd-protisměru-na-zelenou)
+
+## Dlouhá jízda splněna
+
+V jedné souvislé jízdě se vůz čtyřikrát vrátil do Plzně a ujel 205,27 km. Při posledních dvou návratech klesl počet textur z 81 na 73 a počet geometrií z 275 na 272. Počet těles zůstal na 887 a úlomků na nule. Úplná prohlížečová sada pokračuje. Na Klatovské odhalila vůz čekající 545 s při požadavku méně než 120 s. [Záznam všech návratů](../E26.md#čtyři-návraty-po-trase-plzeňrokycanydobřív)
+
+## Spuštění z místní sítě a z disku
+
+V emulaci dotyku hra z rozbaleného archivu přes HTTP automaticky vybrala WebGL 2. Hráč se pohnul páčkou a otevřel mapu. Po sestavení do běžné složky `dist` prošla také opravená příprava zkoušky otevření HTML z disku. Měření na fyzickém telefonu zůstává otevřené. [Podmínky zkoušek](../E26.md#spuštění-na-telefonu-přes-místní-http)
+
+## Archiv s úplným seznamem modulů
+
+Revize `962291e` má ověřené archivy, sestavení na třech verzích Node.js a oba návraty s uloženým postupem. Hra používá stejných 815 souborů jako při probíhajících zkouškách. [Otisky archivů a rozsah ověření](../E26.md#archiv-s-úplným-seznamem-modulů)
+
+## Úplnost fyzikálního modulu ve webovém archivu
+
+Archivace odhalí chybějící modul Joltu i při úplném vstupním HTML. Ověřili jsme to na kopii produkčního sestavení. Prošlo 183 testů JavaScriptu a 27 testů Pythonu. Obsah 815 dosavadních herních souborů se shoduje s kandidátem `254ae60`. Prohlížečová sada a dlouhá jízda pokračují. [Zkouška neúplného webu](../E26.md#úplnost-fyzikálního-modulu-ve-webovém-archivu)
+
+## Ověření archivů po opravě rozvozu MHD
+
+Web kandidáta `254ae60` se shoduje po sestavení na všech třech podporovaných verzích Node.js. Oba návraty s uloženou hrou prošly. Samostatný průjezd místem dřívějšího zastavení měřil 1131,61 m. Úplná prohlížečová sada a porovnání zásob při čtvrtém návratu zůstávají otevřené. [Otisky archivů a výsledky průjezdu](../E26.md#ověření-archivů-po-opravě-rozvozu-mhd)
+
+## Mělčina, hluboká voda a plavání
+
+Na opraveném sestavení prošlo všech osm cílených kontrol na WebGL 2 a WebGPU. Zahrnují rozvoz MHD, dvě fiktivní nádrže a plavání v mapě Radbuzy. Úplná sada nyní obsahuje 360 případů. Otevřená je úplná sada, porovnání třetího a čtvrtého návratu a kontroly na autorových zařízeních. [Výsledky zkoušek vody](../E26.md#mělčina-hluboká-voda-a-plavání)
+
+## Počítání zpátečky při zkoušce čtyř okruhů
+
+Zkouška čtvrtého okruhu na revizi `d4630eb` skončila po 196,42 km. Opravený nástroj přičte pokus až při skutečném couvání. Ověření prošlo v záznamu řídicích vstupů i na fiktivní dráze v Joltu. Prošlo 183 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. Dlouhá jízda zůstává otevřená. [Výsledky zkoušky řízení](../E26.md#počítání-zpátečky-při-zkoušce-čtyř-okruhů)
+
+## Pěší cesta k tramvaji při rozvozu MHD
+
+Opravenou trasu k nástupišti prošel hráč na WebGL 2 i WebGPU. V obou případech dokončil přestup a doručil zásilku pěšky. Prošlo 183 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. Úplná sada vydání a čtyři návraty autem jsou dál rozpracované. [Průběh zakázky](../E26.md#pěší-cesta-k-tramvaji-při-rozvozu-mhd)
+
+## Archiv a návrat uloženého postupu s místním zjemněním terénu
+
+Tři podporované verze Node.js sestavily stejný web jako archiv revize `667277b`. Návrat s uloženým postupem do E12 a E25 prošel. Sestavení přímo z rozbalených zdrojů prošlo i po samostatné instalaci závislostí. Zkouška skončila neúspěšně. Řádky tabulky odpovídají skutečně dokončeným návratům. [Dlouhá jízda na předchozí revizi](../E26.md#dlouhá-jízda-na-revizi-d4630eb) · [Velikosti, otisky a výsledky zkoušek](../E26.md#archiv-a-návrat-uloženého-postupu-s-místním-zjemněním-terénu)
+
+## Počet trojúhelníků u opraveného nájezdu
+
+Ve stejném pohledu na opravený břeh klesl počet trojúhelníků na WebGPU z 59 058 na 28 736. Výšky pro jízdu zůstávají společné s terénem. Na herním kódu `d4630eb` je doloženo 3 z celkem čtyř návratů. Při posledním zaznamenaném návratu bylo 81 textur, 275 geometrií, 887 těles a 0 úlomků. Úplná prohlížečová sada je rozpracovaná. [Měření a minutová zkouška](../E26.md#počet-trojúhelníků-u-opraveného-nájezdu)
+
+## Archiv a návrat uloženého postupu po napojení mostovky
+
+Tři podporované verze Node.js sestavily stejný web jako archiv revize `d4630eb`. Návrat s uloženým postupem do E12 a E25 prošel. [Velikosti, otisky a výsledky zkoušek](../E26.md#archiv-a-návrat-uloženého-postupu-po-napojení-mostovky)
+
+## Plynulý výjezd z mostu na břeh
+
+Řidič při dlouhé jízdě uvízl ve druhém okruhu po 87,72 km. Pomalý průjezd odhalil pod pravými koly pokles o 1,33 m na konci mostovky. Po napojení terénu přes celou šířku vozovky vůz shodným úsekem projel bez couvání. Prošlo 182 testů JavaScriptu, produkční sestavení a kontrola obou směrů jízdy přes Wilsonův most ve WebGL 2 i WebGPU. Nová dlouhá jízda a úplná sada 358 zkoušek pokračují. [Měření břehu a výsledky průjezdů](../E26.md#přechod-z-mostu-na-šikmý-břeh)
+
+## Archiv a návrat uloženého postupu po úpravě řízení
+
+Tři podporované verze Node.js sestavily stejný web jako archiv revize `dc58b1f`. Návrat s uloženým postupem do E12 a E25 prošel. [Velikosti, otisky a výsledky zkoušek](../E26.md#archiv-a-návrat-uloženého-postupu-po-úpravě-řízení)
+
+## Opakování dlouhé jízdy
+
+Předchozí jízda skončila ve třetím okruhu po 103,21 km překročením 12 m od bodu trasy. Po úpravě řízení se vůz na fiktivní přímé dráze vrátil z odchylky 11 m s maximem 11,515 m. V samostatné jízdě přes dotčený úsek ujel 1,04 km bez vyprošťování. Prošlo 182 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. Zbývá porovnat zásoby při třetím a čtvrtém návratu. [Výsledky jízdy](../E26.md#návrat-zkušebního-řidiče-do-pruhu)
+
+Návrat uloženého postupu z archivované revize `2516ec7` do E12 i E25 prošel včetně zachování nákupu vozu a postupu získaného v kandidátovi. [Výsledky obnovy](../E26.md#obnova-postupu-u-kandidáta-2516ec7)
+
+## Zrnitost povrchu v dálce
+
+U vzdálených povrchů nyní shader přeskočí výpočet jemné nebo střední zrnitosti v místech, kde by její váha byla nulová. Výpočet šířky pixelu zůstává mimo obě podmínky, aby měl stejnou hodnotu i na jejich hranicích.
+
+Časy stejné úpravy na větvi E24 jsou v jejím protokolu. Zde šlo o funkční zkoušky.
+
+Na E26 prošlo 182 testů JavaScriptu, produkční sestavení a čtyři prohlížečové kontroly terénu. WebGL 2 i WebGPU vykreslily nízkou předvolbu bez atlasů a střední s barevnou a normálovou texturou.
+
+## Kandidát s opravenými fasádami
+
+Na revizi `2516ec7` se ve vysoké předvolbě na WebGL 2 podařilo spustit hru bez původní chyby při kreslení budov. Při zkoušce dne a noci v okně 400 × 280 bylo v poslední minutě 17 snímků při požadavku více než 30. Zkouška skončila u tohoto požadavku, závěrečnou kontrolu zpráv vykreslovače tedy neprovedla. Výsledek je v `data-raw/e26/vrstva-minuta.log`.
+
+Všechny tři předepsané verze Node.js sestavily stejných 815 souborů jako webový ZIP. Na novém sestavení byla spuštěna úplná sada zkoušek na obou vykreslovačích. V předchozím běhu prošlo před přerušením 22 případů. Dlouhá jízda na herním kódu `19b459d` pokračuje ve druhém okruhu. Při prvním návratu po 51,35 km bylo 74 textur, 239 geometrií, 884 těles Joltu a žádný úlomek. [Archiv a otisky souborů](../E26.md#archiv-kandidáta-z-revize-2516ec7)
+
+## Číslo materiálu fasády na WebGL 2
+
+Při startu hry na WebGL 2 odmítl ovladač vykreslit část domů. U atributu `buildingLayer` shader očekával celé číslo, zatímco geometrie předávala bajt jako číslo s plovoucí řádovou čárkou. Geometrie nyní výslovně předává celočíselný atribut. Stěny a střechy si zachovávají původní čísla materiálů.
+
+Na této větvi prošlo 182 testů JavaScriptu a produkční sestavení. Chromium 159 na střední předvolbě načetlo atlasy fasád a ověřilo materiál stěn i střech v herní scéně na WebGL 2 a WebGPU. Kontrola nově zachytí i odmítnutí příkazu vykreslení ve WebGL. Výsledky jsou v `data-raw/e26/vrstva-typ-e2e.log`.
+
+## Shoda zdrojového archivu s označenou revizí
+
+Při regresní zkoušce se lokálně změněná knihovna dostala do zdrojového ZIPu pod označením původního commitu. Nástroj nyní bere seznam souborů a oprávnění z určeného commitu. Při zápisu porovná skutečné bajty každého zdroje s otiskem jeho objektu v Gitu. Zkouška ověřila odmítnutí změněné knihovny jak před `git add`, tak po něm. Dosavadní výstup se při chybě zachová.
+
+Při opakovaném zabalení čisté revize `be8a43b` vyšly oba ZIPy i manifest přesně stejné jako původní soubory. Prošlo 182 testů JavaScriptu, 27 testů Pythonu a produkční sestavení.
+
+## Ověření archivu s opravou provozu
+
+Webový ZIP z revize `be8a43b` obsahuje 815 souborů. Všech 1 371 položek zdrojového ZIPu odpovídá čisté pracovní kopii. Při použití stejných nainstalovaných závislostí daly Node.js 20.19.0, 22.12.0 i 24.22.1 ve všech souborech stejný výsledek jako zabalený web. Další kontrola rozbalila zdrojový ZIP do prázdné složky, na Node.js 24.22.1 nainstalovala závislosti pomocí `npm ci --offline` z místní mezipaměti a znovu sestavila všech 815 souborů se stejnými otisky. Audit zámku závislostí našel nula známých zranitelností. [Otisky a velikosti obou archivů](../E26.md#archiv-kandidáta-z-revize-be8a43b)
+
+Na webu rozbaleném z tohoto ZIPu prošla také obnova uložené hry z E12 a z E25, její přehrání po nové odměně a objevu i návrat do původních verzí. E25 zachovala vzhled vozu a nastavení počasí. Obě zkoušky běžely v oddělených profilech prohlížeče.
+
+Ve 400 × 280 prošel celý test výchozího WebGPU včetně kladného vzorku času GPU, ověření názvu vykreslovače a kontroly chyb a varování. Při načítání nyní test používá společnou kontrolu připravenosti hry. Výsledek je v `data-raw/e26/mensi-start.log`. Měření v původním rozlišení 960 × 600 zůstává otevřené.
+
+## Čtvrtý okruh a kontrola památek
+
+Na kandidátu `f6a1254` se vůz třikrát vrátil do Plzně. Ve čtvrtém okruhu po 154,56 km střídal pokusy o vyproštění. Po dokončení couvání dostal jediný krok fyziky na jízdu vpřed. Nástroj nyní začne čekací dobu počítat na konci couvání. V opakovaném sledu povelů měl řidič mezi pokusy 100 kroků vpřed. Na sestavení `19b459d` projel od místa dřívějšího zastavení 1 295,65 m bez dalšího couvání. Ověření spotřeby prostředků po čtvrtém návratu pokračuje. [Podmínky jízdy a výsledky](../E26.md)
+
+Na WebGL 2 prošla kontrola blízkého a vzdáleného materiálu památky, střechy i uvolnění dlaždice. Zkouška čeká na obě příslušné dlaždice, aby její výsledek nezávisel na tom, zda se dříve načte novější uliční vybavení. Při samostatné minutové kontrole dne a noci na softwarovém WebGL 2 vzniklo za sledovanou minutu 11 snímků při požadavku více než 30. Výchozí WebGPU hru spustilo a zobrazilo v menu správný název vykreslovače. V okně 960 × 600 během desetiminutového limitu panel nezaznamenal vzorek času GPU. Při opakovaném spuštění v okně 400 × 280 vrátil stejný adaptér po pěti snímcích jeden vzorek, 8 342,91 ms. Minutová zkouška a původní rozlišení zůstávají otevřené. Prošlo všech 182 testů JavaScriptu a 27 testů Pythonu. Nové produkční sestavení se ve všech 815 souborech shoduje se sestavením použité hry. Nad herním kódem `19b459d` byla zahájena nová sada 358 prohlížečových zkoušek.
+
+## Průjezd křižovatkou z E21
+
+Větev vydání přebírá opravu `7d9471b`. Při změně směru zelené řidič počká, až záď vozu z předchozí fáze uvolní křižovatku. Při dlouhém stání MHD u výjezdu může zvolit volnou povolenou odbočku. Na větvi E21 prošla po této změně dvě desetiminutová pozorování. Nejdelší stání na Klatovské třídě bylo 118 s a u hlavního nádraží 56,5 s. Obě měření zachovala hranici pod 120 s i kontrolu jízdy po vozovce.
+
+Na sestavení E26 se změnou prošlo 182 jednotkových testů, produkční sestavení a dva případy na WebGL 2. Jeden ověřil přednost při levém odbočení, druhý vyčkání a volbu odbočky u stojící MHD. Časový limit pozorovacího testu může běžec pro pomalý adaptér prodloužit, doba simulace i podmínky přijetí zůstávají stejné. Výsledky jsou v `data-raw/e26/kolona-sokl-e2e.log`.
+
+## Podmínky materiálu u výloh na Americké
+
+Při spuštění kandidáta `f6a1254` hlásil WebGL 2 čtyři návraty hodnot z podmínek uvnitř shaderu. Úprava z E25 mění barvu soklu a římsy přímo uvnitř podmínek. V obou vykreslovačích prošla stejná kontrola u Wilsonova mostu. Změřená stěna měla přiřazený materiál přízemí i vstup a kompilace proběhla bez varování TSL. Na tomto sestavení prošlo 181 jednotkových testů a produkční sestavení. Výsledky jsou v `data-raw/e26/sokl-e2e.log`. Výkon při minutové zkoušce dne a noci se měří samostatně.
+
+## Uložená hra a panel měření
+
+Chromium 159 načetlo z E12 do archivovaného kandidáta `f6a1254` koupený vůz, brzdy, pneumatiky, sedm rozvozů a objevené místo. V kandidátovi přibylo 120 Kč a druhé místo. Po novém načtení i návratu do E12 zůstalo 4 085 Kč a oba objevy. U přenosu z E25 se v kandidátovi shodovaly také špína, poškození a nastavení počasí. První návrat do E25 vyčerpal pětiminutový limit načtení stránky. Při opakování celého postupu prošel i návrat. E25 načetla novou odměnu, druhý objev, špínu 0,5, poškození levých dveří 0,4 a jasné počasí. [Protokol návratu k archivovaným verzím](../E26.md)
+
+Při kontrole panelu F9 hra po nástupu zapojí řidičovo auto do fyziky v dalším kroku simulace. Zkouška nyní tento krok provede a zkontroluje spojení auta s řidičem ještě před otevřením panelu. Na softwarovém WebGPU prošlo zobrazení času fyziky, počtu těles, otáček, stupně a prokluzu kol. Prošlo také 181 jednotkových testů JavaScriptu a produkční sestavení.
+
+Při zkouškách hodin a návratu ke garáži se po načtení stránky čeká na signál připravenosti hry. Dva případy ve WebGL 2 ověřily přechod přes půlnoc, odjezdy spojů, převod času v Plzni a uchování nastavení po načtení. Na WebGPU prošla na sestavení `f6a1254` zkouška Krkavce, pokuty a nákupu u garáže s nízkým zůstatkem.
+
+V hlavní části prohlížečových zkoušek WebGL 2 prošlo 40 případů. Jejich výsledky jsou uložené. Zbývajících 128 případů má vlastní seznam pro pokračování po uvolnění paměti. WebGPU a dlouhá jízda se vyhodnocují samostatně.
+
+## Čtrnáct kontrol vzhledu kandidáta
+
+V Chromiu 159 prošlo všech sedm zkoušek materiálů na WebGPU a stejných sedm na WebGL 2 nad produkčním sestavením `f6a1254`. Kontroly porovnaly denní a noční oblohu, okna, vodu a lampy u náhonu, světlomety auta, hladinu pod Wilsonovým mostem, portály Valíku a dlažbu náměstí. Při porovnání s předlohami byla hra nastavena na jasné počasí. U řeky test podle G13 měří zvlášť světlou mělčinu a tmavší střed toku. Na obou místech vyžaduje převahu modré. WebGPU čte barvy z dokončeného snímku ve výstupní textuře.
+
+## Kontrola vstupu do archivované hry
+
+Balicí nástroj ověřuje v hotovém ZIPu místní skripty a styly odkazované z úvodní stránky. Zkouška odmítla balík s chybějícím JavaScriptem, s chybějícím CSS i s cestou od kořene serveru, která by se při nasazení z podsložky otevřela mimo hru. Prošlo 181 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. U kandidáta `f6a1254` souhlasí s manifestem všech 815 webových a 1 371 zdrojových položek. Dlouhá jízda stejného kandidáta dokončila druhý okruh po celkových 102,62 km. Při návratu bylo načteno 75 textur, 239 geometrií, 886 fyzikálních těles a žádný úlomek. Porovnání třetího a čtvrtého okruhu pokračuje. [Archivy kandidáta](../E26.md)
+
+## Pozdní načtení textur interiérů
+
+Na WebGPU i WebGL 2 prošly obě zkoušky pomalé sítě. Hra se spustila i při neodpovídajících katalozích a barevné tabulce. Při samostatném pokusu s minimálně třináctisekundovým zpožděním se atlas interiérů po spuštění doplnil a obsah okna reagoval na pohyb kamery. Prošlo všech 181 testů JavaScriptu a 27 testů Pythonu. Node.js 20.19.0, 22.12.0 a 24.22.1 sestavily shodných 815 souborů. Na tomto sestavení vůz dokončil první návrat po 51,32 km. V té chvíli bylo načteno 73 textur, 239 geometrií, 884 fyzikálních těles a žádný úlomek. Porovnání třetího a čtvrtého návratu a úplná prohlížečová sada pokračují.
+
+## Ověřené archivy 0.2.0
+
+Ve složce `data-raw/e26/vydani/` jsou webový a zdrojový ZIP revize `34458c8` a manifest. Všech 815 webových a 1 371 zdrojových položek souhlasí s manifestem. Sestavení z rozbalených zdrojů dalo stejných 815 souborů. Na WebGPU i WebGL 2 prošlo všech šest cílených zkoušek k nálezům kontroly. Zbývající případy běží nad stejným produkčním webem. [Otisky archivů a způsob sestavení](../E26.md)
+
+## Výsledky závěrečné kontroly Astrou
+
+Astra prošla zadání E13–E25 a našla dva problémy, které blokovaly ovládání nebo start, a jednu chybu diagnostiky. Opravy obnovily návrat z mapy po stisku O, spuštění s neodpovídajícími katalogy a měření času GPU na podporované záložní WebGL 2. Z rozbaleného webového ZIPu prošlo načtení a návrat do E12 i E25. Úplná sada má 356 prohlížečových případů, výsledky opakované jízdy a měření na autorových zařízeních jsou otevřené. [Jednotlivé nálezy, ověření a otisk webu](../E26.md)
+
+## První návrat po opravě nájezdu
+
+Na kandidátu `34458c8` dojel zkušební vůz z centra přes Rokycany a Dobřív zpět do Plzně po 51,27 km a 6 088,83 sekundách simulace. Největší pokles pod jízdní povrch byl 0,235 m. Po dokončení vykreslení měl první návrat 72 textur, 229 geometrií, 886 těles Joltu a žádný úlomek. Druhý okruh skončil po celkových 100,47 km odchylkou od trasy při stavu vozu 2,73 ze 100. Další zkouška sleduje stav vozu po celou jízdu a před křižovatkami zpomaluje. Po opravě měření skutečného postupu při návratu z couvání vůz dokončil kontrolní úsek 11,23 km se stavem 94,04 ze 100. Při ukončení předchozího testu po 8,68 km vůz normálně postupoval, ale pořadí bodu zůstávalo stejné. Prošlo 180 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. Pro posouzení růstu prostředků se porovnává až třetí a čtvrtý návrat.
+
+## Jízdní povrch při návratu do Plzně
+
+Na trase centrum–Rokycany–Dobřív–centrum se po 45,62 km projevil nespojitý nájezd na horní vozovku. Opravený spoj používají vykreslení i kolize Joltu. Běžný průjezd přes místo a okolí v délce 1,195 km skončil bez vyprošťování s největším poklesem 0,109 m. Prošlo 180 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. Všechny tři podporované verze Node.js daly stejných 815 souborů. Pokračuje zkouška čtyř okruhů. [Jízda a porovnání před opravou](../E26.md)
+
+## Shoda manifestu s obsahem archivů
+
+Nástroj pro vydání zapisuje do manifestu otisky přesně těch dat, která prošla do obou ZIPů. Regresní zkouška změnila dlaždici mezi zabalením webu a zdrojů a ověřila odmítnutí neúplného vydání. Nezávislé čtení obou ZIPů kandidáta ověřilo 815 položek webu a 1 371 položek zdrojů. [Balení a uložení hry](../E26.md)
+
+## Uložené hry na rozbaleném webu 0.2.0
+
+Chromium 159 na stejné adrese ověřilo přechod z vydání E12 i z posledního sestavení E25 do rozbaleného webového ZIPu a zpět. Po návratu obě starší verze načetly 4 085 Kč, dva objevy, sedm doručení a hatchback s upravenými brzdami a pneumatikami. E25 načetla také znečištění 0,5, poškození levých dveří 0,4 a jasné počasí. [Otisk webového ZIPu a postup obnovy](../E26.md)
+
+## Kandidát se vstupy ve výšce chodníku
+
+Po opravě E25 se mezi 785 chráněnými soubory změnily tři uliční úseky a jejich katalog. Produkční web měl na Node.js 20.19.0, 22.12.0 a 24.22.1 všech 815 souborů shodných po bajtech. Prošlo 179 testů JavaScriptu a 27 testů Pythonu. Při rozbalení webového ZIPu prošlo porovnání každého souboru s tímto sestavením. Úplná prohlížečová sada začala na produkčním náhledu a obsahuje 352 případů včetně fiktivní zkušebny vybavení na obou vykreslovačích. Dlouhá jízda, výsledky celé sady a měření na cílových zařízeních jsou otevřené. [Protokol E26](../E26.md)
+
+## Referenční kamery E13 a E26
+
+Na produkčním webu kandidáta `34458c8` vzniklo osm snímků ze stejných kamer a časů jako v E13. Ve hře byla nastavená volba **Vždy jasno**. Chromium 159 na WebGPU uložilo všechny pohledy v rozlišení 1 280 × 720 do 250 kB na snímek. Kontrola dvojic ověřila záběry a čitelnost scény ve dne i v noci. Nástroj ukládá přímo dokončený obraz a vypisuje počty volání a trojúhelníků. Prošlo 180 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. [Snímky a příkaz pro zopakování](../E26.md)
+
+## První návrat z Dobříva
+
+Řidič zkušební jízdy po opravě zpátečky dokončil první okruh 59,59 km a ve druhém projel přes místo předchozího zastavení. První návrat v Chromiu vykázal 72 textur, 223 geometrií, 886 těles a nula úlomků. Projelo se 6 103,73 simulované sekundy skutečným řízením auta v Joltu. Opakování a srovnání zásob ve třetím a čtvrtém okruhu pokračují. [Podmínky a měření](../E26.md)
+
+## Verze v menu a sestavení na třech verzích Node.js
+
+Kandidát 0.2.0 zobrazuje verzi v nabídce O hře a popisuje fotorežim a diagnostiku v ovládání. Na WebGPU prošla jízda tramvají, uložení a obnovení postupu i kontrola obou nabídek. Na Node.js 20.19.0, 22.12.0 a 24.22.1 vzniklo 815 shodných souborů. Prošlo 178 testů JavaScriptu a 27 testů Pythonu. Úplná sada pro oba vykreslovače obsahuje 350 scénářů. Výsledky jednotlivých jízd a zbývajících prohlížečových zkoušek se doplňují.
+
+## Sestavení z archivu po přidání vstupů
+
+S údaji o vstupech z E25 se změnily otisky tří úseků a jejich společného katalogu. Generátor vydání dal po opakování totožný manifest. Prošlo 178 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. Z předběžného zdrojového ZIPu se podařilo pomocí místní mezipaměti npm sestavit celý web znovu. Všech 815 souborů má stejný SHA-256 jako v předběžném webovém ZIPu. Návrat k nádraží po pozdrženém požadavku a odjezdu prošel na WebGL 2 i WebGPU. Konečné archivy a celkový výsledek zkoušek zůstávají otevřené. [Protokol E26](../E26.md)
+
+## Otisky vydání a obnova z E25
+
+Manifest obsahuje 785 souborů a chrání také seznam střech používaný fyzikou. Na WebGL 2 i WebGPU prošla zkouška chybějící textury a pozměněné tabulky barev. V obou vykreslovačích vzniklo hratelné původní město i při současné chybě 404 čtyř katalogů nebo po přidání jediného bajtu do každého z nich. Prošlo všech 176 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. Samostatné porovnání kandidáta na třech verzích Node.js je v protokolu.
+
+Chromium ověřilo skutečné uložení z E25, načtení a pokračování v E26 i návrat do E25. Při všech načteních zůstalo na hatchbacku poškození levých dveří 0,4 a špína 0,5. Zachovalo se i jasné počasí, dvě zakoupená vylepšení, zakázky, peníze a objevy. Pokračuje zkouška pomalého načítání, dlouhá jízda a skládání konečného vydání. [Výsledky a postup návratu](../E26.md)
+
+### Opakovatelnost archivů
+
+Zdrojový ZIP přebírá spustitelnost souborů z Gitu a webový ZIP používá běžná práva pro čtení. Kontrolní součty tak odpovídají po změně místních přístupových práv. Zkouška navíc ověřila zachování spouštěcího skriptu pro macOS a odmítnutí archivu, ve kterém chybí sledovaný soubor. Prošlo 27 testů Pythonu, na stejném herním kódu 176 testů JavaScriptu a produkční sestavení.
+
+## Řízení vozidel a návrat uložené hry
+
+Jolt nyní řídí hráčův vůz a vrtulník při každém spuštění. Lehký výpočet pohybu aut ve vzdáleném provozu má stále aktivní volající a zůstává zachován. Při zkoušce letu se po odebrání starého řízení projevil chybějící odkaz vrtulníku na svět. Po jeho obnovení prošlo vynuceným WebGL 2 přistání na střeše a vystoupení z vozidla na mostě i v tunelu. Na softwarovém WebGPU dokončil skutečný vůz opraveného sestavení prvních 20 simulovaných minut průjezdu. Další okruhy pokračují.
+
+Na stejné adrese prošel přenos uložené hry z E12 do novějšího sestavení, druhé načtení a návrat do E12 se stejným výsledkem. Podrobnosti o penězích, autě, úpravách a objevech uvádí protokol. Na první revizi katalogů prošlo 172 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. Při simulovaném výpadku katalogu města se ukázala závislost na seznamu čtvrtí a měřených střech. Oprava a závěrečná regresní sada se ověřují samostatně. [Protokol E26](../E26.md)
+
+## Příprava archivu
+
+Nástroj přijímá označení vydání přes `--version`. Před vytvořením ZIPů zkontroluje shodu distribuovaných dat se sestavením. Zdrojový archiv zahrnuje také místní závislost `vendor/picomatch`. Manifest uvádí otisky všech zdrojů, webových souborů a obou archivů. Nové vydání se zveřejní najednou v samostatné složce. Při opakování se zachová totožný výsledek i starší vydání.
+
+Na malém zkušebním repozitáři prošlo dvojí zabalení, porovnání obou archivů s manifestem a odmítnutí zápisu jiné verze do stejné složky. Prošlo 166 testů JavaScriptu, 27 testů Pythonu a produkční sestavení. Finální ZIPy počkají na úplný obsah E25 a zkoušky vydání.
+
+# Stav etapy E25
+
+## Výška vstupů nad chodníkem
+
+První snímky ukázaly nízká okna a zčásti zapuštěné dveře. U všech 21 vstupů ležel spodek měřené stěny 1,05 až 3,14 m pod chodníkem. Převod teď odvozuje výšku prahu z herního terénu v místě dveří. Otisky stěn, počet vrcholů a jejich poloha zůstávají platné. Kontrola našla všech 21 vstupů v distribuovaných dlaždicích a ověřila polohu prahu s tolerancí 4 cm. Prošlo 176 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. Na opraveném vysokém WebGPU je při pohledu z Americké vidět celý vstup až k chodníku. Všech šest snímků je v protokolu včetně počtu trojúhelníků, vykreslovacích volání a mediánu z pěti snímků v každém pohledu. Na WebGL 2 i WebGPU v Chromiu prošlo vykreslení jediné přízemní vrstvy v pilotu po opravě prahů. Fotografická shoda podle autorových předloh zůstává otevřená. [Protokol E25](../E25.md)
+
+## Vymezení pilotu
+
+Americká mezi západním koncem Wilsonova mostu a kruhovou křižovatkou zahrnuje obě strany ulice i nároží u nábřeží. Ze všech 205 452 ploch městského archivu 2024 se podařilo určit 26 stěn osmi budov pro fotografické porovnání. Výběr vychází z průsečíků s paprsky z osy ulice a z předmostí v úrovni parteru. Všechny konce hran leží ve vymezeném obrysu a otisky ploch jsou jedinečné. Zbývá fotograficky ověřit podobu a členění provozoven i vybavení. [Návod k focení a soupis](../E25/navod-foceni.md)
+
+## Převod a načítání pilotu
+
+Všech 26 ploch našlo protějšek ve skutečně distribuované dlaždici. Převod kontroluje zdroj městského měření, otisk a rozměry jednotlivých stěn. Hra ověřuje verzi městského modelu a stavebních konstrukcí a otisk staženého úseku i příslušné dlaždice. Vybrané přízemí získá vlastní materiál až při přiblížení. Ostatní průčelí a vyšší patra zachovávají původní okna. Členění přízemí je zatím neutrální kresba k ověření podle fotografií.
+
+Prošlo 168 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. Ve WebGL 2 i WebGPU se po přesunu do pilotu načetl samostatný balík a vykreslil se správný materiál. Při změně otisku zůstalo při jednotkové zkoušce původní průčelí. Opakovaný převod dal stejných 3,1 kB dat pilotu.
+
+## Vybavení, dlažba a tři úseky
+
+Ve čtyřech městských dlaždicích se podařilo přiřadit všech 66 vymezených stěn. Patnáct jednotlivých prvků vybavení a jeden zastávkový přístřešek prošly kontrolou odstupů od komunikací, dveří vozidel MHD a cílů zakázek. Sklo a konstrukce se zobrazují a reagují na herní fyziku samostatně. Při jednotkové zkoušce na fiktivním místě zůstal po rozbití skla celý rám, po návratu přetrval poškozený stav a po ranní opravě se výplň obnovila.
+
+Prošlo 173 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. Ve všech šesti prohlížečových zkouškách prošel pilot a chůze ve třech úsecích na nízké i vysoké předvolbě za dne, soumraku a noci ve WebGL 2 i WebGPU. Zbývají samostatné zkoušky nástupu u nádraží, doručení na místní adresy a snímky před a po. Věrnost přízemí a přístřešku vyžaduje fotografie autora. [Protokol úseků](../E25.md)
+
+## Průchod ulicemi a zkušebna vybavení
+
+Se vstupy prošlo všech šest prohlížečových zkoušek pilotu a chůze třemi úseky. Na vysoké i nízké předvolbě se hráč pohyboval při 10:00, 18:09 a 22:00 ve WebGL 2 i WebGPU. Na oddělené fiktivní ploše v Joltu projel herní vůz vlastní lavičkou a skleněnou výplní zkušebního přístřešku. Stojky i střecha zůstaly celé. Stav přetrval po odpojení a opětovném připojení vybavení, v ranním termínu se vše opravilo. Oba vykreslovače prošly. Probíhá závěrečné snímkování a měření tří úseků. Porovnání se skutečnými průčelími čeká na fotografie autora.
+
+## Vstupy z ulice
+
+U 21 průčelí dostaly výlohy samostatné prosklené dveře. V popisu je poloha středu v metrech podél konkrétní měřené zdi. Osm vstupů připadá na Americkou, devět na Dřevěnou a čtyři na nádraží. Polohy jsou předběžné do porovnání s autorovými fotografiemi. Na nízké předvolbě má lavička a koš méně ploch, kolizní tvar zůstává společný pro všechny předvolby. Přidání vybavení vyvolá jedinou aktualizaci kolizí příslušné dlaždice.
+
+Prošlo 175 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. WebGL 2 na střední předvolbě ověřilo, že se samostatné dveře v pilotu dostanou až do geometrie vykresleného průčelí. Probíhá kontrola zbývajících pohledů a samostatné fiktivní zkušebny.
+
+## Rozvoz a nastoupení u nádraží
+
+V Chromiu na WebGL 2 i WebGPU prošel rozvoz na adresy ve všech třech úsecích. Na posledních metrech šel hráč pěšky a po doručení dostal odměnu. U hlavního nádraží byla před nástupem načtená nová uliční vrstva. Hráč nastoupil do linky 49, dojel do Pařížské a vystoupil. Všechny čtyři scénáře prošly. Produkční sestavení, 175 jednotkových testů a 26 testů Pythonu prošlo i s připravovanou úpravou vstupů.
+
+# Stav etapy E24
+
+## Klávesové ovládání mapy a fotorežimu
+
+Po stisku O v mapě lze pokračovat klávesou Escape a ze hry pak znovu otevřít fotorežim. Celou posloupnost ověřilo Chromium 159 na WebGL 2 i WebGPU. Prošlo 166 testů JavaScriptu a produkční sestavení. [Protokol E24](../E24.md)
+
+
+E24 navazuje na G17 ve větvi E23 (`fe30ef0`). [Zadání E24](E24.md)
+
+## Výsledek měření E24
+
+G18–G27 jsou implementovány. Po úpravách v revizi `910314b` prošlo 166 testů JavaScriptu, produkční sestavení a funkční kontroly obou vykreslovačů. Při porovnání nízké předvolby na jednom vyhrazeném jádře byl měřený pohled na noční náměstí o 7,0 % pomalejší než E23. Na Wilsonově mostu činil rozdíl 14,6 %, nad požadovanou mezí 10 %. Výsledek z autorova grafického zařízení, výkon vysoké předvolby v dešti a ovládání na skutečném telefonu zůstávají otevřené. Další místní ověření probíhá v souhrnné sadě vydání E26. [Měření, snímky a postup kontroly](../E24.md)
+
+## Vypnutí počasí a práce vykreslovače
+
+Při volbě **Vždy jasno** se i na vysoké a ultra předvolbě vrací původní obloha z E23. Výpočet objemové vrstvy stojí a krajinu nestíní její maska. Po návratu k proměnlivému počasí se první snímek vytvoří bez zastaralé historie. Za sucha materiály přeskočí výpočet sněhové pokrývky. Pod horizontem se vynechá výpočet procedurálních mraků, kde mají nulové krytí. Noční osvětlení používá společný zdroj pozic lamp z E21.
+
+Na obou vykreslovačích prošla kontrola zastavení a obnovení objemové vrstvy, deště a sněhu i porovnání obrazu kolem městské zástavby na nízké předvolbě. Po převzetí E21 prošlo 166 testů JavaScriptu a produkční sestavení. Výkon softwarového adaptéru měří samostatná série. [Ověření E24](../E24.md)
+
+## Průhlednost objemových oblaků
+
+Ve vysoké předvolbě se u nádraží objevila černá obloha. Na stejném místě po opravě zmizely černé plochy a mezi oblaky je vidět modrá obloha. Oprava zachovává krytí vypočtené pro každý paprsek i při přebírání předchozího snímku. WebGL 2 i WebGPU našly částečně průhledné vzorky mezi oblaky a ověřily nulové krytí při pohledu přímo dolů. Prošlo 166 jednotkových testů JavaScriptu a produkční sestavení. [Porovnání obrazu](../E24.md)
+
+Snímky náměstí v protokolu nyní pocházejí z opraveného vykreslování. V dešti v 18:09 zůstaly viditelné večerní osvětlení a srážky, v lednovém sněhu se pokryly střechy i dlažba náměstí. Obě scény mají shodnou kameru.
+
+## G18 a G20 · Fasády a střechy
+
+Na střední až ultra předvolbě se sedm fotografických fasád řídí typem budovy a paletou čtvrti. Okna, sokl a ostění sdílejí souřadnice. Pět střešních vrstev rozlišuje tašky, plech, měď, lepenku a vláknocement. Měděná patina na katedrále začíná až na věži. Převod spároval materiálové údaje OSM s 138 budovami projektu. Ostatní plochy používají výběr podle stylu a barvy.
+
+U 21 fotografických podkladů CC0 prošla kontrola velikosti a zdrojového otisku. Oba převody vytvořily shodné atlasy. Prošlo 161 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. WebGL 2 i WebGPU načetly atlasy a vykreslily měřené i běžné budovy.
+
+## G19 · Místnosti za okny
+
+Osm vlastních variant bytu, kanceláře, obchodu a schodiště má v atlasu po pěti stěnách. Při chůzi kolem budovy se podle směru pohledu odkrývá jiná část místnosti. Závěsy a žaluzie si každé okno drží na místě a večer se rozsvěcí podle rozvrhu E23. Nízká předvolba si ponechává původní okna.
+
+Prošlo 161 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. Kontrola porovnala všech 40 dlaždic s generátorem. WebGL 2 i WebGPU zaznamenaly změnu barev za stejným oknem po načtení atlasu a další změnu po posunu kamery.
+
+## G21 · Lak, špína a světla aut
+
+Na střední až ultra předvolbě má lak průhlednou vrchní vrstvu. Na spodní části karoserie přibývá špína podle ujetých metrů mimo asfalt. Promáčknutí zanechá stopu na konkrétním panelu daného vozu. Uložení a garáž zachovají špínu i po načtení. Brzdová světla čtou brzdu z fyziky, couvací reagují na směr jízdy a provoz má směrovky podle plánovaného odbočení. Dva světlomety hráče sledují natočení karoserie. Klávesa L přepíná v noci dálková světla.
+
+Prošlo 162 testů JavaScriptu a produkční sestavení. WebGPU odhalilo nepodporovaný jednokanálový osmibitový atribut. Po opravě formátu prošly dotčené jednotkové testy a v Chromiu na WebGL 2 i WebGPU prošla kontrola dvou kuželů, rozteče světel a změny jejich dosahu.
+
+## G22 · MHD a postavy
+
+Karoserie tramvají, autobusů a trolejbusů rozlišují lak, sklo, kov a gumu. V noci se rozsvěcují boční okna včetně siluet sedadel a zůstávají čitelné linkové cedule. Chodci mají čtyři střihy oděvu v různých barvách. Jedenáct kostí ovládá chůzi a stejné díly s totožným oblečením používá i pád postavy. Dvě postavy mohou sdílet geometrii a přitom udělat krok každá jinou nohou.
+
+Prošlo 163 testů JavaScriptu a produkční sestavení. WebGL 2 i WebGPU vykreslily noční soupravu a postavu s jedenácti kostmi. Kontrola porovnala označení kostí, geometrii a samostatný pohyb dvou postav.
+
+## G23 · Počasí a přilnavost
+
+Před implementací prošel návrh kontrolou Astra High. Sedm typů počasí vychází z deterministické volby podle data, měsíčních herních vah a teploty. Přechod trvá 10 až 30 herních minut. Z předchozích srážek se při obnově hry i při přeskočení času odvodí vlhkost a sněhová pokrývka. Nastavení „Vždy jasno“ vrací suchý povrch. Volba se ukládá i ve stávajícím formátu pozice.
+
+Na úplně mokrém povrchu klesá přilnavost na 70 % suché hodnoty a na souvislém sněhu na 35 %. Hráč i fyzicky řízená auta čtou stejný dotaz, vzdálený provoz sníží cílovou rychlost a původní jízdní režim upraví brzdění a boční přilnavost. Na stejné fiktivní rovné dráze z 16 m/s potřeboval vůz v dešti delší dráhu než za sucha a na sněhu delší než v dešti.
+
+Prošlo 166 testů JavaScriptu a produkční sestavení. Oba vykreslovače ověřily lednový povrch, změnu počasí v nastavení i obnovení této volby po načtení.
+
+### Déšť, sníh a mlha
+
+Déšť i sníh se vykreslují na GPU v jednom poli kolem kamery. Tunel částice skryje a utlumí déšť. Jeho zvuk se řídí intenzitou srážek, vypnutím zvuku i pozastavením hry. Země za mokra tmavne a vlhne i mimo původní dvě ukázková místa. Sníh zůstává hlavně na vodorovných plochách terénu, střech a korun, u silnic prosvítají stopy jízdních pruhů. Mlha mění dohled a podle výšky se rozptyluje.
+
+Produkční sestavení a všech 12 cílených jednotkových testů prošlo. WebGL 2 i WebGPU vykreslily náměstí za deště v 18:09 a lednové vločky. Test ověřil vodu, sníh, opakované využití stejného bufferu i skrytí částic po nastavení jasného počasí.
+
+## G24 · Objemová oblaka
+
+Na vysoké předvolbě a na ultra prochází každý paprsek deseti vzorky vrstvy oblaků. Její hustota se řídí počasím. Obraz má čtvrtinovou šířku i výšku a při pohybu kamery přebírá předchozí vzorek podle jeho původní projekce. Velký přesun, změna data i velikosti obrazu historii zahodí. Stejný široký vzor oblačnosti tlumí sluneční světlo na krajině. Na střední a nízké předvolbě zůstává původní výpočet oblohy.
+
+Produkční sestavení prošlo. WebGPU i WebGL 2 načetly skutečně vykreslené pixely z cílové textury, ověřily rozměry vůči plátnu, střídání obou textur, opětovné použití při malém pohybu i reset po přesunu o sto metrů.
+
+## G25–G27 · Slunce, fotorežim a pohybové rozmazání
+
+Na ultra procházejí sluneční paprsky stínem vzdálené sluneční kaskády. Odlesk objektivu a pohybové rozmazání mají vlastní přepínače. Rozmazání čte vektory pohybu z časového vyhlazování a ve výchozím nastavení je vypnuté. Fotorežim se otevírá klávesou O nebo z menu, zastaví čas a skryje herní ukazatele. Volná kamera má dosah 100 m, nastavitelnou vzdálenost zaostření a ukládá snímky PNG.
+
+Prošlo 166 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. Ve WebGL 2 i WebGPU prošly čtyři prohlížečové zkoušky. Ověřily zastavení času, návrat kamery, stažení souboru PNG a zapojení paprsků, odlesku i pohybových vektorů na ultra.
+
+## Snímky a měření
+
+Stejná kamera zachytila déšť i sníh na vysoké předvolbě. Ve čtyřech předvolbách prošel rozpočet ve třech referenčních pohledech. Na softwarovém adaptéru jsme zaznamenali také pět snímků za deště i sněhu v každé předvolbě. První postupné srovnání suché scény E23 a E24 ukázalo delší čas vykreslení při souběžných testech. Při prvním střídavém měření byl Wilsonův most o 1 % rychlejší, náměstí o 15 % pomalejší v čase do dokončení snímku. Nízká předvolba nyní kreslí oblohu až za neprůhledné povrchy. V obou vykreslovačích prošlo porovnání obrazu starého a nového pořadí. [Protokol a snímky](../E24.md)
+
+## Výchozí etapa E23
+
+E23 vychází z dokončené větve E22 (`496a72d`). Prvním krokem je detail země při chůzi. Další pořadí tvoří povrchy silnic, voda, stromy, tráva, noční světla a částice. [Zadání E23](E23.md) · [Protokol E22](../E22.md)
+
+Dodatečně doběhla úplná sada Full HD na softwarovém WebGPU. Pro každý profil uvádí protokol skutečný počet snímků i čas CPU. V tak malé sadě vzorků zůstává plynulost jízdy a letu na autorově zařízení otevřená. [Naměřené hodnoty](../E23.md#pokus-ve-full-hd-při-jízdě-a-letu)
+
+## G11 · Detail terénu
+
+Dva atlasy obsahují šest fotografických povrchů včetně normálových map z Poly Haven (CC0). Na střední až ultra předvolbě se mísí s původní barvou země. Čtyřmetrová maska respektuje otvory v polygonech, vodu i pořadí překrývajících se tříd. Detail slábne od 80 do 120 m od kamery. Svahy nad 35° používají tři projekce. Nízká předvolba používá původní materiál a atlasy nestahuje.
+
+Otisky všech 12 zdrojových souborů jsou v převodním seznamu a dva převody se po bajtech shodují s distribuovanými atlasy o souhrnné velikosti přibližně 3,7 MiB. Licence je v README i v nabídce O hře. Prošlo 151 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. Na střední předvolbě byla nalezena rekurze při čtení normály upravovaného materiálu. Detail nyní používá výchozí normálu geometrie. Opakované vykreslení prošlo na WebGPU i WebGL 2 a na WebGPU prošla také nízká předvolba bez požadavků na nové textury.
+
+Rozdíl po přenosu atlasů zachycují dva snímky ze stejného místa a zastavené kamery. [Původní svah](../E23/teren-pred.jpg) · [Svah s detailem](../E23/teren-po.jpg)
+
+## G12 · Asfalt a mokrá vozovka
+
+Na střední až ultra předvolbě se četnost záplat a intenzita vyjetých stop řídí třídou silnice a týdenním průměrem naměřené dopravy. Stopy sledují jízdní pruhy. Záplaty a mříže u městských obrubníků navazují přes hranice dlaždic. Za mokra se mění drsnost asfaltu a odlesk v kolejích. Vodorovné značení si zachovává vlastní vykreslovací vrstvu. Nízká předvolba používá původní geometrii bez dalších atributů.
+
+Prošlo 153 jednotkových testů a produkční sestavení. Mokrou silnici na střední předvolbě vykreslily WebGL 2 i WebGPU. Obě prohlížečové kontroly ověřily provozní profil geometrie, šířky pruhů, pořadí značení a kompilaci materiálu. Měření plynulosti na autorově grafice zůstává otevřené.
+
+## G13 · Řeky a jezy
+
+Dvě vrstvy vln postupují po směru střednice toku z OSM. Samostatné rybníky mají klidný povrch. Vzdálenost od břehu mění odstín vody, úhel pohledu její odlesk. Mapa prostředí osvětluje hladinu na střední a vyšší předvolbě. Ultra na podporovaném vykreslovači přidává odraz viditelných předmětů přes SSR v polovičním rozlišení. Pěna a sprška používají souřadnice jezů ze zvukové mapy. Sprška sdílí rozpočet s ostatními částicemi.
+
+Prošlo 154 jednotkových testů a produkční sestavení. Syntetická řeka ověřila obrácení proudu, mělký břeh, samostatný rybník a návaznost dlaždic. Čtyři prohlížečové zkoušky vykreslily nejbližší jez na střední a ultra předvolbě ve WebGL 2 a WebGPU. Ověřily tok, pěnu, vznik částic i připojení mapy prostředí. Na WebGPU prošla také opakovaná kontrola ultra s odečtem masky odrazů na podporovaném adaptéru.
+
+## G14 · Stromy a roční období
+
+Čtyři vlastní modely představují listnatý a jehličnatý strom, keř a ovocný strom. Z historického dotazu na datum mapy získala hra druh olistění pro 11 379 stromů a 118 ploch. Jednotlivé stromy jsou přiřazené podle polohy, lesní plochy podle vrcholů obvodu. Tam, kde druh chybí, rozhoduje typ plochy. Na střední až ultra předvolbě se blízké koruny pohybují ve větru. Ve vzdálenosti kolem 150 m přebírá obraz atlas s 25 směry pohledu pro každý model a období. Opadavým stromům v zimě zůstávají kmen a větve. Nízká předvolba zachovává původní modely.
+
+Sestavení atlasu a převod mapových značek se po opakování shodovaly po bajtech. Atlas má 96 KiB a mapa olistění 106 KiB. Prošlo 156 jednotkových testů JavaScriptu, produkční sestavení a 24 z 25 zkoušek Pythonu. Jedna kontrola vyžaduje úplný archiv městských objektů. Ve WebGL 2 i WebGPU prošlo vykreslení lesa poblíž Dobříva, výměna obou úrovní detailu a zachování polohy překážek při změně data na leden.
+
+## G15 · Tráva zblízka
+
+V parcích, na loukách a v travních plochách se kolem hráče vytvářejí trsy čtyř stébel. Jejich rozmístění je stálé při odchodu a návratu. Hustota závisí na třídě plochy a zelené složce dostupného ortofota. Výběr vynechává vodu, budovy i celou šířku cest a silnic ve stejné výšce. Vrcholy stébel rozhýbává vítr. Dosah je 30 m na střední, 50 m na vysoké a 80 m na ultra předvolbě. Nízká předvolba trsy nevytváří.
+
+Prošlo 157 jednotkových testů a produkční sestavení. Zkoušky na WebGL 2 a WebGPU našly skutečný městský park, vykreslily jeho trsy a prověřily polohu každého trsu vůči cestám a budovám. Po přesunu pohledu 100 m nad terén tráva zmizela. Rozpočet vykreslování se změří společně s ostatními efekty na konci etapy.
+
+## G16 · Noční osvětlení
+
+Na náměstí a v okolních ulicích osvětlují blízké povrchy skutečná bodová světla. Střední předvolba vybírá až 48 nejbližších lamp, vysoká 128 a ultra 256. Odlehlejší lampy používají původní světelné skvrny. Zhasnutá nebo odstraněná lampa přestane osvětlovat okolí. Vysoká a ultra předvolba mají navíc kuželové světlomety nejvýše osmi nejbližších jedoucích vozů. Přes den hra přepne zpět na běžné osvětlení. Okna domácností se postupně rozsvěcují večer, kanceláře ve dne a výlohy zhasnou ve 20 hodin.
+
+Prošlo 159 jednotkových testů a produkční sestavení. WebGL 2 i WebGPU vykreslily náměstí ve 22 hodin na vysoké předvolbě se 128 bodovými světly. V obou případech zhasla vybraná lampa a při návratu k poledni se skupina nočních světel vypnula.
+
+## G17 · Částice od kol a jezů
+
+Na suché polní cestě a v trávě se od zadních kol zvedá prach. Na mokré vozovce vzniká sprška tam, kde se při stejném sklonu a poloze vykresluje kaluž. Scénu lze vyzkoušet s parametrem `?wet=1`. Kola ve vzduchu nic nevypouštějí. Fyzika částic zahrnuje boční úlet a gravitaci. Počet efektů od kol je omezen i při souběhu více aut a spršky z jezu. Nízká předvolba používá dřívější efekty E21, v nastavení lze vypnout všechny částice.
+
+Prošlo 160 jednotkových testů a produkční sestavení. Oba vykreslovače ověřily vznik částic od kol, zastavení emise ve vzduchu i společný rozpočet. WebGPU přečetl výslednou polohu z výpočetního bufferu, WebGL 2 ověřil stejný výpočet na CPU. Závěrečné ověření E23 zahrnuje rozpočet všech předvoleb, referenční pohledy a měření výkonu.
+
+## Uzavření E23
+
+G11 až G17 jsou implementované a prošly funkčními zkouškami. Závěrečné sestavení prošlo se 160 testy JavaScriptu a 25 testy Pythonu. Ve WebGPU prošly všechny čtyři předvolby ve třech referenčních pohledech při 1280 × 720. Nízká předvolba na náměstí má ověřený přírůstek deseti volání za měřené konstrukce E22. Protokol obsahuje kontrolní měření s těmito konstrukcemi i bez nich, osm měření ze dvou pevných kamer a snímky ze hry. Na cílovém zařízení zbývá ověřit 60 FPS při jízdě a letu. [Protokol E23](../E23.md)
+
+## Výchozí etapa E22
+
+Ve větvi `etapa/E22` jsou převedené městské objekty, ověřený Wilsonův most i tři dávky zdí a pilířů. Hra používá další dvě lávky, silniční desku, dvě železniční mostovky a čtyři díly jezů. Vývoj a dostupné přejímací kontroly E22 jsou dokončené. Zůstává porovnání s autorovými fotografiemi a změření plynulosti na jeho zařízení. [Protokol E22](../E22.md). [Zadání E22](E22.md) · [Výsledky převodu a pilotu](#e22--převod-a-inventura)
+
+## Výchozí etapa E21
+
+Větev `etapa/E21` navazuje na E20 sloučenou revizí `623e081`. [Zadání E21](E21.md) · [Protokol předchozí etapy](../E20.md)
 
 | Krok | Stav |
 | --- | --- |
-| 1. Řidič AI | Hotovo. |
-| 2. Provoz v okruhu hráče | Hotovo. Převzetí řízení fyzikou, pravidla na trase a volný vůz po nárazu. |
-| 3. Zaparkovaná auta a policie | Hotovo. Střet a dojetí hlídky k chodci ověřeny ve hře. |
-| 4. MHD a směny | Hotovo. Články vozidel, odstrčení auta, rozjezdy a brzdění ve směnách. |
-| 5. Vrtulník | Hotovo. Let s asistencí, přistání na střeše a na heliportu. |
-| 6. Voda | Hotovo. Vztlak a odpor vody, pozvolné potopení auta a plavání ke břehu. |
-| 7. Závěrečné scénáře, výkon a protokol | Hotovo. Ověřena revize `ad2231e`. [Výsledky, měření a snímky](../E20.md). |
+| 1. Registr a stálé identifikátory | Hotovo. Každý svět má vlastní registr. Značky a hlavy semaforů dostávají identitu ve zdrojovém pořadí své dlaždice před seskupením podle materiálu. |
+| 2. Lampy | Hotovo. Společné umístění pro grafiku a fyziku, sražení, zhasnutí, dvě části lampy, obnova po návratu a ranní oprava prošly ověřením. |
+| 3. Značky a semafory | Funkční kontroly včetně návratu po opravě a dopravní špičky prošly. Celková grafická kontrola na cílovém zařízení zůstává otevřená. |
+| 4. Mosty a uzavírky | Hotovo. Náraz, návrat a oprava ověřeny ve fyzice a průjezd autem na WebGL 2 i WebGPU. |
+| 5. Následky nárazu | Hotovo. Hledanost, zvuky a společný limit úlomků jsou zapojené do hry. |
+| 6. Auta a garáž | Hotovo. Prošly deformace, odpadnutí dílu, načtení uloženého poškození a oprava v garáži. |
+| 7. Částice | Hotovo. Prošla kontrola výpočtu na WebGPU i náhradního výpočtu na WebGL 2. |
+| 8. Závěrečné ověření | Probíhají závěrečné prohlížečové zkoušky. Snímky a měření ze softwarového vykreslovače jsou v protokolu. Měření na autorově počítači je otevřené. |
 
-## Otevřené otázky
+### Doprava, směny a doručování
 
-Autor schválil samostatné zkoušky mělčiny a úplného potopení a plynulý postup dalšími etapami. Po úspěšných kontrolách lze sloučit větev do `main` a začít další etapu. Otevřená rozhodnutí nyní nejsou.
+Na WebGL 2 prošla kolona na Tylově, změna provozu ve špičce, přestup z tramvaje na autobus, trolejbus 49 i víkendová noční linka. Prošly také čtyři zkoušky zakázek včetně rozvozu s pěším předáním a přestupu s doručením. Při minutě hraní na softwarovém WebGL 2 vykázal Mesa llvmpipe 19 dokončených snímků v měřicím okně při požadavku více než 30. Starší běh se SwiftShaderem vykázal 11. Sada zachovává původní mez. Zbývající zkoušky běží na WebGPU.
 
-Autor schválil rozumný odhad podvodního profilu. Využije obrys vodní plochy a výšku vykreslené hladiny.
-Kontrolním údajem je kóta dna u Wilsonova mostu v městské tabulce. Poppler 26.11.0 z ní přečetl profil R19 v říčním km 1,372 s kótou 299,30 m n. m. Hloubku určuje rozdíl od hladiny.
-Měřené příčné profily nebudou potřeba. [Tabulka města](https://gis.plzen.eu/foto/pov_model/profily/PM_Psany_PP.pdf)
+### Provoz na fiktivní silnici a kolejích
 
-Autor schválil, že cizí nepojízdné auto může hra odklidit po minutě stání, jakmile je celé mimo záběr. Hráčovo poslední auto, právě řízené auto a auto z garáže jsou chráněná.
+Na WebGL 2 i WebGPU prošlo všech šest scénářů s figurínami, testovacími auty a tramvají na samostatné desce Joltu. Testovací tramvaj má vlastní přímou trať a dvě smyšlené zastávky. Po zařazení desky mezi aktivní dlaždice šlo ověřit také vznik běžných fyzikálních těles vozidel. U zaparkovaného vozu test potvrdil probuzení po dotyku, u dvou jedoucích aut změnu rychlosti a u tramvaje brzdění před překážkou. Veškerých osm referenčních pohledů prošlo na WebGL 2 s Mesa llvmpipe za 10,9 minuty. Na WebGPU byly ověřeny již dříve.
 
-Autor schválil také změnu směru před křižovatkou, pokud původní výjezd blokuje vrak. Běžný řidič může zvolit jiný volný směr povolený z jeho dosavadního pruhu. Žádost o sloučení se po úspěšné kontrole otevře přes připojený GitHub v Codexu.
+### Zkoušky s herní figurínou
 
-## Ověření
+Tři regresní scénáře nyní používají vlastní rovnou desku v Joltu a herní figuríny mimo městskou geometrii, bez jízdního řádu a běžného provozu. Na WebGL 2 prošla registrace jediné události při kontaktu, sledování kamery a návrat pěšího hráče do chůze i omezení souběžných pádů. Prošlo 128 testů JavaScriptu a produkční sestavení. Samostatně prošla ve WebGL 2 příprava střední předvolby stínů a stereo tramvaje. Průchod všech osmi referenčních kamer na softwarovém WebGL 2 překročil při souběžném ověřování dvacetiminutový limit. Kontrola klaksonu prošla na WebGL 2 (Mesa llvmpipe) i na WebGPU (SwiftShader). Krátký tón test zachytí při jeho skutečném vytvoření po stisku H. Před odebráním auta navíc ověřuje, že má aktivní vlastní zvuk. Prošlo také stereo tramvaje a zastavení kol a zvuku hamru na WebGL 2.
 
-Řidič dostává trasu, povolenou rychlost a vzdálenost od předního nárazníku k místu zastavení.
-Tři zkoušky v Node používají skutečné čtyřkolové vozidlo s motorem, brzdami a odpružením. Na rovince byla největší odchylka 0,02 m, na kružnici s poloměrem 15 m byla 0,11 m. Z 50 km/h zastavil nárazník 0,61 m před čárou. Prošlo 85 z 85 testů JavaScriptu a produkční sestavení. První krok ještě nemění běžící hru.
+### Oddělená zkušební plocha
 
-### Druhý krok
+Lampa pro fyzikální zkoušku vzniká na vlastní plošině nad herním terénem. Vykreslení i fyzika si vyžádají stejný seznam lamp v dlaždici. Také zkušební značka a světelný signál pocházejí ze samostatného testovacího vstupu s vlastní skupinou. Prošla ztráta a obnova světla po návratu, změna stavu a oprava u všech tří předmětů. V Chromiu uspěly dva scénáře na WebGL 2 a tytéž dva na WebGPU. Prošlo všech 128 testů JavaScriptu a produkční sestavení. Regrese dřívějších etap pokračují.
 
-Okolní auto přebírá čtyřkolový model do 150 m po načtení terénu a drží ho až do 220 m.
-Předvolby dovolují 40, 40, 20 nebo 10 takových aut. Při obou přechodech zůstává stejné auto na své trase.
-V prohlížeči fyzikální vůz u stopky na Doudlevecké zastavil a po splnění pravidla pokračoval.
-Prošlo všech 86 testů JavaScriptu, produkční sestavení a 16 prohlížečových kontrol fyziky a dopravy.
-Zahrnují kolonu před obsazeným výjezdem na Tylově i jízdu hráčovým autem na WebGPU a WebGL 2.
-Záznamy jsou v `data-raw/e20/krok2-{node,build,ove}.log`.
+### Směny a spuštění vykreslovače
 
-### Třetí krok
+Na softwarovém adaptéru první sestavení scény někdy přesáhlo pevnou minutu. Zkoušky směn a vykreslovače nyní čekají na připravenou hru v rámci času určeného pro celý test. V Chromiu prošlo všech pět scénářů směn včetně výplaty, zrušení a opětovného načtení. Prošlo ruční i automatické spuštění WebGL 2. V minutové zkoušce na vysoké předvolbě adaptér zvládl jen 11 snímků, požadavek přes 30 zůstává otevřený. Prošlo 128 testů JavaScriptu a produkční sestavení. Regrese dopravy a starších grafických scén pokračují.
 
-Poblíž hráče zaparkované auto spí, čelní náraz ho probudí a odstrčí. Hlídka používá stejný regulátor jako ostatní auta,
-sleduje trasu k hráči a před stojícím chodcem zastaví v dosahu zatčení. V rozpočtu počtu aut má při pronásledování přednost.
-Prošlo všech 86 testů JavaScriptu, sestavení a všech 11 dotčených prohlížečových kontrol včetně nehody, hlídky, pokuty a pádů chodců.
-Záznamy jsou v `data-raw/e20/krok3-{node,build,e2e}.log`.
+Astra před implementací prověřila návrh. U lamp bude potřeba jeden společný výběr pro fyziku i vzhled, nezávislý na pořadí načítání sousedů. Pro mosty jsou zdrojem již oříznuté úseky hran. Připojené fyzikální těleso a zobrazený objekt mohou mít odlišnou dobu života. Změny po nárazu je potřeba provést po fyzikálním kroku. Otevřené otázky pro autora nyní nejsou.
 
-### Čtvrtý krok
+Prošlo 102 ze 102 testů JavaScriptu a produkční sestavení. Nový test sestaví seznamy dvou dlaždic v obou pořadích, odliší tři předměty v každé a ověří poškození i opravu ve 4:00 dalšího dne. Všech 164 prohlížečových zkoušek prošlo za 45 minut bez vynechání nebo opakování. Záznamy jsou v `data-raw/e21/registr-prohlizec.{log,json}`. Následují lampy. Další záznamy jsou v `data-raw/e21/registr-{node,build}.log`.
 
-Prošlo 87 testů JavaScriptu, produkční sestavení a prohlížečové sady MHD, směn a provozu.
-Tramvaj při náhlé překážce brzdila a odtlačila stojící auto. Při skoku v čase se staré těleso odebere,
-aby při přemístění vozu mezi zastávkami neodstrčilo chodce. Kontrola ověřila i pěší přestup na náměstí Republiky.
-Při stejném průjezdu jako v E12 získala tramvaj 1 celkem 93 bodů, trolejbus 16 získal 99 a autobus 30 získal 100.
-Rozjezd i přechod na provozní brzdu mají omezenou změnu zrychlení. Nouzové zabrzdění má kratší dráhu.
-Záznamy jsou v `data-raw/e20/krok4-{node,build,final,smeny,provoz}.log` a `krok4-body.json`.
+## Lampy
 
-### Pátý krok
+Lampa se vybírá ze zdrojového úseku před rozmístěním do scény. Vizuál a fyzika najdou stejné místo bez ohledu na pořadí načtení sousedů. Po nárazu se skryje stožár i noční světelná skvrna a uvolní se stožár a hlava lampy. Po návratu je chodník průchozí. Oprava je ve 4:00 následujícího herního dne. Ve fyzice se vytvoří či zruší nejvýše 20 těles vybavení za krok.
 
-Vrtulník váží 2 500 kg. Zkouška s počátečním náklonem a klesáním ověřila, že při zapnuté asistenci udrží výšku v rozmezí ±0,5 m po dobu 20 sekund. Ve hře bez poškození přistál z výšky 12 m na střeše FN Lochotín i na pozemním heliportu. Prošlo všech 88 testů JavaScriptu, produkční sestavení a čtyři prohlížečové kontroly včetně načtení vypnuté asistence, dokončení rozvozu a návratu od hranice mapy. Záznamy jsou v `data-raw/e20/krok5-{node,build,final}.log`.
+Při prvním ověření ukázal kontakt s válcovým tělesem neplatnou hloubku průniku. Doplněný povinný poloměr zaoblení v konstruktoru Jolt opravil normálu. V testu těleso malého auta při 10 km/h lampu zachovalo, při 30 km/h ji ulomilo. Obě rychlosti i původní práh 6 000 N·s zůstaly zachovány. V obou vykreslovačích prošel náraz hráčovým autem, odjezd, návrat v noci a oprava. Záznamy jsou v `data-raw/e21/lampy-kontakt.log` a `lampy-cilene.log`. Rozšířená zkouška v úplné sadě navíc kontroluje polohu samotné zobrazené instance.
 
-#### Vyšší vodorovná rychlost na přání autora
+Na výsledné úpravě prošlo 104 ze 104 testů JavaScriptu a produkční sestavení. Nad stejným sestavením běží úplná sada 166 zkoušek. Při navázání ověřit `data-raw/e21/lampy-uplna.{log,json}` a případné nálezy opravit. Po úspěchu uložit druhý krok do gitu a pokračovat značkami a semafory.
 
-V letovém modelu E20 má vrtulník vodorovné maximum 300 km/h. Při větším náklonu vpřed se mění podélný odpor vzduchu. Při jemném manévrování a po vyrovnání působí dosavadní tlumení. Omezení se počítá z obou vodorovných složek rychlosti, takže zachovává směr i rychlost stoupání nebo klesání.
+První úplný běh lamp odhalil, že startovní vůz po přímém rozjezdu narazil do nízkou rychlostí neulomitelné lampy. Před nárazem byla pata 4,5 m před středem auta, náraz měl impulz 4 546 N·s. Vůz teď při prvním umístění hledá místo podél stejné strany ulice s volnou cestou od obrubníku. V ověřené trase zaparkoval o šest metrů dál od lampy a po 130 krocích měl rychlost 5,19 m/s bez nárazu. Původní test rozjezdu i práh zlomení zůstaly zachovány. Diagnostika: `data-raw/e21/rozjezd{,-po}.json`.
 
-Při měření z visu s výchozí asistencí a plným povelem vpřed dosahoval původní model nejvýše 141,1 km/h. Po změně dosáhl 258,9 km/h za 20 s a 299,2 km/h za 50 s. Po uvolnění W z maximální rychlosti zpomalil za deset sekund na 76 km/h. V prohlížeči zkouška porovnává rychloměr se vzdáleností uletěnou za posledních pět sekund a ověřuje také udržení výšky.
+Oprava byla sestavena odděleně, aby předchozí úplná sada doběhla nad původní hrou. Prošlo 104 testů JavaScriptu a sestavení, záznamy `rozjezd-{node,build}.log`. Cílená kontrola rozjezdu a lamp v obou vykreslovačích má záznam `rozjezd-cilene.log`. Při navázání ověřit i případné další nálezy z `lampy-uplna.json`.
 
-Prošlo všech 93 testů JavaScriptu, produkční sestavení a šest dotčených zkoušek v prohlížeči. Přelet prošel na WebGPU i WebGL 2. Prošlo i přistání na střeše FN Lochotín a na heliportu a let k okraji mapy. Záznamy jsou v `data-raw/e20/rychlost-vrtulniku-{node,build,prohlizec,webgpu}.log`.
+Všechny čtyři cílené kontroly rozjezdu a lamp na opraveném sestavení prošly na WebGL 2 i WebGPU. Po dokončení původní sady se automaticky spustí úplná kontrola opravy, pokud původní sada neodhalí další závadu. Výsledek hledej v `data-raw/e21/rozjezd-uplna.{log,json}`; případný jiný nález zaznamená `rozjezd-navazani.log`.
 
-### Šestý krok
+V původním běhu projelo během deseti minut kolem Klatovské 135 aut. Žádné při sledování nevyjelo pod plynem mimo vozovku, řidič ve Smetanových sadech ale čekal 128,5 s při limitu 120 s (hrana 11884). U hlavního nádraží zkouška prošla. Rozšířený záznam sleduje okolní vozidla, fázi semaforu a kontakty se stožáry. Při navázání porovnat `spicka-4173-Klatovská.json` (původní sestavení) a `spicka-4181-Klatovská.json` (upravené parkování). Opakování s jiným průběhem samo příčinu nedokazuje.
 
-Voda v materiálu terénu používá stejnou síť jako `world.heightAt`. Dno pro kola vychází z obrysu vody včetně ostrovů. Do osmi metrů od břehu klesá přibližně o 12 cm na metr, dále o 2,5 cm na metr, nejvýše do hloubky 2,4 m. Na ose Wilsonova mostu poblíž středu řeky je herní hladina ve výšce 300,70 m n. m. Při vzdálenosti 30,5 m od břehu vychází odhad dna na 299,18 m n. m., tedy asi o 12 cm níž než údaj města. Tvar koryta mezi břehy je odhad.
+V rozšířeném pozorování na Klatovské nenarazilo žádné jedoucí auto do lampy. Ve frontě na Husově odhalila samostatná zkouška jinou chybu. Pokud si řidič dřív zvolil jen část průjezdu, považoval spojku 1421 za výjezd a hlásil jízdu rovně. Jeho skutečná trasa odbočovala vlevo do sadů Pětatřicátníků na úsek 12147. Zkouška na předchozím sestavení chybu zopakovala. Nyní řidič ponechá již zvolený směr a doplní navazující odbočení ještě před stopčárou. Nová samostatná zkouška prošla, ale první opakované desetiminutové jízdy měly nadlimitní čekání na obou místech. Záznamy jsou v `spojka-pred.log`, `spojka-e2e.log` a složce `spojka-e2e/`.
 
-V obou vykreslovačích malé auto sjelo ze suchého západního břehu do Radbuzy asi 20 m po proudu od mostu. Při zkoušce zaznělo jedno šplouchnutí, vůz plaval bez dotyku kol se dnem, hráč vyplaval a dostal se zpět na souš. Od prvního kontaktu s vodou po úplné ponoření a vyřazení auta uplynulo 7,05 s. Na mělčině zůstává vyčnívající karoserie ve hře. Prošlo 90 testů JavaScriptu, sestavení a devět závěrečných prohlížečových scénářů. Širší ověření jízdy, fyziky a vody mělo 20 úspěšných scénářů. Záznamy jsou v `data-raw/e20/krok6-{node,build,overeni,kalibrace}.log`.
+Druhá pracovní úprava rozlišuje dvě situace před zelenou. Řidič jedoucí rovně má přednost před čekajícím levým odbočením. Pokud již protijedoucí vůz najel do levého oblouku, ponechá mu před čárou místo k dokončení. Prošlo 104 testů JavaScriptu včetně obou situací a sestavení. Při navázání nejdříve ověřit sedm cílených prohlížečových zkoušek na tomto sestavení v `data-raw/e21/oblouk-e2e.log`, hlavně obě desetiminutové jízdy. Úplný běh `lampy-uplna` kontroluje starší sestavení před opravou parkování a křižovatek. Zbývá také úplná sada na výsledné revizi.
 
-První delší pozorování okolního provozu odhalilo chyby při odbočení do Husovy a při návratu převráceného auta do provozu. Ve špičce některé vozy zůstaly stát několik minut. Pro přijetí kroku 7 je potřeba odstranit příčiny a dlouhý běh zopakovat. Souřadnice a průběh jsou v `data-raw/e20/stopa-Klatovská.json` a `data-raw/e20/pozorovani-v2-*.json`.
+Pokud všech sedm cílených kontrol projde a zbytek původní sady neodhalí jiný problém, naváže automaticky standardní sestavení a úplná sada do `data-raw/e21/oblouk-uplna.{log,json}`. Důvod případného nezahájení zaznamená `oblouk-navazani.log`.
 
-### Sedmý krok, rozpracováno
+Po druhé úpravě prošlo šest ze sedmi cílených zkoušek. Na Klatovské kleslo nejdelší čekání na 74 s a všechna sledovaná auta zůstala na silnici. U nádraží však řidič v Barrandově na hraně 1173 čekal 435 s (výjezd 6376). Zbývá najít konkrétní překážku a ověřit opravu. Běží podrobné pozorování nádraží nad stejným sestavením na portu 4181, výstup `data-raw/e21/spicka-4181-hlavní nádraží.json` a `barrandova-stop.log`.
 
-Střet s jedoucím autem provozu i odbočení z ulice Kardinála Berana do Husovy už mají vlastní zkoušku ve hře. Přední vůz při střetu zrychlil, hráčův zpomalil, oba utrpěly škodu. Převrácené auto už se nepokouší jet po střeše. Odklizení cizího auta hlídá dobu stání, vlastníka a okraje záběru kamery včetně rozměrů auta. Prošlo 92 testů JavaScriptu a sestavení. Zbývá ověřit návrat plynulého provozu v husté dopravě a uzavřít společné měření, testy a protokol.
+### Kontrola kolon při ověřování lamp
 
-K uložení této části sedmého kroku prošlo 13 prohlížečových scénářů provozu a MHD a samostatná prohlížečová zkouška odklizení vraku. Ověřila dobu před minutovým limitem, viditelný vrak po limitu, odstranění po otočení kamery a zachování posledního i garážového auta. Předběžné dlouhé pozorování stále zachytilo dlouhé fronty a vyjetí z vozovky. Záznamy jsou v `data-raw/e20/{krok7-odklid,vrak,odklid-provoz}.log`.
+První úplná kontrola lamp skončila 163 úspěchy ze 166. Dvě selhání byla při rozjezdu startovního auta a jedno na Klatovské. Obě varianty rozjezdu po posunutí parkovacího místa prošly. Úplná kontrola sestavení s opraveným rozjezdem a plánováním odbočení běží do `data-raw/e21/kolony-uplna.{log,json}`.
 
-#### Pokračování po revizi `33b5724`
+Tři jízdy u nádraží před úpravou parkovací brzdy měly nejdelší čekání 223,5 s, 57 s a 129,5 s. V první zůstal nabouraný sedan přes čtyři minuty na stejných souřadnicích. Hra mu stále připisovala rychlost 0,318 m/s, takže se nikdy nezačala počítat minuta k odklizení. Při třetí jízdě čekalo jiné auto v Božkovské u přednosti v jízdě. Na chodník během těchto tří jízd žádné sledované auto pod plynem nevyjelo. Podklady jsou v `data-raw/e21/barrandova-trikrat/`.
 
-Průběžný provoz při výběru trasy prověřuje slepé ulice a na navazující jednosměrce drží pruh. Při parkování se kontrolují i rohy karoserie, aby auto nezasahovalo do křižovatky. Když místo na trase právě zabírá auto, vůz MHD se zařadí až po jeho uvolnění. Obě změny prošly zkouškou ve hře. Při návratu po nehodě řidič kontroluje směr, prostor a dotyk kol s vozovkou. Při bočním odstrčení dalším autem nebo tramvají řízení převezme fyzika.
+Zaparkovaný vůz nyní při probuzení zabrzdí a při uspání se jeho rychlost srovná se skutečnou rychlostí tělesa. Při opuštění okruhu fyziky se pohybující se vůz dál valí. Nová zkouška ověřila oba případy na 13% svahu. Prošlo všech 105 testů JavaScriptu, sestavení i prohlížečové zkoušky lampy, odtlačení zaparkovaného auta a odklizení cizího vraku. V nové jízdě u Klatovské však auto v sadech Pětatřicátníků čekalo 128,5 s. Limit je nadále méně než 120 s. Krok 2 zůstává otevřený.
 
-Měření na Klatovské proběhlo na autorově Macu v pondělní herní špičce v 7.30, na vysoké předvolbě a s WebGPU. Během 10 sekund měření bylo v blízkosti až 40 aut s plnou fyzikou, z nich až 18 s aktivním řidičem. Z 604 měřených kroků fyziky jich 95 % trvalo nejvýše 3,80 ms při rozpočtu 4 ms. Příkaz je `node tools/measure_map.mjs http://127.0.0.1:4173/ --rush`, výsledek je v `data-raw/e20/vykon-spicka.json`.
+Při navázání zkontrolovat výsledky obou míst v `data-raw/e21/vrak-svah-kontrola/` a původní úplnou sadu v `kolony-uplna.log`. Diagnostika `cekani-priciny.mjs` zaznamenává po deseti sekundách čekání barvu semaforu, obsazený výjezd a vozidla s předností. První záznam vzniká v `cekani-klatovska.json`. Určit příčinu další dlouhé fronty a po opravě spustit celou sadu na výsledném sestavení.
 
-Desetiminutová zkouška ve hře sleduje ranní provoz dvakrát. U hlavního nádraží stojí pozorovatel na chodníku u Železniční, přibližně 88 m od bodu nádražní budovy. Při prvním běhu na těchto místech se na Klatovské za deset minut vystřídalo 117 fyzikálně řízených aut a u nádraží 69. V každé minutě se některá auta pohybovala. Nejdelší souvislé čekání jednoho vozu ale dosáhlo 356,5 s na Klatovské a 448,5 s u nádraží, nad mezí 120 s. Pod plynem vyjela auta také z vozovky, mimo jiné na úsecích 28371 na Klatovské a 20738 na Železniční. Časy a souřadnice jsou v `data-raw/e20/pozorovani2/*/pozorovani.json`.
+Ověření po opravě vraku skončilo čtyřmi úspěchy z pěti. U hlavního nádraží byla nejdelší doba stání 90 s. Žádné auto v obou jízdách pod plynem neopustilo vozovku.
 
-Před uložením prošlo 92 z 92 testů JavaScriptu, 23 z 23 testů Pythonu a sestavení. Z 16 dotčených prohlížečových scénářů jich původně prošlo 15. Šestnáctý používal aktuální čas počítače a ve večerním jízdním řádu nenašel svůj zkušební spoj. Po nastavení pondělí v 7.30 prošla kontrola semaforu pro chodce, trolejbus 10 a tramvaj 4 se stejnými očekáváními. Záznamy jsou v `data-raw/e20/krok7-pravidla.log` a `krok7-semafor.log`.
+Na křižovatce Klatovské a Tylovy pokračují dva souběžné pruhy do jednoho. Záznam desetiminutové jízdy v `data-raw/e21/nehody-klatovska.json` zachytil střet dvou aut při řazení do stejného výjezdu. Obě pak zůstala stát. V samostatné zkoušce přijíždějí SUV a krátké osobní auto vedle sebe rychlostí 6 m/s. Před opravou se při zařazování překryly jejich karoserie o 16 cm a obě auta havarovala. Záznam je v `soubeh-prijezd.log`.
 
-Při posledním opakování prošly obě zkoušky tramvaje a společná zkouška semaforů. Obě desetiminutová pozorování znovu selhala. Na Klatovské stálo auto 284,5 s na úseku 19355 před úsekem 4, i když na konci čekání řidič požadoval 10,9 m/s. U nádraží bylo nejdelší čekání 201 s na Barrandově, na úseku 1173 před úsekem 6376, kde řidič žádal nulovou rychlost. První vyjetí nastala v sadech Pětatřicátníků a na Koterovské. Záznamy jsou v `data-raw/e20/krok7-ulozeni/*/pozorovani.json`.
+Řidič před čárou nyní zohlední sousední auto, které se právě rozjíždí do téhož výjezdového pruhu. Pokud vyjíždějí do dvou různých pruhů, mohou jet současně. Samostatná zkouška po opravě prošla, oba vozy projely bez dotyku. Prošlo 106 testů JavaScriptu a sestavení. V desetiminutové kontrole Klatovské žádné sledované auto pod plynem neopustilo vozovku a nejdéle stálo 68 sekund. Výsledek zbývajících kontrol bude v `soubeh-po.log`. Při všech šesti úspěších a bez dalšího nového selhání v původní úplné sadě naváže kontrola všech 167 zkoušek v `soubeh-uplna.{log,json}`. Stav návaznosti zapisuje `soubeh-navazani.log`.
 
-#### Pokračování po revizi `668bf0f`
+Všech šest cílených kontrol opravy prošlo. Na Klatovské i u hlavního nádraží byla nejdelší doba stání 68 sekund při limitu 120 s. Ani na jednom místě žádné sledované auto pod plynem neopustilo vozovku. Ověřeno bylo také vyhnutí se vraku, přednost protisměru a plánování odbočení přes Husovu. Zbývá výsledek úplné sady.
 
-Při odbočení z Koterovské do Železniční vyjížděla i samotná dodávka na prázdné silnici. Nyní řidič začne zatáčet ještě před průsečíkem obou pruhů. Poloměr oblouku vychází z rozvoru vozu, místa v ulici a úhlu odbočení. Na krátkých spojkách řidič počítá s následující zatáčkou při dobrzďování. Nová zkouška nechá dodávku odbočit také z Klatovské na Americkou a kontroluje polohu při každém kroku fyziky až do výjezdového pruhu.
+Úplný běh před opravou řazení skončil 166 úspěchy ze 167. Selhala jen Klatovská. Úplný běh revize `114f0b7` obsahuje 168 zkoušek včetně nového řazení. Při prvních šesti zkouškách WebGL 2 se Mac opakovaně uspal. Všechny skončily překročením časového limitu při čekání na prohlížeč nebo při jeho zavírání. Po probuzení pokračuje stejný běh, jeho výsledky jsou v `data-raw/e21/soubeh-uplna.{log,json}`. Po dobu běhu je omezeno automatické uspání z nečinnosti. Hned po dokončení se znovu spustí pouze těchto šest zkoušek se stejnými limity a stejným sestavením, do `data-raw/e21/po-probuzeni.{log,json}`. Zkontrolovat výsledky obou sad včetně případných dalších selhání před uzavřením kroku 2.
 
-Řidiči sledují volnou vzdálenost podél své trasy i za zatáčkou. U tramvají se přitom bere v úvahu poloha každého článku. Nová auta se zařazují dál od křižovatky a kontrolují, zda už v místě nevznikla kolona.
+Ze stejné kamery na WebGPU byly pořízeny snímky před ulomením lampy a po něm. Je vidět zhasnutý přechod, spadlý stožár a samostatná hlava lampy. Snímky jsou v `data-raw/e21/lampy-snimky/`. Po úplné sadě a opakování šesti přerušených zkoušek naváže zkušební měření deseti současných kolizí s lampami do `data-raw/e21/deset-lamp.{log,json}`. Výsledné měření výkonu se zopakuje v kroku 8. Mimo herní kód je ověřený kloub pro připravovaný krok značek. Pokus `data-raw/e21/kloub-pokus.mjs` upevnil 2,4m sloupek k zemi. Sloupek se během 1,5 s ustálil v trvalém náklonu přibližně 35°. Zapojení do hry je krok 3.
 
-V průběžném běhu prošlo 15 ze 16 zkoušek v prohlížeči. Během deseti minut u hlavního nádraží se vystřídalo 75 aut, nejdelší stání trvalo 58,5 s. Na Klatovské se vystřídalo 108 aut a nejdelší stání trvalo 268 s. V obou místech se v každé minutě část provozu pohybovala a kontrola nezaznamenala žádné vyjetí. Tento běh předcházel poslední úpravě odstupu. Výsledky jsou v `data-raw/e20/zarazeni/*/pozorovani.json`.
+Ve stejné úplné sadě po probuzení prošly obě desetiminutové zkoušky provozu. Nejdelší stání bylo 71,5 s na Klatovské a 50,5 s u hlavního nádraží. V obou případech byla všechna sledovaná auta při jízdě pod plynem na vozovce. Prošel i nový cílený průjezd dvou aut přes zúžení u Tylovy. Úplný běh pokračuje.
 
-Po úpravě odstupu a brzdění MHD prošlo 94 z 94 testů JavaScriptu, 23 z 23 testů Pythonu a produkční sestavení. Z 24 dotčených zkoušek v prohlížeči uspělo 22, včetně všech tří zkoušek MHD, fronty na Tylově a porovnání intenzity dopravy v pracovní den a o víkendu. Záznamy jsou v `data-raw/e20/oblouky-{node,python,build,overeni}.log`.
+Před uložením průběžného stavu znovu prošlo 106 testů JavaScriptu a standardní produkční sestavení. Hlavní soubor je totožný se sestavením v úplném běhu (SHA-256 `01a7241f165f27634443d196fe16f9d7f9d556b8c8023c7cf6c2c5c65200210a`).
 
-| Místo | Pozorovaných aut za 10 minut | Nejdelší souvislé stání | Zjištěná vyjetí z vozovky pod plynem |
-| --- | ---: | ---: | ---: |
-| Hlavní nádraží | 59 | 74,5 s | 0 |
-| Klatovská | 88 | 486 s | 0 |
+Krok 2 je uzavřen. Úplný běh dokončil 162 ze 168 zkoušek. Šest zkoušek přerušených uspáním Macu při samostatném opakování prošlo na stejném sestavení. Dohromady prošlo všech 168 různých zkoušek. Bez vynechání, změny očekávání nebo úpravy časových limitů. Hlavní přehled je v `data-raw/e21/soubeh-uplna.json`, opakování v `po-probuzeni.json`, porovnání konkrétních případů v `soubeh-soucet.py`.
 
-První neúspěšná zkouška zachytila na Klatovské dlouhou frontu před výjezdem. V samostatném záznamu čelo tramvaje 4 z Košutky stálo na souřadnicích (−374,76; 358,50). Střed zaparkovaného auta v bodě (−377,7; 361,7) byl podle mapy mimo vozovku, ale vůz zasahoval do prostoru před tramvají. Podle délky karoserie zbývá k překážce jen 2,52 až 2,58 m. Další auta v koloně čekala i při zelené. Při pokračování prověřit, kam hra dovoluje zaparkovat podél kolejí v křižovatce, a zda výjezd uvolní tramvaj i auta za ní. Záznam průběhu je v `data-raw/e20/cekani-Klatovská.json`, přepočet mezery v `data-raw/e20/koleje-spicka.json`.
+První měření deseti lamp proběhlo v předvolbě vysoká při 1920 × 1080 přes WebGPU na hardwaru Apple. V osmi snímcích bylo maximum 26 ms včetně dokončení vykreslení. V samotných dvou krocích zlomení trvalo vše 21,6 a 16,8 ms a fyzika 1,8 a 1,3 ms. Při umělé souběžné kolizi deseti těles se šest lamp zlomilo v prvním kroku a čtyři v následujícím. Softwarové vykreslování SwiftShader je v samostatném záznamu. Konečné měření celé etapy zbývá v kroku 8. Záznamy jsou v `data-raw/e21/deset-lamp-hw.json` a `deset-lamp.json`.
 
-Druhá neúspěšná zkouška byla směna trolejbusu 16. Při opakování má zkouška pevný okamžik nabídky spojů podle uloženého měření ze 17.18 dne 18. listopadu 2026 a stejnou počáteční fázi semaforů. Tramvaj 1 získala 93 bodů, autobus 30 získal 100 a trolejbus 16 získal 85 při obsloužení všech čtyř zastávek. Dva průjezdy na červenou snížily hodnocení o 14 bodů proti původním 99. Zbývá zachytit konkrétní čáry a okamžik, kdy řidič začíná brzdit, a ověřit výsledek proti povolené odchylce pěti bodů. Výpočty hodnocení i meze testů zůstaly stejné. Záznamy jsou v `data-raw/e20/odjezd-smeny.log` a `data-raw/e20/odjezd-body.json`.
+## Značky a semafory
 
-Při dvou samostatných měřeních na Macu trvalo 95 % z 604 kroků fyziky nejvýše 4,50 ms a 2,40 ms. První běh dosáhl jen 39 fyzikálních aut a překročil rozpočet 4 ms. Ve druhém bylo 40 fyzikálních aut, z nich až 21 s aktivním řidičem, a měření prošlo. Oba výsledky jsou v `data-raw/e20/vykon-oblouky*.json`. Výkon po dalších změnách znovu změřit.
+Rozměry sloupku a štítu nebo skříně semaforu vycházejí z jednoho popisu. Světelná skříň pro chodce má stávající odlišnou výšku. Po změně rozměrů prošlo 108 zkoušek v Node, sestavení a pět prohlížečových kontrol lamp, sdílených fází MHD a stávajících osmi referenčních pohledů. Podklady `data-raw/e21/znacky-rozmery-{node,build,e2e}.log`.
 
-#### Pokračování po revizi `b78d684`
+Značka i semafor nyní při změně stavu ve stávajícím registru skryjí všechny části současně. Registr odstraní vazbu při odložení grafické dlaždice. Prošlo 108 zkoušek v Node, produkční sestavení a pět cílených prohlížečových zkoušek. WebGL 2 i WebGPU ověřily, že u značky zmizí dva díly a u semaforu pět dílů. Při opravě se všechny vrátí na původní místo. Záznamy jsou v `data-raw/e21/znacky-matice-{node,build,e2e}.log`. Další práce připojí fyzikální tělesa a nastaví provoz při výpadku semaforu. Podklady k ověřenému kloubu jsou v `data-raw/e21/znacky-navazani.md` a `kloub-pokus.log`.
 
-Na Klatovské už hra při parkování kontroluje celou délku a šířku auta vůči tramvajové koleji. U křižovatky s Tylovou tak odmítne i původní místo, kde střed auta byl mimo silnici, ale roh karoserie překážel tramvaji. Samostatná zkouška ověřuje také parkování pod vyvýšenou tratí.
+Značka má jedno pevné těleso pro sloupek a štít. Střední náraz ji ohne přes pružný kloub u země. Po ustálení drží náklon jako pevné těleso, které lze dále zlomit. Poloha a náklon se uchovají po odjezdu a návratu. Silný náraz oddělí štít a sloupek. Semafor po zlomení zhasne spolu se světly téže křižovatky. Řidiči zpomalí, počkají na vozy v křižovatce a dají přednost zprava. Výpadek jednoho společného řízení předejde různým pravidlům v příčných směrech. Společně se zpracuje nejvýše 20 těles lamp, značek a semaforů za krok.
 
-V Tylově se trolejbusy 12 z Nové Hospody a 16 z Doubravky na prázdné ulici zastavily proti sobě. Oba původně sledovaly její střed. Generátor nyní z původních dat OpenStreetMap přebírá výslovně povolený protisměr pro MHD. Ve hře se vozy drží vpravo a při zkoušce oba dojely přes dvacet metrů za místo setkání. Při porovnání nově sestavených dat se změnil pouze seznam 16 silničních úseků v `meta.json`. Všech šest binárních souborů se shodovalo po bajtech.
+Ve zkoušce s vozem o hmotnosti 1 000 kg značka při 6 km/h vydržela, při 18 km/h se ohnula a při dalším nárazu 43 km/h zlomila. Semafor vydržel při 45 km/h a zlomil se při 65 km/h. Prohlížečové zkoušky na WebGL 2 a WebGPU ověřily ohnutí, zhasnutí, dva odlomené díly a ranní opravu. Záznam je v `data-raw/e21/semafor-e2e.log`.
 
-Tramvaj 4 z Košutky na středovém pásu Klatovské rozpozná směrový semafor před Americkou. Při jízdě výjezdem přes křižovatku řidič auta může následovat plynule odjíždějící vůz. Před stojícím, brzdícím nebo napříč projíždějícím autem dál čeká.
+První pozorování po připojení těles ukázalo dlouhé stání na Americké. Kombi přidávalo plyn, ale před jeho nárazníkem byla pata pěšího semaforu skutečně uvnitř vozovky. Doloženo v `data-raw/e21/znacky-fyzika-e2e/` a `znacka-americka.json`. Původní polohu zachováme, kdykoli je mimo vozovku. Paty v jízdním pruhu se přesunou s tělesem i zobrazením na nejbližší místo u vozovky. Zdrojový identifikátor a řízený přechod zůstávají. Test kontroluje konkrétní pěší semafor na Americké.
 
-Při srovnání směn začíná zkouška odměřovat čas přímo při kliknutí na „Nastoupit do směny“. Dříve mohl mezi nástupem a prvním měřením proběhnout další snímek hry a zkrátit pobyt v zastávce. Při stejném jízdním řádu a ovládání získaly linky 1, 16 a 30 opět 93, 99 a 100 bodů, stejně jako v E12. Výsledky jednotlivých směn jsou v `data-raw/e20/nastup-body.json`.
+Po opravě polohy prošlo 112 testů v Node a produkční sestavení. Běží 13 cílených prohlížečových zkoušek včetně obou desetiminutových pozorování v `data-raw/e21/znacky-mimo-pruh-e2e.log`. Po jejich úspěchu automaticky naváže úplná sada `znacky-uplna.{log,json}`. Před uzavřením kroku 3 vyhodnotit oba běhy a kontrolu umístění v `paty-semaforu.json`.
 
-| Poslední desetiminutové pozorování | Počet různých aut s fyzikou | Nejdelší stání | Vyjetí z vozovky pod plynem |
-| --- | ---: | ---: | ---: |
-| Hlavní nádraží | 51 | 61 s | 0 |
-| Klatovská | 102 | 197 s | 0 |
+Kontrola polohy prošla všech 8 004 patek. Hrubší vyhledávání přesunulo 1 781 objektů a ponechalo jedinou značku zákazu vjezdu u 17. listopadu v jízdním pruhu. Mezi budovou a okrajem vozovky se pro tuto značku našel úzký volný chodník. Jemnější hledání jako druhý pokus přesunulo i poslední patu. V konečném dvojitém měření bylo přesunuto 1 782 patek a žádná nezůstala ve vozovce. Podklady `data-raw/e21/paty-semaforu.json`, `paty-semaforu-po.json` a `bory-znacka.json`. Po opravě polohy semaforu na Americké prošla desetiminutová Klatovská s maximem 66 s. Zkouška nárazu na obou vykreslovačích také prošla po výběru značky, k níž nárazové těleso může dojet volnou cestou.
 
-Mez zůstává 120 s. Před křižovatkou Husovy s Klatovskou stálo auto na úseku 34501 před úsekem 1423. V souběžném záznamu této situace mělo po 130 s čekání zelenou. Výjezd mu blokovala tramvaj 4 stojící u jiného návěstidla téže skupiny. Při pokračování prověřit polohu čela a zadního článku tramvaje vůči stopčarám a dráze odbočujícího auta. U nádraží při dřívějším běhu vůz vyjel na Železniční, proto po opravě zopakovat obě pozorování. Výsledky jsou v `data-raw/e20/odjezd-pozorovani/*/pozorovani.json`, polohy a semafory v `data-raw/e20/vazby-Klatovská.json`.
+U hlavního nádraží potom jiné pozorování naměřilo stání 137,5 s. Záznam `data-raw/e21/nehody-znacky-nadrazi.json` zachytil opakované nehody na sjezdové rampě. První vůz narazil podvozkem do terénu, ztratil řízení a o šest metrů dál rozbil semafor. Samostatný průjezd prázdnou rampou chybu zopakoval. Pickup najel do prudké části rychlostí 9,75 m/s a dostal náraz 9 077 N·s. Řidiči nyní před strmým klesáním přibrzdí podle výškového profilu. Na stejné rampě po úpravě zůstal pickup v režimu běžného provozu a dojel na spodní úsek. Záznamy `nadrzi-svah.json` a `nadrzi-svah-po.json`.
 
-Při uložení prošlo 96 z 96 testů JavaScriptu, 23 z 23 testů Pythonu a produkční sestavení. Ve společném běhu dopravy, MHD a směn prošlo 23 z 24 zkoušek. Prošla i starší zkouška, v níž kolona na Tylově nechává volný přechod a koleje. Při jediném neúspěchu dodávka z Klatovské do Americké nedojela do sledovaného místa za zatáčkou do 90 s. Obě samostatná opakování se stejnou mezí prošla, stejně jako všech šest dalších průjezdů oběma zatáčkami při záznamu polohy. Příčina nedojetí zůstává otevřená. Příští neúspěch vypíše také polohu, rychlost a číslo semaforu nebo značky. Záznamy jsou v `data-raw/e20/protismery-{node,python,build,zaver}.log`, `protismer-oblouky.log` a `prujezd-americka.json`.
+Výsledné sestavení prošlo 113 testy JavaScriptu a sestavením. Běží 14 cílených zkoušek v `data-raw/e21/znacky-rampe-e2e.log`. Zahrnují jednotlivý průjezd rampou i obě desetiminutové zkoušky. Při úspěchu naváže závěrečná úplná sada do `znacky-uplna.{log,json}`. Limity zkoušek zůstaly stejné. Krok 4 začne po vyhodnocení výsledku.
 
-Na autorově Macu při 40 autech trvalo 95 % fyzikálních kroků nejvýše 4,20 ms, při opakování s 38 auty to bylo 3,50 ms. Každý běh změřil 605 kroků na Klatovské. Podmínku 4 ms při plném počtu 40 aut zatím tato verze nesplnila. Výsledky jsou v `data-raw/e20/vykon-protismer.json` a `vykon-protismer-opakovani.json`.
+Po úpravě rampy prošlo všech 14 cílených zkoušek. Nejdelší čekání bylo 95,5 s na Klatovské a 62 s u hlavního nádraží. Žádné sledované auto pod plynem neopustilo vozovku. Na snímcích před a po je vidět náklon značky 27,4°. Jsou v `data-raw/e21/znacka-snimky/`.
 
-Pokračovat na větvi `etapa/E20` krokem 7. Po sestavení zopakovat `npm run test:e2e -- traffic-observation.spec.js --trace off --output=data-raw/e20/dalsi-pozorovani`. Při kontrole Americké použít i `npm run test:e2e -- physical-traffic.spec.js -g 'dodávka udrží' --repeat-each=3 --trace off`. Po vyřešení fronty a ověření odbočení zbývá celá sada testů, kontrola výkonu při 40 autech, protokol `docs/E20.md`, README, katalog a žádost o sloučení do `main`. Od autora nejsou potřeba další podklady.
+Ve směně MHD se nově u zhasnutého návěstidla zobrazuje „Semafor mimo provoz“. Tento poslední nález vedl k ukončení právě zahájené úplné kontroly a spuštění nové nad výsledným sestavením. Prošlo 114 testů JavaScriptu a produkční sestavení. Nyní běží 174 prohlížečových zkoušek v `data-raw/e21/znacky-final-uplna.{log,json}` s ochranou proti uspání z nečinnosti. Původní krátký běh zůstal v `znacky-uplna.log`. Po vyhodnocení úplné sady bez dalších nálezů uzavřít krok 3 a pokračovat zábradlím a uzavírkami.
 
-#### Pokračování po revizi `41dbf7d`
+Při úplné kontrole se Mac v 9:09 místního času uspal po zavření víka. WebGL 2 překročilo limit u panelu měření a u vyhlazení obrazu na dvou předvolbách. Záznam uspání se shoduje s dobou těchto zkoušek. Stejná sada pokračuje od probuzení. Po jejím skončení se přesně tyto tři zkoušky zopakují nad stejným sestavením a limity. Výsledek bude v `data-raw/e21/znacky-po-viku.{log,json}`. Ostatní selhání vyhodnotit zvlášť.
 
-U Husovy stojí směrový semafor na vjezdu a body dvou přechodů téže křižovatky až za ním. Po změně světel původně tramvaj 4 znovu zabrzdila na výjezdu. Její zadní článek zůstal stát napříč Husovou. Při samostatné zkoušce byla na vjezdu při červené skutečná mezera před čelem 0,55 m. Po vjezdu na zelenou nyní vozidlo opustí křižovatku i při změně fáze. Chodec na přechodu má dále přednost. V měření bez chodce se zadní konec tramvaje po změně světel dostal na souřadnici z = 328,89 m, dříve zůstával na 246,84 m. Husova protíná koleje kolem z = 261 m. Záznamy jsou v `data-raw/e20/husova-srovnani-{pred,po}.json`.
+Pro navazující zábradlí ověřil samostatný fyzikální pokus uzavřený tvar vytvořený ze stávajících rohů mostního úseku. Auto o hmotnosti 1 000 kg při 50 km/h vyvolalo na kamenné zídce impulz 13 808 N·s. To je pod prahem 30 000 N·s. Při 60 km/h na oceli dosáhlo 16 556 N·s a překročilo práh 12 000 N·s. Herní kód zábradlí zatím zůstává ve stavu E19. Podklady `data-raw/e21/zabradli-navazani.md` a `zabradli-tvar-pokus.json`.
 
-Při levém odbočení na Klatovskou řidič sleduje protijedoucí pruh už před krátkou spojkou. Dvě protijedoucí auta v samostatné zkoušce projela bez nárazu. Na Americké odhalila zkouška také falešnou překážku v oblouku. Když zaparkované auto stojí šikmo k odbočujícímu vozu, řidič nyní kontroluje skutečné boky karoserie. V druhém zaznamenaném případě zaparkované auto skutečně blokovalo vnitřek odbočení. Nově zůstává prostor u nároží volný. Všech 98 testů JavaScriptu a sestavení prošly.
+## Přerušení práce 19. listopadu 2026
 
-Na příčném svahu Železniční se dodávka při čekání na červenou opakovaně pokoušela popojet o několik centimetrů. Na kraji silnice přitom sjížděla do strany. Když nárazník pomalu dojede do 95 cm od čáry, řidič drží brzdu. Při rozjezdu bere řízení v úvahu i boční rychlost vozu. V samostatné zkoušce zůstala dodávka padesát sekund před čárou, pak projela na zelenou a po celou dobu zůstala na vozovce. Zkouška prošla ze středu pruhu i při počátečním vychýlení o 82,5 cm k okraji. U značky STOP se ve stejné vzdálenosti započítává doba zastavení.
+Vývoj je na žádost autora pozastavený. Poslední změny hry jsou v revizi `c031baf` na místní větvi `etapa/E21`. Na GitHubu je sloučená E20 v revizi `623e081`. Krok 3 v E21 čeká na úplnou kontrolu.
 
-Na Klatovské u Tylovy má přechod v mapě několik navazujících částí. Jednu z nich dříve řídily jiné herní hodiny a auto mohlo čekat na kolejích, zatímco do křižovatky vjížděly další vozy. Pokud na sebe dvě části přechodu přes oddělené vozovky přímo navazují, připojí se osamocené světlo ke skupině téže křižovatky. Zkouška porovnává obě části přímo na této ulici. Časy světel jsou ve hře odhadem podle E04.
+Prošlo 114 testů JavaScriptu a produkční sestavení. V přerušeném běhu `znacky-final-uplna.json` prošlo 139 ze 174 zkoušek. Tři zastavilo uspání Macu, jedna byla přerušena na žádost autora a 31 se ještě nespustilo. Při přerušení bylo zrušeno i naplánované opakování. V cloudovém prostředí spustit úplnou sadu nad toutéž verzí kódu a podle výsledku navázat. Snímky lamp a ohnuté značky i místní protokoly testů leží v ignorované složce `data-raw/e21/`.
 
-Samostatný záznam u nádraží ukazuje příčinu jedné z dlouhých front. V Barrandově před odbočkou na Koterovskou čekal sedan na úseku 1176 na protijedoucí kombi. Kombi na úseku 1177 před značkou „Dej přednost v jízdě“ číslo 15504 čekalo na sedan a trolejbus 12 z Božkova. Trolejbus čekal na sedan. Řidič sedanu držel brzdu i po 520 s. Tento případ lze ověřit samostatně na skutečných pruzích 1176 → 1178 a 1177 → 1245. V témže záznamu byly dvě po sobě jdoucí polohy mimo vozovku na Ukrajinské (úsek 214 → 217, čas 35 a 35,5 s). Záznam všech tří vozidel a jejich důvodů ke stání je v `data-raw/e20/ostruvek-pricina-hlavní nádraží.json`.
+### Navázání v cloudu
 
-#### Poslední ověření před uložením kroku 7
+Na větvi `etapa/E21` prošlo na převzatém kódu 114 testů JavaScriptu a produkční sestavení. V prohlížeči prošly první tři zkoušky E21 na WebGL 2. Při kontrole výpadku na přechodu odhalil nový test chybu. Po zničení pěšího semaforu auta na stejné křižovatce dál dostávala zelenou. Pěší i vozidlová návěstidla teď přidávají svou identitu do stejné skupiny při stavbě křižovatky. Samostatná zkouška pokrývá i sousední křižovatku a obnovení světel po ranní opravě.
 
-Prošlo 98 z 98 testů JavaScriptu, 23 z 23 testů Pythonu a produkční sestavení. Na konečné verzi prošlo 10 z 12 vybraných prohlížečových zkoušek. Dodávka zvládla obě ostrá odbočení, tramvaj uvolnila Husovu i zadním článkem a při změně světel počkala na chodce. Prošla také samostatná zkouška levého odbočení, parkování, stání na svahu a volného přechodu na Tylově. Směny linek 1, 16 a 30 dosáhly původního hodnocení 93, 99 a 100 bodů. Záznamy jsou v `data-raw/e20/kontrola-prujezdu{.json,.log,-node.log,-python.log,-build.log}`.
+Po opravě prošlo všech 115 testů JavaScriptu, produkční sestavení a rozšířená zkouška pěšího semaforu na Americké ve WebGL 2. Zbývající prohlížečové zkoušky probíhají na stejném sestavení. Výstupy jsou v `data-raw/e21/pesi-{node,build,americka,e2e}.log`.
 
-| Deset minut ve hře, poslední společná zkouška | Počet různých aut s fyzikou | Nejdelší stání | Polohy mimo vozovku pod plynem |
-| --- | ---: | ---: | ---: |
-| Klatovská | 95 | 175 s | 0 |
-| Hlavní nádraží | 89 | 61,5 s | 0 |
+Na revizi `243735c` prošlo všech sedm prohlížečových scénářů v `breakables.spec.js` (čtyři na WebGL 2 a tři na WebGPU) a všech 23 testů Pythonu. Obě desetiminutové zkoušky ranní špičky prošly. Na Klatovské se vystřídalo 120 aut, nejdelší stání bylo 68,5 s. U hlavního nádraží bylo 103 aut a nejdelší stání 60,5 s. Ani na jednom místě sledované auto nevyjelo pod plynem z vozovky. Výsledky jsou v `data-raw/e21/spicka-cloud/`.
 
-V obou případech měla hra současně nejvýše 40 fyzikálních aut. Na Klatovské byl limit čekání 120 s překročen v sadech Pětatřicátníků před úsekem 19355. V jiném rozložení provozu prošla Klatovská se 78 s, zatímco u nádraží čekal vůz na úseku 43739 celých 289 s. Další záznam na konečné verzi zachytil frontu dlouhou 213 s před semaforem 10274015039 na úseku 19523. Výsledky jednotlivých zkoušek jsou v `data-raw/e20/{kontrola-prujezdu,ostruvek-pozorovani}/*/pozorovani.json`, průběh fronty u semaforu je v `data-raw/e20/prujezd-pricina-Klatovská.json`.
+Úplná kontrola kroku 3 zůstává otevřená. V cloudu (2 procesorová jádra pro výpočet, softwarové vykreslování) dosáhly grafické testy E17 při vysoké kvalitě a ultra limitu 90 s v pohledu na Lochotín. U ultra se to zopakovalo ve dvou verzích Chromia (156 a projektová 159) a také v samostatné kopii původní E20 na revizi `623e081` s Chromiem 159. Test skončil před výsledkem počtu volání a trojúhelníků pro tento pohled. Původní limity i grafické předvolby zůstávají součástí závěrečného ověření. Záznamy jsou v `data-raw/e21/{pesi-e2e,ultra-159,e20-ultra}.log`.
 
-Druhá neúspěšná kontrola porovnává počty průjezdů jedním směrem na Klatovské. Za čtyři opakování projelo ráno 41 aut, v poledne 71, odpoledne 60, večer 55 a v sobotu ráno 23. Ranní špička má mít více průjezdů než večer i v sobotu. Časy, pravidla a meze zkoušek zůstaly podle zadání.
+### Mostní zábradlí a uzavírky
 
-Při samostatném měření na autorově Macu bylo na Klatovské současně 40 fyzikálních aut. Z 604 kroků fyziky se 95 % vešlo do 3,0 ms při rozpočtu 4 ms. Výsledek je v `data-raw/e20/vykon-prujezd.json`.
+Každý díl zábradlí má vlastní identitu uvnitř společné kolizní sítě dlaždice. Rozbití dílu otevře mezeru a uvolní pohyblivý kus. Ostatní úseky dál drží chodce i vozidla. Zábrany uzavírek se dají odtlačit, pamatují si polohu po návratu do oblasti a při ranní opravě se vrátí na původní místo. Změna očekávání ve starší zkoušce E19 odpovídá nové kolizi auta se zábradlím. Všech sto pěších náběhů zůstalo součástí testu.
 
-Pokračovat v E20 krokem 7. Nejprve na Barrandově znovu sestavit zachycené setkání sedanu, kombi a trolejbusu a ověřit, kde se jejich jízdní dráhy skutečně překrývají. Na Klatovské zachytit obsazení výjezdu během zelené, porovnat špičku s večerem a zopakovat obě desetiminutová pozorování příkazem `npm run test:e2e -- traffic-observation.spec.js --trace off`. Před uzavřením zbývá ověřit také jízdu na Ukrajinské, spustit úplnou sadu, změřit konečnou verzi, připravit protokol se snímky, README, katalog a žádost o sloučení. Od autora zatím nejsou potřeba podklady ani rozhodnutí.
+Prošlo 119 testů JavaScriptu a sestavení. Ve fyzice se ověřilo chování tří typů zábradlí, odtlačení zábrany i obnova. V prohlížeči auto na WebGL 2 i WebGPU projelo vzniklou mezerou. První zvolená trajektorie na složitém napojení křížila jinou pevnou konstrukci. Zkouška nyní vybírá úsek s volným kolmým příjezdem po vozovce. Kontroluje skutečný pohyb auta, vznik dílu, stav po návratu a opravu. Výstup je v `data-raw/e21/mosty-prujezd.log`.
 
-#### Pokračování po revizi `9868bfd`
+### Hledanost, zvuky a úlomky
 
-Při samostatném opakování v Barrandově odbočuje sedan doprava z Koterovské (19166 → 1176), kombi jede proti němu ke značce přednosti (1177 → 1245) a za sedanem přijíždí trolejbus 12 z Božkova. Při výchozí poloze kombi 13 nebo 18 m od začátku úseku původně zůstaly stát všechny tři vozy. Pokud sedan přijížděl z druhého směru nebo měl protijedoucí vůz větší odstup, všechny tři projely. Původní pokusy obsahuje `data-raw/e20/barrandova-najezd-pred.json`. Nová prohlížečová zkouška měří také skutečný odstup obou karoserií v každém kroku simulace.
+Škodu na veřejném majetku připisuje hra řidiči vozidla, které se objektu skutečně dotklo. Kov, sklo a kámen mají odlišný zvuk. Lampy, značky a zábradlí sdílejí rozpočet 40, 100 nebo 200 pohyblivých úlomků podle předvolby. Při plném rozpočtu dostanou při úklidu přednost spící díly mimo pohled.
 
-Na Klatovské samostatná zkouška potvrdila, že po průjezdu na zelenou přes směrové světlo 10274015040 řidič zastavil na 0 km/h u značky STOP 23586 uvnitř téže řízené křižovatky. Nyní si řidič spojuje značku s navazujícím světelným přechodem na témže úseku a po vjezdu na zelenou pokračuje. Na Husově ukázal záznam další příčinu ranní fronty. Odbočující řidiči si na krátkých spojkách 1423 → 1421 a 1420 → 1422 až 284 sekund dávali přednost navzájem. Před dalšími změnami je případ zaznamenán v `data-raw/e20/klatovska-oblouky.json`.
+Prošlo 120 testů JavaScriptu, produkční sestavení a všech devět prohlížečových zkoušek vybavení. Závěrečný test mostu používá samostatnou zkušební mostovku nad mapou. Hráčovo vozidlo projede vzniklou mezerou a po návratu i opravě se kontroluje stav úseku. Tato zkouška a připsání škody po sražení lampy prošly na obou vykreslovačích. Výsledky jsou v `data-raw/e21/ulomky-{node,build,e2e,final}.log`.
 
-Sedan při pravém odbočení využívá dostupnou šířku příjezdové ulice. Před stopčárou nechává místo protijedoucímu autu. Při zatáčení řidič opravuje skluz podle směru vozovky. V Barrandově sedan, kombi i trolejbus dokončily průjezd a mezi karoseriemi obou aut zůstal v každém kroku odstup. Dodávka projela oba ověřované ostré oblouky na Americkou a Železniční. Na Ukrajinské při samostatných průjezdech dojely malý vůz, sedan a dodávka přes úseky 519 → 214 → 217 bez vyjetí z vozovky (`data-raw/e20/ukrajinska-prujezd.json`).
+### Poškození vozů a garáž
 
-Na Husově řidič před levým odbočením sleduje, zda má protější vůz kam dokončit manévr. V ověřené poloze čtyř aut se obě fronty rozjely. V samostatné zkoušce s vnitřními výjezdovými pruhy a dvěma dalšími vozy již uvnitř křižovatky čtveřice po 30 s stále stála (`data-raw/e20/husova-skutecne-pruhy.mjs`, `volny-oblouk-ctyri.json`). Při pokračování porovnat tuto polohu s příjezdem od obou vstupních stopčar a ověřit, kdy může další vůz bezpečně vjet. Původní kontrola volného místa na výjezdu dále hlídá přechod a koleje. Vzdálenější přechod připouští zastavení před sebou, pokud se tam vejde celé auto.
+Fyzika zaznamená místo kontaktu na každém zúčastněném voze. Karoserie se promáčkne nejvýše o čtvrt metru a při větším poškození může přijít o kapotu, dveře nebo nárazník. Oddělené díly mají vlastní fyziku a společný rozpočet s ostatními úlomky. Poškozenému autu slábne motor, boční poškození ovlivní řízení. Garáž ukládá stav dílů a opraví ho společně se zdravím auta. Starší uložení načte s původním zdravím.
 
-V Tylově dosavadní hledání světel vynechávalo návěstidlo 10274015037 v protisměrném pruhu vyhrazeném MHD. Linky 12 a 11 pak čekaly až na výjezdu do Americké a bránily provozu na Klatovské. Hra nyní používá i pro tento vjezd skutečnou městskou stopčáru 3843. Linka 12 zastavila před čarou do jednoho metru. Po vjezdu na zelenou opustil křižovatku i zadní konec trolejbusu, přestože se mezitím světla změnila. Běžná auta nadále používají svůj jednosměrný pruh. Podklady a původní frontu zachycují `data-raw/e20/tylova-vjezd{,-po}.json` a `volny-oblouk-retez-Klatovská.json`.
+Prošlo 124 testů JavaScriptu, sestavení a pět cílených prohlížečových zkoušek. Test na obou vykreslovačích vrazil vlastním autem do samostatné zkušební stěny, ověřil pohyblivý díl, návrat chybějící části po načtení jako stále poškozené a obnovu po zaplacení v garáži. Výsledky jsou v `data-raw/e21/panely-{node,build,e2e}.log`. Kouř z motoru navazuje v kroku 7.
 
-| Deset minut ranní špičky po zapojení semaforu v Tylově | Různých aut s fyzikou | Nejdelší stání | Zaznamenané polohy mimo vozovku pod plynem |
-| --- | ---: | ---: | ---: |
-| Klatovská | 109 | 348 s | 0 |
-| Hlavní nádraží | 88 | 133,5 s | 8 |
+### Částice
 
-Obě desetiminutové zkoušky překročily mez 120 s. Na Klatovské čekal vůz před semaforem (19355 → 4). U nádraží na Železniční (20737 → 518) dostával stojící vůz požadavek na jízdu rychlostí 10,09 m/s. Mezi 326. a 330. sekundou zaznamenala zkouška na téže ulici osm poloh mimo vozovku. Jsou to vzorky v čase. Počet různých vozů, které vyjely, z této zkoušky neznáme. Oba původní záznamy jsou v `data-raw/e20/tylova-protismer-pozorovani/*/pozorovani.json`.
+Jiskry při drhnutí kovu, střepy, prach a kouř z poškozeného motoru sdílejí jednu geometrii a rozpočet podle předvolby. Efekty lze vypnout v nastavení. Na WebGPU počítá polohy a velikosti výpočetní průchod TSL. Na WebGL 2 dělá stejný výpočet procesor. Prošlo 125 testů JavaScriptu a sestavení. Prohlížečová zkouška na obou vykreslovačích přečetla polohu a velikost střepu, ověřila jeho pohyb, zmenšování a zánik. Na WebGPU četla přímo výstup výpočetního průchodu. Výsledky jsou v `data-raw/e21/castice-{node,build,e2e}.log`.
 
-Samostatné měření na autorově Macu zachytilo 604 kroků fyziky na Klatovské. Při nejvýše 40 autech s fyzikou, z toho až 22 jedoucích pod řízením hry, se 95 % kroků vešlo do 3,60 ms při rozpočtu 4 ms (`data-raw/e20/vykon-barrandova.json`).
+### Sloupky a závěrečné ověření
 
-Před uložením prošlo 99 z 99 testů JavaScriptu, 23 z 23 testů Pythonu v prostředí projektu a produkční sestavení. Na tomto sestavení prošlo i všech 12 cílených zkoušek v prohlížeči. Kromě míst popsaných výše ověřily zastavení a rozjezd dodávky na svahu, volný přechod a koleje v Tylově a hodnocení směn 1, 16 a 30 (93, 99 a 100 bodů). Ve zkoušce četnosti provozu na Klatovské projelo za čtyři opakování ráno 107 aut, v poledne 80, odpoledne 78, večer 60 a v sobotu ráno 44. Výsledky jsou v `data-raw/e20/barrandova-zaver-{node,python,build,e2e}.log` a `barrandova-zaver-e2e.json`. Dřívější běh celé sady byl spuštěn před zapojením semaforu v Tylově a po 21 úspěšných zkouškách přerušen. Úplná sada na výsledném sestavení zbývá.
+Uzavírky dostaly 302 samostatných herních sloupků. Jejich zobrazení a fyzika používají společnou polohu. Sloupek se při nárazu odlomí jako jeden díl a v určenou hodinu se obnoví. Prošlo 126 testů JavaScriptu, 23 testů Pythonu a sestavení. V první části závěrečného běhu prošlo všech sedm scénářů vybavení a garáže na WebGL 2 včetně polohy, skrytí a počtu sloupků.
 
-**Navázání v kroku 7:** Při doplňujícím pozorování byla u Husovy po 210 sekundách stání před autem zelená (semafor 3073913700, 28439 → 1423). Uložené polohy a rychlosti okolních aut jsou v `data-raw/e20/tylova-posledni-fronty-Klatovská.json`. Podle nich ověřit, co na zelenou skutečně zabírá výjezd v místě napojení na Husovu. Na Železniční projetí samotného malého auta, sedanu i dodávky vyšlo ve všech šesti pokusech. Polovina vyjížděla ze začátku úseku 20737, druhá z klidu z místa zaznamenaného stání. Všechny vozy dojely na 518 a udržely se na vozovce (`data-raw/e20/zeleznicni-20737-prujezd.json`). V dalším pozorování u nádraží bylo nejdelší stání 109 s a žádné vyjetí. Pro zachycení příčiny při opakování lze spustit `node data-raw/e20/tylova-posledni-fronty.mjs 'hlavní nádraží'` nad místním produkčním sestavením. Zaznamenává polohy okolních vozů, kontakt kol s vozovkou, směr, rychlost a požadavek řidiče.
+V testu deseti zkušebních lamp na softwarovém WebGPU se všech deset rozbilo. Maximum času do dokončení celého snímku bylo 7 508,2 ms, maximum práce procesoru 107,2 ms. Rozpočet 50 ms na počítači autora čeká na měření. Dva snímky ze stejné kamery ukazují deformaci přídě a ztrátu předního nárazníku. [Protokol E21](../E21.md).
 
-Po opravách znovu spustit obě desetiminutové zkoušky, celou sadu a měření při 40 autech. K uzavření E20 zbývá protokol se snímky, README, katalog a žádost o sloučení do `main`. Od autora teď nejsou potřeba fotografie, měření ani rozhodnutí.
+Závěrečný cílený běh zahrnuje 30 scénářů E21, rozvozů a provozu. Na něj naváže úplná sada. Záznamy jsou v `data-raw/e21/zaver-{cilene,uplna}.log`. Přijetí etapy zůstává otevřené do vyhodnocení prohlížečových zkoušek a měření na cílovém počítači.
 
-#### Pokračování po revizi `cd85f0d`
+### Opravy po závěrečné kontrole
 
-Na Americké se fronta protáhla až ke třem vozům MHD. Dva protijedoucí řidiči taxi chtěli odbočit vlevo (27738 → 56972 a 56968 → 56970). I po 490 sekundách si stále dávali přednost navzájem. Společná zkouška původní chování zopakovala. Po rozpoznání dvojice levých odbočení i před místem míjení oba taxíky projely a jejich karoserie se při žádném kroku nedotkly. Údaje jsou v `data-raw/e20/dodelani-zelena-Klatovská.json` a `americka-taxi-{pred,po}.log`.
+Odpadlý panel se umístí podle tělesa auta včetně natočení. Po průrazu zůstává na hraně mostovky samostatná kolize pro pěší postavu. Rozpočet tvorby těles zahrnuje i tuto síť. Prošlo všech 126 testů JavaScriptu a produkční sestavení. Regresní zkoušky přímo porovnaly polohu panelu u vozu otočeného o 90 stupňů a pohyb pěší postavy směrem k mezeře po návratu na dlaždici.
 
-Na Husově projely při běžném příjezdu od stopčar všechny čtyři vozy. Záznam celé ranní špičky ale znovu zachytil dvě auta s levým odbočením a dvě těsně za nimi už uvnitř křižovatky. Dodávka a pickup ve vnitřních výjezdových pruzích zůstaly stát přes osm minut. V samostatném pokusu se dvěma volnými vnějšími výjezdovými pruhy všechna čtyři auta projela, v nejtěsnějším místě je dělilo 36 cm. Příčinou a rozměry se zabývají `data-raw/e20/zaznam-rozjezdu-Klatovská.json` a `dodelani-pruhy-mezery.jsonl`.
+Na starší revizi `b14f83d` prošlo 18 z 30 závěrečných cílených případů, tři doběhly do časového limitu, jeden byl přerušen a osm se nespustilo. Běh byl ukončen po sestavení opravy. Na nové revizi prošel průjezd zkušební mezerou na obou vykreslovačích a zkouška garáže na WebGPU. Garáž na WebGL 2 poprvé vyčerpala 90 s při opětovném načítání stránky. Záznamy nové revize jsou v `data-raw/e21/revize-{node,build,e2e,garaz,uplna}.log`. Opakování a úplná sada mají v cloudu časový limit 240 s na případ. Funkční podmínky ani rozpočty jednotlivých kontrol se nemění.
 
-Při volbě pruhu se kontroluje místo za koncem oblouku. Příčný provoz před tímto místem řidič během odbočování dál sleduje. Zkoušky s oběma volbami výjezdu i obsazeným druhým pruhem prošly. Obě desetiminutové zkoušky na této dílčí verzi skončily s 72 s na Klatovské a 53,5 s u nádraží bez vyjetí. V následném běhu se u Husovy ocitlo taxi již za stopčárou před levou zatáčkou protijedoucího auta. Stálo 470 s. Při samostatném opakování nová zkouška na původním řízení zachytila předčasné překročení čáry a následné uváznutí.
+Garáž při opakování na WebGL 2 prošla včetně nového načtení a zaplacení opravy. Úplný prohlížečový běh nyní používá samostatné sestavení s oběma opravami z kontroly.
 
-Řidič před levým odbočením nyní vyčká před vstupní čarou, dokud dříve vjeté auto neuvolní společnou část obou tras. Řidič v souběžném volném pruhu může pokračovat. Zkouška rozjezdu z protějších stran prošla. Při nočním běhu původní zkoušky fronty v Tylově chyběl spoj tramvaje 4 z Univerzity. Pro tuto zkoušku je nyní zvolen pracovní den v 7.30. Znovu prošla s původním požadavkem na průjezd skutečné tramvaje přes volné koleje (`data-raw/e20/prednost-prujezd.log`).
+### Návazné ověření referenčních scén
 
-Další pozorování našlo v cestě ze sadů havarovanou dodávku. Řidič před zelenou měl obsazené levé odbočení a volnou cestu rovně po Klatovské. Přesných 128,5 s čekání je v `data-raw/e20/rezervace-prubeh-Klatovská.json`, porovnání výjezdů je v `vrak-mozne-smery.json`. Na Železniční projela všechna tři zkušební vozidla také z příjezdu 29310 přes 20737 až na 518. Při následných pozorováních bylo nejdelší stání u nádraží 53,5 s a 55,5 s, oba běhy bez vyjetí z vozovky.
+Při kontrole na softwarovém vykreslovači se dřívější časový limit přípravy pohledu na Valík vyčerpal i při pokračujícím načítání. Kontrola nyní sleduje počet kroků geometrie, dokončené přenosy i postupné překreslování ortofota. Po skutečném zastavení vypíše stav dlaždic. Odečet expozice čeká na nový vykreslený snímek a dokončení předchozího čtení pixelů. Prahy pro jas a rychlost přizpůsobení oka se zachovaly.
 
-Řidič, který stojí před čárou a má ve výjezdu havarovaný vůz, nově posoudí i další povolené směry ze svého jízdního pruhu. Přes krátké spojky sleduje, zda je na konci místo pro celé auto. Před červenou dál čeká. Pokud jsou všechny výjezdy obsazené nebo původní výjezd blokuje běžná kolona, zachová původní trasu. Zkouška v sadech používá skutečnou polohu dodávky ze záznamu a ověřuje všechny tři situace.
+Prošlo 127 testů JavaScriptu, 23 testů Pythonu a produkční sestavení. Změnu jasu při vjezdu do tunelu a výjezdu na denní světlo potvrdil WebGPU i WebGL 2. Celý případ na WebGL 2 trval na sdíleném softwarovém vykreslovači 12,6 minuty. Jedná se o délku prohlížečového testu včetně přípravy scény. Úplná sada dalších herních scén pokračuje. Otevřené zůstává měření dopadu deseti fiktivních testovacích objektů na cílovém zařízení autora.
 
-#### Výsledky po zavedení objížďky
+### Letecké snímky během celého průchodu hrou
 
-Před opravou zůstal řidič v samostatné zkoušce na původní trase 1423. Po opravě projel přes 19355 rovně po Klatovské. Při ucpání všech výjezdů zůstal před čárou. Po nahrazení vraku běžným stojícím autem ponechal původní odbočení. Ze 30 cílených prohlížečových zkoušek prošlo 29 včetně těchto tří situací, jízdy MHD v Tylově, front na Husově, celé sady fyzického provozu a porovnání počtu průjezdů ve špičce a o víkendu. Prošlo 100 ze 100 testů JavaScriptu, 23 z 23 testů Pythonu a produkční sestavení. Záznamy jsou v `data-raw/e20/objizdka-{pred,ove,node,python,build}.log`.
+Při jízdě a následném přesunu k vrtulníku na softwarovém WebGL 2 vypršelo osm sekund na načtení dostupného bloku ortofota. Rozvoz skončil, ale prohlížeč ohlásil přerušený požadavek. Pro jednotlivý snímek je nyní na přenos minuta. Jestli přenos vyprší a snímek je ještě v dohledu, hra ho vyžádá podruhé. Po druhém vypršení uvolní místo dalším snímkům. Při návratu do oblasti může přenos začít znovu. Odpověď 404 se znovu nezkouší.
 
-| Deset minut ráno | Různá auta s fyzikou | Nejvíce současně | Nejdelší stání | Polohy mimo vozovku pod plynem |
-| --- | ---: | ---: | ---: | ---: |
-| Klatovská | 137 | 40 | 130 s | 0 |
-| Hlavní nádraží | 81 | 40 | 60 s | 0 |
+Po změně prošlo 128 testů JavaScriptu a produkční sestavení. WebGL 2 dokončil chůzi, navigaci, jízdu autem, let vrtulníkem, přistání i placený rozvoz. Během celého případu prošly také původní kontroly chyb konzole, síťových odpovědí a skutečného načtení vybraného leteckého snímku. Ověření je v `data-raw/e21/ortofoto-pruchod.log`.
 
-Jedinou neúspěšnou zkouškou z této skupiny byla Klatovská. Taxi ze Smetanových sadů stálo od 266. do 396. sekundy u světla 10274015045. Při zelené mu stál v cestě vůz odbočující z jeho pruhu, autobus 41 a později vozy linky 4. Po uvolnění kolejí už svítila oranžová. Taxi vyjelo na další zelenou. Všechny čtyři pneumatiky měly kontakt se zemí. Obě samostatná sledování potvrdila tentýž průběh. Polohy jsou v `data-raw/e20/objizdka-ove/*/pozorovani.json`; stav světel a jednotlivých vozů po sekundách v `smetanovy-cary-Klatovská.json`.
+### Start hry a výměna grafických zdrojů
 
-Původní měření začínalo čekat na hustý provoz ještě před načtením okolí. Během vlastního měření bylo současně jen 37 aut, takže tento pokus nesplnil požadovanou zátěž. Nástroj teď nejdřív načte okolí a počká na 40 přirozeně přijíždějících vozů. Naměřil 605 kroků fyziky a v 95 % z nich čas do 3,8 ms při rozpočtu 4 ms. Současně mělo fyziku až 40 aut, z toho až 25 řídila hra. [Měřicí nástroj](../../tools/measure_map.mjs). Oba záznamy jsou v `data-raw/e20/objizdka-vykon{,-plna}.json`.
+Prohlížečové kontroly křížení, Rondelu a památek nyní čekají na stejný signál připravenosti jako hra. Zkouška změny kvality sleduje také dokončení výměny grafických zdrojů. Na sdíleném WebGL 2 prošly obě zkoušky památek, přepnutí grafiky, terén u Klabavy a průjezdy u D5. Opakování nad navazujícím sestavením E22 ověřilo také Rondel a úrovně v Bolevci. U kompletního herního průchodu ve stejné sérii selhal přenos snímku na starém sestavení. Po opravě `0e12604` prošel celý tento případ. Výsledky posledního jednotkového a produkčního sestavení jsou uvedené výše. Úplná prohlížečová regrese a samostatné opakování materiálových scén na softwarovém vykreslovači stále běží.
 
-Běh úplné sady zahájený na předchozím sestavení byl ukončen po 35 úspěšných zkouškách a jedné chybě. Při zkoušce rozvozu se přerušilo stažení leteckého snímku `8_11.webp`. Při samostatném zopakování na sestavení s objížďkou stejná zkouška prošla včetně kontroly načtených souborů (`data-raw/e20/objizdka-rozvoz.log`). Úplné ověření výsledného sestavení zbývá.
+### Samostatné grafické indexy terénních dlaždic
 
-**Navázání v E20, krok 7.** Příčinu fronty lze hledat před příjezdem taxi. V čase 254,33 s fyzika zaznamenala nehodu kombi při vjezdu z 28439 na 1423. V tom okamžiku jelo kombi 8,0 m/s a na jeho levé straně byl autobus 41 jedoucí rychlostí 6,3 m/s. Havarované kombi pak stálo 5,1 m od čela autobusu, který už vjel do křižovatky. Autobus měl zavřené dveře. Záznam nárazu a následného stání je v `data-raw/e20/smetanovy-nehoda-Klatovská.json` a `smetanovy-linka41-Klatovská.json`. V další zkoušce od obou vstupních čar zjistit, kdo vjel na zelenou první, a ověřit bezpečný průjezd autobusu 41 a kombi bez dotyku. Zachovat pravidla pro červenou, přednost i odklízení vraku. Potom zopakovat obě desetiminutové zkoušky, měření při 40 autech a úplnou sadu. Zbývá protokol `docs/E20.md` se snímky, záznam v README a katalogu a žádost o sloučení do `main` přes připojený GitHub. Další rozhodnutí ani podklady od autora nejsou potřeba.
+Při uvolňování dlaždic v navazujícím měření WebGPU došlo k chybě při likvidaci grafického atributu. Kontrola zjistila, že různé geometrie sdílely tentýž atribut indexů a každá jej při svém zániku uvolnila. Dlaždice nyní sdílejí pouze čísla vrcholů v paměti a každá vlastní svůj samostatně uvolnitelný atribut. Prošlo 128 testů JavaScriptu, produkční sestavení i nová prohlížečová zkouška vlastnictví atributů na WebGPU. V měření se samostatně vyskytlo také odmítnutí alokace grafického bufferu v softwarovém adaptéru. Dopad na celý měřený průjezd ještě není ověřen.
 
-#### Průjezd linky 41 po revizi `58d7544`
+### Opakování zkoušek na softwarovém vykreslovači
 
-Kombi i autobus vjely ze stejné strany na zelenou u světla 3073913700. Autobus byl v křižovatce první. Druhý vůz stejné linky stál v Husově na červenou. Na původní trase se při posunu čela o dva centimetry přes vrchol zatáčky poloha v pruhu změnila o 3,43 m. Sousední úseky nyní sdílejí bod posunutý do jízdního pruhu. V prohlížeči prošla kontrola plynulosti i přehrání rozjezdu kombi vedle odbočujícího autobusu s kontrolou mezery mezi karoseriemi v každém kroku.
+Všech šest kontrol materiálů a obě samostatné kontroly dlažby na náměstí a chybějícího ortofota prošly. Pět ze šesti cílených dopravních zkoušek prošlo po úpravě čekání na spuštění hry. Šestá zkouška se dostala až k jízdě. Dodávka zůstala stát 7,82 m od začátku cílové hrany. Při opakování s diagnostikou dojela a ve scéně zůstaly údaje o MHD z okamžiku zmrazení. Tyto výsledky samy neurčují přesnou příčinu původního zastavení.
 
-Při desetiminutovém pozorování bylo nejdelší stání 64,5 s na Klatovské (131 různých aut) a 79 s u nádraží (89 aut). Obě místa měla špičku 40 fyzikálních aut. Nebylo zaznamenáno vyjetí pod plynem. Samostatné měření při 40 autech zachytilo 604 kroků fyziky, z toho 95 % do 2,1 ms. Prošlo 100 testů JavaScriptu, 23 testů Pythonu a produkční sestavení. Záznamy jsou v `data-raw/e20/linka41-*`. Zbývá uzavřít úplnou kontrolu, protokol, přehled etap a žádost o sloučení.
+Zkouška ostrého zatáčení nyní před jízdou uvolní rezervace přechodů a seznam překážek těch účastníků, jejichž pohyb během ní nepokračuje. Semafory, geometrie, požadovaná dojezdová vzdálenost i zákaz vyjetí z vozovky zůstávají součástí zkoušky. Tři nezávislá spuštění projela obě odbočky a všech šest jízd zůstalo na vozovce. Prošlo také 128 jednotkových testů a produkční sestavení. Úplná prohlížečová sada na dřívějším sestavení dál běží. [Zadání E21](E21.md)
 
-#### Břeh u Wilsonova mostu po revizi `8a5fcf1`
+### Referenční pohledy po opravě načítání
 
-Při úplném běhu prošlo 77 kontrol. Zkouška průjezdu Wilsonovým mostem selhala na zpáteční jízdě a běh byl poté ukončen. Kontakt kola 32 cm za východním koncem mostu byl o 11,03 cm níže než suchá silnice. Hra vytvořila jeden trojúhelník se dvěma vrcholy na suchu a třetím v korytě. Nyní rozdělí přechodové trojúhelníky podél břehu a udrží původní výšku silnice. Obě jízdy přes most prošly s největší odchylkou pod 0,02 mm. Ověření obou tubusů Valíku i zkušební rampy prošlo také. Nová samostatná zkouška hlídá výšku suché silnice a zachování hloubky za břehem.
+Na WebGPU prošla zkouška všech osmi referenčních kamer. Při přípravě kolem nové kamery se sleduje postup načítání geometrie a leteckých podkladů. Během dokončování mapy osvětlení stačí vykreslit další strany oblohy. Celé město se kreslí až s hotovým světlem. V odděleném opakování prošly také čtyři scénáře MHD, pádu a lamp. Prošly jednotkové testy, všech 23 testů Pythonu a produkční sestavení.
 
-Na tomto sestavení prošlo 101 testů JavaScriptu a produkční sestavení. Z šesti cílených zkoušek v prohlížeči prošly čtyři. Nejdelší stání za deset minut bylo 70 s na Klatovské a 79 s u nádraží. V obou místech zůstala všechna sledovaná auta na vozovce. U vody v obou vykreslovačích auto šplouchlo, chvíli plavalo, hráč vyplaval a dostal se na břeh. Auto ovšem dosedlo koly na dno asi 1,3 m pod hladinou a vršek karoserie byl na konci 22 cm nad vodou. Původní požadavek na vyřazení ponořeného auta za 6–12 s se na tomto místě nesplnil. Požadavky ani místo zkoušky se dosud nezměnily. Podrobný průběh je v `data-raw/e20/breh-ponor.json`, výchozí a opravené kontakty na mostě v `most-kontakt.json` a `most-pobrezi.json`.
+Na WebGL 2 prošlo vynucení vykreslovače i automatický přechod při chybějícím WebGPU. Při minutové zkoušce dne a noci vykázal sdílený softwarový adaptér 11 snímků proti požadavku na více než 30. Tato výkonnostní kontrola je otevřená. Celková regresní sada se eviduje samostatně.
 
-Autor dostal na výběr ponechat původní jízdu jako kontrolu mělčiny a ověřit úplné potopení samostatnou jízdou do hlubší části, nebo ověřit skutečnou hloubku v původní stopě. Další úpravy vody závisejí na odpovědi. Zbývá závěrečné ověření, protokol, odkazy v katalozích a žádost o sloučení. Pracovní protokol a snímky před a po jsou připravené v `data-raw/e20/navrh-protokolu/`.
+## E22 · Převod a inventura
 
-Po opravě břehu se při 40 autech vešlo 95 % z 605 kroků fyziky do 2,0 ms při rozpočtu 4 ms (`data-raw/e20/breh-vykon.json`). Jízda na nízké kvalitě urazila 61 m a let nad centrem 250 m (`breh-trasy.json`).
+Samostatná pracovní větev začíná nad rozpracovanou E21. Oficiální archiv má otisk `825dc3e395044b1f5a47e27c812cc4189829e9134cc027865ffc8fcb3e7bb9ac`. Převod přečetl 614 záznamů, 602 ID a všech 12 315 ploch. Po sloučení totožných ploch uvnitř ID vytvořil 715 souvislých dílů. Z toho má 93 dílů totožnou geometrii jako jiný díl, jeden nemá použitelný trojúhelník a 621 čeká na prostorovou kontrolu. Každá zdrojová plocha je započtena.
 
-#### Mělčina, hlubší voda a nezávislá kontrola
+Dva úplné převody daly po bajtech shodné soubory `plochy.json`, `dily.json` a `inventura.tsv`. Výsledky jsou v `data-raw/structures/`. Na třech kontrolních bodech se převod do souřadnic hry shodl do pěti centimetrů s nezávislým výpočtem proj4js. Prošlo 128 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. Do běhu hry zatím měřené objekty nevstupují.
 
-V obou vykreslovačích sjelo malé auto u Wilsonova mostu na mělčinu. Po vystoupení hráče mělo čtyři kola na dně a střecha zůstala přibližně 22 cm nad hladinou. Když hráč odešel přes 220 m a vrátil se, rozdíl výšky auta byl 1,6 mm. Na Radbuze v nádrži České údolí při jízdě od východního břehu stejné auto nejdřív plavalo, hráč vyplaval a doplaval na břeh. Vůz zmizel až s celou střechou pod hladinou 6,67 s od prvního kontaktu s vodou. Platí původní rozmezí 6–12 s.
+### Průchodnost a výšky
 
-Kontrola modelem Astra s úrovní Medium našla tři vady. Po vystoupení na suchu teď vůz předá stejné fyzikální těleso také okolnímu provozu. Převrácený vůz při vystoupení zůstal na střeše. Zaplavený vůz mimo okruh fyziky drží polohu, dokud se k němu hráč nevrátí. Zkouška linky 41 používá jediný běžný krok pohybu MHD a pozorovatel stojí mimo vozovku. Při této kontrole projely kombi i autobus bez střetu. Prošlo 101 zkoušek JavaScriptu, 23 zkoušek Pythonu, produkční sestavení a cílené zkoušky všech tří oprav. Záznamy jsou v `data-raw/e20/uzavreni-{node,python,build,kontrola,autobus}.log`.
+Kontrola porovnává trojúhelníky městských ploch s průchozími objemy herních cest včetně sklonu a různých výškových úrovní. Zahrnuje vozovky, parkovací prostor provozu, koleje, pěší cesty a přechody, zastávky, cíle, start, garáž a výchozí okolí heliportů. Ze 715 dílů zasahuje 289 alespoň do jednoho kontrolovaného objemu. Tento průnik je podnětem k posouzení před zařazením. Porovnání výšek u mostních ploch a pilířů obsahuje 91 řádků. Zprávy jsou v `data-raw/structures/strety.tsv`, `vysky.tsv` a `kontroly.json`.
 
-#### Opakované měření špičky a závěrečný běh
+Větev převzala změny E21 včetně sloupků a protokolu z `b14f83d`. Prošlo 130 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. Dalším krokem E22 je volitelný balík herních modelů, kontrola jeho otisků a zkouška statického pilotního objektu.
 
-Na revizi `63aa4e5` prošlo všech 164 prohlížečových zkoušek bez opakování. Při desetiminutovém pozorování projelo Klatovskou 129 různých aut a kolem nádraží 89. Nejdelší stání trvalo 70 a 79 sekund. Na obou místech bylo nejvýše 40 fyzikálních aut a žádné při sledování nevyjelo pod plynem mimo silnici. V samostatném měření špičky trvalo 95 % kroků fyziky nejvýše 4,1 ms při rozpočtu 4 ms.
+### Volitelný model pilíře
 
-Při hledání volného výjezdu se opakovaně počítal tvar stejného úseku silnice. Hra si nyní pamatuje jeho geometrii. Polohu, rychlost a směr všech vozidel dál posuzuje při každém dotazu. Rozšířený test kontroluje i pohyb překážky mimo výjezd. Prošlo 101 ze 101 testů JavaScriptu a produkční sestavení. Záznamy jsou v `data-raw/e20/geometrie-{node,build}.log`.
+Třetí krok přidává měřený pilíř Wilsonova mostu. Základní soubor má 2 956 bajtů a slouží zároveň pro vzhled v dálce a kolizi Jolt. Při přiblížení se načte soubor s městskými plochami (2 272 bajtů). Při odjezdu se podrobná geometrie uvolní. Dva převody daly stejné tři soubory a distribuované soubory souhlasí s ověřeným kandidátem. Inventura po zabalení uvádí jeden začleněný díl a 620 dosud čekajících dílů.
 
-Ve třech samostatných zkouškách na Klatovské s 40 fyzikálními auty trvalo 95 % kroků nejvýše 1,8 ms, 1,9 ms a 2,2 ms. Každá zkouška pokryla 604 kroků a současně jelo až 27, 17 a 24 aut. Všechny tři splnily rozpočet 4 ms. Záznamy jsou v `data-raw/e20/geometrie-vykon-{1,2,3}.json`. Nezávislá kontrola porovnala nový a původní výpočet na 40 000 případech se shodným výsledkem.
+Prošlo 131 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. Prohlížeč na WebGL 2 ověřil střet paprsku s horní plochou pilíře, přepnutí na detail a tři způsoby spuštění původní hry: parametr `?structures=0` bez požadavků na vrstvu, odpověď 404 při načítání základu a nesoulad s otiskem silnic. Výpadek detailu a pozdní odpověď po vyložení dlaždice pokrývá také zkouška v Node. Běhy jsou v `data-raw/structures/pilot-{node,python,build,e2e}.log`.
 
-Na nízké kvalitě auto za deset sekund ujelo 61 m (práce procesoru v 95 % snímků do 1,3 ms), vrtulník uletěl 248 m (do 1,5 ms). Čerstvý snímek u Wilsonova mostu a výsledky výkonu již obsahuje pracovní protokol v `data-raw/e20/navrh-protokolu/`.
+Následuje kalibrace Wilsonova mostu. První řezy horní městskou plochou v 20, 35, 50, 65 a 80 % herního rozpětí ukázaly příčný posun osy o 0,55 až 0,59 m. Průměr výšek obou vnějších okrajů byl v těchto řezech o 0,07 až 0,11 m výš než stávající jízdní profil. Šířka vnějšího obrysu ve středním řezu dosahuje 17,67 m, na ostatních řezech 15,67 až 15,75 m. Do třetího kroku patří pouze pilotní pilíř. Rozměry ani jízdní profil mostovky se v tomto kroku neupravují.
 
-Na revizi `ad2231e` prošlo všech 164 prohlížečových zkoušek za 45,7 minuty bez vynechání či opakování. Pozorování opět zachytilo 129 různých aut na Klatovské a 89 u nádraží, nejdelší stání 70 a 79 s a žádné vyjetí pod plynem mimo silnici. Prošlo také 101 testů JavaScriptu, 23 testů Pythonu v projektovém prostředí a produkční sestavení. Výsledky jsou v `data-raw/e20/geometrie-uplna.json`, `geometrie-python-venv.log` a v [protokolu E20](../E20.md). Zbývá sloučení na GitHubu a následné zahájení E21.
+Oporu a načtení detailní geometrie ověřil také WebGPU. Všech pět cílených prohlížečových případů dokončilo zkoušku.
+
+E22 převzala opravy E21 z revize `7398106`. Následná kontrola kódu potvrdila vypořádání obou nálezů. Po sloučení prošlo všech 131 testů JavaScriptu, produkční sestavení a zkouška pilíře na WebGL 2 i WebGPU.
+
+### Kalibrace Wilsonova mostu
+
+Půdorysy z městské sady určují polohu chodníků a kamenného ohrazení včetně jejich rozšíření uprostřed. Herní jízdní plocha dál vychází ze silničního profilu. Pět příčných řezů určilo společnou výškovou opravu 0,103 m a příčný posun konstrukce přibližně 0,58 m vůči ose jízdních pruhů. V každém řezu se vzdálenost mezi vnitřními stěnami liší od 15 m o méně než 0,1 m. Výška herního ohrazení je 1,15 m. Stejné rohy používá kresba a pěší kolize. Kamera protíná pouze viditelné díly a nad ohrazením vidí přes něj.
+
+Konce městské desky a půdorys zaměřeného pilíře určují rozpětí dvou oblouků. Městský model obsahuje desku, samostatný pilíř a ohrazení. Přesná křivka spodního líce oblouků v těchto plochách chybí, proto zůstává herní aproximací. Zdroj a podmínky užití jsou v README a v obrazovce O hře.
+
+Prošlo 134 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. Dvě sestavení dat se shodují po bajtech. Na WebGL 2 prošla chůze po chodníku, zastavení pěší postavy na obou stranách mostu i průchod pod mostem mimo pilíř. Původní zkouška měřila vzdálenost k vnější stěně při pevné tloušťce 0,5 m. Na měřeném půdorysu ověřuje vzdálenost kapsle k vnitřní stěně v rozsahu 0,32 až 0,45 m. U ostatních mostů platí původní požadavek. Další prohlížečové kontroly včetně průjezdu auta a porovnání pohledu před a po se vyhodnocují v `data-raw/structures/kalibrace-final-e2e.log` a `kalibrace-snimky.log`.
+
+### Zdi a pilíře v obvodu Plzeň 1
+
+První obvod přidává 34 zdí a dva pilíře. S dřívějším pilotním pilířem obsahuje základ 37 objektů ve 12 dlaždicích a zabírá 95 276 bajtů. Z 61 nově posuzovaných dílů obvodu jich 24 zasahuje do herních tras. Jeden další pilíř má patu nad terénem a čeká na určení navazující konstrukce. Inventura zachovává důvod u každého dílu.
+
+Převod řeže plochy na hranicích dlaždic. U členitých zdí ověřuje, že zjednodušení nezaplní dvůr nebo průchod. Před zařazením kontroluje původní plochy i výsledný kolizní obal proti herním trasám. Běžící hra nadále načte také starší formát základu. Detail sdílí omezený počet souběžných přenosů s budovami a leteckými snímky.
+
+Dva převody daly stejné soubory jako distribuovaná vrstva. Prošlo 139 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. V obou vykreslovačích prošlo ověření horní plochy zdi ve fyzice s tolerancí 4 cm a načtení podrobného modelu. Snímek na nízké nastavení pochází z dokončeného snímku WebGPU. [Zeď na nábřeží v obvodu Plzeň 1](../E22/obvod-1.jpg)
+
+Po kalibraci mostu prošlo 12 ze 13 cílených prohlížečových případů včetně kamery u kamenného okraje a pěších cest v obou vykreslovačích. Společná zkouška průjezdu Wilsonovým mostem a oběma tubusy Valíku přesáhla čtyři minuty. Nyní mají oba úseky samostatné výsledky při stejných požadavcích na dojezd, stav auta i kontakt kol.
+
+Dva snímky z téže kamery zachycují změnu u středového pilíře a obou oblouků. Oba vznikly na WebGL 2 v nízkém nastavení. [Před kalibrací](../E22/most-pred.jpg) · [Po kalibraci](../E22/most-po.jpg)
+
+### Zdi a pilíře v obvodu Plzeň 2
+
+Druhá dávka přidává 62 zdí a tři pilíře. Kontrola odložila 53 dalších dílů obvodu kvůli průniku s herní trasou. Celkem je nyní ve 26 dlaždicích 102 statických objektů a základ má 357 992 bajtů. Opakované sestavení kandidáta i distribuované soubory se shodují po bajtech.
+
+Na WebGPU s nízkým nastavením prošlo načtení detailu vybrané zdi a kontrola její výšky ve fyzice do 4 cm. Prošlo 139 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. [Měřená zeď v obvodu Plzeň 2](../E22/obvod-2.jpg)
+
+### Zdi, pilíře a protihlukové stěny v obvodu Plzeň 3
+
+Třetí dávka přidává 142 zdí, osm pilířů a dvě protihlukové stěny. U 153 dalších dílů kontrola našla průnik původních ploch s herní trasou. U jednoho dílu přetrval průnik i po zpřesnění kolizního obalu. Jeden další pilíř čeká kvůli výšce paty. V datech pro ostatních sedm obvodů inventura nenašla samostatné zdi, pilíře ani protihlukové stěny k dávkovému zařazení.
+
+Ve všech třech dávkách a pilotu hra načte 254 objektů v 59 dlaždicích. Základ má 811 308 bajtů. Dva převody i distribuované soubory jsou po bajtech shodné. Z celkem 715 zdrojových dílů má 257 stav „začleněn“ včetně tří půdorysů použitých při kalibraci Wilsonova mostu. Dalších 364 čeká na ověření, 93 sdílí geometrii a jeden postrádá použitelnou plochu.
+
+Prošlo 139 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. WebGPU ověřil načtení detailu a fyzickou horní hranu na dvou zdech ve třetím obvodu. Na WebGL 2 prošly také oddělené průjezdy Wilsonovým mostem v obou směrech bez poškození a oběma tubusy Valíku. Dvě zkoušky mimoúrovňových křížení ukončil časový limit při startu hry. [Zeď u ulice v obvodu Plzeň 3](../E22/obvod-3.jpg)
+
+### Porovnání mostů a první dvě lávky
+
+Kontrola prošla všech 42 městských dílů s mostní plochou. U 35 našla pět společných příčných řezů s alespoň jednou vyvýšenou herní cestou nebo kolejí. Kde se překrývá více cest, zpráva uchovává všechny možnosti. Sedm dílů nemá pět společných řezů. Šířka se měří pouze na souvislé ploše protínající zkoumanou osu. [Porovnání mostních ploch s herními trasami](../E22/mostni-rezy.tsv)
+
+U dvou přímých lávek je přiřazení jednoznačné. U herní cesty č. 1921 má deska po úpravě šířku 3,721 m, u cesty č. 1845 má 5,296 m. Obě se podle řezů posunuly příčně přibližně o 0,12 m. Viditelná konstrukce, okraje, herní výškový dotaz a kolize používají stejnou šířku a posun. Svislé rozdíly přibližně 1,6 m a 1,0 m zůstávají k ověření na navazujících pěších přístupech. U vstupů zůstává původní výška herního profilu.
+
+Ověření 26 krajních dílů proti průchozím objemům nenašlo průnik. Opakované sestavení i distribuovaná data se shodují po bajtech. Prošlo 141 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. Na WebGPU prošel hráč po obou lávkách v obou směrech u okrajů. Na konci každé trasy stál na mostovce. Na WebGL 2 prošel také opakovaný test úrovní v Bolevci a u Wenzigovy nad sestavením třetí dávky zdí.
+
+E22 převzala ověřování referenčních pohledů z E21 (`2123df2`). Příprava pohledu zde sleduje také přenos okolních měřených objektů. Po sloučení prošlo 142 testů JavaScriptu, 25 testů Pythonu, produkční sestavení a cílené zkoušky expozice i měřeného pilíře na WebGPU. Druhá prohlížečová zkouška mimoúrovňových křížení včetně D5 také prošla nad sestavením třetí dávky zdí.
+
+### Silniční deska se souběžnou pěší trasou
+
+Na silničním úseku 1831 má konstrukce podle pěti řezů šířku 8,005 m a příčný posun 0,06 m. Převod ověřuje všechny vrcholy souběžné pěší trasy 28147 včetně její šířky. Oba konce této trasy leží uvnitř rozpětí a jejich výška se od silničního profilu liší nejvýše o 0,023 m. Herní výšky u obou napojení zůstávají původní. Rozdíl proti středu městské desky činí přibližně 1,29 m.
+
+Kontrola přijatých krajních dílů proti herním trasám i dva opakované převody prošly. U dalších tří zvažovaných silničních mostů zasáhl navržený okraj do pěší cesty. Jejich úprava čeká na posouzení skutečného konce ohrazení. Prošlo 143 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. Na WebGL 2 projelo auto po úseku 1831 v obou směrech bez poškození. Kontakty kol se od profilu odchýlily o méně než 5 cm. Samostatná zkouška Rondelu prošla nad sestavením třetí dávky zdí.
+
+### Železniční mostovky
+
+U dvou železničních konstrukcí (herní tratě 8 a 21) nyní pět městských řezů určuje proměnnou šířku a boční polohu desky. Na koncích se plynule vrací k dosavadní šířce. Poloha kolejnic, jízdní profil a jejich výška se zachovaly. Stejné části desky používají kresba, Jolt i výškové dotazy hry. Pata nebo profil přístupu by vyžadovaly další ověření, než by šlo převzít městské výšky.
+
+Převod nyní kontroluje výsledné okraje po oříznutí sousedními mostovkami. Trať 6 zůstala v původní podobě, protože by nový okraj zasáhl do pěší cesty i do prostoru kolejí. Důvod je také v inventuře. Dvě sestavení a distribuovaná data se shodují po bajtech. Základ vrstvy má dál 811 308 bajtů.
+
+Prošlo 145 testů JavaScriptu, 25 testů Pythonu i produkční sestavení. Na WebGPU se u obou mostů a na obou okrajích ověřila poloha viditelného vrcholu do 1 cm. Fyzická opora i výškový dotaz uvnitř okraje odpovídaly hernímu profilu do 9 cm. Další práci v E22 tvoří posouzení dosud nezařazených samostatných zábradlí, vodních a ostatních objektů, přístupů k mostům a závěrečný protokol.
+
+### Jezy, nádrže a ostatní objekty
+
+U všech dvanácti samostatných dílů v těchto třech třídách převod porovnal střed a jedinečné vrcholy s vodními polygony hry i půdorysy budov. Výšku každého vrcholu porovnal s terénem pod ním, na němž hra vykresluje hladinu. Čtyři díly jezů se shodují s polohou dosavadních zvuků vody do 12 metrů. Jejich geometrie i výsledné obaly prošly kontrolou herních tras. Základní balík nyní obsahuje 258 statických objektů a má 811 932 bajtů. [Posouzení dvanácti městských dílů](../E22/vodni-objekty.tsv)
+
+Dva z osmi dalších dílů jsou pro tento model terénu nevhodné. Jedna nádrž leží pod povrchem a v půdorysu budovy, jiný díl vystupuje nanejvýš o dva centimetry. Šest dílů čeká na vyjasnění překryvu s trasou nebo podoby břehu. Ve hře se nezobrazují.
+
+Dva samostatné převody se shodují po bajtech s distribuovanými daty. Prošlo 146 testů JavaScriptu, 25 testů Pythonu a produkční sestavení. Na WebGPU při nízké kvalitě se všechna čtyři tělesa načetla v podrobných dlaždicích. U každého test ověřil polohu ve vodním polygonu a vrcholy nad hladinou i pod ní.
+
+E22 převzala opravu načítání ortofota a čekání na sestavení herních scén z E21 (`cf543a2`). Po sloučení prošlo 147 testů JavaScriptu, 25 testů Pythonu i produkční sestavení. Na WebGPU se pozdě načtené ortofoto promítlo do hotové dlaždice a čtyři měřené díly jezů se vykreslily u hladiny.
+
+### Samostatná zábradlí
+
+Kromě dvou městských obrysů převzatých pro Wilsonův most zbývalo prověřit 77 modelů zábradlí. U 15 vedla měřenými plochami průchozí trasa. U dalších 50 leží spodní část v blízkosti jednoho nebo více dílců stávajícího herního ohrazení. U zbývajících 12 nemá alespoň jeden vzorek spodní části oporu do půl metru od herního terénu ani mostovky. Žádný z těchto modelů proto nepřidává samostatnou překážku. Při dalších úpravách příslušné mostovky lze rozhodnutí přezkoumat podle jednotlivých dílů. [Porovnání všech 77 dílů](../E22/samostatna-zabradli.tsv)
+
+Převod doplňuje každý důvod také do inventury a dává po bajtech stejné herní soubory jako ověřený balík s jezy. Prošlo 148 testů JavaScriptu, 25 testů Pythonu i produkční sestavení. Rozlišení opory, trasy a již přítomného ohrazení má jednotkový test s fiktivním modelem.
+
+### Návaznost výšek u dalších pěti mostovek
+
+Deset konců má poblíž vrchol navazující herní cesty téhož dopravního druhu. U dvou lávek a silničního mostu se nejbližší výška liší nejvýše o 1 cm. U železnice je odchylka nejvýše 9 cm. Šest městských řezů čtvrt metru od konce leží o 0,615 až 1,582 m nad průchozím profilem. U čtyř konců chybí souvislý městský řez v ose. Původní výšky tak zachovávají návaznost v místech, kde by plošný posun desky vytvořil schod. [Všech deset kontrol](../E22/pristupy-mostu.tsv)
+
+Kontrola načítání kolejí navíc odhalila záměnu pořadových čísel dráhy a silniční lávky. Na současných datech se tato čísla neshodovala. Zkouška s fiktivními čísly nyní ověřuje, že železniční model při každém pořadí načte vlastní body a výšky. Prošlo 150 testů JavaScriptu, 25 testů Pythonu, produkční sestavení i zkouška obou železničních mostovek na WebGPU. Převod vyrobil přesně stejnou herní geometrii jako publikovaný balík.
+
+Při měření se projevila chyba vlastnictví společných indexů terénních dlaždic. E22 převzala opravu z E21 (`81395df`). Po sloučení prošlo 150 testů JavaScriptu, 25 testů Pythonu, produkční sestavení a dvě zkoušky WebGPU na sdílená čísla vrcholů a na detail jezů. Na WebGL 2 prošel na sestavení s opravou řazení drah také start hry při chybějícím `core.bin`.
+
+### Uzavření E22
+
+Protokol vychází z herního kódu `d7290c3`. Obsahuje všech 715 inventurních řádků, srovnávací snímky a porovnání stejné kamery s vrstvou i bez ní. U Wilsonova mostu přibylo 8,3 % volání vykreslovače a 2,7 % trojúhelníků. Na náměstí ve dne přibylo 6,9 % volání a 4,4 % trojúhelníků. Úplná dvojice snímkových časů jízdy a letu na softwarovém adaptéru chybí. Podrobnosti a omezení jsou v protokolu. Kontrola autorových fotografií a výkonu na jeho zařízení zůstává otevřená. Další vývoj pokračuje krokem G11 v E23.

@@ -1,9 +1,13 @@
+import { snowColor } from './weather-surfaces.js';
+import { roomAtlas, roomView } from './window-interiors.js';
+import { facadeDetail } from './facade-detail.js';
 import {
   Fn, If, attribute, float, mix, positionWorld, select, smoothstep, step, struct, vec2, vec3, vec4,
   vertexColor,
 } from 'three/tsl';
 import { hash21, valueNoise } from './material-noise.js';
 import { SURFACE } from './material-table.js';
+import { pageLook, WALL_SATURATION, wallLift } from './daylight.js';
 
 function softRange(value, min, max, width) {
   return smoothstep(float(min).sub(width), float(min).add(width), value)
@@ -12,10 +16,18 @@ function softRange(value, min, max, width) {
 
 const windowData = attribute('aWin', 'vec3');
 const surfaceProperties = attribute('aSurface', 'vec2');
-const wallColor = vertexColor().rgb;
+const LOOK = pageLook();
+// Nový vzhled: omítky jsou o něco světlejší a sytější, tmavé barvy se zvednou víc než světlé.
+// Se silnějším sluncem a slabším světlem oblohy by jinak stěny ve stínu zčernaly.
+const wallColor = LOOK === 'novy' ? Fn(() => {
+  const c = vertexColor().rgb.toVar();
+  const lift = wallLift(c.dot(vec3(0.2126, 0.7152, 0.0722)));
+  const gray = vec3(c.dot(vec3(0.2126, 0.7152, 0.0722)));
+  return mix(gray, c, WALL_SATURATION).mul(lift).clamp(0, 0.9);
+})() : vertexColor().rgb;
 const buildingSurface = struct({ color: 'vec3', illumination: 'float', glass: 'float' });
 
-function facade(color, illumination, glazing, cell, code, style, width, night, heritage) {
+function facade(color, illumination, glazing, cell, code, style, width, night, schedule, heritage, rooms, camera, sky) {
   const uv = cell.fract().toVar(), id = cell.floor().toVar();
   const detail = smoothstep(0.25, 0.8, width.x.max(width.y)).oneMinus().toVar();
   const ground = step(id.y, 0.5).toVar();
@@ -122,11 +134,22 @@ function facade(color, illumination, glazing, cell, code, style, width, night, h
     glass.assign(mix(glass, wall.mul(0.6), bars.mul(detail)));
   });
 
-  const lit = step(night.mul(0.5).oneMinus(), h2).mul(night).max(shop.mul(step(0.35, h1), night))
+  const previousLit = step(night.mul(0.5).oneMinus(), h2).mul(night).max(shop.mul(step(0.35, h1), night))
     .mul(mix(1, 0.2, step(4.5, style).mul(step(style, 5.5))), door.oneMinus()).toVar();
+  const offices = style.greaterThan(3.5).and(style.lessThan(5.5));
+  const chance = mix(offices.select(schedule.y, schedule.x), schedule.z, shop);
+  const active = smoothstep(h2.sub(0.035), h2.add(0.035), chance).mul(step(0.001, chance));
+  const lit = mix(previousLit, active.mul(night.mul(0.80).add(0.20), door.oneMinus()), schedule.w);
   const litColor = mix(vec3(1, 0.78, 0.44), vec3(0.70, 0.82, 1), step(0.86, h1))
     .mul(h1.mul(0.38).add(0.62), glassHeight.mul(0.2).add(0.8));
   glass.assign(mix(glass, litColor, lit));
+  if (rooms) {
+    const near = smoothstep(35, 88, camera.sub(positionWorld).length()).oneMinus().mul(detail);
+    If(near.greaterThan(0.001).and(window.greaterThan(0.01)), () => {
+      const opening = uv.sub(rect.xz).div(vec2(rect.y.sub(rect.x),yTop.sub(rect.z)).max(0.001)).saturate();
+      glass.assign(mix(glass, roomView(rooms, opening, style, shop, h1, h2, night, lit, camera, sky), near));
+    });
+  }
   const crossX = smoothstep(0.008, width.x.add(0.012), uv.x.sub(rect.x.add(rect.y).mul(0.5)).abs()).oneMinus();
   const crossY = smoothstep(0.008, width.y.add(0.012), uv.y.sub(mix(rect.z, yTop, 0.68)).abs()).oneMinus();
   const bars = crossX.mul(vertical).max(crossY.mul(horizontal)).mul(detail).toVar();
@@ -177,7 +200,8 @@ function addSurfaceDetail(color, facadePoint, cell, code) {
   });
 }
 
-export function buildingNodes(night, textures, heritage) {
+export function buildingNodes(night, schedule, camera, sky, textures, heritage, street = false) {
+  const rooms = textures ? roomAtlas() : null;
   const surface = Fn(() => {
     const cell = windowData.xy.toVar();
     const code = windowData.z.add(0.5).floor().toVar();
@@ -186,14 +210,50 @@ export function buildingNodes(night, textures, heritage) {
     const color = wallColor.toVar();
     const illumination = float(0).toVar();
     const glazing = float(0).toVar();
-    If(code.greaterThan(0).and(style.greaterThan(0.5)), () => {
-      facade(color, illumination, glazing, cell, code, style, width, night, heritage);
+    const front = street ? attribute('aStreet', 'vec4') : null;
+    const isFront = front && front.z.greaterThan(0).and(front.y.lessThan(front.w.min(3.5)));
+    const regular = code.greaterThan(0).and(style.greaterThan(0.5));
+    If(isFront ? regular.and(isFront.not()) : regular, () => {
+      facade(color, illumination, glazing, cell, code, style, width, night, schedule, heritage, rooms, camera, sky);
+    });
+    if (isFront) If(isFront, () => {
+      // Členění přízemí je vlastní neutrální kresba, rozměry stěny pocházejí z měření.
+      const height = front.w.min(3.5);
+      const bays = front.z.div(3).round().max(1);
+      const edge = front.x.div(front.z).mul(bays).fract().sub(.5).abs();
+      const glass = edge.lessThan(.40).and(front.y.greaterThan(.48), front.y.lessThan(height.sub(.48)),
+        front.z.greaterThan(1.8));
+      // V novém vzhledu fasády skoro neodrážejí oblohu z mapy prostředí; výloha proto
+      // dostane slabý odlesk barvy obzoru přímo zde (za soumraku oranžový).
+      const shopGlass = LOOK === 'novy' ? mix(vec3(.10,.16,.18), sky, .22) : vec3(.10,.16,.18);
+      color.assign(mix(color, shopGlass, glass.select(.85,0)));
+      glazing.assign(glass.select(.9,0));
+      illumination.assign(glass.select(night.mul(.19),0));
+      If(front.y.lessThan(.38), () => {
+        color.mulAssign(.68);
+      });
+      const entrance = attribute('aEntrance', 'float');
+      const offset = front.x.sub(entrance);
+      If(entrance.greaterThan(0).and(offset.abs().lessThan(.55), front.y.lessThan(2.25)), () => {
+        const pane = offset.abs().lessThan(.43).and(front.y.greaterThan(.22), front.y.lessThan(2.13));
+        color.assign(mix(vec3(.12,.11,.10),vec3(.09,.19,.22),pane));
+        glazing.assign(pane.select(.87,0));
+        illumination.assign(pane.select(night.mul(.14),0));
+        if (textures) If(offset.sub(.34).abs().lessThan(.024).and(front.y.sub(1.08).abs().lessThan(.15)), () => {
+          color.assign(vec3(.48,.50,.51));
+          glazing.assign(0);
+        });
+      });
+      If(front.y.sub(height.sub(.25)).abs().lessThan(.065), () => {
+        color.mulAssign(1.18);
+      });
     });
     if (textures) addSurfaceDetail(color, positionWorld, cell, code);
     return buildingSurface(color, illumination, glazing);
   })().toVar();
 
-  const colorNode = vec4(surface.get('color'), 1);
+  const close = textures ? facadeDetail(windowData.z.add(0.5).floor(), windowData.xy, camera, heritage, surface.get('glass')) : null;
+  const colorNode = vec4(snowColor(close ? surface.get('color').mul(close.gain) : surface.get('color'), surface.get('glass').oneMinus()), 1);
   const emissiveNode = Fn(() => {
     const emission = vec3(1, 0.78, 0.42).mul(surface.get('illumination'), 0.90).toVar();
     if (heritage) {
@@ -216,7 +276,8 @@ export function buildingNodes(night, textures, heritage) {
         select(code.equal(-4), SURFACE.timber.roughness,
           select(code.equal(-5), SURFACE.glass.roughness, SURFACE.plaster.roughness))));
   }
+  if (close) roughness = roughness.add(close.rough.sub(.84)).clamp(.12,.99);
   const roughnessNode = mix(roughness, SURFACE.glass.roughness, surface.get('glass'));
   const metalnessNode = heritage ? null : surfaceProperties.y.mul(surface.get('glass').oneMinus());
-  return { colorNode, emissiveNode, roughnessNode, metalnessNode };
+  return { colorNode, emissiveNode, roughnessNode, metalnessNode, ...(close && {normalNode:close.normal}) };
 }

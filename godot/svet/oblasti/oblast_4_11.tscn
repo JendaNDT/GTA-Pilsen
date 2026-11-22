@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_svkj8"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_jvopu"]
+
+[node name="Oblast_4_11" type="Node3D" unique_id=1456359804]
+script = ExtResource("1_svkj8")
+bunka = Vector2i(4, 11)
+stred = Vector2(-4352, 768)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1017350040]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1703017640]
+
+[node name="Terezie_Brzkové_57181-1" type="Node3D" parent="Zastavky" unique_id=562870622]
+transform = Transform3D(0.15121402, 0, -0.9885011, 0, 1, 0, 0.9885011, 0, 0.15121402, 431.6, 28.25, -439.8)
+script = ExtResource("2_jvopu")
+id = "57181/1"
+nazev = "Terezie Brzkové"
+poradi = 54
+gen_pozice = Vector3(431.6, 28.25, -439.8)
+gen_natoceni = -1.419
+gen_nazev = "Terezie Brzkové"
+
+[node name="Terezie_Brzkové_57181-2" type="Node3D" parent="Zastavky" unique_id=265707976]
+transform = Transform3D(-0.13974476, 0, 0.9901876, 0, 1, 0, -0.9901876, 0, -0.13974476, 466.2, 27.7, -436.4)
+script = ExtResource("2_jvopu")
+id = "57181/2"
+nazev = "Terezie Brzkové"
+poradi = 57
+gen_pozice = Vector3(466.2, 27.7, -436.4)
+gen_natoceni = 1.711
+gen_nazev = "Terezie Brzkové"

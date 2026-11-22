@@ -4,8 +4,9 @@ import { pathToFileURL } from 'node:url';
 const root = pathToFileURL(process.cwd() + '/');
 globalThis.matchMedia = () => ({ matches: false });
 globalThis.window = {};
-globalThis.location = { search: '' };
 const baseline = process.argv.includes('--baseline');
+// Výchozí stav auditu jsou původní data bez oprav, tedy i bez vyhlazeného profilu silnic.
+globalThis.location = { search: baseline ? '?silnice=puvodni' : '' };
 const { assetFingerprint, parsePack } = await import(new URL('src/data.js', root));
 const { World, SURF } = await import(new URL('src/world/world.js', root));
 const { RC, RF } = await import(new URL('src/config.js', root));

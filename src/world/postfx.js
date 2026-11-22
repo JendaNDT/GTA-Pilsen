@@ -1,5 +1,9 @@
 import * as THREE from 'three/webgpu';
-import { convertToTexture, materialReference, mix, mrt, normalView, output, pass, renderOutput, texture3D, vec4, velocity } from 'three/tsl';
+import { Fn, If, float, uniform, int, smoothstep, convertToTexture, materialReference, mix, mrt, normalView, output, pass, renderOutput, texture3D, vec3, vec4, velocity } from 'three/tsl';
+import { godrays } from 'three/addons/tsl/display/GodraysNode.js';
+import { dof } from 'three/addons/tsl/display/DepthOfFieldNode.js';
+import { motionBlur } from 'three/addons/tsl/display/MotionBlur.js';
+import { ssr } from 'three/addons/tsl/display/SSRNode.js';
 import { fxaa } from 'three/addons/tsl/display/FXAANode.js';
 import { ao } from 'three/addons/tsl/display/GTAONode.js';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
@@ -12,11 +16,13 @@ import { blendLutData, loadColorLuts, lutTexture } from './color-luts.js';
 import { makeAirPerspective } from './air-perspective.js';
 import { EyeAdaptation } from './exposure.js';
 
-function buffers() {
+function buffers(waterReflections) {
   // Průhledné lampy a značky se přimíchají pouze do barvy. Normála a pohyb
   // mají odpovídat ploše, která zapsala do hloubky.
   const alpha = materialReference('depthWrite', 'bool').select(1, 0);
-  const targets = mrt({ output, normal: vec4(normalView.mul(alpha), alpha), velocity: vec4(velocity.mul(alpha), 0, alpha) });
+  const water = waterReflections ? Fn(builder => builder.material.waterField
+    ? smoothstep(0.35, 0.65, materialReference('map', 'texture').a).oneMinus() : float(0))() : 0;
+  const targets = mrt({ output, normal: vec4(normalView.mul(alpha), alpha), velocity: vec4(velocity.mul(alpha), water, alpha) });
   const retainSurface = new THREE.BlendMode(THREE.NormalBlending);
   targets.setBlendMode('normal', retainSurface);
   targets.setBlendMode('velocity', retainSurface);
@@ -24,10 +30,14 @@ function buffers() {
 }
 
 export class PostFX {
-  constructor(renderer, scene, camera, world, independentBlending) {
+  constructor(renderer, scene, camera, world, independentBlending, environment) {
     this.renderer = renderer;
     this.camera = camera;
     this.renderNumber = 0;
+    this.motion = uniform(false, 'bool');
+    this.photoFocus = uniform(32);
+    this.environment = environment;
+    this.scene = scene;
     this.scenePass = pass(scene, camera, { samples: 0 });
     this.scenePass.name = 'Obraz hry';
     this.oncePerDraw(this.scenePass);
@@ -51,7 +61,8 @@ export class PostFX {
 
     let image = this.color;
     if (QUALITY.shadowCascades >= 3 && independentBlending) {
-      this.scenePass.setMRT(buffers());
+      const reflectWater = QUALITY.name === 'ultra' && PARAMS.get('ssr') !== '0';
+      this.scenePass.setMRT(buffers(reflectWater));
       this.normal = this.scenePass.getTextureNode('normal');
       this.velocity = this.scenePass.getTextureNode('velocity');
       let lit = this.color;
@@ -67,6 +78,17 @@ export class PostFX {
         lit = vec4(this.color.rgb.mul(indirect), this.color.a);
         this.effects.push(occlusion);
       }
+      if (reflectWater) {
+        const mask = this.velocity.b;
+        const reflection = ssr(this.color, this.depth, this.normal, {camera, metalnessNode: mask});
+        reflection.resolutionScale = 0.5;
+        reflection.maxDistance.value = 85;
+        reflection.thickness.value = 0.8;
+        reflection.intensity.value = 0.55;
+        this.waterReflection = reflection;
+        this.effects.push(reflection);
+        lit = vec4(lit.rgb.add(reflection.rgb.mul(mask)), lit.a);
+      }
       if (this.air) lit = this.air.color(lit, this.depth);
       if (lit !== this.color) {
         lit = convertToTexture(lit);
@@ -74,7 +96,14 @@ export class PostFX {
       }
       this.temporal = traa(lit, this.depth, this.velocity, camera);
       this.effects.push(this.temporal);
-      image = this.temporal.getTextureNode();
+      const resolved = this.temporal.getTextureNode();
+      image = Fn(() => {
+        const color = resolved.toVar();
+        If(this.motion, () => {
+          color.assign(motionBlur(resolved, this.velocity.xy.mul(.55), int(7)));
+        });
+        return color;
+      })();
     } else if (this.air) {
       image = this.air.color(image, this.depth);
     }
@@ -86,6 +115,17 @@ export class PostFX {
       image = vec4(image.rgb.add(this.glow.rgb), image.a);
     }
 
+    if (QUALITY.name === 'ultra' && environment?.csm && PARAMS.get('rays') !== '0') {
+      this.rayLight = new THREE.DirectionalLight();
+      const rays = godrays(this.depth, camera, this.rayLight);
+      rays.raymarchSteps.value = 20;
+      rays.resolutionScale = .25;
+      rays.density.value = .025;
+      rays.maxDensity.value = .28;
+      this.effects.push(rays);
+      this.rays = rays;
+      image = vec4(image.rgb.add(vec3(.55,.38,.19).mul(rays.r, env.night.oneMinus())), image.a);
+    }
     const toneMapping = PARAMS.get('tone') === 'agx' ? THREE.AgXToneMapping : THREE.ACESFilmicToneMapping;
     this.toned = renderOutput(image, toneMapping, THREE.LinearSRGBColorSpace);
     for (const effect of this.effects) this.oncePerDraw(effect);
@@ -134,8 +174,37 @@ export class PostFX {
         console.warn('Barevné ladění se nepodařilo načíst.', error);
       }
     }
+    this.displayColor = color;
     this.setupDisplay(color);
     await this.scenePass.compileAsync(this.renderer);
+    if (this.rayLight) {
+      // Mapa stínu vzniká při prvním osvětlení scény. Paprsky sdílejí nejvzdálenější kaskádu.
+      this.renderer.render(this.scene, this.camera);
+      const cascade = this.environment.csm.lights.at(-1);
+      if (cascade) {
+        this.rayLight.shadow = cascade.shadow;
+        this.rayLight.matrixWorld = cascade.matrixWorld;
+      }
+    }
+  }
+
+  setPhoto(active) {
+    if (!active) {
+      this.photoPipeline?.dispose();
+      this.photoDOF?.dispose();
+      this.photoInput?.dispose();
+      this.photoPipeline = this.photoDOF = this.photoInput = null;
+      this.resetHistory();
+      return;
+    }
+    if (this.photoPipeline) return;
+    this.photoInput = convertToTexture(this.displayColor);
+    this.photoDOF = dof(this.photoInput, this.scenePass.getViewZNode(), this.photoFocus, .07, 3);
+    this.photoPipeline = new THREE.RenderPipeline(this.renderer);
+    this.photoPipeline.outputColorTransform = false;
+    this.photoPipeline.outputNode = renderOutput(this.photoDOF, THREE.NoToneMapping, THREE.SRGBColorSpace);
+    this.oncePerDraw(this.photoInput);
+    this.oncePerDraw(this.photoDOF);
   }
 
   resetHistory() {
@@ -162,11 +231,12 @@ export class PostFX {
       this.hasPreviousCamera = true;
     }
     this.renderNumber++;
-    this.pipeline.render();
+    (this.photoPipeline ?? this.pipeline).render();
     this.exposure?.sample();
   }
 
   dispose() {
+    this.setPhoto(false);
     this.pipeline.dispose();
     this.exposure?.dispose();
     for (const effect of this.effects) effect.dispose();
@@ -176,11 +246,11 @@ export class PostFX {
   }
 }
 
-export function createPostFX(renderer, scene, camera, world) {
+export function createPostFX(renderer, scene, camera, world, environment) {
   if (PARAMS.get('postfx') === '0') return null;
   const webgpu = renderer.backend.isWebGPUBackend;
   const gl = webgpu ? null : renderer.backend.getContext();
   if (gl && !gl.getExtension('EXT_color_buffer_float')) return null;
   const independentBlending = webgpu ? !renderer.backend.compatibilityMode : Boolean(gl.getExtension('OES_draw_buffers_indexed'));
-  return new PostFX(renderer, scene, camera, world, independentBlending);
+  return new PostFX(renderer, scene, camera, world, independentBlending, environment);
 }

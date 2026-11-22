@@ -1,0 +1,133 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_svgjq"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_66lqk"]
+
+[node name="Oblast_11_12" type="Node3D" unique_id=937651726]
+script = ExtResource("1_svgjq")
+bunka = Vector2i(11, 12)
+stred = Vector2(2816, 1792)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1502868614]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=743128061]
+
+[node name="Světovar_57161-1" type="Node3D" parent="Zastavky" unique_id=803009467]
+transform = Transform3D(0.7616116, 0, 0.6480338, 0, 1, 0, -0.6480338, 0, 0.7616116, -290.8, 27.85, 420.1)
+script = ExtResource("2_66lqk")
+id = "57161/1"
+nazev = "Světovar"
+poradi = 38
+gen_pozice = Vector3(-290.8, 27.85, 420.1)
+gen_natoceni = 0.705
+gen_nazev = "Světovar"
+
+[node name="Světovar_57161-2" type="Node3D" parent="Zastavky" unique_id=1189395591]
+transform = Transform3D(-0.50657153, 0, 0.86219794, 0, 1, 0, -0.86219794, 0, -0.50657153, -334.1, 27.95, 426.9)
+script = ExtResource("2_66lqk")
+id = "57161/2"
+nazev = "Světovar"
+poradi = 72
+gen_pozice = Vector3(-334.1, 27.95, 426.9)
+gen_natoceni = 2.102
+gen_nazev = "Světovar"
+
+[node name="Světovar_57161-4" type="Node3D" parent="Zastavky" unique_id=1605260030]
+transform = Transform3D(0.50794405, 0, -0.86139005, 0, 1, 0, 0.86139005, 0, 0.50794405, -404.6, 29.18, 394.6)
+script = ExtResource("2_66lqk")
+id = "57161/4"
+nazev = "Světovar"
+poradi = 528
+gen_pozice = Vector3(-404.6, 29.18, 394.6)
+gen_natoceni = -1.038
+gen_nazev = "Světovar"
+
+[node name="U_Světovaru_57162-2" type="Node3D" parent="Zastavky" unique_id=2008786330]
+transform = Transform3D(0.50794405, 0, -0.86139005, 0, 1, 0, 0.86139005, 0, 0.50794405, -419.1, 29.15, 390.4)
+script = ExtResource("2_66lqk")
+id = "57162/2"
+nazev = "U Světovaru"
+poradi = 540
+gen_pozice = Vector3(-419.1, 29.15, 390.4)
+gen_natoceni = -1.038
+gen_nazev = "U Světovaru"
+
+[node name="Světovar_57161-3" type="Node3D" parent="Zastavky" unique_id=430935525]
+transform = Transform3D(-0.8899355, 0, -0.45608646, 0, 1, 0, 0.45608646, 0, -0.8899355, -231, 27.29, 440.4)
+script = ExtResource("2_66lqk")
+id = "57161/3"
+nazev = "Světovar"
+poradi = 623
+gen_pozice = Vector3(-231, 27.29, 440.4)
+gen_natoceni = -2.668
+gen_nazev = "Světovar"
+
+[node name="Božkov_26937-1" type="Node3D" parent="Zastavky" unique_id=28331119]
+transform = Transform3D(0.94668853, 0, 0.32215032, 0, 1, 0, -0.32215032, 0, 0.94668853, 326.1, 1.55, 22.1)
+script = ExtResource("2_66lqk")
+id = "26937/1"
+nazev = "Božkov"
+poradi = 668
+gen_pozice = Vector3(326.1, 1.55, 22.1)
+gen_natoceni = 0.328
+gen_nazev = "Božkov"
+
+[node name="Na_Spojce_53079-1" type="Node3D" parent="Zastavky" unique_id=1878856880]
+transform = Transform3D(0.2723133, 0, 0.9622086, 0, 1, 0, -0.9622086, 0, 0.2723133, -135.2, 15.53, -183.7)
+script = ExtResource("2_66lqk")
+id = "53079/1"
+nazev = "Na Spojce"
+poradi = 669
+gen_pozice = Vector3(-135.2, 15.53, -183.7)
+gen_natoceni = 1.295
+gen_nazev = "Na Spojce"
+
+[node name="Petřínská_26956-1" type="Node3D" parent="Zastavky" unique_id=227757409]
+transform = Transform3D(0.38184923, 0, 0.9242246, 0, 1, 0, -0.9242246, 0, 0.38184923, -472.4, 20.09, -220.6)
+script = ExtResource("2_66lqk")
+id = "26956/1"
+nazev = "Petřínská"
+poradi = 670
+gen_pozice = Vector3(-472.4, 20.09, -220.6)
+gen_natoceni = 1.179
+gen_nazev = "Petřínská"
+
+[node name="Petřínská_26956-2" type="Node3D" parent="Zastavky" unique_id=732202322]
+transform = Transform3D(0.36980236, 0, 0.92911047, 0, 1, 0, -0.92911047, 0, 0.36980236, -502, 20.05, -230.4)
+script = ExtResource("2_66lqk")
+id = "26956/2"
+nazev = "Petřínská"
+poradi = 688
+gen_pozice = Vector3(-502, 20.05, -230.4)
+gen_natoceni = 1.192
+gen_nazev = "Petřínská"
+
+[node name="Na_Spojce_53079-2" type="Node3D" parent="Zastavky" unique_id=1983318885]
+transform = Transform3D(0.2723133, 0, 0.9622086, 0, 1, 0, -0.9622086, 0, 0.2723133, -182.7, 16.05, -189.2)
+script = ExtResource("2_66lqk")
+id = "53079/2"
+nazev = "Na Spojce"
+poradi = 689
+gen_pozice = Vector3(-182.7, 16.05, -189.2)
+gen_natoceni = 1.295
+gen_nazev = "Na Spojce"
+
+[node name="Božkov_26937-2" type="Node3D" parent="Zastavky" unique_id=372225119]
+transform = Transform3D(-0.5031187, 0, -0.8642173, 0, 1, 0, 0.8642173, 0, -0.5031187, 303, 1.45, 55.6)
+script = ExtResource("2_66lqk")
+id = "26937/2"
+nazev = "Božkov"
+poradi = 690
+gen_pozice = Vector3(303, 1.45, 55.6)
+gen_natoceni = -2.098
+gen_nazev = "Božkov"
+
+[node name="Božkov_26937-3" type="Node3D" parent="Zastavky" unique_id=1084684637]
+transform = Transform3D(0.94668853, 0, 0.32215032, 0, 1, 0, -0.32215032, 0, 0.94668853, 325.4, 1.55, 23.4)
+script = ExtResource("2_66lqk")
+id = "26937/3"
+nazev = "Božkov"
+poradi = 696
+gen_pozice = Vector3(325.4, 1.55, 23.4)
+gen_natoceni = 0.328
+gen_nazev = "Božkov"

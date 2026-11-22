@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://skripty/svet/oblast.gd" id="1_r432t"]
+[ext_resource type="Script" path="res://skripty/svet/zastavka.gd" id="2_60eqo"]
+
+[node name="Oblast_3_17" type="Node3D" unique_id=274723876]
+script = ExtResource("1_r432t")
+bunka = Vector2i(3, 17)
+stred = Vector2(-5376, 6912)
+
+[node name="Upravy" type="Node3D" parent="." unique_id=1055790379]
+
+[node name="Zastavky" type="Node3D" parent="." unique_id=1984319844]
+
+[node name="Nová_Ves,_u_lesa_23659-1" type="Node3D" parent="Zastavky" unique_id=365345937]
+transform = Transform3D(0.05976066, 0, -0.99821275, 0, 1, 0, 0.99821275, 0, 0.05976066, -398, 45.22, -149.5)
+script = ExtResource("2_60eqo")
+id = "23659/1"
+nazev = "Nová Ves, u lesa"
+poradi = 284
+gen_pozice = Vector3(-398, 45.22, -149.5)
+gen_natoceni = -1.511
+gen_nazev = "Nová Ves, u lesa"
+
+[node name="Nová_Ves,_u_lesa_23659-2" type="Node3D" parent="Zastavky" unique_id=1551872846]
+transform = Transform3D(0.10758762, 0, -0.9941956, 0, 1, 0, 0.9941956, 0, 0.10758762, -403.7, 45.03, -143.1)
+script = ExtResource("2_60eqo")
+id = "23659/2"
+nazev = "Nová Ves, u lesa"
+poradi = 297
+gen_pozice = Vector3(-403.7, 45.03, -143.1)
+gen_natoceni = -1.463
+gen_nazev = "Nová Ves, u lesa"

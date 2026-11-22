@@ -52,10 +52,38 @@ function gpuFrameTimer(device) {
   };
 }
 
+function webglFrameTimer(gl, extension) {
+  if (!extension) return null;
+  let query;
+  return {
+    start() {
+      query = gl.createQuery();
+      if (query) gl.beginQuery(extension.TIME_ELAPSED_EXT, query);
+    },
+    async finish() {
+      if (!query) return null;
+      gl.endQuery(extension.TIME_ELAPSED_EXT);
+      try {
+        for (;;) {
+          await new Promise(resolve => requestAnimationFrame(resolve));
+          if (gl.isContextLost() || gl.getParameter(extension.GPU_DISJOINT_EXT)) return null;
+          if (gl.getQueryParameter(query, gl.QUERY_RESULT_AVAILABLE)) {
+            return gl.getQueryParameter(query, gl.QUERY_RESULT) / 1e6;
+          }
+        }
+      } finally {
+        gl.deleteQuery(query);
+      }
+    },
+  };
+}
+
 export function createFrameProfiler(game, { sampleEvery = 1 } = {}) {
   const { renderer } = game;
   const { backend } = renderer;
-  let timer = gpuFrameTimer(backend.isWebGPUBackend ? backend.device : null);
+  let timer = backend.isWebGPUBackend
+    ? gpuFrameTimer(backend.device)
+    : webglFrameTimer(backend.gl, backend.disjoint);
   backend.trackTimestamp = false;
   let resolving = false;
   let frameNumber = 0;

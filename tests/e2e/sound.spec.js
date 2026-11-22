@@ -1,3 +1,4 @@
+import { waitForGame } from './ready.js';
 import { expect, test } from '@playwright/test';
 import { gameUrl } from './game-url.js';
 
@@ -5,7 +6,7 @@ async function boot(page) {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto(gameUrl('/?debug&view=620&shadows=0'));
-  await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
+  await waitForGame(page);
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
   await page.waitForFunction(() => window.__game.audio.ctx?.state === 'running');
   await page.evaluate(() => {
@@ -16,14 +17,6 @@ async function boot(page) {
     g.audio.resetWorld();
   });
   return errors;
-}
-
-async function action(page, code) {
-  await page.evaluate((code) => {
-    window.dispatchEvent(new KeyboardEvent('keydown', { code }));
-    window.__step(1 / 60);
-    window.dispatchEvent(new KeyboardEvent('keyup', { code }));
-  }, code);
 }
 
 test('E09 – stereo tramvaje a vlastní hlášení dvou sousedních vozů', async ({ page }, info) => {
@@ -130,10 +123,22 @@ test('E09 – klakson patří řidičovu autu a po odebrání ztichne', async ({
     g._enterCar(car);
     window.otherCar = other;
   });
-  await action(page, 'KeyH');
   const result = await page.evaluate(() => {
     const g = window.__game, car = g.car, other = window.otherCar;
-    const horns = [...g.audio.effects].filter(({ kind }) => kind === 'horn');
+    // Zvukový kontext má vlastní hodiny. Dlouhý první krok fyziky může
+    // krátký tón dokončit dříve, než test dostane další úlohu prohlížeče.
+    const horns = [], effects = g.audio.effects;
+    effects.add = function (effect) {
+      if (effect.kind === 'horn') horns.push(effect);
+      return Set.prototype.add.call(this, effect);
+    };
+    try {
+      window.dispatchEvent(new KeyboardEvent('keydown', {code:'KeyH'}));
+      g.update(1 / 60);
+    } finally {
+      window.dispatchEvent(new KeyboardEvent('keyup', {code:'KeyH'}));
+      delete effects.add;
+    }
     // Sirénu zapíná právě režim pronásledování daného vozu.
     other.mode = 'police';
     g.wanted = 1;
@@ -141,6 +146,8 @@ test('E09 – klakson patří řidičovu autu a po odebrání ztichne', async ({
     const siren = Boolean(g.audio.loops.get(other)?.siren);
     const silentSource = !g.audio.loops.get(car)?.siren;
     g._exitCar();
+    g.audio.horn(car);
+    const playing = [...effects].some(event => event.kind === 'horn' && event.source === car);
     g.vehicles.remove(car);
     const removed = !g.audio.loops.has(car) && ![...g.audio.effects].some((event) => event.source === car);
     g.vehicles.remove(other);
@@ -153,11 +160,11 @@ test('E09 – klakson patří řidičovu autu a po odebrání ztichne', async ({
     const rotor = g.audio.loops.get(h)?.kind;
     h.rotor = 0;
     g.audio.update(0.1, 0);
-    return { horns: horns.length, ownHorn: horns[0]?.source === car, siren, silentSource,
+    return { horns: horns.length, ownHorn: horns[0]?.source === car, playing, siren, silentSource,
       removed, rotor, stillSpinning: g.audio.loops.has(h),
       vehicleSources: [...g.audio.loops.values()].filter(({ kind }) => ['car', 'tram', 'trolleybus', 'bus'].includes(kind)).length };
   });
-  expect(result).toEqual({ horns: 1, ownHorn: true, siren: true, silentSource: true, removed: true,
+  expect(result).toEqual({ horns: 1, ownHorn: true, playing: true, siren: true, silentSource: true, removed: true,
     rotor: 'rotor', stillSpinning: false, vehicleSources: 0 });
   expect(errors).toEqual([]);
 });
@@ -187,7 +194,7 @@ test('E09 – kola hamru a zvuk se zastaví spolu, náhon zůstane slyšet', asy
   await page.getByRole('button', { name: 'Nastavení' }).click();
   await page.getByRole('checkbox', { name: 'Zvuk hry' }).uncheck();
   await page.reload();
-  await page.waitForFunction(() => window.__ready);
+  await waitForGame(page);
   await page.getByRole('button', { name: 'Nastavení' }).click();
   await expect(page.getByRole('checkbox', { name: 'Zvuk hry' })).not.toBeChecked();
   expect(errors).toEqual([]);
