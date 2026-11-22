@@ -32,6 +32,7 @@ import { FORGE, forgeXZ } from './mill.js';
 import { Districts } from './districts.js';
 import { Orthophoto, orthophotoTile } from './orthophoto.js';
 import { decalOrder, groundAnisotropy, ORIGINAL_IMAGE } from './image-quality.js';
+import { limitRoadEdges } from './road-edge-terrain.js';
 
 const _c = new THREE.Color();
 function lin(hex) { _c.setHex(hex); return [_c.r, _c.g, _c.b]; }
@@ -1056,6 +1057,30 @@ function drawTrafficMarkings(world, buf, traffic) {
 // ---------------------------------------------------------------- terén ----
 const terrainIndices = new Map();
 
+/**
+ * Sníží uzly sítě terénu za okrajem vozovky, kde by terén na hraně trojúhelníku vystoupil nad asfalt.
+ * Vzdálenost od okraje se počítá jen u uzlů pod vozovkou a jejich sousedů (ostatní nic nemění).
+ */
+function lowerRoadEdges(world, pos, clampY, n1, G) {
+  const count = n1 * n1, y = new Float64Array(count), edge = new Float64Array(count).fill(NaN);
+  const asphalt = new Float64Array(count).fill(NaN), wanted = new Uint8Array(count);
+  for (let k = 0; k < count; k++) {
+    y[k] = pos[k * 3 + 1];
+    if (clampY[k] !== clampY[k]) continue;
+    const i = k % n1, j = (k - i) / n1;
+    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+      if (i + di >= 0 && i + di < n1 && j + dj >= 0 && j + dj < n1) wanted[(j + dj) * n1 + i + di] = 1;
+    }
+  }
+  for (let k = 0; k < count; k++) {
+    if (!wanted[k]) continue;
+    edge[k] = world.roadEdgeDistance(pos[k * 3], pos[k * 3 + 2], 1.5 * G);
+    if (edge[k] < 0 && clampY[k] === clampY[k]) asphalt[k] = clampY[k] + SURF;
+  }
+  if (!limitRoadEdges(n1, y, edge, asphalt)) return;
+  for (let k = 0; k < count; k++) pos[k * 3 + 1] = y[k];
+}
+
 /** Síť terénu jedné dlaždice (sdílí uzly se sousedy, takže na sebe navazuje beze spár). */
 function buildTerrain(world, ci, cx0, cz0) {
   const grade = world.gradeTerrain.has(ci);
@@ -1070,6 +1095,9 @@ function buildTerrain(world, ci, cx0, cz0) {
   const gi0 = Math.round((cx0 - world.tX0) / G), gj0 = Math.round((cz0 - world.tZ0) / G);
   const th = world.th, tc = world.tCols, tr = world.tRows;
   const H = (i, j) => th[Math.min(tr - 1, Math.max(0, j)) * tc + Math.min(tc - 1, Math.max(0, i))];
+  // terén za okrajem vozovky nesmí na hraně trojúhelníku prorůst asfaltem (road-edge-terrain.js)
+  const edges = roads && !ORIGINAL_IMAGE && ci !== world.bankTerrainTile;
+  const clampY = edges ? new Float64Array(n1 * n1).fill(NaN) : null;
   let o = 0, u = 0;
   for (let j = 0; j <= N; j++) {
     for (let i = 0; i <= N; i++) {
@@ -1077,7 +1105,7 @@ function buildTerrain(world, ci, cx0, cz0) {
       const x = cx0 + i * G, z = cz0 + j * G;
       let y = detail ? world.heightAt(x, z) : H(gi, gj);
       // pod vozovkou leží terén vždy pod pásem silnice, aby jím neprorůstal
-      if (roads) { const road = world.roadClampAt(x, z, y); if (road < y) y = road; }
+      if (roads) { const road = world.roadClampAt(x, z, y); if (road < y) y = road; if (edges) clampY[o / 3] = road; }
       pos[o] = x; pos[o + 1] = y; pos[o + 2] = z;
       let hx, hz;
       if (detail || world.terrainDetail.size && (i === 0 || i === N || j === 0 || j === N)) {
@@ -1094,6 +1122,7 @@ function buildTerrain(world, ci, cx0, cz0) {
       o += 3; u += 2;
     }
   }
+  if (edges) lowerRoadEdges(world, pos, clampY, n1, G);
   if (!terrainIndices.has(N)) {
     const idx = [];
     for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
