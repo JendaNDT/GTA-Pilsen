@@ -24,7 +24,7 @@ import { SURFACE } from './material-table.js';
 import { Parts, getDetailMaterial } from '../entities/models.js';
 import { SURF } from './world.js';
 import { gradeBlend } from './road-grade.js';
-import { sidewalkQuads, sidewalkSections, sidewalkWidth } from './sidewalks.js';
+import { cornerSidewalkSections, sidewalkQuads, sidewalkSections, sidewalkWidth } from './sidewalks.js';
 import { TUNNEL_HEIGHT } from './tunnels.js';
 import { buildTrafficMeshes } from './traffic-meshes.js';
 import { detailRequestLimit, Heritage, pavingChunk } from './heritage.js';
@@ -563,10 +563,10 @@ const SIDEWALK_COLORS = {
 // Chodníky se kreslí jen poblíž; dál stačí chodník v textuře země.
 const SIDEWALK_VIEW = 380, SIDEWALK_BUILD = 500;
 
-/** Chodník s obrubníkem podél části silnice (viz sidewalks.js). */
-function drawSidewalks(world, solid, road, s, e) {
-  const sides = sidewalkSections(world, road, s, e);
-  if (!sides) return;
+/** Chodník s obrubníkem podél části silnice nebo kolem zaobleného rohu (viz sidewalks.js). */
+function drawSidewalks(world, solid, road, s, e, corner = null) {
+  const sides = corner ? [cornerSidewalkSections(world, corner)].filter(Boolean) : sidewalkSections(world, road, s, e);
+  if (!sides?.length) return;
   const walk = world.sidewalkPaving?.[road] ? SIDEWALK_COLORS.paving : SIDEWALK_COLORS.asphalt;
   for (const sections of sides) {
     sidewalkQuads(sections, (a, b, c, d, part) => {
@@ -926,6 +926,18 @@ function buildRoads(world, ci, manager) {
           ribbon(world, marks, D, 0.08, COL.mark, -hw + 0.3, LIFT_MARK);
         }
       }
+    }
+  }
+  // zaoblené rohy křižovatek a ohybů: asfaltový vějíř z rohu přes oblouk
+  for (const corner of world.cornerTiles?.get(ci) ?? []) {
+    const col = roadColor(Math.min(R.cls[corner.a.road], R.cls[corner.b.road]));
+    const points = corner.polygon;
+    const ids = points.map(([x, z]) => asphalt.v(x, world.cornerY(corner, x, z), z, col, 0, 0, null));
+    // líc nahoru (vějíř může vzniknout v obou směrech oběhu)
+    const [a, b, c] = points;
+    const up = (b[1] - a[1]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[1] - a[1]) > 0;
+    for (let k = 1; k + 1 < ids.length; k++) {
+      if (up) asphalt.i.push(ids[0], ids[k], ids[k + 1]); else asphalt.i.push(ids[0], ids[k + 1], ids[k]);
     }
   }
   const apron = world.roadApproach;
@@ -1343,6 +1355,16 @@ function drawGround(mgr, ci, S, tile, bitmap) {
   stroke(0);
   paintStreetPaving(g, world.streetPaving?.get(ci));
   stroke(1); stroke(2);
+  // zaoblené rohy v textuře země (v dálce, kde se asfaltová síť nekreslí)
+  for (const c of near) {
+    for (const corner of world.cornerTiles?.get(c) ?? []) {
+      g.fillStyle = roadHex(Math.min(R.cls[corner.a.road], R.cls[corner.b.road]));
+      g.beginPath();
+      corner.polygon.forEach(([x, z], k) => (k ? g.lineTo(x, z) : g.moveTo(x, z)));
+      g.closePath();
+      g.fill();
+    }
+  }
   // voda = průhledná místa (hladinu dokreslí shader terénu)
   if (polys) {
     g.globalCompositeOperation = 'destination-out';
@@ -1748,13 +1770,15 @@ export class ChunkManager {
   /** Chodníky s obrubníkem v dlaždici jako samostatná síť (viditelná jen poblíž). */
   _buildSidewalks(ci, ch) {
     ch.sidewalkPending = false;
-    const w = this.world, pieces = w.rPieces[ci];
-    if (!pieces) return;
+    const w = this.world, pieces = w.rPieces[ci] ?? [];
     const solid = new SolidBuf();
     for (let q = 0; q < pieces.length; q += 3) {
       const i = pieces[q];
       if (!w.sidewalks[i] || w.tunnelRoads.has(i) || w.rondel?.trackAccess.has(i) || w.rondel?.elevated.has(i)) continue;
       drawSidewalks(w, solid, i, pieces[q + 1], pieces[q + 2]);
+    }
+    for (const corner of w.cornerTiles?.get(ci) ?? []) {
+      if (w.sidewalks[corner.a.road] || w.sidewalks[corner.b.road]) drawSidewalks(w, solid, corner.a.road, 0, 0, corner);
     }
     const geometry = solid.geometry();
     if (!geometry) return;

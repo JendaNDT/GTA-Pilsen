@@ -15,6 +15,7 @@ export const SIDEWALK_SURF = 0.05;
 export const CURB_HEIGHT = 0.10;        // obrubník nad asfaltem (m)
 export const CURB_WIDTH = 0.15;         // šířka žulového obrubníku (m)
 export const CURB_DEPTH = 0.08;         // líc obrubníku sahá pod asfalt, aby pod ním nebyla mezera (m)
+export const CURB_SLOPE = 0.06;         // líc je zkosený, auto přes obrubník přejede bez zaseknutí (m)
 export const SIDEWALK_STEP = 8;         // nejdelší rozteč příčných řezů podél silnice (m)
 export const MIN_SIDEWALK = 0.6;        // užší zbytek chodníku u domu se nekreslí (m)
 const MAX_RISE = 0.08, MAX_FALL = 0.06; // největší příčný sklon chodníku nahoru a dolů
@@ -52,15 +53,19 @@ export function sidewalkHeight(profile, width, d) {
 
 /**
  * Body osy silnice mezi body s a e po nejvýš step metrech i s úsekem a polohou na něm,
- * ve stejném tvaru jako densePath (pro pathNormal).
+ * ve stejném tvaru jako densePath (pro pathNormal). cuts = [{ k, t }] přidá body navíc
+ * (konce chodníku u zaoblených rohů).
  */
-export function stationPath(xs, zs, s, e, a, b, step = SIDEWALK_STEP) {
+export function stationPath(xs, zs, s, e, a, b, step = SIDEWALK_STEP, cuts = null) {
   const X = [xs[s]], Z = [zs[s]], K = [s], T = [0];
   for (let k = s; k < e; k++) {
     const dx = xs[k + 1] - xs[k], dz = zs[k + 1] - zs[k];
     const n = Math.max(1, Math.ceil(Math.hypot(dx, dz) / step));
-    for (let q = 1; q <= n; q++) {
-      const t = q / n;
+    const ts = [];
+    for (let q = 1; q <= n; q++) ts.push(q / n);
+    for (const cut of cuts ?? []) if (cut.k === k && cut.t > 1e-3 && cut.t < 1 - 1e-3) ts.push(cut.t);
+    ts.sort((p, q) => p - q);
+    for (const t of ts) {
       X.push(xs[k] + dx * t); Z.push(zs[k] + dz * t);
       // poslední bod úseku patří do konce úseku k (t = 1)
       K.push(k); T.push(t);
@@ -101,7 +106,7 @@ export function sidewalkQuads(sections, quad) {
   const point = (sec, d, y) => [sec.cx + sec.ox * d, y, sec.cz + sec.oz * d];
   const cap = (sec) => {
     const bottom = sec.road - CURB_DEPTH;
-    quad(point(sec, 0, bottom), point(sec, 0, sec.profile.curb), point(sec, CURB_WIDTH, sec.profile.curb),
+    quad(point(sec, 0, bottom), point(sec, CURB_SLOPE, sec.profile.curb), point(sec, CURB_WIDTH, sec.profile.curb),
       point(sec, CURB_WIDTH, bottom), 'cap', sec);
     quad(point(sec, CURB_WIDTH, bottom), point(sec, CURB_WIDTH, sec.profile.curb), point(sec, sec.width, sec.profile.outer),
       point(sec, sec.width, Math.min(sec.terrain, sec.profile.outer) - 0.02), 'cap', sec);
@@ -113,8 +118,8 @@ export function sidewalkQuads(sections, quad) {
     if (startsRun) cap(a);
     if (!b?.valid) { cap(a); continue; }
     quad(point(a, 0, a.road - CURB_DEPTH), point(b, 0, b.road - CURB_DEPTH),
-      point(b, 0, b.profile.curb), point(a, 0, a.profile.curb), 'face', a);
-    quad(point(a, 0, a.profile.curb), point(b, 0, b.profile.curb),
+      point(b, CURB_SLOPE, b.profile.curb), point(a, CURB_SLOPE, a.profile.curb), 'face', a);
+    quad(point(a, CURB_SLOPE, a.profile.curb), point(b, CURB_SLOPE, b.profile.curb),
       point(b, CURB_WIDTH, b.profile.curb), point(a, CURB_WIDTH, a.profile.curb), 'curb', a);
     quad(point(a, CURB_WIDTH, a.profile.curb), point(b, CURB_WIDTH, b.profile.curb),
       point(b, b.width, b.profile.outer), point(a, a.width, a.profile.outer), 'walk', a);
@@ -134,7 +139,7 @@ export function sidewalkSections(world, road, s, e) {
   const width = world.sidewalks?.[road] ?? 0;
   if (!width) return null;
   const a = world.rOff[road], b = world.rOff[road + 1] - 1;
-  const path = stationPath(world.rpx, world.rpz, s, e, a, b);
+  const path = stationPath(world.rpx, world.rpz, s, e, a, b, SIDEWALK_STEP, world.sidewalkCuts?.get(road));
   const hw = world.r.w[road] / 2;
   const walls = (x0, z0, x1, z1, visit) => world.forWalls(x0, z0, x1, z1, visit);
   const sides = [[], []];
@@ -173,4 +178,25 @@ export function sidewalkFacing(part, section) {
   if (part === 'face') return [[-section.ox, 0, -section.oz]];
   if (part === 'skirt') return [[section.ox, 0, section.oz]];
   return [[-section.oz, 0, section.ox], [section.oz, 0, -section.ox]];
+}
+
+/**
+ * Příčné řezy chodníku kolem zaobleného rohu (viz corners.js): obrubník na oblouku, chodník
+ * směrem ke středu oblouku. Šířka podle širšího chodníku obou ulic, nejvýš 90 % poloměru.
+ * Vrací null, když ani jedna ulice chodník nemá.
+ */
+export function cornerSidewalkSections(world, corner) {
+  const width = Math.min(0.9 * corner.radius, Math.max(world.sidewalks?.[corner.a.road] ?? 0, world.sidewalks?.[corner.b.road] ?? 0));
+  if (!(width >= MIN_SIDEWALK)) return null;
+  const [cx0, cz0] = corner.center;
+  return corner.arc.map(([cx, cz]) => {
+    const l = Math.hypot(cx0 - cx, cz0 - cz) || 1, ox = (cx0 - cx) / l, oz = (cz0 - cz) / l;
+    const w = wallDistance(cx, cz, ox, oz, width, (x0, z0, x1, z1, visit) => world.forWalls(x0, z0, x1, z1, visit));
+    const ex = cx + ox * w, ez = cz + oz * w, mx = cx + ox * w * 0.5, mz = cz + oz * w * 0.5;
+    const surface = world.cornerY(corner, cx, cz);
+    const terrain = world.heightAt(ex, ez) + SIDEWALK_SURF;
+    const valid = w >= MIN_SIDEWALK && surface === surface && !world.sidewalkExcluded(mx, mz) &&
+      !world.insideOtherCarriageway(corner.a.road, mx, mz, 0, corner.b.road) && !world.isWater(mx, mz);
+    return { valid, cx, cz, ox, oz, width: w, road: surface, terrain, profile: sidewalkProfile(surface, terrain, w) };
+  });
 }

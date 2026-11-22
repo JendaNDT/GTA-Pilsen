@@ -13,6 +13,7 @@ import { indexBridgeEdges } from '../physics/railings.js';
 import { prepareRondel } from './rondel.js';
 import { buildRoadGrades, corridorWeight, gradeBlend, gradeHeight, gradeSurface, CORRIDOR_FALLOFF, CORRIDOR_MARGIN } from './road-grade.js';
 import { sidewalkHeight, sidewalkPriority, sidewalkProfile } from './sidewalks.js';
+import { armCut, cornerPolygon, findCorners, insidePolygon, shrinkPolygon } from './corners.js';
 
 export const SURF = 0.05;    // o kolik nad terénem leží povrch, po kterém se jezdí (kvůli vrstvě asfaltu)
 const ROAD_TERRAIN_STEP = 4;                       // rozteč úprav terénu pod silnicemi (m)
@@ -123,6 +124,7 @@ export class World {
     this._initBridges();
     this.bridgeEdges = indexBridgeEdges(this);
     this._initRoadGrades();
+    this._initCorners();
     this.treeTypes = new Map(data.treeTypes?.trees);
     this.forestTypes = new Map(data.treeTypes?.land);
     this.trees = data.trees;
@@ -1045,6 +1047,92 @@ export class World {
     return grid;
   }
 
+  // -------------------------------------------------------- zaoblené rohy ----
+  /** Najde zaoblené rohy křižovatek a ohybů (viz corners.js); vypne je ?rohy=0. */
+  _initCorners() {
+    this.corners = [];
+    this.cornerTiles = new Map();
+    this._cornerCells = new Map();
+    this.sidewalkCuts = new Map();
+    if (new URLSearchParams(globalThis.location?.search ?? '').get('rohy') === '0') return;
+    const R = this.r;
+    const special = new Set([this.roadApproach?.road, 155, 33139, 33140, ...this.tunnelApproaches.keys()]);
+    const usable = (road) => R.cls[road] <= RC.LIVING && !(R.flags[road] & (RF.BRIDGE | RF.TUNNEL | RF.SHARED_DECK | RF.AISLE)) &&
+      !this.tunnelRoads.has(road) && !this.gradeRoads.has(road) && !special.has(road) &&
+      !this.rondel?.elevated.has(road) && !this.rondel?.ring.has(road) && !this.rondel?.trackAccess?.has(road);
+    const walls = (x0, z0, x1, z1, visit) => this.forWalls(x0, z0, x1, z1, visit);
+    const skip = (x, z) => this.sidewalkExcluded(x, z) || this.keepsTerrain(x, z) > 0;
+    const roads = (x, z, a, b) => this.insideOtherCarriageway(a, x, z, 0.2, b);
+    this.corners = findCorners(this, usable, walls, skip, roads);
+    for (let i = 0; i < this.corners.length; i++) {
+      const corner = this.corners[i];
+      corner.polygon = cornerPolygon(corner);
+      corner.inner = shrinkPolygon(corner.polygon, 0.05);
+      let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
+      for (const [x, z] of corner.polygon) { x0 = Math.min(x0, x); z0 = Math.min(z0, z); x1 = Math.max(x1, x); z1 = Math.max(z1, z); }
+      corner.box = [x0, z0, x1, z1];
+      const tile = this.chunkIndex(corner.node[0], corner.node[1]);
+      if (tile >= 0) {
+        if (!this.cornerTiles.has(tile)) this.cornerTiles.set(tile, []);
+        this.cornerTiles.get(tile).push(corner);
+      }
+      for (let cz = Math.floor(z0 / 32); cz <= Math.floor(z1 / 32); cz++) for (let cx = Math.floor(x0 / 32); cx <= Math.floor(x1 / 32); cx++) {
+        const key = cx * 131072 + cz;
+        if (!this._cornerCells.has(key)) this._cornerCells.set(key, []);
+        this._cornerCells.get(key).push(corner);
+      }
+      // chodníky obou silnic končí přesně v bodech dotyku oblouku
+      for (const [arm, along, side] of [[corner.a, corner.sa, 1], [corner.b, corner.sb, -1]]) {
+        const cut = armCut(this, arm, along, side);
+        if (!this.sidewalkCuts.has(arm.road)) this.sidewalkCuts.set(arm.road, []);
+        this.sidewalkCuts.get(arm.road).push(cut);
+      }
+    }
+  }
+
+  /** Zaoblený roh, v jehož asfaltu bod leží (null mimo rohy). */
+  cornerAt(x, z) {
+    const list = this._cornerCells?.get(Math.floor(x / 32) * 131072 + Math.floor(z / 32));
+    if (!list) return null;
+    for (const corner of list) {
+      const [x0, z0, x1, z1] = corner.box;
+      if (x < x0 || x > x1 || z < z0 || z > z1) continue;
+      if (insidePolygon(corner.inner, x, z)) return corner;
+    }
+    return null;
+  }
+
+  /**
+   * Výška asfaltu v zaobleném rohu (včetně SURF jako roadSurfaceY): mezi okraji obou vozovek
+   * podle vzdálenosti, u okraje vozovky přesně její výška. profileOnly = jen z profilů silnic
+   * (bez dotazu na terén, pro výpočet úprav terénu; NaN, kde profil neplatí).
+   */
+  cornerY(corner, x, z, profileOnly = false) {
+    const side = (arm, sign) => {
+      // nejbližší úsek ramene
+      let k = arm.segs[0], t = 0, best = Infinity;
+      for (const seg of arm.segs) {
+        const ax = this.rpx[seg], az = this.rpz[seg], ex = this.rpx[seg + 1] - ax, ez = this.rpz[seg + 1] - az, l2 = ex * ex + ez * ez;
+        const f = l2 ? Math.max(0, Math.min(1, ((x - ax) * ex + (z - az) * ez) / l2)) : 0;
+        const d = (ax + ex * f - x) ** 2 + (az + ez * f - z) ** 2;
+        if (d < best) { best = d; k = seg; t = f; }
+      }
+      const ax = this.rpx[k], az = this.rpz[k], ex = this.rpx[k + 1] - ax, ez = this.rpz[k + 1] - az;
+      // okraj vozovky na straně rohu
+      const nx = -arm.dz * sign, nz = arm.dx * sign;
+      const qx = ax + ex * t + nx * arm.hw, qz = az + ez * t + nz * arm.hw;
+      const grade = this.roadGrade, station = grade?.start[arm.road] >= 0 ? grade.station[k] + t * (grade.station[k + 1] - grade.station[k]) : 0;
+      const y = !profileOnly ? this.roadSurfaceY(arm.road, k, t, qx, qz)
+        : grade && gradeBlend(grade, arm.road, station) >= 1 ? this.roadGradeY(arm.road, k, t) + SURF : NaN;
+      return [y, Math.max(0, (x - qx) * nx + (z - qz) * nz)];
+    };
+    const [ya, da] = side(corner.a, 1), [yb, db] = side(corner.b, -1);
+    if (profileOnly && (ya !== ya || yb !== yb)) return NaN;
+    if (ya !== ya) return yb;
+    if (yb !== yb) return ya;
+    return da + db > 1e-6 ? (ya * db + yb * da) / (da + db) : (ya + yb) / 2;
+  }
+
   // ------------------------------------------------------------- chodníky ----
   /** Projde hrany stěn budov v obdélníku; visit(ax, az, bx, bz). */
   forWalls(x0, z0, x1, z1, visit) {
@@ -1064,15 +1152,19 @@ export class World {
     }
   }
 
-  /** Leží bod na vozovce jiné sjízdné silnice (mimo mosty a tunely) než road, s okrajem pad? */
-  insideOtherCarriageway(road, x, z, pad = 0) {
+  /**
+   * Leží bod na vozovce jiné sjízdné silnice než road a also (mimo mosty a tunely), s okrajem pad,
+   * nebo v asfaltu zaobleného rohu?
+   */
+  insideOtherCarriageway(road, x, z, pad = 0, also = -1) {
+    if (this.cornerAt(x, z)) return true;
     const cx = Math.floor((x - this.minX) / COLL_CELL), cz = Math.floor((z - this.minZ) / COLL_CELL);
     for (let row = Math.max(0, cz - 1); row <= Math.min(this.grows - 1, cz + 1); row++) {
       for (let col = Math.max(0, cx - 1); col <= Math.min(this.gcols - 1, cx + 1); col++) {
         const cell = row * this.gcols + col;
         for (let j = this.segCellStart[cell]; j < this.segCellStart[cell + 1]; j++) {
           const k = this.segCellItems[j], other = this.roadOfPt[k];
-          if (other === road || this.r.cls[other] > DRIVABLE_MAX || (this.r.flags[other] & (RF.BRIDGE | RF.TUNNEL))) continue;
+          if (other === road || other === also || this.r.cls[other] > DRIVABLE_MAX || (this.r.flags[other] & (RF.BRIDGE | RF.TUNNEL))) continue;
           const ax = this.rpx[k], az = this.rpz[k], ex = this.rpx[k + 1] - ax, ez = this.rpz[k + 1] - az, l2 = ex * ex + ez * ez;
           if (!l2) continue;
           const t = Math.max(0, Math.min(1, ((x - ax) * ex + (z - az) * ez) / l2));
@@ -1267,6 +1359,20 @@ export class World {
             }
           }
         }
+      }
+    }
+    // terén pod asfaltem zaobleného rohu leží pod ním (a fyzika tam má jemnou síť)
+    for (const corner of this.corners ?? []) {
+      const [cx0, cz0, cx1, cz1] = corner.box;
+      if (cx1 < x0 || cx0 > x0 + CHUNK || cz1 < z0 || cz0 > z0 + CHUNK) continue;
+      const i0 = Math.max(0, Math.floor((cx0 - x0) / S)), i1 = Math.min(W - 1, Math.ceil((cx1 - x0) / S));
+      const j0 = Math.max(0, Math.floor((cz0 - z0) / S)), j1 = Math.min(W - 1, Math.ceil((cz1 - z0) / S));
+      for (let jj = j0; jj <= j1; jj++) for (let ii = i0; ii <= i1; ii++) {
+        const x = x0 + ii * S, z = z0 + jj * S;
+        if (!insidePolygon(corner.polygon, x, z)) continue;
+        const index = jj * W + ii, y = this.cornerY(corner, x, z, true) - SURF;
+        if (y === y && !(clamp[index] <= y)) { clamp[index] = y; clamped = true; }
+        near[index] = 1;
       }
     }
     this.roadClamp.set(tile, clamped ? clamp : null);

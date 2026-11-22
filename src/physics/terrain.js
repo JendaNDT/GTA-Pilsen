@@ -3,7 +3,7 @@ import { TUNNEL_HEIGHT, TUNNEL_PORTAL_CUT } from '../world/tunnels.js';
 import { riverBed } from './water.js';
 import { densePath, pathNormal } from '../world/road-profile.js';
 import { gradeBlend, stripLift } from '../world/road-grade.js';
-import { sidewalkFacing, sidewalkQuads, sidewalkSections, SIDEWALK_RAISED } from '../world/sidewalks.js';
+import { cornerSidewalkSections, sidewalkFacing, sidewalkQuads, sidewalkSections, SIDEWALK_RAISED } from '../world/sidewalks.js';
 
 const ROAD_STEP = 4;                   // rozteč jemné sítě terénu podél vozovek (m)
 const JUNCTION_PARTS = 4;              // na kolik dílů se pás napříč dělí v křižovatce
@@ -243,26 +243,45 @@ export function roadSurfaceTriangles(world, ci, emit) {
 
 /** Chodníky s obrubníkem v dlaždici (stejné řezy jako vykreslení, viz sidewalks.js). */
 export function sidewalkTriangles(world, ci, emit) {
-  const pieces = world.rPieces?.[ci];
-  if (!world.sidewalks || !pieces) return;
+  const pieces = world.rPieces?.[ci] ?? [];
+  if (!world.sidewalks) return;
   const oriented = (a, b, c, normal) => {
     const nx = (b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]);
     const ny = (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]);
     const nz = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
     if (nx * normal[0] + ny * normal[1] + nz * normal[2] >= 0) emit(a, b, c); else emit(a, c, b);
   };
+  const all = [];
   for (let q = 0; q < pieces.length; q += 3) {
     const road = pieces[q];
     if (!world.sidewalks[road] || (world.r.flags[road] & SIDEWALK_RAISED)) continue;
     const sides = sidewalkSections(world, road, pieces[q + 1], pieces[q + 2]);
-    if (!sides) continue;
-    for (const sections of sides) {
+    if (sides) all.push(...sides);
+  }
+  for (const corner of world.cornerTiles?.get(ci) ?? []) {
+    const sections = cornerSidewalkSections(world, corner);
+    if (sections) all.push(sections);
+  }
+  {
+    for (const sections of all) {
       sidewalkQuads(sections, (a, b, c, d, part, section) => {
         for (const normal of sidewalkFacing(part, section)) {
           oriented(a, b, c, normal);
           oriented(a, c, d, normal);
         }
       });
+    }
+  }
+}
+
+/** Asfalt zaoblených rohů v dlaždici (vějíř z rohu přes oblouk), ve výšce pásu vozovky. */
+export function cornerTriangles(world, ci, emit) {
+  for (const corner of world.cornerTiles?.get(ci) ?? []) {
+    const points = corner.polygon.map(([x, z]) => [x, world.cornerY(corner, x, z), z]);
+    const up = (a, b, c) => ((b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2])) >= 0;
+    for (let k = 1; k + 1 < points.length; k++) {
+      const a = points[0], b = points[k], c = points[k + 1];
+      if (up(a, b, c)) emit(a, b, c); else emit(a, c, b);
     }
   }
 }
