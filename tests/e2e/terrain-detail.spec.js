@@ -11,7 +11,8 @@ for (const quality of ['low','medium']) {
     page.on('response',response=>{
       if (response.url().includes('/textures/terrain/')) maps.push([new URL(response.url()).pathname.split('/').pop(),response.status()]);
     });
-    await page.goto(gameUrl('/?debug&adapt=0&quality='+quality+'&view=350'));
+    // Pevné datum a hodina: noc, mlha a srážky podle dne mění, které efekty se vykreslí a jejichž chyby zkouška hlídá.
+    await page.goto(gameUrl('/?debug&adapt=0&quality='+quality+'&view=350&date=2026-11-09&hour=10'));
     await page.waitForFunction(()=>window.__ready);
     const sample = await page.evaluate(async()=>{
       const g=__game,w=g.world;

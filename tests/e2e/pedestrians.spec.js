@@ -3,7 +3,8 @@ import { prepareCollisionLab } from './collision-lab.js';
 import { gameUrl } from './game-url.js';
 
 test('E19 – skutečný náraz hráčova auta do chodce ohlásí jedinou nehodu', { tag: '@webgpu' }, async ({ page }) => {
-  await page.goto(gameUrl('/?debug&quality=low&adapt=0'));
+  // Pevné datum a hodina: mokro a sníh podle dne mění přilnavost kol jedoucího auta.
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0&date=2026-11-09&hour=10'));
   await page.waitForFunction(() => window.__ready);
   await prepareCollisionLab(page);
   const result = await page.evaluate(() => {
@@ -29,7 +30,8 @@ test('E19 – skutečný náraz hráčova auta do chodce ohlásí jedinou nehodu
 });
 
 test('E19 – jedoucí auto srazí pěšího hráče', { tag: '@webgpu' }, async ({ page }) => {
-  await page.goto(gameUrl('/?debug&quality=low&adapt=0'));
+  // Pevné datum a hodina: mokro a sníh podle dne mění přilnavost kol jedoucího auta.
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0&date=2026-11-09&hour=10'));
   await page.waitForFunction(() => window.__ready);
   await prepareCollisionLab(page);
   const result = await page.evaluate(() => {

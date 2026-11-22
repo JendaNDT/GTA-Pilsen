@@ -6,7 +6,9 @@ test('E05 – pilotní památky se vykreslí, přepnou detail a uvolní dlaždic
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (entry) => { if (entry.type() === 'error') errors.push(entry.text()); });
   const response = page.waitForResponse('**/detail/city/index.json');
-  await page.goto(gameUrl('/?debug&view=620&wet=1'));
+  // Pevné datum a hodina: zkouška čeká ve 21.48 úplnou noc, která v Plzni od konce května
+  // do konce července ještě nenastane. Noc, mlha a srážky také mění vykreslené efekty.
+  await page.goto(gameUrl('/?debug&view=620&wet=1&date=2026-11-09&hour=10'));
   const data = await (await response).json();
   expect(data.sha256).toBe("825dc3e395044b1f5a47e27c812cc4189829e9134cc027865ffc8fcb3e7bb9ac");
   expect(data.buildings).toBe(5697);

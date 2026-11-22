@@ -7,7 +7,8 @@ import { layers } from '../../src/physics/world.js';
 
 // Dno obou nádrží vzniká z polygonu stejným postupem jako dno vodních ploch v mapě.
 async function driveIntoWater(page, { halfWidth, depthScale, speed }) {
-  await page.goto(gameUrl('/?debug&quality=low&adapt=0'));
+  // Pevné datum a hodina: mokro a sníh podle dne mění přilnavost kol na břehu před nádrží.
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0&date=2026-11-09&hour=10'));
   await page.waitForFunction(() => window.__ready);
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
   await prepareCollisionLab(page);

@@ -4,7 +4,8 @@ import { gameUrl } from './game-url.js';
 test('Rondel má průjezdný okruh i obě úrovně u mostů', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto(gameUrl('/?debug&view=620&shadows=0'));
+  // Pevné datum a hodina: mokro a sníh podle dne snižují přilnavost kol v zatáčkách okruhu.
+  await page.goto(gameUrl('/?debug&view=620&shadows=0&date=2026-11-09&hour=10'));
   await page.waitForFunction(() => window.__ready);
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
   const result = await page.evaluate(() => {
