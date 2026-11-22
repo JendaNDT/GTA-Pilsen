@@ -112,3 +112,46 @@ Pohled řidiče 8 m za autem, 15. června v 11:00, vysoká předvolba, softwarov
 - Chodníky a obrubníky zatím nejsou samostatná stavba, u běžných ulic je chodník jen pruh v textuře země.
 - Profil vychází z výškového modelu terénu. Kde má model chybu (násyp nebo zářez, který v něm chybí), sleduje ji profil také, jen hladce.
 - WebGPU se v tomto prostředí nedá ověřit.
+
+## Dodatek: proč selhávala zkouška Wilsonova mostu
+
+Zkouška „kola unesou auto přes Wilsonův most v obou směrech“ končila se zdravím auta 82,3 místo 100. Příčinou nebyl most, profil silnic ani fyzika kol. Auto se na mostě čelně střetlo s protijedoucím trolejbusem. Trolejbus tam jezdí jen podle víkendového jízdního řádu.
+
+### Co ukázalo měření
+
+Diagnostický skript projel most stejně jako zkouška. U každého nárazu karoserie nad 1 m/s zapsal polohu auta, kontakty kol a druhé těleso.
+
+- Při průjezdu se zaznamenal **jediný náraz**, při jízdě na východ po 5,0 s (snímek 301), 28 m od západního konce mostu. Ve zpětném směru už k nárazu nedošlo, zdraví zůstalo na hodnotě z prvního průjezdu.
+- Druhým tělesem byl **trolejbus linky 12 do Nové Hospody**. Jel proti autu rychlostí 5,9 m/s, auto jelo 8,9 m/s. Rychlost střetu 14,8 m/s odpovídá ztrátě 17,7 bodu zdraví.
+- Všechna čtyři kola v tu chvíli stála na mostovce, odchylka od její výšky byla pod 1 mm. Se zábradlím, čelem mostovky ani vybavením ulice nedošlo k žádnému nárazu nad 1 m/s. Poškození začíná až nad 3 m/s.
+- Silnice na mostě je podle dat 7,2 m široká a má dva pruhy. Trolejbus jel uprostřed svého pruhu, 1,8 m od osy, a jeho levý bok byl 0,53 m od osy. Zkušební auto jede přesně po ose silnice, takže jeho bok zasahuje 0,78 m do protisměru. Vozidla se tak překrývala asi o 0,25 m. Hra se zachovala správně: čelní střet s trolejbusem má auto poškodit.
+
+### Proč zkouška někdy prošla
+
+Zkouška nastavovala jen hodinu 10.00. Datum se bralo ze dne spuštění. Na stejném sestavení:
+
+| Datum | Zdraví po průjezdu |
+|---|---:|
+| pátek 20. 11. 2026 | 100 |
+| sobota 21. 11. 2026 | 82,30 |
+| sobota 21. 11. 2026, `?silnice=puvodni` | 82,37 |
+| neděle 22. 11. 2026 | 82,28 |
+| pondělí 23. 11. 2026 | 100 |
+
+V pátek a v pondělí trolejbus most v té chvíli nepřejíždí, o víkendu ano. Proto zkouška selhávala i na revizi `d868511` a s `?silnice=puvodni`.
+
+### Oprava
+
+- Zkouška v `tests/e2e/physics-roads.spec.js` má pevné datum pondělí 9. 11. 2026, stejné jako zkoušky provozu. Na datu závisí jízdní řád MHD, hustota provozu i počasí, a tedy i mokrá vozovka.
+- Před měřením zkouška odstaví MHD a cizí auta stejně jako zkoušky srážek (`tests/e2e/collision-lab.js`). Zkouška měří povrch mostovky a tunelu, ne provoz.
+- Očekávání zůstávají stejná: dojezd do cíle, zdraví 100, pokles pod 0,5 m a kola do 5 cm od mostovky. Herní kód se nemění.
+
+### Ověření opravy
+
+- S odstaveným MHD projelo auto most v obou směrech se zdravím 100 i o víkendu (21. a 22. 11.), také s `?silnice=puvodni`. Při tom se nezaznamenal žádný náraz nad 1 m/s.
+- Na WebGL 2 prošlo všech 11 případů v `physics-roads.spec.js` a `physics.spec.js`. Wilsonův most prošel v obou směrech, stejně jako měřená deska v Radčické, oba tubusy Valíku, rampa a sedm obecných zkoušek fyziky.
+- `npm test`: prošlo všech 212 testů JavaScriptu. `npm run build` prošlo.
+
+### Návrh mimo tento úkol
+
+Dalších deset souborů prohlížečových zkoušek nastavuje hodinu bez data: `car-appearance`, `character`, `clouds`, `facade-detail`, `flight`, `graphics-failure`, `interiors`, `photo-mode`, `prazdroj` a `sky-depth`. Jejich výsledek proto může záviset na dni spuštění (MHD, provoz, počasí, poloha slunce). Doporučuji je projít a tam, kde na tom záleží, doplnit pevné datum.

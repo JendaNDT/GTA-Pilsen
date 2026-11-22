@@ -6,7 +6,9 @@ Na větvi `claude/lucid-bohr-y3rlwb` vznikla vzhledová zkouška webové verze: 
 
 ## Hladký profil silnic (mimo etapu, na přání autora)
 
-Autor si stěžoval na hrbolaté silnice v kopcích. Na větvi `claude/lucid-bohr-y3rlwb` má každá silnice hladký podélný profil, terén pod vozovkou se mu přizpůsobí a fyzika jede po pásu silnice. Okolí měřených mostů, tunelů a ručně upravených křížení zůstává beze změny, v křižovatkách platí výška důležitější silnice. Původní silnice zapne `?silnice=puvodni`. Ve fyzice hry klesl počet rázů mezi křižovatkami ze 180 na 51 na km, v kopcích ze 464 na 79; v křižovatkách zůstává hrbolatost zhruba stejná. Neprošla zkouška Wilsonova mostu, která stejně selhává i na revizi před úpravou. [Protokol, měření a snímky](../silnice.md)
+Autor si stěžoval na hrbolaté silnice v kopcích. Na větvi `claude/lucid-bohr-y3rlwb` má každá silnice hladký podélný profil, terén pod vozovkou se mu přizpůsobí a fyzika jede po pásu silnice. Okolí měřených mostů, tunelů a ručně upravených křížení zůstává beze změny, v křižovatkách platí výška důležitější silnice. Původní silnice zapne `?silnice=puvodni`. Ve fyzice hry klesl počet rázů mezi křižovatkami ze 180 na 51 na km, v kopcích ze 464 na 79; v křižovatkách zůstává hrbolatost zhruba stejná. [Protokol, měření a snímky](../silnice.md)
+
+Zkouška Wilsonova mostu selhávala o víkendu kvůli srážce s trolejbusem 12. Zkušební auto jede po ose mostu a v 10.00 se čelně srazilo s víkendovým trolejbusem 12 v protisměru. Vozidla se překrývala asi o 0,25 m. V pátek i v pondělí zkouška procházela. Most, profil silnic ani fyzika kol chybu nezpůsobily. Zkouška má nyní pevné datum a před měřením odstaví MHD a cizí auta. Prošlo všech 11 případů `physics-roads.spec.js` a `physics.spec.js` na WebGL 2, 212 testů JavaScriptu a sestavení. Deset dalších souborů prohlížečových zkoušek nemá pevné datum; návrh je v protokolu. [Měření a oprava](../silnice.md#dodatek-proč-selhávala-zkouška-wilsonova-mostu)
 
 ## Rampa u hlavního nádraží
 
