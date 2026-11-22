@@ -91,7 +91,8 @@ drcne a chodci chodí po chodníku. Na nízké předvolbě zůstává chodník v
 
 Rohy křižovatek a ostré ohyby silnic jsou zaoblené obloukem o poloměru 4–12 m podle šířky ulic,
 obrubník i chodník ho obcházejí. Líc obrubníku je zkosený, takže při seříznutí zatáčky auto
-přes obrubník přejede. Ostré rohy pro porovnání vrátí `?rohy=0`. [Popis a snímky](docs/rohy.md)
+přes obrubník přejede. Auta řízená hrou v rozích odbočují vpravo plynulejším obloukem podél
+obrubníku. Ostré rohy pro porovnání vrátí `?rohy=0`. [Popis a snímky](docs/rohy.md)
 
 Silnice jsou napříč skloněné podle svahu (nejvýš 4 %) a zatáčky mimo zástavbu jsou klopené
 (nejvýš 6 %), aby v nich auto lépe drželo. Navazující silnice mají stejný sklon, takže

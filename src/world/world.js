@@ -14,7 +14,7 @@ import { prepareRondel } from './rondel.js';
 import { buildRoadGrades, corridorWeight, gradeBlend, gradeCross, gradeHeight, gradeShore, gradeSurface, shoreLift, CORRIDOR_FALLOFF, CORRIDOR_MARGIN,
   SHORE_BACK, SHORE_FADE, SHORE_FILL, SHORE_PLATEAU, SHORE_REACH, SHORE_WATER } from './road-grade.js';
 import { sidewalkHeight, sidewalkPriority, sidewalkProfile } from './sidewalks.js';
-import { armCut, cornerPolygon, findCorners, insidePolygon, shrinkPolygon } from './corners.js';
+import { armCut, cornerOverlap, cornerPolygon, findCorners, insidePolygon, shrinkPolygon } from './corners.js';
 
 export const SURF = 0.05;    // o kolik nad terénem leží povrch, po kterém se jezdí (kvůli vrstvě asfaltu)
 const ROAD_TERRAIN_STEP = 4;                       // rozteč úprav terénu pod silnicemi (m)
@@ -25,7 +25,8 @@ const NEAR_PAD = 3;                                // pás kolem vozovky, kde m�
 const JUNCTION_CELL = 32;                          // mřížka pro hledání křižovatek (m)
 // Zářez svahu u vozovky hlubší než tolik (m): dlaždice má jemnější síť terénu (4 m), aby do pásu nezasahovala.
 const STEEP_CUT = 0.3;
-const JUNCTION_BLEND = 6;                         // vedlejší silnice se napojí na okraj hlavní během (m)
+const JUNCTION_BLEND = 6;
+const CORNER_OVERLAP = 0.3;                        // vykreslený asfalt oblouku zasahuje pod pás vozovky (m)                         // vedlejší silnice se napojí na okraj hlavní během (m)
 const junctionKey = (x, z) => (Math.floor(x / JUNCTION_CELL) + 65536) * 131072 + Math.floor(z / JUNCTION_CELL) + 65536;
 const cellKey = (x, z) => (Math.floor(x / STRUCTURE_KEEP) + 65536) * 131072 + Math.floor(z / STRUCTURE_KEEP) + 65536;
 const SHORE_CELL = 32;                             // mřížka hran břehů pro hledání vody u silnic (m)
@@ -1132,8 +1133,9 @@ export class World {
       const corner = this.corners[i];
       corner.polygon = cornerPolygon(corner);
       corner.inner = shrinkPolygon(corner.polygon, 0.05);
+      corner.draw = cornerOverlap(corner, CORNER_OVERLAP);
       let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity;
-      for (const [x, z] of corner.polygon) { x0 = Math.min(x0, x); z0 = Math.min(z0, z); x1 = Math.max(x1, x); z1 = Math.max(z1, z); }
+      for (const [x, z] of [...corner.polygon, ...corner.draw]) { x0 = Math.min(x0, x); z0 = Math.min(z0, z); x1 = Math.max(x1, x); z1 = Math.max(z1, z); }
       corner.box = [x0, z0, x1, z1];
       const tile = this.chunkIndex(corner.node[0], corner.node[1]);
       if (tile >= 0) {
@@ -1162,6 +1164,37 @@ export class World {
       const [x0, z0, x1, z1] = corner.box;
       if (x < x0 || x > x1 || z < z0 || z > z1) continue;
       if (insidePolygon(corner.inner, x, z)) return corner;
+    }
+    return null;
+  }
+
+  /** Zaoblený roh, jehož asfalt (i s překrytím přes okraje vozovek) leží v bodě, nebo null. */
+  cornerAsphaltAt(x, z) {
+    const list = this._cornerCells?.get(Math.floor(x / 32) * 131072 + Math.floor(z / 32));
+    if (!list) return null;
+    for (const corner of list) {
+      const [x0, z0, x1, z1] = corner.box;
+      if (x < x0 - 1 || x > x1 + 1 || z < z0 - 1 || z > z1 + 1) continue;
+      if (insidePolygon(corner.draw ?? corner.polygon, x, z)) return corner;
+    }
+    return null;
+  }
+
+  /**
+   * Zaoblený roh v uzlu (x, z) mezi rameny ve směrech (ax, az) a (bx, bz) od uzlu, nebo null.
+   * Auta řízená hrou podle něj volí dráhu při odbočení.
+   */
+  cornerBetween(x, z, ax, az, bx, bz) {
+    if (!this._cornerCells?.size) return null;
+    const along = (arm, dx, dz) => arm.dx * dx + arm.dz * dz > 0.8;
+    // roh je zapsaný v buňkách své plochy, uzel může ležet v sousední
+    for (let cz = Math.floor((z - 12) / 32); cz <= Math.floor((z + 12) / 32); cz++) {
+      for (let cx = Math.floor((x - 12) / 32); cx <= Math.floor((x + 12) / 32); cx++) {
+        for (const corner of this._cornerCells.get(cx * 131072 + cz) ?? []) {
+          if (Math.hypot(corner.node[0] - x, corner.node[1] - z) > 3) continue;
+          if ((along(corner.a, ax, az) && along(corner.b, bx, bz)) || (along(corner.a, bx, bz) && along(corner.b, ax, az))) return corner;
+        }
+      }
     }
     return null;
   }
@@ -1542,8 +1575,10 @@ export class World {
     return terrain;
   }
 
-  /** Zahrnuje celou šířku všech překrývajících se vozovek v téže výšce. */
+  /** Zahrnuje celou šířku všech překrývajících se vozovek v téže výšce i asfalt zaoblených rohů. */
   onCarriageway(x, z, y, padding = 0, maxClass = DRIVABLE_MAX) {
+    const corner = this.cornerAsphaltAt(x, z);
+    if (corner && Math.abs(this.cornerY(corner, x, z) - y) < 2.5) return true;
     const range = this.maxRoadHalfWidth + padding;
     const minCol = Math.max(0, Math.floor((x - range - this.minX) / COLL_CELL));
     const maxCol = Math.min(this.gcols - 1, Math.floor((x + range - this.minX) / COLL_CELL));

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { armCut, cornerClear, cornerFillet, cornerPolygon, cornerRadius, findCorners, insidePolygon, shrinkPolygon } from '../src/world/corners.js';
+import { armCut, cornerClear, cornerFillet, cornerOverlap, cornerPolygon, cornerRadius, findCorners, insidePolygon, shrinkPolygon } from '../src/world/corners.js';
 import { stationPath } from '../src/world/sidewalks.js';
 
 const close = (a, b, eps = 1e-6) => Math.abs(a - b) < eps;
@@ -107,4 +107,20 @@ test('oblouk se zmenší, když by zasáhl vozovku třetí silnice (ostrůvek)',
   const third = (x, z) => Math.abs(x + z - 13) < 2;
   const [corner] = findCorners(world, () => true, null, null, (x, z) => third(x, z));
   assert.ok(!corner || (corner.radius < cornerRadius(3, 3) && ![corner.center, ...corner.arc].some(([x, z]) => third(x, z))));
+});
+
+test('vykreslený asfalt oblouku zasahuje o kus pod obě vozovky', () => {
+  const a = { dx: 1, dz: 0, hw: 3, room: 40 }, b = { dx: 0, dz: 1, hw: 3, room: 40 };
+  const f = cornerFillet(0, 0, a, b, 6);
+  const drawn = cornerOverlap(f, 0.3);
+  // roh a body dotyku leží 0,3 m uvnitř vozovek, oblouk zůstává
+  const [apex, ta] = drawn, tb = drawn.at(-1);
+  assert.ok(close(apex[0], 2.7) && close(apex[1], 2.7) && apex[2] === true);
+  assert.ok(close(ta[0], 9) && close(ta[1], 2.7) && ta[2] === true);
+  assert.ok(close(tb[0], 2.7) && close(tb[1], 9) && tb[2] === true);
+  assert.equal(drawn.length, f.arc.length + 3);
+  assert.ok(drawn.slice(2, -1).every(([x, z, under], i) => close(x, f.arc[i][0]) && close(z, f.arc[i][1]) && under === false));
+  // celý původní oblouk je uvnitř vykreslené plochy
+  const outline = drawn.map(([x, z]) => [x, z]);
+  assert.ok(insidePolygon(outline, 3.2, 3.2) && insidePolygon(outline, 2.85, 5));
 });

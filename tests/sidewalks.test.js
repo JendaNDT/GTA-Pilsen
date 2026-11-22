@@ -56,6 +56,11 @@ test('plochy chodníku: líc, obrubník a chodník mezi řezy, čela na koncích
   assert.equal(count('curb'), 2);
   assert.equal(count('walk'), 2);
   assert.equal(count('cap'), 8);   // dva úseky, každý se dvěma konci, čelo má dvě plochy
+  // osamocený řez a kus kratší než 3 m (zbytky v ostrůvku) se nekreslí
+  const lone = [];
+  sidewalkQuads([section(0, true), section(4, false), section(8, true), section(10, true), section(14, false)],
+    (a, b, c, d, part) => lone.push(part));
+  assert.deepEqual(lone, []);
   // líc obrubníku je svislý a sahá pod asfalt
   sidewalkQuads([section(0, true), section(4, true)], (a, b, c, d, part) => {
     if (part !== 'face') return;
