@@ -454,6 +454,26 @@ Na malém zkušebním repozitáři prošlo dvojí zabalení, porovnání obou ar
 
 # Stav etapy E25
 
+## Zrnitost povrchu v dálce
+
+U vzdálených povrchů nyní shader přeskočí výpočet jemné nebo střední zrnitosti v místech, kde by její váha byla nulová. Výpočet šířky pixelu zůstává mimo obě podmínky, aby měl stejnou hodnotu i na jejich hranicích.
+
+Časy stejné úpravy na větvi E24 jsou v jejím protokolu. Zde šlo o funkční zkoušky.
+
+Na E25 prošlo 176 testů JavaScriptu, produkční sestavení a čtyři prohlížečové kontroly terénu. WebGL 2 i WebGPU vykreslily nízkou předvolbu bez atlasů a střední s barevnou a normálovou texturou.
+
+## Číslo materiálu fasády na WebGL 2
+
+Při startu hry na WebGL 2 odmítl ovladač vykreslit část domů. U atributu `buildingLayer` shader očekával celé číslo, zatímco geometrie předávala bajt jako číslo s plovoucí řádovou čárkou. Geometrie nyní výslovně předává celočíselný atribut. Stěny a střechy si zachovávají původní čísla materiálů.
+
+Na této větvi prošlo 176 testů JavaScriptu a produkční sestavení. Chromium 159 na střední předvolbě načetlo atlasy fasád a ověřilo materiál stěn i střech v herní scéně na WebGL 2 a WebGPU. Kontrola nově zachytí i odmítnutí příkazu vykreslení ve WebGL. Výsledky jsou v `data-raw/e25/vrstva-typ-e2e.log`.
+
+## Vykreslení soklu a římsy
+
+V materiálu přízemí dvě podmínky vracely změněnou barvu do překladače shaderů Three.js. Po spuštění hry na WebGL 2 hlásil čtyři varování. Podmínky teď přímo upraví barvu soklu a římsy. Kontrola u Wilsonova mostu sleduje i hlášení překladače TSL.
+
+V Chromiu 159 se na WebGL 2 i WebGPU vykreslila fasáda na Americké se změřenými stěnami a vyznačeným vstupem, bez chyby shaderu či varování TSL. Prošlo 176 jednotkových testů a produkční sestavení. První pokus s WebGPU v prostředí nastaveném pro softwarové OpenGL skončil ještě při spuštění vykreslovače. Samostatný běh s adaptérem SwiftShader prošel. Výstupy jsou v `data-raw/e25/sokl-e2e.log` a `data-raw/e25/sokl-webgpu.log`.
+
 ## Výška vstupů nad chodníkem
 
 První snímky ukázaly nízká okna a zčásti zapuštěné dveře. U všech 21 vstupů ležel spodek měřené stěny 1,05 až 3,14 m pod chodníkem. Převod teď odvozuje výšku prahu z herního terénu v místě dveří. Otisky stěn, počet vrcholů a jejich poloha zůstávají platné. Kontrola našla všech 21 vstupů v distribuovaných dlaždicích a ověřila polohu prahu s tolerancí 4 cm. Prošlo 176 testů JavaScriptu, 26 testů Pythonu a produkční sestavení. Na opraveném vysokém WebGPU je při pohledu z Americké vidět celý vstup až k chodníku. Všech šest snímků je v protokolu včetně počtu trojúhelníků, vykreslovacích volání a mediánu z pěti snímků v každém pohledu. Na WebGL 2 i WebGPU v Chromiu prošlo vykreslení jediné přízemní vrstvy v pilotu po opravě prahů. Fotografická shoda podle autorových předloh zůstává otevřená. [Protokol E25](../E25.md)
