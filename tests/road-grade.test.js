@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buildRoadGrades, corridorWeight, gradeBlend, gradeHeight, gradeSurface, pinProfile, profileAt, smoothProfile, stripLift, STRIP_LIFT } from '../src/world/road-grade.js';
+import { bankFor, buildRoadGrades, corridorWeight, gradeBlend, gradeCross, gradeHeight, gradeSurface, pinProfile, profileAt, smoothProfile, stripLift, CROSS_BANK, CROSS_TERRAIN, STRIP_LIFT } from '../src/world/road-grade.js';
 
 test('vyhlazení odstraní schody po 8 m a zachová rovnoměrné stoupání', () => {
   // svah 6 % se zuby terénu po 8 m (vzorky po 2 m)
@@ -157,4 +157,66 @@ test('křižovatka se pozná, pouhé pokračování silnice ne', () => {
   assert.equal(junction.dirs.length, 3);
   const straight = buildRoadGrades(world, (road) => road < 2, () => false, flat, 2, () => 0, () => false);
   assert.equal(straight.junctions.length, 0);
+});
+
+test('příčný sklon kopíruje svah vedle silnice a má horní mez', () => {
+  // silnice na východ, terén stoupá k jihu (+z) o 3 %, jinde o 10 %
+  const world = { rCount: 2, rOff: Int32Array.from([0, 2, 4]), rpx: Float32Array.from([0, 200, 0, 200]), rpz: Float32Array.from([0, 0, 500, 500]), rpy: new Float32Array(4) };
+  const terrain = (x, z) => (z < 250 ? 0.03 * z : 0.1 * z);
+  const grades = buildRoadGrades(world, () => true, () => false, terrain, undefined, null, null, { cross: true });
+  // normála (−dz, dx) = +z: bod na jižní straně leží o 3 % výš
+  assert.ok(Math.abs(gradeCross(grades, 0, 100) - 0.03) < 1e-3, `${gradeCross(grades, 0, 100)}`);
+  assert.ok(Math.abs(gradeCross(grades, 1, 100) - CROSS_TERRAIN) < 1e-9);
+  // bez volby zůstane silnice napříč rovná
+  const flat = buildRoadGrades(world, () => true, () => false, terrain);
+  assert.equal(gradeCross(flat, 0, 100), 0);
+});
+
+test('klopení: vnitřní strana zatáčky leží níž, u konců klopení mizí', () => {
+  // oblouk o poloměru 60 m stáčející se od +x k +z (střed na straně normály)
+  const N = 40, px = [], pz = [];
+  for (let i = 0; i <= N; i++) { const a = (Math.PI / 2) * i / N; px.push(60 * Math.sin(a)); pz.push(60 - 60 * Math.cos(a)); }
+  const world = { rCount: 1, rOff: Int32Array.from([0, N + 1]), rpx: Float32Array.from(px), rpz: Float32Array.from(pz), rpy: new Float32Array(N + 1) };
+  const flat = () => 5;
+  const length = 60 * Math.PI / 2;
+  const banked = buildRoadGrades(world, () => true, () => false, flat, undefined, null, null, { cross: true, bank: () => true });
+  assert.ok(Math.abs(gradeCross(banked, 0, length / 2) + CROSS_BANK) < 1e-3, `${gradeCross(banked, 0, length / 2)}`);
+  assert.ok(Math.abs(gradeCross(banked, 0, 0)) < 1e-6);
+  assert.ok(bankFor(1 / 60) < 0 && bankFor(-1 / 60) > 0 && bankFor(0) === 0);
+  assert.ok(Math.abs(bankFor(1 / 500)) < CROSS_BANK);
+  const plain = buildRoadGrades(world, () => true, () => false, flat, undefined, null, null, { cross: true, bank: () => false });
+  assert.ok(Math.abs(gradeCross(plain, 0, length / 2)) < 1e-9);
+  // mezi domy (tady v celé zatáčce) se neklopí
+  const town = buildRoadGrades(world, () => true, () => false, flat, undefined, null, null, { cross: true, bank: () => true, built: () => true });
+  assert.ok(Math.abs(gradeCross(town, 0, length / 2)) < 1e-9);
+  // dům jen u začátku zatáčky: uprostřed se klopí naplno
+  const house = buildRoadGrades(world, () => true, () => false, flat, undefined, null, null, { cross: true, bank: () => true, built: (x, z) => x < 5 && z < 5 });
+  assert.ok(Math.abs(gradeCross(house, 0, length / 2) + CROSS_BANK) < 1e-3);
+});
+
+test('navazující silnice mají ve společném bodě stejný příčný sklon (i opačně kreslené)', () => {
+  // A z (0,0) do (100,0); B pokračuje do (200,0), C kreslená opačně z (100,300)… do (0,300) a D z (200,300) do (100,300)
+  const world = {
+    rCount: 4, rOff: Int32Array.from([0, 2, 4, 6, 8]),
+    rpx: Float32Array.from([0, 100, 100, 200, 100, 0, 200, 100]),
+    rpz: Float32Array.from([0, 0, 0, 0, 300, 300, 300, 300]),
+    rpy: new Float32Array(8),
+  };
+  const terrain = (x, z) => (x < 100 ? 0.03 * z : -0.02 * z);
+  const grades = buildRoadGrades(world, () => true, () => false, terrain, undefined, null, null, { cross: true });
+  const end = (road) => grades.station[world.rOff[road + 1] - 1];
+  // A končí, B začíná: obě mají normálu +z, sklon se shoduje
+  assert.ok(Math.abs(gradeCross(grades, 0, end(0)) - gradeCross(grades, 1, 0)) < 1e-6);
+  // C začíná v (100,300) směrem na západ (normála −z), D tam končí směrem na západ (normála −z)
+  assert.ok(Math.abs(gradeCross(grades, 2, 0) - gradeCross(grades, 3, end(3))) < 1e-6);
+  // daleko od napojení zůstane sklon podle svahu
+  assert.ok(Math.abs(gradeCross(grades, 0, 10) - 0.03) < 2e-3);
+  // E a F začínají ve stejném bodě opačnými směry: normály míří proti sobě, sklon má opačné znaménko
+  const pair = {
+    rCount: 2, rOff: Int32Array.from([0, 2, 4]),
+    rpx: Float32Array.from([100, 0, 100, 200]), rpz: Float32Array.from([600, 600, 600, 600]), rpy: new Float32Array(4),
+  };
+  const opposite = buildRoadGrades(pair, () => true, () => false, terrain, undefined, null, null, { cross: true });
+  const e = gradeCross(opposite, 0, 0), f = gradeCross(opposite, 1, 0);
+  assert.ok(Math.abs(e + f) < 1e-6 && Math.abs(e) > 0.01, `${e} ${f}`);
 });

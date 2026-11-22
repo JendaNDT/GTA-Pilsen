@@ -13,6 +13,13 @@ export const GRADE_TAPER = 15;          // přechod profilu do původního teré
 export const KEEP_MARGIN = 10;          // kolik silnice za ručně doladěným místem zůstane také beze změny (m)
 export const STRIP_LIFT = 0.05;         // pás jízdního povrchu leží jako vykreslený asfalt nad terénem (m)
 export const STRIP_RAMP = 6;            // na začátku pásu se zvedá z terénu plynule (m)
+export const CROSS_TERRAIN = 0.04;      // největší příčný sklon podle svahu (4 %)
+export const CROSS_BANK = 0.06;         // největší klopení v zatáčce (6 %)
+export const CROSS_MAX = 0.07;          // největší příčný sklon celkem (7 %)
+export const BANK_FACTOR = 10;          // klopení = křivost · tento součinitel (m), odpovídá ~40 km/h
+export const BANK_CLEAR = 15;           // klopení u křižovatek a konců plynule mizí (m)
+const CROSS_STEP = 8;                   // svah vedle silnice se měří po 8 m
+export const BANK_BUILT = 6;            // dům blíž než tolik za okrajem silnice: zatáčka se neklopí (m)
 
 /**
  * Klouzavý průměr; tři průchody dají téměř Gaussovo vyhlazení. Za konci se profil prodlužuje
@@ -27,15 +34,15 @@ export function smoothProfile(values, width = GRADE_SMOOTH, passes = 3) {
     if (i >= n) return 2 * arr[n - 1] - arr[Math.max(0, 2 * n - 2 - i)];
     return arr[i];
   };
+  let b = new Float64Array(n);
   for (let p = 0; p < passes; p++) {
-    const b = new Float64Array(n);
     let sum = 0;
     for (let j = -half; j <= half; j++) sum += at(a, j);
     for (let i = 0; i < n; i++) {
       b[i] = sum / (2 * half + 1);
       sum += at(a, i + half + 1) - at(a, i - half);
     }
-    a = b;
+    [a, b] = [b, a];
   }
   return a;
 }
@@ -48,30 +55,151 @@ export function smoothProfile(values, width = GRADE_SMOOTH, passes = 3) {
 export function pinProfile(heights, step, constraints, reach = PIN_REACH) {
   if (!constraints.length) return heights;
   const out = Float64Array.from(heights);
-  const n = out.length;
+  pinRange(out, 0, out.length, step, constraints, reach);
+  return out;
+}
+
+/** Totéž jako pinProfile, ale na místě v úseku pole arr[off … off + n). */
+function pinRange(arr, off, n, step, constraints, reach = PIN_REACH) {
+  if (!constraints.length) return;
   const value = (s) => {
     const f = Math.max(0, Math.min(n - 1, s / step)), i = Math.min(n - 2, Math.floor(f));
-    return n < 2 ? heights[0] : heights[i] + (heights[i + 1] - heights[i]) * (f - i);
+    return n < 2 ? arr[off] : arr[off + i] + (arr[off + i + 1] - arr[off + i]) * (f - i);
   };
   const pins = constraints.map(([s, y]) => [s, y - value(s)]).sort((a, b) => a[0] - b[0]);
   const fade = (d) => {
     const t = Math.max(0, Math.min(1, 1 - d / reach));
     return t * t * (3 - 2 * t);
   };
+  let k = 0;
   for (let i = 0; i < n; i++) {
     const s = i * step;
     let delta;
     if (s <= pins[0][0]) delta = pins[0][1] * fade(pins[0][0] - s);
     else if (s >= pins.at(-1)[0]) delta = pins.at(-1)[1] * fade(s - pins.at(-1)[0]);
     else {
-      let k = 0;
       while (pins[k + 1][0] < s) k++;
       const [s0, d0] = pins[k], [s1, d1] = pins[k + 1];
       delta = s1 > s0 ? d0 + (d1 - d0) * (s - s0) / (s1 - s0) : d0;
     }
-    out[i] += delta;
+    arr[off + i] += delta;
   }
-  return out;
+}
+
+/** Vyhlazení úseku pole na místě jako smoothProfile (tmp = pomocné pole délky aspoň n). */
+function smoothRange(arr, off, n, width, passes, tmp) {
+  const half = Math.floor(width / 2);
+  if (n < 3 || half < 1) return;
+  const at = (i) => {
+    if (i < 0) return 2 * tmp[0] - tmp[Math.min(n - 1, -i)];
+    if (i >= n) return 2 * tmp[n - 1] - tmp[Math.max(0, 2 * n - 2 - i)];
+    return tmp[i];
+  };
+  for (let p = 0; p < passes; p++) {
+    for (let i = 0; i < n; i++) tmp[i] = arr[off + i];
+    let sum = 0;
+    for (let j = -half; j <= half; j++) sum += at(j);
+    for (let i = 0; i < n; i++) {
+      arr[off + i] = sum / (2 * half + 1);
+      sum += at(i + half + 1) - at(i - half);
+    }
+  }
+}
+
+/**
+ * Příčný sklon všech silnic s profilem v jednom poli (indexy jako heights): svah vedle silnice
+ * měřený po CROSS_STEP m (nejvýš CROSS_TERRAIN), klopení podle křivosti (nejvýš CROSS_BANK, mizí
+ * u křižovatek a volných konců), celkem nejvýš CROSS_MAX. Navazující silnice mají ve společném
+ * bodě stejný sklon, na mostovku se silnice napojí bez sklonu.
+ */
+function buildCross(world, grade, baseHeight, options, pairs, bankStops, joints) {
+  const { rCount, rOff, rpx, rpz } = world;
+  const { start, count, station, step, total } = grade;
+  const values = new Float64Array(total);
+  let tmp = new Float64Array(1024), side = new Float64Array(1024);
+  const joined = new Map();          // silnice → staničení konců napojených na pokračující silnici
+  for (const pair of pairs) for (const member of pair) {
+    if (!joined.has(member.road)) joined.set(member.road, []);
+    joined.get(member.road).push(station[member.p]);
+  }
+  for (let road = 0; road < rCount; road++) {
+    const s0 = start[road];
+    if (s0 < 0) continue;
+    const n = count[road], a = rOff[road], b = rOff[road + 1], length = station[b - 1];
+    const m = Math.max(2, Math.round(length / CROSS_STEP) + 1);
+    if (tmp.length < Math.max(n, m)) { tmp = new Float64Array(2 * Math.max(n, m)); side = new Float64Array(tmp.length); }
+    // svah: terén vlevo a vpravo za okrajem vozovky
+    const reachSide = (options.halfWidth?.(road) ?? 3) + 2;
+    const banked = options.bank?.(road), built = banked && options.built ? [] : null;
+    let p = a;
+    for (let j = 0; j < m; j++) {
+      const s = length * j / (m - 1);
+      while (p < b - 2 && station[p + 1] < s) p++;
+      const seg = station[p + 1] - station[p] || 1;
+      const t = (s - station[p]) / seg, dx = (rpx[p + 1] - rpx[p]) / seg, dz = (rpz[p + 1] - rpz[p]) / seg;
+      const x = rpx[p] + (rpx[p + 1] - rpx[p]) * t, z = rpz[p] + (rpz[p + 1] - rpz[p]) * t;
+      side[j] = (baseHeight(x - dz * reachSide, z + dx * reachSide) - baseHeight(x + dz * reachSide, z - dx * reachSide)) / (2 * reachSide);
+      if (built && options.built(x, z, reachSide + BANK_BUILT)) built.push(s);
+    }
+    smoothRange(side, 0, m, 3, 3, tmp);
+    for (let i = 0; i < n; i++) {
+      const f = length > 0 ? Math.min(1, i * step / length) * (m - 1) : 0, j = Math.min(m - 2, Math.floor(f));
+      const v = side[j] + (side[j + 1] - side[j]) * (f - j);
+      values[s0 + i] = Math.max(-CROSS_TERRAIN, Math.min(CROSS_TERRAIN, v));
+    }
+    if (banked) {
+      // klopení podle křivosti: směr úseků (bez skoku o 2π), vyhlazený podél silnice
+      let previous = null, angle = 0, angleSeg = -1;
+      p = a;
+      for (let i = 0; i < n; i++) {
+        const s = Math.min(length, i * step);
+        while (p < b - 2 && station[p + 1] < s) p++;
+        if (p !== angleSeg) {
+          angle = Math.atan2(rpz[p + 1] - rpz[p], rpx[p + 1] - rpx[p]);
+          if (previous !== null) angle = previous + Math.atan2(Math.sin(angle - previous), Math.cos(angle - previous));
+          previous = angle; angleSeg = p;
+        }
+        side[i] = angle;
+      }
+      smoothRange(side, 0, n, 7, 3, tmp);
+      // U křižovatek, volných konců a mezi domy klopení mizí, na navazující silnici pokračuje.
+      // Úseky bez klopení: [od, do], sloučené a seřazené.
+      const ends = joined.get(road) ?? [], half = length / (m - 1) / 2 + 1e-6;
+      const spans = [0, length].filter((s) => !ends.some((j) => Math.abs(j - s) < 0.01)).map((s) => [s, s]);
+      for (const s of bankStops.get(road) ?? []) spans.push([s, s]);
+      for (const s of built ?? []) spans.push([s - half, s + half]);
+      spans.sort((x, y) => x[0] - y[0]);
+      const stops = [];
+      for (const span of spans) {
+        const last = stops.at(-1);
+        if (last && span[0] <= last[1]) last[1] = Math.max(last[1], span[1]);
+        else stops.push(span);
+      }
+      let q = 0;
+      for (let i = 0; i < n; i++) {
+        const s = i * step;
+        while (q + 1 < stops.length && stops[q + 1][0] <= s) q++;
+        let d = stops.length ? Math.max(0, stops[q][0] - s, s - stops[q][1]) : Infinity;
+        if (q + 1 < stops.length) d = Math.min(d, stops[q + 1][0] - s);
+        const t = Math.min(1, d / BANK_CLEAR);
+        const i0 = Math.max(0, i - 1), i1 = Math.min(n - 1, i + 1);
+        if (i1 > i0) values[s0 + i] += bankFor((side[i1] - side[i0]) / ((i1 - i0) * step)) * t * t * (3 - 2 * t);
+      }
+    }
+    for (let i = 0; i < n; i++) values[s0 + i] = Math.max(-CROSS_MAX, Math.min(CROSS_MAX, values[s0 + i]));
+  }
+  const pins = new Map();
+  const pin = (road, s, value) => { if (!pins.has(road)) pins.set(road, []); pins.get(road).push([s, value]); };
+  for (const [road, stations] of joints) for (const s of stations) pin(road, s, 0);
+  // společný sklon ve směru průjezdu z A do B (normála silnice A míří stejně, jen když A končí v uzlu)
+  for (const [A, B] of pairs) {
+    const crossOf = (member) => profileAt(values, start[member.road], count[member.road], station[member.p], step);
+    const through = (crossOf(B) * B.out - crossOf(A) * A.out) / 2;
+    pin(A.road, station[A.p], -A.out * through);
+    pin(B.road, station[B.p], B.out * through);
+  }
+  for (const [road, list] of pins) pinRange(values, start[road], count[road], step, list);
+  return Float32Array.from(values);
 }
 
 /** Výška profilu v daném staničení (lineárně mezi vzorky po GRADE_STEP m). */
@@ -139,6 +267,22 @@ export function gradeSurface(grade, road, station, ground) {
   return gradeBlend(grade, road, station) >= 1 ? y : ground;
 }
 
+/** Příčný sklon silnice ve staničení (m na metr ve směru normály (−dz, dx) silnice), 0 bez profilu. */
+export function gradeCross(grade, road, station) {
+  const start = grade.start[road];
+  if (start < 0 || !grade.cross) return 0;
+  const count = grade.count[road];
+  const f = Math.max(0, Math.min(count - 1, station / grade.step));
+  const i = Math.min(count - 2, Math.floor(f));
+  const a = grade.cross[start + i], b = grade.cross[start + i + 1];
+  return a + (b - a) * (f - i);
+}
+
+/** Klopení podle křivosti (1/m) se znaménkem: vnitřní strana zatáčky níž. */
+export function bankFor(curvature) {
+  return -Math.max(-CROSS_BANK, Math.min(CROSS_BANK, curvature * BANK_FACTOR));
+}
+
 /** Váha pásu kolem osy: 1 na vozovce a krajnici, potom plynule k nule. */
 export function corridorWeight(distance, halfWidth, margin = CORRIDOR_MARGIN, falloff = CORRIDOR_FALLOFF) {
   const inner = halfWidth + margin;
@@ -157,9 +301,13 @@ export function corridorWeight(distance, halfWidth, margin = CORRIDOR_MARGIN, fa
  * Vrací { start (Int32Array, −1 = bez profilu), count (Int32Array), heights (Float32Array),
  * kept (Uint8Array, 1 = vzorek v ručně doladěném místě), reach (Float32Array, vzdálenost
  * k chráněnému místu nebo nenapojenému konci), rise (Float32Array, vzdálenost od začátku pásu
- * nebo od napojení na mostovku), junctions ({ p: bod, roads, dirs: směry silnic z bodu }), step, station }.
+ * nebo od napojení na mostovku), junctions ({ p: bod, roads, dirs: směry silnic z bodu }), cross
+ * (Float32Array, příčný sklon), step, station }.
+ * options.cross = počítat příčný sklon podle terénu, options.bank(road) = klopit v zatáčkách,
+ * options.built(x, z, r) = je do vzdálenosti r dům (v zástavbě se zatáčky neklopí),
+ * options.halfWidth(road) = poloviční šířka vozovky (pro odečet svahu vedle silnice).
  */
-export function buildRoadGrades(world, include, pinned, baseHeight, step = GRADE_STEP, keep = null, foreign = null) {
+export function buildRoadGrades(world, include, pinned, baseHeight, step = GRADE_STEP, keep = null, foreign = null, options = {}) {
   const { rCount, rOff, rpx, rpz, rpy } = world;
   const start = new Int32Array(rCount).fill(-1), count = new Int32Array(rCount);
   const station = new Float64Array(rpx.length);
@@ -241,6 +389,9 @@ export function buildRoadGrades(world, include, pinned, baseHeight, step = GRADE
     if (p === rOff[road]) startFree[road] = 1;
     if (p === rOff[road + 1] - 1) endFree[road] = 1;
   };
+  const crossPairs = [];             // navazující konce silnic se společným příčným sklonem
+  const bankStops = new Map();       // silnice → staničení křižovatek a volných konců (bez klopení)
+  const stopBank = (road, s) => { if (!bankStops.has(road)) bankStops.set(road, []); bankStops.get(road).push(s); };
   for (const members of nodes.values()) {
     if (members.length < 2) continue;
     // V ručně doladěném místě (konec mostu, podjezd) a těsně za ním zůstává původní napojení.
@@ -281,10 +432,30 @@ export function buildRoadGrades(world, include, pinned, baseHeight, step = GRADE
         through = a[0] * b[0] + a[1] * b[1] < -0.9;
       }
       if (!through) junctions.push({ p: linked[0][1], roads: linked.map(([road]) => road), dirs: linked.map(([road, p]) => heading(road, p)) });
+      if (!through) for (const [road, p] of linked) stopBank(road, station[p]);
+      // Silnice, která pokračuje druhou (i přes křižovatku), na ni naváže stejným příčným sklonem.
+      if (options.cross) {
+        const ends = linked.filter(([road, p]) => p === rOff[road] || p === rOff[road + 1] - 1)
+          .map(([road, p]) => ({ road, p, out: p === rOff[road] ? 1 : -1, dir: heading(road, p) }));
+        const used = new Set();
+        for (const A of ends) {
+          if (used.has(A)) continue;
+          let best = null, bestDot = -0.85;
+          for (const B of ends) {
+            if (B === A || used.has(B)) continue;
+            const dot = A.dir[0] * B.dir[0] + A.dir[1] * B.dir[1];
+            if (dot < bestDot) { bestDot = dot; best = B; }
+          }
+          if (!best) continue;
+          used.add(A); used.add(best);
+          crossPairs.push([A, best]);
+        }
+      }
     }
   }
   const heights = new Float32Array(total), kept = new Uint8Array(total), reach = new Float32Array(total);
   const rise = new Float32Array(total);
+  const cross = options.cross ? buildCross(world, { start, count, station, step, total }, baseHeight, options, crossPairs, bankStops, joints) : null;
   for (let road = 0; road < rCount; road++) {
     if (!raw[road]) continue;
     const pins = [...(constraints.get(road) ?? []), ...(keptSamples.get(road) ?? [])];
@@ -306,5 +477,5 @@ export function buildRoadGrades(world, include, pinned, baseHeight, step = GRADE
     for (let i = n - 2; i >= 0; i--) up[i] = Math.min(up[i], up[i + 1] + step);
     for (let i = 0; i < n; i++) rise[start[road] + i] = Math.min(1e4, up[i], Math.max(0, distance[i] - GRADE_TAPER));
   }
-  return { start, count, heights, kept, reach, rise, junctions, step, station };
+  return { start, count, heights, kept, reach, rise, junctions, cross, step, station };
 }

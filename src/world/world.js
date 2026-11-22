@@ -11,7 +11,7 @@ import { Traffic } from '../game/traffic.js';
 import { prazdrojDeck, identifyPrazdrojBridge } from './prazdroj-bridge.js';
 import { indexBridgeEdges } from '../physics/railings.js';
 import { prepareRondel } from './rondel.js';
-import { buildRoadGrades, corridorWeight, gradeBlend, gradeHeight, gradeSurface, CORRIDOR_FALLOFF, CORRIDOR_MARGIN } from './road-grade.js';
+import { buildRoadGrades, corridorWeight, gradeBlend, gradeCross, gradeHeight, gradeSurface, CORRIDOR_FALLOFF, CORRIDOR_MARGIN } from './road-grade.js';
 import { sidewalkHeight, sidewalkPriority, sidewalkProfile } from './sidewalks.js';
 import { armCut, cornerPolygon, findCorners, insidePolygon, shrinkPolygon } from './corners.js';
 
@@ -22,6 +22,8 @@ const ROAD_TILE_CACHE = 512;                       // kolik dlaždic s úpravou 
 const CLAMP_PAD = 1.5;                             // terén do této vzdálenosti za okrajem vozovky leží pod ní (m)
 const NEAR_PAD = 3;                                // pás kolem vozovky, kde má fyzika jemnou síť terénu (m)
 const JUNCTION_CELL = 32;                          // mřížka pro hledání křižovatek (m)
+// Zářez svahu u vozovky hlubší než tolik (m): dlaždice má jemnější síť terénu (4 m), aby do pásu nezasahovala.
+const STEEP_CUT = 0.3;
 const JUNCTION_BLEND = 6;                         // vedlejší silnice se napojí na okraj hlavní během (m)
 const junctionKey = (x, z) => (Math.floor(x / JUNCTION_CELL) + 65536) * 131072 + Math.floor(z / JUNCTION_CELL) + 65536;
 const cellKey = (x, z) => (Math.floor(x / STRUCTURE_KEEP) + 65536) * 131072 + Math.floor(z / STRUCTURE_KEEP) + 65536;
@@ -862,8 +864,12 @@ export class World {
     this._structureEnds = ends;
     // Sjízdné silnice bez profilu (ručně doladěné nájezdy): navazující silnice k nim přejdou do terénu.
     const foreign = (road) => R.cls[road] <= DRIVABLE_MAX && !raised(road) && !includeRoad(road);
+    // Příčný sklon podle svahu a klopení zatáček mimo obytné ulice a kruhové objezdy (?sklon=0 vypne).
+    const cross = new URLSearchParams(globalThis.location?.search ?? '').get('sklon') !== '0';
+    const bank = (road) => R.cls[road] <= RC.UNCLASSIFIED && !(R.flags[road] & RF.ROUNDABOUT) && !this.rondel?.ring.has(road);
+    const built = (x, z, r) => this.nearBuilding(x, z, r);
     this.roadGrade = buildRoadGrades(this, includeRoad, raised, (x, z) => this.terrainHeightAt(x, z), undefined,
-      (x, z) => this.keepsTerrain(x, z), foreign);
+      (x, z) => this.keepsTerrain(x, z), foreign, { cross, bank, built, halfWidth: (road) => R.w[road] / 2 });
     this.roadTerrain = new Map();
     this.roadClamp = new Map();
     this.roadNear = new Map();
@@ -926,8 +932,9 @@ export class World {
           let index = -1;
           for (let q = 0; q < found.length; q += 3) if (found[q] === road) { index = q; break; }
           if (index >= 0 && found[index + 1] <= d) continue;
-          const y = gradeSurface(grade, road, grade.station[k] + t * (grade.station[k + 1] - grade.station[k]), NaN);
+          let y = gradeSurface(grade, road, grade.station[k] + t * (grade.station[k + 1] - grade.station[k]), NaN);
           if (y !== y) continue;
+          y += this.roadCrossAt(road, k, t, x, z);
           if (index >= 0) { found[index + 1] = d; found[index + 2] = y; }
           else found.push(road, d, y);
         }
@@ -1003,7 +1010,8 @@ export class World {
           const t = Math.max(0, Math.min(1, ((x - ax) * ex + (z - az) * ez) / l2));
           const reach = this.r.w[road] / 2 + pad;
           if ((ax + ex * t - x) ** 2 + (az + ez * t - z) ** 2 > reach * reach) continue;
-          const y = gradeSurface(grade, road, grade.station[k] + t * (grade.station[k + 1] - grade.station[k]), ground);
+          let y = gradeSurface(grade, road, grade.station[k] + t * (grade.station[k + 1] - grade.station[k]), NaN);
+          y = y === y ? y + this.roadCrossAt(road, k, t, x, z, true) : ground;
           if (y < best || best !== best) best = y;
         }
       }
@@ -1026,6 +1034,23 @@ export class World {
     const grade = this.roadGrade;
     if (!grade || grade.start[road] < 0) return NaN;
     return gradeHeight(grade, road, station);
+  }
+
+  /**
+   * Příčný sklon: o kolik leží bod (x, z) nad osou silnice v úseku (seg, t). Odsazení od osy se
+   * měří jako vzdálenost od úseku se znaménkem strany a nejvýš do okraje vozovky. lower = za
+   * okrajem na nižší straně pokračovat ve sklonu dál dolů (pro srovnání terénu pod pásem).
+   */
+  roadCrossAt(road, seg, t, x, z, lower = false) {
+    const grade = this.roadGrade;
+    if (!grade?.cross || grade.start[road] < 0) return 0;
+    const ax = this.rpx[seg], az = this.rpz[seg], ex = this.rpx[seg + 1] - ax, ez = this.rpz[seg + 1] - az;
+    const ox = x - ax - ex * t, oz = z - az - ez * t;
+    const d = Math.hypot(ox, oz);
+    if (!d) return 0;
+    const slope = gradeCross(grade, road, grade.station[seg] + t * (grade.station[seg + 1] - grade.station[seg]));
+    const rate = ex * oz - ez * ox < 0 ? -slope : slope, hw = this.r.w[road] / 2;
+    return lower ? Math.min(rate * Math.min(hw, d), rate * d) : rate * Math.min(hw, d);
   }
 
   /**
@@ -1118,13 +1143,15 @@ export class World {
         if (d < best) { best = d; k = seg; t = f; }
       }
       const ax = this.rpx[k], az = this.rpz[k], ex = this.rpx[k + 1] - ax, ez = this.rpz[k + 1] - az;
-      // okraj vozovky na straně rohu
+      // okraj vozovky na straně rohu; bod na vozovce ramene má výšku vozovky (i s příčným sklonem)
       const nx = -arm.dz * sign, nz = arm.dx * sign;
-      const qx = ax + ex * t + nx * arm.hw, qz = az + ez * t + nz * arm.hw;
+      let qx = ax + ex * t + nx * arm.hw, qz = az + ez * t + nz * arm.hw;
+      const beyond = (x - qx) * nx + (z - qz) * nz;
+      if (beyond < 0) { qx = x; qz = z; }
       const grade = this.roadGrade, station = grade?.start[arm.road] >= 0 ? grade.station[k] + t * (grade.station[k + 1] - grade.station[k]) : 0;
       const y = !profileOnly ? this.roadSurfaceY(arm.road, k, t, qx, qz)
-        : grade && gradeBlend(grade, arm.road, station) >= 1 ? this.roadGradeY(arm.road, k, t) + SURF : NaN;
-      return [y, Math.max(0, (x - qx) * nx + (z - qz) * nz)];
+        : grade && gradeBlend(grade, arm.road, station) >= 1 ? this.roadGradeY(arm.road, k, t) + this.roadCrossAt(arm.road, k, t, qx, qz) + SURF : NaN;
+      return [y, Math.max(0, beyond)];
     };
     const [ya, da] = side(corner.a, 1), [yb, db] = side(corner.b, -1);
     if (profileOnly && (ya !== ya || yb !== yb)) return NaN;
@@ -1134,6 +1161,21 @@ export class World {
   }
 
   // ------------------------------------------------------------- chodníky ----
+  /** Leží do vzdálenosti r od bodu obdélník kolem některého domu? */
+  nearBuilding(x, z, r) {
+    const cx0 = Math.max(0, Math.floor((x - r - this.minX) / COLL_CELL)), cx1 = Math.min(this.gcols - 1, Math.floor((x + r - this.minX) / COLL_CELL));
+    const cz0 = Math.max(0, Math.floor((z - r - this.minZ) / COLL_CELL)), cz1 = Math.min(this.grows - 1, Math.floor((z + r - this.minZ) / COLL_CELL));
+    for (let cz = cz0; cz <= cz1; cz++) for (let cx = cx0; cx <= cx1; cx++) {
+      const c = cz * this.gcols + cx;
+      for (let k = this.bCellStart[c], ke = this.bCellStart[c + 1]; k < ke; k++) {
+        const i = this.bCellItems[k];
+        const dx = Math.max(this.bMinX[i] - x, 0, x - this.bMaxX[i]), dz = Math.max(this.bMinZ[i] - z, 0, z - this.bMaxZ[i]);
+        if (dx * dx + dz * dz <= r * r) return true;
+      }
+    }
+    return false;
+  }
+
   /** Projde hrany stěn budov v obdélníku; visit(ax, az, bx, bz). */
   forWalls(x0, z0, x1, z1, visit) {
     const B = this.b, vx = this.bvx, vz = this.bvz;
@@ -1312,9 +1354,13 @@ export class World {
           const w = corridorWeight(d, hw);
           const index = jj * W + ii;
           const station = grade.station[k] + t * (grade.station[k + 1] - grade.station[k]);
+          // příčný sklon: na vozovce, za okrajem na nižší straně dál dolů (terén tam leží pod pásem)
+          const slope = grade.cross ? gradeCross(grade, road, station) : 0;
+          const u = (ex * (z - az - ez * t) - ez * (x - ax - ex * t)) < 0 ? -d : d;
+          const cross = Math.min(slope * Math.max(-hw, Math.min(hw, u)), slope * u);
           // nejnižší vozovka na profilu nad uzlem (terén pod ní nesmí prorůstat)
           if (d <= hw + NEAR_PAD) {
-            const surface = gradeSurface(grade, road, station, NaN);
+            const surface = gradeSurface(grade, road, station, NaN) + cross;
             if (surface === surface) near[index] = 1;
             if (d <= hw + CLAMP_PAD && (surface < clamp[index] || (clamp[index] !== clamp[index] && surface === surface))) {
               clamp[index] = surface;
@@ -1322,7 +1368,7 @@ export class World {
             }
           }
           if (w <= weight[index]) continue;
-          const goal = gradeHeight(grade, road, station);
+          const goal = gradeHeight(grade, road, station) + cross;
           if (goal !== goal) continue;                    // ručně doladěný úsek
           fade[index] = gradeBlend(grade, road, station);
           weight[index] = w;
@@ -1391,12 +1437,14 @@ export class World {
       const base = this.terrainHeightAt(x0 + ii * S, z0 + jj * S);
       let goal = target[index];
       // Svah těsně u vozovky výš než silnice: dlaždice potřebuje jemnější síť terénu.
-      if (!carriageway[index] && distance[index] <= halfWidth[index] + 2 && base - goal > 0.4) this.roadSteepTiles.add(tile);
+      if (!carriageway[index] && distance[index] <= halfWidth[index] + 2 && base - goal > STEEP_CUT) this.roadSteepTiles.add(tile);
       // u chráněných míst a volných konců se úprava plynule ztrácí
       let strength = w * fade[index];
       if (!carriageway[index] && base > goal) {
         // Svah nad silnicí: pata se odřízne (krajnice nejvýš 5 cm nad vozovkou, dál mírný
         // sklon 15 %), aby trojúhelníky svahu nezasahovaly do vozovky. Jen snížení, bez náspu.
+        // Na nižší straně silnice s příčným sklonem se měří od roviny vozovky prodloužené za
+        // okraj (cíl už ji obsahuje), jinak by svah zasahoval do pásu.
         goal = Math.min(base, goal + 0.05 + 0.15 * Math.max(0, distance[index] - halfWidth[index] - 1.5));
         strength = fade[index];
       } else if (!carriageway[index] && goal - base > 0.3) continue;   // jiná úroveň (opěrná zeď, násep)
@@ -1417,7 +1465,7 @@ export class World {
     if (graded !== graded) terrain = this.heightAt(x, z) + SURF;
     else {
       const grade = this.roadGrade, b = gradeBlend(grade, road, grade.station[seg] + t * (grade.station[seg + 1] - grade.station[seg]));
-      let surface = b >= 1 ? graded : this.heightAt(x, z);
+      let surface = b >= 1 ? graded + this.roadCrossAt(road, seg, t, x, z) : this.heightAt(x, z);
       if (b >= 1 && this.inJunction(x, z)) {
         const shared = this.junctionSurfaceAt(x, z);
         if (shared === shared) surface = shared;

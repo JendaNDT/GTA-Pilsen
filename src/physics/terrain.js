@@ -2,7 +2,7 @@ import { TUNNEL_HEIGHT, TUNNEL_PORTAL_CUT } from '../world/tunnels.js';
 
 import { riverBed } from './water.js';
 import { densePath, pathNormal } from '../world/road-profile.js';
-import { gradeBlend, stripLift } from '../world/road-grade.js';
+import { gradeBlend, gradeCross, stripLift } from '../world/road-grade.js';
 import { cornerSidewalkSections, sidewalkFacing, sidewalkQuads, sidewalkSections, SIDEWALK_RAISED } from '../world/sidewalks.js';
 
 const ROAD_STEP = 4;                   // rozteč jemné sítě terénu podél vozovek (m)
@@ -182,6 +182,7 @@ function refinedGrid(near, base, x0, z0, size, vertex, surface) {
  * Povrch vozovek s hladkým profilem (pásy po 2 m po celé šířce). Terén pod silnicí je srovnaný
  * do stejného profilu a pás leží jako vykreslený asfalt 5 cm nad ním, takže drobné nerovnosti
  * sítě terénu kola necítí. Na začátku pásu (za přechodem u chráněných míst) se zvedá plynule.
+ * Napříč má pás stejný sklon jako vykreslená vozovka (podle svahu a klopení v zatáčce).
  */
 export function roadSurfaceTriangles(world, ci, emit) {
   const grade = world.roadGrade, pieces = world.rPieces?.[ci];
@@ -203,7 +204,7 @@ export function roadSurfaceTriangles(world, ci, emit) {
       if (y !== y) { previous = null; continue; }
       // v přechodu k nim a u nenapojených konců jede auto po plynule upraveném terénu
       if (gradeBlend(grade, road, station) < 1) { previous = null; continue; }
-      const lift = stripLift(grade, road, station);
+      const lift = stripLift(grade, road, station), slope = gradeCross(grade, road, station) * hw;
       // V křižovatce leží pás ve společné výšce všech vozovek. Aby se překrývající pásy
       // různých silnic shodovaly, dělí se tam napříč na JUNCTION_PARTS dílů.
       const junction = world.inJunction(D.x[k], D.z[k]) ||
@@ -214,7 +215,7 @@ export function roadSurfaceTriangles(world, ci, emit) {
       for (let i = 0; i <= parts; i++) {
         const u = -1 + (2 * i) / parts;
         const x = D.x[k] + n.x * hw * scale * u, z = D.z[k] + n.z * hw * scale * u;
-        let h = y;
+        let h = y + slope * u;              // příčný sklon (u = −1 levý, +1 pravý okraj)
         if (junction && world.inJunction(x, z)) {
           const shared = world.junctionSurfaceAt(x, z);
           if (shared === shared) h = shared;

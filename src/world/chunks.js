@@ -23,7 +23,7 @@ import { makeBuildingMaterial, makeDecalMaterial, makeAsphaltMaterial, makeSurfa
 import { SURFACE } from './material-table.js';
 import { Parts, getDetailMaterial } from '../entities/models.js';
 import { SURF } from './world.js';
-import { gradeBlend } from './road-grade.js';
+import { gradeBlend, gradeCross } from './road-grade.js';
 import { cornerSidewalkSections, sidewalkQuads, sidewalkSections, sidewalkWidth } from './sidewalks.js';
 import { TUNNEL_HEIGHT } from './tunnels.js';
 import { buildTrafficMeshes } from './traffic-meshes.js';
@@ -528,11 +528,24 @@ function gradeDense(world, D, road, s) {
   let station = grade.station[s] + Math.hypot(D.x[0] - world.rpx[s], D.z[0] - world.rpz[s]);
   D.y = new Array(D.n);
   D.blend = new Array(D.n);
+  D.cross = new Array(D.n);
+  D.hw = world.r.w[road] / 2;
   for (let k = 0; k < D.n; k++) {
     if (k) station += Math.hypot(D.x[k] - D.x[k - 1], D.z[k] - D.z[k - 1]);
     D.y[k] = world.roadGradeAt(road, station) + SURF;
     D.blend[k] = gradeBlend(grade, road, station);
+    D.cross[k] = gradeCross(grade, road, station);
   }
+}
+
+/** Příčný sklon husté cesty: výška bodu nad osou (vzdálenost od úseku k se znaménkem, nejvýš hw). */
+function denseCross(D, k, t, x, z) {
+  if (!D.cross) return 0;
+  const a = Math.min(k, D.n - 2), k1 = Math.min(D.n - 1, k + 1);
+  const ex = D.x[a + 1] - D.x[a], ez = D.z[a + 1] - D.z[a], len = Math.hypot(ex, ez);
+  if (!len) return 0;
+  const u = Math.max(-D.hw, Math.min(D.hw, ((z - D.z[a]) * ex - (x - D.x[a]) * ez) / len));
+  return (D.cross[k] + (D.cross[k1] - D.cross[k]) * t) * u;
 }
 
 /**
@@ -551,7 +564,7 @@ function denseY(world, D, k, t, x, z) {
     const shared = world.junctionSurfaceAt(x, z);
     if (shared === shared) return shared + SURF;
   }
-  return y;
+  return y + denseCross(D, k, t, x, z);
 }
 
 // Barvy chodníku: žulový obrubník, líc ve stínu, dlažba v měřených čtvrtích a asfaltový chodník.
