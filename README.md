@@ -104,6 +104,13 @@ lomem a několik cest u vody) leží na ulici nad nábřežní zdí. Výškový 
 rozmazal do svahu přes celou vozovku, takže Anglické nábřeží dřív leželo v jámě až 6 m pod
 ulicí. Původní profil pro porovnání vrátí `?nabrezi=0`. [Rozbor a měření](docs/nabrezi.md)
 
+Obraz za jízdy je klidnější a ostřejší. Jemné zrno asfaltu, omítek a dlažby se v dálce plynule
+vytratí dřív, než by začalo blikat, a spáry cihel se nahradí jejich průměrnou tmavostí. Textury
+země se v dálce filtrují ostřeji, nízká předvolba kreslí na počítači v plném rozlišení a vysoká
+předvolba obraz po časovém vyhlazení mírně doostří. Tramvajový pás leží pod asfaltem ulice
+a terén u okraje silnice už tak často nevystupuje nad asfalt. Původní obraz pro porovnání vrátí
+`?obraz=puvodni`, samotné doostření vypne `?ostreni=0`. [Rozbor, měření a snímky](docs/obraz.md)
+
 Hra ve výchozím nastavení používá aktuální čas v Plzni. V **Nastavení → Herní čas**
 můžeš zadat konkrétní hodinu a minutu. Herní čas pak plyne stejným tempem jako skutečný
 čas a při pauze stojí. **Použít aktuální čas v Plzni** obnoví živé hodiny. Po změně

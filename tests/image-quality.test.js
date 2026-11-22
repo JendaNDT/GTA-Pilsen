@@ -78,8 +78,7 @@ test('sousední dlaždice mají pevné pořadí plochých povrchů a druhy povrc
       if (other === null) continue;
       assert.equal(Math.abs(decalOrder(14, ci, cols) - decalOrder(14, other, cols)), 0.5);
     }
-    // tramvajový pás vždy pod asfaltem, asfalt vždy pod značením
-    assert.ok(decalOrder(13, ci, cols) < 14);
+    // asfalt vždy pod značením
     assert.ok(decalOrder(14, ci, cols) >= 14 && decalOrder(14, ci, cols) < 15);
     assert.ok(decalOrder(16, ci, cols) >= 16 && decalOrder(16, ci, cols) < 17);
   }

@@ -46,7 +46,7 @@ export function temporalSharpness(original = ORIGINAL_IMAGE) {
 }
 
 /**
- * Pořadí kreslení plochého povrchu dlaždice ci (base = 13 tramvajové pásy, 14 asfalt, 16 značení).
+ * Pořadí kreslení plochého povrchu dlaždice ci (base = 14 asfalt, 16 značení).
  * Sousední dlaždice se liší o 0,5 podle šachovnice, takže se jejich překryv nekreslí jednou tak
  * a jednou onak podle vzdálenosti od kamery. Pořadí druhů povrchů se tím nemění (rozdíl < 1).
  */

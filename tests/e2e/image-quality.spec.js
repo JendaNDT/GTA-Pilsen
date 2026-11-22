@@ -16,43 +16,56 @@ async function buildAround(page, [x, z]) {
   }, [x, z]);
 }
 
-/** Pořadí kreslení asfaltu v bodě: [druh, renderOrder] všech plochých povrchů, které ho kryjí. */
+/** Ploché povrchy v bodě: [druh, dlaždice] všech trojúhelníků asfaltu, které ho kryjí. */
 async function asphaltLayers(page, [x, z]) {
   return page.evaluate(([x, z]) => {
     const g = window.__game, layers = [];
     for (const ch of g.chunks.chunks.values()) {
-      for (const [kind, mesh] of [['asfalt', ch.asphalt], ['tramvajovy pas', ch.beds]]) {
-        if (!mesh) continue;
-        const pos = mesh.geometry.attributes.position, idx = mesh.geometry.index;
-        for (let t = 0; t < idx.count; t += 3) {
-          const [a, b, c] = [0, 1, 2].map((o) => idx.getX(t + o));
-          const ax = pos.getX(a), az = pos.getZ(a), bx = pos.getX(b), bz = pos.getZ(b), cx = pos.getX(c), cz = pos.getZ(c);
-          const d = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
-          if (Math.abs(d) < 1e-9) continue;
-          const l1 = ((bz - cz) * (x - cx) + (cx - bx) * (z - cz)) / d, l2 = ((cz - az) * (x - cx) + (ax - cx) * (z - cz)) / d;
-          if (l1 < 0 || l2 < 0 || l1 + l2 > 1) continue;
-          layers.push([kind, mesh.renderOrder, ch.ci]);
-          break;
-        }
+      const mesh = ch.asphalt;
+      if (!mesh) continue;
+      const pos = mesh.geometry.attributes.position, idx = mesh.geometry.index, layout = mesh.geometry.attributes.roadLayout;
+      for (let t = 0; t < idx.count; t += 3) {
+        const [a, b, c] = [0, 1, 2].map((o) => idx.getX(t + o));
+        const ax = pos.getX(a), az = pos.getZ(a), bx = pos.getX(b), bz = pos.getZ(b), cx = pos.getX(c), cz = pos.getZ(c);
+        const d = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
+        if (Math.abs(d) < 1e-9) continue;
+        const l1 = ((bz - cz) * (x - cx) + (cx - bx) * (z - cz)) / d, l2 = ((cz - az) * (x - cx) + (ax - cx) * (z - cz)) / d;
+        if (l1 < 0 || l2 < 0 || l1 + l2 > 1) continue;
+        // asfalt ulice nese šířku vozovky; tramvajový pás a rohy ne
+        layers.push([layout.getY(a) !== 0 ? 'ulice' : 'jiny pas', ch.ci]);
       }
     }
     return layers;
   }, [x, z]);
 }
 
-test('tramvajový pás leží pod asfaltem ulice a sousední dlaždice mají pevné pořadí', async ({ page }) => {
+test('v Prešovské leží koleje v asfaltu ulice bez tramvajového pásu navrch', async ({ page }) => {
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  await page.goto(gameUrl('/?debug&adapt=0&quality=medium&traffic=0&date=2026-11-09&hour=10'));
-  await page.waitForFunction(() => window.__ready);
-  await buildAround(page, PRESOVSKA);
-  const layers = await asphaltLayers(page, PRESOVSKA);
-  const road = layers.find(([kind]) => kind === 'asfalt'), bed = layers.find(([kind]) => kind === 'tramvajovy pas');
-  expect(road, JSON.stringify(layers)).toBeTruthy();
-  expect(bed, JSON.stringify(layers)).toBeTruthy();
-  // kolej je v jiné dlaždici než ulice; pás se přesto kreslí dřív, takže ho asfalt překryje
-  expect(bed[2]).not.toBe(road[2]);
-  expect(bed[1]).toBeLessThan(road[1]);
+  const layersAt = async (extra) => {
+    await page.goto(gameUrl(`/?debug&adapt=0&quality=medium&traffic=0&date=2026-11-09&hour=10${extra}`));
+    await page.waitForFunction(() => window.__ready);
+    await buildAround(page, PRESOVSKA);
+    return asphaltLayers(page, PRESOVSKA);
+  };
+  // původně: přes asfalt ulice ležel tramvajový pás ze sousední dlaždice
+  const original = await layersAt('&obraz=puvodni');
+  expect(original.filter(([kind]) => kind === 'ulice').length, JSON.stringify(original)).toBeGreaterThan(0);
+  const bed = original.find(([kind]) => kind === 'jiny pas'), road = original.find(([kind]) => kind === 'ulice');
+  expect(bed, JSON.stringify(original)).toBeTruthy();
+  expect(bed[1]).not.toBe(road[1]);
+  const now = await layersAt('');
+  expect(now.filter(([kind]) => kind === 'ulice').length, JSON.stringify(now)).toBeGreaterThan(0);
+  expect(now.filter(([kind]) => kind !== 'ulice'), JSON.stringify(now)).toEqual([]);
+  // koleje zůstávají
+  const rails = await page.evaluate(([x, z]) => [...window.__game.chunks.chunks.values()].some((ch) => {
+    const pos = ch.marks?.geometry.attributes.position;
+    if (!pos) return false;
+    for (let i = 0; i < pos.count; i++) if (Math.hypot(pos.getX(i) - x, pos.getZ(i) - z) < 4) return true;
+    return false;
+  }), PRESOVSKA);
+  expect(rails).toBe(true);
+  // sousední dlaždice mají pevné pořadí asfaltu
   const orders = await page.evaluate(() => {
     const g = window.__game, cols = g.world.cols, byTile = new Map();
     for (const ch of g.chunks.chunks.values()) if (ch.asphalt) byTile.set(ch.ci, ch.asphalt.renderOrder);

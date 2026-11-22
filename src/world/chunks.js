@@ -595,7 +595,8 @@ function drawSidewalks(world, solid, road, s, e, corner = null) {
 }
 
 /** Pás položený na terén (nebo na mostovku). center = přidat středovou řadu bodů (lépe kopíruje terén). */
-function ribbon(world, buf, D, hw, col, lateral, lift, capStart, capEnd, center, road) {
+/** Pás podél osy D. covered[k] = bod osy leží pod jiným povrchem; úsek mezi dvěma takovými body se vynechá. */
+function ribbon(world, buf, D, hw, col, lateral, lift, capStart, capEnd, center, road, covered = null) {
   const n = D.n;
   let pL = -1, pC = -1, pR = -1;
   let along = road?.start ?? 0;
@@ -604,13 +605,13 @@ function ribbon(world, buf, D, hw, col, lateral, lift, capStart, capEnd, center,
     const nr = pathNormal(D, k);
     const nx = nr.x, nz = nr.z, sc = nr.scale;
     if (road && k) along += Math.hypot(D.x[k]-D.x[k-1],D.z[k]-D.z[k-1]);
-    if (nr.dot < 0.93) buf.disc(D.x[k] + nx * lateral, D.z[k] + nz * lateral, hw, col, yFn, 8, road, along, nx, nz);
+    if (nr.dot < 0.93 && !covered?.[k]) buf.disc(D.x[k] + nx * lateral, D.z[k] + nz * lateral, hw, col, yFn, 8, road, along, nx, nz);
     const cx = D.x[k] + nx * lateral * sc, cz = D.z[k] + nz * lateral * sc;
     const lx = cx - nx * hw * sc, lz = cz - nz * hw * sc, rx = cx + nx * hw * sc, rz = cz + nz * hw * sc;
     const L = buf.v(lx, yFn(lx, lz), lz, col, along, -hw, road), R = buf.v(rx, yFn(rx, rz), rz, col, along, hw, road);
     let C = -1;
     if (center) C = buf.v(cx, yFn(cx, cz), cz, col, along, 0, road);
-    if (pL >= 0) {
+    if (pL >= 0 && !(covered?.[k] && covered[k - 1])) {
       if (center) { buf.quad(pL, pC, C, L); buf.quad(pC, pR, R, C); } else buf.quad(pL, pR, R, L);
     }
     pL = L; pC = C; pR = R;
@@ -885,9 +886,10 @@ function buildRoads(world, ci, manager) {
   const R = world.r, px = world.rpx, pz = world.rpz, py = world.rpy, off = world.rOff;
   const asphalt = QUALITY.roadDetail ? new RoadBuf() : new DecalBuf(), marks = new DecalBuf(), solid = new SolidBuf();
   const surfaceStep = world.gradeTerrain.has(ci) ? world.gradeStep : 4;
-  // Koleje: osy po metrech. Tramvajový pás se kreslí před silnicemi, aby ho tam, kde tramvaj jede
-  // po vozovce, překryl asfalt ulice (jinak vedle něj zůstával pruh jiného asfaltu). ?obraz=puvodni
-  // vrací původní pořadí.
+  // Koleje. Tramvajový pás se nekreslí tam, kde kolej vede po vozovce: tam je povrchem asfalt ulice
+  // a koleje leží v něm. Pás často leží v sousední dlaždici než ulice a jeho překryv s asfaltem se
+  // kreslil jednou tak, jednou onak (vedle pásu zůstával pruh jiného asfaltu). Zbytek pásu se kreslí
+  // před silnicemi. ?obraz=puvodni vrací původní pás.
   const rails = world.railChunks[ci];
   const railPaths = new Map();
   const railPath = (ri) => {
@@ -900,9 +902,11 @@ function buildRoads(world, ci, manager) {
     }
     return railPaths.get(ri);
   };
-  // Pás má vlastní síť kreslenou pod asfaltem: kolej často leží v sousední dlaždici než ulice.
-  const beds = ORIGINAL_IMAGE ? asphalt : QUALITY.roadDetail ? new RoadBuf() : new DecalBuf();
-  const tramBed = (ri) => ribbon(world, beds, railPath(ri), 1.25, COL.tramBed, 0, 0.004);
+  const tramBed = (ri) => {
+    const D = railPath(ri);
+    const covered = ORIGINAL_IMAGE ? null : Uint8Array.from({ length: D.n }, (_, k) => world.insideOtherCarriageway(-1, D.x[k], D.z[k]) ? 1 : 0);
+    ribbon(world, asphalt, D, 1.25, COL.tramBed, 0, 0.004, false, false, false, null, covered);
+  };
   if (rails && !ORIGINAL_IMAGE) for (const ri of rails) if (world.rails[ri].cls === 0) tramBed(ri);
   if (pieces) {
     for (let q = 0; q < pieces.length; q += 3) {
@@ -1029,7 +1033,7 @@ function buildRoads(world, ci, manager) {
   }
   const traffic = world.traffic.chunks.get(ci);
   if (traffic) drawTrafficMarkings(world, marks, traffic);
-  return { asphalt: asphalt.geometry(), beds: beds === asphalt ? null : beds.geometry(), marks: marks.geometry(), solid: solid.geometry(), furniture };
+  return { asphalt: asphalt.geometry(), marks: marks.geometry(), solid: solid.geometry(), furniture };
 }
 
 function drawTrafficMarkings(world, buf, traffic) {
@@ -1808,10 +1812,9 @@ export class ChunkManager {
       if (roads.furniture.length) ch.roadFurniture = attachRoadFurniture(w.breakables, ch.group,
         roads.solid, this.solidMat, roads.furniture);
       // Ploché povrchy se kreslí bez hloubky v pořadí renderOrder, při shodě podle vzdálenosti
-      // od kamery. Překryv sousedních dlaždic by se pak za jízdy prohazoval a blikal: sousedé
-      // proto mají pevné pořadí podle šachovnice (decalOrder).
+      // od kamery. Překryv sousedních dlaždic (asfalt v křižovatce na hranici, tramvajový pás) by
+      // se pak za jízdy prohazoval a blikal: sousedé proto mají pevné pořadí podle šachovnice.
       const order = (base) => ORIGINAL_IMAGE ? base : decalOrder(base, ci, w.cols);
-      if (roads.beds) { const m = new THREE.Mesh(roads.beds, this.asphaltMat); m.renderOrder = order(13); m.receiveShadow = true; add(m, roads.beds); ch.beds = m; }
       if (roads.asphalt) { const m = new THREE.Mesh(roads.asphalt, this.asphaltMat); m.renderOrder = order(14); m.receiveShadow = true; add(m, roads.asphalt); ch.asphalt = m; }
       if (roads.marks) { const m = new THREE.Mesh(roads.marks, this.marksMat); m.renderOrder = order(16); m.receiveShadow = true; add(m, roads.marks); ch.marks = m; }
       const entries = w.traffic.chunks.get(ci);
@@ -1946,7 +1949,6 @@ export class ChunkManager {
       if (ch.lamps) { ch.lamps.poles.visible = d < 560; ch.lamps.pools.visible = night && d < 1100; }
       // v dálce stačí silnice nakreslené v textuře země; přesná síť a čáry jen poblíž
       if (ch.asphalt) ch.asphalt.visible = d < 800;
-      if (ch.beds) ch.beds.visible = d < 800;
       if (ch.marks) ch.marks.visible = d < 480;
       if (ch.sidewalks) ch.sidewalks.visible = d < SIDEWALK_VIEW;
       else if (ch.sidewalkPending && d < SIDEWALK_BUILD && (!sidewalkJob || d < sidewalkJob.dist)) sidewalkJob = ch;
