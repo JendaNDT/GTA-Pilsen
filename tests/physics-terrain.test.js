@@ -223,7 +223,7 @@ test('nájezd na Wilsonův most má fyziku terénu ve výšce vozovky i vedle st
   assert.ok(worst < 0.02, `Fyzika terénu se na nájezdu liší od vozovky o ${worst.toFixed(3)} m v bodě ${place}.`);
 });
 
-test('Anglické nábřeží severně od Wilsonova mostu leží na ulici nad nábřežní zdí, ne v půli svahu k Radbuze', async () => {
+test('Anglické nábřeží jižně od Wilsonova mostu leží na ulici nad nábřežní zdí, ne v půli svahu k Radbuze', async () => {
   // Výškový model po 8 m rozmazal nábřežní zeď Radbuzy do svahu přes celou vozovku. Profil
   // silnice z výšek v ose proto klesal až na −9,06 m a asfalt ležel až 2,4 m pod terénem u okraje
   // (a 6 m pod ulicí za ním), fyzika terénu u okraje prorůstala nad pás až o 2,2 m.

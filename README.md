@@ -98,6 +98,11 @@ Silnice jsou napříč skloněné podle svahu (nejvýš 4 %) a zatáčky mimo z�
 v křižovatkách méně drncá. Vodorovné silnice pro porovnání vrátí `?sklon=0`.
 [Popis, měření a snímky](docs/sklon.md)
 
+Silnice na hraně břehu (Anglické a Denisovo nábřeží, Mlýnské nábřeží, Karlovarská nad zatopeným
+lomem a několik cest u vody) leží na ulici nad nábřežní zdí. Výškový model po 8 m tam zeď
+rozmazal do svahu přes celou vozovku, takže Anglické nábřeží dřív leželo v jámě až 6 m pod
+ulicí. Původní profil pro porovnání vrátí `?nabrezi=0`. [Rozbor a měření](docs/nabrezi.md)
+
 Hra ve výchozím nastavení používá aktuální čas v Plzni. V **Nastavení → Herní čas**
 můžeš zadat konkrétní hodinu a minutu. Herní čas pak plyne stejným tempem jako skutečný
 čas a při pauze stojí. **Použít aktuální čas v Plzni** obnoví živé hodiny. Po změně

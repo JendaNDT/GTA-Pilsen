@@ -1,5 +1,29 @@
 # Stav etapy E26
 
+## Anglické nábřeží pod terénem (mimo etapu, na přání autora)
+
+Na větvi `claude/stoic-hopper-46xgy0`, která navazuje na opravu nájezdu Wilsonova mostu (`claude/determined-volta-o7e9t2`, revize `6e3e924`). Oprava je v revizi `ada32f9`. [Rozbor, tabulky a měření](../nabrezi.md)
+
+**Směr.** Zadání i dřívější zápis mluví o úseku „severně od mostu“. Herní z ale roste k jihu: úsek z 458–519 vede od Americké na jih po levém břehu Radbuzy (bod (165; 490) = 49,74309° s. š., 13,37989° v. d.).
+
+**Příčina (ověřeno).** Profil silnice vzniká z výšek výškového modelu v ose. Model má body po 8 m a mezi ulicí nad Radbuzou (asi −3 m) a řekou (asi −12 m) je nábřežní zeď. Jeden uzel sítě leží na ulici, sousední o 8 m dál u vody, a výška mezi nimi klesá rovnoměrně. Celá vozovka Anglického nábřeží (silnice 13188) tak ležela na rozmazané zdi: v z 505 je osa na −9,7 m, terasa začíná 7 m od osy na −3,2 m a voda 7,3 m od osy na −11,4 m. Model tedy nezachytil koryto přímo v ose, ale pád terénu z ulice k řece. Podle mapy je mezi silnicí a vodou jen chodník.
+
+**Druhá chyba se potvrdila jinde.** Body na břehové čáře ve fyzice (`shore()`) se opravdu nesrovnávaly pod pás. Ve 239 dlaždicích s vodou a silnicemi prorůstalo nad pás 14 z 34 235 takových bodů, nejvíc o 19 cm u Radbuzy pod Tyršovou (568; 94). Na Anglickém nábřeží žádný takový bod nebyl. Naměřené prorůstání o 2,2 m u (161,7; 486,5) způsoboval uzel sítě fyziky (160; 488) 4,7 m od osy na ulici (−2,9 m). Ten už leží za pásem 1,5 m od okraje vozovky, který se srovnává pod pás, a trojúhelník od něj k propadlé vozovce (−6,7 m) vystupoval u okraje nad pás.
+
+**Oprava.**
+- `src/world/road-grade.js`, `src/world/world.js`: vzorek profilu silnice, která vede z boku podél vody (nejvýš 8 m za okrajem), se zvedne na terasu nad zdí, když terén u osy nebo k terase prudce stoupá (25–50 % na metr) a za terasou už nestoupá. Na úbočí kopce zůstává výška v ose. Zvednutá vozovka je napříč rovná a terén se pod ni dosype i u domů a směrem k vodě (ne do ní). Vypne se `?nabrezi=0`.
+- `src/physics/terrain.js`: body na břehové čáře se srovnávají pod pás stejně jako ostatní vrcholy (`roadClampAt`).
+
+**Výsledek na Anglickém nábřeží.** Profil −9,06 … −2,08 m → −3,41 … −2,05 m. Asfalt v z 505 −9,01 → −3,02 m. Asfalt v z 470–515 leží nejvýš 0,00 m pod okolním terénem (dřív 5,72 m), fyzika terénu je v celé šířce aspoň 5 cm pod pásem (dřív o 2,25 m nad ním). Ve městě se zvedlo 14 silnic, všechny na hraně břehu nebo nad zatopeným lomem (Anglické a Denisovo nábřeží, Mlýnské nábřeží, Karlovarská, Pražská, Doubravecká, K Valše, Ke Krkavci a pět účelových cest u vody). Sestavení profilů při startu +0,15 s (1 180 → 1 333 ms v Node).
+
+**Ověření.**
+- Dva nové testy v Node (`tests/physics-terrain.test.js`): Anglické nábřeží v z 470–515 (asfalt nejvýš 0,3 m pod okolním terénem, fyzika pod pásem, profil kolísá méně než 1,6 m; s `?nabrezi=0` selže s 5,72 m) a body na břehové čáře pod pásem (na původním `terrain.js` selže s 0,186 m). Testovací svět v Node má nově vodní plochy (`_initWater`).
+- `npm test` 231 z 231, `npm run build` prošlo.
+- Prohlížečové zkoušky `physics-roads.spec.js physics.spec.js river-detail.spec.js water.spec.js --trace off` (vzor zahrnuje i `structure-water.spec.js`): prošlo 32 z 34. WebGL 2 17 z 17 včetně Wilsonova mostu v obou směrech. Na WebGPU selhaly obě zkoušky `river-detail.spec.js` (medium, ultra) hned při prvním dotazu do stránky chybou `OperationError: A valid external Instance reference no longer exists` (ztráta softwarového zařízení WebGPU). Na původní revizi `6e3e924` bez opravy selhávají v tomto prostředí stejně, opakovaně. Oprava je tedy nezpůsobila.
+- Jízda ve hře (nízká předvolba, WebGL 2, 9. 11. 2026 v 10.00, bez MHD a cizích aut) po celém úseku od Americké na jih do 43 km/h: s opravou auto dojelo se zdravím 100, kola se od asfaltu lišila nejvýš o 5 mm a nikdy neztratila dotyk. S `?nabrezi=0` auto nedojelo, zdraví kleslo na 90, kolo se od asfaltu vzdálilo o 1,61 m a kola 13 270krát ztratila dotyk. Snímky před a po jsou v protokolu.
+
+**Otevřené a návrhy.** Čistší oprava by byla v sestavení terénu (`tools/terrain.py`, `burn_lines`), surová data DMR 5G ale v tomto prostředí nejsou. Dům 1545 u nábřeží stojí na průměrné výšce původního modelu a může být o něco níž než ulice. Nábřežní zeď se nevykresluje, k vodě klesá terén strmým svahem.
+
 ## Propad nájezdu na Wilsonův most (mimo etapu, na přání autora)
 
 Na větvi `claude/modest-ramanujan-wvjl2i` (revize `faa1a84`) selhávala zkouška „kola unesou auto přes Wilsonův most v obou směrech“: auto dojelo se zdravím 100, ale jedno kolo leželo 5,3 cm pod vozovkou (mez 5 cm). Oprava je na větvi `claude/determined-volta-o7e9t2`.
@@ -18,6 +42,8 @@ Na větvi `claude/modest-ramanujan-wvjl2i` (revize `faa1a84`) selhávala zkoušk
 - Širší sada 21 souborů prohlížečových zkoušek na WebGL 2 (jízda, provoz, MHD, chodci, asfalt, mimoúrovňová křížení, Rondel, Prazdroj, řeka, jemný terén, stopy kol, rozpočet): průběžně, výsledek doplním.
 
 **Návrhy mimo úkol.** Profil Anglického nábřeží severně od mostu leží až 2,5 m pod terénem (výškový model u břehu nejspíš zachytil koryto) a body sítě na břehové čáře řeky se pod pás nesrovnávají. Na samém okraji nábřeží u nájezdu vystoupí terén až 15 cm nad pás, mimo stopu kol. [Měření, tabulky a návrhy](../sklon.md#dodatek-proč-kolo-klesalo-pod-nájezd-wilsonova-mostu)
+
+Oba návrhy jsou provedené v části „Anglické nábřeží pod terénem“ výše. Úsek ve skutečnosti leží jižně od mostu (z ve hře roste k jihu).
 
 ## Jasné počasí ve všech prohlížečových zkouškách (mimo etapu, na přání autora)
 
