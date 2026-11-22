@@ -14,7 +14,28 @@ Větev `claude/modest-ramanujan-wvjl2i` spojuje `claude/lucid-bohr-y3rlwb` (chod
 - `physical-traffic.spec.js`: zkoušky bez data běžely v aktuálním čase s MHD a provozem podle dne. Výchozí hodnota pomocníka `start` je teď pondělí 9. 11. 2026 v 10.00, jako ve zkouškách provozu. Zkoušky s vlastním datem a hodinou se nemění.
 - Zkoušky bez data a hodiny, které záměrně používají hodiny prohlížeče (`clock`, `page.clock.setFixedTime`), nebo uloženou hru, zůstávají v aktuálním čase. Mají jen jasno.
 
-**Ověření (průběžně).** Prošlo 228 z 228 testů JavaScriptu a produkční sestavení. Celá sada 179 prohlížečových zkoušek na WebGL 2 právě běží v čase se sněžením. Po ní následuje ověření dotčených souborů v jiných časech spuštění pomocí `faketime`. Výsledky doplním sem.
+**Ověření.** Prošlo 228 z 228 testů JavaScriptu a produkční sestavení. Herní kód se mezi revizemi `3e8f5ee` (bez úpravy) a `faa1a84` (s úpravou) neliší, oba běhy používají stejné sestavení.
+
+Celá sada na WebGL 2 běžela v neděli 22. 11. 2026 od 11.13 do 12.19 v Plzni, kdy ve hře sněžilo a přilnavost byla 0,35. Prošlo 176 ze 179 zkoušek za 1,1 hodiny. U všech tří neúspěšných zkoušek rozhodlo opakování na obou revizích:
+
+| Zkouška | Bez úpravy | S úpravou | Závěr |
+|---|---|---|---|
+| `physics-roads` · Wilsonův most v obou směrech | odchylka kola 0,05306 m (mez 0,05 m) | stejná odchylka 0,05306 m | Nezávisí na počasí ani čase. Zkouška má pevné datum a přilnavost je v obou případech 1,0. Dřív ji zakrývala srážka s trolejbusem 12. Na `claude/exciting-cannon-kzvgbu` bez chodníků a sklonu prošla. Na samostatnou opravu čeká návrh úkolu. Místo: x = 170,20, z = 456,99, kolo 5,3 cm pod mostovkou. |
+| `renderer` · minuta hraní ve dne i v noci | 21 snímků za 30 s (mez > 30) | 20 snímků | Vykreslování v tomto prostředí běží jen na procesoru a je na zkoušku pomalé. |
+| `traffic-observation` · ranní špička na Klatovské | stání 205 s (mez 120 s) | v celé sadě 343 s, při opakování prošla | Kolísání provozu, jako dřív v E20. Mlha a oblaka mění jen obraz, ne řidiče. |
+
+Dotčené soubory jsem spustil i v jiných časech: `game`, `physical-traffic`, `weather`, `precipitation`, `clouds` a `asphalt`, celkem 34 zkoušek. Čas spuštění nastavují hodiny prohlížeče (`page.clock.setFixedTime`) v dočasné kopii zkoušek mimo repozitář. Nástroj `faketime` pro celý systém se nehodil, hra se pod ním v prohlížeči nenačetla.
+
+| Čas spuštění (Plzeň) | Počasí ve hře | Bez úpravy | S úpravou |
+|---|---|---|---|
+| neděle 22. 11. 2026, 11.00 | sněžení, sníh 1,0, přilnavost 0,35 | policejní vůz 2,63 m před chodcem (mez > 3 m) | 34 z 34 |
+| sobota 14. 11. 2026, 22.00 | noc, sněžení, sníh 0,96, přilnavost 0,38 | policejní vůz i dodávka prošly | 34 z 34 |
+| neděle 21. 6. 2026, 21.45 | letní soumrak, polojasno | – | 34 z 34 |
+| pondělí 23. 11. 2026, 7.30 | ranní špička, déšť, přilnavost 0,70 | – | 34 z 34 |
+
+Simulace zopakovala selhání policejního vozu s přesně stejnou vzdáleností jako skutečný běh v neděli v 11.10, tedy 2,62743664949375 m. Zkoušky `weather`, `precipitation`, `clouds` a `asphalt` jsem spustil také na WebGPU. Prošla jen `weather`. Ostatní tři selhaly s chybou „A valid external Instance reference no longer exists“ stejně i na revizi bez úpravy. Softwarový adaptér WebGPU je v tomto prostředí nespolehlivý. Záznamy běhů zůstaly jen v dočasném adresáři prostředí.
+
+**Návrh mimo tento úkol.** Zkoušky bez data a hodiny v `traffic`, `transit`, `work` a `breakables` mají teď jasno. Jízdní řád MHD, hustota provozu a noc se v nich ale dál řídí dnem spuštění. Předchozí rozbor 29 souborů je nezahrnul, protože v jiné zkoušce stejného souboru datum je. Doporučuji projít je stejným postupem jako `physical-traffic`.
 
 ## Vzhledová zkouška (mimo etapu, na přání autora)
 
