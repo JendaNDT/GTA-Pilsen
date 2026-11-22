@@ -114,6 +114,8 @@ test('E10 – taxi, příjem ze zakázek a vlastní auto po obnovení hry', asyn
   await page.getByRole('button', { name: 'Vyjet s autem' }).click();
   const after = await page.evaluate(() => {
     const g = window.__game, car = g.garage.active;
+    // Mez pro brzdění z 15 m/s je změřená na suchu. Počasí ve hře se řídí datem.
+    g.setWeatherMode('clear');
     g.player.place(car.x + 2, car.z);
     g.doAction();
     const vx = 15 * Math.sin(car.yaw), vz = 15 * Math.cos(car.yaw);

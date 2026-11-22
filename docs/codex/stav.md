@@ -244,6 +244,14 @@ U zkoušek vody sníh výsledek změnil jen málo, daleko od mezí. V hluboké n
 
 Chování na sněhu je věrohodné a herní kód zůstává beze změny. Pokud má hra ověřovat i jízdu na sněhu, navrhuji pro ni samostatnou zkoušku s vlastními mezemi, například s datem 14. 11. 2026.
 
+## Ověření brzd po načtení auta
+
+Na WebGL 2 prošla zkouška zakázek a garáže po sjednocení počasí při měření brzd. Archiv větve `f6d41bb` obsahuje opravenou zkoušku. Webový ZIP je po bajtech shodný s herní revizí `5233937`. Na témže webu pokračuje úplná sada a dlouhá jízda. [Výsledek a podmínky zkoušky](../E26.md#brzdění-po-vyzvednutí-auta-z-garáže)
+
+## Ověření ranní špičky a archiv
+
+Na herní revizi `5233937` prošla ranní špička u hlavního nádraží i na Klatovské na WebGL 2 a WebGPU. Nejdelší stání ze všech čtyř běhů dosáhlo 118 s při limitu 120 s. Prošlo také všech 70 cílených prohlížečových případů dopravy. Tři verze Node.js sestavily přesně stejný web jako v archivu. Uložený postup prošel přechodem z E12 i E25 do nové verze a zpět. Zbytek úplné prohlížečové sady pokračuje. [Měření a otisky souborů](../E26.md#špička-na-dvou-místech-a-archiv-po-úpravě-rampy)
+
 ## Rampa u hlavního nádraží
 
 Návrat z předchozího archivu do E12 i E25 prošel. U hlavního nádraží odhalilo pozorování na WebGL 2 stání 181 s. Po úpravě příčného sklonu a brzdění ve sjezdu bylo při opakování nejdelší stání 57 s. Prošlo 185 testů JavaScriptu, 27 testů Pythonu a sestavení. Pokračují prohlížečové zkoušky vydání na obou vykreslovacích cestách. [Povrch rampy, brzdění a provoz](../E26.md#příčný-sklon-nádražní-rampy-a-brzdění-ve-sjezdu)
@@ -388,7 +396,7 @@ Na WebGPU i WebGL 2 prošly obě zkoušky pomalé sítě. Hra se spustila i při
 
 ## Ověřené archivy 0.2.0
 
-Ve složce `data-raw/e26/vydani/` jsou webový a zdrojový ZIP revize `34458c8` a manifest. Všech 815 webových a 1 371 zdrojových položek souhlasí s manifestem. Sestavení z rozbalených zdrojů dalo stejných 815 souborů. Na WebGPU i WebGL 2 prošlo všech šest cílených zkoušek k nálezům kontroly. Zbývající případy běží nad stejným produkčním webem. [Otisky archivů a způsob sestavení](../E26.md)
+Ve složce `data-raw/e26/vydani-34458c8/` jsou webový a zdrojový ZIP revize `34458c8` a manifest. Všech 815 webových a 1 371 zdrojových položek souhlasí s manifestem. Sestavení z rozbalených zdrojů dalo stejných 815 souborů. Na WebGPU i WebGL 2 prošlo všech šest cílených zkoušek k nálezům kontroly. Zbývající případy běží nad stejným produkčním webem. [Otisky archivů a způsob sestavení](../E26.md)
 
 ## Výsledky závěrečné kontroly Astrou
 
@@ -513,7 +521,6 @@ V Chromiu na WebGL 2 i WebGPU prošel rozvoz na adresy ve všech třech úsecíc
 ## Klávesové ovládání mapy a fotorežimu
 
 Po stisku O v mapě lze pokračovat klávesou Escape a ze hry pak znovu otevřít fotorežim. Celou posloupnost ověřilo Chromium 159 na WebGL 2 i WebGPU. Prošlo 166 testů JavaScriptu a produkční sestavení. [Protokol E24](../E24.md)
-
 
 E24 navazuje na G17 ve větvi E23 (`fe30ef0`). [Zadání E24](E24.md)
 
