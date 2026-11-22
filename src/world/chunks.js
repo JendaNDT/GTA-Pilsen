@@ -560,6 +560,9 @@ const SIDEWALK_COLORS = {
   paving: lin(0x928c82), asphalt: lin(0x76797e),
 };
 
+// Chodníky se kreslí jen poblíž; dál stačí chodník v textuře země.
+const SIDEWALK_VIEW = 380, SIDEWALK_BUILD = 500;
+
 /** Chodník s obrubníkem podél části silnice (viz sidewalks.js). */
 function drawSidewalks(world, solid, road, s, e) {
   const sides = sidewalkSections(world, road, s, e);
@@ -902,8 +905,6 @@ function buildRoads(world, ci, manager) {
       } else if (measured !== undefined && D.y.some((y, k) => y - world.heightAt(D.x[k], D.z[k]) > 0.75)) {
         bridgeSlab(world, solid, D, measured, COL.concrete, false);
       }
-      // chodník s obrubníkem po obou stranách ulice
-      if (world.sidewalks?.[i] && !raised) drawSidewalks(world, solid, i, s, e);
       // vodorovné značení
       if (ring) rondelMarkings(world, marks, D, hw, surfaceWidth, R.lanes[i]);
       else if (cls <= RC.UNCLASSIFIED && !(flags & RF.ROUNDABOUT)) {
@@ -1709,6 +1710,10 @@ export class ChunkManager {
       ch.heritage = this.heritage.build(ci, ch);
       this._buildBuildings(ci, ch);
     } else if (ch.stage === 2) {
+      if (w.sidewalks) {
+        if (ch.dist < SIDEWALK_BUILD) this._buildSidewalks(ci, ch);
+        else ch.sidewalkPending = true;
+      }
       const roads = buildRoads(w, ci, this);
       if (roads.solid) { const m = new THREE.Mesh(roads.solid, this.solidMat); m.castShadow = true; m.receiveShadow = true; add(m, roads.solid); }
       if (roads.furniture.length) ch.roadFurniture = attachRoadFurniture(w.breakables, ch.group,
@@ -1738,6 +1743,28 @@ export class ChunkManager {
       w.addObstacles(ch.obstacles);
     }
     ch.stage++;
+  }
+
+  /** Chodníky s obrubníkem v dlaždici jako samostatná síť (viditelná jen poblíž). */
+  _buildSidewalks(ci, ch) {
+    ch.sidewalkPending = false;
+    const w = this.world, pieces = w.rPieces[ci];
+    if (!pieces) return;
+    const solid = new SolidBuf();
+    for (let q = 0; q < pieces.length; q += 3) {
+      const i = pieces[q];
+      if (!w.sidewalks[i] || w.tunnelRoads.has(i) || w.rondel?.trackAccess.has(i) || w.rondel?.elevated.has(i)) continue;
+      drawSidewalks(w, solid, i, pieces[q + 1], pieces[q + 2]);
+    }
+    const geometry = solid.geometry();
+    if (!geometry) return;
+    const mesh = new THREE.Mesh(geometry, this.solidMat);
+    mesh.receiveShadow = true;
+    mesh.matrixAutoUpdate = false;
+    mesh.visible = ch.dist < SIDEWALK_VIEW;
+    ch.group.add(mesh);
+    ch.disposables.push(geometry);
+    ch.sidewalks = mesh;
   }
 
   _dispose(ch) {
@@ -1783,7 +1810,7 @@ export class ChunkManager {
           const orthoTile = this.orthophoto && this.landIndex.polys[ci]?.some((i) => ORTHOPHOTO_LAND.has(w.l.cls[i]))
             ? orthophotoTile(ci, w.cols, CHUNK) : null;
           this.chunks.set(ci, {
-            ci, group, district: this.districts.at(centerX, centerZ), disposables: [], obstacles: [], trees: [], lamps: null, asphalt: null, marks: null,
+            ci, group, district: this.districts.at(centerX, centerZ), disposables: [], obstacles: [], trees: [], lamps: null, asphalt: null, marks: null, sidewalks: null, sidewalkPending: false,
             stage: 0, tex: null, terrainMat: null, texSize: 0, dist: 0,
             orthoTile, orthoBitmap: null,
             cx: centerX, cz: centerZ,
@@ -1796,7 +1823,7 @@ export class ChunkManager {
     }
     // vzdálenosti, viditelnost lamp a výběr práce: nejdřív terén všude, pak detaily od nejbližších
     const night = env.night.value > 0.03;
-    let pending = 0, pendingStart = 0, rebake = null;
+    let pending = 0, pendingStart = 0, rebake = null, sidewalkJob = null;
     const todo = [], cityRequests = [];
     const orthophoto = this.orthophoto;
     const orthoRequests = this.orthophotoEnabled && orthophoto?.blocks &&
@@ -1824,6 +1851,8 @@ export class ChunkManager {
       // v dálce stačí silnice nakreslené v textuře země; přesná síť a čáry jen poblíž
       if (ch.asphalt) ch.asphalt.visible = d < 800;
       if (ch.marks) ch.marks.visible = d < 480;
+      if (ch.sidewalks) ch.sidewalks.visible = d < SIDEWALK_VIEW;
+      else if (ch.sidewalkPending && d < SIDEWALK_BUILD && (!sidewalkJob || d < sidewalkJob.dist)) sidewalkJob = ch;
       if (ch.traffic) {
         ch.traffic.group.visible = d < 400;
         if (ch.traffic.group.visible) ch.traffic.update();
@@ -1888,6 +1917,7 @@ export class ChunkManager {
       ch.tex = tex; ch.texSize = rebake[3];
       ch.terrainMat.map = tex;
     }
+    if (sidewalkJob && done < budget) { this._buildSidewalks(sidewalkJob.ci, sidewalkJob); done++; }
     this.grass?.update(x, z, y, budget);
     this.pending = pending;
     this.pendingStart = Math.max(0, pendingStart);    // kolik kroků zbývá, než jde hrát (terén všude + okolí hotové)

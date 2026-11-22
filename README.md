@@ -85,6 +85,10 @@ takže auto v kopcích drncalo a terén místy prorůstal asfaltem. Terén pod v
 přizpůsobí, okolí mostů a ručně upravená místa zůstávají beze změny. Původní silnice pro
 porovnání zapne parametr `?silnice=puvodni`. [Rozbor, měření a snímky](docs/silnice.md)
 
+Městské ulice mají od střední předvolby chodník s obrubníkem 10 cm nad asfaltem. Auto o obrubník
+drcne a chodci chodí po chodníku. Na nízké předvolbě zůstává chodník v textuře země, parametr
+`?chodniky=0` ho vypne i jinde. [Popis a snímky](docs/chodniky.md)
+
 Hra ve výchozím nastavení používá aktuální čas v Plzni. V **Nastavení → Herní čas**
 můžeš zadat konkrétní hodinu a minutu. Herní čas pak plyne stejným tempem jako skutečný
 čas a při pauze stojí. **Použít aktuální čas v Plzni** obnoví živé hodiny. Po změně

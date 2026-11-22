@@ -4,6 +4,10 @@
 
 Na větvi `claude/lucid-bohr-y3rlwb` vznikla vzhledová zkouška webové verze: silnější slunce, slabší odraz oblohy na fasádách, tmavší zem v mapě odrazů, sytější omítky a oblé koruny stromů. Původní světlo zapne `?vzhled=puvodni`. Autor rozhodne podle zveřejněné zkoušky, zda se vzhled převezme. [Protokol a snímky](../vzhledova-zkouska.md)
 
+## Chodníky a obrubníky (mimo etapu, na přání autora)
+
+Podél městských ulic vzniká od střední předvolby chodník s obrubníkem 10 cm nad asfaltem; vykreslení, fyzika i chodci používají stejné řezy. Chodník se kreslí do 380 m od kamery, aby se vešel do rozpočtu vykreslování. Vypne ho `?chodniky=0`. Prošlo 218 testů JavaScriptu a 104 ze 105 prohlížečových zkoušek (neprošel jen dlouhodobě selhávající Wilsonův most). [Popis a snímky](../chodniky.md)
+
 ## Hladký profil silnic (mimo etapu, na přání autora)
 
 Autor si stěžoval na hrbolaté silnice v kopcích. Na větvi `claude/lucid-bohr-y3rlwb` má každá silnice hladký podélný profil, terén pod vozovkou se mu přizpůsobí a fyzika jede po pásu silnice. Okolí měřených mostů, tunelů a ručně upravených křížení zůstává beze změny, v křižovatkách platí výška důležitější silnice. Původní silnice zapne `?silnice=puvodni`. Ve fyzice hry klesl počet rázů mezi křižovatkami ze 180 na 51 na km, v kopcích ze 464 na 79; v křižovatkách zůstává hrbolatost zhruba stejná. Neprošla zkouška Wilsonova mostu, která stejně selhává i na revizi před úpravou. [Protokol, měření a snímky](../silnice.md)

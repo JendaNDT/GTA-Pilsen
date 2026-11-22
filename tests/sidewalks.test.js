@@ -90,8 +90,8 @@ test('řezy chodníku: obě strany, konec u domu a mezera v ústí jiné silnice
   };
   const [left, right] = sidewalkSections(world, 0, 0, 1);
   assert.equal(left.length, right.length);
-  assert.ok(left.length >= 26);
-  const at = (list, x) => list.find((s) => Math.abs(s.cx - x) < 0.01);
+  assert.ok(left.length >= 13);                      // řezy nejvýš po 8 m
+  const at = (list, x) => list.reduce((best, s) => (Math.abs(s.cx - x) < Math.abs(best.cx - x) ? s : best));
   // levá strana (z < 0) u domu: chodník jen do stěny
   assert.ok(Math.abs(at(left, 72).width - 1.2) < 1e-6);
   assert.equal(at(left, 20).width, 2);

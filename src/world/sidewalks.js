@@ -15,7 +15,7 @@ export const SIDEWALK_SURF = 0.05;
 export const CURB_HEIGHT = 0.10;        // obrubník nad asfaltem (m)
 export const CURB_WIDTH = 0.15;         // šířka žulového obrubníku (m)
 export const CURB_DEPTH = 0.08;         // líc obrubníku sahá pod asfalt, aby pod ním nebyla mezera (m)
-export const SIDEWALK_STEP = 4;         // rozteč příčných řezů podél silnice (m)
+export const SIDEWALK_STEP = 8;         // nejdelší rozteč příčných řezů podél silnice (m)
 export const MIN_SIDEWALK = 0.6;        // užší zbytek chodníku u domu se nekreslí (m)
 const MAX_RISE = 0.08, MAX_FALL = 0.06; // největší příčný sklon chodníku nahoru a dolů
 
