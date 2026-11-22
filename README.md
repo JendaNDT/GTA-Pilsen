@@ -93,6 +93,11 @@ Rohy křižovatek a ostré ohyby silnic jsou zaoblené obloukem o poloměru 4–
 obrubník i chodník ho obcházejí. Líc obrubníku je zkosený, takže při seříznutí zatáčky auto
 přes obrubník přejede. Ostré rohy pro porovnání vrátí `?rohy=0`. [Popis a snímky](docs/rohy.md)
 
+Silnice jsou napříč skloněné podle svahu (nejvýš 4 %) a zatáčky mimo zástavbu jsou klopené
+(nejvýš 6 %), aby v nich auto lépe drželo. Navazující silnice mají stejný sklon, takže
+v křižovatkách méně drncá. Vodorovné silnice pro porovnání vrátí `?sklon=0`.
+[Popis, měření a snímky](docs/sklon.md)
+
 Hra ve výchozím nastavení používá aktuální čas v Plzni. V **Nastavení → Herní čas**
 můžeš zadat konkrétní hodinu a minutu. Herní čas pak plyne stejným tempem jako skutečný
 čas a při pauze stojí. **Použít aktuální čas v Plzni** obnoví živé hodiny. Po změně

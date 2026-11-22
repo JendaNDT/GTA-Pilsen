@@ -4,6 +4,10 @@
 
 Na větvi `claude/lucid-bohr-y3rlwb` vznikla vzhledová zkouška webové verze: silnější slunce, slabší odraz oblohy na fasádách, tmavší zem v mapě odrazů, sytější omítky a oblé koruny stromů. Původní světlo zapne `?vzhled=puvodni`. Autor rozhodne podle zveřejněné zkoušky, zda se vzhled převezme. [Protokol a snímky](../vzhledova-zkouska.md)
 
+## Příčný sklon silnic (mimo etapu, na přání autora)
+
+Silnice s hladkým profilem jsou napříč skloněné podle svahu vedle silnice (nejvýš 4 %). Zatáčky silnic mimo obytné ulice jsou klopené podle křivosti (nejvýš 6 %), klopení mizí u křižovatek, na koncích a mezi domy. Navazující silnice mají ve společném bodě stejný sklon, na mostovky se napojí bez sklonu. Sklon platí pro asfalt, fyziku, auta, chodníky, rohy i křižovatky. Terén se na nižší straně srovnává od roviny vozovky a dlaždice se zářezem nad 0,3 m má jemnější síť terénu. Vypne ho `?sklon=0`. Drncání mezi křižovatkami +2 %, v křižovatkách −16 %, prosvítání terénu u okraje 3,44 % → 2,62 %. Start hry asi +0,5 s. Prošlo 228 testů JavaScriptu a 110 ze 111 prohlížečových zkoušek (Wilsonův most selhává dlouhodobě). [Popis, měření a snímky](../sklon.md)
+
 ## Zaoblené rohy křižovatek (mimo etapu, na přání autora)
 
 Každý roh křižovatky a vnitřní strana ostrého ohybu silnice má asfaltový oblouk o poloměru 4–12 m podle šířky ulic (17 950 oblouků, typicky 7,8 m). Obrubník a chodník ho obcházejí, líc obrubníku je zkosený, aby přes něj auto přejelo. Asfalt oblouku má i fyzika. Vypne je `?rohy=0`. Prošlo 225 testů JavaScriptu a 109 ze 111 prohlížečových zkoušek (Wilsonův most selhává dlouhodobě, odbočení z Kardinála Berana bylo náhodné a samostatně prošlo třikrát). [Popis a snímky](../rohy.md)
