@@ -64,12 +64,15 @@ export function terrainTriangles(world, ci, x0, z0, size, emit) {
   const near = roads < Infinity && base > ROAD_STEP && size === 256 ? world.roadNearTile(ci) : null;
   const step = near ? base : Math.min(base, roads);
   const holes = world.tunnels.flatMap((t) => t.portalCuts(x0, z0, size)).flatMap(portalPlanes);
+  // terén pod pásem vozovky a do CLAMP_PAD za jejím okrajem leží pod pásem (viz roadClampAt)
+  const dryHeight = (x, z) => {
+    const y = world.heightAt(x, z);
+    const road = roads < Infinity ? world.roadClampAt(x, z, y) : NaN;
+    return road < y ? road : y;
+  };
   const vertex = (x, z) => {
     const depth = bed ? bed(x, z) : 0;
-    let y = world.heightAt(x, z);
-    const road = roads < Infinity ? world.roadClampAt(x, z, y) : NaN;
-    if (road < y) y = road;
-    const p = [x, y - depth, z];
+    const p = [x, dryHeight(x, z) - depth, z];
     p.wet = depth > 0;
     return p;
   };
@@ -89,7 +92,8 @@ export function terrainTriangles(world, ci, x0, z0, size, emit) {
       else lo = t;
     }
     const x = dry[0] + lo * dx, z = dry[2] + lo * dz;
-    return [x, world.heightAt(x, z), z];
+    // bod na břehové čáře se srovná pod pás vozovky stejně jako vrcholy sítě
+    return [x, dryHeight(x, z), z];
   };
   const surface = (a, b, c) => {
     if (a.wet === b.wet && a.wet === c.wet) return triangle(a, b, c);

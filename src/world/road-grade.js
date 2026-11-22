@@ -20,6 +20,38 @@ export const BANK_FACTOR = 10;          // klopení = křivost · tento součini
 export const BANK_CLEAR = 15;           // klopení u křižovatek a konců plynule mizí (m)
 const CROSS_STEP = 8;                   // svah vedle silnice se měří po 8 m
 export const BANK_BUILT = 6;            // dům blíž než tolik za okrajem silnice: zatáčka se neklopí (m)
+export const SHORE_WATER = 8;           // nábřeží: voda nejvýš tolik za okrajem vozovky (m)
+export const SHORE_FADE = 4;            // … a dál se zvednutí plynule ztrácí (m)
+export const SHORE_REACH = 8;           // terasa nad nábřežní zdí nejvýš tolik za okrajem (jedna buňka modelu, m)
+export const SHORE_PLATEAU = 6;         // za terasou terén aspoň tolik dál nestoupá (m)
+export const SHORE_BACK = 3;            // strmý břeh se hledá i tolik od osy směrem k vodě (m)
+export const SHORE_FILL = 0.3;          // od tohoto zvednutí se terén dosype i za okrajem vozovky (m)
+
+function smoothStep(value, from, to) {
+  const t = Math.max(0, Math.min(1, (value - from) / (to - from)));
+  return t * t * (3 - 2 * t);
+}
+
+/**
+ * O kolik zvednout vzorek profilu silnice, která vede podél břehu (m, ≥ 0).
+ * land[i] = výška terénu po 1 m napříč silnicí, i = SHORE_BACK je osa, menší i leží směrem k vodě,
+ * větší směrem od vody až do osy + reach + SHORE_PLATEAU; reach = poloviční šířka + SHORE_REACH.
+ * Výškový model po 8 m rozmaže nábřežní zeď do svahu přes celou vozovku, takže osa silnice leží
+ * v půli svahu nebo u paty zdi místo na ulici nad ní. Silnice se zvedne na nejvyšší místo terasy
+ * do reach, jen když u osy nebo mezi osou a terasou je strmý břeh (rozmazaná zeď, krok přes
+ * 25–50 % na metr) a za terasou terén už nestoupá. Na úbočí kopce u řeky zůstává výška v ose.
+ */
+export function shoreLift(land, reach, back = SHORE_BACK) {
+  const axis = land[back], n = Math.min(land.length - 1, back + Math.round(reach));
+  let top = axis, at = back;
+  for (let i = back + 1; i <= n; i++) if (land[i] > top) { top = land[i]; at = i; }
+  if (top - axis < 0.05) return 0;
+  let beyond = -Infinity;
+  for (let i = n; i < land.length; i++) if (land[i] > beyond) beyond = land[i];
+  let steep = 0;
+  for (let i = 0; i < at; i++) steep = Math.max(steep, land[i + 1] - land[i]);
+  return (top - axis) * smoothStep(steep, 0.25, 0.5) * (1 - smoothStep(beyond - top, 0.2, 0.6));
+}
 
 /**
  * Klouzavý průměr; tři průchody dají téměř Gaussovo vyhlazení. Za konci se profil prodlužuje
@@ -112,7 +144,7 @@ function smoothRange(arr, off, n, width, passes, tmp) {
  * u křižovatek a volných konců), celkem nejvýš CROSS_MAX. Navazující silnice mají ve společném
  * bodě stejný sklon, na mostovku se silnice napojí bez sklonu.
  */
-function buildCross(world, grade, baseHeight, options, pairs, bankStops, joints) {
+function buildCross(world, grade, baseHeight, options, pairs, bankStops, joints, shore = null) {
   const { rCount, rOff, rpx, rpz } = world;
   const { start, count, station, step, total } = grade;
   const values = new Float64Array(total);
@@ -139,6 +171,8 @@ function buildCross(world, grade, baseHeight, options, pairs, bankStops, joints)
       const t = (s - station[p]) / seg, dx = (rpx[p + 1] - rpx[p]) / seg, dz = (rpz[p + 1] - rpz[p]) / seg;
       const x = rpx[p] + (rpx[p + 1] - rpx[p]) * t, z = rpz[p] + (rpz[p + 1] - rpz[p]) * t;
       side[j] = (baseHeight(x - dz * reachSide, z + dx * reachSide) - baseHeight(x + dz * reachSide, z - dx * reachSide)) / (2 * reachSide);
+      // Na nábřeží zvednutém na terasu je „svah“ jen rozmazaná nábřežní zeď: vozovka je napříč rovná.
+      if (shore?.[road]) side[j] *= 1 - smoothStep(profileAt(shore[road], 0, shore[road].length, s, step), 0.1, 0.5);
       if (built && options.built(x, z, reachSide + BANK_BUILT)) built.push(s);
     }
     smoothRange(side, 0, m, 3, 3, tmp);
@@ -278,6 +312,13 @@ export function gradeCross(grade, road, station) {
   return a + (b - a) * (f - i);
 }
 
+/** Zvednutí profilu na nábřeží ve staničení (m, vyhlazené jako profil), 0 bez profilu. */
+export function gradeShore(grade, road, station) {
+  const start = grade.start[road];
+  if (start < 0 || !grade.shore) return 0;
+  return profileAt(grade.shore, start, grade.count[road], station, grade.step);
+}
+
 /** Klopení podle křivosti (1/m) se znaménkem: vnitřní strana zatáčky níž. */
 export function bankFor(curvature) {
   return -Math.max(-CROSS_BANK, Math.min(CROSS_BANK, curvature * BANK_FACTOR));
@@ -311,7 +352,7 @@ export function buildRoadGrades(world, include, pinned, baseHeight, step = GRADE
   const { rCount, rOff, rpx, rpz, rpy } = world;
   const start = new Int32Array(rCount).fill(-1), count = new Int32Array(rCount);
   const station = new Float64Array(rpx.length);
-  const raw = [];
+  const raw = [], shoreRaw = [];
   const keptSamples = new Map(), keptIndices = new Map(), keptFlags = new Map();
   let total = 0;
   for (let road = 0; road < rCount; road++) {
@@ -322,15 +363,24 @@ export function buildRoadGrades(world, include, pinned, baseHeight, step = GRADE
     const length = station[b - 1];
     const n = Math.max(2, Math.round(length / step) + 1);
     const samples = new Float64Array(n);
+    // na nábřeží profil leží na terase nad zdí (viz shoreLift), ručně doladěná místa ne
+    const lift = options.shore ? new Float64Array(n) : null;
     let p = a;
     for (let i = 0; i < n; i++) {
       const s = Math.min(length, i * step);
       while (p < b - 2 && station[p + 1] < s) p++;
       const seg = station[p + 1] - station[p];
       const t = seg > 0 ? (s - station[p]) / seg : 0;
-      samples[i] = baseHeight(rpx[p] + (rpx[p + 1] - rpx[p]) * t, rpz[p] + (rpz[p + 1] - rpz[p]) * t);
+      const x = rpx[p] + (rpx[p + 1] - rpx[p]) * t, z = rpz[p] + (rpz[p + 1] - rpz[p]) * t;
+      samples[i] = baseHeight(x, z);
+      if (lift) lift[i] = options.shore(road, x, z, -(rpz[p + 1] - rpz[p]) / (seg || 1), (rpx[p + 1] - rpx[p]) / (seg || 1));
     }
-    raw[road] = smoothProfile(samples);
+    if (lift && lift.some((v) => v > 0)) {
+      const lifted = new Float64Array(n);
+      for (let i = 0; i < n; i++) lifted[i] = samples[i] + lift[i];
+      raw[road] = smoothProfile(lifted);
+      shoreRaw[road] = smoothProfile(lift);
+    } else raw[road] = smoothProfile(samples);
     // Ručně doladěný terén (podjezdy, nájezdy, rampy) zůstává beze změny.
     // Ještě KEEP_MARGIN za ním silnice kopíruje terén, teprve potom začíná přechod.
     if (keep) {
@@ -454,8 +504,9 @@ export function buildRoadGrades(world, include, pinned, baseHeight, step = GRADE
     }
   }
   const heights = new Float32Array(total), kept = new Uint8Array(total), reach = new Float32Array(total);
-  const rise = new Float32Array(total);
-  const cross = options.cross ? buildCross(world, { start, count, station, step, total }, baseHeight, options, crossPairs, bankStops, joints) : null;
+  const rise = new Float32Array(total), shore = options.shore ? new Float32Array(total) : null;
+  if (shore) for (let road = 0; road < rCount; road++) if (shoreRaw[road]) shore.set(shoreRaw[road], start[road]);
+  const cross = options.cross ? buildCross(world, { start, count, station, step, total }, baseHeight, options, crossPairs, bankStops, joints, shoreRaw) : null;
   for (let road = 0; road < rCount; road++) {
     if (!raw[road]) continue;
     const pins = [...(constraints.get(road) ?? []), ...(keptSamples.get(road) ?? [])];
@@ -477,5 +528,5 @@ export function buildRoadGrades(world, include, pinned, baseHeight, step = GRADE
     for (let i = n - 2; i >= 0; i--) up[i] = Math.min(up[i], up[i + 1] + step);
     for (let i = 0; i < n; i++) rise[start[road] + i] = Math.min(1e4, up[i], Math.max(0, distance[i] - GRADE_TAPER));
   }
-  return { start, count, heights, kept, reach, rise, junctions, cross, step, station };
+  return { start, count, heights, kept, reach, rise, junctions, cross, shore, step, station };
 }

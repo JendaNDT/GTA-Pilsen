@@ -11,7 +11,8 @@ import { Traffic } from '../game/traffic.js';
 import { prazdrojDeck, identifyPrazdrojBridge } from './prazdroj-bridge.js';
 import { indexBridgeEdges } from '../physics/railings.js';
 import { prepareRondel } from './rondel.js';
-import { buildRoadGrades, corridorWeight, gradeBlend, gradeCross, gradeHeight, gradeSurface, CORRIDOR_FALLOFF, CORRIDOR_MARGIN } from './road-grade.js';
+import { buildRoadGrades, corridorWeight, gradeBlend, gradeCross, gradeHeight, gradeShore, gradeSurface, shoreLift, CORRIDOR_FALLOFF, CORRIDOR_MARGIN,
+  SHORE_BACK, SHORE_FADE, SHORE_FILL, SHORE_PLATEAU, SHORE_REACH, SHORE_WATER } from './road-grade.js';
 import { sidewalkHeight, sidewalkPriority, sidewalkProfile } from './sidewalks.js';
 import { armCut, cornerPolygon, findCorners, insidePolygon, shrinkPolygon } from './corners.js';
 
@@ -27,6 +28,8 @@ const STEEP_CUT = 0.3;
 const JUNCTION_BLEND = 6;                         // vedlejší silnice se napojí na okraj hlavní během (m)
 const junctionKey = (x, z) => (Math.floor(x / JUNCTION_CELL) + 65536) * 131072 + Math.floor(z / JUNCTION_CELL) + 65536;
 const cellKey = (x, z) => (Math.floor(x / STRUCTURE_KEEP) + 65536) * 131072 + Math.floor(z / STRUCTURE_KEEP) + 65536;
+const SHORE_CELL = 32;                             // mřížka hran břehů pro hledání vody u silnic (m)
+const shoreKey = (cx, cz) => (cx + 65536) * 131072 + cz + 65536;
 const ROAD_TERRAIN_STRIDE = CHUNK / ROAD_TERRAIN_STEP + 1;
 const KEY_OFF = 250000;      // posun, aby byly kvantované souřadnice (decimetry) kladné – stačí na ±25 km
 const KEY_MUL = 524288;
@@ -868,8 +871,11 @@ export class World {
     const cross = new URLSearchParams(globalThis.location?.search ?? '').get('sklon') !== '0';
     const bank = (road) => R.cls[road] <= RC.UNCLASSIFIED && !(R.flags[road] & RF.ROUNDABOUT) && !this.rondel?.ring.has(road);
     const built = (x, z, r) => this.nearBuilding(x, z, r);
+    // Silnice podél břehu leží na terase nad nábřežní zdí, kterou výškový model rozmazal (?nabrezi=0 vypne).
+    const shore = new URLSearchParams(globalThis.location?.search ?? '').get('nabrezi') !== '0' && this.shoreCells?.size
+      ? (road, x, z, nx, nz) => this.shoreLiftAt(road, x, z, nx, nz) : null;
     this.roadGrade = buildRoadGrades(this, includeRoad, raised, (x, z) => this.terrainHeightAt(x, z), undefined,
-      (x, z) => this.keepsTerrain(x, z), foreign, { cross, bank, built, halfWidth: (road) => R.w[road] / 2 });
+      (x, z) => this.keepsTerrain(x, z), foreign, { cross, bank, built, shore, halfWidth: (road) => R.w[road] / 2 });
     this.roadTerrain = new Map();
     this.roadClamp = new Map();
     this.roadNear = new Map();
@@ -1363,7 +1369,7 @@ export class World {
     const clamp = new Float32Array(W * W).fill(NaN), near = new Uint8Array(W * W);
     const sharedY = new Float32Array(W * W), sharedDone = new Uint8Array(W * W), kept = new Int8Array(W * W).fill(-1);
     let clamped = false;
-    const distance = new Float32Array(W * W), halfWidth = new Float32Array(W * W);
+    const distance = new Float32Array(W * W), halfWidth = new Float32Array(W * W), shore = new Float32Array(W * W);
     const seen = new Set();
     const c0 = Math.max(0, Math.floor((x0 - reach - this.minX) / COLL_CELL)), c1 = Math.min(this.gcols - 1, Math.floor((x0 + CHUNK + reach - this.minX) / COLL_CELL));
     const r0 = Math.max(0, Math.floor((z0 - reach - this.minZ) / COLL_CELL)), r1 = Math.min(this.grows - 1, Math.floor((z0 + CHUNK + reach - this.minZ) / COLL_CELL));
@@ -1424,6 +1430,7 @@ export class World {
           carriageway[index] = d <= hw ? 1 : 0;
           distance[index] = d; halfWidth[index] = hw;
           target[index] = goal;
+          shore[index] = gradeShore(grade, road, station);
         }
       }
     }
@@ -1448,6 +1455,8 @@ export class World {
             for (let jj = j0; jj <= j1; jj++) for (let ii = i0; ii <= i1; ii++) {
               const index = jj * W + ii;
               if (!weight[index]) continue;
+              // Na nábřeží s rozmazanou zdí leží i terén u domu pod vozovkou zvednutou na ulici.
+              if (shore[index] > SHORE_FILL) continue;
               const x = x0 + ii * S, z = z0 + jj * S;
               const t = l2 ? Math.max(0, Math.min(1, ((x - ax) * ex + (z - az) * ez) / l2)) : 0;
               if (Math.hypot(ax + ex * t - x, az + ez * t - z) <= BUILDING_CLEARANCE) weight[index] = 0;
@@ -1496,7 +1505,11 @@ export class World {
         // okraj (cíl už ji obsahuje), jinak by svah zasahoval do pásu.
         goal = Math.min(base, goal + 0.05 + 0.15 * Math.max(0, distance[index] - halfWidth[index] - 1.5));
         strength = fade[index];
-      } else if (!carriageway[index] && goal - base > 0.3) continue;   // jiná úroveň (opěrná zeď, násep)
+      } else if (!carriageway[index] && goal - base > 0.3) {
+        // Jiná úroveň (opěrná zeď, násep) zůstává. Na nábřeží se ale terén dosype i za okraj
+        // vozovky směrem k vodě (ne do ní), ať asfalt nevisí nad rozmazanou nábřežní zdí.
+        if (!(shore[index] > SHORE_FILL) || this.inWaterArea(x0 + ii * S, z0 + jj * S)) continue;
+      }
       if (goal === base) continue;
       const offset = Math.round(100 * strength * (goal - base));
       if (offset) { grid[index] = Math.max(-32000, Math.min(32000, offset)); any = true; }
@@ -1789,12 +1802,12 @@ export class World {
   }
 
   // ------------------------------------------------------------ plochy ----
-  _initLand(L) {
+  /** Vodní plochy pro přesný test a hrany jejich břehů po buňkách SHORE_CELL (bez plátna). */
+  _initWater(L) {
     this.l = L;
     const n = L.header.count;
     this.lCount = n;
-    // vodní plochy pro přesný test
-    const water = [];
+    const water = [], shore = new Map();
     for (let i = 0; i < n; i++) {
       if (L.cls[i] !== LC.WATER) continue;
       const r0 = L.pRing[i], r1 = L.pRing[i + 1];
@@ -1804,8 +1817,95 @@ export class World {
         if (x < x0) x0 = x; if (x > x1) x1 = x; if (z < z0) z0 = z; if (z > z1) z1 = z;
       }
       water.push({ i, x0, x1, z0, z1 });
+      for (let r = r0; r < r1; r++) {
+        const start = L.ringStart[r], end = L.ringStart[r + 1];
+        for (let a = end - 1, b = start; b < end; a = b++) {
+          const ax = L.vx[a] * 0.1, az = L.vz[a] * 0.1, bx = L.vx[b] * 0.1, bz = L.vz[b] * 0.1;
+          for (let cz = Math.floor(Math.min(az, bz) / SHORE_CELL); cz <= Math.floor(Math.max(az, bz) / SHORE_CELL); cz++) {
+            for (let cx = Math.floor(Math.min(ax, bx) / SHORE_CELL); cx <= Math.floor(Math.max(ax, bx) / SHORE_CELL); cx++) {
+              const key = shoreKey(cx, cz);
+              if (!shore.has(key)) shore.set(key, []);
+              shore.get(key).push(ax, az, bx, bz);
+            }
+          }
+        }
+      }
     }
     this.water = water;
+    this.shoreCells = shore;
+  }
+
+  /** Nejbližší bod břehové čáry do vzdálenosti reach: [x, z, vzdálenost], nebo null. */
+  nearestShore(x, z, reach) {
+    const cells = this.shoreCells;
+    if (!cells?.size) return null;
+    let best = reach * reach, bx = NaN, bz = NaN;
+    for (let cz = Math.floor((z - reach) / SHORE_CELL); cz <= Math.floor((z + reach) / SHORE_CELL); cz++) {
+      for (let cx = Math.floor((x - reach) / SHORE_CELL); cx <= Math.floor((x + reach) / SHORE_CELL); cx++) {
+        const list = cells.get(shoreKey(cx, cz));
+        if (!list) continue;
+        for (let k = 0; k < list.length; k += 4) {
+          const ax = list[k], az = list[k + 1], ex = list[k + 2] - ax, ez = list[k + 3] - az, l2 = ex * ex + ez * ez;
+          const t = l2 ? Math.max(0, Math.min(1, ((x - ax) * ex + (z - az) * ez) / l2)) : 0;
+          const d2 = (ax + ex * t - x) ** 2 + (az + ez * t - z) ** 2;
+          if (d2 < best) { best = d2; bx = ax + ex * t; bz = az + ez * t; }
+        }
+      }
+    }
+    return bx === bx ? [bx, bz, Math.sqrt(best)] : null;
+  }
+
+  /** Leží bod ve vodní ploše? Přesný test bez hrubé masky. */
+  inWaterArea(x, z) {
+    for (const w of this.water ?? []) {
+      if (x < w.x0 || x > w.x1 || z < w.z0 || z > w.z1) continue;
+      if (this.landContains(w.i, x, z)) return true;
+    }
+    return false;
+  }
+
+  /**
+   * O kolik zvednout profil silnice road v bodě (x, z) s normálou (nx, nz), když vede podél břehu
+   * a výškový model do ní rozmazal nábřežní zeď (viz shoreLift). Voda musí ležet z boku silnice
+   * nejvýš SHORE_WATER za okrajem vozovky, dál se zvednutí plynule ztrácí.
+   */
+  shoreLiftAt(road, x, z, nx, nz) {
+    const hw = this.r.w[road] / 2, range = hw + SHORE_WATER + SHORE_FADE;
+    // Většina silnic k vodě nevede: rychlé vyřazení celé silnice podle buněk s hranami břehu.
+    const near = this._shoreRoads ??= new Uint8Array(this.rCount);
+    if (!near[road]) {
+      near[road] = 1;
+      for (let k = this.rOff[road]; k + 1 < this.rOff[road + 1] && near[road] === 1; k++) {
+        const ax = this.rpx[k], az = this.rpz[k], bx = this.rpx[k + 1], bz = this.rpz[k + 1];
+        for (let cz = Math.floor((Math.min(az, bz) - range) / SHORE_CELL); cz <= Math.floor((Math.max(az, bz) + range) / SHORE_CELL); cz++) {
+          for (let cx = Math.floor((Math.min(ax, bx) - range) / SHORE_CELL); cx <= Math.floor((Math.max(ax, bx) + range) / SHORE_CELL); cx++) {
+            if (this.shoreCells.has(shoreKey(cx, cz))) { near[road] = 2; break; }
+          }
+          if (near[road] === 2) break;
+        }
+      }
+    }
+    if (near[road] === 1) return 0;
+    const shore = this.nearestShore(x, z, range);
+    if (!shore || shore[2] < 0.1) return 0;
+    const ux = (x - shore[0]) / shore[2], uz = (z - shore[1]) / shore[2];
+    const side = ux * nx + uz * nz;
+    const across = Math.abs(side);
+    if (across <= 0.5) return 0;
+    const reach = hw + SHORE_REACH, n = SHORE_BACK + Math.round(reach) + SHORE_PLATEAU;
+    const land = this._shoreLand ??= [];
+    land.length = n + 1;
+    const sx = Math.sign(side) * nx, sz = Math.sign(side) * nz;
+    for (let i = 0; i <= n; i++) land[i] = this.terrainHeightAt(x + sx * (i - SHORE_BACK), z + sz * (i - SHORE_BACK));
+    const lift = shoreLift(land, reach);
+    if (!lift || this.inWaterArea(x, z)) return 0;
+    const lateral = Math.min(1, (across - 0.5) / 0.2), far = Math.max(0, Math.min(1, (shore[2] - hw - SHORE_WATER) / SHORE_FADE));
+    return lift * lateral * lateral * (3 - 2 * lateral) * (1 - far * far * (3 - 2 * far));
+  }
+
+  _initLand(L) {
+    this._initWater(L);
+    const n = L.header.count;
 
     // hrubá maska povrchů: bit 1 = les, 2 = měkký povrch (tráva, pole), 4 = voda (~10 m na bod)
     const S = 2048;

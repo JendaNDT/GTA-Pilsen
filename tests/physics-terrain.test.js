@@ -24,7 +24,8 @@ async function profileWorld() {
   const json = async (file) => JSON.parse(await readFile(new URL('../public/data/' + file, import.meta.url)));
   data.meta = await json('meta.json');
   data.gradeSeparations = await json('grade-separations.json');
-  class ProfileWorld extends World { _initLand() {} }
+  // vodní plochy a břehy ano (fyzika řeky, nábřeží), hrubou masku povrchů z plátna ne
+  class ProfileWorld extends World { _initLand(land) { this._initWater(land); } }
   return new ProfileWorld(data);
 }
 
@@ -220,6 +221,68 @@ test('nájezd na Wilsonův most má fyziku terénu ve výšce vozovky i vedle st
     if (!(error <= worst)) { worst = error; place = [x.toFixed(2), z.toFixed(2)]; }
   }
   assert.ok(worst < 0.02, `Fyzika terénu se na nájezdu liší od vozovky o ${worst.toFixed(3)} m v bodě ${place}.`);
+});
+
+test('Anglické nábřeží severně od Wilsonova mostu leží na ulici nad nábřežní zdí, ne v půli svahu k Radbuze', async () => {
+  // Výškový model po 8 m rozmazal nábřežní zeď Radbuzy do svahu přes celou vozovku. Profil
+  // silnice z výšek v ose proto klesal až na −9,06 m a asfalt ležel až 2,4 m pod terénem u okraje
+  // (a 6 m pod ulicí za ním), fyzika terénu u okraje prorůstala nad pás až o 2,2 m.
+  const w = await profileWorld();
+  const road = w.r.name.findIndex((name, i) => w.roadNames[name] === 'Anglické nábřeží' && w.r.w[i] === 6 &&
+    Math.abs(w.rpx[w.rOff[i]] - 168.1) < 0.2 && Math.abs(w.rpz[w.rOff[i]] - 519) < 0.2);
+  assert.ok(road >= 0, 'Chybí úsek Anglického nábřeží mezi z 519 a 457.');
+  const hw = w.r.w[road] / 2, cache = new Map();
+  let below = 0, belowAt = null, poke = -Infinity, pokeAt = null;
+  for (let z = 470; z <= 515; z += 0.5) {
+    let k = w.rOff[road];
+    while (k + 2 < w.rOff[road + 1] && w.rpz[k + 1] > z) k++;
+    const t = (w.rpz[k] - z) / (w.rpz[k] - w.rpz[k + 1]), x = w.rpx[k] + (w.rpx[k + 1] - w.rpx[k]) * t;
+    const l = Math.hypot(w.rpx[k + 1] - w.rpx[k], w.rpz[k + 1] - w.rpz[k]);
+    const nx = -(w.rpz[k + 1] - w.rpz[k]) / l, nz = (w.rpx[k + 1] - w.rpx[k]) / l;
+    for (const side of [-1, 1]) {
+      const asphalt = w.roadSurfaceY(road, k, t, x + nx * hw * side, z + nz * hw * side);
+      // okolní terén: u okraje vozovky, 1,5 m za ním a na ulici 5 m za okrajem (původní model i upravený terén)
+      for (const out of [0, 1.5, 5]) {
+        const px = x + nx * (hw + out) * side, pz = z + nz * (hw + out) * side;
+        const ground = Math.max(w.terrainHeightAt(px, pz), w.heightAt(px, pz));
+        if (ground - asphalt > below) { below = ground - asphalt; belowAt = [px.toFixed(1), pz.toFixed(1)]; }
+      }
+    }
+    for (let u = -hw; u <= hw; u += 0.25) {
+      const px = x + nx * u, pz = z + nz * u;
+      const error = physicsTerrainHeight(w, cache, px, pz) - w.roadSurfaceY(road, k, t, px, pz);
+      if (error > poke) { poke = error; pokeAt = [px.toFixed(2), pz.toFixed(2)]; }
+    }
+  }
+  assert.ok(below < 0.3, `Asfalt leží ${below.toFixed(2)} m pod okolním terénem v bodě ${belowAt}.`);
+  assert.ok(poke < 0.02, `Fyzika terénu prorůstá nad pás vozovky o ${poke.toFixed(3)} m v bodě ${pokeAt}.`);
+  // Ulice je po celé délce rovná napříč i podélně jako skutečné nábřeží (dřív klesala o 7 m a zase stoupala).
+  let low = Infinity, high = -Infinity;
+  for (let s = 0; s <= w.roadGrade.station[w.rOff[road + 1] - 1]; s += 2) {
+    const y = w.roadGradeAt(road, s);
+    low = Math.min(low, y); high = Math.max(high, y);
+  }
+  assert.ok(high - low < 1.6, `Profil kolísá o ${(high - low).toFixed(2)} m.`);
+});
+
+test('body fyziky terénu na břehové čáře řeky leží pod pásem vozovky', async () => {
+  // Na rozhraní vody a souše vkládá síť terénu body na břehovou čáru. Dřív ležely ve výšce terénu
+  // bez srovnání pod pás vozovky a u Radbuzy pod Tyršovou ulicí prorůstaly pásem až o 19 cm.
+  const w = await profileWorld();
+  let checked = 0, worst = 0, place = null;
+  for (const [x, z] of [[566, 96], [165, 490]]) {
+    const ci = w.chunkIndex(x, z), x0 = w.minX + ci % w.cols * 256, z0 = w.minZ + Math.floor(ci / w.cols) * 256;
+    terrainTriangles(w, ci, x0, z0, 256, (...triangle) => {
+      for (const p of triangle) {
+        if (p.wet !== undefined) continue;                    // jen body vložené na břehovou čáru
+        checked++;
+        const error = p[1] - w.roadClampAt(p[0], p[2], p[1]);
+        if (error > worst) { worst = error; place = [p[0].toFixed(1), p[2].toFixed(1)]; }
+      }
+    });
+  }
+  assert.ok(checked > 100, 'Chybí body na břehové čáře.');
+  assert.ok(worst < 0.005, `Bod na břehu leží ${worst.toFixed(3)} m nad pásem vozovky v bodě ${place}.`);
 });
 
 test('kola při přejezdu skutečné hranice dvou dlaždic nedostanou svislý ráz 0,5 m/s', async () => {
