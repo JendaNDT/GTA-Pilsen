@@ -916,6 +916,8 @@ export class World {
     if (!grade) return NaN;
     const R = this.r;
     const cx = Math.floor((x - this.minX) / COLL_CELL), cz = Math.floor((z - this.minZ) / COLL_CELL);
+    // Úsek dál než reach na ose x nebo z nemůže zasáhnout; rychlé vyřazení před výpočtem vzdálenosti.
+    const reach = this.maxRoadHalfWidth + JUNCTION_BLEND;
     const found = this._junctionRoads ??= [];
     found.length = 0;
     for (let row = Math.max(0, cz - 1); row <= Math.min(this.grows - 1, cz + 1); row++) {
@@ -924,7 +926,10 @@ export class World {
         for (let j = this.segCellStart[cell]; j < this.segCellStart[cell + 1]; j++) {
           const k = this.segCellItems[j], road = this.roadOfPt[k];
           if (grade.start[road] < 0) continue;
-          const ax = this.rpx[k], az = this.rpz[k], ex = this.rpx[k + 1] - ax, ez = this.rpz[k + 1] - az, l2 = ex * ex + ez * ez;
+          const ax = this.rpx[k], az = this.rpz[k], bx = this.rpx[k + 1], bz = this.rpz[k + 1];
+          if ((ax < bx ? ax : bx) > x + reach || (ax > bx ? ax : bx) < x - reach ||
+            (az < bz ? az : bz) > z + reach || (az > bz ? az : bz) < z - reach) continue;
+          const ex = bx - ax, ez = bz - az, l2 = ex * ex + ez * ez;
           if (!l2) continue;
           const t = Math.max(0, Math.min(1, ((x - ax) * ex + (z - az) * ez) / l2));
           const d = Math.hypot(ax + ex * t - x, az + ez * t - z);
@@ -944,10 +949,10 @@ export class World {
     const order = this._junctionOrder ??= [];
     order.length = 0;
     for (let q = 0; q < found.length; q += 3) order.push(q);
-    const rank = (q) => [R.cls[found[q]], -R.w[found[q]], found[q]];
+    // pořadí: vyšší třída (méně důležitá) dřív, potom užší, potom vyšší číslo silnice
     order.sort((a, b) => {
-      const ra = rank(a), rb = rank(b);
-      return rb[0] - ra[0] || rb[1] - ra[1] || rb[2] - ra[2];
+      const ra = found[a], rb = found[b];
+      return R.cls[rb] - R.cls[ra] || R.w[ra] - R.w[rb] || rb - ra;
     });
     let surface = NaN;
     for (const q of order) {
@@ -998,7 +1003,7 @@ export class World {
     const grade = this.roadGrade;
     if (!grade) return NaN;
     const cx = Math.floor((x - this.minX) / COLL_CELL), cz = Math.floor((z - this.minZ) / COLL_CELL);
-    let best = NaN;
+    let best = NaN, kept = -1;
     for (let row = Math.max(0, cz - 1); row <= Math.min(this.grows - 1, cz + 1); row++) {
       for (let col = Math.max(0, cx - 1); col <= Math.min(this.gcols - 1, cx + 1); col++) {
         const cell = row * this.gcols + col;
@@ -1008,15 +1013,43 @@ export class World {
           const ax = this.rpx[k], az = this.rpz[k], ex = this.rpx[k + 1] - ax, ez = this.rpz[k + 1] - az, l2 = ex * ex + ez * ez;
           if (!l2) continue;
           const t = Math.max(0, Math.min(1, ((x - ax) * ex + (z - az) * ez) / l2));
-          const reach = this.r.w[road] / 2 + pad;
-          if ((ax + ex * t - x) ** 2 + (az + ez * t - z) ** 2 > reach * reach) continue;
+          const hw = this.r.w[road] / 2, reach = hw + pad, d2 = (ax + ex * t - x) ** 2 + (az + ez * t - z) ** 2;
+          if (d2 > reach * reach) continue;
+          // za okrajem pásu ne u konců mostů, tunelů a ramp (viz _buildRoadTerrain)
+          if (d2 > hw * hw && (kept < 0 ? (kept = this.keepsTerrain(x, z) === 1 ? 1 : 0) : kept)) continue;
           let y = gradeSurface(grade, road, grade.station[k] + t * (grade.station[k + 1] - grade.station[k]), NaN);
-          y = y === y ? y + this.roadCrossAt(road, k, t, x, z, true) : ground;
+          y = y === y ? this.stripClampY(road, k, t, x, z, y + this.roadCrossAt(road, k, t, x, z, true)) : ground;
           if (y < best || best !== best) best = y;
         }
       }
     }
     return best;
+  }
+
+  /**
+   * Výška pásu vozovky, pod kterou se srovná terén v bodě (x, z) u úseku (seg, t). Mimo
+   * křižovatky je to vlastní profil silnice s příčným sklonem, za okrajem na nižší straně
+   * prodloužený dál dolů (own). V křižovatce ale pás leží ve společné výšce vozovek
+   * (junctionSurfaceAt), která se od vlastního profilu vedlejší nebo strmé silnice liší i o
+   * desítky centimetrů. Bod za okrajem se proto promítne na okraj pásu a vezme se tamní společná
+   * výška; klesá-li pás k okraji, pokračuje za ním stejným sklonem. Jinak by okraj sousední silnice
+   * stáhl terén pod vozovku, po které kola jedou přímo po terénu (napojení mostů a tunelů).
+   */
+  stripClampY(road, seg, t, x, z, own) {
+    const ax = this.rpx[seg], az = this.rpz[seg];
+    const px = ax + (this.rpx[seg + 1] - ax) * t, pz = az + (this.rpz[seg + 1] - az) * t;
+    const d = Math.hypot(x - px, z - pz), hw = this.r.w[road] / 2;
+    const f = d > hw ? hw / d : 1;
+    const qx = px + (x - px) * f, qz = pz + (z - pz) * f;
+    if (!this.inJunction(qx, qz)) return own;
+    const shared = this.junctionSurfaceAt(qx, qz);
+    if (shared !== shared) return own;
+    if (d <= hw) return shared;
+    // sklon pásu napříč u okraje: výška o krok (nejvýš 1 m) blíž k ose
+    const step = Math.min(1, hw), back = (hw - step) / d;
+    const inner = this.junctionSurfaceAt(px + (x - px) * back, pz + (z - pz) * back);
+    const fall = inner === inner ? Math.min(0, (shared - inner) / step) : 0;
+    return shared + fall * (d - hw);
   }
 
   /**
@@ -1328,6 +1361,7 @@ export class World {
     const weight = new Float32Array(W * W), target = new Float32Array(W * W), carriageway = new Uint8Array(W * W);
     const fade = new Float32Array(W * W);
     const clamp = new Float32Array(W * W).fill(NaN), near = new Uint8Array(W * W);
+    const sharedY = new Float32Array(W * W), sharedDone = new Uint8Array(W * W), kept = new Int8Array(W * W).fill(-1);
     let clamped = false;
     const distance = new Float32Array(W * W), halfWidth = new Float32Array(W * W);
     const seen = new Set();
@@ -1358,13 +1392,28 @@ export class World {
           const slope = grade.cross ? gradeCross(grade, road, station) : 0;
           const u = (ex * (z - az - ez * t) - ez * (x - ax - ex * t)) < 0 ? -d : d;
           const cross = Math.min(slope * Math.max(-hw, Math.min(hw, u)), slope * u);
-          // nejnižší vozovka na profilu nad uzlem (terén pod ní nesmí prorůstat)
+          // nejnižší pás vozovky nad uzlem (terén pod ním nesmí prorůstat)
           if (d <= hw + NEAR_PAD) {
-            const surface = gradeSurface(grade, road, station, NaN) + cross;
+            let surface = gradeSurface(grade, road, station, NaN) + cross;
             if (surface === surface) near[index] = 1;
-            if (d <= hw + CLAMP_PAD && (surface < clamp[index] || (clamp[index] !== clamp[index] && surface === surface))) {
-              clamp[index] = surface;
-              clamped = true;
+            // Za okrajem pásu se terén nesnižuje u konců mostů, tunelů a ramp: silnice tam leží přímo
+            // na terénu kalibrovaném podle měření a pás nemá. (Ručně upravený terén mimoúrovňových
+            // křížení se snižuje dál, vedle silnic tam bývá násep, který by do pásu prorůstal.)
+            if (d > hw && d <= hw + CLAMP_PAD && kept[index] < 0) kept[index] = this.keepsTerrain(x, z) === 1 ? 1 : 0;
+            if (d <= hw + CLAMP_PAD && surface === surface && !(d > hw && kept[index])) {
+              // v křižovatce podle společné výšky pásů (viz stripClampY)
+              if (d <= hw) {
+                // uzel na vozovce: společná výška křižovatky v uzlu je stejná pro všechny silnice
+                if (!sharedDone[index]) {
+                  sharedDone[index] = 1;
+                  sharedY[index] = this.inJunction(x, z) ? this.junctionSurfaceAt(x, z) : NaN;
+                }
+                if (sharedY[index] === sharedY[index]) surface = sharedY[index];
+              } else surface = this.stripClampY(road, k, t, x, z, surface);
+              if (surface < clamp[index] || clamp[index] !== clamp[index]) {
+                clamp[index] = surface;
+                clamped = true;
+              }
             }
           }
           if (w <= weight[index]) continue;

@@ -17,6 +17,38 @@ async function pack(name) {
   return parsePack(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
 }
 
+/** Celý svět z distribuovaných dat (bez barevné mapy podkladu, která potřebuje plátno). */
+async function profileWorld() {
+  const data = {};
+  for (const name of ['buildings', 'roads', 'land', 'terrain', 'rails', 'trees', 'landscape']) data[name] = await pack(name + '.bin');
+  const json = async (file) => JSON.parse(await readFile(new URL('../public/data/' + file, import.meta.url)));
+  data.meta = await json('meta.json');
+  data.gradeSeparations = await json('grade-separations.json');
+  class ProfileWorld extends World { _initLand() {} }
+  return new ProfileWorld(data);
+}
+
+/** Výška sítě terénu fyziky v bodě (nejvyšší trojúhelník nad ním, NaN mimo síť). */
+function physicsTerrainHeight(w, cache, x, z) {
+  const ci = w.chunkIndex(x, z);
+  if (!cache.has(ci)) {
+    const list = [];
+    terrainTriangles(w, ci, w.minX + ci % w.cols * 256, w.minZ + Math.floor(ci / w.cols) * 256, 256, (a, b, c) => list.push([a, b, c]));
+    cache.set(ci, list);
+  }
+  let best = NaN;
+  for (const [a, b, c] of cache.get(ci)) {
+    const d = (b[2] - c[2]) * (a[0] - c[0]) + (c[0] - b[0]) * (a[2] - c[2]);
+    if (Math.abs(d) < 1e-9) continue;
+    const l1 = ((b[2] - c[2]) * (x - c[0]) + (c[0] - b[0]) * (z - c[2])) / d;
+    const l2 = ((c[2] - a[2]) * (x - c[0]) + (a[0] - c[0]) * (z - c[2])) / d;
+    if (l1 < -1e-7 || l2 < -1e-7 || l1 + l2 > 1 + 1e-7) continue;
+    const y = l1 * a[1] + l2 * b[1] + (1 - l1 - l2) * c[1];
+    if (!(y <= best)) best = y;
+  }
+  return best;
+}
+
 test('síť Jolt odpovídá dotazu na výšku do 5 cm na základním, jemném i upraveném terénu', async () => {
   const Jolt = await loadJolt();
   const physics = new PhysicsWorld(Jolt);
@@ -61,14 +93,7 @@ test('síť Jolt odpovídá dotazu na výšku do 5 cm na základním, jemném i 
 test('Jolt protne Wilsonův most, Rondel, Valík a nádražní rampu ve výšce profilu', async () => {
   const { RoadStructures } = await import('../src/physics/structures.js');
   const { TUNNEL_HEIGHT } = await import('../src/world/tunnels.js');
-  const data = {};
-  for (const name of ['buildings', 'roads', 'land', 'terrain', 'rails', 'trees', 'landscape']) data[name] = await pack(name + '.bin');
-  const json = async (file) => JSON.parse(await readFile(new URL('../public/data/' + file, import.meta.url)));
-  data.meta = await json('meta.json');
-  data.gradeSeparations = await json('grade-separations.json');
-  // Barevná mapa podkladu potřebuje plátno, výškové profily se načítají samostatně.
-  class ProfileWorld extends World { _initLand() {} }
-  const w = new ProfileWorld(data), structures = new RoadStructures(w);
+  const w = await profileWorld(), structures = new RoadStructures(w);
   const Jolt = await loadJolt(), physics = new PhysicsWorld(Jolt);
   const loaded = new Set();
   const deviations = [];
@@ -171,6 +196,30 @@ test('Jolt protne Wilsonův most, Rondel, Valík a nádražní rampu ve výšce 
   } finally {
     physics.dispose();
   }
+});
+
+test('nájezd na Wilsonův most má fyziku terénu ve výšce vozovky i vedle strmého Anglického nábřeží', async () => {
+  // Americká vede na most přes křižovatku s Anglickým nábřežím, které od ní prudce klesá k řece.
+  // Posledních 8 m před mostovkou leží silnice přímo na kalibrovaném terénu bez pásu fyziky.
+  // Terén pod okrajem nábřeží se dřív srovnával podle jeho vlastního profilu a příčného sklonu,
+  // ne podle společné výšky křižovatky. Fyzika terénu tak v ose nájezdu ležela až o 35 cm
+  // a u severního okraje až o 57 cm níž než vykreslená vozovka.
+  const w = await profileWorld();
+  const wilson = [...w.archedBridges.keys()].find((i) => w.roadNames[w.r.name[i]] === 'Wilsonův most');
+  const a = w.rOff[wilson], x0 = w.rpx[a], z0 = w.rpz[a];
+  const length = Math.hypot(w.rpx[a + 1] - x0, w.rpz[a + 1] - z0);
+  const ux = (x0 - w.rpx[a + 1]) / length, uz = (z0 - w.rpz[a + 1]) / length;   // od mostovky ven
+  const near = [...w.roadGrade.junctions].some(({ roads }) => roads.some((road) => w.roadNames[w.r.name[road]] === 'Anglické nábřeží') &&
+    roads.some((road) => w.roadNames[w.r.name[road]] === 'Americká'));
+  assert.ok(near, 'Chybí křižovatka Americké s Anglickým nábřežím.');
+  const cache = new Map();
+  let worst = 0, place = null;
+  for (let along = 0.25; along <= 8; along += 0.25) for (let side = -3; side <= 3; side += 0.5) {
+    const x = x0 + ux * along - uz * side, z = z0 + uz * along + ux * side;
+    const error = Math.abs(physicsTerrainHeight(w, cache, x, z) - w.heightAt(x, z));
+    if (!(error <= worst)) { worst = error; place = [x.toFixed(2), z.toFixed(2)]; }
+  }
+  assert.ok(worst < 0.02, `Fyzika terénu se na nájezdu liší od vozovky o ${worst.toFixed(3)} m v bodě ${place}.`);
 });
 
 test('kola při přejezdu skutečné hranice dvou dlaždic nedostanou svislý ráz 0,5 m/s', async () => {
