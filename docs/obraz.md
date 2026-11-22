@@ -88,7 +88,7 @@ v běžném rozlišení a ve dvojnásobném rozlišení zmenšeném na stejnou v
 průměrný rozdíl jasu sousedních pixelů proti ideálu (1,00 = stejně ostré). Odchylky jsou podíl
 pixelů, které se od ideálu liší o víc než 48 úrovní (součet RGB): zuby, třpyt a chybějící tenké detaily.
 
-MERENI_OSTROST
+Měření probíhá, výsledky se doplní.
 
 ### Ostrost za jízdy
 
@@ -96,7 +96,7 @@ Kamera jede 50 km/h (30 snímků za sekundu) Husovou, Prešovskou a Mikulášsko
 Po 24 snímcích se obraz uloží a porovná se se stejným místem, kde kamera stála a obraz se ustálil
 (původní obraz bez doostření). Vysoká předvolba, horní tři čtvrtiny obrazu.
 
-MERENI_JIZDA
+Měření probíhá, výsledky se doplní.
 
 ## Snímky
 
@@ -105,11 +105,11 @@ obrubníku zmizel, koleje leží v asfaltu ulice a asfalt je v pár metrech pře
 
 ![Prešovská před a po](obraz/presovska.jpg)
 
-SNIMEK_JIZDA
+
 
 ## Výsledky zkoušek
 
-VYSLEDKY_ZKOUSEK
+Měření probíhá, výsledky se doplní.
 
 ## Známé odchylky a návrhy
 

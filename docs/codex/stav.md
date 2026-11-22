@@ -1,5 +1,17 @@
 # Stav etapy E26
 
+## Blikání, rozmazání a okraje silnic (mimo etapu, na přání autora)
+
+Autor hrál verzi 0.2.0 ze zkušební stránky na počítači a hlásil: textury při jízdě problikávají a rozmazávají se, mezi asfaltem a obrubníkem zůstává pruh jiného povrchu a terén vystupuje přes okraj silnice. Na větvi `claude/bold-ptolemy-36flyi` od revize `3e46e6b`. [Rozbor, měření a snímky](../obraz.md)
+
+**Příčiny (ověřeno).** Jemné vzory (zrno asfaltu 3 cm, zrno omítky 14 cm, spáry cihel) mizely, až když pixel měřil víc než buňka vzoru, a za jízdy blikaly. Asfalt a čáry sousedních dlaždic se kreslily v pořadí podle vzdálenosti od kamery, takže se jejich překryv prohazoval. V Prešovské ležel tramvajový pás ze sousední dlaždice přes asfalt ulice a vedle něj vykukoval světlejší asfalt (měření u 61 334 míst u obrubníků nenašlo žádnou skutečnou díru). Nízká předvolba kreslila na počítači ve 3/4 rozlišení, země se filtrovala jen čtyřnásobně a časové vyhlazení vysoké předvolby obraz za jízdy změkčilo. Terén mezi uzlem pod vozovkou a uzlem za okrajem stoupal nad asfalt.
+
+**Oprava.** `src/world/image-quality.js` (mizení vzorů podle buňky, filtrování, rozlišení, doostření, pořadí dlaždic), `asphalt.js`, `materials.js`, `building-nodes.js`, `postfx.js` (SharpenNode po TRAA), `chunks.js` (pořadí dlaždic podle šachovnice, tramvajový pás se nekreslí na vozovce), `road-edge-terrain.js` a `world.roadEdgeDistance` (snížení uzlů terénu za okrajem vozovky). Původní obraz vrací `?obraz=puvodni`, doostření vypne `?ostreni=0`.
+
+**Ověření.** Nové testy `tests/image-quality.test.js` (6) a `tests/road-edge-terrain.test.js` (3), prohlížečová zkouška `tests/e2e/image-quality.spec.js` (3). Výsledky měření a zkoušek jsou v [protokolu](../obraz.md).
+
+**Odbočka.** První pokus kreslil tramvajový pás jako samostatnou vrstvu pod asfaltem. Přidal tím vykreslovací volání a pohled na Lochotín na nízké předvolbě překročil rozpočet (111 volání, mez 110). Mez se neměnila, pás se místo toho na vozovce nekreslí.
+
 ## Aktuální verze na zkušební stránce (na přání autora, příprava vydání 0.2.0)
 
 Ve složce `zkouska-vzhledu/` na větvi `gh-pages` je od revize `0d9e98e` sestavení verze 0.2.0 z `main`, revize `6b8df3a`. Předchozí zveřejněná verze (`41c9b3b`) byla o 38 revizí starší a neměla opravu nájezdu Wilsonova mostu ani zvednuté Anglické nábřeží. Seznam 816 souborů se nezměnil. Liší se jen kód hry (`assets/`, `index.html`, `.vite/manifest.json`), data a obrázky jsou stejné. Popis na větvi `gh-pages` uvádí nový vypínač `?nabrezi=0` a adresu panelu měření.
