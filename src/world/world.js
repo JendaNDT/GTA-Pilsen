@@ -12,6 +12,7 @@ import { prazdrojDeck, identifyPrazdrojBridge } from './prazdroj-bridge.js';
 import { indexBridgeEdges } from '../physics/railings.js';
 import { prepareRondel } from './rondel.js';
 import { buildRoadGrades, corridorWeight, gradeBlend, gradeHeight, gradeSurface, CORRIDOR_FALLOFF, CORRIDOR_MARGIN } from './road-grade.js';
+import { sidewalkHeight, sidewalkPriority, sidewalkProfile } from './sidewalks.js';
 
 export const SURF = 0.05;    // o kolik nad terénem leží povrch, po kterém se jezdí (kvůli vrstvě asfaltu)
 const ROAD_TERRAIN_STEP = 4;                       // rozteč úprav terénu pod silnicemi (m)
@@ -1042,6 +1043,114 @@ export class World {
     grid = this._buildRoadTerrain(tile);
     this.roadTerrain.set(tile, grid);
     return grid;
+  }
+
+  // ------------------------------------------------------------- chodníky ----
+  /** Projde hrany stěn budov v obdélníku; visit(ax, az, bx, bz). */
+  forWalls(x0, z0, x1, z1, visit) {
+    const B = this.b, vx = this.bvx, vz = this.bvz;
+    const cx0 = Math.max(0, Math.floor((x0 - this.minX) / COLL_CELL)), cx1 = Math.min(this.gcols - 1, Math.floor((x1 - this.minX) / COLL_CELL));
+    const cz0 = Math.max(0, Math.floor((z0 - this.minZ) / COLL_CELL)), cz1 = Math.min(this.grows - 1, Math.floor((z1 - this.minZ) / COLL_CELL));
+    for (let cz = cz0; cz <= cz1; cz++) for (let cx = cx0; cx <= cx1; cx++) {
+      const c = cz * this.gcols + cx;
+      for (let k = this.bCellStart[c], ke = this.bCellStart[c + 1]; k < ke; k++) {
+        const i = this.bCellItems[k];
+        if (x1 < this.bMinX[i] || x0 > this.bMaxX[i] || z1 < this.bMinZ[i] || z0 > this.bMaxZ[i]) continue;
+        for (let rg = B.bRing[i]; rg < B.bRing[i + 1]; rg++) {
+          const v0 = B.ringStart[rg], v1 = B.ringStart[rg + 1];
+          for (let v = v0, j = v1 - 1; v < v1; j = v++) visit(vx[j], vz[j], vx[v], vz[v]);
+        }
+      }
+    }
+  }
+
+  /** Leží bod na vozovce jiné sjízdné silnice (mimo mosty a tunely) než road, s okrajem pad? */
+  insideOtherCarriageway(road, x, z, pad = 0) {
+    const cx = Math.floor((x - this.minX) / COLL_CELL), cz = Math.floor((z - this.minZ) / COLL_CELL);
+    for (let row = Math.max(0, cz - 1); row <= Math.min(this.grows - 1, cz + 1); row++) {
+      for (let col = Math.max(0, cx - 1); col <= Math.min(this.gcols - 1, cx + 1); col++) {
+        const cell = row * this.gcols + col;
+        for (let j = this.segCellStart[cell]; j < this.segCellStart[cell + 1]; j++) {
+          const k = this.segCellItems[j], other = this.roadOfPt[k];
+          if (other === road || this.r.cls[other] > DRIVABLE_MAX || (this.r.flags[other] & (RF.BRIDGE | RF.TUNNEL))) continue;
+          const ax = this.rpx[k], az = this.rpz[k], ex = this.rpx[k + 1] - ax, ez = this.rpz[k + 1] - az, l2 = ex * ex + ez * ez;
+          if (!l2) continue;
+          const t = Math.max(0, Math.min(1, ((x - ax) * ex + (z - az) * ez) / l2));
+          const reach = this.r.w[other] / 2 + pad;
+          if ((ax + ex * t - x) ** 2 + (az + ez * t - z) ** 2 <= reach * reach) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /** Leží bod na chodníku důležitější silnice? Tam chodník silnice road v rohu křižovatky končí. */
+  insideSidewalkOf(road, x, z) {
+    const widths = this.sidewalks;
+    if (!widths) return false;
+    const own = sidewalkPriority(this, road);
+    const cx = Math.floor((x - this.minX) / COLL_CELL), cz = Math.floor((z - this.minZ) / COLL_CELL);
+    for (let row = Math.max(0, cz - 1); row <= Math.min(this.grows - 1, cz + 1); row++) {
+      for (let col = Math.max(0, cx - 1); col <= Math.min(this.gcols - 1, cx + 1); col++) {
+        const cell = row * this.gcols + col;
+        for (let j = this.segCellStart[cell]; j < this.segCellStart[cell + 1]; j++) {
+          const k = this.segCellItems[j], other = this.roadOfPt[k];
+          if (other === road || !widths[other]) continue;
+          const priority = sidewalkPriority(this, other);
+          if (priority < own || (priority === own && other > road)) continue;
+          const ax = this.rpx[k], az = this.rpz[k], ex = this.rpx[k + 1] - ax, ez = this.rpz[k + 1] - az, l2 = ex * ex + ez * ez;
+          if (!l2) continue;
+          const t = Math.max(0, Math.min(1, ((x - ax) * ex + (z - az) * ez) / l2));
+          const reach = this.r.w[other] / 2 + widths[other];
+          if ((ax + ex * t - x) ** 2 + (az + ez * t - z) ** 2 <= reach * reach) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /** Ruční úseky ulic z E25 mají vlastní dlažbu a vybavení; chodník se tam negeneruje. */
+  sidewalkExcluded(x, z) {
+    for (const section of this.streetDetails?.sections ?? []) {
+      const [x0, z0, x1, z1] = section.bounds;
+      if (x >= x0 - 6 && x <= x1 + 6 && z >= z0 - 6 && z <= z1 + 6) return true;
+    }
+    return false;
+  }
+
+  /** Výška chodníku v bodě (NaN mimo chodník). Stejný průběh jako vykreslený chodník. */
+  sidewalkY(x, z) {
+    const widths = this.sidewalks;
+    if (!widths || this.sidewalkExcluded(x, z)) return NaN;
+    const cx = Math.floor((x - this.minX) / COLL_CELL), cz = Math.floor((z - this.minZ) / COLL_CELL);
+    let best = Infinity, road = -1, seg = 0, along = 0, qx = 0, qz = 0;
+    for (let row = Math.max(0, cz - 1); row <= Math.min(this.grows - 1, cz + 1); row++) {
+      for (let col = Math.max(0, cx - 1); col <= Math.min(this.gcols - 1, cx + 1); col++) {
+        const cell = row * this.gcols + col;
+        for (let j = this.segCellStart[cell]; j < this.segCellStart[cell + 1]; j++) {
+          const k = this.segCellItems[j], r = this.roadOfPt[k];
+          if (!widths[r]) continue;
+          const ax = this.rpx[k], az = this.rpz[k], ex = this.rpx[k + 1] - ax, ez = this.rpz[k + 1] - az, l2 = ex * ex + ez * ez;
+          if (!l2) continue;
+          const t = Math.max(0, Math.min(1, ((x - ax) * ex + (z - az) * ez) / l2));
+          const px = ax + ex * t, pz = az + ez * t, d = Math.hypot(px - x, pz - z), hw = this.r.w[r] / 2;
+          if (d < hw || d > hw + widths[r] || d - hw >= best) continue;
+          best = d - hw; road = r; seg = k; along = t; qx = px; qz = pz;
+        }
+      }
+    }
+    if (road < 0 || this.insideOtherCarriageway(road, x, z, 0)) return NaN;
+    const d = best + this.r.w[road] / 2, ox = (x - qx) / d, oz = (z - qz) / d, hw = this.r.w[road] / 2, width = widths[road];
+    const surface = this.roadSurfaceY(road, seg, along, qx + ox * hw, qz + oz * hw);
+    const terrain = this.heightAt(qx + ox * (hw + width), qz + oz * (hw + width)) + SURF;
+    return sidewalkHeight(sidewalkProfile(surface, terrain, width), width, best);
+  }
+
+  /** Výška pro chodce: terén, mostovka nebo chodník, co je výš. */
+  walkY(x, z, yHint) {
+    const ground = this.groundY(x, z, yHint);
+    const walk = this.sidewalks ? this.sidewalkY(x, z) : NaN;
+    return walk > ground ? walk : ground;
   }
 
   /** Má dlaždice úpravy terénu nebo vozovku s profilem? */

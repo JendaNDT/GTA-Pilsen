@@ -143,7 +143,7 @@ export class PedManager {
     const p = new Ped(this.seq++);
     p.edge = e; p.s = s; p.side = side;
     p.x = _pt.x; p.z = _pt.z; p.yaw = Math.atan2(_pt.tx, _pt.tz);
-    p.y = w.groundY(p.x, p.z, w.heightAt(p.x, p.z) + 1);
+    p.y = w.walkY(p.x, p.z, w.heightAt(p.x, p.z) + 1);
     this.peds.push(p);
     this.scene.add(p.mesh);
   }
@@ -152,7 +152,7 @@ export class PedManager {
   spawnAt(x, z, yaw) {
     const p = new Ped(this.seq++);
     p.x = x; p.z = z; p.yaw = yaw; p.state = 'flee'; p.timer = 5;
-    p.y = this.world.groundY(x, z, this.world.heightAt(x, z) + 1);
+    p.y = this.world.walkY(x, z, this.world.heightAt(x, z) + 1);
     p.fx = Math.sin(yaw); p.fz = Math.cos(yaw);
     this.peds.push(p);
     this.scene.add(p.mesh);
@@ -232,7 +232,7 @@ export class PedManager {
       if (d2 > 230 * 230) { this.remove(i); continue; }
       let moving = 0;
       if (this.game.falls.active.has(p)) continue;
-      const surface = w.groundY(p.x, p.z, p.y);
+      const surface = w.walkY(p.x, p.z, p.y);
       if (p.y - surface > 5 && this.game.falls.enabled && d2 <= 80 ** 2) {
         w.traffic.users.delete(p); p.crossing = null;
         p.state = 'down';

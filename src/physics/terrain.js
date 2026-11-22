@@ -3,6 +3,7 @@ import { TUNNEL_HEIGHT, TUNNEL_PORTAL_CUT } from '../world/tunnels.js';
 import { riverBed } from './water.js';
 import { densePath, pathNormal } from '../world/road-profile.js';
 import { gradeBlend, stripLift } from '../world/road-grade.js';
+import { sidewalkFacing, sidewalkQuads, sidewalkSections, SIDEWALK_RAISED } from '../world/sidewalks.js';
 
 const ROAD_STEP = 4;                   // rozteč jemné sítě terénu podél vozovek (m)
 const JUNCTION_PARTS = 4;              // na kolik dílů se pás napříč dělí v křižovatce
@@ -236,6 +237,32 @@ export function roadSurfaceTriangles(world, ci, emit) {
         }
       }
       previous = section;
+    }
+  }
+}
+
+/** Chodníky s obrubníkem v dlaždici (stejné řezy jako vykreslení, viz sidewalks.js). */
+export function sidewalkTriangles(world, ci, emit) {
+  const pieces = world.rPieces?.[ci];
+  if (!world.sidewalks || !pieces) return;
+  const oriented = (a, b, c, normal) => {
+    const nx = (b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]);
+    const ny = (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]);
+    const nz = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+    if (nx * normal[0] + ny * normal[1] + nz * normal[2] >= 0) emit(a, b, c); else emit(a, c, b);
+  };
+  for (let q = 0; q < pieces.length; q += 3) {
+    const road = pieces[q];
+    if (!world.sidewalks[road] || (world.r.flags[road] & SIDEWALK_RAISED)) continue;
+    const sides = sidewalkSections(world, road, pieces[q + 1], pieces[q + 2]);
+    if (!sides) continue;
+    for (const sections of sides) {
+      sidewalkQuads(sections, (a, b, c, d, part, section) => {
+        for (const normal of sidewalkFacing(part, section)) {
+          oriented(a, b, c, normal);
+          oriented(a, c, d, normal);
+        }
+      });
     }
   }
 }

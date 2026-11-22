@@ -1,7 +1,7 @@
 import { RoadFurnitureBodies } from './road-furniture.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
 import { CHUNK } from '../config.js';
-import { roadSurfaceTriangles, terrainTriangles } from './terrain.js';
+import { roadSurfaceTriangles, sidewalkTriangles, terrainTriangles } from './terrain.js';
 import { RoadStructures } from './structures.js';
 import { layers } from './world.js';
 import { forgeRoofFaces } from '../world/mill.js';
@@ -103,6 +103,7 @@ export class TileColliders {
     const emit = (a, b, c) => triangles.push(...a, ...b, ...c);
     terrainTriangles(w, ci, x, z, CHUNK, emit);
     roadSurfaceTriangles(w, ci, emit);
+    sidewalkTriangles(w, ci, emit);
     for (const i of w.bChunks[ci] ?? []) building(w, i, this.replaced.has(i) || i === w.heritage.forgeIndex, emit);
     if (ci === w.heritage.forgeChunk) forgeRoofFaces(w, w.heritage.forgeIndex, (a, b, c) => roof(emit, a, b, c));
     const tile = this.roofs.get(ci);

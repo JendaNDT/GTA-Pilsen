@@ -24,6 +24,7 @@ import { SURFACE } from './material-table.js';
 import { Parts, getDetailMaterial } from '../entities/models.js';
 import { SURF } from './world.js';
 import { gradeBlend } from './road-grade.js';
+import { sidewalkQuads, sidewalkSections, sidewalkWidth } from './sidewalks.js';
 import { TUNNEL_HEIGHT } from './tunnels.js';
 import { buildTrafficMeshes } from './traffic-meshes.js';
 import { detailRequestLimit, Heritage, pavingChunk } from './heritage.js';
@@ -553,6 +554,25 @@ function denseY(world, D, k, t, x, z) {
   return y;
 }
 
+// Barvy chodníku: žulový obrubník, líc ve stínu, dlažba v měřených čtvrtích a asfaltový chodník.
+const SIDEWALK_COLORS = {
+  curb: lin(0x8f8e89), face: lin(0x6f6e6a), skirt: lin(0x76746f), cap: lin(0x7f7e79),
+  paving: lin(0x928c82), asphalt: lin(0x76797e),
+};
+
+/** Chodník s obrubníkem podél části silnice (viz sidewalks.js). */
+function drawSidewalks(world, solid, road, s, e) {
+  const sides = sidewalkSections(world, road, s, e);
+  if (!sides) return;
+  const walk = world.sidewalkPaving?.[road] ? SIDEWALK_COLORS.paving : SIDEWALK_COLORS.asphalt;
+  for (const sections of sides) {
+    sidewalkQuads(sections, (a, b, c, d, part) => {
+      const color = part === 'walk' ? walk : SIDEWALK_COLORS[part];
+      solid.quad(a, b, c, d, color, part === 'face' || part === 'skirt' ? 0.85 : 1);
+    });
+  }
+}
+
 /** Pás položený na terén (nebo na mostovku). center = přidat středovou řadu bodů (lépe kopíruje terén). */
 function ribbon(world, buf, D, hw, col, lateral, lift, capStart, capEnd, center, road) {
   const n = D.n;
@@ -882,6 +902,8 @@ function buildRoads(world, ci, manager) {
       } else if (measured !== undefined && D.y.some((y, k) => y - world.heightAt(D.x[k], D.z[k]) > 0.75)) {
         bridgeSlab(world, solid, D, measured, COL.concrete, false);
       }
+      // chodník s obrubníkem po obou stranách ulice
+      if (world.sidewalks?.[i] && !raised) drawSidewalks(world, solid, i, s, e);
       // vodorovné značení
       if (ring) rondelMarkings(world, marks, D, hw, surfaceWidth, R.lanes[i]);
       else if (cls <= RC.UNCLASSIFIED && !(flags & RF.ROUNDABOUT)) {
@@ -1588,6 +1610,12 @@ export class ChunkManager {
       const mid = (world.rOff[i] + world.rOff[i + 1]) >> 1;
       this.roadVerge[i] = surfaceContext(world, this.districts, world.rpx[mid], world.rpz[mid]);
     }
+    // Chodníky s obrubníkem: od střední předvolby, vypne je ?chodniky=0. Platí pro celou hru
+    // (vykreslení, fyziku i chodce), změna předvolby se projeví po novém načtení.
+    if (QUALITY.roadDetail && PARAMS.get('chodniky') !== '0' && world.sidewalks === undefined) {
+      world.sidewalks = Float32Array.from(this.roadVerge, (context, i) => sidewalkWidth(world.r.cls[i], world.r.flags[i], context));
+      world.sidewalkPaving = Uint8Array.from(this.roadVerge, (context) => context === 2 ? 1 : 0);
+    } else if (world.sidewalks === undefined) world.sidewalks = null;
     this.scratch = new Map();
     this.orthoScratch = new Map();
     this.aniso = Math.min(4, renderer.getMaxAnisotropy());
