@@ -629,16 +629,46 @@ Ve větvi `etapa/E22` jsou převedené městské objekty, ověřený Wilsonův m
 
 Větev `etapa/E21` navazuje na E20 sloučenou revizí `623e081`. [Zadání E21](E21.md) · [Protokol předchozí etapy](../E20.md)
 
+## Minuta dne a noci po ověření ranní špičky
+
+Chromium 159 na softwarovém WebGL 2 v okně 400 × 280 na herním kódu `7d9471b` zaznamenalo 21 snímků během minuty. Mez je více než 30. V prostředí současně běžely zkoušky E26. Výsledek je v `data-raw/e21/minuta-po-kolone.log`. Při opakování v témže okně se dvěma vlákny Mesa a samostatně přidělenými procesory prošla celá minutová zkouška. Po střídání dne a noci bylo ve sledovaném okně více než 30 snímků a prohlížeč nehlásil chybu ani varování. Záznam je v `data-raw/e21/minuta-dve-jadra.log`.
+
+Po přidání zkoušky objížďky u MHD má výpis Playwrightu 184 případů. Všech 184 má úspěšný výsledek napříč běhy a revizemi. Na herním kódu `7d9471b` prošlo 129 testů JavaScriptu, produkční sestavení, obě desetiminutové ranní špičky a poslední dosud otevřená minutová zkouška. K přijetí etapy zbývá měření deseti fiktivních lamp na autorově počítači s limitem 50 ms na snímek.
+
+## Uvolnění výjezdu z křižovatky
+
+V desetiminutové zkoušce na Klatovské třídě čekalo jedno auto 381 sekund. U stojícího vozu v sadech Pětatřicátníků ukázal záznam v čase 376 s zelenou, volný přechod a část vozu MHD ve zvoleném výjezdu. V rekonstrukci zůstával z jeho jízdního pruhu volný ještě jeden povolený výjezd. Další měření na původním sestavení zachytilo po čtyřech minutách čekání až 184,5 s. V této koloně už výjezd blokovala i osobní auta z více směrů. Měření jsme potom ukončili a uvolnili prostředky pro ověření opravy.
+
+Řidič může při zelené zvolit jiný povolený směr, když sám čeká nejméně minutu a MHD mu stejně dlouho stojí ve výjezdu se zavřenými dveřmi. Objížďka používá stejné kontroly volných pruhů jako běžný průjezd. Po změně fáze řidič s volnem vyčká, až záď posledního auta z příčného směru uvolní křižovatku. Regresní zkouška této přednosti před úpravou selhala a po úpravě prošla. Na revizi `7d9471b` prošla obě desetiminutová pozorování ranní špičky na WebGL 2. Na Klatovské třídě trvalo nejdelší stání 118 s, u hlavního nádraží 56,5 s. Ověřený limit je méně než 120 s.
+
+Na sestavení s objížďkou prošly v Chromiu na WebGL 2 obě cílené zkoušky. Řidič počkal za krátce stojící MHD, na červenou a před obsazeným druhým výjezdem. Na zelenou odbočil volným směrem. Druhý případ ověřil dřívější chování u odstaveného vozidla. Na sestavení zahrnujícím i čekání příčné osy prošlo 129 testů JavaScriptu a produkční sestavení. Záznamy zkoušek jsou v `data-raw/e21/kolona-objizdka-e2e.log`, `kolona-pricny-node.log` a `kolona-pricny-build.log` ve stejné složce.
+
 | Krok | Stav |
 | --- | --- |
 | 1. Registr a stálé identifikátory | Hotovo. Každý svět má vlastní registr. Značky a hlavy semaforů dostávají identitu ve zdrojovém pořadí své dlaždice před seskupením podle materiálu. |
 | 2. Lampy | Hotovo. Společné umístění pro grafiku a fyziku, sražení, zhasnutí, dvě části lampy, obnova po návratu a ranní oprava prošly ověřením. |
-| 3. Značky a semafory | Funkční kontroly včetně návratu po opravě a dopravní špičky prošly. Celková grafická kontrola na cílovém zařízení zůstává otevřená. |
+| 3. Značky a semafory | Kontrola návratu po opravě a desetiminutová ranní špička na Klatovské i u hlavního nádraží prošly. Grafická kontrola na cílovém zařízení zůstává otevřená. |
 | 4. Mosty a uzavírky | Hotovo. Náraz, návrat a oprava ověřeny ve fyzice a průjezd autem na WebGL 2 i WebGPU. |
 | 5. Následky nárazu | Hotovo. Hledanost, zvuky a společný limit úlomků jsou zapojené do hry. |
 | 6. Auta a garáž | Hotovo. Prošly deformace, odpadnutí dílu, načtení uloženého poškození a oprava v garáži. |
 | 7. Částice | Hotovo. Prošla kontrola výpočtu na WebGPU i náhradního výpočtu na WebGL 2. |
-| 8. Závěrečné ověření | Probíhají závěrečné prohlížečové zkoušky. Snímky a měření ze softwarového vykreslovače jsou v protokolu. Měření na autorově počítači je otevřené. |
+| 8. Závěrečné ověření | Místní funkční zkoušky dokončeny. Snímky a výsledky jsou v protokolu. Zbývá měření na autorově počítači. |
+
+### Opakování ranní špičky na WebGL 2
+
+Tři opakované zkoušky nad produkčním sestavením dokončily start hry. Prošla návštěva Krkavce s pokutou a nákupem u garáže. Během deseti simulovaných minut u hlavního nádraží trvalo nejdelší stání vozu 60 sekund. Na Klatovské třídě dosáhlo 381 sekund při požadavku méně než 120. V každé z deseti minut se část provozu pohybovala a test u žádného sledovaného vozu nezaznamenal výjezd z vozovky. Dřívějších 182 úspěchů ze 183 případů je součet napříč běhy. Otevřená zůstává také regrese ranní špičky. Prošlo 128 testů JavaScriptu a produkční sestavení.
+
+### Barvy na WebGPU a minutová zkouška WebGL 2
+
+Po opravě čtení výsledné textury prošlo všech pět barevných kontrol na WebGPU. Stejné původní meze ověřily denní a noční oblohu, sousední světlá a tmavá okna, vodu u Wilsonova mostu, oba portály se značením a dlažbu náměstí. Na WebGL 2 prošlo sedm zkoušek materiálů včetně pohybu náhonu, světel auta a osvětlení pod lampou. Napříč běhy má úspěšný výsledek 182 ze 183 případů. Při opakování zbývající minuty dne a noci vykázal softwarový WebGL 2 v Chromiu 159 s Mesa llvmpipe 20 snímků při souběžné práci. Mez je více než 30. Výsledek izolovaného běhu a měření na skutečné grafické kartě zůstávají otevřené.
+
+### Závěrečné prohlížečové zkoušky
+
+Na Chromiu 159 prošel výchozí start na WebGPU, zobrazení názvu vykreslovače v nabídce i získání prvních snímků bez varování. Prošly také všechny čtyři předvolby vyhlazování a stínů, pohyb dveří tramvaje v obrazu pro TRAA, měsíc po západu slunce a oba případy vztlaku. Z 37 znovu spuštěných případů prošlo 32. Pět zbývajících v tomto běhu používalo čtení barev plátna. Součet jednotlivých úspěšných zkoušek napříč opravami dosahuje 177 ze 183. Kromě pěti kontrol barev zbývá ověřit počet snímků během minuty hraní na WebGL 2. Původní mez nad 30 snímků zůstává součástí zkoušky.
+
+### Hodiny po opětovném načtení hry
+
+Chromium 159 na WebGPU ověřilo změnu času na 09:15, přepočet jízdního řádu, opětovné načtení hry i návrat k aktuálnímu času v Plzni. Stejná zkouška už prošla na WebGL 2. Test při načítání nyní vypíše chybu startu hry a respektuje čas přidělený prohlížečové zkoušce. Prošlo 128 testů JavaScriptu a všech 741 souborů nového produkčního sestavení se po bajtech shodovalo s webem, nad kterým běží zkoušky. Při kontrole materiálů na WebGPU vrátilo kopírování prezentačního plátna černé pixely. Pokračuje ověření čtení přímo z vykreslené textury.
 
 ### Doprava, směny a doručování
 
