@@ -10,7 +10,8 @@ test('E24 – fotorežim z menu pozastaví čas a stáhne vlastní PNG @webgpu',
     if (/invalid shader module|validation error|error.*shader|shader.*error/i.test(m.text())) errors.push(m.text());
   });
   await page.setViewportSize({width:400,height:280});
-  await page.goto(gameUrl('/?debug&quality=medium&view=300&adapt=0&weather=clear&hour=12'));
+  // Pevné datum: poloha slunce a roční období stromů se mění podle dne.
+  await page.goto(gameUrl('/?debug&quality=medium&view=300&adapt=0&weather=clear&date=2026-11-09&hour=12'));
   await waitForGame(page);
   const before = await page.evaluate(() => ({ time: __game.clock.now, pos: __game.camera.position.toArray() }));
   await page.locator('#btn-photo').click();
@@ -58,7 +59,8 @@ test('E24 – ultra spojuje sluneční paprsky, volitelný odlesk a vektory pohy
     if (/invalid shader module|validation error|error.*shader|shader.*error/i.test(m.text())) errors.push(m.text());
   });
   await page.setViewportSize({width:400,height:280});
-  await page.goto(gameUrl('/?debug&quality=ultra&view=350&adapt=0&weather=clear&hour=12'));
+  // Pevné datum: zkouška míří kamerou do slunce, jehož poloha se mění podle dne.
+  await page.goto(gameUrl('/?debug&quality=ultra&view=350&adapt=0&weather=clear&date=2026-11-09&hour=12'));
   await waitForGame(page);
   const state = await page.evaluate(async () => {
     __freeze(true);

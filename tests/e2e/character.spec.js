@@ -2,7 +2,8 @@ import { expect, test } from '@playwright/test';
 import { gameUrl } from './game-url.js';
 
 test('E19 – vystoupení na mostě, v tunelu a po přistání na střeše', { tag: '@webgpu' }, async ({ page }) => {
-  await page.goto(gameUrl('/?debug&quality=low&adapt=0&hour=10'));
+  // Pevné datum: přistání vrtulníku běží v herní smyčce, kde MHD a provoz jezdí podle dne.
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0&date=2026-11-09&hour=10'));
   await page.waitForFunction(() => window.__ready);
   const results = await page.evaluate(() => {
     const g = window.__game, w = g.world, player = g.player, car = player.lastCar;

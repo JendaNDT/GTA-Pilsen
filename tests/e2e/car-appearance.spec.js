@@ -9,7 +9,8 @@ test('E24 – dvě světla hráče sledují karoserii a přepnutí dálkových s
     if (/error.*shader|shader.*error|invalid shader module|validation error/i.test(m.text())) errors.push(m.text());
   });
   await page.setViewportSize({ width: 400, height: 280 });
-  await page.goto(gameUrl('/?debug&quality=medium&view=300&adapt=0&hour=22'));
+  // Pevné datum: déšť, mlha a sníh se losují podle dne a mění, které efekty se v noci vykreslí.
+  await page.goto(gameUrl('/?debug&quality=medium&view=300&adapt=0&date=2026-11-09&hour=22'));
   await waitForGame(page);
   const state = await page.evaluate(async () => {
     __freeze(true);

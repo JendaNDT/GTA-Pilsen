@@ -2,7 +2,8 @@ import { expect, test } from '@playwright/test';
 import { gameUrl } from './game-url.js';
 
 test('E18 – auto projede ulicí U Prazdroje pod měřenou lávkou v obou směrech', async ({ page }) => {
-  await page.goto(gameUrl('/?debug&quality=low&adapt=0&hour=10'));
+  // Pevné datum: sníh nebo mokrá vozovka podle dne mění přilnavost kol a MHD jezdí podle dne v týdnu.
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0&date=2026-11-09&hour=10'));
   await page.waitForFunction(() => window.__ready);
   const runs = await page.evaluate(() => {
     const g = window.__game, w = g.world, car = g.player.lastCar;

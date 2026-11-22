@@ -4,7 +4,8 @@ import { waitForGame } from './ready.js';
 
 test('E24 – obloha na nízké předvolbě zachová výhled a nepřekreslí ulice @webgpu', async ({page}) => {
   await page.setViewportSize({width:400,height:280});
-  await page.goto(gameUrl('/?debug&quality=low&adapt=0&weather=clear&hour=10&view=340'));
+  // Pevné datum: poloha slunce a roční období stromů mění barvy oblohy i ulic.
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0&weather=clear&date=2026-11-09&hour=10&view=340'));
   await waitForGame(page);
   const stats = await page.evaluate(async () => {
     const g = window.__game, renderer = g.renderer, sky = g.env.sky;

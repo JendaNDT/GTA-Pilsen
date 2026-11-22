@@ -2,7 +2,8 @@ import { expect, test } from '@playwright/test';
 import { gameUrl } from './game-url.js';
 
 test('E20 – vrtulník v rovném letu zrychlí na 300 km/h a po uvolnění W zpomalí', { tag: '@webgpu' }, async ({ page }) => {
-  await page.goto(gameUrl('/?debug&quality=low&adapt=0&hour=10'));
+  // Pevné datum: během letu běží MHD a provoz, jejichž počet se mění podle dne.
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0&date=2026-11-09&hour=10'));
   await page.waitForFunction(() => window.__ready);
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
   const height = await page.evaluate(() => {
