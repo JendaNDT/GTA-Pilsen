@@ -1,5 +1,17 @@
 # Stav etapy E26
 
+## Aktuální verze na zkušební stránce (na přání autora, příprava vydání 0.2.0)
+
+Ve složce `zkouska-vzhledu/` na větvi `gh-pages` je od revize `0d9e98e` sestavení verze 0.2.0 z `main`, revize `6b8df3a`. Předchozí zveřejněná verze (`41c9b3b`) byla o 38 revizí starší a neměla opravu nájezdu Wilsonova mostu ani zvednuté Anglické nábřeží. Seznam 816 souborů se nezměnil. Liší se jen kód hry (`assets/`, `index.html`, `.vite/manifest.json`), data a obrázky jsou stejné. Popis na větvi `gh-pages` uvádí nový vypínač `?nabrezi=0` a adresu panelu měření.
+
+**Ověření před zveřejněním** (22. 11. 2026, revize `6b8df3a`):
+- `npm test` 233 z 233, `npm run test:python` 27 testů (1 přeskočený), `npm run build` prošlo.
+- `npm run test:e2e -- physics-roads.spec.js physics.spec.js game.spec.js --project=webgl2 --trace off`: 19 z 19, včetně Wilsonova mostu v obou směrech a obou tubusů Valíku.
+- Zveřejňovaná složka se otevřela místně z podsložky jako na GitHub Pages v Chromiu na softwarovém WebGL 2. Na počítači (1280 × 720, `?debug&adapt=0&quality=low`) i na emulovaném telefonu Pixel 7 s dotykem šla spustit hra, **O hře** ukazuje verzi 0.2.0 a panel **Měření** začal měřit. Nevznikla žádná chyba stránky a nechyběl žádný soubor.
+- Ve snímku s otevřeným panelem **Měření** je pod panelem tmavý obdélník velikosti jeho textového pole. Není to prvek stránky a stejně se objevil i ve starší verzi `b4935e9`. Nejspíš jde o chybu skládání obrazu v prohlížeči bez obrazovky. Na skutečném zařízení zbývá potvrdit, že tam není.
+
+**Zbývá k vydání 0.2.0.** Autor změří hru na počítači a telefonu podle části „Měření vydání na počítači a telefonu“ v [E26](../E26.md) a rozhodne, zda zůstane nový vzhled. Potom se doplní protokol E26 a vydání se označí.
+
 ## Anglické nábřeží pod terénem (mimo etapu, na přání autora)
 
 Na větvi `claude/stoic-hopper-46xgy0`, která navazuje na opravu nájezdu Wilsonova mostu (`claude/determined-volta-o7e9t2`, revize `6e3e924`). Oprava je v revizi `ada32f9`. [Rozbor, tabulky a měření](../nabrezi.md)
