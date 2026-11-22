@@ -39,7 +39,7 @@ Na větvi `claude/modest-ramanujan-wvjl2i` (revize `faa1a84`) selhávala zkoušk
 - Nový test v Node hlídá výšku fyziky na nájezdu v šířce ±3 m (na původním kódu selže s rozdílem 57 cm).
 - `npm test` 229 z 229, `npm run build` prošlo, `npm run test:e2e -- physics-roads.spec.js physics.spec.js --trace off` 22 z 22 (WebGL 2 i WebGPU).
 - Ve městě ubylo míst, kde terén ve fyzice prorůstá nad pás o víc než 5 cm, z 2 871 na 794. Propady pod vozovku nad 20 cm zmizely. Příprava fyziky dlaždice +1 až 3 %.
-- Širší sada 21 souborů prohlížečových zkoušek na WebGL 2 (jízda, provoz, MHD, chodci, asfalt, mimoúrovňová křížení, Rondel, Prazdroj, řeka, jemný terén, stopy kol, rozpočet): průběžně, výsledek doplním.
+- Širší sada 21 souborů prohlížečových zkoušek na WebGL 2 (rozpočet vykreslování, hra, chodci, srážky s vybavením ulic, rozvoz, podrobnosti ulic, rozbitné předměty, fyzikální provoz, doprava, postava, stavby, MHD, směny, asfalt, materiály, mimoúrovňová křížení, Rondel, Prazdroj, řeka, jemný terén, stopy kol): 100 ze 100.
 
 **Návrhy mimo úkol.** Profil Anglického nábřeží severně od mostu leží až 2,5 m pod terénem (výškový model u břehu nejspíš zachytil koryto) a body sítě na břehové čáře řeky se pod pás nesrovnávají. Na samém okraji nábřeží u nájezdu vystoupí terén až 15 cm nad pás, mimo stopu kol. [Měření, tabulky a návrhy](../sklon.md#dodatek-proč-kolo-klesalo-pod-nájezd-wilsonova-mostu)
 
