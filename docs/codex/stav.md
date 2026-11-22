@@ -8,7 +8,63 @@ Na větvi `claude/lucid-bohr-y3rlwb` vznikla vzhledová zkouška webové verze: 
 
 Autor si stěžoval na hrbolaté silnice v kopcích. Na větvi `claude/lucid-bohr-y3rlwb` má každá silnice hladký podélný profil, terén pod vozovkou se mu přizpůsobí a fyzika jede po pásu silnice. Okolí měřených mostů, tunelů a ručně upravených křížení zůstává beze změny, v křižovatkách platí výška důležitější silnice. Původní silnice zapne `?silnice=puvodni`. Ve fyzice hry klesl počet rázů mezi křižovatkami ze 180 na 51 na km, v kopcích ze 464 na 79; v křižovatkách zůstává hrbolatost zhruba stejná. [Protokol, měření a snímky](../silnice.md)
 
-Zkouška Wilsonova mostu selhávala o víkendu kvůli srážce s trolejbusem 12. Zkušební auto jede po ose mostu a v 10.00 se čelně srazilo s víkendovým trolejbusem 12 v protisměru. Vozidla se překrývala asi o 0,25 m. V pátek i v pondělí zkouška procházela. Most, profil silnic ani fyzika kol chybu nezpůsobily. Zkouška má nyní pevné datum a před měřením odstaví MHD a cizí auta. Prošlo všech 11 případů `physics-roads.spec.js` a `physics.spec.js` na WebGL 2, 212 testů JavaScriptu a sestavení. Deset dalších souborů prohlížečových zkoušek nemá pevné datum; návrh je v protokolu. [Měření a oprava](../silnice.md#dodatek-proč-selhávala-zkouška-wilsonova-mostu)
+Zkouška Wilsonova mostu selhávala o víkendu kvůli srážce s trolejbusem 12. Zkušební auto jede po ose mostu a v 10.00 se čelně srazilo s víkendovým trolejbusem 12 v protisměru. Vozidla se překrývala asi o 0,25 m. V pátek i v pondělí zkouška procházela. Most, profil silnic ani fyzika kol chybu nezpůsobily. Zkouška má nyní pevné datum a před měřením odstaví MHD a cizí auta. Prošlo všech 11 případů `physics-roads.spec.js` a `physics.spec.js` na WebGL 2, 212 testů JavaScriptu a sestavení. Deset dalších souborů prohlížečových zkoušek nemělo pevné datum. Jejich úprava je popsaná v následující části. [Měření a oprava](../silnice.md#dodatek-proč-selhávala-zkouška-wilsonova-mostu)
+
+## Pevné datum v dalších prohlížečových zkouškách (mimo etapu, navazuje na opravu Wilsonova mostu)
+
+Deset souborů prohlížečových zkoušek nastavovalo hodinu bez data, takže hra brala den spuštění. Podle data se ve hře mění jízdní řád MHD pro všední den a víkend, hustota aut a chodců, počasí, poloha slunce a roční období stromů. Počasí se losuje po tříhodinových úsecích. Například v 10.00 je 9. 11. 2026 zataženo a sucho, 21. 11. je mokro, 22. 11. sněží a 14. 11. leží téměř souvislý sníh.
+
+Na větvi `claude/epic-goodall-4sf609`, která navazuje na `claude/sweet-carson-xmt7sk`, má všech 11 zkoušek s nastavenou hodinou pevné datum pondělí 9. 11. 2026, stejně jako zkoušky provozu. Zkouška interiérů má navíc jasné počasí. Ostatní zkoušky v těchto souborech nenastavují hodinu ani datum a na dni nezávisí, proto zůstaly beze změny. Očekávání zkoušek ani herní kód se nemění.
+
+### Co podle dne mění jednotlivé zkoušky
+
+| Soubor · zkouška | Co se podle dne mění | Úprava |
+|---|---|---|
+| `prazdroj` · průjezd pod lávkou U Prazdroje (10.00) | Mokro a sníh snižují přilnavost kol, ve všední den jezdí dvakrát víc vozů MHD. Na sněhu trval průjezd 5,83 s z povolených 6 s, výsledek se tedy může změnit. | datum |
+| `interiors` · místnost za stejným oknem (10.00) | Zkouška porovnává barvy okna. Slunce, oblačnost, mlha a sníh mění jejich jas, výsledek se tedy může změnit. | datum a jasno |
+| `sky-depth` · obloha na nízké předvolbě (10.00, jasno) | Poloha slunce a barva stromů mění barvy oblohy i ulic, které zkouška počítá. | datum |
+| `character` · vystoupení na mostě, v tunelu a na střeše (10.00) | Při přistání vrtulníku běží 120 kroků hry s MHD a provozem podle dne. | datum |
+| `flight` · let rychlostí 300 km/h (10.00) | Během 2 550 kroků letu hra kolem vrtulníku simuluje MHD a provoz podle dne. | datum |
+| `car-appearance` · světla auta (22.00) | Ve 22.00 je v Plzni po celý rok tma, světla se tedy rozsvítí vždy. Déšť, mlha a sníh ale mění, které efekty se vykreslí a jejichž chyby zkouška hlídá. | datum |
+| `facade-detail` · povrchy budov (10.00) | Déšť nebo sníh přidají do snímku další efekty. | datum |
+| `graphics-failure` · poškozená barevná tabulka a textury (10.00) | Počasí mění efekty prvního herního snímku. | datum |
+| `clouds` · obraz oblaků (12.00, vynuceně oblačno) | Krytí a tvar oblaků na datu nezávisí, mění se jen poloha slunce a barva oblohy. Datum zajistí stejný obraz při opakování. | datum |
+| `photo-mode` · fotorežim z menu a paprsky na ultra (12.00, jasno) | Mění se poloha slunce, do kterého míří kamera, a roční období stromů. V poledne je slunce po celý rok nad obzorem. | datum |
+
+### Zkoušky ponechané bez data
+
+- `character`, čtyři zkoušky chůze u zábradlí, po chodníku a pod mosty: hra stojí v menu a posouvá se jen chodec mezi pevnými kolizemi. Tělesa MHD a aut vznikají až v kroku hry, který tyto zkoušky nespouštějí. Počasí chůzi neovlivňuje.
+- `flight`, přistání na FN Lochotín a na heliportu: zkouška vypíná auta i chodce. Ze všech 370 tras MHD vede nejbližší 160 m od střechy a 414 m od heliportu, takže se vůz MHD k místu přistání nedostane blíž. Počasí let neovlivňuje.
+- `flight`, načtení vypnuté letové asistence: ověřuje jen uložené nastavení.
+- `graphics-failure`, porucha katalogů (dvě zkoušky) a pomalá síť (dvě zkoušky): ověřují, co se stáhne a zda lze začít hrát. Na datu to nezávisí.
+- `photo-mode`, klávesa fotorežimu v mapě: ověřuje jen přepínání oken a ovládání.
+
+### Ověření
+
+V Chromiu na WebGL 2 prošlo ve čtyřech bězích všech 22 případů deseti souborů:
+
+- původní zkoušky dnes, v neděli 22. 11. 2026, kdy v 10.00 sněží: 22 z 22,
+- upravené zkoušky s pevným datem 9. 11. 2026 předepsaným příkazem: 22 z 22,
+- upravené zkoušky s datem posunutým na sobotu 21. 11. 2026: 22 z 22,
+- upravené zkoušky s datem posunutým na pondělí 23. 11. 2026 s mokrou vozovkou: 22 z 22.
+
+Prošlo také 212 testů JavaScriptu (`npm test`) a sestavení (`npm run build`).
+
+Samostatné měření průjezdu U Prazdroje ukazuje, jak velký je rozdíl mezi dny. Zkouška povoluje na 28 m nejvýše 6 s.
+
+| Datum | Den | Počasí v 10.00 | Přilnavost kol | Průjezd tam / zpět | Vozů MHD | Nejbližší vůz MHD |
+|---|---|---|---:|---:|---:|---:|
+| 9. 11. 2026 | pondělí | zataženo, sucho | 1,00 | 4,62 / 3,62 s | 83 | 40 m |
+| 14. 11. 2026 | sobota | jasno, sníh 0,97 | 0,37 | 5,83 / 5,25 s | 41 | 189 m |
+| 21. 11. 2026 | sobota | polojasno, mokro 0,86 | 0,74 | 4,60 / 3,87 s | 41 | 189 m |
+| 22. 11. 2026 | neděle | sněžení, sníh 0,49 | 0,68 | 4,63 / 4,02 s | 41 | 189 m |
+| 23. 11. 2026 | pondělí | jasno, mokro 0,83 | 0,75 | 4,65 / 3,85 s | 83 | 40 m |
+
+Zdraví auta zůstalo ve všech dnech 100 a kola se od terénu vzdálila nejvýše o 0,073 m.
+
+### Návrh mimo tento úkol
+
+Dalších 29 souborů prohlížečových zkoušek nikde nenastavuje datum: `asphalt`, `budget`, `exposure`, `game`, `grade-separations`, `graphics-quality`, `grass`, `heritage`, `orthophoto`, `particles`, `pedestrians`, `performance`, `postfx`, `reference`, `release`, `river-detail`, `rondel`, `shadows`, `shifts`, `solar`, `sound`, `startup`, `street-collision`, `street-delivery`, `structure-water`, `structures`, `terrain-detail`, `water` a `wheel-trails`. Hodinu nastavují jen `game`, `shadows`, `solar` a `sound`, ostatních 25 souborů běží v aktuálním čase. Doporučuji je projít stejným postupem.
 
 ## Rampa u hlavního nádraží
 
