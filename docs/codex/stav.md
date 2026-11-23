@@ -8,7 +8,9 @@ Autor chtěl hezčí herní postavu a přirozenější pohyby, zvolil stylizovan
 
 **Ověření.** `npm test` 259 z 259 (nové `character-pose` 8, `character-shape` 4), `npm run build` prošlo. Prohlížečové zkoušky na WebGL 2: `budget` na všech předvolbách, `character`, `pedestrians`, `game`, `physics`, `street-collision` 29 z 29, po úpravě ponoření `water` a `character` 9 z 9. Postava má 1 510 až 1 642 trojúhelníků (dříve asi 170).
 
-**Zbývá.** Zkušební stránka a vyzkoušení autorem. Sloučení do `main` jen se souhlasem autora.
+**Zkušební stránka.** Revize `e57292a` je ve složce `zkouska-vzhledu/` na větvi `gh-pages` od revize `f55e6e3`. Před zveřejněním se načetla z podsložky na počítači i na emulovaném telefonu bez chyby a bez chybějícího souboru.
+
+**Zbývá.** Vyzkoušení autorem. Sloučení do `main` jen se souhlasem autora.
 
 ## Vydání 0.2.0 (23. 11. 2026)
 
