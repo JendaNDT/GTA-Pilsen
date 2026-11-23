@@ -130,3 +130,27 @@ plavání se paže od ramen neoddělí:
 - `npm test` 262 z 262, `npm run build` prošlo.
 - Zkoušky v prohlížeči (WebGL 2): rozpočet vykreslování na všech čtyřech předvolbách včetně počtu
   trojúhelníků, postava, chodci, hra, fyzika, srážky na ulici a voda 32 z 32.
+
+## Sloučení do main (na přání autora)
+
+Autor 23. 11. 2026 schválil sloučení. Před sloučením proběhla na revizi `86cd67c` celá sada
+prohlížečových zkoušek na WebGL 2: **182 ze 184** (při vydání 0.2.0 183 ze 184). Selhaly dvě
+zkoušky, které jsou proměnlivé i na vydání 0.2.0:
+
+- **Start a minuta hraní** (`renderer.spec.js`): 22 snímků za 30 s, mez nad 30 (při vydání 23).
+  Softwarové vykreslování v cloudu na ni nestačí. Při samostatném spuštění zkouška na obou verzích
+  skončí už na hlášení ovladače „GPU stall due to ReadPixels“. Měření počtu snímků stejným postupem
+  bez této kontroly, třikrát na každé verzi:
+
+  | Verze | Snímky za 30 s |
+  |---|---|
+  | vydání 0.2.0 (`da600ef`) | 22, 23, 24 |
+  | nová postava (`86cd67c`) | 23, 23, 22 |
+
+- **Deset minut ranní špičky, Klatovská** (`traffic-observation.spec.js`): nejdelší stání 366 s
+  (mez 120 s). Dva samostatné běhy na vydání 0.2.0 selhaly se 223 s a 156,5 s, na nové postavě
+  jeden běh selhal se 366 s a jeden prošel. Nová postava nepoužívá náhodná čísla, takže na průběh
+  provozu nemá vliv. Jde o známou zácpu v modelu provozu (viz protokol E26, část Vydání 0.2.0).
+
+Všechny ostatní zkoušky prošly, včetně hlavního nádraží v ranní špičce, rozpočtu vykreslování na
+všech předvolbách, práce, směn, MHD, fotorežimu a výkonu. `npm test` 262 z 262.
