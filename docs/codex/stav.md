@@ -20,6 +20,8 @@ Autor hrál verzi 0.2.0 ze zkušební stránky na počítači a hlásil: textury
 
 **Odbočka.** První pokus kreslil tramvajový pás jako samostatnou vrstvu pod asfaltem. Přidal tím vykreslovací volání a pohled na Lochotín na nízké předvolbě překročil rozpočet (111 volání, mez 110). Mez se neměnila, pás se místo toho na vozovce nekreslí.
 
+**Zkušební stránka.** Revize `2b193c8` je ve složce `zkouska-vzhledu/` na větvi `gh-pages` od revize `cba17fe`. Před zveřejněním se stránka načetla z podsložky na počítači (`?debug&adapt=0&quality=low`) i na emulovaném telefonu Pixel 7 bez chyby a bez chybějícího souboru, verze 0.2.0, panel Měření funguje. Popis na `gh-pages` uvádí `?obraz=puvodni` a `?ostreni=0`.
+
 ## Aktuální verze na zkušební stránce (na přání autora, příprava vydání 0.2.0)
 
 Ve složce `zkouska-vzhledu/` na větvi `gh-pages` je od revize `0d9e98e` sestavení verze 0.2.0 z `main`, revize `6b8df3a`. Předchozí zveřejněná verze (`41c9b3b`) byla o 38 revizí starší a neměla opravu nájezdu Wilsonova mostu ani zvednuté Anglické nábřeží. Seznam 816 souborů se nezměnil. Liší se jen kód hry (`assets/`, `index.html`, `.vite/manifest.json`), data a obrázky jsou stejné. Popis na větvi `gh-pages` uvádí nový vypínač `?nabrezi=0` a adresu panelu měření.
