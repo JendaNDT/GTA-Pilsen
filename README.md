@@ -4,11 +4,12 @@ Tato větev obsahuje jen sestavené hry pro GitHub Pages:
 
 - **kořen** – webová verze z enginu Godot (adresář `godot/`, revize d868511 větve `godot/prestavba`),
 - **`zkouska-vzhledu/`** – původní webová hra (three.js) ve verzi 0.2.0 s opravami obrazu z větve
-  `claude/bold-ptolemy-36flyi`, revize 2b193c8 (navazuje na `main`, revize 6b8df3a).
+  `claude/bold-ptolemy-36flyi`, revize 2b5f96f (navazuje na `main`, revize 6b8df3a).
   Obsahuje nové světlo, fasády, stromy, podrobnější auta, vyhlazené tramvaje, hladký profil silnic,
   chodníky s obrubníkem, zaoblené rohy křižovatek, příčný sklon silnic s klopenými zatáčkami,
   opravený nájezd na Wilsonův most, Anglické nábřeží zvednuté na úroveň ulice a klidnější, ostřejší
-  obraz za jízdy (jemné vzory bez blikání, koleje v asfaltu ulice, terén pod okrajem silnice).
+  obraz za jízdy (jemné vzory bez blikání, koleje v asfaltu ulice, terén pod okrajem silnice)
+  a celou obrazovku (po kliknutí na Hrát, tlačítko ⛶).
   Původní vzhled pro srovnání zapne adresa `zkouska-vzhledu/?vzhled=puvodni`, původní silnice
   `zkouska-vzhledu/?silnice=puvodni`, chodníky jen v textuře `zkouska-vzhledu/?chodniky=0`, ostré rohy
   `zkouska-vzhledu/?rohy=0`, silnice vodorovné napříč `zkouska-vzhledu/?sklon=0`, nábřeží bez zvednutí
