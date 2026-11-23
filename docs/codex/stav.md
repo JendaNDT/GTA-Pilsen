@@ -1,5 +1,27 @@
 # Stav etapy E26
 
+## Postava · vylepšení vzhledu (mimo etapu, na přání autora)
+
+Autor schválil úpravu ramen a paží, zad a boků a jemné zastínění (`450ad17`). Ramena se svažují ke krku, vršek paže je oblý ramenní sval pod kloubem ramene, paže jsou o 7 cm blíž k trupu, boky navazují na stehna, ruka má dlaň s prsty. Zastínění v barvách postavy vypne `?zastineni=0`. [Popis a snímky](../postava.md#vylepšení-vzhledu-na-přání-autora)
+
+**Ověření.** `npm test` 262 z 262 (3 nové zkoušky tvaru a zastínění, na předchozí podobě postavy neprojdou), `npm run build` prošlo. Postava má 1 578 až 1 762 trojúhelníků. Prohlížečové zkoušky na WebGL 2: `budget` na všech předvolbách, `character`, `pedestrians`, `game`, `physics`, `street-collision`, `water` 32 z 32. Snímky všech jedenácti pohybů včetně pádu a plavání jsou v protokolu.
+
+**Zkušební stránka.** Revize `450ad17` je ve složce `zkouska-vzhledu/` na větvi `gh-pages` od revize `70a6971`. Před zveřejněním se načetla z podsložky na počítači i na emulovaném telefonu bez chyby a bez chybějícího souboru.
+
+**Zbývá.** Vyzkoušení autorem. Sloučení do `main` jen se souhlasem autora.
+
+## Postava · vzhled a pohyby (mimo etapu, na přání autora)
+
+Autor chtěl hezčí herní postavu a přirozenější pohyby, zvolil stylizovaný vzhled vytvořený v kódu (bez stažených modelů). Platí pro hráče i chodce. Na větvi `claude/bold-ptolemy-36flyi` od vydání 0.2.0 (`da600ef`). [Popis, snímky a měření](../postava.md)
+
+**Úprava.** `src/entities/character-pose.js` (výpočet pohybů: chůze, běh, stání, rozhlížení, skok, pád, dopad, plavání, šlapání vody, náklon v zatáčce; meze kloubů z fyzikální postavy), `src/entities/character-shape.js` (oblé tělo, obličej, čtyři účesy, klouby, dlaně, boty; každý díl v kvádru fyzikální postavy), `models.js` (`poseCharacter`, víc odstínů pleti, vlasů a bot), `player.js` (fáze kroku podle uražené vzdálenosti, ponoření ve vodě 1,17 m / 1,3 m). Původní kvádrovou postavu vrací `?postava=puvodni`. Uložené hry se nemění.
+
+**Ověření.** `npm test` 259 z 259 (nové `character-pose` 8, `character-shape` 4), `npm run build` prošlo. Prohlížečové zkoušky na WebGL 2: `budget` na všech předvolbách, `character`, `pedestrians`, `game`, `physics`, `street-collision` 29 z 29, po úpravě ponoření `water` a `character` 9 z 9. Postava má 1 510 až 1 642 trojúhelníků (dříve asi 170).
+
+**Zkušební stránka.** Revize `e57292a` je ve složce `zkouska-vzhledu/` na větvi `gh-pages` od revize `f55e6e3`. Před zveřejněním se načetla z podsložky na počítači i na emulovaném telefonu bez chyby a bez chybějícího souboru.
+
+**Zbývá.** Vyzkoušení autorem. Sloučení do `main` jen se souhlasem autora.
+
 ## Vydání 0.2.0 (23. 11. 2026)
 
 Autor rozhodl o vydání. `main` je na revizi `99b1463` (sloučení `claude/bold-ptolemy-36flyi`). Zkoušky, archiv a přenos uložené hry jsou v [protokolu E26](../E26.md#vydání-020). Značku `v0.2.0` GitHub z prostředí odmítl (HTTP 403), vytvoří ji autor na revizi `99b1463`. Otevřené: měření na autorově počítači a telefonu, dlouhá jízda se zásobami po 3. a 4. návratu, kontrola Astrou, zácpy v modelu provozu (Klatovská).

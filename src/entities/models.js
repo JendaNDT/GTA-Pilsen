@@ -4,6 +4,8 @@ import { step, vertexColor } from 'three/tsl';
 import { env, getPoolMaterial, makeBatchedSurfaceMaterial, makeSurfaceMaterial } from '../world/materials.js';
 import { SURFACE } from '../world/material-table.js';
 import { parts as ragdollParts } from '../physics/ragdoll.js';
+import { HAIR_STYLES, ORIGINAL_CHARACTER, stylizedPart } from './character-shape.js';
+import { characterPose } from './character-pose.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { transitMaterial } from './transit-material.js';
 import { carPaint, carLenses } from './car-appearance.js';
@@ -495,6 +497,10 @@ export function makeTrolleybus() {
 
 // -------------------------------------------------------------- postavy ----
 const SKIN = [lin(0xe8b98f), lin(0xd9a577), lin(0xc68a5c), lin(0xf0c9a5)];
+// stylizovaná postava: víc odstínů pleti a vlasů, barvy bot a podrážek
+const SKIN_WIDE = [...SKIN, lin(0x9c6b46), lin(0x6e4a32)];
+const HAIR = [0x30251e, 0x725237, 0xc6ac7d, 0x908a89, 0x141210, 0xb3542a].map(lin);
+const SHOES = [[0x1e1f22, 0x2a2a2a], [0xe9e7e2, 0xd8d4cc], [0x6b4a32, 0x2c241d], [0x2b4a7a, 0xe0ddd5]].map(([a, b]) => [lin(a), lin(b)]);
 const SHIRTS = [0x3d6fb0, 0xb23a2e, 0x4f8a4b, 0xe6c84a, 0x8c8c8c, 0xf2f2f2, 0x7a5234, 0x6b3fa0, 0x222a33, 0xd9822b].map(lin);
 const PANTS = [0x2b3a55, 0x3a3a3a, 0x5a4a3a, 0x1f2933, 0x6a6f75].map(lin);
 let pedMat = null;
@@ -510,7 +516,13 @@ function pedestrianShape(variant, hero) {
   const colors = { shirt: hero ? lin(0xf2b632) : SHIRTS[variant % SHIRTS.length],
     pants: hero ? lin(0x26323c) : PANTS[(variant >> 2) % PANTS.length], skin };
   const style = hero ? 1 : variant % 4;
+  const stylized = !ORIGINAL_CHARACTER && {
+    skin: hero ? SKIN_WIDE[0] : SKIN_WIDE[variant % SKIN_WIDE.length], hair: hero ? HAIR[1] : HAIR[(variant >> 1) % HAIR.length],
+    shirt: colors.shirt, pants: colors.pants, shoes: SHOES[hero ? 1 : (variant >> 2) % SHOES.length][0],
+    sole: SHOES[hero ? 1 : (variant >> 2) % SHOES.length][1], hairStyle: hero ? 0 : (variant >> 3) % HAIR_STYLES.length, style,
+  };
   const fallen = ragdollParts.map(part => {
+    if (stylized) return stylizedPart(new Parts(), part, stylized).geometry();
     const p = new Parts(), name = part.name;
     const shortSleeve = style === 0 && name.startsWith('predlokti');
     p.box(...part.size, 0, 0, 0, shortSleeve ? skin : colors[part.color]);
@@ -565,6 +577,20 @@ export function makeFallenMesh(walkingMesh) {
     group.add(limb);
   }
   return group;
+}
+
+/**
+ * Pohyby stylizované postavy (entities/character-pose.js) na kosti: natočení kloubů, posun
+ * a náklon pánve. state viz characterPose(); s ?postava=puvodni se použije původní houpání.
+ */
+export function poseCharacter(mesh, state) {
+  if (ORIGINAL_CHARACTER) return animatePed(mesh, state.phase, Math.min(1, (state.speed ?? 0) / (state.calm ? 2.5 : 3)));
+  const pose = characterPose(state), bones = mesh.skeleton.bones;
+  for (let i = 0; i < bones.length; i++) bones[i].rotation.set(...pose.joints[ragdollParts[i].name]);
+  const root = bones[0];
+  root.rotation.set(pose.root.x, pose.root.yaw, pose.root.z);
+  root.position.y = joints[0][1] + pose.root.y;
+  return pose;
 }
 
 export function animatePed(mesh, phase, amount) {
