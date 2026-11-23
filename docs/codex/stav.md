@@ -4,9 +4,11 @@
 
 Autor schválil úpravu ramen a paží, zad a boků a jemné zastínění (`450ad17`). Ramena se svažují ke krku, vršek paže je oblý ramenní sval pod kloubem ramene, paže jsou o 7 cm blíž k trupu, boky navazují na stehna, ruka má dlaň s prsty. Zastínění v barvách postavy vypne `?zastineni=0`. [Popis a snímky](../postava.md#vylepšení-vzhledu-na-přání-autora)
 
-**Ověření.** `npm test` 262 z 262 (3 nové zkoušky tvaru a zastínění, na předchozí podobě postavy neprojdou), `npm run build` prošlo. Postava má 1 578 až 1 762 trojúhelníků. Prohlížečové zkoušky běží.
+**Ověření.** `npm test` 262 z 262 (3 nové zkoušky tvaru a zastínění, na předchozí podobě postavy neprojdou), `npm run build` prošlo. Postava má 1 578 až 1 762 trojúhelníků. Prohlížečové zkoušky na WebGL 2: `budget` na všech předvolbách, `character`, `pedestrians`, `game`, `physics`, `street-collision`, `water` 32 z 32. Snímky všech jedenácti pohybů včetně pádu a plavání jsou v protokolu.
 
-**Zbývá.** Prohlížečové zkoušky, snímky pádu a plavání, zkušební stránka, vyzkoušení autorem.
+**Zkušební stránka.** Revize `450ad17` je ve složce `zkouska-vzhledu/` na větvi `gh-pages` od revize `70a6971`. Před zveřejněním se načetla z podsložky na počítači i na emulovaném telefonu bez chyby a bez chybějícího souboru.
+
+**Zbývá.** Vyzkoušení autorem. Sloučení do `main` jen se souhlasem autora.
 
 ## Postava · vzhled a pohyby (mimo etapu, na přání autora)
 

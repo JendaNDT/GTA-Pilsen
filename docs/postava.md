@@ -128,3 +128,5 @@ plavání se paže od ramen neoddělí:
   zkoušek neprojdou (vršek paže 1,435 m nad kloubem 1,42 m, stehno 0,212 m proti bokům 0,165 m,
   podpaží bez zastínění).
 - `npm test` 262 z 262, `npm run build` prošlo.
+- Zkoušky v prohlížeči (WebGL 2): rozpočet vykreslování na všech čtyřech předvolbách včetně počtu
+  trojúhelníků, postava, chodci, hra, fyzika, srážky na ulici a voda 32 z 32.
