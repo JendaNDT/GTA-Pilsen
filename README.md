@@ -3,8 +3,8 @@
 Tato větev obsahuje jen sestavené hry pro GitHub Pages:
 
 - **kořen** – webová verze z enginu Godot (adresář `godot/`, revize d868511 větve `godot/prestavba`),
-- **`zkouska-vzhledu/`** – původní webová hra (three.js) ve verzi 0.2.0 s opravami obrazu z větve
-  `claude/bold-ptolemy-36flyi`, revize 2b5f96f (navazuje na `main`, revize 6b8df3a).
+- **`zkouska-vzhledu/`** – webová hra (three.js), vydání 0.2.0 z větve `main` (revize 99b1463; sestavení je
+  po bajtech stejné jako dřívější revize 2b5f96f na větvi `claude/bold-ptolemy-36flyi`).
   Obsahuje nové světlo, fasády, stromy, podrobnější auta, vyhlazené tramvaje, hladký profil silnic,
   chodníky s obrubníkem, zaoblené rohy křižovatek, příčný sklon silnic s klopenými zatáčkami,
   opravený nájezd na Wilsonův most, Anglické nábřeží zvednuté na úroveň ulice a klidnější, ostřejší
