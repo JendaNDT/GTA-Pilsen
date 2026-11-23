@@ -493,7 +493,7 @@ export class VehicleManager {
   _obstacleLimit(car, limit, ignore, pointAt) {
     const fx = Math.sin(car.yaw), fz = Math.cos(car.yaw);
     const lx = fz, lz = -fx;
-    let sampled = false;
+    let sampled = false, blocker = null;
     if (pointAt) car.queued = false;
     const check = (o) => {
       const dx = o.x - car.x, dz = o.z - car.z;
@@ -511,7 +511,8 @@ export class VehicleManager {
             const enter = (theirs - half) / speed, leave = (theirs + half + car.radius) / speed;
             const arrival = (mine - car.halfLen) / Math.max(1, car.speed);
             if (enter < 3 && leave > arrival && (enter < arrival - 0.15 || Math.abs(enter - arrival) <= 0.15 && det > 0)) {
-              limit = Math.min(limit, Math.max(0, (mine - car.halfLen - (o.radius || 1) - 1) / Math.max(0.5, leave)));
+              const allowed = Math.max(0, (mine - car.halfLen - (o.radius || 1) - 1) / Math.max(0.5, leave));
+              if (allowed < limit) { limit = allowed; blocker = o; }
             }
           }
         }
@@ -538,10 +539,11 @@ export class VehicleManager {
       const allowed = Math.min(Math.max(0, along + (gap - 2.2 - Math.max(0, car.speed)) * 1.1),
         Math.sqrt(Math.max(0, along) ** 2 + 6 * Math.max(0, gap - 2.2)));
       if (pointAt && allowed < 0.4 && o.mode === 'ai' && Math.cos(car.yaw - o.yaw) > 0.85) car.queued = true;
-      if (allowed < limit) limit = allowed;
+      if (allowed < limit) { limit = allowed; blocker = o; }
     };
     for (const o of this.cars) if (o !== car && o !== ignore) check(o);
     for (const o of this.obstacles) if (o !== ignore) check(o);
+    if (pointAt && this.onObstacle) this.onObstacle(car, limit < 0.4 ? blocker : null);
     return limit;
   }
 
@@ -566,7 +568,7 @@ export class VehicleManager {
 
   _leftTurnRoom(car, turn, leftDistance) {
     const a = turn.start, buffer = car.halfLen + 0.75;
-    let room = Infinity;
+    let room = Infinity, blocker = null;
     for (const other of this.cars) {
       if (other === car || other.mode === 'parked' || other.mode === 'loose' || Math.abs(other.y - car.y) > 3) continue;
       const x = a.x - other.x, z = a.z - other.z;
@@ -588,7 +590,8 @@ export class VehicleManager {
           const first = car.leftArrival < other.leftArrival || car.leftArrival === other.leftArrival && turn.from < opposing.from;
           if (held === otherHeld ? first : otherHeld) continue;
           const crossing = oncomingDistance(opposing, other.halfLen, car, a.tx, a.tz);
-          room = Math.min(room, Math.min(leftDistance, crossing) - buffer);
+          const available = Math.min(leftDistance, crossing) - buffer;
+          if (available < room) { room = available; blocker = other; }
           continue;
         }
       }
@@ -597,8 +600,9 @@ export class VehicleManager {
       const rule = other.trafficStop?.rule;
       if (speed < 0.5 && rule?.kind === 'signal' && this.world.traffic.light(rule) === 'red' &&
           (rule.x - other.x) * tx + (rule.z - other.z) * tz > 0) continue;
-      room = Math.min(room, leftDistance - buffer);
+      if (leftDistance - buffer < room) { room = leftDistance - buffer; blocker = other; }
     }
+    if (room <= 0.2) this.onYield?.(car, blocker);
     return Math.max(0, room);
   }
 

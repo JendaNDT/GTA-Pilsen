@@ -336,3 +336,18 @@ test('na stejné smyšlené rovině vůz při dešti a sněhu potřebuje delší
   assert.ok(distances[1] > distances[0] * 1.05 && distances[2] > distances[1] * 1.1,
     'Brzdné dráhy pro sucho, déšť a sníh: ' + distances.map(n => n.toFixed(2)).join(', '));
 });
+
+test('záznam fronty označí vůz omezující rychlost a zapomene překážku po uvolnění pruhu', () => {
+  const car = { x: 0, y: 0, z: 0, yaw: 0, speed: 0, halfLen: 2, type: { wid: 1.8 } };
+  const near = { x: 0, y: 0, z: 5, yaw: 0, halfLen: 2, radius: 1 };
+  const far = { ...near, z: 12 };
+  const path = z => ({ x: 0, z });
+  const manager = { cars: [car, far, near], obstacles: [], drivingPath: Array.from({ length: 7 }, () => ({})) };
+  let blocker;
+  manager.onObstacle = (who, other) => { assert.equal(who, car); blocker = other; };
+  const limit = ignore => VehicleManager.prototype._obstacleLimit.call(manager, car, 12, ignore, path);
+  assert.equal(limit(null), 0);
+  assert.equal(blocker, near);
+  assert.ok(limit(near) > 0.4);
+  assert.equal(blocker, null);
+});

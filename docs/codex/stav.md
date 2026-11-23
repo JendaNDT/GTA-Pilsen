@@ -1,5 +1,11 @@
 # Stav etapy E26
 
+## Rozjezd a příčiny kolon (24. 11. 2026)
+
+Na větvi `codex/rozjezd-a-kolony` navazující na `f09c09f` přibylo sledování příčiny fronty přímo při rozhodování řidičů a MHD. Ve čtyřech dvojicích desetiminutových jízd stouply průjezdy na zelenou ze 407 na 477 a počet hlášených nárazů z 15 na 16. Pouze u silnějšího rozjezdu test zjistil v Ukrajinské jízdu pod plynem mimo vozovku. V běžné hře proto zůstává původní výkon motoru. Dvě vozidla, která se v pokusu blokovala, byla autobus 41 a sedan v Husově. Případné pravidlo pro jejich vyhnutí potřebuje ověřit prostor pro průjezd. [Měření, podmínky a návod pro zopakování](../E20/rozjezd-a-kolony.md)
+
+Prošlo všech 274 testů JavaScriptu, produkční sestavení a 388 z 390 prohlížečových zkoušek. Všechny dopravní zkoušky prošly. Obě selhání kontroly nočních oken na náměstí se zopakovala i na původním sestavení `f09c09f`. [Podrobnosti ověření](../E20/rozjezd-a-kolony.md#kontrola-výsledné-hry)
+
 ## Vzhled hlavního nádraží od Mikulášské
 
 Na větvi `codex/hlavni-nadrazi` má západní průčelí vlastní kresbu podle autorovy předlohy, patinované kupole, římsy a čitelný název na přední hraně přístřešku. Prošlo 271 testů JavaScriptu, produkční sestavení, cílené kontroly na WebGL 2 i WebGPU a dotyková emulace telefonu. [Snímky a místní ověření](../E25/pruceli-nadrazi.md)
