@@ -81,3 +81,50 @@ Ve vodě: plavání a šlapání vody, nad hladinou je hlava a ramena:
 - Vzdálení chodci (dál než 120 m) se nehýbou, jako dosud.
 - Vlasy a kšilt smějí díl fyzikální postavy mírně přesáhnout, při pádu proto mohou krátce
   zajet do země.
+
+## Vylepšení vzhledu (na přání autora)
+
+Autor se zeptal, jestli jde vzhled ještě vylepšit, a schválil úpravu ramen a paží, zad a boků
+a jemné zastínění. Vychází z revize `e57292a`, která je na zkušební stránce.
+
+**Co bylo špatně (zjištěno na snímcích zezadu, jak postavu hráč vidí).** Paže stály vedle trupu
+jako trubky s rovným vrškem nad rameny, ramena byla vodorovná a celkově široká asi 0,64 m. Stehna
+vyčnívala z boků o 4,7 cm (0,212 m proti 0,165 m od osy těla). Každý kus oblečení měl jednu barvu
+bez stínů. Ruka byla kvádr dlouhý 9 cm.
+
+**Co se změnilo** (`src/entities/character-shape.js`):
+
+- Ramena se svažují od krku ven. Vršek paže je oblý ramenní sval, jehož nejvyšší bod leží 0,7 cm
+  pod kloubem ramene a blíž k tělu než osa paže. Paže se kreslí o 7 cm blíž k trupu (dříve
+  4,5 cm), šířka ramen přes paže je asi 0,58 m.
+- Trup má vzadu lopatky a v pase prohnutí, tričko má lem přes pásek. Krk je silnější, vlasy
+  vzadu sahají níž a čelo je volnější.
+- Boky jsou nejširší dole u kyčlí a plynule navazují na stehna, kalhoty mají vzadu hýždě. Stehna
+  a lýtka se zužují ke koleni a ke kotníku.
+- Ruka má dlaň, prsty a palec a od zápěstí měří 14 cm. Dlaň míří k tělu.
+- **Zastínění** (`characterOcclusion`): barvy postavy jsou tmavší tam, kam málo dosvítí obloha,
+  protože je zakrývá jiná část těla. Jde o podpaží a boky trupu, vnitřní stranu paží a stehen,
+  rozkrok, krk pod bradou a vlasy a pruh pod lemem trička. K zemi postava mírně tmavne (u bot na
+  72 %). Počítá se jednou při stavbě postavy, na výkon nemá vliv. Vypne ho `?zastineni=0`.
+
+![Před a po](postava/vylepseni.jpg)
+
+![Bez zastínění a se zastíněním](postava/zastineni.jpg)
+
+![Chodci před a po](postava/chodci-vylepseni.jpg)
+
+Všech jedenáct pohybů s novým tvarem (pořadí jako výše). Při pádu s rukama do stran ani při
+plavání se paže od ramen neoddělí:
+
+![Pohyby po úpravě](postava/pohyby-vylepseni.jpg)
+
+### Měření a zkoušky
+
+- Jedna postava má 1 578 až 1 762 trojúhelníků (dříve 1 510 až 1 642), nejvýš o 7 % víc.
+- Nové zkoušky v `tests/character-shape.test.js`: ramena se svažují (trup nad 1,44 m užší než
+  0,12 m od osy), vršek paže leží pod kloubem ramene, šířka ramen nejvýš 0,6 m, stehna nevyčnívají
+  z boků víc než o 1 cm, ruka měří aspoň 13 cm a zastínění ztmaví podpaží, krk, rozkrok a vnitřní
+  stranu stehen a paží, nikde pod 40 % ani nad 110 %. Na předchozí podobě postavy tři z těchto
+  zkoušek neprojdou (vršek paže 1,435 m nad kloubem 1,42 m, stehno 0,212 m proti bokům 0,165 m,
+  podpaží bez zastínění).
+- `npm test` 262 z 262, `npm run build` prošlo.

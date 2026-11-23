@@ -1,5 +1,13 @@
 # Stav etapy E26
 
+## Postava · vylepšení vzhledu (mimo etapu, na přání autora)
+
+Autor schválil úpravu ramen a paží, zad a boků a jemné zastínění (`450ad17`). Ramena se svažují ke krku, vršek paže je oblý ramenní sval pod kloubem ramene, paže jsou o 7 cm blíž k trupu, boky navazují na stehna, ruka má dlaň s prsty. Zastínění v barvách postavy vypne `?zastineni=0`. [Popis a snímky](../postava.md#vylepšení-vzhledu-na-přání-autora)
+
+**Ověření.** `npm test` 262 z 262 (3 nové zkoušky tvaru a zastínění, na předchozí podobě postavy neprojdou), `npm run build` prošlo. Postava má 1 578 až 1 762 trojúhelníků. Prohlížečové zkoušky běží.
+
+**Zbývá.** Prohlížečové zkoušky, snímky pádu a plavání, zkušební stránka, vyzkoušení autorem.
+
 ## Postava · vzhled a pohyby (mimo etapu, na přání autora)
 
 Autor chtěl hezčí herní postavu a přirozenější pohyby, zvolil stylizovaný vzhled vytvořený v kódu (bez stažených modelů). Platí pro hráče i chodce. Na větvi `claude/bold-ptolemy-36flyi` od vydání 0.2.0 (`da600ef`). [Popis, snímky a měření](../postava.md)

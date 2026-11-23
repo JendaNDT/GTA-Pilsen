@@ -113,8 +113,9 @@ předvolba obraz po časovém vyhlazení mírně doostří. Tramvajový pás le�
 a terén u okraje silnice už tak často nevystupuje nad asfalt. Původní obraz pro porovnání vrátí
 `?obraz=puvodni`, samotné doostření vypne `?ostreni=0`. [Rozbor, měření a snímky](docs/obraz.md)
 
-Hráč i chodci mají stylizovanou postavu místo kvádrů: zaoblené tělo, obličej, čtyři druhy účesů,
-dlaně a boty, víc odstínů pleti a vlasů. Postava se pohybuje přirozeněji: délka kroku odpovídá
+Hráč i chodci mají stylizovanou postavu místo kvádrů: zaoblené tělo se svažujícími se rameny,
+obličej, čtyři druhy účesů, dlaně s prsty a boty, víc odstínů pleti a vlasů. Jemné zastínění
+v barvách postavy (podpaží, krk, vnitřní strana paží a stehen) vypne `?zastineni=0`. Postava se pohybuje přirozeněji: délka kroku odpovídá
 rychlosti, při běhu se předkloní a pumpuje rukama, vestoje dýchá a rozhlíží se, ve skoku pokrčí
 nohy, při pádu roztáhne ruce, po dopadu se přikrčí a ve vodě plave tempa. Pohyby se drží mezí
 kloubů fyzikální postavy, takže pády a srážky fungují jako dřív. Původní postavu pro porovnání
