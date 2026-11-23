@@ -303,8 +303,7 @@ function buildBuildings(world, list, replaced, district) {
     const inset = (flags & BF.INSET) && B.roofInset && B.bRing[i + 1] - B.bRing[i] === 1 && nOuter0 >= 3
       ? insetRing(vx, vz, B.ringStart[B.bRing[i]], nOuter0, B.roofInset[i] * 0.1) : null;
     let wallTop = gable || ridge || inset ? world.bWall[i] : top;
-    let base = world.bBase[i];
-    if (kind === BK.ROOF) base = Math.max(base, top - 0.35);
+    const base = world.bBase[i];
     const r0 = B.bRing[i], r1 = B.bRing[i + 1];
     // patra se počítají od průměrné výšky terénu; zeď pod ní (ve svahu) je sokl bez oken
     const ground = kind === BK.ROOF || B.hMin[i] > 0 ? base : world.bGround[i];

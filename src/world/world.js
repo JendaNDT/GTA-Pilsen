@@ -1,4 +1,4 @@
-import { forecourtBounds, stationForecourtOffsets, stationRetainingWalls } from './station-forecourt.js';
+import { stationForecourtOffsets, stationRetainingWalls } from './station-forecourt.js';
 import { bridgeApproach, bridgeBankOffsets, stationRampOffsets } from './road-profile.js';
 import { streetLamps } from './lamps.js';
 import { breakableId, Breakables } from '../physics/breakables.js';
@@ -452,7 +452,6 @@ export class World {
     const vx = new Float32Array(nv), vz = new Float32Array(nv);
     const minX = new Float32Array(n), maxX = new Float32Array(n), minZ = new Float32Array(n), maxZ = new Float32Array(n);
     const hTop = new Float32Array(n), hWall = new Float32Array(n), hMin = new Float32Array(n);
-    const [west, north, east, south] = forecourtBounds;
     const bGround = new Float32Array(n), bFoot = new Float32Array(n);
     const chunkLists = new Array(this.cols * this.rows);
     const cellCount = new Uint32Array(this.gcols * this.grows + 1);
@@ -474,10 +473,8 @@ export class World {
       bGround[i] = ground; bFoot[i] = gmin - 0.4;
       hTop[i] = ground + B.hTop[i] * 0.1; hWall[i] = ground + B.hWall[i] * 0.1;
       hMin[i] = B.hMin[i] > 0 ? ground + B.hMin[i] * 0.1 : gmin - 0.4;
-      // Pod přístřešky před hlavním vchodem je pěší úroveň 0. Jejich boky
-      // končí u spodní hrany střechy stejně jako ve vykresleném modelu.
-      if (B.kind[i] === BK.ROOF && x0 >= west && x1 <= east && z0 >= north && z1 <= south)
-        hMin[i] = Math.max(hMin[i], hTop[i] - .35);
+      // Samostatná střecha má tenký okraj i ve fyzice. Pod ní zůstává volný prostor.
+      if (B.kind[i] === BK.ROOF) hMin[i] = Math.max(hMin[i], hTop[i] - 0.35);
       const ci = this.chunkIndex((x0 + x1) / 2, (z0 + z1) / 2);
       if (ci >= 0) (chunkLists[ci] || (chunkLists[ci] = [])).push(i);
       if (B.flags[i] & (BF.NO_COLLIDE | BF.PART)) continue;

@@ -410,8 +410,7 @@ function exportBuildings(ci, includeReplaced) {
     const inset = (flags & BF.INSET) && B.roofInset && r1 - r0 === 1 && nOuter >= 3
       ? ch.insetRing(vx, vz, s0, nOuter, B.roofInset[i] * 0.1) : null;
     const wallTop = gable || ridge || inset ? world.bWall[i] : top;
-    let base = world.bBase[i];
-    if (kind === BK.ROOF) base = Math.max(base, top - 0.35);
+    const base = world.bBase[i];
     const ground = kind === BK.ROOF || B.hMin[i] > 0 ? base : world.bGround[i];
     let roof = ROOF.FLAT;
     if (gable && nOuter === 4 && r1 - r0 === 1) roof = ROOF.GABLE;

@@ -58,3 +58,49 @@ test('E25 – herní auto na fiktivní zkušební ploše převrhne lavičku a ro
   expect(results[1].states).toEqual([['stojka-l','intact'],['stojka-p','intact'],['strecha','intact'],['sklo','broken']]);
   expect(results.every(r=>r.passed && r.restored && r.repaired)).toBe(true);
 });
+
+test('Otevřené přístřešky v Plzni pustí chodce pod střechu a udrží ho na střeše', async ({page}) => {
+  await page.setViewportSize({width:640,height:384});
+  await page.goto(gameUrl('/?debug&quality=low&view=340&adapt=0&hour=10'));
+  await waitForGame(page);
+  await page.getByRole('button', {name:'Hrát', exact:true}).click();
+  const routes = [
+    ['Jíkalka u domu', -618.22, 63.99, -609.92, 65.50],
+    ['Petrohrad', 909.71, 108.57, 935.49, 102.33],
+    ['Bezovka', -731.89, 813.65, -750.91, 809.75],
+    ['Jíkalka napříč', -907.03, -28.98, -933.77, -16.72],
+    ['Pod Záhorskem', -334.98, -1154.74, -354.52, -1139.36],
+    ['Karlov', -1441.24, 907.71, -1444.26, 945.49],
+    ['Roudná u domu', 1422.33, -389.54, 1417.07, -391.86],
+  ];
+  const result = await page.evaluate(async routes => {
+    window.__freeze(true);
+    const g = window.__game, p = g.player;
+    const remaining = [];
+    for (const [, x, z, endX, endZ] of routes) {
+      g.colliders.update(x, z);
+      p.place(x, z);
+      for (let i = 0; i < 150; i++) {
+        g.chunks.update(x, z, 340, 40, p.y);
+        if (!g.chunks.pending && !g.chunks.heritage.fetching) break;
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+      for (let i = 0; i < 1400; i++) {
+        const dx = endX - p.x, dz = endZ - p.z, d = Math.hypot(dx, dz);
+        if (d < .45) break;
+        p.update(1/60, dx/d, dz/d, false, false);
+      }
+      remaining.push(Math.hypot(endX - p.x, endZ - p.z));
+    }
+    // Na Karlově je v ose průchodu rovná mapová střecha. Postava na ni dopadne shora.
+    const x = -1442.75, z = 926.60, top = g.world.bTop[93192];
+    g.colliders.update(x, z);
+    p.place(x, z, top + 1);
+    for (let i = 0; i < 120; i++) p.update(1/60, 0, 0, false, false);
+    return {remaining, landing: Math.abs(p.y - top)};
+  }, routes);
+  for (const [i, distance] of result.remaining.entries()) {
+    expect(distance, routes[i][0]).toBeLessThan(.45);
+  }
+  expect(result.landing).toBeLessThan(.08);
+});

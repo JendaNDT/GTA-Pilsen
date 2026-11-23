@@ -17,6 +17,26 @@ Od Mikulášské projdi mezi sloupky ke spodním dveřím. Uprostřed prostranst
 
 ## Ověření
 
-Prošlo všech 268 testů JavaScriptu, 28 testů Pythonu a produkční sestavení. Na WebGL 2 i WebGPU postava přešla od jednoho přístřešku ke druhému a došla ke spodním dveřím. Na obou prošla i zkouška cesty ke stanovištím MHD. Zkouška trolejbusu 49 prošla na WebGPU, na softwarovém WebGL 2 vypršel limit při čekání na načtení detailu nádraží.
+Prošlo všech 268 testů JavaScriptu, 28 testů Pythonu a produkční sestavení. Na WebGL 2 i WebGPU postava přešla od jednoho přístřešku ke druhému a došla ke spodním dveřím. Na obou prošla i zkouška cesty ke stanovištím MHD. Zkouška trolejbusu 49 prošla na WebGPU, na softwarovém WebGL 2 při prvním ověření vypršel limit při čekání na načtení detailu nádraží. Samostatné opakování na stejném sestavení prošlo za 40,4 s.
 
 U hlavního vchodu v nízké kvalitě (Apple M4, Chromium, WebGL 2, 1920 × 1080, deset sekund) vyšel 95. percentil práce CPU 5,9 ms před úpravou a 4,7 ms po ní. GPU stoupl z 9,49 na 10,25 ms (20 a 18 vzorků). Poslední snímek měl 89 a 93 vykreslovacích volání. Běžná kontrolní jízda mimo předprostor a let pomocí `tools/measure_map.mjs --work` vyšly na 7,0 a 4,3 ms CPU a 13,83 a 8,19 ms GPU. U jízdy překročil čas GPU rozpočet 12 ms. Kontrolní měření mimo nádraží probíhalo souběžně s dalšími zkouškami prohlížeče a pro izolované srovnání výkonu se nehodí.
+
+## Průchod pod střechami na celé mapě
+
+V mapovém balíčku je 103 300 objektů budov. Z nich 296 představuje samostatnou střechu nebo přístřešek a 13 střešní část jiné stavby. U všech 309 fyzika před revizí `fc675ea` vytvářela svislý plášť níž než vykreslení mapové střechy. První oprava zvedla spodní hranu tří střech před nádražím. Nyní ji fyzika a kresba přebírají ze stejného místa na celé mapě. Zastávkové přístřešky z městského mobiliáře mají vlastní stojky, střechu a sklo a byly prověřeny samostatně.
+
+V tabulce je vzdálenost, která postavě po pokusu dojít na určené místo zbývala v metrech. Obě verze měly stejnou trasu, velikost postavy a toleranci cíle 0,45 m. Dvě trasy končí pod střechou u sousední budovy, pět pokračuje až na druhou stranu.
+
+| Místo | Před opravou | Po opravě |
+|---|---:|---:|
+| Jíkalka, směrem k domu | 6,80 | 0,44 |
+| Petrohrad u Šumavské | 24,90 | 0,44 |
+| Bezovka | 17,79 | 0,41 |
+| Jíkalka u Přemyslovy | 27,79 | 0,44 |
+| Pod Záhorskem u Karlovarské | 23,24 | 0,41 |
+| Karlov | 36,27 | 0,41 |
+| Roudná, směrem k domu | 4,12 | 0,42 |
+
+Kontrola spodní hrany proběhla u všech objektů v distribuovaných datech. V prohlížeči bylo vyzkoušeno těchto sedm tras, předprostor u nádraží, dopad postavy na střechu na Karlově a náraz auta do přístřešku se sklem. Na WebGL 2 i WebGPU prošly všechny tři cílené scénáře. Prošlo také 269 testů JavaScriptu, 28 testů Pythonu a produkční sestavení.
+
+Samostatně jsme hledali převislá patra uvnitř obrysů domů. U centra NTIS obě mapované pěšiny došly k cíli už na původní verzi. U dvou dalších domů, včetně Nového divadla, nevede kontrolovanou plochou žádná pěší trasa v distribuované mapě. Samotný překryv půdorysů u nich nedokládá chybějící veřejný průchod.

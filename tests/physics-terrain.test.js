@@ -338,3 +338,19 @@ test('před hlavním nádražím je spodní vstup průchozí v celé šířce me
     }
   }
 });
+
+test('boky mapových přístřešků končí u střechy a sousední zdi mají původní patu', async () => {
+  const w = await profileWorld();
+  const { BK } = await import('../src/config.js');
+  let roofs = 0;
+  for (let i = 0; i < w.bCount; i++) {
+    const taggedBase = w.b.hMin[i] > 0 ? w.bGround[i] + .1 * w.b.hMin[i] : w.bFoot[i];
+    let expected = taggedBase;
+    if (w.b.kind[i] === BK.ROOF) {
+      roofs++;
+      expected = Math.max(expected, w.bTop[i] - .35);
+    }
+    assert.ok(Math.abs(w.bBase[i] - expected) < .001, 'Spodní hrana objektu ' + i);
+  }
+  assert.ok(roofs > 0);
+});

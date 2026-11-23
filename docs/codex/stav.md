@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Průchod pod střechami v celé mapě
+
+Na přání autora byla nádražní oprava rozšířena na 309 mapových přístřešků včetně 13 částí staveb. Po opravě prošlo sedm původně zablokovaných pěších tras v šesti čtvrtích na WebGL 2 i WebGPU. Ověřen byl též dopad na střechu, přístřešek se sklem a spodní předprostor nádraží. Prošlo 269 testů JavaScriptu, 28 testů Pythonu a produkční sestavení. [Naměřené vzdálenosti a rozsah kontroly](../E25/prednadrazi.md#průchod-pod-střechami-na-celé-mapě)
+
 ## Spodní předprostor hlavního nádraží
 
 Před vstupem od Mikulášské je nyní dlažba s podélným sklonem 1,8 %, opěrné zdi a průchozí prostor pod přístřešky. Porovnání se stejným pohledem před úpravou, výsledky zkoušek a odchylky od fotografie jsou v [protokolu](../E25/prednadrazi.md).
