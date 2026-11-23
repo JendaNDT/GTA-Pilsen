@@ -1,5 +1,13 @@
 # Stav etapy E26
 
+## Kontrola celé obrazovky po stisku Esc (23. 11. 2026)
+
+Na revizi `d98e677` se podařilo zopakovat selhání při vypnutí celé obrazovky tlačítkem. Při místním měření dorazila událost `fullscreenchange` po dokončení požadavku za 150 ms na WebGPU a za 122 ms na WebGL 2. Hra v obou případech při události správně přepnula stav tlačítka. Původní test tento stav přečetl před doručením události.
+
+Zkouška nyní v jednom odečtu ověřuje režim okna, stav tlačítka a jeho nápovědu. Kontroluje také ukončení režimu přes `document.exitFullscreen()` mimo tlačítko hry a následné zapnutí. V běžném okně Chromu na Macu byl zvlášť vyzkoušen přímo stisk Esc v obou režimech. Vrátily se lišty, tlačítko hlásilo vypnutou celou obrazovku a dalším kliknutím ji znovu zapnulo.
+
+Prošlo 262 z 262 testů JavaScriptu a produkční sestavení. Obě zkoušky v `fullscreen.spec.js` prošly dvakrát na WebGL 2 i dvakrát na WebGPU, celkem 8 z 8. Změna se týká testu a tohoto zápisu.
+
 ## Postava ve větvi main (23. 11. 2026)
 
 Autor schválil sloučení stylizované postavy. `main` je na revizi `34ae246` (sloučení `claude/bold-ptolemy-36flyi`, obsah shodný s ověřenou revizí `c0c9a3e`). Celá sada prohlížečových zkoušek na WebGL 2 182 ze 184. Selhaly proměnlivé zkoušky „start a minuta hraní“ (22 snímků, vydání 0.2.0 má 22 až 24) a „ranní špička, Klatovská“ (selhává i na vydání 0.2.0). [Podrobnosti](../postava.md#sloučení-do-main-na-přání-autora)
