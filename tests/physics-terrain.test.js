@@ -322,3 +322,19 @@ test('kola při přejezdu skutečné hranice dvou dlaždic nedostanou svislý r�
     assert.ok(peak < 0.5, 'Svislá rychlost na hraně ' + peak + ' m/s');
   } finally { vehicle.dispose(); physics.dispose(); }
 });
+
+test('před hlavním nádražím je spodní vstup průchozí v celé šířce mezi zvýšenými nástupišti', async () => {
+  const w = await profileWorld(), cache = new Map();
+  for (const u of [2, 12, 24, 30]) {
+    for (const v of [-17, -8, 0, 8, 17]) {
+      const x = 727.01 - .915*u + .403*v, z = 481.92 + .403*u + .915*v;
+      const y = w.heightAt(x,z);
+      assert.ok(Math.abs(y + w.baseElevation - (316.2 - .018*u)) < .08, 'dlažba ' + [u,v]);
+      assert.ok(Math.abs(physicsTerrainHeight(w, cache, x, z) - y) < .05, 'fyzika ' + [u,v]);
+    }
+    for (const v of [-27,27]) {
+      const height = w.heightAt(727.01 - .915*u + .403*v, 481.92 + .403*u + .915*v) + w.baseElevation;
+      assert.ok(height > 319.7 && height < 320.9, 'horní úroveň ' + [u,v]);
+    }
+  }
+});

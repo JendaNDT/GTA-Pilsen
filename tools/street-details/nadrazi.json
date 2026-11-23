@@ -12,11 +12,11 @@
     ],
     [
       787,
-      392
+      525
     ],
     [
       562,
-      392
+      525
     ]
   ],
   "axis": [
@@ -259,6 +259,76 @@
         1,
         2
       ]
+    },
+    {
+      "id": "node-8118968782",
+      "kind": "post",
+      "x": 697.42,
+      "z": 482.17,
+      "yaw": 0
+    },
+    {
+      "id": "node-8118968783",
+      "kind": "post",
+      "x": 700.8,
+      "z": 483.86,
+      "yaw": 0
+    },
+    {
+      "id": "node-8118968784",
+      "kind": "post",
+      "x": 703.54,
+      "z": 486.47,
+      "yaw": 0
+    },
+    {
+      "id": "node-8118968785",
+      "kind": "post",
+      "x": 705.36,
+      "z": 489.74,
+      "yaw": 0
+    },
+    {
+      "id": "node-8118968786",
+      "kind": "post",
+      "x": 707.02,
+      "z": 497,
+      "yaw": 0
+    },
+    {
+      "id": "node-8118968787",
+      "kind": "post",
+      "x": 706.27,
+      "z": 500.72,
+      "yaw": 0
+    },
+    {
+      "id": "node-8118968788",
+      "kind": "post",
+      "x": 704.68,
+      "z": 504.12,
+      "yaw": 0
+    },
+    {
+      "id": "node-8118968789",
+      "kind": "post",
+      "x": 702.54,
+      "z": 507.16,
+      "yaw": 0
+    },
+    {
+      "id": "node-8118968790",
+      "kind": "post",
+      "x": 693.76,
+      "z": 481.32,
+      "yaw": 0
+    },
+    {
+      "id": "node-8118968792",
+      "kind": "post",
+      "x": 706.36,
+      "z": 493.27,
+      "yaw": 0
     }
   ],
   "paving": [
@@ -341,7 +411,7 @@
         ],
         [
           741.53,
-          321.0
+          321
         ],
         [
           706.75,
@@ -398,6 +468,7 @@
     "paving": "OSM 1064543438 a 1064543439 určují obrysy tramvajových ostrůvků. U cest 332361606, 332361602 a 332361603 přebíráme osu a dlažbu, vykreslená šířka 2,8 m je odhad.",
     "shelters": "Osa podle OSM 332361606, otevřená strana k zastavení vozu OSM 3395187564. Přesná poloha a rozměry konstrukce čekají na fotografii.",
     "entrances": "Pracovní poloha dveří na vybraném průčelí. Ověřit z autorovy fotografie.",
-    "platformSigns": "Vlastní herní označníky. Čísla 1 až 4 odpovídají stanovištím 53408 v herním jízdním řádu PMDP. Polohy mají odstup od dveří, přechodů a pěších tras."
+    "platformSigns": "Vlastní herní označníky. Čísla 1 až 4 odpovídají stanovištím 53408 v herním jízdním řádu PMDP. Polohy mají odstup od dveří, přechodů a pěších tras.",
+    "forecourtPosts": "Oblouk pevných kovových sloupků OSM před hlavním vchodem. Deset poloh je posunuto o 2 až 2,75 m mimo herní pěší koridor."
   }
 }

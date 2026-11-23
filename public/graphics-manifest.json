@@ -3568,13 +3568,13 @@
     },
     "detail/streets/index.json": {
       "bytes": 458,
-      "fingerprint": "0e0affa0",
-      "sha256": "4fcff223ab816deae16d6c0dcfaba917357875f2e20c20afde06c12232a8b0cb"
+      "fingerprint": "bac5a44f",
+      "sha256": "e8a77212b67450c79ab22458efc175801e6f3f01ba9bddf459625014e041f33d"
     },
     "detail/streets/nadrazi.bin": {
-      "bytes": 2752,
-      "fingerprint": "bd49ca3b",
-      "sha256": "c83e6d8625b5d9f462e98a6f4ca1edb996fd1855e0c5d070967bbbbc71798492"
+      "bytes": 3436,
+      "fingerprint": "74cc91db",
+      "sha256": "a8d870c1be386933e042bb19b02f740994ac0ccba3503c4bd11055ae464f2271"
     },
     "detail/structures/29_47.bin": {
       "bytes": 508,

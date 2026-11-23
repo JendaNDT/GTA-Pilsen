@@ -1,3 +1,4 @@
+import { stationPaving } from './station-forecourt.js';
 // Materiály světa. Fasády domů, povrch země i voda se dokreslují přímo v shaderu.
 import * as THREE from 'three/webgpu';
 import {
@@ -114,6 +115,7 @@ function groundNoise(point) {
 }
 
 const PAVING = {
+  3: stationPaving,
   1: {
     origin: [0, 0], axisX: [0.967, -0.255], axisZ: [0.255, 0.967],
     center: [-0.6, 0.5], half: [55, 54.5], edge: 1.4, scale: [4.8, 7], color: [0.46, 0.423, 0.365],

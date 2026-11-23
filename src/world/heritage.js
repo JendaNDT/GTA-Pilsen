@@ -1,4 +1,5 @@
 // Měřené městské dlaždice a vlastní model vodního hamru.
+import { forecourtBounds } from './station-forecourt.js';
 import * as THREE from 'three/webgpu';
 import { CHUNK, QUALITY } from '../config.js';
 import { SolidBuf } from './solid-buffer.js';
@@ -257,6 +258,8 @@ export class Heritage {
 // Dlažba jako součást stejné plochy terénu, bez kolizní hrany.
 export function pavingChunk(x, z) {
   if (x < 75 && x + CHUNK > -66 && z < 68 && z + CHUNK > -60) return 1;
+  const [west, north, east, south] = forecourtBounds;
+  if (x < east && x + CHUNK > west && z < south && z + CHUNK > north) return 3;
   if (x < FORGE.x + 19 && x + CHUNK > FORGE.x - 24 && z < FORGE.z + 45 && z + CHUNK > FORGE.z) return 2;
   return 0;
 }

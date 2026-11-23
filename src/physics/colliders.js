@@ -101,6 +101,10 @@ export class TileColliders {
     const x = w.minX + (ci % w.cols) * CHUNK, z = w.minZ + Math.floor(ci / w.cols) * CHUNK;
     const triangles = [];
     const emit = (a, b, c) => triangles.push(...a, ...b, ...c);
+    for (const {corners:[a,b,c,d]} of w.forecourtWalls.get(ci) ?? []) {
+      emit(a,b,c);
+      emit(a,c,d);
+    }
     terrainTriangles(w, ci, x, z, CHUNK, emit);
     roadSurfaceTriangles(w, ci, emit);
     cornerTriangles(w, ci, emit);

@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Spodní předprostor hlavního nádraží
+
+Před vstupem od Mikulášské je nyní dlažba s podélným sklonem 1,8 %, opěrné zdi a průchozí prostor pod přístřešky. Porovnání se stejným pohledem před úpravou, výsledky zkoušek a odchylky od fotografie jsou v [protokolu](../E25/prednadrazi.md).
+
 ## Doplnění E25 u hlavního nádraží (23. 11. 2026)
 
 Větev `codex/hlavni-nadrazi` navazuje na opravu dopravy `33f74e9`. Veřejný prostor má čtyři herní označníky, oboustrannou směrovku, zpřesněnou dlažbu a opravenou orientaci přístřešku. Čtyřka stojí u severního přechodu. Blíž k bodu zastavení by sloupek zasáhl do pěší nebo dopravní trasy.

@@ -127,3 +127,41 @@ test('Hlavní nádraží – od veřejných vstupů ke dvěma stanovištím bez 
   expect(route).toEqual({numbers:[1,2,3,4], reachedTram:true, reachedBus:true});
   await expect(page.locator('#minimap')).toBeHidden();
 });
+
+test('Hlavní nádraží – přes dlážděný předprostor mezi přístřešky a ke spodnímu vchodu', async ({page}) => {
+  await page.setViewportSize({width:640,height:384});
+  await page.goto(gameUrl('/?debug&quality=low&view=340&adapt=0&hour=23.17'));
+  await waitForGame(page);
+  await page.getByRole('button', {name:'Hrát',exact:true}).click();
+  const legs = await page.evaluate(async () => {
+    const g = window.__game, p = g.player;
+    window.__freeze(true);
+    const point = (u,v) => [727.01 - .915*u + .403*v, 481.92 + .403*u + .915*v];
+    p.place(...point(14,-17));
+    const deadline = performance.now() + 45000;
+    while (![...g.chunks.heritage.streetSections.values()].flat().some(f => f.id.includes('8118968785'))) {
+      g.chunks.update(p.x,p.z,340,40,p.y);
+      g.colliders.update(p.x,p.z);
+      await new Promise(resolve => setTimeout(resolve,10));
+      if (performance.now() > deadline) throw Error('Předprostor nádraží se nenačetl.');
+    }
+    const result = [];
+    for (const [u,v] of [[14,17],[14,0],[2,0]]) {
+      const [x,z] = point(u,v);
+      let maxError = 0;
+      for (let i = 0; i < 1300; i++) {
+        const dx = x-p.x, dz = z-p.z, distance = Math.hypot(dx,dz);
+        if (distance < .65) break;
+        g.colliders.update(p.x,p.z);
+        p.update(1/60, dx/distance, dz/distance, false, false);
+        maxError = Math.max(maxError, Math.abs(p.y-g.world.heightAt(p.x,p.z)));
+      }
+      result.push({distance:Math.hypot(x-p.x,z-p.z), maxError});
+    }
+    return result;
+  });
+  for (const leg of legs) {
+    expect(leg.distance).toBeLessThan(.65);
+    expect(leg.maxError).toBeLessThan(.25);
+  }
+});

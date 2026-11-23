@@ -885,6 +885,7 @@ function buildRoads(world, ci, manager) {
   const pieces = world.rPieces[ci];
   const R = world.r, px = world.rpx, pz = world.rpz, py = world.rpy, off = world.rOff;
   const asphalt = QUALITY.roadDetail ? new RoadBuf() : new DecalBuf(), marks = new DecalBuf(), solid = new SolidBuf();
+  for (const face of world.forecourtWalls.get(ci) ?? []) solid.quad(...face.corners, face.color);
   const surfaceStep = world.gradeTerrain.has(ci) ? world.gradeStep : 4;
   // Koleje. Tramvajový pás se nekreslí tam, kde kolej vede po vozovce: tam je povrchem asfalt ulice
   // a koleje leží v něm. Pás často leží v sousední dlaždici než ulice a jeho překryv s asfaltem se
