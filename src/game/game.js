@@ -212,6 +212,7 @@ export class Game {
     this.clockVisible = true;
     this.orthophotoEnabled = true;
     this.flareEnabled = this.motionEnabled = false;
+    this.fullscreenEnabled = true;
     this.player = new Player(this.scene, this.world, physics, this.colliders);
     // vrtulníky: heliporty z mapy (FN Lochotín, pivovar, Bory) a jeden na náměstí Republiky
     this.helis = [[106, -1596], [984, -396], [-266, 1314], [48, 52]].map(([x, z], i) => {
@@ -342,6 +343,7 @@ export class Game {
       this.particles.enabled = s.particlesEnabled !== false;
       this.flareEnabled = s.flareEnabled === true;
       this.motionEnabled = s.motionEnabled === true;
+      this.fullscreenEnabled = s.fullscreenEnabled !== false;
       this.falls.enabled = s.fallsEnabled !== false;
       this.weather.mode = s.weatherMode === 'clear' ? 'clear' : 'variable';
       this.orthophotoEnabled = s.orthophotoEnabled !== false;
@@ -395,7 +397,7 @@ export class Game {
         v: 2, money: this.money, date: formatDay(this.clock.day), hour: this.hour, clockVisible: this.clockVisible,
         clockMode: this.clock.followsPrague ? 'prague' : 'manual',
         soundEnabled: !this.audio.muted, orthophotoEnabled: this.orthophotoEnabled,
-        flareEnabled: this.flareEnabled, motionEnabled: this.motionEnabled, weatherMode: this.weather.mode, particlesEnabled: this.particles.enabled, fallsEnabled: this.falls.enabled, graphics: this.graphics, steering: this.steering, heliAssist: this.heliAssist,
+        flareEnabled: this.flareEnabled, motionEnabled: this.motionEnabled, fullscreenEnabled: this.fullscreenEnabled, weatherMode: this.weather.mode, particlesEnabled: this.particles.enabled, fallsEnabled: this.falls.enabled, graphics: this.graphics, steering: this.steering, heliAssist: this.heliAssist,
         car: this.mode === 'car' ? {
           model: f.typeId, color: f.color, x: f.x, z: f.z, y: f.y, yaw: f.yaw,
           health: f.health, dirt: f.dirt, owned: f === this.garage.active,

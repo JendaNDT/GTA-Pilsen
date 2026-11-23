@@ -6,7 +6,8 @@ otevřených dat. Běží na počítači i na mobilu, bez instalace.
 
 Ve složce [godot/](godot/README.md) vzniká verze v herním enginu **Godot 4.7.2** ze stejných dat,
 s editorem pro úpravy míst a zastávek. Co z této hry už převedla a jak je to ověřené, ukazuje
-[godot/FUNKCE.md](godot/FUNKCE.md). Webová hra popsaná níže funguje dál beze změny.
+[godot/FUNKCE.md](godot/FUNKCE.md). Autor 23. 11. 2026 rozhodl, že dál se rozvíjí webová hra popsaná níže;
+verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do ní nepřevádějí.
 
 ## Co ve hře je
 
@@ -71,6 +72,7 @@ Větev vydání 0.2.0 obsahuje společnou fyziku vozidel v Joltu, kontrolu staž
 | O | otevřít nebo zavřít fotorežim |
 | F8 · F9 | v režimu `?debug` zobrazit kolize nebo otevřít měření výkonu |
 | N · Esc | posunout čas o 3 hodiny · menu se zakázkami, garáží a směnami MHD |
+| ⛶ · F11 | celá obrazovka; po kliknutí na **Hrát** se zapne sama (vypíná se v **Nastavení**), Esc ji ukončí |
 
 Na dotykové obrazovce se objeví páčka a tlačítka. Telefon automaticky použije nižší grafickou
 kvalitu. Na počítači ji lze zapnout parametrem `?quality=low`. Ve vyšší kvalitě zobrazí `?wet=1`

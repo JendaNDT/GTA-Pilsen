@@ -1,5 +1,17 @@
 # Stav etapy E26
 
+## Rozhodnutí autora: pokračuje webová hra (23. 11. 2026)
+
+Dál se rozvíjí webová hra (three.js). Verze v Godotu (`godot/`, větev `godot/prestavba`) zůstává ve stavu z 20. 11. 2026, nové funkce ani herní obsah se do ní nepřevádějí. Herní obsah se bude vkládat do webové hry.
+
+## Celá obrazovka (mimo etapu, na přání autora)
+
+Autor hlásil, že hra neběží přes celou obrazovku. Plátno hry vyplňuje celé okno prohlížeče i po jeho zvětšení (ověřeno na nízké, střední i vysoké předvolbě z 800 × 450 na 1600 × 900), hra ale neměla režim celé obrazovky bez lišt prohlížeče.
+
+**Úprava.** `src/game/fullscreen.js` (zjištění podpory, zapnutí, vypnutí, starší Safari s předponou webkit). Po kliknutí na **Hrát** se hra přepne na celou obrazovku; volba **Hrát přes celou obrazovku** v Nastavení se ukládá jako `fullscreenEnabled` (starší uložené hry ji mají zapnutou). Tlačítko ⛶ vedle ☰ ji kdykoli přepíná, Esc ji ukončí, F11 prohlížeče funguje dál. Kde prohlížeč celou obrazovku nepovoluje (iPhone), tlačítko ani volba se nezobrazí. Nápověda v Ovládání a README.
+
+**Ověření.** `tests/fullscreen.test.js` (5), `tests/e2e/fullscreen.spec.js` (2). `npm test` 247 z 247, `npm run build` prošlo. Prohlížečové zkoušky na WebGL 2: `fullscreen`, `graphics-quality`, `game`, `physics` 20 z 20 a `photo-mode`, `startup`, `release`, `work`, `shifts`, `sound` 17 ze 17. V Chromiu bez obrazovky se rozměr okna při celé obrazovce nemění, ostatní zkoušky proto ovlivněny nejsou.
+
 ## Blikání, rozmazání a okraje silnic (mimo etapu, na přání autora)
 
 Autor hrál verzi 0.2.0 ze zkušební stránky na počítači a hlásil: textury při jízdě problikávají a rozmazávají se, mezi asfaltem a obrubníkem zůstává pruh jiného povrchu a terén vystupuje přes okraj silnice. Na větvi `claude/bold-ptolemy-36flyi` od revize `3e46e6b`. [Rozbor, měření a snímky](../obraz.md)
