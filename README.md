@@ -54,7 +54,7 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
   uzavírky na okraji mapy. Hra střídá den a noc, ukazuje den v týdnu a ukládá datum i postup.
   Hodiny u minimapy lze skrýt v nastavení.
 
-Větev vydání 0.2.0 obsahuje společnou fyziku vozidel v Joltu, kontrolu stažených mapových podkladů a možnost obnovit předchozí vydání se stejným uloženým postupem. [Ověření kandidáta a postup návratu](docs/E26.md)
+Vydání 0.2.0 (23. 11. 2026, revize `99b1463`) obsahuje společnou fyziku vozidel v Joltu, kontrolu stažených mapových podkladů, chodníky, zaoblené rohy a sklon silnic, klidnější a ostřejší obraz, celou obrazovku a možnost obnovit předchozí vydání se stejným uloženým postupem. [Ověření vydání a postup návratu](docs/E26.md#vydání-020)
 
 ## Ovládání
 

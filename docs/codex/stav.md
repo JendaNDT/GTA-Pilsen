@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Vydání 0.2.0 (23. 11. 2026)
+
+Autor rozhodl o vydání. `main` je na revizi `99b1463` (sloučení `claude/bold-ptolemy-36flyi`). Zkoušky, archiv a přenos uložené hry jsou v [protokolu E26](../E26.md#vydání-020). Značku `v0.2.0` GitHub z prostředí odmítl (HTTP 403), vytvoří ji autor na revizi `99b1463`. Otevřené: měření na autorově počítači a telefonu, dlouhá jízda se zásobami po 3. a 4. návratu, kontrola Astrou, zácpy v modelu provozu (Klatovská).
+
 ## Rozhodnutí autora: pokračuje webová hra (23. 11. 2026)
 
 Dál se rozvíjí webová hra (three.js). Verze v Godotu (`godot/`, větev `godot/prestavba`) zůstává ve stavu z 20. 11. 2026, nové funkce ani herní obsah se do ní nepřevádějí. Herní obsah se bude vkládat do webové hry.
