@@ -103,8 +103,9 @@ body.touch #perf-toggle { margin-left: 48px; }
   background: #fffdf5; color: #1b2026; font: 800 13px system-ui, sans-serif; }
 #speedo em { display: block; font-style: normal; font-size: 13px; opacity: .85; }
 
-#btn-menu { left: max(14px, env(safe-area-inset-left)); bottom: max(14px, env(safe-area-inset-bottom));
+#btn-menu, #btn-fullscreen { left: max(14px, env(safe-area-inset-left)); bottom: max(14px, env(safe-area-inset-bottom));
   pointer-events: auto; width: 40px; height: 40px; border-radius: 10px; border: 0; background: var(--panel); font-size: 18px; }
+#btn-fullscreen { left: calc(max(14px, env(safe-area-inset-left)) + 48px); }
 
 /* ---------- dotykové ovládání ---------- */
 #touch { inset: 0; pointer-events: none; }
@@ -124,6 +125,7 @@ body.touch #perf-toggle { margin-left: 48px; }
 #tb-map { right: 254px; top: 14px; width: 46px; height: 46px; font-size: 18px; }
 body.touch #speedo { right: 50%; transform: translateX(50%); bottom: 10px; text-align: center; }
 body.touch #btn-menu { bottom: auto; top: 150px; }
+body.touch #btn-fullscreen { bottom: auto; top: 198px; left: max(14px, env(safe-area-inset-left)); }
 body.touch #prompt { bottom: 46%; }
 
 /* ---------- velká mapa ---------- */
@@ -219,6 +221,7 @@ body.touch #prompt { bottom: 46%; }
   #tb-job { right: 144px; top: 10px; width: 40px; height: 40px; font-size: 16px; }
   #tb-map { right: 190px; top: 10px; width: 40px; height: 40px; font-size: 16px; }
   body.touch #btn-menu { top: 96px; width: 34px; height: 34px; }
+  body.touch #btn-fullscreen { top: 136px; width: 34px; height: 34px; }
   body.touch #mission { left: 56px; }
   #menu-card { padding: 16px 18px; }
   #menu .sub { margin: 4px 0 12px; }

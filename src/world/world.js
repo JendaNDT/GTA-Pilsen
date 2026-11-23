@@ -1034,6 +1034,32 @@ export class World {
   }
 
   /**
+   * Vzdálenost bodu od okraje nejbližší vozovky s profilem (záporná na vozovce), NaN dál než reach.
+   * Pro vykreslenou síť terénu u okraje silnice (road-edge-terrain.js).
+   */
+  roadEdgeDistance(x, z, reach) {
+    const grade = this.roadGrade;
+    if (!grade) return NaN;
+    const cx = Math.floor((x - this.minX) / COLL_CELL), cz = Math.floor((z - this.minZ) / COLL_CELL);
+    let best = Infinity;
+    for (let row = Math.max(0, cz - 1); row <= Math.min(this.grows - 1, cz + 1); row++) {
+      for (let col = Math.max(0, cx - 1); col <= Math.min(this.gcols - 1, cx + 1); col++) {
+        const cell = row * this.gcols + col;
+        for (let j = this.segCellStart[cell]; j < this.segCellStart[cell + 1]; j++) {
+          const k = this.segCellItems[j], road = this.roadOfPt[k];
+          if (grade.start[road] < 0) continue;
+          const ax = this.rpx[k], az = this.rpz[k], ex = this.rpx[k + 1] - ax, ez = this.rpz[k + 1] - az, l2 = ex * ex + ez * ez;
+          if (!l2) continue;
+          const t = Math.max(0, Math.min(1, ((x - ax) * ex + (z - az) * ez) / l2));
+          const edge = Math.hypot(ax + ex * t - x, az + ez * t - z) - this.r.w[road] / 2;
+          if (edge < best) best = edge;
+        }
+      }
+    }
+    return best <= reach ? best : NaN;
+  }
+
+  /**
    * Výška pásu vozovky, pod kterou se srovná terén v bodě (x, z) u úseku (seg, t). Mimo
    * křižovatky je to vlastní profil silnice s příčným sklonem, za okrajem na nižší straně
    * prodloužený dál dolů (own). V křižovatce ale pás leží ve společné výšce vozovek

@@ -1,5 +1,55 @@
 # Stav etapy E26
 
+## Rozhodnutí autora: pokračuje webová hra (23. 11. 2026)
+
+Dál se rozvíjí webová hra (three.js). Verze v Godotu (`godot/`, větev `godot/prestavba`) zůstává ve stavu z 20. 11. 2026, nové funkce ani herní obsah se do ní nepřevádějí. Herní obsah se bude vkládat do webové hry.
+
+## Celá obrazovka (mimo etapu, na přání autora)
+
+Autor hlásil, že hra neběží přes celou obrazovku. Plátno hry vyplňuje celé okno prohlížeče i po jeho zvětšení (ověřeno na nízké, střední i vysoké předvolbě z 800 × 450 na 1600 × 900), hra ale neměla režim celé obrazovky bez lišt prohlížeče.
+
+**Úprava.** `src/game/fullscreen.js` (zjištění podpory, zapnutí, vypnutí, starší Safari s předponou webkit). Po kliknutí na **Hrát** se hra přepne na celou obrazovku; volba **Hrát přes celou obrazovku** v Nastavení se ukládá jako `fullscreenEnabled` (starší uložené hry ji mají zapnutou). Tlačítko ⛶ vedle ☰ ji kdykoli přepíná, Esc ji ukončí, F11 prohlížeče funguje dál. Kde prohlížeč celou obrazovku nepovoluje (iPhone), tlačítko ani volba se nezobrazí. Nápověda v Ovládání a README.
+
+**Ověření.** `tests/fullscreen.test.js` (5), `tests/e2e/fullscreen.spec.js` (2). `npm test` 247 z 247, `npm run build` prošlo. Prohlížečové zkoušky na WebGL 2: `fullscreen`, `graphics-quality`, `game`, `physics` 20 z 20 a `photo-mode`, `startup`, `release`, `work`, `shifts`, `sound` 17 ze 17. V Chromiu bez obrazovky se rozměr okna při celé obrazovce nemění, ostatní zkoušky proto ovlivněny nejsou.
+
+**Zkušební stránka.** Revize `2b5f96f` je ve složce `zkouska-vzhledu/` na větvi `gh-pages` od revize `660f89c`. Před zveřejněním se načetla z podsložky na počítači i na emulovaném telefonu bez chyby a bez chybějícího souboru.
+
+**Potvrzení autora.** 23. 11. 2026 autor na zkušební stránce ověřil, že celá obrazovka funguje.
+
+## Blikání, rozmazání a okraje silnic (mimo etapu, na přání autora)
+
+Autor hrál verzi 0.2.0 ze zkušební stránky na počítači a hlásil: textury při jízdě problikávají a rozmazávají se, mezi asfaltem a obrubníkem zůstává pruh jiného povrchu a terén vystupuje přes okraj silnice. Na větvi `claude/bold-ptolemy-36flyi` od revize `3e46e6b`. [Rozbor, měření a snímky](../obraz.md)
+
+**Příčiny (ověřeno).** Jemné vzory (zrno asfaltu 3 cm, zrno omítky 14 cm, spáry cihel) mizely, až když pixel měřil víc než buňka vzoru, a za jízdy blikaly. Asfalt a čáry sousedních dlaždic se kreslily v pořadí podle vzdálenosti od kamery, takže se jejich překryv prohazoval. V Prešovské ležel tramvajový pás ze sousední dlaždice přes asfalt ulice a vedle něj vykukoval světlejší asfalt (měření u 61 334 míst u obrubníků nenašlo žádnou skutečnou díru). Nízká předvolba kreslila na počítači ve 3/4 rozlišení, země se filtrovala jen čtyřnásobně a časové vyhlazení vysoké předvolby obraz za jízdy změkčilo. Terén mezi uzlem pod vozovkou a uzlem za okrajem stoupal nad asfalt.
+
+**Oprava.** `src/world/image-quality.js` (mizení vzorů podle buňky, filtrování, rozlišení, doostření, pořadí dlaždic), `asphalt.js`, `materials.js`, `building-nodes.js`, `postfx.js` (SharpenNode po TRAA), `chunks.js` (pořadí dlaždic podle šachovnice, tramvajový pás se nekreslí na vozovce), `road-edge-terrain.js` a `world.roadEdgeDistance` (snížení uzlů terénu za okrajem vozovky). Původní obraz vrací `?obraz=puvodni`, doostření vypne `?ostreni=0`.
+
+**Ověření.**
+- `npm test` 242 z 242 (nové `tests/image-quality.test.js` 6 a `tests/road-edge-terrain.test.js` 3), `npm run build` prošlo.
+- Prohlížečové zkoušky na WebGL 2: celá sada 178 ze 182, nová `image-quality.spec.js` 3 ze 3, rozpočet vykreslování na všech předvolbách prošel. `graphics-quality.spec.js` čekala rozlišení 0,75 po přepnutí na nízkou předvolbu; nízká ho na počítači záměrně kreslí v plném rozlišení, očekávání je teď 1 a zkouška prošla. `renderer.spec.js` (minuta hraní) selhává v prostředí dlouhodobě.
+- Okraje silnic (32 dlaždic centra, střední předvolba): terén nad asfaltem 0,71 → 0,30 %, nad 5 cm 0,14 → 0,04 %, nejvyšší 0,74 → 0,09 m. Třepot vozovky při posunu kamery o půl pixelu −40 %. Nízká předvolba ostrost proti ideálu 0,82 → 0,93. Vysoká předvolba za jízdy 0,93 → 1,22 původní ostrosti vestoje.
+- Výkon: na softwarovém vykreslování nejsou časy použitelné (0,1 až 1,4 snímku za sekundu). Nízká předvolba na počítači kreslí o 78 % pixelů víc, vysoká přidává průchod doostření. Měření na autorově počítači zbývá.
+
+**Otevřená otázka.** `traffic-observation.spec.js`: Klatovská selhává i na původní revizi `3e46e6b` (386,5 s). Hlavní nádraží na nové verzi dvakrát 141 s (mez 120 s), na původní revizi i s `?obraz=puvodni` prošlo. Úpravy nemění kód provozu ani fyziky. Příčina neověřená, nejspíš jiné načasování startu.
+
+[Rozbor, měření a snímky](../obraz.md)
+
+**Odbočka.** První pokus kreslil tramvajový pás jako samostatnou vrstvu pod asfaltem. Přidal tím vykreslovací volání a pohled na Lochotín na nízké předvolbě překročil rozpočet (111 volání, mez 110). Mez se neměnila, pás se místo toho na vozovce nekreslí.
+
+**Zkušební stránka.** Revize `2b193c8` je ve složce `zkouska-vzhledu/` na větvi `gh-pages` od revize `cba17fe`. Před zveřejněním se stránka načetla z podsložky na počítači (`?debug&adapt=0&quality=low`) i na emulovaném telefonu Pixel 7 bez chyby a bez chybějícího souboru, verze 0.2.0, panel Měření funguje. Popis na `gh-pages` uvádí `?obraz=puvodni` a `?ostreni=0`.
+
+## Aktuální verze na zkušební stránce (na přání autora, příprava vydání 0.2.0)
+
+Ve složce `zkouska-vzhledu/` na větvi `gh-pages` je od revize `0d9e98e` sestavení verze 0.2.0 z `main`, revize `6b8df3a`. Předchozí zveřejněná verze (`41c9b3b`) byla o 38 revizí starší a neměla opravu nájezdu Wilsonova mostu ani zvednuté Anglické nábřeží. Seznam 816 souborů se nezměnil. Liší se jen kód hry (`assets/`, `index.html`, `.vite/manifest.json`), data a obrázky jsou stejné. Popis na větvi `gh-pages` uvádí nový vypínač `?nabrezi=0` a adresu panelu měření.
+
+**Ověření před zveřejněním** (22. 11. 2026, revize `6b8df3a`):
+- `npm test` 233 z 233, `npm run test:python` 27 testů (1 přeskočený), `npm run build` prošlo.
+- `npm run test:e2e -- physics-roads.spec.js physics.spec.js game.spec.js --project=webgl2 --trace off`: 19 z 19, včetně Wilsonova mostu v obou směrech a obou tubusů Valíku.
+- Zveřejňovaná složka se otevřela místně z podsložky jako na GitHub Pages v Chromiu na softwarovém WebGL 2. Na počítači (1280 × 720, `?debug&adapt=0&quality=low`) i na emulovaném telefonu Pixel 7 s dotykem šla spustit hra, **O hře** ukazuje verzi 0.2.0 a panel **Měření** začal měřit. Nevznikla žádná chyba stránky a nechyběl žádný soubor.
+- Ve snímku s otevřeným panelem **Měření** je pod panelem tmavý obdélník velikosti jeho textového pole. Není to prvek stránky a stejně se objevil i ve starší verzi `b4935e9`. Nejspíš jde o chybu skládání obrazu v prohlížeči bez obrazovky. Na skutečném zařízení zbývá potvrdit, že tam není.
+
+**Zbývá k vydání 0.2.0.** Autor změří hru na počítači a telefonu podle části „Měření vydání na počítači a telefonu“ v [E26](../E26.md) a rozhodne, zda zůstane nový vzhled. Potom se doplní protokol E26 a vydání se označí.
+
 ## Anglické nábřeží pod terénem (mimo etapu, na přání autora)
 
 Na větvi `claude/stoic-hopper-46xgy0`, která navazuje na opravu nájezdu Wilsonova mostu (`claude/determined-volta-o7e9t2`, revize `6e3e924`). Oprava je v revizi `ada32f9`. [Rozbor, tabulky a měření](../nabrezi.md)

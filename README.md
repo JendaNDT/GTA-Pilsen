@@ -6,7 +6,8 @@ otevřených dat. Běží na počítači i na mobilu, bez instalace.
 
 Ve složce [godot/](godot/README.md) vzniká verze v herním enginu **Godot 4.7.2** ze stejných dat,
 s editorem pro úpravy míst a zastávek. Co z této hry už převedla a jak je to ověřené, ukazuje
-[godot/FUNKCE.md](godot/FUNKCE.md). Webová hra popsaná níže funguje dál beze změny.
+[godot/FUNKCE.md](godot/FUNKCE.md). Autor 23. 11. 2026 rozhodl, že dál se rozvíjí webová hra popsaná níže;
+verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do ní nepřevádějí.
 
 ## Co ve hře je
 
@@ -71,6 +72,7 @@ Větev vydání 0.2.0 obsahuje společnou fyziku vozidel v Joltu, kontrolu staž
 | O | otevřít nebo zavřít fotorežim |
 | F8 · F9 | v režimu `?debug` zobrazit kolize nebo otevřít měření výkonu |
 | N · Esc | posunout čas o 3 hodiny · menu se zakázkami, garáží a směnami MHD |
+| ⛶ · F11 | celá obrazovka; po kliknutí na **Hrát** se zapne sama (vypíná se v **Nastavení**), Esc ji ukončí |
 
 Na dotykové obrazovce se objeví páčka a tlačítka. Telefon automaticky použije nižší grafickou
 kvalitu. Na počítači ji lze zapnout parametrem `?quality=low`. Ve vyšší kvalitě zobrazí `?wet=1`
@@ -103,6 +105,13 @@ Silnice na hraně břehu (Anglické a Denisovo nábřeží, Mlýnské nábřež�
 lomem a několik cest u vody) leží na ulici nad nábřežní zdí. Výškový model po 8 m tam zeď
 rozmazal do svahu přes celou vozovku, takže Anglické nábřeží dřív leželo v jámě až 6 m pod
 ulicí. Původní profil pro porovnání vrátí `?nabrezi=0`. [Rozbor a měření](docs/nabrezi.md)
+
+Obraz za jízdy je klidnější a ostřejší. Jemné zrno asfaltu, omítek a dlažby se v dálce plynule
+vytratí dřív, než by začalo blikat, a spáry cihel se nahradí jejich průměrnou tmavostí. Textury
+země se v dálce filtrují ostřeji, nízká předvolba kreslí na počítači v plném rozlišení a vysoká
+předvolba obraz po časovém vyhlazení mírně doostří. Tramvajový pás leží pod asfaltem ulice
+a terén u okraje silnice už tak často nevystupuje nad asfalt. Původní obraz pro porovnání vrátí
+`?obraz=puvodni`, samotné doostření vypne `?ostreni=0`. [Rozbor, měření a snímky](docs/obraz.md)
 
 Hra ve výchozím nastavení používá aktuální čas v Plzni. V **Nastavení → Herní čas**
 můžeš zadat konkrétní hodinu a minutu. Herní čas pak plyne stejným tempem jako skutečný

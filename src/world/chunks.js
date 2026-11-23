@@ -31,6 +31,8 @@ import { detailRequestLimit, Heritage, pavingChunk } from './heritage.js';
 import { FORGE, forgeXZ } from './mill.js';
 import { Districts } from './districts.js';
 import { Orthophoto, orthophotoTile } from './orthophoto.js';
+import { decalOrder, groundAnisotropy, ORIGINAL_IMAGE } from './image-quality.js';
+import { limitRoadEdges } from './road-edge-terrain.js';
 
 const _c = new THREE.Color();
 function lin(hex) { _c.setHex(hex); return [_c.r, _c.g, _c.b]; }
@@ -593,7 +595,8 @@ function drawSidewalks(world, solid, road, s, e, corner = null) {
 }
 
 /** Pás položený na terén (nebo na mostovku). center = přidat středovou řadu bodů (lépe kopíruje terén). */
-function ribbon(world, buf, D, hw, col, lateral, lift, capStart, capEnd, center, road) {
+/** Pás podél osy D. covered[k] = bod osy leží pod jiným povrchem; úsek mezi dvěma takovými body se vynechá. */
+function ribbon(world, buf, D, hw, col, lateral, lift, capStart, capEnd, center, road, covered = null) {
   const n = D.n;
   let pL = -1, pC = -1, pR = -1;
   let along = road?.start ?? 0;
@@ -602,13 +605,13 @@ function ribbon(world, buf, D, hw, col, lateral, lift, capStart, capEnd, center,
     const nr = pathNormal(D, k);
     const nx = nr.x, nz = nr.z, sc = nr.scale;
     if (road && k) along += Math.hypot(D.x[k]-D.x[k-1],D.z[k]-D.z[k-1]);
-    if (nr.dot < 0.93) buf.disc(D.x[k] + nx * lateral, D.z[k] + nz * lateral, hw, col, yFn, 8, road, along, nx, nz);
+    if (nr.dot < 0.93 && !covered?.[k]) buf.disc(D.x[k] + nx * lateral, D.z[k] + nz * lateral, hw, col, yFn, 8, road, along, nx, nz);
     const cx = D.x[k] + nx * lateral * sc, cz = D.z[k] + nz * lateral * sc;
     const lx = cx - nx * hw * sc, lz = cz - nz * hw * sc, rx = cx + nx * hw * sc, rz = cz + nz * hw * sc;
     const L = buf.v(lx, yFn(lx, lz), lz, col, along, -hw, road), R = buf.v(rx, yFn(rx, rz), rz, col, along, hw, road);
     let C = -1;
     if (center) C = buf.v(cx, yFn(cx, cz), cz, col, along, 0, road);
-    if (pL >= 0) {
+    if (pL >= 0 && !(covered?.[k] && covered[k - 1])) {
       if (center) { buf.quad(pL, pC, C, L); buf.quad(pC, pR, R, C); } else buf.quad(pL, pR, R, L);
     }
     pL = L; pC = C; pR = R;
@@ -883,6 +886,28 @@ function buildRoads(world, ci, manager) {
   const R = world.r, px = world.rpx, pz = world.rpz, py = world.rpy, off = world.rOff;
   const asphalt = QUALITY.roadDetail ? new RoadBuf() : new DecalBuf(), marks = new DecalBuf(), solid = new SolidBuf();
   const surfaceStep = world.gradeTerrain.has(ci) ? world.gradeStep : 4;
+  // Koleje. Tramvajový pás se nekreslí tam, kde kolej vede po vozovce: tam je povrchem asfalt ulice
+  // a koleje leží v něm. Pás často leží v sousední dlaždici než ulice a jeho překryv s asfaltem se
+  // kreslil jednou tak, jednou onak (vedle pásu zůstával pruh jiného asfaltu). Zbytek pásu se kreslí
+  // před silnicemi. ?obraz=puvodni vrací původní pás.
+  const rails = world.railChunks[ci];
+  const railPaths = new Map();
+  const railPath = (ri) => {
+    if (!railPaths.has(ri)) {
+      const rail = world.rails[ri];
+      const n = rail.pts.length / 2;
+      const rx = new Float32Array(n), rz = new Float32Array(n);
+      for (let k = 0; k < n; k++) { rx[k] = rail.pts[k * 2]; rz[k] = rail.pts[k * 2 + 1]; }
+      railPaths.set(ri, densePath(rx, rz, rail.y, 0, n - 1, 0, n - 1, rail.y ? 1e9 : surfaceStep));
+    }
+    return railPaths.get(ri);
+  };
+  const tramBed = (ri) => {
+    const D = railPath(ri);
+    const covered = ORIGINAL_IMAGE ? null : Uint8Array.from({ length: D.n }, (_, k) => world.insideOtherCarriageway(-1, D.x[k], D.z[k]) ? 1 : 0);
+    ribbon(world, asphalt, D, 1.25, COL.tramBed, 0, 0.004, false, false, false, null, covered);
+  };
+  if (rails && !ORIGINAL_IMAGE) for (const ri of rails) if (world.rails[ri].cls === 0) tramBed(ri);
   if (pieces) {
     for (let q = 0; q < pieces.length; q += 3) {
       const i = pieces[q], s = pieces[q + 1], e = pieces[q + 2];
@@ -986,15 +1011,11 @@ function buildRoads(world, ci, manager) {
   rondelAbutments(world, solid, ci);
   for (const underpass of world.trackUnderpasses.get(ci) ?? []) buildTrackUnderpass(world, solid, underpass);
   // koleje
-  const rails = world.railChunks[ci];
   if (rails) {
     for (const ri of rails) {
       const rail = world.rails[ri];
-      const n = rail.pts.length / 2;
-      const rx = new Float32Array(n), rz = new Float32Array(n);
-      for (let k = 0; k < n; k++) { rx[k] = rail.pts[k * 2]; rz[k] = rail.pts[k * 2 + 1]; }
-      const D = densePath(rx, rz, rail.y, 0, n - 1, 0, n - 1, rail.y ? 1e9 : surfaceStep);
-      if (rail.cls === 0) ribbon(world, asphalt, D, 1.25, COL.tramBed, 0, 0.004);
+      const D = railPath(ri);
+      if (rail.cls === 0) { if (ORIGINAL_IMAGE) tramBed(ri); }
       else if (rail.y) ribbon(world, asphalt, D, 1.7, COL.ballast, 0, 0.004);
       ribbon(world, marks, D, 0.07, COL.rail, 0.7175, LIFT_RAIL);
       ribbon(world, marks, D, 0.07, COL.rail, -0.7175, LIFT_RAIL);
@@ -1040,6 +1061,30 @@ function drawTrafficMarkings(world, buf, traffic) {
 // ---------------------------------------------------------------- terén ----
 const terrainIndices = new Map();
 
+/**
+ * Sníží uzly sítě terénu za okrajem vozovky, kde by terén na hraně trojúhelníku vystoupil nad asfalt.
+ * Vzdálenost od okraje se počítá jen u uzlů pod vozovkou a jejich sousedů (ostatní nic nemění).
+ */
+function lowerRoadEdges(world, pos, clampY, n1, G) {
+  const count = n1 * n1, y = new Float64Array(count), edge = new Float64Array(count).fill(NaN);
+  const asphalt = new Float64Array(count).fill(NaN), wanted = new Uint8Array(count);
+  for (let k = 0; k < count; k++) {
+    y[k] = pos[k * 3 + 1];
+    if (clampY[k] !== clampY[k]) continue;
+    const i = k % n1, j = (k - i) / n1;
+    for (let dj = -1; dj <= 1; dj++) for (let di = -1; di <= 1; di++) {
+      if (i + di >= 0 && i + di < n1 && j + dj >= 0 && j + dj < n1) wanted[(j + dj) * n1 + i + di] = 1;
+    }
+  }
+  for (let k = 0; k < count; k++) {
+    if (!wanted[k]) continue;
+    edge[k] = world.roadEdgeDistance(pos[k * 3], pos[k * 3 + 2], 1.5 * G);
+    if (edge[k] < 0 && clampY[k] === clampY[k]) asphalt[k] = clampY[k] + SURF;
+  }
+  if (!limitRoadEdges(n1, y, edge, asphalt)) return;
+  for (let k = 0; k < count; k++) pos[k * 3 + 1] = y[k];
+}
+
 /** Síť terénu jedné dlaždice (sdílí uzly se sousedy, takže na sebe navazuje beze spár). */
 function buildTerrain(world, ci, cx0, cz0) {
   const grade = world.gradeTerrain.has(ci);
@@ -1054,6 +1099,9 @@ function buildTerrain(world, ci, cx0, cz0) {
   const gi0 = Math.round((cx0 - world.tX0) / G), gj0 = Math.round((cz0 - world.tZ0) / G);
   const th = world.th, tc = world.tCols, tr = world.tRows;
   const H = (i, j) => th[Math.min(tr - 1, Math.max(0, j)) * tc + Math.min(tc - 1, Math.max(0, i))];
+  // terén za okrajem vozovky nesmí na hraně trojúhelníku prorůst asfaltem (road-edge-terrain.js)
+  const edges = roads && !ORIGINAL_IMAGE && ci !== world.bankTerrainTile;
+  const clampY = edges ? new Float64Array(n1 * n1).fill(NaN) : null;
   let o = 0, u = 0;
   for (let j = 0; j <= N; j++) {
     for (let i = 0; i <= N; i++) {
@@ -1061,7 +1109,7 @@ function buildTerrain(world, ci, cx0, cz0) {
       const x = cx0 + i * G, z = cz0 + j * G;
       let y = detail ? world.heightAt(x, z) : H(gi, gj);
       // pod vozovkou leží terén vždy pod pásem silnice, aby jím neprorůstal
-      if (roads) { const road = world.roadClampAt(x, z, y); if (road < y) y = road; }
+      if (roads) { const road = world.roadClampAt(x, z, y); if (road < y) y = road; if (edges) clampY[o / 3] = road; }
       pos[o] = x; pos[o + 1] = y; pos[o + 2] = z;
       let hx, hz;
       if (detail || world.terrainDetail.size && (i === 0 || i === N || j === 0 || j === N)) {
@@ -1078,6 +1126,7 @@ function buildTerrain(world, ci, cx0, cz0) {
       o += 3; u += 2;
     }
   }
+  if (edges) lowerRoadEdges(world, pos, clampY, n1, G);
   if (!terrainIndices.has(N)) {
     const idx = [];
     for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
@@ -1662,7 +1711,7 @@ export class ChunkManager {
     } else if (world.sidewalks === undefined) world.sidewalks = null;
     this.scratch = new Map();
     this.orthoScratch = new Map();
-    this.aniso = Math.min(4, renderer.getMaxAnisotropy());
+    this.aniso = groundAnisotropy(QUALITY.name, renderer.getMaxAnisotropy());
     this.texNear = QUALITY.groundTex; this.texFar = QUALITY.groundTexFar;
     this.lastCenter = -1;
     this.pending = 0;
@@ -1689,6 +1738,7 @@ export class ChunkManager {
     this.lastCenter = -1;
     this.texNear = QUALITY.groundTex;
     this.texFar = QUALITY.groundTexFar;
+    this.aniso = groundAnisotropy(QUALITY.name, this.renderer.getMaxAnisotropy());
     this.orthophotoPrepared = false;
     if (this.orthophoto) this.orthophoto.capacity = QUALITY.groundTex === 256 ? 12 : 24;
     if (this.paintedBuildings !== this.buildingMat) this.paintedBuildings.dispose();
@@ -1761,8 +1811,12 @@ export class ChunkManager {
       if (roads.solid) { const m = new THREE.Mesh(roads.solid, this.solidMat); m.castShadow = true; m.receiveShadow = true; add(m, roads.solid); }
       if (roads.furniture.length) ch.roadFurniture = attachRoadFurniture(w.breakables, ch.group,
         roads.solid, this.solidMat, roads.furniture);
-      if (roads.asphalt) { const m = new THREE.Mesh(roads.asphalt, this.asphaltMat); m.renderOrder = 14; m.receiveShadow = true; add(m, roads.asphalt); ch.asphalt = m; }
-      if (roads.marks) { const m = new THREE.Mesh(roads.marks, this.marksMat); m.renderOrder = 16; m.receiveShadow = true; add(m, roads.marks); ch.marks = m; }
+      // Ploché povrchy se kreslí bez hloubky v pořadí renderOrder, při shodě podle vzdálenosti
+      // od kamery. Překryv sousedních dlaždic (asfalt v křižovatce na hranici, tramvajový pás) by
+      // se pak za jízdy prohazoval a blikal: sousedé proto mají pevné pořadí podle šachovnice.
+      const order = (base) => ORIGINAL_IMAGE ? base : decalOrder(base, ci, w.cols);
+      if (roads.asphalt) { const m = new THREE.Mesh(roads.asphalt, this.asphaltMat); m.renderOrder = order(14); m.receiveShadow = true; add(m, roads.asphalt); ch.asphalt = m; }
+      if (roads.marks) { const m = new THREE.Mesh(roads.marks, this.marksMat); m.renderOrder = order(16); m.receiveShadow = true; add(m, roads.marks); ch.marks = m; }
       const entries = w.traffic.chunks.get(ci);
       if (entries && (entries.signs.length || entries.heads.length || entries.posts?.length)) {
         ch.traffic = buildTrafficMeshes(w, entries);

@@ -10,11 +10,13 @@ import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import { lut3D } from 'three/addons/tsl/display/Lut3DNode.js';
 import { smaa } from 'three/addons/tsl/display/SMAANode.js';
 import { traa } from 'three/addons/tsl/display/TRAANode.js';
+import { sharpen } from 'three/addons/tsl/display/SharpenNode.js';
 import { PARAMS, QUALITY } from '../config.js';
 import { env } from './materials.js';
 import { blendLutData, loadColorLuts, lutTexture } from './color-luts.js';
 import { makeAirPerspective } from './air-perspective.js';
 import { EyeAdaptation } from './exposure.js';
+import { temporalSharpness } from './image-quality.js';
 
 function buffers(waterReflections) {
   // Průhledné lampy a značky se přimíchají pouze do barvy. Normála a pohyb
@@ -134,7 +136,19 @@ export class PostFX {
   setupDisplay(color) {
     const display = renderOutput(color, THREE.NoToneMapping, THREE.SRGBColorSpace);
     if (this.temporal) {
-      this.pipeline.outputNode = display;
+      // Časové vyhlazení skládá snímky přes sebe a za jízdy obraz změkčí; doostření vrací kresbu
+      // textur. Vypne ho ?ostreni=0 (a ?obraz=puvodni).
+      const sharpness = PARAMS.get('ostreni') === '0' ? null : temporalSharpness();
+      if (sharpness === null) this.pipeline.outputNode = display;
+      else {
+        const displayTexture = convertToTexture(display);
+        const sharpened = sharpen(displayTexture, sharpness);
+        this.effects.push(displayTexture, sharpened);
+        this.oncePerDraw(displayTexture);
+        this.oncePerDraw(sharpened);
+        this.sharpen = sharpened;
+        this.pipeline.outputNode = sharpened;
+      }
       this.antialias = 'traa';
     } else {
       const displayTexture = convertToTexture(display);

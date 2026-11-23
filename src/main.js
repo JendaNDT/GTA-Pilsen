@@ -14,6 +14,8 @@ import { resultText } from './game/missions.js';
 import { createFrameProfiler } from './game/frame-profiler.js';
 import { initPerfPanel } from './game/perf-panel.js';
 import { QUALITY, IS_TOUCH, IS_MOBILE, DEBUG, PARAMS } from './config.js';
+import { profilePixelRatio } from './world/image-quality.js';
+import { enterFullscreen, fullscreenOnPlay, fullscreenSupported, isFullscreen, toggleFullscreen } from './game/fullscreen.js';
 
 const $ = (id) => document.getElementById(id);
 const canvas = $('game');
@@ -30,6 +32,7 @@ const HELP_HTML = IS_TOUCH ? `
     <tr><td>✉</td><td>vzít rychlý rozvoz jídla nebo zrušit aktivní zakázku</td></tr>
     <tr><td>☰</td><td>zakázky, garáž a směny MHD</td></tr>
     <tr><td>🗺</td><td>velká mapa (vyhledej místo nebo klepnutím nastav cíl)</td></tr>
+    <tr><td>⛶</td><td>celá obrazovka (kde ji prohlížeč dovolí)</td></tr>
     <tr><td>Tah prstem</td><td>otáčení kamery</td></tr>
   </table>` : `
   <h3>Ovládání</h3>
@@ -46,6 +49,7 @@ const HELP_HTML = IS_TOUCH ? `
     <tr><td>O</td><td>fotorežim · pohyb WASD, nahoru E, dolů Q, otáčení tažením</td></tr>
     <tr><td>C · H · L · R</td><td>kamera · klakson · dálková světla · vrátit na silnici</td></tr>
     <tr><td>N · Esc</td><td>posunout čas o 3 hodiny · menu se zakázkami, garáží a směnami MHD</td></tr>
+    <tr><td>⛶ · F11</td><td>celá obrazovka (po kliknutí na Hrát se zapne sama, Esc ji ukončí)</td></tr>
   </table>`;
 
 const ABOUT_HTML = (meta, rendering) => `
@@ -126,7 +130,7 @@ async function boot() {
   }
   const rendering = renderer.backend.isWebGPUBackend ? 'WebGPU' : 'WebGL 2';
   renderer.info.autoReset = false;
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, QUALITY.pixelRatio));
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, profilePixelRatio(QUALITY.pixelRatio, IS_MOBILE)));
   renderer.setSize(innerWidth, innerHeight);
   renderer.shadowMap.enabled = QUALITY.shadows;
   renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -197,6 +201,8 @@ async function boot() {
     updateWork();
   };
   const play = () => {
+    // Prohlížeč dovolí celou obrazovku jen hned po kliknutí, proto dřív než cokoli dalšího.
+    if (fullscreenOnPlay(game.fullscreenEnabled)) void enterFullscreen();
     menu.classList.add('hidden'); game.hud.show(true);
     running = true; input.enabled = true; game.paused = false; last = performance.now();
     perf?.reset();
@@ -238,6 +244,20 @@ async function boot() {
     });
   }
   $('btn-play').addEventListener('click', play);
+  // Celá obrazovka: po kliknutí na Hrát (volba v nastavení) a tlačítkem ⛶ ve hře.
+  const fullscreenButton = $('btn-fullscreen'), fullscreenChoice = $('fullscreen-play');
+  const supported = fullscreenSupported();
+  fullscreenButton.classList.toggle('hidden', !supported);
+  $('fullscreen-setting').classList.toggle('hidden', !supported);
+  fullscreenChoice.checked = game.fullscreenEnabled;
+  fullscreenChoice.addEventListener('change', () => { game.fullscreenEnabled = fullscreenChoice.checked; game.save(); });
+  const showFullscreen = () => {
+    const on = isFullscreen();
+    fullscreenButton.setAttribute('aria-pressed', on);
+    fullscreenButton.title = on ? 'Zpět do okna' : 'Celá obrazovka';
+  };
+  for (const name of ['fullscreenchange', 'webkitfullscreenchange']) document.addEventListener(name, showFullscreen);
+  fullscreenButton.addEventListener('click', () => { void toggleFullscreen(); });
   const updateWork = initWorkUI(game, play);
   updateWork();
   const sections = ['jobs', 'garage', 'shifts', 'help', 'about', 'settings'];

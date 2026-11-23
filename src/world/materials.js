@@ -10,6 +10,7 @@ import { terrainDetailNodes } from './terrain-detail.js';
 import { buildingNodes } from './building-nodes.js';
 import { SURFACE } from './material-table.js';
 import { hash21, valueNoise } from './material-noise.js';
+import { detailFadeRange } from './image-quality.js';
 import { TUNNEL_HEIGHT, TUNNEL_PORTAL_CUT } from './tunnels.js';
 
 export const env = {
@@ -93,16 +94,20 @@ export function makeAsphaltMaterial(detail) {
   return material;
 }
 
-// Zrnitost slábne s velikostí promítnutého pixelu.
+// Zrnitost slábne s velikostí promítnutého pixelu (buňky 0,38 m a 3 m, viz image-quality.js).
+export const GROUND_FINE_FADE = detailFadeRange(1 / 2.6, [0.15, 0.7]);
+export const GROUND_MID_FADE = detailFadeRange(1 / 0.33, [1.2, 5]);
+export const PAVING_FADE = (scale) => detailFadeRange(1 / Math.max(...scale), [0.033, 0.20]);
+
 function groundNoise(point) {
   const px = point.x.fwidth().max(point.y.fwidth()).toVar();
   const fine = float(0).toVar(), mid = float(0).toVar();
   // Pokud promítnutý pixel překročí celou šířku přechodu, váha vrstvy už je nula.
-  If(px.lessThan(0.7), () => {
-    fine.assign(valueNoise(point.mul(2.6)).sub(0.5).mul(smoothstep(0.15, 0.7, px).oneMinus()));
+  If(px.lessThan(GROUND_FINE_FADE[1]), () => {
+    fine.assign(valueNoise(point.mul(2.6)).sub(0.5).mul(smoothstep(...GROUND_FINE_FADE, px).oneMinus()));
   });
-  If(px.lessThan(5), () => {
-    mid.assign(valueNoise(point.mul(0.33)).sub(0.5).mul(smoothstep(1.2, 5, px).oneMinus()));
+  If(px.lessThan(GROUND_MID_FADE[1]), () => {
+    mid.assign(valueNoise(point.mul(0.33)).sub(0.5).mul(smoothstep(...GROUND_MID_FADE, px).oneMinus()));
   });
   const big = valueNoise(point.mul(0.021)).sub(0.5).toVar();
   return { px, mid, big, gain: fine.mul(0.13).add(mid.mul(0.10), big.mul(0.07), 1) };
@@ -136,7 +141,7 @@ function addPaving(landColor, profile, local, worldPosition, noise, detail) {
       const cell = brick.fract().toVar();
       const edge = cell.x.min(cell.x.oneMinus(), cell.y, cell.y.oneMinus());
       const joint = smoothstep(0.028, 0.086, edge).oneMinus();
-      const sharp = smoothstep(0.033, 0.20, noise.px).oneMinus();
+      const sharp = smoothstep(...PAVING_FADE(profile.scale), noise.px).oneMinus();
       tint.mulAssign(sharp.mul(hash21(brick.floor()).sub(0.5).mul(0.25).sub(joint.mul(0.29))).add(1));
     }
     tint.mulAssign(noise.mid.mul(0.14).add(noise.big.mul(0.09), 1));

@@ -2,6 +2,12 @@ import { snowColor } from './weather-surfaces.js';
 import { puddleNode } from './puddles.js';
 import {attribute, float, Fn, mix, normalWorldGeometry, positionWorld, smoothstep, struct, transformNormalToView, vec2, vec3, vec4} from 'three/tsl';
 import {hash21,valueNoise} from './material-noise.js';
+import { detailFadeRange } from './image-quality.js';
+
+// Buňky zrna v metrech; druhé pole je původní mizení pro ?obraz=puvodni (hrubé zrno tam nebylo).
+export const STONE_FADE = detailFadeRange(1 / 32, [0.018, 0.10]);
+export const COARSE_FADE = detailFadeRange(1 / 8, [-2, -1]);
+export const SLOT_FADE = detailFadeRange(1 / 13, [0.018, 0.10]);
 
 const sampleType = struct({gain:'float', roughness:'float', normal:'vec3', snow:'float'});
 
@@ -25,10 +31,15 @@ export function asphaltNodes(color, wet, camera) {
     const grate = smoothstep(0.18,0.22,curb).oneMinus().mul(smoothstep(0.36,0.40,end).oneMinus(),
       layout.y.greaterThan(0).toFloat()).toVar();
     const px = p.x.fwidth().max(p.y.fwidth());
-    const fine = smoothstep(0.018,0.10,px).oneMinus();
-    const stone = valueNoise(p.mod(32).mul(32)).sub(0.5).mul(fine).toVar();
-    const pores = valueNoise(p.mod(32).mul(32).add(vec2(4.3,8.7))).sub(0.5).mul(fine);
-    const slots = smoothstep(0.32,0.56,uv.x.mul(13).fract()).mul(fine);
+    // Jemné zrno (buňka 3 cm) mizí dřív, než jeho buňka zabere méně než dva pixely, jinak za jízdy bliká.
+    // Hrubší zrno (buňka 12,5 cm) drží strukturu asfaltu dál od kamery.
+    const fine = smoothstep(...STONE_FADE,px).oneMinus().toVar();
+    const coarse = smoothstep(...COARSE_FADE,px).oneMinus().mul(fine.oneMinus(),0.6).toVar();
+    const stone = valueNoise(p.mod(32).mul(32)).sub(0.5).mul(fine)
+      .add(valueNoise(p.mod(32).mul(8).add(vec2(1.7,3.1))).sub(0.5).mul(coarse)).toVar();
+    const pores = valueNoise(p.mod(32).mul(32).add(vec2(4.3,8.7))).sub(0.5).mul(fine)
+      .add(valueNoise(p.mod(32).mul(8).add(vec2(6.1,2.3))).sub(0.5).mul(coarse));
+    const slots = smoothstep(0.32,0.56,uv.x.mul(13).fract()).mul(smoothstep(...SLOT_FADE,px).oneMinus());
     const dry = float(1).add(stone.mul(0.32),track.mul(-0.16),patch.mul(-0.21));
     const gain = mix(1,dry.mul(mix(1,0.77,wet)),near).mul(mix(1,float(0.52).sub(slots.mul(0.28)),grate.mul(near)));
     const rough = float(0.94).add(stone.mul(0.10),track.mul(-0.18),patch.mul(-0.12));
