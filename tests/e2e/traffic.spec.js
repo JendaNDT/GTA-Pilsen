@@ -584,6 +584,8 @@ test('E21 – řidič před Husovou zná levé odbočení i za druhou krátkou s
     const middle = { from: 1423, to: 1421, lane: vehicles._laneFor(1421, 1), slow: 6 };
     car.exitPlan.push(first, middle);
     vehicles._pickNext(car);
+    const partial = world.traffic.junctionMovement(car, light);
+    car.trafficStop = { rule: light, held: 0, ready: Infinity, movement: partial };
     // Vůz již zvolil prostřední spojku. Tady zadáme cíl jeho jediné zbývající volby.
     const choose = vehicles._nextMove.bind(vehicles);
     vehicles._nextMove = (edge, context, lane) => edge === 1421
@@ -591,9 +593,9 @@ test('E21 – řidič před Husovou zná levé odbočení i za druhou krátkou s
       : choose(edge, context, lane);
     vehicles.stepAI(car, 1 / 60);
     const movement = car.trafficStop?.movement;
-    return { kept: car.exitPlan[0] === middle, exit: movement?.edge, left: movement?.left };
+    return { partial: partial.edge, kept: car.exitPlan[0] === middle, exit: movement?.edge, left: movement?.left };
   });
-  expect(observed).toEqual({ kept: true, exit: 12147, left: true });
+  expect(observed).toEqual({ partial: 1421, kept: true, exit: 12147, left: true });
 });
 
 test('E21 – řidič u dlouho stojící MHD počká na zelenou a použije volný výjezd', async ({ page }) => {
@@ -647,4 +649,50 @@ test('E21 – řidič u dlouho stojící MHD počká na zelenou a použije voln�
   });
   expect(result).toEqual({ waiting: [0, 30, 60, 0], originalBlocked: true,
     exits: [19355, 19355, 19355, 34502], leftOn: 34502 });
+});
+
+test('Klatovská u Tylovy – jižní příjezd a přechod mají společný cyklus křižovatky', async ({ page }) => {
+  await boot(page);
+  const result = await page.evaluate(() => {
+    const t = __game.world.traffic;
+    const south = t.byEdge.get(28371)?.find(c => c.directedHead && c.id === 3073913680);
+    const north = t.controls.find(c => c.id === 10274015040);
+    const east = t.controls.find(c => c.id === 10274015039);
+    const crossing = t.crossings.find(c => c.id === 10975);
+    if (!south || !crossing) return null;
+    const phases = new Set();
+    for (let i = 0; i < 120; i++) {
+      t.tick(1);
+      phases.add([t.light(south), t.light(north), t.light(east), t.canWalk(crossing)].join('/'));
+    }
+    return { mark: south.mark, together: [north, east, crossing].every(c => c.group === south.group),
+      phases: [...phases] };
+  });
+  expect(result?.mark).toBe(10982);
+  expect(result.together).toBe(true);
+  expect(result.phases).toEqual(expect.arrayContaining(['green/green/red/false', 'red/red/green/false', 'red/red/red/true']));
+  expect(result.phases).not.toContain('green/green/green/false');
+});
+
+test('Božkovská – při dlouhé frontě v Železniční zvolí řidič volné odbočení', async ({ page }) => {
+  await boot(page);
+  const result = await page.evaluate(() => {
+    const { world, vehicles, player } = __game, car = player.lastCar;
+    vehicles.obstacles.length = 0;
+    for (const other of [...vehicles.cars]) if (car !== other) vehicles.remove(other);
+    const edge = 1168, rule = world.traffic.byEdge.get(edge).find(c => c.kind === 'yield');
+    const s = rule.s - car.halfLen - 0.8, p = world.edgePoint(edge, s, 0, {});
+    car.place(p.x, p.z, Math.atan2(p.tx, p.tz));
+    Object.assign(car, { mode: 'ai', edge, s, lane: 0, blocked: 64 });
+    car.exitPlan = [{ from: edge, to: 29310, lane: vehicles._laneFor(29310), slow: 7 }];
+    vehicles._pickNext(car);
+    const queue = world.edgePoint(29310, 5, car.nextLane, {});
+    vehicles.cars.push({ ...queue, mode: 'ai', y: car.y, yaw: Math.atan2(queue.tx, queue.tz),
+      halfLen: 2.3, radius: 1.07, blocked: 10 });
+    car.trafficStop = { rule, ready: 0 };
+    const full = world.traffic.exitBlocked(car, rule, vehicles.cars, []);
+    vehicles._detourAroundBlockage(car);
+    return { full, next: car.next, free: !world.traffic.exitBlocked(car, rule, vehicles.cars, []) };
+  });
+  expect(result).toEqual({ full: true, next: 29309, free: true });
 });

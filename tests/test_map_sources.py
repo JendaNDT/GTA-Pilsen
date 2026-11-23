@@ -12,6 +12,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 from area import BBOX
 from coordinates import ORIGIN, to_wgs84, to_xz, world_bounds
 from map_sources import DEM_GRID, dump_dem, load_dem
+from traffic_data import build_traffic
 
 
 class MapSourcesTests(unittest.TestCase):
@@ -31,6 +32,22 @@ class MapSourcesTests(unittest.TestCase):
                 self.assertAlmostEqual(x, expected[0], places=6)
                 self.assertAlmostEqual(z, expected[1], places=6)
                 self.assertEqual(to_wgs84(x, z), gps)
+
+    def test_crossing_and_directed_signal_share_one_osm_node(self):
+        tags = {"highway": "crossing;traffic_signals", "crossing": "traffic_signals",
+                "traffic_signals:direction": "forward"}
+        extract = {"nodes": {1: (ORIGIN["lat"], ORIGIN["lon"], tags)},
+                   "ways": {10: ({}, [1])}, "rels": {}}
+        road = {"way": 10, "pts": [(-10, 0), (10, 0)], "w": 7, "cls": 4,
+                "flags": 1, "reverse": False, "limitForward": 50, "limitBackward": 50}
+        with TemporaryDirectory() as directory:
+            data = build_traffic(extract, [road], (-20, 20, -20, 20), directory)
+        light, = data["controls"]
+        crossing, = data["crossings"]
+        self.assertEqual((light["kind"], light["id"], light["direction"]), ("signal", 1, 1))
+        self.assertTrue(light["directedHead"])
+        self.assertEqual(crossing["id"], light["id"])
+        self.assertTrue(crossing["signal"])
 
     def test_dem_rejects_different_bounds_and_replaced_raster(self):
         with TemporaryDirectory() as directory, patch.dict(DEM_GRID, {"shape": [2, 2]}):

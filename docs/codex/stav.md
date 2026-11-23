@@ -1,5 +1,22 @@
 # Stav etapy E26
 
+## Ranní kolona na Klatovské (23. 11. 2026)
+
+Oprava vychází z revize `f2ff94a`. V jedné desetiminutové jízdě čekalo auto ve Smetanových sadech 319,5 s. Při jiném rozložení provozu stálo auto v Tylově 537,5 s. V obou případech se fronta přenesla i do okolních ulic.
+
+- Při příjezdu ze Smetanových sadů leží stopčára těsně za hranicí dvou úseků silnice. Auto teď zkontroluje protisměr a místo za křižovatkou už na předchozím úseku. Ve zkoušce na původní verzi přejelo čáru o více než 17 m. Po opravě zastaví před čárou a po uvolnění protisměru projede.
+- Pokud si na Husově při odbočování do Skrétovy zahradí cestu dvě protijedoucí auta, může řidič ještě před provedením odbočky pokračovat volným pruhem rovně. U semaforu může po dlouhém čekání zvolit jiný povolený výjezd ještě během zelené. Zohlední, zda při odbočování vlevo skutečně čekal na zelenou kvůli ostatním vozidlům. Obě situace mají samostatnou jízdní zkoušku.
+- Linkový vůz a řidič odbočující přes koleje nově respektují, kdo už do křižovatky vjel. Jakmile i poslední článek tramvaje mine dráhu auta, řidič může odbočit. Na Božkovské může řidič po minutě před zaplněnou Železniční odbočit na volnou stranu. Nadále dává přednost provozu na hlavní.
+- Při kontrolní jízdě od nádraží stálo taxi v Barrandově u Guldenerovy 500,5 s. Malé auto v protisměru mělo po boku 11,5 cm místa, ale návratem doprostřed pruhu by narazilo. Řidič nyní může krokem podržet směr, pokud mají karoserie skutečný boční odstup a oba přední rohy zůstanou na vozovce. Zkouška sleduje všechna tři původní auta až do uvolnění křižovatky a měří odstup každé dvojice.
+- Při odbočení vlevo z vedlejší ulice řidič počítá i s rozjezdem od čáry a s délkou svého auta. V ulici Kardinála Berana tak nechá vůz na hlavní projet i v případě, kdy by původní třísekundový odhad propustil taxi do jeho dráhy.
+- Na jižním příjezdu ke křižovatce Klatovské, Tylovy a Americké doplnilo sestavení mapy směrový semafor. Přechod a návěstidlo sdílejí uzel OSM `3073913680`. Hra nyní použije městskou stopčáru `10982` a střídá zelenou společně s protějším semaforem, příčnou ulicí a chodci. Nové sestavení používá stejné zdrojové soubory. Všech šest binárních souborů základní mapy se shoduje bajt po bajtu.
+
+**Místní ověření.** Prošlo všech 264 testů JavaScriptu, všech 28 testů Pythonu včetně ověření městského archivu a produkční sestavení. V Chromiu prošlo všech 14 cílených zkoušek na závěrečném sestavení (sedm situací na WebGL 2 a WebGPU). V širší průběžné sadě dopravy a MHD prošlo 85 z 86. Zbývající zkoušku po přejmenování běžící proces nenašel, pod konečným názvem na obou vykreslovačích prošla. Kompletní sadu všech herních zkoušek jsme po poslední úpravě neopakovali.
+
+**Deset minut v pondělí v 7.30.** Běžná zkouška na Klatovské prošla na obou vykreslovačích. Nejdelší souvislé stání bylo 65,5 a 70,5 s. Kontrola u hlavního nádraží na obou vykreslovačích naměřila 163,5 s v Ukrajinské, kde záznam ukazuje několik poškozených vozů. Kontrolní jízda od nádraží na původní revizi měla maximum 96 s. Maximum se získává ze všech sledovaných aut v okolí pozorovatele, jednotlivé jízdy mají různý průběh. Žádná ze čtyř jízd nezaznamenala vyjetí z vozovky pod plynem.
+
+**Další rozložení provozu.** Tři samostatné desetiminutové jízdy v okolí Klatovské naměřily 95 s, 279 s a 68 s. V delší frontě stálo auto na Americké, za opravenou křižovatkou, před linkovým vozem. Ukrajinská a souběh MHD na tomto úseku Americké zůstávají otevřené. Dvouminutový limit platí dál.
+
 ## Kontrola celé obrazovky po stisku Esc (23. 11. 2026)
 
 Na revizi `d98e677` se podařilo zopakovat selhání při vypnutí celé obrazovky tlačítkem. Při místním měření dorazila událost `fullscreenchange` po dokončení požadavku za 150 ms na WebGPU a za 122 ms na WebGL 2. Hra v obou případech při události správně přepnula stav tlačítka. Původní test tento stav přečetl před doručením události.

@@ -53,6 +53,7 @@ export class Car {
     this.upcomingLeft = null;
     this.queued = false;
     this.pathBlocked = false;
+    this.passingStoppedCar = false;
     this.floodTime = 0;
     this.physicsTeleport = true;
     this.skid = 0;
@@ -351,21 +352,55 @@ export class VehicleManager {
     return this._moveTo(e, lane, pick);
   }
 
+  // Když se auta při odbočení vzájemně zablokují, může řidič ještě
+  // před zatočením zvolit volné přímé pokračování svého pruhu.
+  _continueStraight(car) {
+    const w = this.world, length = w.eLen[car.edge];
+    if (!car.plannedTurn || car.finishingTurn || car.junctionMovement || length - car.s > 12) return false;
+    const tangent = w.edgePoint(car.edge, car.s, car.lane, _pt);
+    if (Math.sin(car.yaw) * tangent.tx + Math.cos(car.yaw) * tangent.tz < 0.94) return false;
+    const opposing = this.cars.some(other => other !== car && other.mode === 'ai' && other.pathBlocked &&
+      other.blocked > 2 && Math.abs(other.y - car.y) < 3 && Math.cos(other.yaw - car.yaw) < -0.7 &&
+      Math.hypot(other.x - car.x, other.z - car.z) < car.halfLen + other.halfLen + 5);
+    if (!opposing) return false;
+    const straight = this._movesFrom(car.edge, car.turnContext, car.lane)
+      .filter(move => move.fits && move.cos > 0.97 && move.edge !== car.next)
+      .sort((a, b) => b.cos - a.cos)[0];
+    if (!straight) return false;
+    const move = this._moveTo(car.edge, car.lane, straight);
+    const pointAt = distance => car.s + distance <= length
+      ? w.edgePoint(car.edge, car.s + distance, car.lane, _pt)
+      : w.edgePoint(move.to, car.s + distance - length, move.lane, _pt);
+    if (this._obstacleLimit(car, 4, null, pointAt) < 1) return false;
+    car.exitPlan = [move];
+    this._pickNext(car);
+    car.trafficStop = null;
+    return true;
+  }
+
   _detourAroundBlockage(car) {
     const w = this.world, traffic = w.traffic, state = car.trafficStop, rule = state?.rule;
-    if (!rule || rule.edge !== car.edge || car.finishingTurn || car.enteredSignal && car.enteredSignal.group === rule.group ||
-        traffic.time < car.nextDetourCheck) return;
-    const gap = rule.s - car.s - car.halfLen;
-    if (gap < 0 || gap > 4 || w.eLen[car.edge] - rule.s > 27) return;
+    if (traffic.time < car.nextDetourCheck) return;
     car.nextDetourCheck = traffic.time + 2;
+    if (car.blocked >= 8 && car.pathBlocked && this._continueStraight(car)) return;
+    if (!rule || rule.edge !== car.edge || car.finishingTurn || car.enteredSignal && car.enteredSignal.group === rule.group) return;
+    const gap = rule.s - car.s - car.halfLen;
+    if (gap < 0 || gap > 4 || !traffic.controlsJunction(rule)) return;
     const wreck = this.cars.some(other => other.crashed && (other.mode === 'loose' || other.mode === 'parked') &&
         Math.hypot(other.x - car.x, other.z - car.z) < 65 && traffic.exitBlocked(car, rule, [other], []));
-    // Linkový vůz může zůstat stát napříč výjezdem i přes další zelenou.
-    // Řidič hledá objížďku až po minutě stání obou vozů mimo nástup cestujících.
+    // Po minutě před plným výjezdem může řidič změnit směr. U semaforu
+    // hledá až na zelenou, linkový vůz při běžném nástupu cestujících neobjíždí.
     const longWait = 60;
-    if (!wreck && !(car.blocked >= longWait && rule.directedHead && traffic.light(rule) === 'green' &&
-        this.obstacles.some(section => section.stoppedInTraffic >= longWait &&
-          traffic.exitBlocked(car, rule, [], [section])))) return;
+    if (!wreck) {
+      if (rule.kind === 'signal' && (!rule.directedHead || traffic.light(rule) !== 'green')) return;
+      // Při dlouhém čekání na levé odbočení využijeme ještě tutéž zelenou.
+      const missedTurn = car.blocked >= 20 && state.turnWait >= 5;
+      if (car.blocked < longWait && !missedTurn) return;
+      const queue = this.cars.filter(other => other !== car && other.mode === 'ai');
+      const transit = this.obstacles.filter(section => section.stoppedInTraffic >= longWait ||
+        section.control && Math.hypot(section.vx, section.vz) > 1);
+      if (!state.yieldingTo && !traffic.exitBlocked(car, rule, queue, transit)) return;
+    }
 
     // Projdeme povolené výjezdy ze stávajícího pruhu. Křižovatka může mít
     // více krátkých spojek před místem, kde se za odbočením vejde celé auto.
@@ -386,12 +421,15 @@ export class VehicleManager {
         }
         const [first, ...rest] = path;
         const trial = { edge: car.edge, lane: car.lane, y: car.y, halfLen: car.halfLen, radius: car.radius,
-          next: first.to, nextLane: first.lane, exitPlan: rest };
+          next: first.to, nextLane: first.lane, plannedTurn: first.turn, exitPlan: rest };
         if (traffic.exitBlocked(trial, rule, others, this.obstacles)) continue;
+        const movement = rule.directedHead && traffic.junctionMovement(trial, rule);
+        if (movement && traffic.turnInProgress(car, movement, others, this.obstacles)) continue;
         car.exitPlan = path;
         this._pickNext(car);
         state.movement = undefined;
         state.yieldingTo = null;
+        state.turnWait = 0;
         state.crossing = false;
         return;
       }
@@ -440,6 +478,8 @@ export class VehicleManager {
       if (!move) {
         move = this._nextMove(edge, context, lane);
         car.exitPlan.push(move);
+        // Dosavadní plán mohl končit na spojce uprostřed křižovatky.
+        if (car.trafficStop) car.trafficStop.movement = undefined;
       }
       this._planTurn(car, edge, lane, move);
       if (move.to < 0) break;
@@ -503,6 +543,25 @@ export class VehicleManager {
     for (const o of this.cars) if (o !== car && o !== ignore) check(o);
     for (const o of this.obstacles) if (o !== ignore) check(o);
     return limit;
+  }
+
+  _passBesideStoppedCar(car) {
+    const fx = Math.sin(car.yaw), fz = Math.cos(car.yaw), width = car.type.wid / 2;
+    const other = this.cars.find(o => {
+      if (o === car || o.mode !== 'ai' || !o.pathBlocked || o.blocked < 3 || Math.abs(o.speed) > 0.3 || Math.abs(o.y - car.y) > 3) return false;
+      const dx = o.x - car.x, dz = o.z - car.z, along = dx * fx + dz * fz;
+      if (along < 0 || along > car.halfLen + o.halfLen || dx * dx + dz * dz > 49) return false;
+      const angle = o.yaw - car.yaw, cosine = Math.cos(angle);
+      if (cosine > -0.75) return false;
+      // Průmět obou karoserií na příčnou osu. Při zachování směru zůstane
+      // stejná mezera mezi boky po celé délce míjení.
+      const side = Math.abs(dx * fz - dz * fx);
+      return side > width + Math.abs(cosine) * o.type.wid / 2 + Math.abs(Math.sin(angle)) * o.halfLen + 0.08;
+    });
+    if (!other) return null;
+    const x = car.x + fx * (car.halfLen + 1), z = car.z + fz * (car.halfLen + 1);
+    return this.world.onCarriageway(x + fz * width, z - fx * width, car.y) &&
+      this.world.onCarriageway(x - fz * width, z + fx * width, car.y) ? other : null;
   }
 
   _leftTurnRoom(car, turn, leftDistance) {
@@ -646,7 +705,7 @@ export class VehicleManager {
     car.turnSignal = turn && arcDistance > -26 ? turn.sign : 0;
     if (remain < 24 && car.turnSlow < vmax) vmax = car.turnSlow + (vmax - car.turnSlow) * Math.max(0, (remain - 6) / 18);
     if (turn) vmax = Math.min(vmax, Math.sqrt(3 * turn.radius + 6 * Math.max(0, -arcDistance)));
-    const pointAt = (look) => {
+    let pointAt = (look) => {
       if (turn) {
         const distance = arcDistance + look, arc = turn.radius * turn.angle;
         if (distance < 0) return w.edgePoint(turn.from, turn.entry + distance,
@@ -665,6 +724,25 @@ export class VehicleManager {
     };
     vmax *= Math.sqrt(this.game.weather?.surfaceGrip(car.x, car.z) ?? 1);
     let limit = this._obstacleLimit(car, vmax, null, pointAt);
+    // Po odbočení do úzké ulice mohou dvě auta stát vedle sebe. Běžné
+    // míjení i příjezd k řízené křižovatce dál používají plánovanou stopu.
+    const clearingTurn = car.s < 2 * car.type.len && !car.enteredSignal && !car.trafficStop &&
+      !leftTurn && turn?.from !== car.edge && remain > car.type.len;
+    const wasPassing = car.passingStoppedCar;
+    car.passingStoppedCar = false;
+    if (clearingTurn && limit < 0.4 && car.speed < 1 && (wasPassing || car.blocked >= 3)) {
+      const beside = this._passBesideStoppedCar(car);
+      if (beside) {
+        const tx = Math.sin(car.yaw), tz = Math.cos(car.yaw);
+        pointAt = distance => {
+          _pt.x = car.x + tx * distance; _pt.z = car.z + tz * distance;
+          _pt.tx = tx; _pt.tz = tz;
+          return _pt;
+        };
+        limit = this._obstacleLimit(car, Math.min(0.8, vmax), beside, pointAt);
+        car.passingStoppedCar = limit > 0;
+      }
+    }
     car.pathBlocked = limit < 0.4;
     const upcomingLeft = leftTurn ?? (turn?.sign < 0 ? turn : null);
     if (car.upcomingLeft !== upcomingLeft) car.leftArrival = w.traffic.time;
@@ -815,7 +893,7 @@ export class VehicleManager {
     if (car.blocked > 1.2) limit = Math.max(limit, 4);
     car.policeDist = dist;
     if (physical) {
-      const pointAt = (look) => {
+      let pointAt = (look) => {
         // Bod před kapotou umožní i otočení za cílem přímo v zádech.
         const heading = car.yaw + clamp(diff, -1.4, 1.4);
         const range = Math.min(look, Math.hypot(tx - car.x, tz - car.z));

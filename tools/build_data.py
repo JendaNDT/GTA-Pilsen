@@ -28,7 +28,7 @@ import numpy as np
 import terrain as terrain_mod
 from area import BBOX, OSM_BBOX
 from coordinates import ORIGIN, to_xz, world_bounds
-from traffic_data import build_traffic
+from traffic_data import build_traffic, highway_values
 from map_sources import load_dem
 from terrain import Terrain
 from osm_source import extract_timestamp
@@ -1261,10 +1261,11 @@ def build_pois(ex, dem, road_names):
     for la, lo, t in nodes.values():
         if not inside(la, lo):
             continue
-        if t.get("highway") == "traffic_signals":
+        kinds = highway_values(t)
+        if "traffic_signals" in kinds:
             x, z = to_xz(la, lo)
             signals.append([round(x, 1), round(z, 1)])
-        elif t.get("highway") == "crossing" and t.get("crossing") not in ("unmarked", "no"):
+        if "crossing" in kinds and t.get("crossing") not in ("unmarked", "no"):
             x, z = to_xz(la, lo)
             crossings.append([round(x, 1), round(z, 1)])
 

@@ -242,6 +242,11 @@ def osm_signs(ex, index, municipal):
     return out
 
 
+def highway_values(tags):
+    """Jeden uzel OSM může nést přechod i směrový semafor."""
+    return {value.strip() for value in tags.get("highway", "").split(";")}
+
+
 def build_traffic(ex, roads, bounds, raw):
     folder = Path(raw)
     index = RoadIndex(roads)
@@ -253,11 +258,11 @@ def build_traffic(ex, roads, bounds, raw):
 
     tagged = {}
     for nid, (lat, lon, tags) in ex["nodes"].items():
-        hw = tags.get("highway")
-        if (hw in ("stop", "give_way", "traffic_signals", "crossing") or tags.get("traffic_sign") == "CZ:B1") and tags.get("public_transport") != "stop_position":
+        kinds = highway_values(tags)
+        if (kinds.intersection(("stop", "give_way", "traffic_signals", "crossing")) or tags.get("traffic_sign") == "CZ:B1") and tags.get("public_transport") != "stop_position":
             x, z = rounded(to_xz(lat, lon))
             if bounds[0] < x < bounds[1] and bounds[2] < z < bounds[3]:
-                tagged[nid] = (x, z, tags)
+                tagged[nid] = (x, z, tags, kinds)
     members = defaultdict(set)
     for wid, road_ids in index.ways.items():
         for nid in ex["ways"][wid][1]:
@@ -265,7 +270,7 @@ def build_traffic(ex, roads, bounds, raw):
                 members[nid].update(road_ids)
 
     controls, crossings, conflicts = [], [], []
-    for nid, (x, z, tags) in tagged.items():
+    for nid, (x, z, tags, kinds) in tagged.items():
         roads_here = members.get(nid)
         if not roads_here:
             continue
@@ -282,7 +287,7 @@ def build_traffic(ex, roads, bounds, raw):
                               "z": round(sz + dx * d * side, 2), "tx": round(dx * d, 4), "tz": round(dz * d, 4),
                               "road": i, "direction": d, "id": nid, "source": "osm", "estimated": True})
         signal_crossing = tags.get("crossing") == "traffic_signals" or tags.get("crossing:signals") == "yes"
-        if hw == "traffic_signals" or signal_crossing:
+        if "traffic_signals" in kinds or signal_crossing:
             direction = tags.get("traffic_signals:direction")
             for i in sorted(roads_here):
                 r = roads[i]
@@ -292,7 +297,7 @@ def build_traffic(ex, roads, bounds, raw):
                 if r["reverse"]:
                     sign_dir = -sign_dir
                 controls.append({"kind": "signal", "x": x, "z": z, "road": i, "direction": sign_dir,
-                                 "id": nid, "source": "osm", "directedHead": hw == "traffic_signals" and bool(sign_dir)})
+                                 "id": nid, "source": "osm", "directedHead": "traffic_signals" in kinds and bool(sign_dir)})
         if hw in ("stop", "give_way"):
             for i in sorted(roads_here):
                 r = roads[i]
@@ -312,7 +317,7 @@ def build_traffic(ex, roads, bounds, raw):
                     continue
                 controls.append({"kind": "stop" if hw == "stop" else "yield", "x": x, "z": z,
                                  "road": i, "direction": sign_dir, "id": nid, "source": "osm"})
-        if (hw == "crossing" or signal_crossing) and tags.get("crossing") not in ("unmarked", "no") and tags.get("crossing:markings") != "no":
+        if ("crossing" in kinds or signal_crossing) and tags.get("crossing") not in ("unmarked", "no") and tags.get("crossing:markings") != "no":
             hit = index.match(x, z, 8, roads_here)
             if not hit:
                 continue

@@ -84,6 +84,7 @@ export class Traffic {
           if (entry.directedHead) control.head = [control.x, control.z];
           const surveyed = this.surveyedLine(control, linesByRoad.get(entry.road));
           if (surveyed) {
+            if (control.directedHead) control.headS = control.s;
             control.s = surveyed.s;
             control.mark = surveyed.id;
             this.moveToEdge(control);
@@ -231,10 +232,15 @@ export class Traffic {
     return true;
   }
 
+  controlsJunction(control) {
+    // Měřená stopčára může být několik metrů před návěstidlem téže křižovatky.
+    return this.world.eLen[control.edge] - Math.max(control.s, control.headS ?? control.s) <= 27;
+  }
+
   addToGroup(control) {
     const w = this.world, n = control.transitOnly ? w.eFrom[control.edge] : w.eTo[control.edge];
     const x = w.nodeX[n], z = w.nodeZ[n];
-    const nearJunction = w.eLen[control.edge] - control.s < 27 && w.outStart[n + 1] - w.outStart[n] >= 2;
+    const nearJunction = this.controlsJunction(control) && w.outStart[n + 1] - w.outStart[n] >= 2;
     const gx = nearJunction ? x : control.x, gz = nearJunction ? z : control.z;
     let group = this.groups.find((g) => Math.hypot(g.x - gx, g.z - gz) <= 38);
     if (!group) {
@@ -381,8 +387,8 @@ export class Traffic {
     const state = car.trafficStop?.rule === control ? car.trafficStop
       : (car.trafficStop = { rule: control, held: 0, ready: Infinity });
     let stop;
+    const color = signal && this.light(control);
     if (signal) {
-      const color = this.light(control);
       if (color === 'off') {
         if (state.ready === Infinity && distance < 4) state.ready = this.time;
         stop = distance < 22 && this.yieldAtBlackout(car, control, others, extra);
@@ -391,7 +397,8 @@ export class Traffic {
         state.rightBlocker = null;
         stop = color === 'red' || (color === 'amber' && speed ** 2 < 11 * Math.max(0, distance));
       }
-      if (checkExit && control.directedHead && distance < 22 && state.movement === undefined) {
+      if (checkExit && control.directedHead && state.movement === undefined &&
+          (control.edge === car.edge || car.exitPlan[0]?.from === control.edge)) {
         state.movement = this.junctionMovement(car, control);
       }
     } else {
@@ -404,8 +411,11 @@ export class Traffic {
     // Při povinném zastavení před stejnou čárou stačí zkoumat výjezd až při rozjezdu.
     state.yieldingTo = null;
     if (!stop && checkExit) {
-      if (state.movement) state.yieldingTo = this.turnInProgress(car, state.movement, others);
+      if (state.movement) state.yieldingTo = this.turnInProgress(car, state.movement, others, extra);
       stop = !!state.yieldingTo || this.exitBlocked(car, control, others, extra);
+      if (stop && color === 'green' && state.movement?.left && distance < 4 && Math.abs(speed) < 0.3) {
+        state.turnWait = (state.turnWait ?? 0) + dt;
+      }
     }
     // Při souběhu dvou pruhů si řidič ještě před čárou ponechá místo k zařazení.
     state.entering = !stop && !!state.movement && limit > 0 && distance < 3 + speed * speed / 8;
@@ -460,9 +470,15 @@ export class Traffic {
 
   junctionMovement(car, control) {
     const w = this.world;
-    if (car.next < 0 || w.eLen[car.edge] - control.s > 27) return null;
-    let edge = car.next, exitLane = car.nextLane, turn = car.plannedTurn, width = w.r.w[w.eRoad[car.edge]];
-    for (const move of car.exitPlan) {
+    const ahead = control.edge === car.next && car.edge !== car.next;
+    const first = ahead ? car.exitPlan[0] : null;
+    let edge = ahead ? first?.to : car.next;
+    if (edge == null || edge < 0 || !this.controlsJunction(control)) return null;
+    const lane = ahead ? car.nextLane : car.lane;
+    let exitLane = ahead ? first.lane : car.nextLane, turn = ahead ? first.turn : car.plannedTurn;
+    let width = w.r.w[w.eRoad[control.edge]];
+    for (let index = ahead ? 1 : 0; index < car.exitPlan.length; index++) {
+      const move = car.exitPlan[index];
       if (move.from !== edge || move.to < 0 || w.eLen[edge] >= 12) break;
       width = Math.max(width, w.r.w[w.eRoad[edge]]);
       edge = move.to;
@@ -471,19 +487,23 @@ export class Traffic {
     }
     const exit = w.edgePoint(edge, turn?.exit ?? 0, 0, {});
     const left = control.tx * exit.tz - control.tz * exit.tx < -0.35;
-    return { control, lane: car.lane, edge, exitLane, left, reached: false,
+    return { control, lane, edge, exitLane, left, exitX: exit.x, exitZ: exit.z, reached: false,
       clearAt: Math.min(w.eLen[edge], Math.max(width / 2, turn?.exit ?? 0) + car.halfLen + 1) };
   }
 
-  turnInProgress(car, mine, others) {
+  crossesTransit(movement, head) {
+    return head && movement?.control.group === head.group && (movement.left || movement.control.axis !== head.axis);
+  }
+
+  turnInProgress(car, mine, others, sections = []) {
     const light = mine.control;
     for (const other of others) {
       if (other === car || other.mode !== 'ai') continue;
       const active = other.junctionMovement;
       const state = other.trafficStop;
       const approach = state?.movement?.control;
-      const entering = active ?? (state?.entering && approach && other.edge === approach.edge &&
-        other.s + other.halfLen < approach.s + 1 ? state.movement : null);
+      const entering = active ?? (state?.entering && approach && (other.next === approach.edge ||
+        other.edge === approach.edge && other.s + other.halfLen < approach.s + 1) ? state.movement : null);
       if (entering?.control === light && entering.lane !== mine.lane && entering.edge === mine.edge &&
           entering.exitLane === mine.exitLane && Number.isFinite(mine.exitLane)) return entering;
       if (!entering || entering.control.group !== light.group) continue;
@@ -507,6 +527,16 @@ export class Traffic {
         return active;
       }
     }
+    // Linkový vůz se nesmí ocitnout čelem proti autu uprostřed kolejí.
+    return sections.find(section => {
+      if (!this.crossesTransit(mine, section.control)) return false;
+      // Jakmile i zadní článek minul dráhu auta, smí auto vyjet. Dlouhá
+      // tramvaj už může stát u dalšího semaforu, zatímco pořád patří do téže skupiny.
+      const tx = Math.sin(section.yaw), tz = Math.cos(section.yaw);
+      const beyond = (x, z) => (section.x - x) * tx + (section.z - z) * tz;
+      const rear = section.halfLen + car.radius + light.width / 2;
+      return Math.min(beyond(light.x, light.z), beyond(mine.exitX, mine.exitZ)) <= rear;
+    });
   }
 
   conflict(car, control, others, extra) {
@@ -514,11 +544,19 @@ export class Traffic {
     const junction = w.eTo[control.edge];
     const x = w.nodeX[junction], z = w.nodeZ[junction];
     if (Math.hypot(x - control.x, z - control.z) > 36) return false;
+    // Při odbočení vlevo z vedlejší musí i záď vozu opustit první pruh.
+    // Čára v ulici Kardinála Berana je přitom deset metrů před středem křižovatky.
+    let gapTime = 3;
+    if (car.plannedTurn?.sign < 0) {
+      const speed = Math.max(0, car.speed ?? 0);
+      const distance = Math.hypot(x - car.x, z - car.z) + car.halfLen + 2;
+      gapTime = Math.max(gapTime, (Math.sqrt(speed * speed + 4 * distance) - speed) / 2 + 0.8);
+    }
     const priority = (other) => {
       if (other === car || other.mode === 'parked' || Math.abs(other.y - car.y) > 3) return false;
       const dx = x - other.x, dz = z - other.z, distance = Math.hypot(dx, dz);
       if (distance < 3.6) return true;
-      if (distance > 34) return false;
+      if (distance > Math.max(34, 18 * gapTime)) return false;
       if (other.edge === car.edge) return false;
       const speed = Math.hypot(other.vx || 0, other.vz || 0);
       // Auto z jiné vedlejší cesty, které už čeká, účastní se pořadí příjezdu.
@@ -529,14 +567,19 @@ export class Traffic {
         return wait.ready < mine.ready || (wait.ready === mine.ready && wait.rule.edge < control.edge);
       }
       const closing = (dx * (other.vx || 0) + dz * (other.vz || 0)) / distance;
-      return closing > 0.25 && distance / closing < 3;
+      return closing > 0.25 && distance / closing < gapTime;
     };
     return others.some(priority) || extra.some(priority);
   }
 
   exitBlocked(car, control, others, extra) {
     const w = this.world;
-    const junction = w.eLen[car.edge] - control.s <= 27 && car.next >= 0;
+    const approach = control.edge;
+    const ahead = approach === car.next && car.edge !== car.next;
+    const approachLane = ahead ? car.nextLane : car.lane;
+    const first = ahead ? car.exitPlan[0] : null;
+    let edge = ahead ? first?.to : car.next;
+    const junction = edge >= 0 && this.controlsJunction(control);
     const carLength = car.halfLen * 2 + 1.4;
     const requiredEnd = (edge, start, base) => {
       let clearance = start + base;
@@ -552,14 +595,14 @@ export class Traffic {
       return clearance + carLength;
     };
     if (!junction) {
-      return this.laneOccupied(car, car.edge, car.lane, control.s, requiredEnd(car.edge, control.s, 7), others, extra);
+      return this.laneOccupied(car, approach, approachLane, control.s, requiredEnd(approach, control.s, 7), others, extra);
     }
-    if (this.laneOccupied(car, car.edge, car.lane, control.s, w.eLen[car.edge], others, extra)) return true;
+    if (this.laneOccupied(car, approach, approachLane, control.s, w.eLen[approach], others, extra)) return true;
 
-    let edge = car.next, lane = car.nextLane, end = requiredEnd(edge, 0, 5);
+    let lane = ahead ? first.lane : car.nextLane, end = requiredEnd(edge, 0, 5);
     // Silniční graf někdy dělí výjezd na několik krátkých spojek.
     for (let links = 0; links < 4; links++) {
-      const move = car.exitPlan[links];
+      const move = car.exitPlan[links + (ahead ? 1 : 0)];
       const continues = move?.from === edge && move.to >= 0;
       const length = w.eLen[edge];
       const connector = continues && length < 12;
@@ -642,7 +685,10 @@ export class Traffic {
     if (control) {
       const distance = (second ? w.eLen[car.edge] : 0) + control.s - lead;
       if (distance <= 50) {
-        limit = this.drivingRule(car, control, distance, dt, limit, others, extra, stopping, !!first);
+        // Čára může ležet hned za hranicí dvou úseků. Brzdění před obsazenou
+        // křižovatkou musí začít stejně brzy jako brzdění na červenou.
+        limit = this.drivingRule(car, control, distance, dt, limit, others, extra, stopping,
+          !!first || !!control.directedHead);
       }
     }
     if (!this.users.size) return limit;
@@ -691,6 +737,10 @@ export class Traffic {
     if (next) {
       // V trase MHD je s poloha čela vozu, nikoli jeho středu.
       limit = this.drivingRule(vehicle, next.control, next.distance - 0.55, dt, limit, others);
+      if (next.control.directedHead && vehicle.enteredSignal?.group !== next.control.group &&
+          others.some(car => car.mode === 'ai' && this.crossesTransit(car.junctionMovement, next.control))) {
+        limit = Math.min(limit, stopDistance(next.distance - 0.55, dt));
+      }
     } else vehicle.trafficStop = null;
     const distance = this.pedestrianDistance(point.x, point.z, ahead);
     limit = Math.min(limit, stopDistance(distance - 1.4, dt));

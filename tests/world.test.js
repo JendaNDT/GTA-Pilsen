@@ -401,3 +401,36 @@ test('dráha se stejným pořadovým číslem jako silniční lávka použije sv
   assert.deepEqual([...sample.rails[0].y],[2,2.5]);
   assert.deepEqual(sample.railChunks[0],[0]);
 });
+
+test('auto a linkový vůz počkají u čáry na dokončení průjezdu přes koleje', () => {
+  const traffic = Object.create(Traffic.prototype), group = {};
+  const head = { kind: 'signal', directedHead: true, group, axis: 0, width: 7, x: 0, z: -10 };
+  const movement = { control: head, left: true, exitX: -5, exitZ: 5 };
+  const car = { mode: 'ai', radius: 1, junctionMovement: movement };
+  const section = { control: { group, axis: 0 }, x: 0, z: 0, yaw: 0, halfLen: 5 };
+  assert.equal(traffic.turnInProgress(car, movement, [], [section]), section);
+  assert.equal(traffic.turnInProgress(car, { ...movement, left: false }, [], [section]), undefined);
+  assert.equal(traffic.turnInProgress(car, movement, [], [{ control: { group: {}, axis: 0 } }]), undefined);
+  section.z = 20;
+  assert.equal(traffic.turnInProgress(car, movement, [], [section]), undefined);
+  Object.assign(traffic, { transitControl: () => ({ control: head, distance: 0.55 }),
+    light: () => 'green', pedestrianDistance: () => Infinity });
+  const tram = { v: 0 };
+  const limit = () => traffic.transitLimit(tram, {}, {}, 1 / 60, 1, [car]);
+  assert.equal(limit(), 0);
+  car.junctionMovement = null;
+  assert.equal(limit(), 1);
+});
+
+test('řidič odbočující z vedlejší ponechá čas na přejetí pruhu od vzdálenější čáry', () => {
+  const traffic = Object.create(Traffic.prototype);
+  traffic.world = { eTo: [0], nodeX: [0], nodeZ: [0] };
+  const rule = { edge: 0, x: 0, z: 10 };
+  const taxi = { x: 0, y: 0, z: 13, halfLen: 2.3, speed: 0, plannedTurn: { sign: -1 } };
+  const hatch = { x: -50, y: 0, z: 0, vx: 12, vz: 0, edge: 1, mode: 'ai' };
+  assert.equal(traffic.conflict(taxi, rule, [hatch], []), true);
+  hatch.x = -100;
+  assert.equal(traffic.conflict(taxi, rule, [hatch], []), false);
+  hatch.x = 50;
+  assert.equal(traffic.conflict(taxi, rule, [hatch], []), false);
+});

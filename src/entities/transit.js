@@ -403,7 +403,7 @@ export class TransitManager {
       for (const k of collisionPoints) this.heavy.push({ x: x + fx * k, y, z: z + fz * k, r: 1.35, vx, vz });
       const footprint = v.footprints[index];
       Object.assign(footprint, { x, y, z, vx, vz, yaw, halfLen: length / 2, radius: 1.4,
-        stoppedInTraffic: v.stoppedInTraffic });
+        stoppedInTraffic: v.stoppedInTraffic, control: v.enteredSignal });
       this.obstacles.push(footprint);
       if (index === (v.isTram ? 1 : 0)) Object.assign(v, { x, y, z, yaw, vx, vz });
     }
