@@ -50,6 +50,11 @@ export async function streetClearance({world, stops}, sections) {
   return function check(item) {
     const model=STREET_MODELS[item.kind];
     if(!model || ![item.x,item.z,item.yaw].every(Number.isFinite)) throw Error('Neplatný model '+item.id);
+    if (item.kind === 'platformGuide' && ![item.left, item.right].every(group =>
+      Array.isArray(group) && group.length === 2 && group.every(n => Number.isInteger(n) && n >= 1 && n <= 4)))
+      throw Error('Neplatné směry rozcestníku u ' + item.id);
+    if (item.kind === 'platformSign' && (!Number.isInteger(item.number) || item.number < 1 || item.number > 4))
+      throw Error('Neznámé číslo stanoviště u ' + item.id);
     const {x,z}=item, y=world.heightAt(x,z), r=Math.hypot(model.width,model.depth)*.5+.22;
     if (doors.some(door => blocksPassage(x,z,y,r,model.height,door))) return 'dveře MHD';
     for(let a=Math.floor((x-r)/32);a<=Math.floor((x+r)/32);a++) {

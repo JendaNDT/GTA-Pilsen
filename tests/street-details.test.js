@@ -105,3 +105,34 @@ test('práh všech 21 vstupů leží na chodníku před měřenou stěnou', asyn
   }
   assert.equal(doors, 21);
 });
+
+test('u nádraží má každé stanoviště jízdního řádu jeden označník a volné dveře', async () => {
+  const {loadStructureMap} = await import('../tools/audit_structures.mjs');
+  const {streetClearance} = await import('../tools/street_clearance.mjs');
+  const json = async path => JSON.parse(await readFile(path, 'utf8'));
+  const section = await json('tools/street-details/nadrazi.json');
+  const structures = await json('public/detail/structures/index.json');
+  const map = await loadStructureMap('public/data', structures.bridges, structures.railDecks);
+  const check = await streetClearance(map, [section]);
+  const pack = parsePack(Uint8Array.from(await readFile('public/detail/streets/nadrazi.bin')).buffer);
+  const items = pack.header.tiles.flatMap(tile => tile.furniture ?? []);
+  const signs = items.filter(item => item.kind === 'platformSign');
+  const stops = (await json('public/data/timetable.json')).stops.filter(([name]) => name === 'Hlavní nádraží');
+  assert.deepEqual(signs.map(s => s.number).sort(), stops.map(s => Number(s[3].split('/')[1])).sort());
+  for (const sign of signs) {
+    assert.equal(check(sign), null, sign.id);
+    assert.equal(map.world.buildingAt(sign.x, sign.z), -1, sign.id);
+  }
+  const guide = items.find(item => item.kind === 'platformGuide');
+  assert.equal(check(guide), null);
+  for (const sign of signs) {
+    const references = sign.x < guide.x ? guide.left : guide.right;
+    assert.ok(references.includes(sign.number), sign.id);
+  }
+  const shelter = items.find(item => item.kind === 'shelter');
+  // Zadní sklo musí být na opačné straně než vůz u nástupiště OSM 332361606.
+  const towardBus = [709.41 - 707.31, 345.82 - 337.38];
+  assert.ok(-Math.sin(shelter.yaw) * towardBus[0] + Math.cos(shelter.yaw) * towardBus[1] < 0);
+  const paving = pack.header.tiles.flatMap(tile => tile.paving ?? []);
+  assert.deepEqual(paving.map(p => p.osmWay).sort(), [332361602,332361603,332361606,1064543438,1064543439].sort());
+});

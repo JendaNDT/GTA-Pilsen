@@ -1,5 +1,11 @@
 # Stav etapy E26
 
+## Doplnění E25 u hlavního nádraží (23. 11. 2026)
+
+Větev `codex/hlavni-nadrazi` navazuje na opravu dopravy `33f74e9`. Veřejný prostor má čtyři herní označníky, oboustrannou směrovku, zpřesněnou dlažbu a opravenou orientaci přístřešku. Čtyřka stojí u severního přechodu. Blíž k bodu zastavení by sloupek zasáhl do pěší nebo dopravní trasy.
+
+Prošlo 267 testů JavaScriptu, 28 testů Pythonu a produkční sestavení. Na WebGL 2 i WebGPU prošel rozvoz, chůze v nízké a vysoké kvalitě i nástup do trolejbusu 49. Rozšířená zkouška prošla na obou také bez minimapy po trase od veřejných dveří kolem rozcestníku ke stanovišti 1 a od jižního vstupu do tramvajového ostrůvku ke stanovišti 3. Čeká porovnání konstrukce přístřešku s fotografiemi a kontrola autorem na telefonu. [Podklady, snímky a měření](../E25/nadrazi.md)
+
 ## Ranní kolona na Klatovské (23. 11. 2026)
 
 Oprava vychází z revize `f2ff94a`. V jedné desetiminutové jízdě čekalo auto ve Smetanových sadech 319,5 s. Při jiném rozložení provozu stálo auto v Tylově 537,5 s. V obou případech se fronta přenesla i do okolních ulic.

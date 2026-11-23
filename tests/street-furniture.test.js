@@ -38,3 +38,50 @@ test('nízká předvolba kreslí jednodušší lavičku a koš při stejných ko
     assert.ok(faces(false) > 0 && faces(false) < faces(true));
   }
 });
+
+test('čtyři čísla stanovišť jsou čitelná z obou stran i na nízké předvolbě', () => {
+  const shapes = new Set();
+  for (const number of [1, 2, 3, 4]) {
+    const [sign] = streetFixtures({kind:'platformSign', id:'zkouska', number, x:0, z:0, yaw:0}, scene);
+    const strokes = detailed => {
+      const faces = [];
+      drawStreetFixture({quad(a,b,c,d,color) {
+        if (color[0] === .98) faces.push([a,b,c,d]);
+      }}, sign, detailed);
+      return faces;
+    };
+    const digits = strokes(false);
+    assert.deepEqual(digits, strokes(true));
+    const front = digits.filter(face => face[0][2] > 0);
+    const back = digits.filter(face => face[0][2] < 0);
+    assert.ok(front.length > 0);
+    assert.deepEqual(back.map(face => face.map(([x,y,z]) => [0-x,y,-z])), front);
+    shapes.add(JSON.stringify(front));
+    assert.ok(Number.isFinite(sign.impulse));
+  }
+  assert.equal(shapes.size, 4);
+});
+
+test('rozcestník ukazuje na obou stranách stejné číslo ke stejnému konci tabule', () => {
+  const [guide] = streetFixtures({kind:'platformGuide', id:'rozcesti', x:0, z:0, yaw:0,
+    left:[3,4], right:[1,2]}, scene);
+  const groups = new Map();
+  drawStreetFixture({quad(a,b,c,d,color) {
+    if (color[2] !== .14) return;
+    const face = a[2] > 0 ? 'zepředu' : 'zezadu';
+    const end = a[0] > 0 ? 'východ' : 'západ';
+    const key = face + '/' + end;
+    const centers = groups.get(key) ?? [];
+    centers.push((a[0]+b[0]+c[0]+d[0])/4);
+    groups.set(key, centers);
+  }}, guide, false);
+  for (const end of ['východ','západ']) {
+    const ordered = side => {
+      const coords = groups.get(side + '/' + end);
+      const divide = end === 'východ' ? .52 : -.52;
+      return [coords.filter(x => x < divide).length, coords.filter(x => x > divide).length];
+    };
+    assert.deepEqual(ordered('zepředu'), end === 'východ' ? [2,5] : [4,3]);
+    assert.deepEqual(ordered('zezadu').reverse(), ordered('zepředu'));
+  }
+});

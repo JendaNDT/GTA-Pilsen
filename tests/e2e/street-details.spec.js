@@ -83,3 +83,47 @@ for (const quality of ['low','high']) {
     expect(errors).toEqual([]);
   });
 }
+
+test('Hlavní nádraží – od veřejných vstupů ke dvěma stanovištím bez minimapy', async ({page}) => {
+  await page.setViewportSize({width:480,height:320});
+  await page.goto(gameUrl('/?debug&quality=low&view=340&adapt=0&hour=10'));
+  await waitForGame(page);
+  await page.getByRole('button', {name:'Hrát', exact:true}).click();
+  await page.addStyleTag({content:'#minimap { display: none; }'});
+  await expect(page.locator('#minimap')).toBeHidden();
+  const route = await page.evaluate(async () => {
+    const g = window.__game;
+    window.__freeze(true);
+    // Veřejný vstup na jižním konci ostrůvku je v OSM uzel 9737859382.
+    g.player.place(609.02, 335.5);
+    const deadline = performance.now() + 45000;
+    let signs;
+    do {
+      g.chunks.update(g.player.x, g.player.z, 340, 40, g.player.y);
+      await new Promise(resolve => setTimeout(resolve, 10));
+      signs = [...g.chunks.heritage.streetSections.values()].flat().filter(f => f.kind === 'platformSign');
+      if (performance.now() > deadline) throw Error('Čtyři označníky se nenačetly.');
+    } while (signs.length < 4);
+    const walkTo = (x, z, range) => {
+      for (let i = 0; i < 2400; i++) {
+        const dx = x - g.player.x, dz = z - g.player.z;
+        const distance = Math.hypot(dx, dz);
+        if (distance < range) return true;
+        g.colliders.update(g.player.x, g.player.z);
+        g.player.update(1 / 60, dx / distance, dz / distance, false, false);
+      }
+      return false;
+    };
+    const tram = signs.find(sign => sign.number === 3);
+    const reachedTram = walkTo(tram.x, tram.z, 2);
+    // Druhá trasa začíná před veřejnými dveřmi OSM 12707369913 na straně terminálu.
+    g.player.place(658.52, 389.9);
+    const busStop = g.transit.timetable.stops.find(([name, , , code]) =>
+      name === 'Hlavní nádraží' && code === '53408/1');
+    const reachedBus = [[657.5,382], [673.6,374.1], [685,363.7], [698,353], [busStop[1],busStop[2]]]
+      .every(([x,z]) => walkTo(x, z, 1));
+    return {numbers:signs.map(sign => sign.number).sort(), reachedTram, reachedBus};
+  });
+  expect(route).toEqual({numbers:[1,2,3,4], reachedTram:true, reachedBus:true});
+  await expect(page.locator('#minimap')).toBeHidden();
+});

@@ -21,7 +21,7 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
   Po celé mapě se střídají povrchy polí, luk, lesů, břehů a obcí podle mapových ploch.
 - **Počasí a fotorežim.** Déšť prodlužuje brzdnou dráhu, sníh pokrývá střechy a dlažbu. Počasí můžeš v nastavení přepnout na vždy jasno. Fotorežim zastaví čas a uloží vlastní snímek PNG. [Ovládání a ověření E24](docs/E24.md)
 
-- **Tři úseky města při chůzi.** Na Americké, v Dřevěné a u hlavního nádraží mají vybraná průčelí vlastní přízemí. Dlažba a městský mobiliář respektují prostor pro dopravu a pěší. [Rozsah a předlohy E25](docs/E25.md)
+- **Tři úseky města při chůzi.** Na Americké, v Dřevěné a u hlavního nádraží mají vybraná průčelí vlastní přízemí. Dlažba a městský mobiliář respektují prostor pro dopravu a pěší. U hlavního nádraží čtyři modré označníky ukazují čísla stanovišť z herního jízdního řádu. Ke čtyřce se přichází od severního přechodu. [Rozsah a předlohy E25](docs/E25.md)
 - **Roční období a noční město.** Druhy stromů se liší tvarem i podzimním listím. Voda pod Wilsonovým mostem proudí, na jezech se tvoří pěna a v noci lampy osvětlují okolí. [Snímky a měření E23](docs/E23.md)
 - **Kompletní síť PMDP.** Tramvaje, trolejbusy i denní a noční autobusy obsluhují 51 linek z vybraného
   jízdního řádu. V mapě najdeš jednotlivá stanoviště a u nich odjezdy s cílem spoje. Do vozu
@@ -371,6 +371,7 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
   místní palety. [3D budovy centra Plzně](https://opendata.plzen.eu/public/opendata/detail/37) ·
   [Městské části](https://opendata.plzen.eu/public/opendata/detail/108)
   Město u sady 3D uvádí, že neobsahuje autorská díla a databáze nepodléhá autorskoprávní ochraně ani zvláštnímu právu pořizovatele. [Podmínky užití v katalogu města](https://opendata.plzen.eu/public/opendata/dataset/37)
+- Obrysy tramvajových ostrůvků a osy nástupišť v Šumavské vycházejí z OpenStreetMap (ODbL). Oboustranné označníky jsou vlastní modely projektu. [Podklady a srovnání ve hře](docs/E25/nadrazi.md)
 - Odjezdy tramvají, trolejbusů a autobusů vycházejí z GTFS Plzeňských městských dopravních podniků, a.s.
   Hra přiřazuje zastávky ke kolejím a silnicím OpenStreetMap a ořezává spoje na okraji herního území.
   [Jízdní řády PMDP](https://opendata.plzen.eu/public/opendata/detail/187) ·

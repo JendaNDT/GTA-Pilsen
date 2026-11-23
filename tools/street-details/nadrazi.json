@@ -12,11 +12,11 @@
     ],
     [
       787,
-      377
+      392
     ],
     [
       562,
-      377
+      392
     ]
   ],
   "axis": [
@@ -211,47 +211,183 @@
       "kind": "shelter",
       "x": 723.43,
       "z": 326.89,
-      "yaw": -0.4096
+      "yaw": 2.73199
+    },
+    {
+      "id": "pmdp-53408-1",
+      "kind": "platformSign",
+      "number": 1,
+      "x": 706.31,
+      "z": 335.88,
+      "yaw": 1.16
+    },
+    {
+      "id": "pmdp-53408-2",
+      "kind": "platformSign",
+      "number": 2,
+      "x": 746.8,
+      "z": 336.9,
+      "yaw": 1.16
+    },
+    {
+      "id": "pmdp-53408-3",
+      "kind": "platformSign",
+      "number": 3,
+      "x": 609.6,
+      "z": 257.6,
+      "yaw": 0
+    },
+    {
+      "id": "pmdp-53408-4",
+      "kind": "platformSign",
+      "number": 4,
+      "x": 595.1,
+      "z": 251.2,
+      "yaw": 0
+    },
+    {
+      "kind": "platformGuide",
+      "id": "rozcestnik-nadrazi",
+      "x": 659.5,
+      "z": 380.5,
+      "yaw": 0,
+      "left": [
+        3,
+        4
+      ],
+      "right": [
+        1,
+        2
+      ]
     }
   ],
   "paving": [
     {
+      "osmWay": 1064543438,
       "outline": [
         [
-          706,
-          339
+          606.32,
+          336.11
         ],
         [
-          721,
-          339
+          609.02,
+          336.03
         ],
         [
-          721,
-          342
+          612.09,
+          335.94
         ],
         [
-          706,
-          342
+          613.59,
+          335.95
+        ],
+        [
+          614.47,
+          335.95
+        ],
+        [
+          613.26,
+          256.07
+        ],
+        [
+          608.04,
+          256.15
+        ],
+        [
+          605.07,
+          256.19
         ]
       ]
     },
     {
+      "osmWay": 1064543439,
       "outline": [
         [
-          594,
-          296
+          594.73,
+          336.71
         ],
         [
-          596,
-          296
+          596.79,
+          336.69
         ],
         [
-          596.9,
-          310
+          597.82,
+          336.68
         ],
         [
-          594.9,
-          310
+          596.99,
+          252.63
+        ],
+        [
+          595.45,
+          252.65
+        ],
+        [
+          593.89,
+          252.67
+        ]
+      ]
+    },
+    {
+      "osmWay": 332361606,
+      "outline": [
+        [
+          707.87,
+          338.66
+        ],
+        [
+          742.65,
+          323.56
+        ],
+        [
+          741.53,
+          321.0
+        ],
+        [
+          706.75,
+          336.1
+        ]
+      ]
+    },
+    {
+      "osmWay": 332361602,
+      "outline": [
+        [
+          741.5,
+          339.78
+        ],
+        [
+          708.88,
+          354.39
+        ],
+        [
+          710.02,
+          356.95
+        ],
+        [
+          742.64,
+          342.34
+        ]
+      ]
+    },
+    {
+      "osmWay": 332361603,
+      "outline": [
+        [
+          780.46,
+          322.39
+        ],
+        [
+          741.5,
+          339.78
+        ],
+        [
+          742.64,
+          342.34
+        ],
+        [
+          781.6,
+          324.95
         ]
       ]
     }
@@ -259,8 +395,9 @@
   "source": {
     "furniture": "OpenStreetMap",
     "date": "2026-11-15T01:07:22Z",
-    "paving": "Pracovní obrys herního chodníku k ověření podle fotek.",
-    "shelters": "OSM uvádí zastřešení na nástupištích. Poloha a podoba modelu jsou pracovní do kontroly podle fotografií.",
-    "entrances": "Pracovní poloha dveří na vybraném průčelí. Ověřit z autorovy fotografie."
+    "paving": "OSM 1064543438 a 1064543439 určují obrysy tramvajových ostrůvků. U cest 332361606, 332361602 a 332361603 přebíráme osu a dlažbu, vykreslená šířka 2,8 m je odhad.",
+    "shelters": "Osa podle OSM 332361606, otevřená strana k zastavení vozu OSM 3395187564. Přesná poloha a rozměry konstrukce čekají na fotografii.",
+    "entrances": "Pracovní poloha dveří na vybraném průčelí. Ověřit z autorovy fotografie.",
+    "platformSigns": "Vlastní herní označníky. Čísla 1 až 4 odpovídají stanovištím 53408 v herním jízdním řádu PMDP. Polohy mají odstup od dveří, přechodů a pěších tras."
   }
 }
