@@ -106,8 +106,8 @@ export class Player {
   }
 
   sync(moving) {
-    // ve vodě je vidět hlava a ramena; při plavání je postava skloněná, proto méně ponořená
-    const swimDepth = this.swimming ? (moving > 0.2 && !ORIGINAL_CHARACTER ? 0.82 : 1.05) : 0;
+    // ve vodě je vidět hlava a ramena: při šlapání vody je postava rovně, při plavání skloněná
+    const swimDepth = !this.swimming ? 0 : ORIGINAL_CHARACTER ? 1.05 : moving > 0.2 ? 1.17 : 1.3;
     this.mesh.position.set(this.x, this.y - swimDepth, this.z);
     this.mesh.rotation.y = this.yaw;
     const s = this.pose;

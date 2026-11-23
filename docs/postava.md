@@ -37,6 +37,47 @@ o metr). Stejné kvádry s rozměry a klouby má fyzikální postava pro pády a
   dopředu nebo dozadu, koleno do 135°, loket do 140°).
 - `?postava=puvodni` vrátí kvádrovou postavu, původní houpání i původní ponoření ve vodě.
 
+## Snímky
+
+Původní postava vestoje a v běhu, nová postava vestoje a v běhu:
+
+![Před a po](postava/srovnani.jpg)
+
+Nové pohyby, zleva shora: vestoje, rozhlížení, dvě fáze chůze, dvě fáze běhu, skok, pád, podřep
+po dopadu, plavání a šlapání vody (pozice ve vodě je pro snímek vyfocena na suchu):
+
+![Pohyby](postava/pohyby.jpg)
+
+Osm chodců vedle sebe, nahoře původní kvádry, dole nová postava se stejnými barvami oblečení:
+
+![Chodci](postava/chodci.jpg)
+
+Ve vodě: plavání a šlapání vody, nad hladinou je hlava a ramena:
+
+![Ve vodě](postava/voda.jpg)
+
 ## Měření a zkoušky
 
-Měření probíhá, výsledky se doplní.
+- **Velikost.** Jedna postava má 1 510 až 1 642 trojúhelníků podle oblečení a účesu (dříve asi 170).
+  Počet vykreslovacích volání se nemění, každá postava je dál jeden objekt s kostrou.
+- **Rytmus.** Chodec asi 101 kroků za minutu, svižná chůze hráče 152, běh 183. Délka kroku roste
+  s rychlostí (0,95 až 4,2 m na dvojkrok), takže chodidlo stojí na zemi, dokud se nezvedne.
+- **Ve vodě** je postava ponořená o 1,17 m při plavání a o 1,3 m při šlapání vody (dříve 1,05 m
+  vždy), nad hladinou zůstane hlava a ramena.
+- **Zkoušky v Node** (`npm test`): 259 z 259. Nové `tests/character-pose.test.js` (8: rytmus bez
+  klouzání nohou, meze kloubů v celém rozsahu rychlostí, střídání nohou, běh proti chůzi, stání,
+  skok a dopad, plavání, náklon v zatáčce) a `tests/character-shape.test.js` (4: výchozí vzhled,
+  plochy otočené ven a uvnitř kvádrů fyzikální postavy, nejvýš 1 800 trojúhelníků a paže u trupu,
+  barvy obličeje a oblečení).
+- **Zkoušky v prohlížeči** (WebGL 2): rozpočet vykreslování na všech předvolbách včetně počtu
+  trojúhelníků, postava, chodci, hra, fyzika a srážky na ulici 29 z 29, po úpravě ponoření
+  `water` a `character` 9 z 9.
+- `npm run build` prošlo.
+
+## Známé odchylky
+
+- Pohyby se počítají z okamžité rychlosti postavy, nejsou to nahrané animace ani se mezi sebou
+  neprolínají. Jak rychle postava zpomalí, tak rychle se jí srovnají nohy.
+- Vzdálení chodci (dál než 120 m) se nehýbou, jako dosud.
+- Vlasy a kšilt smějí díl fyzikální postavy mírně přesáhnout, při pádu proto mohou krátce
+  zajet do země.
