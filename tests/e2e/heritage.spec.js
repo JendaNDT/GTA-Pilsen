@@ -116,3 +116,36 @@ test('měřené budovy se stahují podle polohy a po selhání zůstane vidět p
   expect(installed.active).toBeGreaterThan(0);
   expect(installed.released && installed.disposed).toBe(true);
 });
+
+test('Hlavní nádraží načte vlastní průčelí i v nízké kvalitě a po odjezdu ho uvolní', async ({page}) => {
+  const errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  page.on('console',entry=>{ if (entry.type()==='error') errors.push(entry.text()); });
+  await page.setViewportSize({width:640,height:384});
+  await page.goto(gameUrl('/?debug&quality=low&view=340&adapt=0&hour=23.17'));
+  await page.waitForFunction(() => window.__ready);
+  await page.getByRole('button',{name:'Hrát',exact:true}).click();
+  await page.evaluate(() => { window.__freeze(true); window.__game.player.place(696,496); });
+  await page.waitForFunction(() => {
+    const g=window.__game;
+    g.chunks.update(696,496,340,40,g.player.y);
+    const ch=g.chunks.chunks.get(g.world.chunkIndex(896,384));
+    const atlas=ch?.disposables.find(item=>item.isTexture && item.image?.src?.includes('station-front'));
+    return ch?.heritage?.group.getObjectByName('Průčelí hlavního nádraží') && atlas?.image.naturalWidth>0;
+  });
+  const observed=await page.evaluate(() => {
+    const g=window.__game, key=g.world.chunkIndex(896,384), ch=g.chunks.chunks.get(key);
+    const front=ch.heritage.group.getObjectByName('Průčelí hlavního nádraží');
+    const dome=ch.heritage.group.getObjectByName('Kupole hlavního nádraží');
+    let disposed=0;
+    const atlas=ch.disposables.find(item=>item.isTexture && item.image?.src?.includes('station-front'));
+    const assets=[front.geometry,dome.geometry,front.material,dome.material,atlas];
+    for (const asset of assets) asset.addEventListener('dispose',()=>disposed++);
+    window.__view(694,6,496,727,12,482);
+    const visible=front.visible && dome.visible && front.parent.visible;
+    g.chunks.update(-1200,-2600,340,0);
+    return {visible,disposed,unloaded:!g.chunks.chunks.has(key)};
+  });
+  expect(observed).toEqual({visible:true,disposed:5,unloaded:true});
+  expect(errors).toEqual([]);
+});

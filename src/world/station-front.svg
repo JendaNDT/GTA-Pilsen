@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1680" height="1120" viewBox="-840 0 1680 1120">
+  <title>Vlastní kresba západního průčelí plzeňského hlavního nádraží</title>
+  <defs>
+    <linearGradient id="stone" x2=".22" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#e9d9b5"/><stop offset=".52" stop-color="#e0c8a1"/><stop offset="1" stop-color="#c7b28c"/>
+    </linearGradient>
+    <linearGradient id="pillar"><stop stop-color="#8e795f"/><stop offset=".13" stop-color="#d8c59e"/><stop offset=".25" stop-color="#f3e4c4"/><stop offset=".67" stop-color="#e4d1ae"/><stop offset=".9" stop-color="#bdab87"/><stop offset="1" stop-color="#9f8d71"/></linearGradient>
+    <linearGradient id="glass" x2=".33" y2="1"><stop stop-color="#3d5264"/><stop offset=".3" stop-color="#52646c"/><stop offset=".52" stop-color="#384753"/><stop offset=".76" stop-color="#4a5356"/><stop offset="1" stop-color="#282e31"/></linearGradient>
+    <linearGradient id="recess" x2="0" y2="1"><stop stop-color="#79684e"/><stop offset=".16" stop-color="#bda881"/><stop offset="1" stop-color="#dfcca8"/></linearGradient>
+    <pattern id="joint" width="108" height="40" patternUnits="userSpaceOnUse"><path d="M0 0h108M0 20h108M52 0v20M0 20v20" fill="none" stroke="#958568" stroke-width="1.1"/><path d="M0 2h108M0 22h108" stroke="#f4e8d1" opacity=".55"/></pattern>
+    <pattern id="balusters" width="14" height="30" patternUnits="userSpaceOnUse"><path d="M5 0h4v4Q13 9 9 13Q6 16 10 23v3H4v-3q4-7 1-10Q1 8 5 4z" fill="#a8acaa" stroke="#495451" stroke-width="1.2"/></pattern>
+    <g id="course"><path d="M-850 0H850" stroke="#a18a6e" stroke-width="8"/><path d="M-850 -4H850" stroke="#f1e3c4" stroke-width="5"/><path d="M-850 6H850" stroke="#beaa89" stroke-width="2"/></g>
+    <g id="arch">
+      <path d="M-54 0v-104a54 54 0 0 1 108 0V0z" fill="url(#recess)" stroke="#97815e" stroke-width="3"/>
+      <path d="M-45 -3v-101a45 45 0 0 1 90 0V-3z" fill="url(#glass)" stroke="#76654f" stroke-width="6"/>
+      <path d="M0 -147v143M-45 -104h90M-44 -54h88" stroke="#6e685b" stroke-width="4"/>
+      <path d="M-32 -136l32 32 32-32" fill="none" stroke="#787367" stroke-width="2"/>
+      <path d="M-59 0H59v5H-59zM-57 -107h15m84 0h15" fill="#e8d6b2" stroke="#9c8a6c" stroke-width="2"/>
+      <path d="M-7 -158h14l-3 14H-4z" fill="#ead8b4" stroke="#a49171"/>
+    </g>
+    <g id="door">
+      <path d="M-43 0v-124h86V0" fill="#a49378" stroke="#8c7b61" stroke-width="3"/>
+      <path d="M-36 0v-116h72V0z" fill="#403731"/><path d="M-31 -11v-78h26v78zm36 0v-78h26v78zM-31 -95v-16h62v16z" fill="url(#glass)" stroke="#655647" stroke-width="2"/>
+      <path d="M-8 -44v9m16-9v9" stroke="#c4aa75" stroke-width="3"/>
+      <path d="M-45 -126h90" stroke="#e7d5b1" stroke-width="5"/>
+    </g>
+    <g id="leaf"><path d="M0 0C-14 -1 -22 -12 -19 -27Q-5 -21 0 0zM0 0Q-17 -12 -18 -25" fill="url(#pillar)" stroke="#a38f70" stroke-width="1.5"/></g>
+    <g id="garland"><path d="M-43 -12Q0 25 43 -12" fill="none" stroke="#a48f70" stroke-width="5"/><use xlink:href="#leaf" transform="translate(-25 0) scale(.5)"/><use xlink:href="#leaf" transform="translate(-10 6) scale(.5)"/><use xlink:href="#leaf" transform="translate(8 6) scale(-.5 .5)"/><use xlink:href="#leaf" transform="translate(24 0) scale(-.5 .5)"/></g>
+    <g id="pier">
+      <path d="M-13 0h26v-202h-26z" fill="url(#pillar)" stroke="#a28f73"/>
+      <path d="M-8 -13v-174m7 174v-174m7 174v-174" stroke="#b09b7c" stroke-width="2"/>
+      <path d="M-17 1h34v-9h-34zm1-191h32v-9h-32zM-21 -202h42v-7h-42z" fill="#e7d6b4" stroke="#9f8e72" stroke-width="2"/>
+      <path d="M-15 -196q-15 -11 -3 -15q8 -1 7 5m26 10q15 -11 3 -15q-8 -1 -7 5" fill="none" stroke="#baa483" stroke-width="3"/>
+    </g>
+    <g id="tower">
+      <path d="M-132 125h264v22h-264zm7 25h250v37h-250z" fill="url(#recess)" stroke="#a18e72" stroke-width="3"/>
+      <path d="M-137 122h274m-263 27h252m-255 38h258" stroke="#f5e4c3" stroke-width="5"/>
+      <use xlink:href="#garland" transform="translate(0 166)"/>
+      <use xlink:href="#pier" transform="translate(-107 445) scale(.95 1.15)"/><use xlink:href="#pier" transform="translate(107 445) scale(.95 1.15)"/>
+      <path d="M-57 440V291h114v149z" fill="url(#recess)" stroke="#b09a79" stroke-width="4"/>
+      <path d="M-44 437V308h88v129z" fill="url(#glass)" stroke="#81735e" stroke-width="5"/>
+      <path d="M0 308v128m-43-95h86m-85 50h85" fill="none" stroke="#82786a" stroke-width="5"/>
+      <path d="M-73 297l73-47 73 47z" fill="#b8a282" stroke="#8f7f67" stroke-width="2"/><path d="M-73 291l73-45 73 45m-137 4h129" fill="none" stroke="#f1ddba" stroke-width="6"/>
+      <use xlink:href="#garland" transform="translate(0 287) scale(.54)"/>
+      <path d="M-62 443H62v8H-62z" fill="#e1cda7" stroke="#a18a6e" stroke-width="2"/>
+      <path d="M-123 470h246m-249 8h252" stroke="#a79374" stroke-width="4"/>
+    </g>
+    <g id="lamp"><path d="M0 5v16m-8 0H8" stroke="#514d42" stroke-width="3"/><path d="M-7 -7L0 -13 7-7 4 5h-8z" fill="#f2d799" stroke="#514d42" stroke-width="3"/></g>
+  </defs>
+  <path fill="url(#stone)" d="M-840 0H840v1120H-840z"/>
+  <path fill="url(#joint)" opacity=".52" d="M-840 100H840v870H-840z"/>
+  <!-- Přízemí se třemi vstupními dveřmi a postranními výlohami. -->
+  <path d="M-840 770H840v67H-840z" fill="#d3bf9d"/><path d="M-840 837H840v96H-840z" fill="#9a9181"/><path d="M-840 838H840v95H-840z" fill="url(#joint)"/>
+  <use xlink:href="#door" transform="translate(-98 919)"/><use xlink:href="#door" transform="translate(0 919)"/><use xlink:href="#door" transform="translate(98 919)"/>
+  <g fill="url(#glass)" stroke="#897962" stroke-width="5">
+    <path d="M-746 794h44v57h-44zm187 0h42v58h-42zm165 0h42v57h-42zm137 0h43v56h-43zm475 0h43v56h-43zm137 0h42v57h-42zm165 0h42v58h-42zm187 0h44v57h-44z"/>
+  </g>
+  <use xlink:href="#lamp" transform="translate(-190 797)"/><use xlink:href="#lamp" transform="translate(190 797)"/>
+  <!-- Prosklené dveře a litinové zábradlí v úrovni kolejí. -->
+  <g transform="translate(0 740) scale(.8 .98)">
+    <use xlink:href="#door" x="-830"/><use xlink:href="#door" x="-600"/><use xlink:href="#door" x="-420"/><use xlink:href="#door" x="-220"/><use xlink:href="#door" x="-95"/><use xlink:href="#door"/><use xlink:href="#door" x="95"/><use xlink:href="#door" x="220"/><use xlink:href="#door" x="420"/><use xlink:href="#door" x="600"/><use xlink:href="#door" x="830"/>
+  </g>
+  <path fill="url(#balusters)" d="M-840 715H840v29H-840z"/><path d="M-840 714H840m-1680 30H840" stroke="#515958" stroke-width="4"/>
+  <use xlink:href="#course" y="752"/><use xlink:href="#course" y="766"/>
+  <!-- Dvojice věží, arkády a střední štít. -->
+  <use xlink:href="#tower" x="-671"/><use xlink:href="#tower" x="671"/>
+  <use xlink:href="#arch" transform="translate(-461 486) scale(.89 1.13)"/><use xlink:href="#arch" transform="translate(-350 486) scale(.89 1.13)"/>
+  <use xlink:href="#arch" transform="translate(350 486) scale(.89 1.13)"/><use xlink:href="#arch" transform="translate(461 486) scale(.89 1.13)"/>
+  <g fill="none" stroke="#b09b7e" stroke-width="7"><path d="M-540 237h294m493 0h289M-536 251h298m485 0h289"/></g>
+  <path d="M-255 200L0 35l255 165" stroke="#9f8b6c" stroke-width="17" fill="none"/><path d="M-252 190L0 28l252 162" stroke="#f2dfba" stroke-width="10" fill="none"/>
+  <use xlink:href="#pier" transform="translate(-208 521) scale(1.18 1.64)"/><use xlink:href="#pier" transform="translate(208 521) scale(1.18 1.64)"/>
+  <path d="M-153 499V282Q-152 196 0 192Q152 196 153 282V499z" fill="url(#recess)" stroke="#a48d6e" stroke-width="5"/>
+  <path d="M-135 491V279Q-135 213 0 210Q135 213 135 279V491z" fill="url(#glass)" stroke="#736955" stroke-width="6"/>
+  <g stroke="#ad9d81" stroke-width="7"><path d="M-59 217v274m118-274v274M-134 286h268m-268 97h268"/></g>
+  <g stroke="#686a61" stroke-width="2.5"><path d="M-99 237v253m71-278v278m56-278v278m72-254v254M-133 336h266m-266 99h266"/></g>
+  <path d="M-164 502h328v11h-328z" fill="#ebd8b3" stroke="#aa9475" stroke-width="3"/>
+  <g transform="translate(0 143)">
+    <use xlink:href="#leaf" transform="translate(-20 4) rotate(-42)"/><use xlink:href="#leaf" transform="translate(20 4) scale(-1 1) rotate(-42)"/>
+    <path d="M-18 -24q18 6 36 0v17Q17 7 0 17Q-17 8 -18-7z" fill="url(#pillar)" stroke="#a58f6e" stroke-width="3"/><path d="M-6 3l5-17 8 19" fill="none" stroke="#b19a76" stroke-width="3"/>
+    <use xlink:href="#garland" transform="translate(0 19)"/>
+  </g>
+  <g transform="translate(0 401)">
+    <circle r="31" cy="0" fill="#837968"/><circle r="26" fill="#efe3c7" stroke="#564e41" stroke-width="2"/>
+    <path d="M0 -23v5m0 36v5m-23 -23h5m36 0h5M-16 -16l3 3m26 26l3 3m-32 0l3-3m26-26l3-3" stroke="#514d47" stroke-width="2.2"/>
+    <path d="M-10 -9L0 0l10-15" fill="none" stroke="#373b3c" stroke-width="3"/>
+  </g>
+  <use xlink:href="#course" y="535"/><use xlink:href="#course" y="563"/>
+  <!-- Samostatné výřezy pro hranu stříšky a nástavec na temeni kupole. -->
+  <path d="M-540 978H540v56H-540z" fill="#34454b"/><path d="M-540 981H540m-1080 49H540" stroke="#94a4a3" stroke-width="2"/>
+  <text x="0" y="1021" text-anchor="middle" font-family="Arial, sans-serif" font-weight="bold" font-size="43" textLength="824" lengthAdjust="spacing" fill="#f8f1dc">PLZEŇ&#160; HLAVNÍ&#160; NÁDRAŽÍ</text>
+  <path d="M-190 1041h380v79h-380z" fill="#846e55"/><path d="M-182 1048h364v61h-364z" fill="#dcc6a0" stroke="#9d886a" stroke-width="4"/>
+  <g fill="#716657"><path d="M-125 1109v-29a16 16 0 0 1 32 0v29zm109 0v-29a16 16 0 0 1 32 0v29zm109 0v-29a16 16 0 0 1 32 0v29z"/></g>
+  <path fill="#48595a" d="M560 1050h90v45h-90z"/><path fill="#f0dfbd" d="M660 1050h90v45h-90z"/>
+</svg>

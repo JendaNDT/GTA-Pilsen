@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Vzhled hlavního nádraží od Mikulášské
+
+Na větvi `codex/hlavni-nadrazi` má západní průčelí vlastní kresbu podle autorovy předlohy, patinované kupole, římsy a čitelný název na přední hraně přístřešku. Prošlo 271 testů JavaScriptu, produkční sestavení, cílené kontroly na WebGL 2 i WebGPU a dotyková emulace telefonu. [Snímky a místní ověření](../E25/pruceli-nadrazi.md)
+
 ## Průchod pod střechami v celé mapě
 
 Na přání autora byla nádražní oprava rozšířena na 309 mapových přístřešků včetně 13 částí staveb. Po opravě prošlo sedm původně zablokovaných pěších tras v šesti čtvrtích na WebGL 2 i WebGPU. Ověřen byl též dopad na střechu, přístřešek se sklem a spodní předprostor nádraží. Prošlo 269 testů JavaScriptu, 28 testů Pythonu a produkční sestavení. [Naměřené vzdálenosti a rozsah kontroly](../E25/prednadrazi.md#průchod-pod-střechami-na-celé-mapě)

@@ -21,7 +21,7 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
   Po celé mapě se střídají povrchy polí, luk, lesů, břehů a obcí podle mapových ploch.
 - **Počasí a fotorežim.** Déšť prodlužuje brzdnou dráhu, sníh pokrývá střechy a dlažbu. Počasí můžeš v nastavení přepnout na vždy jasno. Fotorežim zastaví čas a uloží vlastní snímek PNG. [Ovládání a ověření E24](docs/E24.md)
 
-- **Tři úseky města při chůzi.** Na Americké, v Dřevěné a u hlavního nádraží mají vybraná průčelí vlastní přízemí. Dlažba a městský mobiliář respektují prostor pro dopravu a pěší. U hlavního nádraží čtyři modré označníky ukazují čísla stanovišť z herního jízdního řádu. Ke čtyřce se přichází od severního přechodu. Před hlavní budovou vede souvislá dlažba od Mikulášské až ke spodním dveřím. Pod otevřenými mapovými přístřešky lze projít i jinde ve městě. [Snímky přednádraží](docs/E25/prednadrazi.md) [Rozsah a předlohy E25](docs/E25.md)
+- **Tři úseky města při chůzi.** Na Americké, v Dřevěné a u hlavního nádraží mají vybraná průčelí vlastní přízemí. Dlažba a městský mobiliář respektují prostor pro dopravu a pěší. U hlavního nádraží čtyři modré označníky ukazují čísla stanovišť z herního jízdního řádu. Ke čtyřce se přichází od severního přechodu. Před hlavní budovou vede souvislá dlažba od Mikulášské až ke spodním dveřím. Průčelí poznáš podle zelených kupolí, velkého obloukového okna a názvu nádraží nad vchodem. Pod otevřenými mapovými přístřešky lze projít i jinde ve městě. [Denní a noční pohled na průčelí](docs/E25/pruceli-nadrazi.md) · [Snímky přednádraží](docs/E25/prednadrazi.md) [Rozsah a předlohy E25](docs/E25.md)
 - **Roční období a noční město.** Druhy stromů se liší tvarem i podzimním listím. Voda pod Wilsonovým mostem proudí, na jezech se tvoří pěna a v noci lampy osvětlují okolí. [Snímky a měření E23](docs/E23.md)
 - **Kompletní síť PMDP.** Tramvaje, trolejbusy i denní a noční autobusy obsluhují 51 linek z vybraného
   jízdního řádu. V mapě najdeš jednotlivá stanoviště a u nich odjezdy s cílem spoje. Do vozu
@@ -363,6 +363,7 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
   Pro další ulice a pro chodce hra používá odhad. [Dopravní detektory](https://opendata.plzen.eu/public/opendata/detail/160) ·
   [Hodinové profily PoliVisu](https://polivisuapi.plzen.eu/api/)
 
+- Kresba průčelí hlavního nádraží, římsy, tabule, špice a materiál měděných kupolí jsou vlastní tvorba projektu Plzeň naplno. Podkladem tvaru je měřený model města uvedený níže.
 - Fotografické materiály fasád poskytla knihovna Poly Haven (CC0). Normály, drsnost a barva stěn se balí do atlasů spolu s pěti vlastními vzory střech. Projekt vytvořil také osm variant interiérů za okny. [Sedm materiálů a otisky](tools/facade-textures.json) · [Licence Poly Haven](https://polyhaven.com/license)
 - Čtyři modely stromů a atlas jejich sezónních pohledů vznikají přímo z geometrie projektu. Druh olistění vychází ze značek OpenStreetMap pod licencí ODbL. [Převod značek](tools/build_tree_types.py) · [Vykreslení atlasu](tools/build_impostors.mjs)
 - Detail trávy, hlíny, štěrku, brázd, písku a lesního listí používá fotografie a normálové mapy z knihovny Poly Haven pod licencí CC0. [Šest použitých materiálů a jejich otisky](tools/terrain-textures.json) · [Licence Poly Haven](https://polyhaven.com/license)
