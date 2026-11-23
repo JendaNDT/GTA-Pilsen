@@ -14,6 +14,8 @@ Autor hlásil, že hra neběží přes celou obrazovku. Plátno hry vyplňuje ce
 
 **Zkušební stránka.** Revize `2b5f96f` je ve složce `zkouska-vzhledu/` na větvi `gh-pages` od revize `660f89c`. Před zveřejněním se načetla z podsložky na počítači i na emulovaném telefonu bez chyby a bez chybějícího souboru.
 
+**Potvrzení autora.** 23. 11. 2026 autor na zkušební stránce ověřil, že celá obrazovka funguje.
+
 ## Blikání, rozmazání a okraje silnic (mimo etapu, na přání autora)
 
 Autor hrál verzi 0.2.0 ze zkušební stránky na počítači a hlásil: textury při jízdě problikávají a rozmazávají se, mezi asfaltem a obrubníkem zůstává pruh jiného povrchu a terén vystupuje přes okraj silnice. Na větvi `claude/bold-ptolemy-36flyi` od revize `3e46e6b`. [Rozbor, měření a snímky](../obraz.md)
