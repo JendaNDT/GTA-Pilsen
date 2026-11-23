@@ -12,6 +12,8 @@ Autor hlásil, že hra neběží přes celou obrazovku. Plátno hry vyplňuje ce
 
 **Ověření.** `tests/fullscreen.test.js` (5), `tests/e2e/fullscreen.spec.js` (2). `npm test` 247 z 247, `npm run build` prošlo. Prohlížečové zkoušky na WebGL 2: `fullscreen`, `graphics-quality`, `game`, `physics` 20 z 20 a `photo-mode`, `startup`, `release`, `work`, `shifts`, `sound` 17 ze 17. V Chromiu bez obrazovky se rozměr okna při celé obrazovce nemění, ostatní zkoušky proto ovlivněny nejsou.
 
+**Zkušební stránka.** Revize `2b5f96f` je ve složce `zkouska-vzhledu/` na větvi `gh-pages` od revize `660f89c`. Před zveřejněním se načetla z podsložky na počítači i na emulovaném telefonu bez chyby a bez chybějícího souboru.
+
 ## Blikání, rozmazání a okraje silnic (mimo etapu, na přání autora)
 
 Autor hrál verzi 0.2.0 ze zkušební stránky na počítači a hlásil: textury při jízdě problikávají a rozmazávají se, mezi asfaltem a obrubníkem zůstává pruh jiného povrchu a terén vystupuje přes okraj silnice. Na větvi `claude/bold-ptolemy-36flyi` od revize `3e46e6b`. [Rozbor, měření a snímky](../obraz.md)
