@@ -1,6 +1,8 @@
 // Hráč pěšky a chodci.
 import { WalkingCharacter } from '../physics/character.js';
-import { makePedMesh, animatePed } from './models.js';
+import { makePedMesh, poseCharacter } from './models.js';
+import { LANDING_TIME, landingStrength, phaseRate } from './character-pose.js';
+import { ORIGINAL_CHARACTER } from './character-shape.js';
 import { QUALITY, RC, RF } from '../config.js';
 import { wrapAngle } from './vehicles.js';
 
@@ -26,6 +28,9 @@ export class Player {
     this.colliders = colliders;
     this.character = null;
     this.streetContact = { x: 0, z: 0, depth: 0 };
+    // stav pro pohyby postavy (character-pose.js)
+    this.time = 0; this.idle = 0; this.landing = 0; this.landingPower = 0; this.airVy = 0; this.turn = 0;
+    this.pose = { speed: 0, phase: 0, time: 0, idle: 0, grounded: true, vy: 0, landing: 0, swimming: false, turn: 0, seed: 0 };
   }
 
   setWalking(active) {
@@ -67,6 +72,7 @@ export class Player {
       const want = Math.atan2(dirX, dirZ);
       this.yaw += clamp(wrapAngle(want - this.yaw), -12 * dt, 12 * dt);
     }
+    const yawBefore = this.yaw, wasGrounded = this.grounded;
     const k = Math.min(1, dt * (this.grounded ? 12 : 2.5));
     this.vx += (tvx - this.vx) * k; this.vz += (tvz - this.vz) * k;
     this.setWalking(true);
@@ -83,15 +89,32 @@ export class Player {
       this.character.place(x, this.y, z);
     }
     const moving = Math.hypot(this.vx, this.vz);
-    this.phase += dt * (3 + moving * 2.2);
+    // fáze kroku podle uražené vzdálenosti (boty neklouzají), ve vodě rytmus temp
+    if (ORIGINAL_CHARACTER) this.phase += dt * (3 + moving * 2.2);
+    else this.phase += this.swimming ? (moving > 0.2 ? dt * Math.PI * 2 / 1.3 : 0) : phaseRate(moving) * dt;
+    this.time += dt;
+    this.idle = moving < 0.15 && this.grounded ? this.idle + dt : 0;
+    if (!this.grounded) this.airVy = this.vy;
+    if (this.grounded && !wasGrounded) {
+      this.landingPower = landingStrength(this.airVy);
+      this.landing = this.landingPower > 0 ? LANDING_TIME : 0;
+    }
+    this.landing = Math.max(0, this.landing - dt);
+    this.turn += ((dt > 0 ? wrapAngle(this.yaw - yawBefore) / dt : 0) - this.turn) * Math.min(1, dt * 8);
     this.sync(moving);
     return fallDamage;
   }
 
   sync(moving) {
-    this.mesh.position.set(this.x, this.y - (this.swimming ? 1.05 : 0), this.z);
+    // ve vodě je vidět hlava a ramena; při plavání je postava skloněná, proto méně ponořená
+    const swimDepth = this.swimming ? (moving > 0.2 && !ORIGINAL_CHARACTER ? 0.82 : 1.05) : 0;
+    this.mesh.position.set(this.x, this.y - swimDepth, this.z);
     this.mesh.rotation.y = this.yaw;
-    animatePed(this.mesh, this.phase, Math.min(1, moving / 3));
+    const s = this.pose;
+    s.speed = moving; s.phase = this.phase; s.time = this.time; s.idle = this.idle;
+    s.grounded = this.grounded; s.vy = this.vy; s.swimming = this.swimming; s.turn = this.turn;
+    s.landing = this.landing > 0 ? this.landingPower * Math.sin(Math.PI * Math.min(1, (LANDING_TIME - this.landing) / LANDING_TIME * 1.6 + 0.2)) ** 0.7 : 0;
+    poseCharacter(this.mesh, s);
   }
 }
 
@@ -313,10 +336,16 @@ export class PedManager {
         }
         moving = p.speed;
       }
-      p.phase += dt * (3 + moving * 2.4);
+      p.phase += ORIGINAL_CHARACTER ? dt * (3 + moving * 2.4) : phaseRate(moving) * dt;
+      p.time = (p.time ?? 0) + dt;
+      p.idle = moving < 0.15 ? (p.idle ?? 0) + dt : 0;
       p.mesh.position.set(p.x, p.y, p.z);
       p.mesh.rotation.y = p.yaw;
-      if (d2 < 120 * 120) animatePed(p.mesh, p.phase, Math.min(1, moving / 2.5));
+      if (d2 < 120 * 120) {
+        const pose = p.pose ??= { grounded: true, calm: 1, seed: p.phase };
+        pose.speed = moving; pose.phase = p.phase; pose.time = p.time; pose.idle = p.idle;
+        poseCharacter(p.mesh, pose);
+      }
     }
   }
 }
