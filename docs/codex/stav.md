@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Postava ve větvi main (23. 11. 2026)
+
+Autor schválil sloučení stylizované postavy. `main` je na revizi `34ae246` (sloučení `claude/bold-ptolemy-36flyi`, obsah shodný s ověřenou revizí `c0c9a3e`). Celá sada prohlížečových zkoušek na WebGL 2 182 ze 184. Selhaly proměnlivé zkoušky „start a minuta hraní“ (22 snímků, vydání 0.2.0 má 22 až 24) a „ranní špička, Klatovská“ (selhává i na vydání 0.2.0). [Podrobnosti](../postava.md#sloučení-do-main-na-přání-autora)
+
 ## Postava · vylepšení vzhledu (mimo etapu, na přání autora)
 
 Autor schválil úpravu ramen a paží, zad a boků a jemné zastínění (`450ad17`). Ramena se svažují ke krku, vršek paže je oblý ramenní sval pod kloubem ramene, paže jsou o 7 cm blíž k trupu, boky navazují na stehna, ruka má dlaň s prsty. Zastínění v barvách postavy vypne `?zastineni=0`. [Popis a snímky](../postava.md#vylepšení-vzhledu-na-přání-autora)
