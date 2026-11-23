@@ -8,7 +8,15 @@ Autor hrál verzi 0.2.0 ze zkušební stránky na počítači a hlásil: textury
 
 **Oprava.** `src/world/image-quality.js` (mizení vzorů podle buňky, filtrování, rozlišení, doostření, pořadí dlaždic), `asphalt.js`, `materials.js`, `building-nodes.js`, `postfx.js` (SharpenNode po TRAA), `chunks.js` (pořadí dlaždic podle šachovnice, tramvajový pás se nekreslí na vozovce), `road-edge-terrain.js` a `world.roadEdgeDistance` (snížení uzlů terénu za okrajem vozovky). Původní obraz vrací `?obraz=puvodni`, doostření vypne `?ostreni=0`.
 
-**Ověření.** Nové testy `tests/image-quality.test.js` (6) a `tests/road-edge-terrain.test.js` (3), prohlížečová zkouška `tests/e2e/image-quality.spec.js` (3). Výsledky měření a zkoušek jsou v [protokolu](../obraz.md).
+**Ověření.**
+- `npm test` 242 z 242 (nové `tests/image-quality.test.js` 6 a `tests/road-edge-terrain.test.js` 3), `npm run build` prošlo.
+- Prohlížečové zkoušky na WebGL 2: celá sada 178 ze 182, nová `image-quality.spec.js` 3 ze 3, rozpočet vykreslování na všech předvolbách prošel. `graphics-quality.spec.js` čekala rozlišení 0,75 po přepnutí na nízkou předvolbu; nízká ho na počítači záměrně kreslí v plném rozlišení, očekávání je teď 1 a zkouška prošla. `renderer.spec.js` (minuta hraní) selhává v prostředí dlouhodobě.
+- Okraje silnic (32 dlaždic centra, střední předvolba): terén nad asfaltem 0,71 → 0,30 %, nad 5 cm 0,14 → 0,04 %, nejvyšší 0,74 → 0,09 m. Třepot vozovky při posunu kamery o půl pixelu −40 %. Nízká předvolba ostrost proti ideálu 0,82 → 0,93. Vysoká předvolba za jízdy 0,93 → 1,22 původní ostrosti vestoje.
+- Výkon: na softwarovém vykreslování nejsou časy použitelné (0,1 až 1,4 snímku za sekundu). Nízká předvolba na počítači kreslí o 78 % pixelů víc, vysoká přidává průchod doostření. Měření na autorově počítači zbývá.
+
+**Otevřená otázka.** `traffic-observation.spec.js`: Klatovská selhává i na původní revizi `3e46e6b` (386,5 s). Hlavní nádraží na nové verzi dvakrát 141 s (mez 120 s), na původní revizi i s `?obraz=puvodni` prošlo. Úpravy nemění kód provozu ani fyziky. Příčina neověřená, nejspíš jiné načasování startu.
+
+[Rozbor, měření a snímky](../obraz.md)
 
 **Odbočka.** První pokus kreslil tramvajový pás jako samostatnou vrstvu pod asfaltem. Přidal tím vykreslovací volání a pohled na Lochotín na nízké předvolbě překročil rozpočet (111 volání, mez 110). Mez se neměnila, pás se místo toho na vozovce nekreslí.
 

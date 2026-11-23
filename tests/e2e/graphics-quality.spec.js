@@ -22,7 +22,8 @@ test('E17 – volba v nastavení přepne grafiku ve stejné hře a uloží ji', 
     const saved = JSON.parse(localStorage.getItem('plzen-naplno-v1'));
     return [game === window.originalGame, game.money, game.postfx.antialias, Boolean(game.env.csm),
       saved.graphics.choice, game.renderer.getPixelRatio()];
-  })).toEqual([true, 771, 'fxaa', false, 'low', 0.75]);
+    // Nízká předvolba kreslí na počítači v plném rozlišení (dřív 0,75, obraz byl rozmazaný; docs/obraz.md).
+  })).toEqual([true, 771, 'fxaa', false, 'low', 1]);
   await page.goto(gameUrl('/?debug&adapt=0&view=620'));
   await page.waitForFunction(() => window.__ready);
   expect(await page.evaluate(() => [window.__game.money, window.__game.postfx.antialias])).toEqual([771, 'fxaa']);

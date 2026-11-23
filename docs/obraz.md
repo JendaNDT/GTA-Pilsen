@@ -145,7 +145,45 @@ původně za jízdy (rozmazané), vlevo dole po úpravě za jízdy, vpravo dole 
 
 ## Výsledky zkoušek
 
-Zkoušky a měření výkonu probíhají, výsledky se doplní.
+- `npm test`: 242 z 242 (nové `tests/image-quality.test.js` a `tests/road-edge-terrain.test.js`). Nový test
+  mizení vzorů na původních hodnotách selže (zrno asfaltu mizelo až u pixelu 10 cm při buňce 3 cm),
+  test terénu u okraje bez úpravy najde terén 0,1 m nad asfaltem.
+- `npm run build` prošlo.
+- Nová prohlížečová zkouška `tests/e2e/image-quality.spec.js` (3 případy): v Prešovské s `?obraz=puvodni`
+  leží přes asfalt ulice pás ze sousední dlaždice, po úpravě jen asfalt ulice a koleje. Sousední
+  dlaždice mají různé pořadí asfaltu. Vysoká předvolba doostřuje a filtruje zemi 16×, nízká kreslí
+  na počítači v plném rozlišení; `?obraz=puvodni` vrátí původní hodnoty.
+- Celá sada prohlížečových zkoušek na WebGL 2: 178 ze 182. Upravená zkouška `graphics-quality.spec.js`
+  čekala po přepnutí na nízkou předvolbu rozlišení 0,75. Nízká předvolba ho na počítači záměrně
+  kreslí v plném rozlišení, očekávání je teď 1 (ostatní kontroly zkoušky se nemění). Po úpravě prošla.
+  `renderer.spec.js` (minuta hraní, 19 snímků za 30 s při mezi nad 30) selhává v tomto prostředí
+  dlouhodobě, softwarové vykreslování je na ni pomalé.
+- `traffic-observation.spec.js` (deset minut ranní špičky): Klatovská selhává i na původní revizi
+  `3e46e6b` (stání 386,5 s, mez 120 s; nová verze 401,5 s). Hlavní nádraží na nové verzi selhalo
+  dvakrát se stáním 141 s, na původní revizi i na nové verzi s `?obraz=puvodni` prošlo. Úpravy
+  nemění kód provozu ani fyziky, fyzika nečte vykreslenou síť. Podle dřívějších záznamů zkouška
+  kolísá i na stejném kódu (205 s, 343 s, nebo projde). Vysvětlení není ověřené. Nejpravděpodobnější
+  je, že nový výpočet terénu u okraje prodlouží start a do začátku simulace se stihne načíst jiná
+  část okolí. Otevřená otázka.
+- Rozpočet vykreslování (`budget.spec.js`) prošel na všech předvolbách.
+
+## Výkon
+
+Nástroj `tools/measure_map.mjs --work` na softwarovém WebGL 2 v okně 1920 × 1080 stihl za 10 s jen
+1 až 15 snímků (0,1 až 1,4 snímku za sekundu), časy proto nejsou použitelné. Počty vykreslování:
+
+| Předvolba · scénář | Volání původně / po | Trojúhelníky původně / po | Měřítko obrazu |
+|---|---:|---:|---|
+| nízká · auto | 137 / 137 | 361 938 / 359 355 | 0,75 → 1 |
+| nízká · vrtulník | 49 / 51 | 133 080 / 137 196 | 0,75 → 1 |
+| vysoká · auto | 511 / 519 | 1 192 771 / 1 194 657 | 1 |
+| vysoká · vrtulník | 130 / 136 | 247 979 / 269 707 | 1 |
+
+Vysoká předvolba přidává doostření (jeden průchod přes celý obraz a jedna kopie). Nízká předvolba
+na počítači kreslí o 78 % pixelů víc než dřív. Zhoršení nad 10 % má tento důvod: ve 3/4 rozlišení
+byl obraz rozmazaný. Když grafika nestíhá, automatika hry rozlišení sama sníží (až na 0,6), a
+`?obraz=puvodni` vrátí původní stav. Stavba 32 dlaždic se nezměnila (12,50 s → 12,43 s).
+Skutečný čas grafické karty zbývá změřit na autorově počítači.
 
 ## Známé odchylky a návrhy
 
