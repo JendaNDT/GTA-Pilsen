@@ -44,6 +44,7 @@ export class TrafficBodies {
   }
 
   keepCar(vehicle) {
+    vehicle.setArcade(false);
     const { car } = vehicle;
     car.physical = vehicle;
     this.dynamic.set(car, vehicle);

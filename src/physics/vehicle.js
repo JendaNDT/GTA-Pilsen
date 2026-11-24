@@ -106,6 +106,7 @@ export class PlayerVehicle {
     this.listener = new Jolt.VehicleConstraintStepListener(this.constraint);
     physics.system.AddStepListener(this.listener);
     this.wheels = Array.from({length: 4}, (_, i) => Jolt.castObject(this.constraint.GetWheel(i), Jolt.WheelWV));
+    this.arcade = false;
     this.friction = 1;
     this.callbacks = new Jolt.VehicleConstraintCallbacksJS();
     this.callbacks.GetCombinedFriction = (_index, _direction, tireFriction) => tireFriction * this.friction;
@@ -183,24 +184,40 @@ export class PlayerVehicle {
     return speed;
   }
 
+  setArcade(enabled) {
+    if (this.arcade === enabled) return;
+    this.arcade = enabled;
+    this.controller.GetEngine().mMaxTorque = this.spec.torque * (enabled ? 1.35 : 1);
+    for (let i = 0; i < this.wheels.length; i++) {
+      this.wheels[i].GetSettings().mMaxBrakeTorque = this.spec.brake * (i < 2 ? 1.4 : 0.94) * (enabled ? 1.35 : 1);
+    }
+    this.friction = this.surface * this.spec.grip;
+    this.surfaceTimer = 0;
+  }
+
   drive(dt, throttle, steer, handbrake, arcade, surface) {
     const { car, spec } = this;
+    this.setArcade(arcade);
     this.surfaceTimer -= dt;
     if (this.surfaceTimer <= 0) {
       this.surfaceTimer = 0.25;
       this.surface = surface(car.x, car.z);
     }
-    this.friction = this.surface * (arcade ? 1.15 : 1) * spec.grip;
+    this.friction = this.surface * (arcade ? 1.38 : 1) * spec.grip;
     const speed = car.speed;
     const braking = throttle * speed < 0 && Math.abs(speed) > 0.65;
     car.brakeLights = braking || handbrake;
     const slip = this.wheels.reduce((max, w) => w.HasContact() ? Math.max(max, Math.abs(w.mLongitudinalSlip)) : max, 0);
     const abs = arcade && Math.abs(speed) > 3 && slip > 0.18;
-    const traction = arcade && Math.abs(speed) > 1 && slip > 0.22 ? 0.65 : 1;
-    const limit = Math.min(1, 0.13 + 32 / (32 + speed * speed));
-    car.steer += (Math.max(-1, Math.min(1, steer + steeringPull(car))) * limit - car.steer) * Math.min(1, dt * 8);
+    const traction = arcade && Math.abs(speed) > 1 && slip > 0.22 ? 0.83 : 1;
+    const steeringRange = arcade ? 60 : 32;
+    const limit = Math.min(1, 0.13 + steeringRange / (steeringRange + speed * speed));
+    const steeringRate = arcade ? (steer ? 12 : 16) : 8;
+    // Mírné brzdění motorem po puštění plynu postupně slábne při dojezdu.
+    const coastBrake = arcade && !throttle ? Math.min(0.09, Math.abs(speed) * 0.012) : 0;
+    car.steer += (Math.max(-1, Math.min(1, steer + steeringPull(car))) * limit - car.steer) * Math.min(1, dt * steeringRate);
     this.controller.SetDriverInput(braking ? 0 : throttle * traction * enginePower(car),
-      car.steer, braking ? (abs ? 0.68 : 1) : 0, handbrake ? 1 : 0);
+      car.steer, braking ? (abs ? 0.8 : 1) : coastBrake, handbrake ? 1 : 0);
     if (throttle || handbrake || steer) this.physics.bodies.ActivateBody(this.body.GetID());
     if (arcade && !handbrake && !steer && Math.abs(speed) > 4) {
       const omega = this.body.GetAngularVelocity();

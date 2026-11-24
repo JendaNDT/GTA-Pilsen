@@ -1,5 +1,20 @@
 # Stav etapy E27
 
+## Arkádové řízení hráčova auta
+
+Úprava na větvi `codex/arkadove-rizeni` navazuje na kameru z revize `053d326`. V arkádovém režimu má auto silnější motor a provozní brzdy, ve městě má větší rejd a po puštění plynu brzdí motorem. S rychlostí rejd stále klesá. Při předání vozidla provozu nebo přepnutí na realistické řízení se obnoví jeho původní nastavení.
+
+| Malé auto na stejné suché rovině | Před | Po |
+| --- | ---: | ---: |
+| Rozjezd z 0 na 50 km/h | 5,45 s | 3,83 s |
+| Brzdná dráha ze 100 km/h | 44,4 m | 33,8 m |
+| Změna směru za půl sekundy při 65 % rejdu po dosažení 40 km/h | 12,8° | 19,8° |
+| Rychlost dvě sekundy po puštění plynu při 40 km/h | 41,1 km/h | 32,9 km/h |
+
+Původní zkouška arkádového režimu měla dolní mez času zrychlení a délky brzdné dráhy. Nové intervaly pro malé a sportovní auto odpovídají požadovanému svižnějšímu rozjezdu a kratšímu zastavení. Přibylo ověření reakce na řízení, dojezdu a obnovení nastavení při změně režimu i po vystoupení.
+
+Prošlo všech 310 jednotkových testů, produkční sestavení a 24 cílených zkoušek ve hře na WebGL 2 a WebGPU. Ověřily mimo jiné běžnou jízdu po mostě, průjezd tunelem, výjezd na rampu, nastavení řízení a kameru při rozjezdu.
+
 ## Oprava kamery při rozjezdu auta
 
 Oprava vychází z revize `47b808d`. Kamera za autem přebírá polohu a natočení právě vykreslené karoserie. Stejná poloha slouží i ke kontrole překážek mezi autem a kamerou. Při třech sekundách rovného rozjezdu se 120 aktualizacemi obrazu za sekundu původní směr pohledu míjel očekávaný cíl až o 2,1–2,2 cm. Po opravě klesla největší měřená odchylka mezi kroky fyziky pod 0,1 mm na WebGL 2 i WebGPU. Prošlo všech 308 jednotkových zkoušek, produkční sestavení a osm cílených prohlížečových kontrol rozjezdu, tunelu Valík a kamenného okraje mostu.

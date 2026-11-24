@@ -44,7 +44,7 @@ test('poháněné nápravy a rychlost na omezovači odpovídají typu auta', () 
   }
 });
 
-for (const [type, from, to] of [['hatch', 11, 14], ['sport', 4, 6]]) {
+for (const [type, from, to] of [['hatch', 8.5, 10], ['sport', 3.8, 4.8]]) {
   test(type + ' splní zrychlení na 100 km/h i brzdnou dráhu s ABS', () => {
     const { car, tick, close } = track(type);
     try {
@@ -56,10 +56,53 @@ for (const [type, from, to] of [['hatch', 11, 14], ['sport', 4, 6]]) {
       for (let i = 0; i < 600 && car.speed > 0; i++) tick(-1);
       const distance = car.z - start;
       assert.ok(car.speed <= 0);
-      assert.ok(distance >= 36 && distance <= 45, 'Brzdná dráha ' + distance + ' m');
+      assert.ok(distance >= 29 && distance <= 36, 'Brzdná dráha ' + distance + ' m');
     } finally { close(); }
   });
 }
+
+test('arkádové řízení rychle zatočí v městské rychlosti a při dojezdu zpomalí', () => {
+  for (const steer of [0, 0.65]) {
+    const { car, tick, close } = track('hatch');
+    try {
+      for (let i = 0; car.speed * 3.6 < 40 && i < 360; i++) tick(1);
+      assert.ok(car.speed * 3.6 >= 40);
+      const yaw = car.yaw;
+      const frames = steer ? 30 : 120;
+      for (let i = 0; i < frames; i++) tick(0, steer);
+      if (steer) {
+        const angle = Math.abs(car.yaw - yaw) * 180 / Math.PI;
+        assert.ok(angle > 16 && angle < 24, 'Změna směru za půl sekundy: ' + angle);
+      } else {
+        assert.ok(car.speed * 3.6 > 28 && car.speed * 3.6 < 36, 'Rychlost po dojezdu: ' + car.speed * 3.6);
+      }
+    } finally { close(); }
+  }
+});
+
+test('po přepnutí řízení i předání auta provozu se obnoví běžný motor a brzdy', async () => {
+  const { TrafficBodies } = await import('../src/physics/traffic-bodies.js');
+  const { vehicle, tick, close } = track('hatch');
+  const settings = () => [vehicle.controller.GetEngine().mMaxTorque,
+    ...vehicle.wheels.map(wheel => wheel.GetSettings().mMaxBrakeTorque)];
+  const traffic = new TrafficBodies(vehicle.physics);
+  try {
+    tick(0, 0, false, false);
+    const standard = settings();
+    tick(1);
+    assert.ok(settings().every((value, index) => value > standard[index]));
+    tick(0, 0, false, false);
+    assert.deepEqual(settings(), standard);
+    tick(1);
+    traffic.keepCar(vehicle);
+    assert.deepEqual(settings(), standard);
+    assert.equal(traffic.takeCar(vehicle.car), vehicle);
+  } finally {
+    Jolt.destroy(traffic.pos);
+    Jolt.destroy(traffic.rotation);
+    close();
+  }
+});
 
 test('ruční brzda udrží vůz na patnáctiprocentním svahu', () => {
   const { car, tick, close } = track('hatch', Math.atan(0.15));

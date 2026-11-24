@@ -194,7 +194,8 @@ V menu **Nastavení → Kvalita grafiky** můžeš vybrat jednu ze čtyř předv
 volba **Automaticky** přizpůsobí kvalitu zařízení podle prvních deseti sekund hraní.
 
 [E18 přidává odpružení, pneumatiky a automatickou převodovku auta](docs/E18.md).
-V **Nastavení → Řízení** si zvolíš arkádový nebo realistický režim. Klávesa **R**
+V **Nastavení → Řízení** si zvolíš arkádový nebo realistický režim. V arkádovém autě se rychleji rozjedeš,
+snáz zatočíš v městské rychlosti a po puštění plynu auto postupně zpomalí. Klávesa **R**
 vrátí auto na nejbližší silnici. Pokud hru uložíš za volantem, při návratu
 najdeš stojící auto na uloženém místě. V režimu `?debug` zobrazí **F8** povrchy pro
 fyziku a **F9** měření včetně otáček a prokluzu jednotlivých kol.
