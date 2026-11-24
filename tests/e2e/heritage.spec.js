@@ -229,3 +229,49 @@ test('Velké divadlo na telefonu načte terasu i zábradlí a obnoví je po náv
     expect(errors).toEqual([]);
   }finally{await context.close();}
 });
+
+test('Nové divadlo na telefonu dovolí projít portálem a pod spojovací chodbou', async ({browser})=>{
+  const context=await browser.newContext({hasTouch:true,isMobile:true,viewport:{width:844,height:390}});
+  try {
+    const page=await context.newPage();
+    const errors=[];
+    page.on('pageerror',error=>errors.push(error.message));
+    await page.goto(gameUrl('/?debug&quality=low&view=340&adapt=0&hour=13'));
+    await page.waitForFunction(()=>window.__ready);
+    await page.getByRole('button',{name:'Hrát',exact:true}).tap();
+    await page.evaluate(()=>{window.__freeze(true);window.__game.player.place(-389,-121);});
+    const waitForTheatre=()=>page.waitForFunction(()=>{
+      const g=window.__game;
+      g.chunks.update(-389,-121,340,40,g.player.y);
+      return g.scene.getObjectByName('Nové divadlo')?.material.map.image?.naturalWidth>0;
+    });
+    await waitForTheatre();
+    const result=await page.evaluate(()=>{
+      const g=window.__game, dx=.06682, dz=-.99776;
+      const walk=(u,v,steps)=>{
+        const x=-388.66+dx*u-dz*v, z=-121.53+dz*u+dx*v;
+        g.colliders.update(x,z);
+        g.player.place(x,z,g.world.heightAt(x,z)+.1);
+        for(let i=0;i<35;i++) g.player.update(1/60,0,0,false,false);
+        for(let i=0;i<steps;i++) g.player.update(1/60,dx,dz,false,false);
+        return u+(g.player.x-x)*dx+(g.player.z-z)*dz;
+      };
+      const door=walk(-1,-.16,220), pier=walk(-1,-1.84,160);
+      const ball=walk(-1,-18.5,160), bridge=walk(10,-21.8,270);
+      const mesh=g.scene.getObjectByName('Nové divadlo');
+      let disposed=0;
+      for(const asset of [mesh.geometry,mesh.material,mesh.material.map]) asset.addEventListener('dispose',()=>disposed++);
+      g.chunks.update(-1200,-2600,340,0);
+      return {door,pier,ball,bridge,disposed};
+    });
+    expect(result.door).toBeGreaterThan(3);
+    expect(result.door).toBeLessThan(5.4);
+    expect(result.pier).toBeLessThan(2.35);
+    expect(result.ball).toBeGreaterThan(2.4);
+    expect(result.ball).toBeLessThan(3.55);
+    expect(result.bridge).toBeGreaterThan(18);
+    expect(result.disposed).toBe(3);
+    await waitForTheatre();
+    expect(errors).toEqual([]);
+  } finally {await context.close();}
+});

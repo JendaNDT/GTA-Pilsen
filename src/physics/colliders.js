@@ -4,6 +4,7 @@ import { CHUNK } from '../config.js';
 import { cornerTriangles, roadSurfaceTriangles, sidewalkTriangles, terrainTriangles } from './terrain.js';
 import { RoadStructures } from './structures.js';
 import { layers } from './world.js';
+import { modernTheatreCollision } from '../world/modern-theatre.js';
 import { forgeRoofFaces } from '../world/mill.js';
 
 function roof(emit, a, b, c) {
@@ -109,7 +110,11 @@ export class TileColliders {
     roadSurfaceTriangles(w, ci, emit);
     cornerTriangles(w, ci, emit);
     sidewalkTriangles(w, ci, emit);
-    for (const i of w.bChunks[ci] ?? []) building(w, i, this.replaced.has(i) || i === w.heritage.forgeIndex, emit);
+    const theatre = w.heritage.modernTheatre;
+    for (const i of w.bChunks[ci] ?? []) {
+      if (!theatre?.collisionSkip.has(i)) building(w, i, this.replaced.has(i) || i === w.heritage.forgeIndex, emit);
+    }
+    if (theatre?.ci === ci) modernTheatreCollision(w, theatre, emit);
     if (ci === w.heritage.forgeChunk) forgeRoofFaces(w, w.heritage.forgeIndex, (a, b, c) => roof(emit, a, b, c));
     const tile = this.roofs.get(ci);
     if (tile) {

@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Nové divadlo v Plzni
+
+Na větvi `codex/nove-divadlo` dostalo Nové divadlo nakloněné průčelí s otvory, červený sál a tmavé administrativní křídlo s prosklenými spojovacími chodbami. V nízké kvalitě prošla dotyková zkouška chůze až k foyer i pod přední spojovací chodbou na obou vykreslovačích. Prošlo 276 testů JavaScriptu a sestavení hry. V celé sadě prošlo 394 z 396 prohlížečových kontrol. Zbývající dvě kontroly kontrastu nočních oken na náměstí selhávaly už před úpravou. [Snímky a výsledky ověření](../E25/nove-divadlo.md)
+
 ## Velké divadlo J. K. Tyla
 
 Větev `codex/velke-divadlo` navazuje na synagogu. Divadlo má vlastní historické průčelí, prostorovou balustrádu, střechu jeviště a souvislou parkovou terasu. Prošlo 274 testů JavaScriptu, produkční sestavení a dotyková zkouška na WebGL 2 i WebGPU. V celé sadě prošlo 392 z 394 prohlížečových kontrol. Kontrola nočních oken na náměstí selhala na obou vykreslovačích i na výchozí revizi. Postava na terase přistála a při chůzi se zastavila o její sklo. [Srovnání vstupu a parkové strany](../E25/velke-divadlo.md)

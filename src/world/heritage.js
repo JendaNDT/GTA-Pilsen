@@ -1,6 +1,7 @@
 // Měřené městské dlaždice a vlastní model vodního hamru.
 import { canopyTile, stationMaterials, stationSurfaces, stationTile } from './station-building.js';
 import { alignTheatreTerrace, theatreMaterial, theatreSurfaces, theatreTile } from './theatre.js';
+import { modernTheatreGeometry, modernTheatreMaterial, modernTheatreSite, modernTheatreTile } from './modern-theatre.js';
 import { synagogueMaterial, synagogueSurface, synagogueTile } from './synagogue.js';
 import { forecourtBounds } from './station-forecourt.js';
 import * as THREE from 'three/webgpu';
@@ -83,6 +84,7 @@ export class Heritage {
     if (showTheatre && manifest.tiles.some(tile=>tile[2]===theatreTile)) {
       this.theatreTerrace=alignTheatreTerrace(world);
     }
+    this.modernTheatre = PARAMS.get('noveDivadlo') === 'puvodni' ? null : modernTheatreSite(world,manifest);
     const forge = world.buildingAt(FORGE.x, FORGE.z);
     this.forgeIndex = forge;
     this.forgeWorking = false;
@@ -125,7 +127,7 @@ export class Heritage {
       const tile = this.cells.get(ch.ci);
       const hasStreet = this.streets?.tiles.has(tile.name);
       const customFacade = stationTiles.has(tile.name) || (showSynagogue && tile.name === synagogueTile)
-        || (showTheatre && tile.name === theatreTile);
+        || (showTheatre && tile.name === theatreTile) || (this.modernTheatre && tile.name === modernTheatreTile);
       loadCityTile(tile.name, controller.signal, hasStreet || customFacade).then(async (pack) => {
         if (controller.signal.aborted) return;
         const { version, cx, cz } = pack.header;
@@ -189,10 +191,19 @@ export class Heritage {
       if (showTheatre && entry.name === theatreTile) {
         const theatre = theatreSurfaces(pack, geometry, this.world, this.theatreTerrace);
         if (theatre) {
-          owner.theatreTerrace = this.theatreTerrace;
+          owner.facadeBuildings = new Set([this.theatreTerrace]);
           const material = theatreMaterial();
           add(theatre.geometry, material).name = 'Velké divadlo';
           sections.push({id:'divadlo-zabradli', fixtures:theatre.fixtures, paving:[]});
+          owner.disposables.push(material, material.map);
+        }
+      }
+      if (this.modernTheatre && entry.name === modernTheatreTile) {
+        const modern = modernTheatreGeometry(pack, geometry, this.world, this.modernTheatre);
+        if (modern) {
+          owner.facadeBuildings = this.modernTheatre.hidden;
+          const material = modernTheatreMaterial();
+          add(modern, material).name = 'Nové divadlo';
           owner.disposables.push(material, material.map);
         }
       }

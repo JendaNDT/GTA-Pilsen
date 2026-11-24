@@ -363,6 +363,7 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
   Pro další ulice a pro chodce hra používá odhad. [Dopravní detektory](https://opendata.plzen.eu/public/opendata/detail/160) ·
   [Hodinové profily PoliVisu](https://polivisuapi.plzen.eu/api/)
 
+- Perforovaná stěna Nového divadla, kresba jeho fasád, prosklené chodby a betonová koule jsou vlastní tvorba projektu. Výšky a obrysy budov vycházejí z městského měření a půdorysy spojovacích chodeb z OpenStreetMap (ODbL). [Snímky Nového divadla ve hře](docs/E25/nove-divadlo.md)
 - Fasády Velkého divadla, balustráda, střešní ozdoby a členění měděné střechy jsou vlastní tvorba projektu. Tvar budovy vychází z městského měření a část parkové terasy z půdorysu OpenStreetMap (ODbL). [Srovnání ze dvou stran](docs/E25/velke-divadlo.md)
 - Fasády Velké synagogy a obou sousedních domů v sadech Pětatřicátníků, kupole, římsy a hvězdy jsou vlastní tvorba projektu Plzeň naplno. Poloha budov vychází z měřeného modelu města. [Snímky ulice před a po úpravě](docs/E25/synagoga.md)
 - Kresba průčelí hlavního nádraží, římsy, tabule, špice a materiál měděných kupolí jsou vlastní tvorba projektu Plzeň naplno. Podkladem tvaru je měřený model města uvedený níže.
