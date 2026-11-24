@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Štíty severní strany náměstí
+
+Na větvi `codex/severni-stity` jsou průčelí č. 40, 41 a 2 až 5, římsy, vikýře a samostatná kresba šesti domů. Prošlo 294 testů JavaScriptu, sestavení a 407 ze 410 prohlížečových kontrol. Kontrola celé řady po návratu na náměstí prošla na obou vykreslovačích. Selhaly dvě známé kontroly nočních oken a jednou ranní špička na Klatovské, která při opakování prošla. [Podklady a ověření](../E25/severni-stity.md)
+
 ## Kašny na náměstí Republiky
 
 Větev `codex/kasny-na-namesti` přidává Anděla, Chrtici a Velblouda na jejich mapová místa. Hotové jsou modely čtyř nádrží a tří chrličů, proudy vody, kolize, snímky a měření výkonu. Prošlo 292 testů JavaScriptu, produkční sestavení i cílené kontroly kašen a rozpočtu na obou vykreslovačích. Ve společném běhu prošlo 405 ze 408 prohlížečových zkoušek. Selhala známá dvojice kontrol nočních oken a jednou ranní špička na Klatovské. Samostatná zkouška špičky prošla před změnou i po ní. [Srovnání ze stejných míst, zdroje a výsledky měření](../E25/kasny.md)

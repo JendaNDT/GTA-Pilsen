@@ -499,3 +499,33 @@ test('kašny na náměstí mají čtyři mísy, pevný chrlič a po návratu se 
     await load();
   } finally { await context.close(); }
 });
+
+test('šest severních domů a radnice se na telefonu znovu načtou po návratu',async ({browser})=>{
+  const context=await browser.newContext({hasTouch:true,isMobile:true,viewport:{width:844,height:390}});
+  try {
+    const page=await context.newPage();
+    await page.goto(gameUrl('/?debug&quality=low&view=340&adapt=0'));
+    await page.waitForFunction(()=>window.__ready);
+    await page.getByRole('button',{name:'Hrát',exact:true}).tap();
+    await page.evaluate(()=>{ __freeze(true); __game.player.place(18,-33); });
+    const ready=()=>page.waitForFunction(()=>{
+      __game.chunks.update(18,-33,340,40);
+      const meshes=__game.scene.getObjectsByProperty('name','Severní průčelí náměstí');
+      return meshes.length===2 && meshes.every(m=>m.material.map.image?.naturalWidth===2048)
+        && !!__game.scene.getObjectByName('Plzeňská radnice');
+    });
+    await ready();
+    const disposed=await page.evaluate(()=>{
+      let count=0;
+      for (const mesh of __game.scene.getObjectsByProperty('name','Severní průčelí náměstí')) {
+        for (const asset of [mesh.geometry,mesh.material,mesh.material.map]) {
+          asset.addEventListener('dispose',()=>count++);
+        }
+      }
+      __game.chunks.update(-1200,-2600,340,0);
+      return count;
+    });
+    expect(disposed).toBe(6);
+    await ready();
+  } finally {await context.close();}
+});
