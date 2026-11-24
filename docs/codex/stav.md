@@ -1,5 +1,13 @@
 # Stav etapy E27
 
+## Kratší dobrzdění při držení brzdy
+
+Po vyzkoušení revize `cab60c3` chtěl autor silnější účinek při sešlápnutí brzdy. Kola při aktivním brzdění v arkádě využijí vyšší podélnou přilnavost a brzda zůstane zapojená až do rychlosti přibližně 0,4 km/h. Volný dojezd malého auta po uvolnění plynu ve čtyřicítce dal před změnou i po ní 32,9 km/h po dvou sekundách.
+
+Na stejné suché rovině se u malého auta zkrátila dráha dobrzdění z 50 km/h z 11,73 na 7,62 metru a čas z 1,80 na 1,20 sekundy. Z 15 km/h klesla dráha z 1,68 na 1,05 metru. Měření končilo při poklesu rychlosti pod 0,1 m/s. Podle měření se zpřísnila přípustná brzdná dráha ze stovky pro malé i sportovní auto a přibyla zkouška času a dráhy při brzdění z 15 a 50 km/h.
+
+Prošlo 311 jednotkových zkoušek včetně brzdění na mokru a sněhu, produkční sestavení a šest cílených zkoušek v prohlížeči.
+
 ## Arkádové řízení hráčova auta
 
 Úprava na větvi `codex/arkadove-rizeni` navazuje na kameru z revize `053d326`. V arkádovém režimu má auto silnější motor a provozní brzdy, ve městě má větší rejd a po puštění plynu brzdí motorem. S rychlostí rejd stále klesá. Při předání vozidla provozu nebo přepnutí na realistické řízení se obnoví jeho původní nastavení.

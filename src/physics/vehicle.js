@@ -3,6 +3,9 @@ import { Euler, Quaternion, Vector3 } from 'three/webgpu';
 import { BodyPose } from './step.js';
 import { layers } from './world.js';
 
+// Zesílení provozní brzdy platí pouze při brzdění pedálem.
+const ARCADE_SERVICE_BRAKE_BOOST = 1.6;
+
 export function vehicleSpec(type, upgrades = {}) {
   const sport = type.id === 'sport', mass = 1200 * type.mass;
   const radius = type.id === 'suv' || type.id === 'pickup' ? 0.39 : type.id === 'van' ? 0.36 : 0.31;
@@ -108,8 +111,10 @@ export class PlayerVehicle {
     this.wheels = Array.from({length: 4}, (_, i) => Jolt.castObject(this.constraint.GetWheel(i), Jolt.WheelWV));
     this.arcade = false;
     this.friction = 1;
+    this.brakeGrip = 1;
     this.callbacks = new Jolt.VehicleConstraintCallbacksJS();
-    this.callbacks.GetCombinedFriction = (_index, _direction, tireFriction) => tireFriction * this.friction;
+    this.callbacks.GetCombinedFriction = (_index, direction, tireFriction) =>
+      tireFriction * this.friction * (direction === Jolt.ETireFrictionDirection_Longitudinal ? this.brakeGrip : 1);
     this.callbacks.OnPreStepCallback = () => {};
     this.callbacks.OnPostCollideCallback = () => {};
     this.callbacks.OnPostStepCallback = () => {};
@@ -187,9 +192,10 @@ export class PlayerVehicle {
   setArcade(enabled) {
     if (this.arcade === enabled) return;
     this.arcade = enabled;
+    this.brakeGrip = 1;
     this.controller.GetEngine().mMaxTorque = this.spec.torque * (enabled ? 1.35 : 1);
     for (let i = 0; i < this.wheels.length; i++) {
-      this.wheels[i].GetSettings().mMaxBrakeTorque = this.spec.brake * (i < 2 ? 1.4 : 0.94) * (enabled ? 1.35 : 1);
+      this.wheels[i].GetSettings().mMaxBrakeTorque = this.spec.brake * (i < 2 ? 1.4 : 0.94) * (enabled ? 1.35 * ARCADE_SERVICE_BRAKE_BOOST : 1);
     }
     this.friction = this.surface * this.spec.grip;
     this.surfaceTimer = 0;
@@ -205,7 +211,8 @@ export class PlayerVehicle {
     }
     this.friction = this.surface * (arcade ? 1.38 : 1) * spec.grip;
     const speed = car.speed;
-    const braking = throttle * speed < 0 && Math.abs(speed) > 0.65;
+    const braking = throttle * speed < 0 && Math.abs(speed) > (arcade ? 0.12 : 0.65);
+    this.brakeGrip = arcade && braking ? 1.65 : 1;
     car.brakeLights = braking || handbrake;
     const slip = this.wheels.reduce((max, w) => w.HasContact() ? Math.max(max, Math.abs(w.mLongitudinalSlip)) : max, 0);
     const abs = arcade && Math.abs(speed) > 3 && slip > 0.18;
@@ -214,7 +221,7 @@ export class PlayerVehicle {
     const limit = Math.min(1, 0.13 + steeringRange / (steeringRange + speed * speed));
     const steeringRate = arcade ? (steer ? 12 : 16) : 8;
     // Mírné brzdění motorem po puštění plynu postupně slábne při dojezdu.
-    const coastBrake = arcade && !throttle ? Math.min(0.09, Math.abs(speed) * 0.012) : 0;
+    const coastBrake = arcade && !throttle ? Math.min(0.09, Math.abs(speed) * 0.012) / ARCADE_SERVICE_BRAKE_BOOST : 0;
     car.steer += (Math.max(-1, Math.min(1, steer + steeringPull(car))) * limit - car.steer) * Math.min(1, dt * steeringRate);
     this.controller.SetDriverInput(braking ? 0 : throttle * traction * enginePower(car),
       car.steer, braking ? (abs ? 0.8 : 1) : coastBrake, handbrake ? 1 : 0);

@@ -44,7 +44,9 @@ test('poháněné nápravy a rychlost na omezovači odpovídají typu auta', () 
   }
 });
 
-for (const [type, from, to] of [['hatch', 8.5, 10], ['sport', 3.8, 4.8]]) {
+for (const [type, from, to, minDistance, maxDistance] of [
+  ['hatch', 8.5, 10, 23, 28], ['sport', 3.8, 4.8, 18, 23]
+]) {
   test(type + ' splní zrychlení na 100 km/h i brzdnou dráhu s ABS', () => {
     const { car, tick, close } = track(type);
     try {
@@ -56,10 +58,29 @@ for (const [type, from, to] of [['hatch', 8.5, 10], ['sport', 3.8, 4.8]]) {
       for (let i = 0; i < 600 && car.speed > 0; i++) tick(-1);
       const distance = car.z - start;
       assert.ok(car.speed <= 0);
-      assert.ok(distance >= 29 && distance <= 36, 'Brzdná dráha ' + distance + ' m');
+      assert.ok(distance >= minDistance && distance <= maxDistance, 'Brzdná dráha ' + distance + ' m');
     } finally { close(); }
   });
 }
+
+test('malé auto při držení arkádové brzdy rychle dobrzdí z městské rychlosti', () => {
+  for (const [kmh, maxDistance, maxTime] of [[15, 1.25, 0.5], [50, 8.5, 1.4]]) {
+    const { car, tick, close } = track('hatch');
+    try {
+      for (let n = 0; car.speed * 3.6 < kmh && n < 600; n++) tick(1);
+      assert.ok(car.speed * 3.6 >= kmh);
+      const start = car.z;
+      let frames = 0;
+      while (car.speed > 0.1 && frames < 180) {
+        tick(-1);
+        frames++;
+      }
+      assert.ok(car.speed <= 0.1);
+      assert.ok(car.z - start < maxDistance, 'Brzdná dráha ' + (car.z - start));
+      assert.ok(frames / 60 < maxTime, 'Doba brzdění ' + frames / 60);
+    } finally { close(); }
+  }
+});
 
 test('arkádové řízení rychle zatočí v městské rychlosti a při dojezdu zpomalí', () => {
   for (const steer of [0, 0.65]) {
