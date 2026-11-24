@@ -1,3 +1,4 @@
+import { buildFountains } from './fountains.js';
 import { buildPavilion } from './pavilion.js';
 import { buildColumn } from './plague-column.js';
 import { SolidBuf } from './solid-buffer.js';
@@ -1190,6 +1191,7 @@ function buildLandIndex(world, districts) {
     for (let b = b0; b <= b1; b++) for (let a = a0; a <= a1; a++) (arr[b * world.cols + a] || (arr[b * world.cols + a] = [])).push(id);
   };
   for (let i = 0; i < world.lCount; i++) {
+    if (world.fountainLand?.has(i)) continue;
     let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
     for (let v = L.ringStart[L.pRing[i]], ve = L.ringStart[L.pRing[i + 1]]; v < ve; v++) {
       const x = L.vx[v] * 0.1, z = L.vz[v] * 0.1;
@@ -1802,6 +1804,8 @@ export class ChunkManager {
       add(m, geo);
     } else if (ch.stage === 1) {
       ch.structure = w.structures?.build(ci, ch.group, this.solidMat);
+      const fountains = w.fountainTiles?.get(ci);
+      if (fountains) buildFountains(fountains,ch,QUALITY.waterDetail,PARAMS.get('kasny')!=='bez-proudu',env.time);
       if (ci === w.pavilion?.tile) buildPavilion(w, this.solidMat, ch);
       if (ci === w.plagueColumn?.tile) {
         ch.group.add(buildColumn(w, w.plagueColumn, this.solidMat, QUALITY.heritageDetail, ch));

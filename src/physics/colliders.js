@@ -112,6 +112,7 @@ export class TileColliders {
     roadSurfaceTriangles(w, ci, emit);
     cornerTriangles(w, ci, emit);
     sidewalkTriangles(w, ci, emit);
+    for (const site of w.fountainTiles?.get(ci) ?? []) triangles.push(...site.solid);
     const theatre = w.heritage.modernTheatre;
     for (const i of w.bChunks[ci] ?? []) {
       if (i === w.pavilion?.building) pavilionCollision(w.pavilion, emit);

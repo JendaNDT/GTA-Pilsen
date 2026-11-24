@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Kašny na náměstí Republiky
+
+Větev `codex/kasny-na-namesti` přidává Anděla, Chrtici a Velblouda na jejich mapová místa. Hotové jsou modely čtyř nádrží a tří chrličů, proudy vody, kolize, snímky a měření výkonu. Prošlo 292 testů JavaScriptu, produkční sestavení i cílené kontroly kašen a rozpočtu na obou vykreslovačích. Ve společném běhu prošlo 405 ze 408 prohlížečových zkoušek. Selhala známá dvojice kontrol nočních oken a jednou ranní špička na Klatovské. Samostatná zkouška špičky prošla před změnou i po ní. [Srovnání ze stejných míst, zdroje a výsledky měření](../E25/kasny.md)
+
 ## Lochotínský pavilonek
 
 Na větvi `codex/lochotinsky-pavilonek` pavilonek převzal půdorys z OpenStreetMap. Podle fotografií má členěné fasády, tři valbové střechy a přístupnou terasu s dřevěným zábradlím. Prošlo všech 289 testů JavaScriptu, produkční sestavení a 404 ze 406 prohlížečových kontrol. Na obou vykreslovačích prošla zkouška pavilonku a selhala známá kontrola nočních oken na náměstí. [Tři pohledy před úpravou a po ní a ověření ve hře](../E25/lochotinsky-pavilonek.md)

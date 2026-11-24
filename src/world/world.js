@@ -1,3 +1,5 @@
+import { isFountainPool } from './fountain-shapes.js';
+import { createFountainSites, fountainContact, fountainRay, fountainSurface } from './fountain-site.js';
 import { createPavilionSite, nearPavilion, pavilionContact, pavilionRay, pavilionSurface } from './pavilion-site.js';
 import { columnContact, columnRay, columnSurface, createColumnSite } from './plague-column-site.js';
 import { stationForecourtOffsets, stationRetainingWalls } from './station-forecourt.js';
@@ -110,6 +112,7 @@ export class World {
     this.turns = new TurnRules(this, data.meta.traffic?.restrictions);
     this.breakables = new Breakables();
     this.traffic = new Traffic(this, data.meta.traffic);
+    this.fountainLand = PARAMS.get('kasny') === 'puvodni' ? null : new Set();
     this._initLand(data.land);
     this._initRails(data.rails);
     this.gradeRails = this._applyGradeProfiles(grades?.rails, (index) => {
@@ -136,6 +139,7 @@ export class World {
     this._initRoadGrades();
     this._initCorners();
     this.forecourtWalls = stationRetainingWalls(this);
+    this.fountainTiles = this.fountainLand ? createFountainSites(this) : new Map();
     this.pavilion = PARAMS.get('pavilonek') === 'puvodni' ? null : createPavilionSite(this);
     for (const rail of this.pavilion?.rails ?? []) {
       if (!this.streetFixtures.has(rail.tile)) this.streetFixtures.set(rail.tile, []);
@@ -526,6 +530,8 @@ export class World {
       hit.x += hit.nx * hit.depth; hit.z += hit.nz * hit.depth;
       any = true;
     }
+    const fountains = this.fountainTiles?.get(this.chunkIndex(hit.x,hit.z));
+    if (fountains && fountainContact(fountains,hit,r,y,yTop)) any=true;
     if (this.pavilion && nearPavilion(hit.x,hit.z,r) && pavilionContact(this.pavilion,hit,r,y,yTop)) any=true;
     const B = this.b, vx = this.bvx, vz = this.bvz;
     const cx0 = Math.max(0, Math.floor((x - r - this.minX) / COLL_CELL)), cx1 = Math.min(this.gcols - 1, Math.floor((x + r - this.minX) / COLL_CELL));
@@ -661,6 +667,8 @@ export class World {
     const c = this.cellIndex(x, z);
     const imported = this.heritage?.roofHeight(x, z) ?? -Infinity;
     let h = Number.isFinite(imported) && imported <= maxY ? imported : -1e9;
+    const fountains = this.fountainTiles?.get(this.chunkIndex(x,z));
+    if (fountains) h=Math.max(h,fountainSurface(fountains,x,z,maxY));
     if (this.pavilion && nearPavilion(x,z)) h=Math.max(h,pavilionSurface(this.pavilion,x,z,maxY));
     for (let k = this.bCellStart[c], ke = this.bCellStart[c + 1]; k < ke; k++) {
       const i = this.bCellItems[k];
@@ -693,6 +701,9 @@ export class World {
     const B = this.b, vx = this.bvx, vz = this.bvz;
     const len = Math.hypot(x1 - x0, z1 - z0);
     let tBest = this.pavilion && nearPavilion(x0,z0,len) ? pavilionRay(this.pavilion,x0,z0,x1,z1,y) : 1;
+    if (this.fountainTiles && Math.min(x0,x1)<55 && Math.max(x0,x1)>-59 && Math.min(z0,z1)<103 && Math.max(z0,z1)>-30) {
+      for (const sites of this.fountainTiles.values()) tBest=Math.min(tBest,fountainRay(sites,x0,z0,x1,z1,y));
+    }
     const steps = Math.max(1, Math.ceil(len / (COLL_CELL * 0.5)));
     let lastCell = -1;
     const seen = this._seen || (this._seen = new Set());
@@ -1907,6 +1918,10 @@ export class World {
         const x = L.vx[v] * 0.1, z = L.vz[v] * 0.1;
         if (x < x0) x0 = x; if (x > x1) x1 = x; if (z < z0) z0 = z; if (z > z1) z1 = z;
       }
+      if (this.fountainLand && isFountainPool(x0,z0,x1,z1)) {
+        this.fountainLand.add(i);
+        continue;
+      }
       water.push({ i, x0, x1, z0, z1 });
       for (let r = r0; r < r1; r++) {
         const start = L.ringStart[r], end = L.ringStart[r + 1];
@@ -2008,6 +2023,7 @@ export class World {
     const sx = S / (this.maxX - this.minX), sz = S / (this.maxZ - this.minZ);
     const soft = new Set([LC.FARMLAND, LC.MEADOW, LC.GRASS, LC.ALLOTMENTS, LC.FOREST, LC.SCRUB, LC.PARK, LC.GARDEN, LC.CEMETERY, LC.PITCH]);
     for (let i = 0; i < n; i++) {
+      if (this.fountainLand?.has(i)) continue;
       const c = L.cls[i];
       let col = null;
       if (c === LC.FOREST) col = '#ff0000';

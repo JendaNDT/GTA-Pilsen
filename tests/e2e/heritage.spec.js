@@ -462,3 +462,40 @@ test('pavilonek v parku má na nízké kvalitě rozdílné střechy a obnoví z�
     })).toEqual(['broken','intact']);
   } finally { await context.close(); }
 });
+
+test('kašny na náměstí mají čtyři mísy, pevný chrlič a po návratu se načtou znovu',async ({browser})=>{
+  const context=await browser.newContext({hasTouch:true,isMobile:true,viewport:{width:844,height:390}});
+  try {
+    const page=await context.newPage();
+    await page.goto(gameUrl('/?debug&quality=low&view=340&adapt=0'));
+    await page.waitForFunction(()=>window.__ready);
+    await page.getByRole('button',{name:'Hrát',exact:true}).tap();
+    await page.evaluate(()=>{ __freeze(true); __game.player.place(21,92); });
+    const load=()=>page.waitForFunction(()=>{
+      __game.chunks.update(21,92,340,40);
+      return ['Anděl','Chrtice','Velbloud'].every(n=>__game.scene.getObjectByName('Kašna '+n));
+    });
+    await load();
+    const result=await page.evaluate(()=>{
+      const g=__game,w=g.world;
+      const s=[...w.fountainTiles.values()].flat().find(s=>s.id==='andel');
+      const sx=s.x-2*s.sin,sz=s.z+2*s.cos;
+      for (let i=0;i<28;i++) g.colliders.update(sx,sz);
+      g.player.place(sx,sz,w.heightAt(sx,sz)+.1);
+      for (let i=0;i<35;i++) g.player.update(1/60,0,0,false,false);
+      for (let i=0;i<160;i++) g.player.update(1/60,s.sin,-s.cos,false,false);
+      const distance=(g.player.z-s.z)*s.cos-(g.player.x-s.x)*s.sin;
+      const count=w.fountainLand.size;
+      const mesh=g.scene.getObjectByName('Kašna Anděl').levels[0].object;
+      let freed=false;
+      mesh.geometry.addEventListener('dispose',()=>{freed=true;});
+      g.chunks.update(-1200,-2600,340,0);
+      return {count,distance,freed};
+    });
+    expect(result.count).toBe(4);
+    expect(result.freed).toBe(true);
+    expect(result.distance).toBeGreaterThan(.3);
+    expect(result.distance).toBeLessThan(1);
+    await load();
+  } finally { await context.close(); }
+});
