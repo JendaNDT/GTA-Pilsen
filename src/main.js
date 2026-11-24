@@ -68,7 +68,7 @@ const ABOUT_HTML = (meta, rendering) => `
   (autoři three.js, licence <a href="https://github.com/mrdoob/three.js/blob/r187/LICENSE" target="_blank" rel="noopener">MIT</a>).
   Aktuální vykreslování: <strong>${rendering}</strong>.</p>
   <p>Fyziku počítá <a href="https://github.com/jrouwe/JoltPhysics.js" target="_blank" rel="noopener">Jolt Physics 1.1.1</a> (Jorrit Rouwe, licence MIT).</p>
-  <p>Herní model pětidveřové Škody Fabia II a pohyblivá kola aut jsou vlastní tvorbou projektu Plzeň naplno.</p>
+  <p>Herní model pětidveřové Škody Fabia II, ostatní karoserie, výbava taxislužby a policie a pohyblivá kola aut jsou vlastní tvorbou projektu Plzeň naplno.</p>
   <p>Tvar říčního dna je vlastní herní odhad podle vzdálenosti od břehu.
   Výška dna u Wilsonova mostu byla porovnána s <a href="https://gis.plzen.eu/foto/pov_model/profily/PM_Psany_PP.pdf"
   target="_blank" rel="noopener">profilem R19 v povodňovém modelu města Plzně</a>.</p>

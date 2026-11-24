@@ -162,3 +162,32 @@ test('Fabia má svítící jádra ve tvarovaném čele a prolis předních dveř
     }
   }
 });
+
+test('vozový park má na nízké kvalitě stejné obrysy, oddělenou optiku a korbu s podlahou pod bočnicí', async () => {
+  const { Mesh, Raycaster } = await import('three/webgpu');
+  for (const id of types.filter(id => id !== 'hatch')) {
+    const low = buildCarGeometry(id, false), high = buildCarGeometry(id, true);
+    for (const mesh of [low.body, high.body]) mesh.computeBoundingBox();
+    assert.ok(low.body.boundingBox.max.distanceTo(high.body.boundingBox.max) < 0.02, id);
+    assert.ok(low.body.attributes.position.count < high.body.attributes.position.count, id);
+    for (const { detail, indicators, hazards } of [low, high]) {
+      assert.deepEqual(new Set(detail.attributes.aLens.array), new Set([0,1,2,3]), id);
+      assert.equal(hazards.attributes.position.count, 144, id);
+      for (const [i, group] of indicators.entries()) {
+        const { start, count } = group.drawRange, pos = group.attributes.position;
+        const side = i === 0 ? -1 : 1;
+        const zs = [];
+        for (let k=start; k<start+count; k++) {
+          assert.ok(side*pos.getX(k)>0, id);
+          zs.push(pos.getZ(k));
+        }
+        assert.ok(Math.min(...zs)<-1 && Math.max(...zs)>1, id);
+      }
+    }
+    if (id === 'pickup') {
+      const skins = [high.body,high.detail].map(geometry => new Mesh(geometry));
+      const height = x => new Raycaster(new Vector3(x,3,-1.5), new Vector3(0,-1,0)).intersectObjects(skins)[0].point.y;
+      assert.ok(height(0.94)-height(0)>0.2, 'nákladový prostor má prohlubeň přes dvacet centimetrů');
+    }
+  }
+});

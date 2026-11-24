@@ -27,8 +27,9 @@ function cabinShape(type, belt) {
  * Bokorys auta v rovině (z vpřed, y nahoru). Spodek obsahuje podběhy kol,
  * kabina je samostatný obrys od paty předního skla po patu zadního.
  */
-export function carProfile(type) {
+export function carProfile(type, beltOffset = 0) {
   const chassis = carChassis(type);
+  chassis.belt += beltOffset;
   const { ride, wheelR, belt, wheelZ } = chassis;
   const { len, h, trunk, id } = type;
   const fz = len / 2, rz = -len / 2;
@@ -42,7 +43,8 @@ export function carProfile(type) {
   lower.push([fz - 0.4, belt - (blunt ? 0.02 : 0.05)], [cab.front, belt + 0.03]);
   // zadní část: kufr sedanu, korba pick-upu nebo svislá záď
   if (id === 'pickup') {
-    lower.push([cab.rear, belt + 0.03], [rz + 0.05, belt + 0.06], [rz, belt - 0.05]);
+    const deck = belt - 0.27;
+    lower.push([cab.rear, belt + 0.03], [cab.rear - 0.024, deck], [rz + 0.05, deck], [rz, deck - 0.045]);
   } else if (trunk >= 0.6) {
     lower.push([cab.rear, belt + 0.03], [rz + 0.18, belt + 0.02], [rz + 0.02, belt - 0.07]);
   } else {

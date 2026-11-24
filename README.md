@@ -342,6 +342,7 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 ## Zdroje a licence dat
 
 - Fyziku počítá [Jolt Physics 1.1.1](https://github.com/jrouwe/JoltPhysics.js) od Jorrita Rouweho ([licence MIT](https://github.com/jrouwe/JoltPhysics.js/blob/main/LICENSE)).
+- Sedan, kombi, SUV, dodávka, sportovní kupé, pick-up a výbava taxislužby a policie jsou vlastní modely projektu. [Přehled aut ve hře](docs/E29.md)
 - Karoserie herní Fabie II, disky a animace kol jsou vlastní tvorbou projektu Plzeň naplno. Tvarovou předlohou byl pětidveřový hatchback z roku 2007. [Příď a dveře před úpravou a po ní](docs/fabia/prid-a-dvere.md) · [Celý model ve hře](docs/E28.md) · [Fotografické srovnání generací výrobce](https://cdn.skoda-storyboard.com/2021/02/SKODA_FABIA_History.pdf)
 - Tvar říčního dna je vlastní herní odhad podle vzdálenosti od břehu. Pro kontrolu výšky u Wilsonova mostu sloužil profil R19. [Povodňový model města Plzně](https://gis.plzen.eu/foto/pov_model/profily/PM_Psany_PP.pdf).
 

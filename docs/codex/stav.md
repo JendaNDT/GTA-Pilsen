@@ -1,4 +1,8 @@
-# Stav etapy E28
+# Stav etapy E29
+
+## Modely ostatních aut
+
+Dokončeny jsou všechny ostatní karoserie i obě služební varianty. Přibylo srovnání osmi aut ze stejného místa, kontrola hloubky korby a zkouška řízení každého typu na nízkou kvalitu. Prošlo 315 jednotkových testů, sestavení hry a 14 cílených kontrol v prohlížeči. [Zadání](E29.md) · [Galerie a výsledky](../E29.md)
 
 ## Druhá verze přídě a dveří Fabie
 

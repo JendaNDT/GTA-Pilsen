@@ -88,3 +88,31 @@ test('Fabia ukazuje rejd na místě i odvalování při jízdě a couvání @web
   }
   expect(result.speed).toBeLessThan(-0.5);
 });
+
+test('ostatní karoserie lze na nízkou kvalitu řídit s pohyblivými koly @webgpu', async ({ page }) => {
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0&hour=12'));
+  await waitForGame(page);
+  const results = await page.evaluate(() => {
+    window.__freeze(true);
+    const g = window.__game, Car = g.player.lastCar.constructor;
+    g.paused = false;
+    return ['sedan','kombi','suv','van','sport','pickup','taxi','police'].map((id, i) => {
+      const car = g.vehicles.add(new Car(id, 0x698499));
+      car.place(-36 + 4*i, 43, 0.2);
+      g._enterCar(car);
+      window.__setInput(0.5, 1);
+      for (let tick = 0; tick < 35; tick++) g.update(1/60);
+      const matrix = car.mesh.matrix.clone(), wheels = car.mesh.userData.wheels;
+      wheels.getMatrixAt(0, matrix);
+      const result = { id, speed: car.speed, steer: Math.abs(matrix.elements[2]), count: wheels.count };
+      window.__setInput(0,0);
+      g._exitCar();
+      return result;
+    });
+  });
+  for (const car of results) {
+    expect(car.count, car.id).toBe(4);
+    expect(car.steer, car.id).toBeGreaterThan(0.05);
+    expect(car.speed, car.id).toBeGreaterThan(0.1);
+  }
+});
