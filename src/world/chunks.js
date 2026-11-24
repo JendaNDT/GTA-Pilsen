@@ -1535,7 +1535,7 @@ function buildTrees(world, ci, cx0, cz0, forest, cover) {
       const road = world.nearestRoad(x, z, 12, DRIVABLE_MAX, 0, nearby);
       if (road && road.dist < world.r.w[road.road] / 2 - 0.2) continue;
       const rotation = hash(t, 6);
-      const size = (0.8 + hash(t, 5) * 0.6) * (world.sady && inSady(x,z) ? 1.72 : 1);
+      const size = (0.8 + hash(t, 5) * 0.6) * (world.sady && inSady(x,z) ? (x > 129 ? 1.28 : 1.72) : 1);
       if (detailed) {
         const polygon = cover.findLast(id => world.landContains(id, x, z));
         const cls = world.l.cls[polygon];

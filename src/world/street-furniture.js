@@ -93,7 +93,11 @@ export function drawStreetFixture(solid, f, detailed = true) {
       solid.quad(base[i],base[j],top[j],top[i],color,.85);
     }
   };
-  if (f.kind==='theatreGlass') {
+  if (f.kind==='strouhaRail') {
+    for (const u of [-f.width/2+.04,f.width/2-.04]) part(u,0,.052,.058,0,1.03,metal);
+    part(0,0,f.width,.078,.985,.06,wood);
+    for (const h of [.32,.61,.83]) part(0,0,f.width,.026,h,.026,metal);
+  } else if (f.kind==='theatreGlass') {
     part(0,0,f.width,.035,.06,1.00,glass);
     part(0,0,f.width,.095,1.06,.06,metal);
     part(-f.width/2+.035,0,.07,.085,0,1.07,metal);

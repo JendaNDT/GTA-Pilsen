@@ -613,3 +613,39 @@ test('Smetanovy sady po návratu na nízké kvalitě obnoví celou promenádu a�
   expect(result.disposed).toBe(true);expect(result.away).toBe(true);
   await visit();
 });
+
+test('Sadový okruh ke Strouze po návratu obnoví sochy a pěší hráč přejde dřevěnou lávku', async ({page}) => {
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0&view=340'));
+  await page.waitForFunction(() => window.__ready);
+  await page.evaluate(() => __freeze(true));
+  const visit=()=>page.waitForFunction(()=>{
+    const g=__game;
+    g.chunks.update(276,25,420,40);
+    return ['Spejbl a Hurvínek','Lavička Václava Havla','Busta Františka Křižíka','Hradba u Proluky',
+      'Kamenný oblouk Pražského mostu','Dřevěná lávka přes Strouhu','Dřevěná terasa u Strouhy',
+      'Matka kouzelnice','Syn ryba','Dcera pták','Pobřežní porost Mlýnské strouhy']
+      .every(name=>g.scene.getObjectByName(name));
+  });
+  await visit();
+  const crossing=await page.evaluate(()=>{
+    const {world,player,colliders,chunks,scene}=__game;
+    const bridge=world.sady.solids.find(site=>site.id==='lavka');
+    const dx=Math.cos(bridge.angle),dz=Math.sin(bridge.angle),start=bridge.length/2+2.5;
+    const x=bridge.x+dx*start,z=bridge.z+dz*start;
+    for(let i=0;i<24;i++) colliders.update(x,z);
+    player.place(x,z,world.surfaceAt(x,z)+.05);
+    let wet=false,progress=0;
+    for(let i=0;i<650 && progress<start*2;i++) {
+      player.update(1/60,-dx,-dz,false,false);
+      progress=(x-player.x)*dx+(z-player.z)*dz;
+      if(Math.abs(start-progress)<bridge.length/2-1) wet ||= player.swimming;
+    }
+    let disposed=false;
+    scene.getObjectByName('Dřevěná lávka přes Strouhu').geometry.addEventListener('dispose',()=>{disposed=true;});
+    chunks.update(5200,1800,340,0);
+    return {progress,wet,disposed,pond:world.isWater(252,-7),gone:!scene.getObjectByName('Dřevěná lávka přes Strouhu')};
+  });
+  expect(crossing.progress,JSON.stringify(crossing)).toBeGreaterThan(19);
+  expect(crossing).toMatchObject({wet:false,disposed:true,pond:true,gone:true});
+  await visit();
+});

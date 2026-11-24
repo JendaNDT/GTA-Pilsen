@@ -1,3 +1,5 @@
+import { easternBeds, easternBenches, easternLawns, easternSites, easternWalks } from './strouha-layout.js';
+
 // Obrys Smetanových sadů, osy pěšin, pomník, pítko a lavičky z místního výřezu OSM.
 export const lawn = [
   [-247.3,243.1],[-289.3,261.2],[-285.9,268],[-238.6,288.9],[-199.4,304],
@@ -20,6 +22,7 @@ export const features = [
   {id:'kopecky',name:'Pomník Martina Kopeckého',x:-55.8,z:289.3,angle:.16},
   {id:'loubi',name:'Zelené loubí u muzea',x:75,z:302.6,angle:.115},
   {id:'muzeum',name:'Fontána před muzeem',x:141.25,z:307.55,angle:-.67,rx:8.8,rz:5.05},
+  ...easternSites,
 ];
 export const benches = [
   [-157.2,294.3,.17],[-172.4,305.1,-1.38],[-181.3,287.4,2.23],[-137.9,290,1.78],
@@ -48,6 +51,7 @@ export const benches = [
   [-56.2,306.1,0.15],
   [-91.9,301.7,0.15],
   [-98.5,294.8,0.15],
+  ...easternBenches,
 ];
 // Výtvarná skladba nízkých záhonů sleduje volné plochy mezi skutečnými cestami.
 export const beds = [
@@ -56,6 +60,7 @@ export const beds = [
   [-183,280.2,3.1,1.35,.18],[-161,289.7,9.0,1.45,.17],[-158.7,304.8,8.2,1.45,.17],
   [-95,308,6.2,1.3,.24],[-78.1,300.4,3.4,1.05,-.52],[-40,289.8,6,1.3,.11],
   [-16.1,296,8,1.5,.1],[47.4,301.6,12,1.6,.115],[79.6,305,13,1.7,.115],[104.8,309,7.4,1.5,.12],
+  ...easternBeds,
 ];
 const walks = [
   [[-243,286],[-240.8,281.5],[-233.6,275.7],[-233.1,263.3],[-229.8,255.8]],
@@ -67,7 +72,7 @@ const walks = [
   [[23.7,289.9],[37.2,291.1],[106.4,299.7],[111.8,299.4]],
 ];
 
-function inLawn(lawn,x,z) {
+export function inLawn(lawn,x,z) {
   let inside=false;
   for(let i=0,j=lawn.length-1;i<lawn.length;j=i++) {
     const [a,b]=lawn[i], [c,d]=lawn[j];
@@ -77,26 +82,32 @@ function inLawn(lawn,x,z) {
 }
 
 export function inSady(x,z) {
+  if (x >= 116 && x <= 419 && z >= -173 && z <= 305 &&
+      easternLawns.some(outline => inLawn(outline,x,z))) return true;
   if(x < -290 || x > 129 || z < 242 || z > 321) return false;
   return lawns.some(outline=>inLawn(outline,x,z));
 }
 
 export function paintSady(ctx,x,z,span) {
-  if (x+span < -291 || x > 130 || z+span < 242 || z > 321) return;
+  const west = x+span >= -291 && x <= 130 && z+span >= 242 && z <= 321;
+  const east = x+span >= 116 && x <= 419 && z+span >= -173 && z <= 305;
+  if (!west && !east) return;
+  const outlines = west && east ? [...lawns,...easternLawns] : west ? lawns : easternLawns;
+  const paths = west && east ? [...walks,...easternWalks] : west ? walks : easternWalks;
   const path=points=>{
     ctx.beginPath();ctx.moveTo(...points[0]);
     for(const p of points.slice(1)) ctx.lineTo(...p);
   };
   ctx.save();
   ctx.beginPath();
-  for(const outline of lawns) {
+  for(const outline of outlines) {
     ctx.moveTo(...outline[0]);
     for(const p of outline.slice(1)) ctx.lineTo(...p);
     ctx.closePath();
   }
   ctx.clip();
   ctx.fillStyle='#7e9c65';ctx.fill();
-  for(const points of walks) {
+  for(const points of paths) {
     path(points);
     ctx.lineWidth=3.35;ctx.strokeStyle='#aba18e';ctx.stroke();
     ctx.lineWidth=2.9;ctx.strokeStyle='#c7bdab';ctx.stroke();
@@ -108,14 +119,6 @@ export function paintSady(ctx,x,z,span) {
     ctx.fillStyle='#727447';ctx.fill();
   }
   ctx.restore();
-}
-
-// Rychlé vyřazení městských kolizí mimo sadový okruh.
-export function crossesSady(x0,z0,x1,z1) {
-  return Math.max(x0,x1)>-262 && Math.min(x0,x1)<152 && Math.max(z0,z1)>251 && Math.min(z0,z1)<320;
-}
-export function nearSady(x,z,r=0) {
-  return crossesSady(x-r,z-r,x+r,z+r);
 }
 
 export function inRusalka(x,z) {
@@ -132,7 +135,7 @@ const basins = features.filter(site => site.rx).map(site => ({
 const leknin = features.find(site => site.id === 'leknin');
 
 export function inParkFountain(x, z) {
-  if (!nearSady(x, z)) return false;
+  if (x < -261 || x > 151 || z < 251 || z > 318) return false;
   if (inRusalka(x, z)) return true;
   for (const basin of basins) {
     const dx = x - basin.x, dz = z - basin.z;

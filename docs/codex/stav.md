@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Od muzea k Mlýnské strouze
+
+Větev `codex/sady-ke-strouze` prodlužuje model od Západočeského muzea přes Šafaříkovy a Křižíkovy sady k jezírku i na trávník za ním. Pěší hráč přejde lávku mezi oběma břehy. Vzniklo osm dvojic srovnávacích snímků včetně dvou přeletů. Prošlo 306 jednotkových testů a produkční sestavení. Z 418 prohlížečových zkoušek prošlo napoprvé 413. Po úpravě dohledu prošly všechny kontroly rozpočtů a při opakování také obě kontroly ranní špičky na Klatovské. [Snímky, podklady a ověření](../E25/strouha.md)
+
 ## Smetanovy a Kopeckého sady až k muzeu
 
 Větev `codex/smetanovy-sady` doplňuje celý úsek od divadla k muzeu. Na trase je pět vodních prvků, tři pomníky, zelené loubí, 14 záhonů a 33 laviček. Vzniklo osm dvojic snímků včetně dvou přeletů. Prošlo všech 304 testů JavaScriptu a produkční sestavení. V úplném běhu prošlo 414 ze 416 prohlížečových kontrol. Kontrola celé promenády po odletu a návratu prošla na WebGL 2 i WebGPU. Dvě zkoušky ranní špičky na Klatovské při společném běhu zaznamenaly příliš dlouhé čekání na křižovatce. Obě prošly při samostatném opakování beze změny kódu. Při přeletu je náročnost srovnatelná s výchozí verzí, při jízdě v sadech vzrostl čas GPU přibližně o 23 %. [Podklady, porovnání a ověření](../E25/smetanovy-sady.md)

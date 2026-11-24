@@ -2,6 +2,9 @@ import * as THREE from 'three/webgpu';
 import { attribute, color, mix, positionLocal, positionWorld, sin, vec2, vec3, vertexColor } from 'three/tsl';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { valueNoise } from './material-noise.js';
+import { bridgeRails, easternFeature, roundMask } from './strouha-model.js';
+import { easternSites, reedBeds } from './strouha-layout.js';
+import { bankPlants } from './strouha-plants.js';
 import { civicStatue, gardenFountain, leafArches } from './kopecky-fountains.js';
 import { beds, benches, features } from './sady-layout.js';
 import { streetFixtures, drawStreetFixture } from './street-furniture.js';
@@ -153,9 +156,12 @@ function monument(m,collider) {
   m.box(-.09,3.79,.30,.32,.075,.25,0x696b59,-.18);
 }
 
+const easternIds = new Set(easternSites.map(site => site.id));
+
 export function featureGeometry(spec,detail,flow,collider=false) {
   const model=parts(detail);
-  if(spec.id==='rusalka') rusalka(model,detail,flow,collider);
+  if(easternIds.has(spec.id)) easternFeature(model,spec,detail,collider);
+  else if(spec.id==='rusalka') rusalka(model,detail,flow,collider);
   else if(spec.id==='leknin') leknin(model,detail,flow,collider);
   else if(spec.id==='smetana') monument(model,collider);
   else if(spec.id==='bedrich' || spec.id==='kopecky') civicStatue(model,spec.id,collider);
@@ -165,7 +171,9 @@ export function featureGeometry(spec,detail,flow,collider=false) {
       model.box(0,2.82,0,22.4,.19,.15,0x405342);
     } else leafArches(model,detail);
   } else gardenFountain(model,spec,detail,flow,collider);
-  return model.finish().rotateY(-spec.angle);
+  const geometry=model.finish();
+  if (['kouzelnice','ptak','ryba'].includes(spec.id)) roundMask(geometry);
+  return geometry.rotateY(-spec.angle);
 }
 
 function flowerBed(world,bed,detail) {
@@ -207,7 +215,7 @@ export function createSady(world) {
   const tiles=new Map(),solids=[];
   const tileAt=(x,z)=>{
     const ci=world.chunkIndex(x,z);
-    if(!tiles.has(ci)) tiles.set(ci,{sites:[],beds:[],benches:[],collision:[]});
+    if(!tiles.has(ci)) tiles.set(ci,{sites:[],beds:[],benches:[],rails:[],reeds:[],collision:[]});
     return tiles.get(ci);
   };
   for(const spec of features) {
@@ -221,6 +229,10 @@ export function createSady(world) {
       for(const [u,v] of rim) ground=Math.max(ground,world.heightAt(spec.x+c*u-s*v,spec.z+s*u+c*v));
     }
     const site={...spec,ground,tree:new Octree()};
+    if (spec.wall) site.levels=spec.wall.map(([u,v]) => world.heightAt(spec.x+u,spec.z+v)-ground);
+    if (spec.id==='lavka') {
+      for (const rail of bridgeRails(ground,world)) tileAt(rail.x,rail.z).rails.push(rail);
+    }
     const geo=featureGeometry(site,false,false,true);
     geo.translate(site.x,ground,site.z);
     const {position,wet}=geo.attributes;
@@ -238,12 +250,28 @@ export function createSady(world) {
     tileAt(site.x,site.z).sites.push(site);
     solids.push(site);
   }
-  for(const bed of beds) tileAt(bed[0],bed[1]).beds.push(bed);
+  for(const patch of reedBeds) {
+    const [x,z]=patch[0];
+    if (world.chunkIndex(x,z)>=0) tileAt(x,z).reeds.push(patch);
+  }
+  for(const bed of beds) if (world.chunkIndex(bed[0],bed[1])>=0) tileAt(bed[0],bed[1]).beds.push(bed);
   for(const [i,[x,z,yaw]] of benches.entries()) {
+    if (world.chunkIndex(x,z)<0) continue;
     const fixtures=streetFixtures({id:'sady-lavicka-'+i,kind:'bench',x,z,yaw},world);
     tileAt(x,z).benches.push(...fixtures);
   }
-  return {tiles,solids};
+  // Při rozšiřování okruhu určí dosah kolizí samotné modely, včetně přesahů mezi dlaždicemi.
+  const bounds=new THREE.Box3();
+  const groups=new Map();
+  for(const site of solids) {
+    bounds.union(site.tree.bounds);
+    const tile=world.chunkIndex(site.x,site.z);
+    if (!groups.has(tile)) groups.set(tile,{bounds:new THREE.Box3(),sites:[]});
+    const group=groups.get(tile);
+    group.bounds.union(site.tree.bounds);
+    group.sites.push(site);
+  }
+  return {tiles,solids,bounds,groups:[...groups.values()]};
 }
 
 function parkMaterial(clock,flow,detail) {
@@ -281,29 +309,55 @@ export function buildSady(world,tile,owner,solidMaterial,detail,flow,clock) {
     owner.group.add(mesh);owner.disposables.push(geo);
     return mesh;
   }
+  // Drobné vybavení za hranicí čitelnosti nezatěžuje ani stínovou mapu.
+  function limitDistance(mesh, distance) {
+    const geo=mesh.geometry;
+    geo.computeBoundingSphere();
+    const lod=new THREE.LOD();
+    lod.position.copy(geo.boundingSphere.center).add(mesh.position);
+    mesh.position.sub(lod.position);
+    lod.addLevel(mesh,0);
+    lod.addLevel(new THREE.Object3D(),distance,.08);
+    owner.group.add(lod);
+  }
   if(tile.sites.length) {
-    const mat=parkMaterial(clock,flow,detail);
-    owner.disposables.push(mat);
+    const mat=tile.sites.some(site => !easternIds.has(site.id)) ? parkMaterial(clock,flow,detail) : null;
+    if (mat) owner.disposables.push(mat);
     for(const site of tile.sites) {
       const dry = !site.rx && ['smetana','bedrich','kopecky','loubi'].includes(site.id);
-      const mesh=attach(featureGeometry(site,detail,flow),!detail && dry ? solidMaterial : mat,site.name);
+      const mesh=attach(featureGeometry(site,detail,flow),easternIds.has(site.id) || (!detail && dry) ? solidMaterial : mat,site.name);
       mesh.position.set(site.x,site.ground,site.z);
+      if (easternIds.has(site.id)) {
+        const large=site.wall || ['lavka','terasa','arch'].includes(site.id);
+        const distance=large ? 430 : 145;
+        limitDistance(mesh,detail ? distance : distance*.55);
+      }
     }
   }
   if(tile.beds.length) {
     const geometries=tile.beds.map(b=>flowerBed(world,b,detail));
     const mesh=attach(mergeGeometries(geometries),solidMaterial,'Záhony Smetanových sadů');
     mesh.castShadow=false;
+    limitDistance(mesh,detail ? 215 : 140);
     for(const g of geometries) g.dispose();
   }
-  if(tile.benches.length) {
+  if(tile.reeds.length) {
+    const geo=bankPlants(world,tile.reeds,detail);
+    if (geo) {
+      const plants=attach(geo,solidMaterial,'Pobřežní porost Mlýnské strouhy');
+      plants.castShadow=false;
+      limitDistance(plants,detail ? 230 : 155);
+    }
+  }
+  if(tile.benches.length || tile.rails.length) {
     const buf=new SolidBuf(),ranges=[];
-    for(const fixture of tile.benches) {
+    for(const fixture of [...tile.benches,...tile.rails]) {
       const start=buf.p.length;
       drawStreetFixture(buf,fixture,detail);
       ranges.push({fixture,start,end:buf.p.length});
     }
     const mesh=attach(buf.geometry(),solidMaterial,'Lavičky ve Smetanových sadech');
+    limitDistance(mesh,detail ? 155 : 115);
     owner.sadyBenches=attachRoadFurniture(world.breakables,owner.group,mesh.geometry,solidMaterial,ranges);
   }
 }

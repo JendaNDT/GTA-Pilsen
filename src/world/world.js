@@ -1,4 +1,4 @@
-import { nearSady, crossesSady, museumWaterPolygon } from './sady-layout.js';
+import { museumWaterPolygon } from './sady-layout.js';
 import { createSady } from './sady-model.js';
 import { createBorySite } from './bory.js';
 import { isFountainPool } from './fountain-shapes.js';
@@ -23,6 +23,10 @@ import { buildRoadGrades, corridorWeight, gradeBlend, gradeCross, gradeHeight, g
   SHORE_BACK, SHORE_FADE, SHORE_FILL, SHORE_PLATEAU, SHORE_REACH, SHORE_WATER } from './road-grade.js';
 import { sidewalkHeight, sidewalkPriority, sidewalkProfile } from './sidewalks.js';
 import { armCut, cornerOverlap, cornerPolygon, findCorners, insidePolygon, shrinkPolygon } from './corners.js';
+
+function overlapsPark(bounds,x0,z0,x1,z1) {
+  return x0<=bounds.max.x && x1>=bounds.min.x && z0<=bounds.max.z && z1>=bounds.min.z;
+}
 
 export const SURF = 0.05;    // o kolik nad terénem leží povrch, po kterém se jezdí (kvůli vrstvě asfaltu)
 const ROAD_TERRAIN_STEP = 4;                       // rozteč úprav terénu pod silnicemi (m)
@@ -154,7 +158,7 @@ export class World {
     if (this.plagueColumn) this.streetFixtures.set(this.plagueColumn.tile, this.plagueColumn.fixtures.slice());
     this.sady = PARAMS.get('sady') === 'puvodni' ? null : createSady(this);
     for (const tile of this.sady?.tiles.values() ?? []) {
-      for (const bench of tile.benches) {
+      for (const bench of [...tile.benches,...tile.rails]) {
         if (!this.streetFixtures.has(bench.tile)) this.streetFixtures.set(bench.tile, []);
         this.streetFixtures.get(bench.tile).push(bench);
       }
@@ -544,7 +548,12 @@ export class World {
     }
     const fountains = this.fountainTiles?.get(this.chunkIndex(hit.x,hit.z));
     if (fountains && fountainContact(fountains,hit,r,y,yTop)) any=true;
-    if (this.sady && nearSady(hit.x,hit.z,r) && fountainContact(this.sady.solids,hit,r,y,yTop)) any=true;
+    if (this.sady && overlapsPark(this.sady.bounds,hit.x-r,hit.z-r,hit.x+r,hit.z+r)) {
+      for (const group of this.sady.groups) {
+        if (overlapsPark(group.bounds,hit.x-r,hit.z-r,hit.x+r,hit.z+r) &&
+            fountainContact(group.sites,hit,r,y,yTop)) any=true;
+      }
+    }
     if (this.pavilion && nearPavilion(hit.x,hit.z,r) && pavilionContact(this.pavilion,hit,r,y,yTop)) any=true;
     const B = this.b, vx = this.bvx, vz = this.bvz;
     const cx0 = Math.max(0, Math.floor((x - r - this.minX) / COLL_CELL)), cx1 = Math.min(this.gcols - 1, Math.floor((x + r - this.minX) / COLL_CELL));
@@ -682,7 +691,11 @@ export class World {
     let h = Number.isFinite(imported) && imported <= maxY ? imported : -1e9;
     const fountains = this.fountainTiles?.get(this.chunkIndex(x,z));
     if (fountains) h=Math.max(h,fountainSurface(fountains,x,z,maxY));
-    if (this.sady && nearSady(x,z)) h=Math.max(h,fountainSurface(this.sady.solids,x,z,maxY));
+    if (this.sady && overlapsPark(this.sady.bounds,x,z,x,z)) {
+      for (const group of this.sady.groups) {
+        if (overlapsPark(group.bounds,x,z,x,z)) h=Math.max(h,fountainSurface(group.sites,x,z,maxY));
+      }
+    }
     if (this.bory && Math.abs(x-this.bory.cx)<190 && Math.abs(z-this.bory.cz)<190) {
       const roof=this.bory.roofs.heightAt(x,z);
       if(roof<=maxY) h=Math.max(h,roof);
@@ -719,7 +732,14 @@ export class World {
     const B = this.b, vx = this.bvx, vz = this.bvz;
     const len = Math.hypot(x1 - x0, z1 - z0);
     let tBest = this.pavilion && nearPavilion(x0,z0,len) ? pavilionRay(this.pavilion,x0,z0,x1,z1,y) : 1;
-    if (this.sady && crossesSady(x0,z0,x1,z1)) tBest=Math.min(tBest,fountainRay(this.sady.solids,x0,z0,x1,z1,y));
+    if (this.sady) {
+      const xmin=Math.min(x0,x1), xmax=Math.max(x0,x1), zmin=Math.min(z0,z1), zmax=Math.max(z0,z1);
+      if (overlapsPark(this.sady.bounds,xmin,zmin,xmax,zmax)) {
+        for (const group of this.sady.groups) {
+          if(overlapsPark(group.bounds,xmin,zmin,xmax,zmax)) tBest=Math.min(tBest,fountainRay(group.sites,x0,z0,x1,z1,y));
+        }
+      }
+    }
     if (this.fountainTiles && Math.min(x0,x1)<55 && Math.max(x0,x1)>-59 && Math.min(z0,z1)<103 && Math.max(z0,z1)>-30) {
       for (const sites of this.fountainTiles.values()) tBest=Math.min(tBest,fountainRay(sites,x0,z0,x1,z1,y));
     }
