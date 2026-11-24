@@ -1,3 +1,4 @@
+import { inParkFountain } from './sady-layout.js';
 import * as THREE from 'three/webgpu';
 import { attribute, cameraPosition, mix, positionGeometry, smoothstep, vec3 } from 'three/tsl';
 import { CHUNK, LC } from '../config.js';
@@ -41,7 +42,7 @@ export function grassPatch(manager, cx, cz, bitmap) {
       const x = x0 + ((i + 0.15 + 0.7 * hash(key, 1)) * CELL) / SIDE,
         z = z0 + ((j + 0.15 + 0.7 * hash(key, 2)) * CELL) / SIDE;
       const ci = w.chunkIndex(x, z);
-      if (ci < 0) continue;
+      if (ci < 0 || (w.sady && inParkFountain(x,z))) continue;
       if (!vegetation.has(ci))
         vegetation.set(
           ci,

@@ -1,3 +1,5 @@
+import { nearSady, crossesSady, museumWaterPolygon } from './sady-layout.js';
+import { createSady } from './sady-model.js';
 import { createBorySite } from './bory.js';
 import { isFountainPool } from './fountain-shapes.js';
 import { createFountainSites, fountainContact, fountainRay, fountainSurface } from './fountain-site.js';
@@ -113,6 +115,7 @@ export class World {
     this.turns = new TurnRules(this, data.meta.traffic?.restrictions);
     this.breakables = new Breakables();
     this.traffic = new Traffic(this, data.meta.traffic);
+    this.gardenWaterLand = PARAMS.get('sady') === 'puvodni' ? null : new Set();
     this.fountainLand = PARAMS.get('kasny') === 'puvodni' ? null : new Set();
     this._initLand(data.land);
     this._initRails(data.rails);
@@ -149,6 +152,13 @@ export class World {
     }
     this.plagueColumn = createColumnSite(this);
     if (this.plagueColumn) this.streetFixtures.set(this.plagueColumn.tile, this.plagueColumn.fixtures.slice());
+    this.sady = PARAMS.get('sady') === 'puvodni' ? null : createSady(this);
+    for (const tile of this.sady?.tiles.values() ?? []) {
+      for (const bench of tile.benches) {
+        if (!this.streetFixtures.has(bench.tile)) this.streetFixtures.set(bench.tile, []);
+        this.streetFixtures.get(bench.tile).push(bench);
+      }
+    }
     this.treeTypes = new Map(data.treeTypes?.trees);
     this.forestTypes = new Map(data.treeTypes?.land);
     this.trees = data.trees;
@@ -534,6 +544,7 @@ export class World {
     }
     const fountains = this.fountainTiles?.get(this.chunkIndex(hit.x,hit.z));
     if (fountains && fountainContact(fountains,hit,r,y,yTop)) any=true;
+    if (this.sady && nearSady(hit.x,hit.z,r) && fountainContact(this.sady.solids,hit,r,y,yTop)) any=true;
     if (this.pavilion && nearPavilion(hit.x,hit.z,r) && pavilionContact(this.pavilion,hit,r,y,yTop)) any=true;
     const B = this.b, vx = this.bvx, vz = this.bvz;
     const cx0 = Math.max(0, Math.floor((x - r - this.minX) / COLL_CELL)), cx1 = Math.min(this.gcols - 1, Math.floor((x + r - this.minX) / COLL_CELL));
@@ -671,6 +682,7 @@ export class World {
     let h = Number.isFinite(imported) && imported <= maxY ? imported : -1e9;
     const fountains = this.fountainTiles?.get(this.chunkIndex(x,z));
     if (fountains) h=Math.max(h,fountainSurface(fountains,x,z,maxY));
+    if (this.sady && nearSady(x,z)) h=Math.max(h,fountainSurface(this.sady.solids,x,z,maxY));
     if (this.bory && Math.abs(x-this.bory.cx)<190 && Math.abs(z-this.bory.cz)<190) {
       const roof=this.bory.roofs.heightAt(x,z);
       if(roof<=maxY) h=Math.max(h,roof);
@@ -707,6 +719,7 @@ export class World {
     const B = this.b, vx = this.bvx, vz = this.bvz;
     const len = Math.hypot(x1 - x0, z1 - z0);
     let tBest = this.pavilion && nearPavilion(x0,z0,len) ? pavilionRay(this.pavilion,x0,z0,x1,z1,y) : 1;
+    if (this.sady && crossesSady(x0,z0,x1,z1)) tBest=Math.min(tBest,fountainRay(this.sady.solids,x0,z0,x1,z1,y));
     if (this.fountainTiles && Math.min(x0,x1)<55 && Math.max(x0,x1)>-59 && Math.min(z0,z1)<103 && Math.max(z0,z1)>-30) {
       for (const sites of this.fountainTiles.values()) tBest=Math.min(tBest,fountainRay(sites,x0,z0,x1,z1,y));
     }
@@ -1924,6 +1937,10 @@ export class World {
         const x = L.vx[v] * 0.1, z = L.vz[v] * 0.1;
         if (x < x0) x0 = x; if (x > x1) x1 = x; if (z < z0) z0 = z; if (z > z1) z1 = z;
       }
+      if (this.gardenWaterLand && museumWaterPolygon(x0,z0,x1,z1)) {
+        this.gardenWaterLand.add(i);
+        continue;
+      }
       if (this.fountainLand && isFountainPool(x0,z0,x1,z1)) {
         this.fountainLand.add(i);
         continue;
@@ -2029,7 +2046,7 @@ export class World {
     const sx = S / (this.maxX - this.minX), sz = S / (this.maxZ - this.minZ);
     const soft = new Set([LC.FARMLAND, LC.MEADOW, LC.GRASS, LC.ALLOTMENTS, LC.FOREST, LC.SCRUB, LC.PARK, LC.GARDEN, LC.CEMETERY, LC.PITCH]);
     for (let i = 0; i < n; i++) {
-      if (this.fountainLand?.has(i)) continue;
+      if (this.fountainLand?.has(i) || this.gardenWaterLand?.has(i)) continue;
       const c = L.cls[i];
       let col = null;
       if (c === LC.FOREST) col = '#ff0000';

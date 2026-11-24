@@ -1,3 +1,5 @@
+import { inSady, paintSady } from './sady-layout.js';
+import { buildSady } from './sady-model.js';
 import { buildFountains } from './fountains.js';
 import { buildBory } from './bory.js';
 import { buildPavilion } from './pavilion.js';
@@ -1202,7 +1204,7 @@ function buildLandIndex(world, districts) {
     for (let b = b0; b <= b1; b++) for (let a = a0; a <= a1; a++) (arr[b * world.cols + a] || (arr[b * world.cols + a] = [])).push(id);
   };
   for (let i = 0; i < world.lCount; i++) {
-    if (world.fountainLand?.has(i)) continue;
+    if (world.fountainLand?.has(i) || world.gardenWaterLand?.has(i)) continue;
     let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
     for (let v = L.ringStart[L.pRing[i]], ve = L.ringStart[L.pRing[i + 1]]; v < ve; v++) {
       const x = L.vx[v] * 0.1, z = L.vz[v] * 0.1;
@@ -1439,7 +1441,9 @@ function drawGround(mgr, ci, S, tile, bitmap) {
   };
   stroke(0);
   paintStreetPaving(g, world.streetPaving?.get(ci));
-  stroke(1); stroke(2);
+  stroke(1);
+  if (world.sady) paintSady(g,cx0,cz0,CHUNK);
+  stroke(2);
   // zaoblené rohy v textuře země (v dálce, kde se asfaltová síť nekreslí)
   for (const c of near) {
     for (const corner of world.cornerTiles?.get(c) ?? []) {
@@ -1530,7 +1534,8 @@ function buildTrees(world, ci, cx0, cz0, forest, cover) {
       if (world.buildingAt(x, z) >= 0 || world.isWater(x, z)) continue;
       const road = world.nearestRoad(x, z, 12, DRIVABLE_MAX, 0, nearby);
       if (road && road.dist < world.r.w[road.road] / 2 - 0.2) continue;
-      const size = 0.8 + hash(t, 5) * 0.6, rotation = hash(t, 6);
+      const rotation = hash(t, 6);
+      const size = (0.8 + hash(t, 5) * 0.6) * (world.sady && inSady(x,z) ? 1.72 : 1);
       if (detailed) {
         const polygon = cover.findLast(id => world.landContains(id, x, z));
         const cls = world.l.cls[polygon];
@@ -1817,6 +1822,8 @@ export class ChunkManager {
       ch.structure = w.structures?.build(ci, ch.group, this.solidMat);
       const fountains = w.fountainTiles?.get(ci);
       if (fountains) buildFountains(fountains,ch,QUALITY.waterDetail,PARAMS.get('kasny')!=='bez-proudu',env.time);
+      const garden = w.sady?.tiles.get(ci);
+      if (garden) buildSady(w,garden,ch,this.solidMat,QUALITY.heritageDetail,PARAMS.get('kasny')!=='bez-proudu',env.time);
       if (ci === w.bory?.tile) buildBory(w,ch,QUALITY.heritageDetail);
       if (ci === w.pavilion?.tile) buildPavilion(w, this.solidMat, ch);
       if (ci === w.plagueColumn?.tile) {
@@ -1890,6 +1897,7 @@ export class ChunkManager {
 
   _dispose(ch) {
     if (ch.structure) this.world.structures.dispose(ch.structure);
+    for (const bench of ch.sadyBenches ?? []) this.world.breakables.detach(bench);
     for (const rail of ch.pavilionRails ?? []) this.world.breakables.detach(rail);
     for (const rail of ch.columnRails ?? []) this.world.breakables.detach(rail);
     this.scene.remove(ch.group);

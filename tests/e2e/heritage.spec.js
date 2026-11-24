@@ -585,3 +585,31 @@ test('Bory na nízké kvalitě obnoví celý model i jeho kopuli po návratu z p
   expect(result.roof).toBeCloseTo(result.peak,3);
   await ready();
 });
+
+test('Smetanovy sady po návratu na nízké kvalitě obnoví celou promenádu až k muzeu',async ({page})=>{
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0&view=340'));
+  await page.waitForFunction(()=>window.__ready);
+  await page.evaluate(()=>__freeze(true));
+  const visit=()=>page.waitForFunction(()=>{
+    const g=__game;
+    g.chunks.update(-60,295,420,40);
+    return ['Kašna Rusalka','Pítko Leknín','Fontána Corso','Matka s dítětem','Fontána před muzeem',
+      'Pomník Josefa Františka Smetany','Pomník Bedřicha Smetany','Pomník Martina Kopeckého',
+      'Zelené loubí u muzea','Záhony Smetanových sadů','Lavičky ve Smetanových sadech']
+      .every(name=>g.scene.getObjectByName(name));
+  });
+  await visit();
+  const result=await page.evaluate(()=>{
+    const g=__game,site=g.world.sady.solids.find(s=>s.id==='rusalka');
+    const high=g.world.roofAt(site.x,site.z);
+    const naturalWater=g.world.isWater(141.25,307.55);
+    let disposed=false;
+    g.scene.getObjectByName('Kašna Rusalka').geometry.addEventListener('dispose',()=>{disposed=true;});
+    g.chunks.update(5200,1800,340,0);
+    return {height:high-site.ground,naturalWater,disposed,away:!g.scene.getObjectByName('Pítko Leknín')};
+  });
+  expect(result.height).toBeGreaterThan(2);
+  expect(result.naturalWater).toBeFalsy();
+  expect(result.disposed).toBe(true);expect(result.away).toBe(true);
+  await visit();
+});

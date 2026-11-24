@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Smetanovy a Kopeckého sady až k muzeu
+
+Větev `codex/smetanovy-sady` doplňuje celý úsek od divadla k muzeu. Na trase je pět vodních prvků, tři pomníky, zelené loubí, 14 záhonů a 33 laviček. Vzniklo osm dvojic snímků včetně dvou přeletů. Prošlo všech 304 testů JavaScriptu a produkční sestavení. V úplném běhu prošlo 414 ze 416 prohlížečových kontrol. Kontrola celé promenády po odletu a návratu prošla na WebGL 2 i WebGPU. Dvě zkoušky ranní špičky na Klatovské při společném běhu zaznamenaly příliš dlouhé čekání na křižovatce. Obě prošly při samostatném opakování beze změny kódu. Při přeletu je náročnost srovnatelná s výchozí verzí, při jízdě v sadech vzrostl čas GPU přibližně o 23 %. [Podklady, porovnání a ověření](../E25/smetanovy-sady.md)
+
 ## Historická věznice Bory
 
 Větev `codex/bory-pruceli` doplňuje celý vnější model historické budovy. Uliční průčelí, kapli, paprskovitá křídla a kupoli lze porovnat ve čtyřech pohledech před změnou a po ní. Prošlo všech 300 testů JavaScriptu, produkční sestavení a 413 ze 414 prohlížečových kontrol. Zbývající zkouška dopravy u hlavního nádraží prošla při samostatném opakování. Pro příští památky platí kontrola ze země i z vrtulníku. [Snímky, zdroje a ověření](../E25/bory.md)
