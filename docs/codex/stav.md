@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Herní mapa a orientace
+
+Domluvené změny a příklady pro ověření na počítači i telefonu jsou v [zadání herní mapy](herni-mapa.md). Výchozí verze je `a496a1a`, pracovní větev `codex/herni-mapa`.
+
 ## Od muzea k Mlýnské strouze
 
 Větev `codex/sady-ke-strouze` prodlužuje model od Západočeského muzea přes Šafaříkovy a Křižíkovy sady k jezírku i na trávník za ním. Pěší hráč přejde lávku mezi oběma břehy. Vzniklo osm dvojic srovnávacích snímků včetně dvou přeletů. Prošlo 306 jednotkových testů a produkční sestavení. Z 418 prohlížečových zkoušek prošlo napoprvé 413. Po úpravě dohledu prošly všechny kontroly rozpočtů a při opakování také obě kontroly ranní špičky na Klatovské. [Snímky, podklady a ověření](../E25/strouha.md)
