@@ -1,5 +1,9 @@
 # Stav etapy E28
 
+## Druhá verze přídě a dveří Fabie
+
+Světlomety kopírují zakřivení blatníků. Každé pouzdro má dvě paraboly a samostatnou směrovku. Boční dveře mají tvarované plechy, průběžné spáry a kliky v barvě karoserie. Prošlo 314 jednotkových testů, produkční sestavení a 12 cílených kontrol v prohlížeči. [Snímky stejného auta před úpravou a po ní a ověření](../fabia/prid-a-dvere.md)
+
 ## Fabia II a pohyblivá kola
 
 Hotová je pětidveřová Fabia II včetně střechy a zádě, rejd předních kol a odvalování všech kol při jízdě i couvání. Pohyb používají také auta v provozu. Prošlo 313 jednotkových testů, produkční sestavení a 14 cílených kontrol v prohlížeči. [Zadání](E28.md) · [Snímky, měření a výsledek](../E28.md)

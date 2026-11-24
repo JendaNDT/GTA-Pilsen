@@ -137,3 +137,28 @@ test('kola v provozu odvalují vpřed i vzad a rejd má jen přední náprava', 
   car.speed = -4; updateCarWheels(car, 0.05);
   assert.ok(Math.abs(wheels.userData.roll) < 1e-7);
 });
+
+test('Fabia má svítící jádra ve tvarovaném čele a prolis předních dveří na obou stranách', () => {
+  for (const detail of [true, false]) {
+    const g = buildCarGeometry('hatch', detail);
+    const { position, aLens } = g.detail.attributes;
+    for (const side of [-1, 1]) {
+      const depths = [], widths = [];
+      for (let i = 0; i < position.count; i++) {
+        if (aLens.getX(i) !== 1 || Math.sign(position.getX(i)) !== side) continue;
+        depths.push(position.getZ(i));
+        widths.push(Math.abs(position.getX(i)));
+      }
+      assert.equal(depths.length, 36);
+      assert.ok(Math.max(...depths) - Math.min(...depths) > 0.055, 'paraboly sledují oblouk blatníku');
+      assert.ok(Math.max(...widths) < 0.71, 'směrovka na vnějším konci zůstane oddělená od tlumeného světla');
+      const door = g.panels[side > 0 ? 'rightDoor' : 'leftDoor'];
+      const points = g.body.attributes.position;
+      const doorWidths = [];
+      for (let i = door.start; i < door.start + door.count; i++) {
+        if (points.getY(i) < 0.80) doorWidths.push(Math.abs(points.getX(i)));
+      }
+      assert.ok(Math.max(...doorWidths) - Math.min(...doorWidths) > 0.02, 'plech mezi prahem a klikou má zaoblený profil');
+    }
+  }
+});
