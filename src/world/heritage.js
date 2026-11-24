@@ -1,5 +1,6 @@
 // Měřené městské dlaždice a vlastní model vodního hamru.
 import { canopyTile, stationMaterials, stationSurfaces, stationTile } from './station-building.js';
+import { synagogueMaterial, synagogueSurface, synagogueTile } from './synagogue.js';
 import { forecourtBounds } from './station-forecourt.js';
 import * as THREE from 'three/webgpu';
 import { CHUNK, PARAMS, QUALITY } from '../config.js';
@@ -13,6 +14,7 @@ import { env, makeBuildingMaterial, makeMillraceMaterial, makeSurfaceMaterial } 
 import { SURFACE } from './material-table.js';
 import { FORGE, buildForge, forgeRoofHeight } from './mill.js';
 
+const showSynagogue = PARAMS.get('synagoga') !== 'puvodni';
 const stationTiles = new Set(PARAMS.get('pruceli') === 'puvodni' ? [] : [stationTile, canopyTile]);
 
 export const detailRequestLimit = () => QUALITY.groundTex === 256 ? 2 : 4;
@@ -117,7 +119,7 @@ export class Heritage {
       this.fetching++;
       const tile = this.cells.get(ch.ci);
       const hasStreet = this.streets?.tiles.has(tile.name);
-      loadCityTile(tile.name, controller.signal, hasStreet || stationTiles.has(tile.name)).then(async (pack) => {
+      loadCityTile(tile.name, controller.signal, hasStreet || stationTiles.has(tile.name) || (showSynagogue && tile.name === synagogueTile)).then(async (pack) => {
         if (controller.signal.aborted) return;
         const { version, cx, cz } = pack.header;
         const n = pack.p?.length;
@@ -168,6 +170,14 @@ export class Heritage {
     if (city) {
       const pack = owner.cityData;
       const geometry = cityMesh(pack, '');
+      if (showSynagogue && entry.name === synagogueTile) {
+        const front = synagogueSurface(pack, geometry);
+        if (front) {
+          const material = synagogueMaterial();
+          add(front, material).name = 'Velká synagoga a sousední domy';
+          owner.disposables.push(material, material.map);
+        }
+      }
       if (stationTiles.has(entry.name)) {
         const station = stationSurfaces(pack, geometry);
         if (station) {

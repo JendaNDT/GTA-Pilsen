@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Velká synagoga v sadech Pětatřicátníků
+
+Na větvi `codex/velka-synagoga` má synagoga vlastní průčelí, kupole, římsy a hvězdy. Vlastní fasádu mají také oba přilehlé domy včetně výloh za zaobleným nárožím. Prošlo 272 testů JavaScriptu, produkční sestavení a 16 cílených prohlížečových zkoušek. V celé sadě prošlo 390 z 392 kontrol. Zbývající dvě kontroly nočních oken na náměstí selhaly i na původní verzi. Na nízké předvolbě se vzhled obnovil také po návratu do ulice v dotykové emulaci. [Srovnání ze stejného místa a výsledky zkoušek](../E25/synagoga.md)
+
 ## Vzhled hlavního nádraží od Mikulášské
 
 Na větvi `codex/hlavni-nadrazi` má západní průčelí vlastní kresbu podle autorovy předlohy, patinované kupole, římsy a čitelný název na přední hraně přístřešku. Prošlo 271 testů JavaScriptu, produkční sestavení, cílené kontroly na WebGL 2 i WebGPU a dotyková emulace telefonu. [Snímky a místní ověření](../E25/pruceli-nadrazi.md)

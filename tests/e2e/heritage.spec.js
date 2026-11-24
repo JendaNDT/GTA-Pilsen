@@ -149,3 +149,31 @@ test('Hlavní nádraží načte vlastní průčelí i v nízké kvalitě a po od
   expect(observed).toEqual({visible:true,disposed:5,unloaded:true});
   expect(errors).toEqual([]);
 });
+
+test('Velká synagoga a oba domy se v nízké kvalitě načtou a po odjezdu uvolní', async ({page}) => {
+  const errors = [];
+  page.on('pageerror',error=>errors.push(error.message));
+  await page.setViewportSize({width:844,height:390});
+  await page.goto(gameUrl('/?debug&quality=low&view=340&adapt=0&hour=10'));
+  await page.waitForFunction(()=>window.__ready);
+  await page.getByRole('button',{name:'Hrát',exact:true}).click();
+  await page.evaluate(()=>{ window.__freeze(true); window.__game.player.place(-292,111); });
+  await page.waitForFunction(()=>{
+    const g = window.__game;
+    g.chunks.update(-292,111,340,40,g.player.y);
+    return g.scene.getObjectByName('Velká synagoga a sousední domy')?.material.map.image?.naturalWidth>0;
+  });
+  const result = await page.evaluate(()=>{
+    const g = window.__game, mesh = g.scene.getObjectByName('Velká synagoga a sousední domy');
+    window.__view(-292,6.6,111,-329,17,103);
+    let disposed = 0;
+    for (const asset of [mesh.geometry,mesh.material,mesh.material.map]) {
+      asset.addEventListener('dispose',()=>disposed++);
+    }
+    const visible = mesh.visible && mesh.parent.visible;
+    g.chunks.update(-1200,-2600,340,0);
+    return {visible,disposed};
+  });
+  expect(result).toEqual({visible:true,disposed:3});
+  expect(errors).toEqual([]);
+});

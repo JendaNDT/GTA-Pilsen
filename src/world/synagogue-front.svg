@@ -1,0 +1,499 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="2016" height="672" viewBox="0 0 144 48">
+<title>Velká synagoga a sousední domy v sadech Pětatřicátníků</title>
+<defs>
+  <pattern id="cihla" patternUnits="userSpaceOnUse" width=".86" height=".42">
+    <rect width=".86" height=".42" fill="#8c493c"/><path d="M0 .01H.86 M0 .22H.86 M.43 .01V.22 M.01 .22V.42" fill="none" stroke="#ad7f6b" stroke-width=".038"/>
+    <path d="M.08 .09h.22 M.56 .32h.19" stroke="#814434" stroke-width=".045"/>
+  </pattern>
+  <pattern id="kvadr" patternUnits="userSpaceOnUse" width="2" height="1.12">
+    <rect width="2" height="1.12" fill="#e7d8bd"/><path d="M0 .02H2 M0 .58H2 M1 .02V.58 M.02 .58V1.12" fill="none" stroke="#baa98f" stroke-width=".065"/>
+  </pattern>
+  <g id="portal">
+    <path d="M-2.17 0V4.78a2.17 2.17 0 0 0 4.34 0V0" fill="#bfae91" stroke="#988674" stroke-width=".11"/>
+    <path d="M-1.96 0V4.76a1.96 1.96 0 0 0 3.92 0V0" fill="#eee1c7" stroke="#f6ead1" stroke-width=".09"/>
+    <path d="M-1.7 0V4.74a1.7 1.7 0 0 0 3.4 0V0" fill="#3a302f" stroke="#9e8b74" stroke-width=".13"/>
+    <path d="M-1.64 .28H1.64 M0 .24v4.4 M-1.65 4.66h3.3" stroke="#625049" stroke-width=".09"/>
+    <path d="M-2.18 .06h.5v.29h-.5z M1.68 .06h.5v.29h-.5z M-2.18 4.49h.53v.22h-.53z M1.65 4.49h.53v.22h-.53z" fill="#f2e6cf"/>
+  </g>
+  <g id="okno">
+    <path d="M-2.17 0v5.24a2.17 2.17 0 0 0 4.34 0V0" fill="#eee2c9" stroke="#b5a188" stroke-width=".17"/>
+    <path d="M-1.86 0v5.2a1.86 1.86 0 0 0 3.72 0V0" fill="#cbbc9e" stroke="#f9ead1" stroke-width=".13"/>
+    <g fill="#303c45" stroke="#ede1c9" stroke-width=".13"><path d="M-1.67 .16v4.1a.74 .74 0 0 0 1.48 0V.16z M.19 .16v4.1a.74 .74 0 0 0 1.48 0V.16z"/><circle cy="5.62" r=".87"/></g>
+    <path d="M-.94 .18v4.48 M.94 .18v4.48 M-1.64 1.95h1.44 M.22 1.95h1.42" stroke="#677078" stroke-width=".07"/>
+    <path d="M-2.12 -.08h4.24v.2h-4.24z M-.22 .1h.44v.2h-.44z" fill="#fcf0da"/>
+  </g>
+  <g id="byt">
+    <rect x="-1" y="-.13" width="2" height="2.73" fill="#9b8066"/>
+    <rect x="-.9" width="1.8" height="2.53" fill="#f4e0b3"/>
+    <rect x="-.73" y=".12" width="1.46" height="2.26" fill="#53606a"/>
+    <path d="M0 .12v2.25 M-.73 1.72H.73" fill="none" stroke="#d4c9b2" stroke-width=".095"/>
+    <path d="M-.98 -.15H.98 M-.98 2.61H.98" stroke="#f9e7c5" stroke-width=".18"/>
+  </g>
+  <g id="vyklad">
+    <rect x="-1.38" width="2.76" height="3.4" fill="#7b695a"/><rect x="-1.22" y=".18" width="2.44" height="2.65" fill="#485965"/>
+    <path d="M-.98 1.95L.1 2.72H.78l-1.76-1.31z" fill="#64717a"/>
+    <path d="M0 .18V2.85 M-1.22 2.23h2.44" stroke="#968878" stroke-width=".10"/>
+    <path d="M-1.32 3.02h2.64v.44h-2.64z" fill="#6c443e"/>
+  </g>
+  <g id="arkada"><path d="M0 0v.56a.34 .34 0 0 0 .68 0V0" fill="#795243" stroke="#f3e4cc" stroke-width=".12"/></g>
+  <path id="cimburi" d="M0 0v.34a.32 .32 0 0 0 .64 0v-.34" fill="none" stroke="#eddebf" stroke-width=".22"/>
+</defs>
+<g transform="translate(0 48) scale(1 -1)">
+<rect x="0" y="0" width="144" height="48" fill="#d0bfa9"/>
+<rect x="0" y="0" width="38.9" height="25" fill="#d5a25c"/>
+<rect x="0" y="0" width="38.9" height="5" fill="#d2a664"/>
+<rect x="0" y="0.3" width="38.9" height="0.045" fill="#9e805f"/>
+<rect x="0" y="1" width="38.9" height="0.045" fill="#9e805f"/>
+<rect x="0" y="1.7" width="38.9" height="0.045" fill="#9e805f"/>
+<rect x="0" y="2.4" width="38.9" height="0.045" fill="#9e805f"/>
+<rect x="0" y="3.1" width="38.9" height="0.045" fill="#9e805f"/>
+<rect x="0" y="3.8" width="38.9" height="0.045" fill="#9e805f"/>
+<rect x="0" y="4.5" width="38.9" height="0.045" fill="#9e805f"/>
+<rect x="0" y="4.76" width="38.9" height="0.12" fill="#aa8666"/>
+<rect x="0" y="4.88" width="38.9" height="0.2" fill="#f3d59a"/>
+<rect x="0" y="5.07" width="38.9" height="0.07" fill="#fff0cc"/>
+<rect x="0" y="8.87" width="38.9" height="0.12" fill="#aa8666"/>
+<rect x="0" y="8.99" width="38.9" height="0.2" fill="#f3d59a"/>
+<rect x="0" y="9.18" width="38.9" height="0.07" fill="#fff0cc"/>
+<rect x="0" y="12.98" width="38.9" height="0.12" fill="#aa8666"/>
+<rect x="0" y="13.1" width="38.9" height="0.2" fill="#f3d59a"/>
+<rect x="0" y="13.29" width="38.9" height="0.07" fill="#fff0cc"/>
+<rect x="0" y="17.71" width="38.9" height="0.12" fill="#aa8666"/>
+<rect x="0" y="17.83" width="38.9" height="0.2" fill="#f3d59a"/>
+<rect x="0" y="18.02" width="38.9" height="0.07" fill="#fff0cc"/>
+<use xlink:href="#byt" transform="translate(1.65 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(1.65 9.72) scale(0.85 1.02)"/>
+<path d="M0.6199999999999999 12.5l1.03 .51 1.03 -.51z" fill="#f3d59a" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(1.65 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(1.65 2.47) scale(0.82 0.78)"/>
+<rect x="1.47" y="18.05" width="0.36" height="0.23" fill="#f3d59a"/>
+<use xlink:href="#byt" transform="translate(4.7 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(4.7 9.72) scale(0.85 1.02)"/>
+<path d="M3.669999999999999 12.5l1.03 .51 1.03 -.51z" fill="#f3d59a" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(4.7 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(4.7 2.47) scale(0.82 0.78)"/>
+<rect x="4.52" y="18.05" width="0.36" height="0.23" fill="#f3d59a"/>
+<use xlink:href="#byt" transform="translate(7.75 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(7.75 9.72) scale(0.85 1.02)"/>
+<path d="M6.72 12.5l1.03 .51 1.03 -.51z" fill="#f3d59a" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(7.75 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(7.75 2.47) scale(0.82 0.78)"/>
+<rect x="7.57" y="18.05" width="0.36" height="0.23" fill="#f3d59a"/>
+<use xlink:href="#byt" transform="translate(10.8 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(10.8 9.72) scale(0.85 1.02)"/>
+<path d="M9.77 12.5l1.03 .51 1.03 -.51z" fill="#f3d59a" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(10.8 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(10.8 2.47) scale(0.82 0.78)"/>
+<rect x="10.62" y="18.05" width="0.36" height="0.23" fill="#f3d59a"/>
+<use xlink:href="#byt" transform="translate(13.85 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(13.85 9.72) scale(0.85 1.02)"/>
+<path d="M12.82 12.5l1.03 .51 1.03 -.51z" fill="#f3d59a" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(13.85 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(13.85 2.47) scale(0.82 0.78)"/>
+<rect x="13.67" y="18.05" width="0.36" height="0.23" fill="#f3d59a"/>
+<use xlink:href="#byt" transform="translate(16.9 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(16.9 9.72) scale(0.85 1.02)"/>
+<path d="M15.87 12.5l1.03 .51 1.03 -.51z" fill="#f3d59a" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(16.9 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(16.9 2.47) scale(0.82 0.78)"/>
+<rect x="16.72" y="18.05" width="0.36" height="0.23" fill="#f3d59a"/>
+<use xlink:href="#byt" transform="translate(19.95 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(19.95 9.72) scale(0.85 1.02)"/>
+<path d="M18.919999999999995 12.5l1.03 .51 1.03 -.51z" fill="#f3d59a" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(19.95 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(19.95 2.47) scale(0.82 0.78)"/>
+<rect x="19.77" y="18.05" width="0.36" height="0.23" fill="#f3d59a"/>
+<use xlink:href="#byt" transform="translate(23 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(23 9.72) scale(0.85 1.02)"/>
+<path d="M21.969999999999995 12.5l1.03 .51 1.03 -.51z" fill="#f3d59a" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(23 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(23 2.47) scale(0.82 0.78)"/>
+<rect x="22.82" y="18.05" width="0.36" height="0.23" fill="#f3d59a"/>
+<use xlink:href="#byt" transform="translate(26.05 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(26.05 9.72) scale(0.85 1.02)"/>
+<path d="M25.019999999999996 12.5l1.03 .51 1.03 -.51z" fill="#f3d59a" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(26.05 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(26.05 2.47) scale(0.82 0.78)"/>
+<rect x="25.87" y="18.05" width="0.36" height="0.23" fill="#f3d59a"/>
+<use xlink:href="#byt" transform="translate(29.1 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(29.1 9.72) scale(0.85 1.02)"/>
+<path d="M28.069999999999997 12.5l1.03 .51 1.03 -.51z" fill="#f3d59a" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(29.1 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(29.1 2.47) scale(0.82 0.78)"/>
+<rect x="28.92" y="18.05" width="0.36" height="0.23" fill="#f3d59a"/>
+<use xlink:href="#byt" transform="translate(32.15 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(32.15 9.72) scale(0.85 1.02)"/>
+<path d="M31.119999999999997 12.5l1.03 .51 1.03 -.51z" fill="#f3d59a" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(32.15 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(32.15 2.47) scale(0.82 0.78)"/>
+<rect x="31.97" y="18.05" width="0.36" height="0.23" fill="#f3d59a"/>
+<use xlink:href="#byt" transform="translate(35.2 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(35.2 9.72) scale(0.85 1.02)"/>
+<path d="M34.169999999999995 12.5l1.03 .51 1.03 -.51z" fill="#f3d59a" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(35.2 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(35.2 2.47) scale(0.82 0.78)"/>
+<rect x="35.02" y="18.05" width="0.36" height="0.23" fill="#f3d59a"/>
+<rect x="0.15" y="5" width="0.32" height="12.83" fill="#f3d59a"/>
+<rect x="38.43" y="5" width="0.32" height="12.83" fill="#f3d59a"/>
+<rect x="0.12" y="5.12" width="0.33" height="12.5" fill="#c29958"/>
+<rect x="0.18" y="5.12" width="0.25" height="12.5" fill="#f3d59a"/>
+<rect x="0.03" y="5.18" width="0.55" height="0.19" fill="#f3d59a"/>
+<rect x="0.03" y="9.46" width="0.55" height="0.19" fill="#f3d59a"/>
+<rect x="0.03" y="13.59" width="0.55" height="0.19" fill="#f3d59a"/>
+<rect x="0.03" y="17.43" width="0.55" height="0.19" fill="#f3d59a"/>
+<rect x="9.12" y="5.12" width="0.33" height="12.5" fill="#c29958"/>
+<rect x="9.18" y="5.12" width="0.25" height="12.5" fill="#f3d59a"/>
+<rect x="9.03" y="5.18" width="0.55" height="0.19" fill="#f3d59a"/>
+<rect x="9.03" y="9.46" width="0.55" height="0.19" fill="#f3d59a"/>
+<rect x="9.03" y="13.59" width="0.55" height="0.19" fill="#f3d59a"/>
+<rect x="9.03" y="17.43" width="0.55" height="0.19" fill="#f3d59a"/>
+<rect x="12.17" y="5.12" width="0.33" height="12.5" fill="#c29958"/>
+<rect x="12.23" y="5.12" width="0.25" height="12.5" fill="#f3d59a"/>
+<rect x="12.08" y="5.18" width="0.55" height="0.19" fill="#f3d59a"/>
+<rect x="12.08" y="9.46" width="0.55" height="0.19" fill="#f3d59a"/>
+<rect x="12.08" y="13.59" width="0.55" height="0.19" fill="#f3d59a"/>
+<rect x="12.08" y="17.43" width="0.55" height="0.19" fill="#f3d59a"/>
+<rect x="24.37" y="5.12" width="0.33" height="12.5" fill="#c29958"/>
+<rect x="24.43" y="5.12" width="0.25" height="12.5" fill="#f3d59a"/>
+<rect x="24.28" y="5.18" width="0.55" height="0.19" fill="#f3d59a"/>
+<rect x="24.28" y="9.46" width="0.55" height="0.19" fill="#f3d59a"/>
+<rect x="24.28" y="13.59" width="0.55" height="0.19" fill="#f3d59a"/>
+<rect x="24.28" y="17.43" width="0.55" height="0.19" fill="#f3d59a"/>
+<rect x="27.42" y="5.12" width="0.33" height="12.5" fill="#c29958"/>
+<rect x="27.48" y="5.12" width="0.25" height="12.5" fill="#f3d59a"/>
+<rect x="27.33" y="5.18" width="0.55" height="0.19" fill="#f3d59a"/>
+<rect x="27.33" y="9.46" width="0.55" height="0.19" fill="#f3d59a"/>
+<rect x="27.33" y="13.59" width="0.55" height="0.19" fill="#f3d59a"/>
+<rect x="27.33" y="17.43" width="0.55" height="0.19" fill="#f3d59a"/>
+<rect x="38.39" y="5.12" width="0.33" height="12.5" fill="#c29958"/>
+<rect x="38.45" y="5.12" width="0.25" height="12.5" fill="#f3d59a"/>
+<rect x="38.3" y="5.18" width="0.55" height="0.19" fill="#f3d59a"/>
+<rect x="38.3" y="9.46" width="0.55" height="0.19" fill="#f3d59a"/>
+<rect x="38.3" y="13.59" width="0.55" height="0.19" fill="#f3d59a"/>
+<rect x="38.3" y="17.43" width="0.55" height="0.19" fill="#f3d59a"/>
+<path d="M3.95 16.76q1.05 1.10 2.1 0z" fill="#f3d59a" stroke="#b88a56" stroke-width="0.06"/>
+<path d="M7.000000000000001 16.76q1.05 1.10 2.1 0z" fill="#f3d59a" stroke="#b88a56" stroke-width="0.06"/>
+<path d="M15.93 16.76q1.05 1.10 2.1 0z" fill="#f3d59a" stroke="#b88a56" stroke-width="0.06"/>
+<path d="M18.98 16.76q1.05 1.10 2.1 0z" fill="#f3d59a" stroke="#b88a56" stroke-width="0.06"/>
+<path d="M28.13 16.76q1.05 1.10 2.1 0z" fill="#f3d59a" stroke="#b88a56" stroke-width="0.06"/>
+<path d="M31.179999999999996 16.76q1.05 1.10 2.1 0z" fill="#f3d59a" stroke="#b88a56" stroke-width="0.06"/>
+<path d="M14 17.95l5.4 1.99 5.4-1.99z" fill="#efd397" stroke="#ad855a" stroke-width="0.17"/>
+<path d="M16 18.21l3.4 1.20 3.4-1.20z" fill="#cc9e5e" stroke="none" stroke-width="0"/>
+<use xlink:href="#portal" transform="translate(19.4 1.95) scale(0.75 0.5)"/>
+<rect x="75.88" y="0" width="54.35" height="25" fill="#ac856d"/>
+<rect x="75.88" y="0" width="54.35" height="5" fill="#a78b76"/>
+<rect x="75.88" y="0.3" width="54.35" height="0.045" fill="#9e805f"/>
+<rect x="75.88" y="1" width="54.35" height="0.045" fill="#9e805f"/>
+<rect x="75.88" y="1.7" width="54.35" height="0.045" fill="#9e805f"/>
+<rect x="75.88" y="2.4" width="54.35" height="0.045" fill="#9e805f"/>
+<rect x="75.88" y="3.1" width="54.35" height="0.045" fill="#9e805f"/>
+<rect x="75.88" y="3.8" width="54.35" height="0.045" fill="#9e805f"/>
+<rect x="75.88" y="4.5" width="54.35" height="0.045" fill="#9e805f"/>
+<rect x="75.88" y="4.76" width="54.35" height="0.12" fill="#aa8666"/>
+<rect x="75.88" y="4.88" width="54.35" height="0.2" fill="#e9ccb1"/>
+<rect x="75.88" y="5.07" width="54.35" height="0.07" fill="#fff0cc"/>
+<rect x="75.88" y="8.87" width="54.35" height="0.12" fill="#aa8666"/>
+<rect x="75.88" y="8.99" width="54.35" height="0.2" fill="#e9ccb1"/>
+<rect x="75.88" y="9.18" width="54.35" height="0.07" fill="#fff0cc"/>
+<rect x="75.88" y="12.98" width="54.35" height="0.12" fill="#aa8666"/>
+<rect x="75.88" y="13.1" width="54.35" height="0.2" fill="#e9ccb1"/>
+<rect x="75.88" y="13.29" width="54.35" height="0.07" fill="#fff0cc"/>
+<rect x="75.88" y="18.03" width="54.35" height="0.12" fill="#aa8666"/>
+<rect x="75.88" y="18.15" width="54.35" height="0.2" fill="#e9ccb1"/>
+<rect x="75.88" y="18.34" width="54.35" height="0.07" fill="#fff0cc"/>
+<use xlink:href="#byt" transform="translate(77.53 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(77.53 9.72) scale(0.85 1.02)"/>
+<path d="M76.5 12.5l1.03 .51 1.03 -.51z" fill="#e9ccb1" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(77.53 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#vyklad" transform="translate(77.53 1.93) scale(0.98 0.81)"/>
+<rect x="77.35" y="18.37" width="0.36" height="0.23" fill="#e9ccb1"/>
+<use xlink:href="#byt" transform="translate(80.63 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(80.63 9.72) scale(0.85 1.02)"/>
+<path d="M79.6 12.5l1.03 .51 1.03 -.51z" fill="#e9ccb1" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(80.63 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#vyklad" transform="translate(80.63 1.93) scale(0.98 0.81)"/>
+<rect x="80.45" y="18.37" width="0.36" height="0.23" fill="#e9ccb1"/>
+<use xlink:href="#byt" transform="translate(83.73 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(83.73 9.72) scale(0.85 1.02)"/>
+<path d="M82.7 12.5l1.03 .51 1.03 -.51z" fill="#e9ccb1" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(83.73 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#vyklad" transform="translate(83.73 1.93) scale(0.98 0.81)"/>
+<rect x="83.55" y="18.37" width="0.36" height="0.23" fill="#e9ccb1"/>
+<use xlink:href="#byt" transform="translate(86.83 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(86.83 9.72) scale(0.85 1.02)"/>
+<path d="M85.8 12.5l1.03 .51 1.03 -.51z" fill="#e9ccb1" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(86.83 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#vyklad" transform="translate(86.83 1.93) scale(0.98 0.81)"/>
+<rect x="86.65" y="18.37" width="0.36" height="0.23" fill="#e9ccb1"/>
+<use xlink:href="#byt" transform="translate(89.93 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(89.93 9.72) scale(0.85 1.02)"/>
+<path d="M88.9 12.5l1.03 .51 1.03 -.51z" fill="#e9ccb1" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(89.93 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#vyklad" transform="translate(89.93 1.93) scale(0.98 0.81)"/>
+<rect x="89.75" y="18.37" width="0.36" height="0.23" fill="#e9ccb1"/>
+<use xlink:href="#byt" transform="translate(93.03 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(93.03 9.72) scale(0.85 1.02)"/>
+<path d="M92.0 12.5l1.03 .51 1.03 -.51z" fill="#e9ccb1" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(93.03 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#vyklad" transform="translate(93.03 1.93) scale(0.98 0.81)"/>
+<rect x="92.85" y="18.37" width="0.36" height="0.23" fill="#e9ccb1"/>
+<use xlink:href="#byt" transform="translate(96.13 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(96.13 9.72) scale(0.85 1.02)"/>
+<path d="M95.1 12.5l1.03 .51 1.03 -.51z" fill="#e9ccb1" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(96.13 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#vyklad" transform="translate(96.13 1.93) scale(0.98 0.81)"/>
+<rect x="95.95" y="18.37" width="0.36" height="0.23" fill="#e9ccb1"/>
+<use xlink:href="#byt" transform="translate(99.23 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(99.23 9.72) scale(0.85 1.02)"/>
+<path d="M98.2 12.5l1.03 .51 1.03 -.51z" fill="#e9ccb1" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(99.23 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#vyklad" transform="translate(99.23 1.93) scale(0.98 0.81)"/>
+<rect x="99.05" y="18.37" width="0.36" height="0.23" fill="#e9ccb1"/>
+<use xlink:href="#byt" transform="translate(102.33 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(102.33 9.72) scale(0.85 1.02)"/>
+<path d="M101.3 12.5l1.03 .51 1.03 -.51z" fill="#e9ccb1" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(102.33 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#vyklad" transform="translate(102.33 1.93) scale(0.98 0.81)"/>
+<rect x="102.15" y="18.37" width="0.36" height="0.23" fill="#e9ccb1"/>
+<use xlink:href="#byt" transform="translate(105.43 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(105.43 9.72) scale(0.85 1.02)"/>
+<path d="M104.4 12.5l1.03 .51 1.03 -.51z" fill="#e9ccb1" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(105.43 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#vyklad" transform="translate(105.43 1.93) scale(0.98 0.81)"/>
+<rect x="105.25" y="18.37" width="0.36" height="0.23" fill="#e9ccb1"/>
+<use xlink:href="#byt" transform="translate(108.53 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(108.53 9.72) scale(0.85 1.02)"/>
+<path d="M107.5 12.5l1.03 .51 1.03 -.51z" fill="#e9ccb1" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(108.53 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#vyklad" transform="translate(108.53 1.93) scale(0.98 0.81)"/>
+<rect x="108.35" y="18.37" width="0.36" height="0.23" fill="#e9ccb1"/>
+<use xlink:href="#byt" transform="translate(111.63 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(111.63 9.72) scale(0.85 1.02)"/>
+<path d="M110.6 12.5l1.03 .51 1.03 -.51z" fill="#e9ccb1" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(111.63 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#vyklad" transform="translate(111.63 1.93) scale(0.98 0.81)"/>
+<rect x="111.45" y="18.37" width="0.36" height="0.23" fill="#e9ccb1"/>
+<use xlink:href="#byt" transform="translate(114.73 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(114.73 9.72) scale(0.85 1.02)"/>
+<path d="M113.7 12.5l1.03 .51 1.03 -.51z" fill="#e9ccb1" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(114.73 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#vyklad" transform="translate(114.73 1.93) scale(0.98 0.81)"/>
+<rect x="114.55" y="18.37" width="0.36" height="0.23" fill="#e9ccb1"/>
+<use xlink:href="#byt" transform="translate(117.83 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(117.83 9.72) scale(0.85 1.02)"/>
+<path d="M116.80000000000001 12.5l1.03 .51 1.03 -.51z" fill="#e9ccb1" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(117.83 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#vyklad" transform="translate(117.83 1.93) scale(0.98 0.81)"/>
+<rect x="117.65" y="18.37" width="0.36" height="0.23" fill="#e9ccb1"/>
+<use xlink:href="#byt" transform="translate(120.93 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(120.93 9.72) scale(0.85 1.02)"/>
+<path d="M119.9 12.5l1.03 .51 1.03 -.51z" fill="#e9ccb1" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(120.93 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#vyklad" transform="translate(120.93 1.93) scale(0.98 0.81)"/>
+<rect x="120.75" y="18.37" width="0.36" height="0.23" fill="#e9ccb1"/>
+<use xlink:href="#byt" transform="translate(124.03 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(124.03 9.72) scale(0.85 1.02)"/>
+<path d="M123.0 12.5l1.03 .51 1.03 -.51z" fill="#e9ccb1" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(124.03 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#vyklad" transform="translate(124.03 1.93) scale(0.98 0.81)"/>
+<rect x="123.85" y="18.37" width="0.36" height="0.23" fill="#e9ccb1"/>
+<use xlink:href="#byt" transform="translate(127.13 5.55) scale(0.85 1.02)"/>
+<use xlink:href="#byt" transform="translate(127.13 9.72) scale(0.85 1.02)"/>
+<path d="M126.1 12.5l1.03 .51 1.03 -.51z" fill="#e9ccb1" stroke="#ac8a6e" stroke-width="0.07"/>
+<use xlink:href="#byt" transform="translate(127.13 13.94) scale(0.85 1.02)"/>
+<use xlink:href="#vyklad" transform="translate(127.13 1.93) scale(0.98 0.81)"/>
+<rect x="126.95" y="18.37" width="0.36" height="0.23" fill="#e9ccb1"/>
+<rect x="76.03" y="5" width="0.32" height="13.15" fill="#e9ccb1"/>
+<rect x="129.76" y="5" width="0.32" height="13.15" fill="#e9ccb1"/>
+<rect x="76.04" y="5" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="76.04" y="6" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="76.04" y="7" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="76.04" y="8" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="76.04" y="9" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="76.04" y="10" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="76.04" y="11" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="76.04" y="12" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="76.04" y="13" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="76.04" y="14" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="76.04" y="15" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="76.04" y="16" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="76.04" y="17" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="91.39" y="5" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="91.39" y="6" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="91.39" y="7" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="91.39" y="8" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="91.39" y="9" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="91.39" y="10" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="91.39" y="11" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="91.39" y="12" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="91.39" y="13" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="91.39" y="14" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="91.39" y="15" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="91.39" y="16" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="91.39" y="17" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="97.59" y="5" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="97.59" y="6" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="97.59" y="7" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="97.59" y="8" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="97.59" y="9" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="97.59" y="10" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="97.59" y="11" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="97.59" y="12" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="97.59" y="13" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="97.59" y="14" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="97.59" y="15" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="97.59" y="16" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="97.59" y="17" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="106.89" y="5" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="106.89" y="6" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="106.89" y="7" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="106.89" y="8" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="106.89" y="9" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="106.89" y="10" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="106.89" y="11" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="106.89" y="12" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="106.89" y="13" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="106.89" y="14" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="106.89" y="15" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="106.89" y="16" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="106.89" y="17" width="0.41" height="0.81" fill="#cfad94"/>
+<rect x="76.36" y="4.52" width="2.75" height="0.26" fill="#856a51"/>
+<rect x="82.56" y="4.52" width="2.75" height="0.26" fill="#5e756e"/>
+<rect x="88.76" y="4.52" width="2.75" height="0.26" fill="#986450"/>
+<rect x="94.96" y="4.52" width="2.75" height="0.26" fill="#856a51"/>
+<rect x="101.16" y="4.52" width="2.75" height="0.26" fill="#5e756e"/>
+<rect x="79.26" y="4.22" width="5.94" height="0.72" fill="#9b4742"/>
+<rect x="79.72" y="4.47" width="0.43" height="0.13" fill="#d6c6ad"/>
+<rect x="80.57" y="4.47" width="0.43" height="0.13" fill="#d6c6ad"/>
+<rect x="81.42" y="4.47" width="0.43" height="0.13" fill="#d6c6ad"/>
+<rect x="82.27" y="4.47" width="0.43" height="0.13" fill="#d6c6ad"/>
+<rect x="83.12" y="4.47" width="0.43" height="0.13" fill="#d6c6ad"/>
+<rect x="83.97" y="4.47" width="0.43" height="0.13" fill="#d6c6ad"/>
+<rect x="85.46" y="4.22" width="5.94" height="0.72" fill="#486c57"/>
+<rect x="85.92" y="4.47" width="0.43" height="0.13" fill="#d6c6ad"/>
+<rect x="86.77" y="4.47" width="0.43" height="0.13" fill="#d6c6ad"/>
+<rect x="87.62" y="4.47" width="0.43" height="0.13" fill="#d6c6ad"/>
+<rect x="88.47" y="4.47" width="0.43" height="0.13" fill="#d6c6ad"/>
+<rect x="89.32" y="4.47" width="0.43" height="0.13" fill="#d6c6ad"/>
+<rect x="90.17" y="4.47" width="0.43" height="0.13" fill="#d6c6ad"/>
+<rect x="84.57" y="1.89" width="1.46" height="2.83" fill="#574c43"/>
+<rect x="84.71" y="2.13" width="1.18" height="2.2" fill="#45535a"/>
+<rect x="84.75" y="3.04" width="0.14" height="0.28" fill="#cfb993"/>
+<rect x="38.88" y="0" width="37" height="32" fill="url(#cihla)"/>
+<rect x="38.88" y="0" width="37" height="8.42" fill="url(#kvadr)"/>
+<rect x="38.88" y="0" width="3.84" height="24" fill="url(#kvadr)"/>
+<rect x="72.04" y="0" width="3.84" height="24" fill="url(#kvadr)"/>
+<rect x="42.22" y="0" width="0.76" height="22.18" fill="url(#kvadr)"/>
+<rect x="49.83" y="0" width="0.76" height="22.18" fill="url(#kvadr)"/>
+<rect x="64.35" y="0" width="0.76" height="22.18" fill="url(#kvadr)"/>
+<rect x="71.71" y="0" width="0.76" height="22.18" fill="url(#kvadr)"/>
+<rect x="38.9" y="0.05" width="37" height="0.25" fill="#b7a88f"/>
+<rect x="38.9" y="7.82" width="37" height="0.12" fill="#ad9982"/>
+<rect x="38.9" y="8.02" width="37" height="0.28" fill="#e8d9c0"/>
+<rect x="38.9" y="8.32" width="37" height="0.13" fill="#a99178"/>
+<rect x="38.9" y="8.46" width="37" height="0.27" fill="#f0e1c8"/>
+<use xlink:href="#portal" transform="translate(52.98 1.64) scale(0.99 0.83)"/>
+<use xlink:href="#okno" transform="translate(52.98 8.78) scale(1.07 1.16)"/>
+<use xlink:href="#portal" transform="translate(57.7 1.64) scale(0.99 0.83)"/>
+<use xlink:href="#okno" transform="translate(57.7 8.78) scale(1.07 1.16)"/>
+<use xlink:href="#portal" transform="translate(62.42 1.64) scale(0.99 0.83)"/>
+<use xlink:href="#okno" transform="translate(62.42 8.78) scale(1.07 1.16)"/>
+<use xlink:href="#okno" transform="translate(46.9 8.73) scale(0.86 1.1)"/>
+<rect x="43.2" y="18.22" width="7.4" height="0.22" fill="#ebddc5"/>
+<rect x="43.2" y="18.55" width="7.4" height="0.4" fill="#ccbca3"/>
+<rect x="43.2" y="18.97" width="7.4" height="0.14" fill="#fbedcf"/>
+<rect x="43.2" y="20.53" width="7.4" height="0.18" fill="#ede1c8"/>
+<rect x="43.2" y="20.77" width="7.4" height="0.42" fill="#d9c9ad"/>
+<rect x="43.2" y="21.18" width="7.4" height="0.28" fill="#f6e8ce"/>
+<use xlink:href="#arkada" transform="translate(43.65 19.27) scale(1 1)"/>
+<use xlink:href="#arkada" transform="translate(44.49 19.27) scale(1 1)"/>
+<use xlink:href="#arkada" transform="translate(45.33 19.27) scale(1 1)"/>
+<use xlink:href="#arkada" transform="translate(46.17 19.27) scale(1 1)"/>
+<use xlink:href="#arkada" transform="translate(47.01 19.27) scale(1 1)"/>
+<use xlink:href="#arkada" transform="translate(47.85 19.27) scale(1 1)"/>
+<use xlink:href="#arkada" transform="translate(48.69 19.27) scale(1 1)"/>
+<use xlink:href="#arkada" transform="translate(49.53 19.27) scale(1 1)"/>
+<use xlink:href="#okno" transform="translate(68.4 8.73) scale(0.86 1.1)"/>
+<rect x="64.7" y="18.22" width="7.4" height="0.22" fill="#ebddc5"/>
+<rect x="64.7" y="18.55" width="7.4" height="0.4" fill="#ccbca3"/>
+<rect x="64.7" y="18.97" width="7.4" height="0.14" fill="#fbedcf"/>
+<rect x="64.7" y="20.53" width="7.4" height="0.18" fill="#ede1c8"/>
+<rect x="64.7" y="20.77" width="7.4" height="0.42" fill="#d9c9ad"/>
+<rect x="64.7" y="21.18" width="7.4" height="0.28" fill="#f6e8ce"/>
+<use xlink:href="#arkada" transform="translate(65.15 19.27) scale(1 1)"/>
+<use xlink:href="#arkada" transform="translate(65.99 19.27) scale(1 1)"/>
+<use xlink:href="#arkada" transform="translate(66.83 19.27) scale(1 1)"/>
+<use xlink:href="#arkada" transform="translate(67.67 19.27) scale(1 1)"/>
+<use xlink:href="#arkada" transform="translate(68.51 19.27) scale(1 1)"/>
+<use xlink:href="#arkada" transform="translate(69.35 19.27) scale(1 1)"/>
+<use xlink:href="#arkada" transform="translate(70.19 19.27) scale(1 1)"/>
+<use xlink:href="#arkada" transform="translate(71.03 19.27) scale(1 1)"/>
+<rect x="42.26" y="0" width="0.68" height="21.72" fill="url(#kvadr)"/>
+<rect x="42.13" y="0.27" width="0.94" height="0.22" fill="#efe3cc"/>
+<rect x="42.13" y="7.84" width="0.94" height="0.22" fill="#efe3cc"/>
+<rect x="42.13" y="8.26" width="0.94" height="0.22" fill="#efe3cc"/>
+<rect x="42.13" y="18.58" width="0.94" height="0.22" fill="#efe3cc"/>
+<rect x="42.13" y="20.73" width="0.94" height="0.22" fill="#efe3cc"/>
+<rect x="42.13" y="21.22" width="0.94" height="0.22" fill="#efe3cc"/>
+<rect x="49.91" y="0" width="0.68" height="21.72" fill="url(#kvadr)"/>
+<rect x="49.78" y="0.27" width="0.94" height="0.22" fill="#efe3cc"/>
+<rect x="49.78" y="7.84" width="0.94" height="0.22" fill="#efe3cc"/>
+<rect x="49.78" y="8.26" width="0.94" height="0.22" fill="#efe3cc"/>
+<rect x="49.78" y="18.58" width="0.94" height="0.22" fill="#efe3cc"/>
+<rect x="49.78" y="20.73" width="0.94" height="0.22" fill="#efe3cc"/>
+<rect x="49.78" y="21.22" width="0.94" height="0.22" fill="#efe3cc"/>
+<rect x="64.43" y="0" width="0.68" height="21.72" fill="url(#kvadr)"/>
+<rect x="64.3" y="0.27" width="0.94" height="0.22" fill="#efe3cc"/>
+<rect x="64.3" y="7.84" width="0.94" height="0.22" fill="#efe3cc"/>
+<rect x="64.3" y="8.26" width="0.94" height="0.22" fill="#efe3cc"/>
+<rect x="64.3" y="18.58" width="0.94" height="0.22" fill="#efe3cc"/>
+<rect x="64.3" y="20.73" width="0.94" height="0.22" fill="#efe3cc"/>
+<rect x="64.3" y="21.22" width="0.94" height="0.22" fill="#efe3cc"/>
+<rect x="71.76" y="0" width="0.68" height="21.72" fill="url(#kvadr)"/>
+<rect x="71.63" y="0.27" width="0.94" height="0.22" fill="#efe3cc"/>
+<rect x="71.63" y="7.84" width="0.94" height="0.22" fill="#efe3cc"/>
+<rect x="71.63" y="8.26" width="0.94" height="0.22" fill="#efe3cc"/>
+<rect x="71.63" y="18.58" width="0.94" height="0.22" fill="#efe3cc"/>
+<rect x="71.63" y="20.73" width="0.94" height="0.22" fill="#efe3cc"/>
+<rect x="71.63" y="21.22" width="0.94" height="0.22" fill="#efe3cc"/>
+<use xlink:href="#okno" transform="translate(40.84 9.05) scale(0.57 0.87)"/>
+<use xlink:href="#byt" transform="translate(40.84 2.25) scale(0.6 0.75)"/>
+<use xlink:href="#okno" transform="translate(74.16 9.05) scale(0.57 0.87)"/>
+<use xlink:href="#byt" transform="translate(74.16 2.25) scale(0.6 0.75)"/>
+<path d="M50.33 21.45L57.7 27.24 65 21.46" fill="none" stroke="#ae9887" stroke-width="0.89"/>
+<path d="M50.33 21.6L57.7 27.39 65 21.61" fill="none" stroke="#f1e4ca" stroke-width="0.52"/>
+<use xlink:href="#cimburi" transform="translate(50.76 21.2627) scale(1 1)"/>
+<use xlink:href="#cimburi" transform="translate(51.53 21.8707) scale(1 1)"/>
+<use xlink:href="#cimburi" transform="translate(52.3 22.4787) scale(1 1)"/>
+<use xlink:href="#cimburi" transform="translate(53.07 23.0867) scale(1 1)"/>
+<use xlink:href="#cimburi" transform="translate(53.84 23.6947) scale(1 1)"/>
+<use xlink:href="#cimburi" transform="translate(54.61 24.3027) scale(1 1)"/>
+<use xlink:href="#cimburi" transform="translate(55.38 24.9107) scale(1 1)"/>
+<use xlink:href="#cimburi" transform="translate(56.15 25.5188) scale(1 1)"/>
+<use xlink:href="#cimburi" transform="translate(56.92 26.1268) scale(1 1)"/>
+<use xlink:href="#cimburi" transform="translate(57.69 26.2452) scale(1 1)"/>
+<use xlink:href="#cimburi" transform="translate(58.46 25.6372) scale(1 1)"/>
+<use xlink:href="#cimburi" transform="translate(59.23 25.0292) scale(1 1)"/>
+<use xlink:href="#cimburi" transform="translate(60 24.4212) scale(1 1)"/>
+<use xlink:href="#cimburi" transform="translate(60.77 23.8132) scale(1 1)"/>
+<use xlink:href="#cimburi" transform="translate(61.54 23.2052) scale(1 1)"/>
+<use xlink:href="#cimburi" transform="translate(62.31 22.5971) scale(1 1)"/>
+<use xlink:href="#cimburi" transform="translate(63.08 21.9891) scale(1 1)"/>
+<use xlink:href="#cimburi" transform="translate(63.85 21.3811) scale(1 1)"/>
+<path d="M57.7 23.43l-2.14-3.70h4.28z M57.7 18.50l2.14 3.70h-4.28z" fill="none" stroke="#f1e6d1" stroke-width="0.31"/>
+<path d="M56.83 20.48v.99l.87.51.87-.51v-.99l-.87-.50z" fill="#323139" stroke="none" stroke-width="0"/>
+<rect x="130.7" y="22" width="4.6" height="12" fill="url(#cihla)"/>
+<rect x="130.7" y="23.13" width="4.6" height="0.52" fill="#ecdfc9"/>
+<rect x="130.7" y="25.5" width="4.6" height="0.52" fill="#ecdfc9"/>
+<rect x="130.7" y="28.8" width="4.6" height="0.52" fill="#ecdfc9"/>
+<rect x="130.7" y="32" width="4.6" height="0.52" fill="#ecdfc9"/>
+<rect x="130.7" y="32.37" width="4.6" height="0.52" fill="#ecdfc9"/>
+<path d="M131.95 24.15v5.58a1.05 1.05 0 0 0 2.1 0v-5.58z" fill="#303944" stroke="#eee0c9" stroke-width="0.27"/>
+<path d="M133 24.25v6.25 M132.05 27.85h1.90" fill="none" stroke="#58636a" stroke-width="0.09"/>
+<rect x="137" y="0" width="1" height="4" fill="#ece1c9"/>
+<rect x="138" y="0" width="1" height="4" fill="#a44343"/>
+<rect x="139" y="0" width="1" height="4" fill="#767c87"/>
+<rect x="140" y="0" width="1" height="4" fill="#eac264"/>
+<rect x="141" y="0" width="1" height="4" fill="#77685c"/>
+</g>
+</svg>
