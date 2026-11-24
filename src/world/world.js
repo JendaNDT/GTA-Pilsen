@@ -1,10 +1,11 @@
+import { createPavilionSite, nearPavilion, pavilionContact, pavilionRay, pavilionSurface } from './pavilion-site.js';
 import { columnContact, columnRay, columnSurface, createColumnSite } from './plague-column-site.js';
 import { stationForecourtOffsets, stationRetainingWalls } from './station-forecourt.js';
 import { bridgeApproach, bridgeBankOffsets, stationRampOffsets } from './road-profile.js';
 import { streetLamps } from './lamps.js';
 import { breakableId, Breakables } from '../physics/breakables.js';
 // Herní svět: dekódování dat, prostorové indexy, kolize, silniční graf.
-import { CHUNK, COLL_CELL, DRIVABLE_MAX, RF, RC, LC, BF, BK } from '../config.js';
+import { PARAMS, CHUNK, COLL_CELL, DRIVABLE_MAX, RF, RC, LC, BF, BK } from '../config.js';
 import {measuredRailDeck, segmentHalfWidth} from './rail-deck.js';
 import { Structures } from './structures.js';
 import { Tunnel, TUNNEL_HEIGHT } from './tunnels.js';
@@ -135,6 +136,11 @@ export class World {
     this._initRoadGrades();
     this._initCorners();
     this.forecourtWalls = stationRetainingWalls(this);
+    this.pavilion = PARAMS.get('pavilonek') === 'puvodni' ? null : createPavilionSite(this);
+    for (const rail of this.pavilion?.rails ?? []) {
+      if (!this.streetFixtures.has(rail.tile)) this.streetFixtures.set(rail.tile, []);
+      this.streetFixtures.get(rail.tile).push(rail);
+    }
     this.plagueColumn = createColumnSite(this);
     if (this.plagueColumn) this.streetFixtures.set(this.plagueColumn.tile, this.plagueColumn.fixtures.slice());
     this.treeTypes = new Map(data.treeTypes?.trees);
@@ -520,6 +526,7 @@ export class World {
       hit.x += hit.nx * hit.depth; hit.z += hit.nz * hit.depth;
       any = true;
     }
+    if (this.pavilion && nearPavilion(hit.x,hit.z,r) && pavilionContact(this.pavilion,hit,r,y,yTop)) any=true;
     const B = this.b, vx = this.bvx, vz = this.bvz;
     const cx0 = Math.max(0, Math.floor((x - r - this.minX) / COLL_CELL)), cx1 = Math.min(this.gcols - 1, Math.floor((x + r - this.minX) / COLL_CELL));
     const cz0 = Math.max(0, Math.floor((z - r - this.minZ) / COLL_CELL)), cz1 = Math.min(this.grows - 1, Math.floor((z + r - this.minZ) / COLL_CELL));
@@ -529,6 +536,7 @@ export class World {
         const c = cz * this.gcols + cx;
         for (let k = this.bCellStart[c], ke = this.bCellStart[c + 1]; k < ke; k++) {
           const i = this.bCellItems[k];
+          if (i === this.pavilion?.building) continue;
           if (i === this.plagueColumn?.building) {
             if (columnContact(this.plagueColumn, hit, r, y, yTop)) { any = true; moved = true; }
             continue;
@@ -653,8 +661,10 @@ export class World {
     const c = this.cellIndex(x, z);
     const imported = this.heritage?.roofHeight(x, z) ?? -Infinity;
     let h = Number.isFinite(imported) && imported <= maxY ? imported : -1e9;
+    if (this.pavilion && nearPavilion(x,z)) h=Math.max(h,pavilionSurface(this.pavilion,x,z,maxY));
     for (let k = this.bCellStart[c], ke = this.bCellStart[c + 1]; k < ke; k++) {
       const i = this.bCellItems[k];
+      if (i === this.pavilion?.building) continue;
       if (x < this.bMinX[i] || x > this.bMaxX[i] || z < this.bMinZ[i] || z > this.bMaxZ[i]) continue;
       if (i === this.plagueColumn?.building) {
         h = Math.max(h, columnSurface(this.plagueColumn, x, z, maxY));
@@ -681,8 +691,8 @@ export class World {
   /** Paprsek v rovině xz proti zdem vyšším než y. Vrací t ∈ (0, 1] prvního zásahu, nebo 1. */
   raycast(x0, z0, x1, z1, y) {
     const B = this.b, vx = this.bvx, vz = this.bvz;
-    let tBest = 1;
     const len = Math.hypot(x1 - x0, z1 - z0);
+    let tBest = this.pavilion && nearPavilion(x0,z0,len) ? pavilionRay(this.pavilion,x0,z0,x1,z1,y) : 1;
     const steps = Math.max(1, Math.ceil(len / (COLL_CELL * 0.5)));
     let lastCell = -1;
     const seen = this._seen || (this._seen = new Set());
@@ -694,7 +704,7 @@ export class World {
       lastCell = c;
       for (let k = this.bCellStart[c], ke = this.bCellStart[c + 1]; k < ke; k++) {
         const i = this.bCellItems[k];
-        if (seen.has(i)) continue;
+        if (seen.has(i) || i === this.pavilion?.building) continue;
         seen.add(i);
         if (i === this.plagueColumn?.building) {
           tBest = Math.min(tBest, columnRay(this.plagueColumn, x0, z0, x1, z1, y));

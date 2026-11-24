@@ -1,3 +1,4 @@
+import { pavilionCollision } from '../world/pavilion-site.js';
 import { columnCollision } from '../world/plague-column-site.js';
 import { RoadFurnitureBodies } from './road-furniture.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
@@ -113,7 +114,8 @@ export class TileColliders {
     sidewalkTriangles(w, ci, emit);
     const theatre = w.heritage.modernTheatre;
     for (const i of w.bChunks[ci] ?? []) {
-      if (i === w.plagueColumn?.building) columnCollision(w.plagueColumn, emit);
+      if (i === w.pavilion?.building) pavilionCollision(w.pavilion, emit);
+      else if (i === w.plagueColumn?.building) columnCollision(w.plagueColumn, emit);
       else if (!theatre?.collisionSkip.has(i)) building(w, i, this.replaced.has(i) || i === w.heritage.forgeIndex, emit);
     }
     if (theatre?.ci === ci) modernTheatreCollision(w, theatre, emit);

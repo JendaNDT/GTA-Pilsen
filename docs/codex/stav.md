@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Lochotínský pavilonek
+
+Na větvi `codex/lochotinsky-pavilonek` pavilonek převzal půdorys z OpenStreetMap. Podle fotografií má členěné fasády, tři valbové střechy a přístupnou terasu s dřevěným zábradlím. Prošlo všech 289 testů JavaScriptu, produkční sestavení a 404 ze 406 prohlížečových kontrol. Na obou vykreslovačích prošla zkouška pavilonku a selhala známá kontrola nočních oken na náměstí. [Tři pohledy před úpravou a po ní a ověření ve hře](../E25/lochotinsky-pavilonek.md)
+
 ## Západočeské muzeum
 
 Na větvi `codex/zapadoceske-muzeum` má hlavní budova v Kopeckého sadech vlastní portál, lodžii se třemi oblouky a tři otevřené střešní věžičky. Obě křídla a oblé nároží vycházejí z městského měření. Prošlo všech 286 testů JavaScriptu, produkční sestavení i kontrola muzea na obou vykreslovačích. V celé prohlížečové sadě prošlo 402 ze 404 zkoušek. Obě selhání odpovídají známé kontrole nočních oken na náměstí. [Srovnání tří pohledů a měření výkonu](../E25/zapadoceske-muzeum.md)

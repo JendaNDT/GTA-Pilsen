@@ -424,3 +424,41 @@ test('muzeum na dotykovém displeji načte průčelí i po odjezdu a návratu', 
     await waitForMuseum();
   } finally { await context.close(); }
 });
+
+test('pavilonek v parku má na nízké kvalitě rozdílné střechy a obnoví zábradlí po návratu',async ({browser})=>{
+  const context=await browser.newContext({hasTouch:true,isMobile:true,viewport:{width:844,height:390}});
+  try {
+    const page=await context.newPage();
+    await page.goto(gameUrl('/?debug&quality=low&view=340&adapt=0'));
+    await page.waitForFunction(()=>window.__ready);
+    await page.getByRole('button',{name:'Hrát',exact:true}).tap();
+    await page.evaluate(()=>{window.__freeze(true); __game.player.place(-795,-1515);});
+    const waitForSite=()=>page.waitForFunction(()=>{
+      const g=window.__game;
+      g.chunks.update(-795,-1515,340,40,g.player.y);
+      return g.scene.getObjectByName('Lochotínský pavilonek')?.material.map.image?.naturalWidth===1024;
+    });
+    await waitForSite();
+    const result=await page.evaluate(()=>{
+      const g=window.__game,w=g.world, mesh=g.scene.getObjectByName('Lochotínský pavilonek');
+      const rail=w.pavilion.rails[3], wood=g.scene.getObjectByName('Dřevěné zábradlí terasy');
+      const version=wood.geometry.attributes.position.version;
+      w.breakables.damage(rail.id,'broken',0);
+      const broken=wood.geometry.attributes.position.version>version;
+      let freed=0;
+      for (const a of [mesh.material.map,mesh.material,mesh.geometry,wood.geometry]) a.addEventListener('dispose',()=>freed++);
+      const diff=w.roofAt(-800,-1533)-w.roofAt(-814,-1532);
+      g.chunks.update(0,0,340,0);
+      return {diff,freed,broken};
+    });
+    expect(result.diff).toBeGreaterThan(2.5);
+    expect(result).toMatchObject({freed:4,broken:true});
+    await waitForSite();
+    expect(await page.evaluate(()=>{
+      const w=window.__game.world, rail=w.pavilion.rails[3];
+      const state=w.breakables.state(rail.id);
+      w.breakables.repairDue(2*86400);
+      return [state,w.breakables.state(rail.id)];
+    })).toEqual(['broken','intact']);
+  } finally { await context.close(); }
+});
