@@ -14,7 +14,7 @@ function roof(emit, a, b, c) {
   else emit(a, c, b);
 }
 
-function building(world, i, measured, emit) {
+function building(world, i, measured, emit, wallTop=world.bTop[i]) {
   const { bRing, ringStart } = world.b;
   const flat = [], holes = [], top = [], bottom = [];
   for (let r = bRing[i]; r < bRing[i + 1]; r++) {
@@ -23,7 +23,7 @@ function building(world, i, measured, emit) {
     for (let v = ringStart[r]; v < ringStart[r + 1]; v++) {
       const x = world.bvx[v], z = world.bvz[v];
       flat.push(x, z);
-      top.push([x, world.bTop[i], z]);
+      top.push([x, wallTop, z]);
       bottom.push([x, world.bBase[i], z]);
     }
     for (let a = start, b = top.length - 1; a < top.length; b = a++) {
@@ -116,9 +116,11 @@ export class TileColliders {
     const theatre = w.heritage.modernTheatre;
     for (const i of w.bChunks[ci] ?? []) {
       if (i === w.pavilion?.building) pavilionCollision(w.pavilion, emit);
+      else if (i === w.bory?.drum) building(w,i,true,emit,w.bWall[i]);
       else if (i === w.plagueColumn?.building) columnCollision(w.plagueColumn, emit);
       else if (!theatre?.collisionSkip.has(i)) building(w, i, this.replaced.has(i) || i === w.heritage.forgeIndex, emit);
     }
+    for (const [a,b,c] of w.bory?.collision.get(ci) ?? []) emit(a,b,c);
     if (theatre?.ci === ci) modernTheatreCollision(w, theatre, emit);
     if (ci === w.heritage.forgeChunk) forgeRoofFaces(w, w.heritage.forgeIndex, (a, b, c) => roof(emit, a, b, c));
     const tile = this.roofs.get(ci);

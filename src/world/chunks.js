@@ -1,4 +1,5 @@
 import { buildFountains } from './fountains.js';
+import { buildBory } from './bory.js';
 import { buildPavilion } from './pavilion.js';
 import { buildColumn } from './plague-column.js';
 import { SolidBuf } from './solid-buffer.js';
@@ -148,6 +149,14 @@ function styleFor(world, i, district) {
   if (col) { _c.setHex(col & 0xffffff); wall = [_c.r, _c.g, _c.b]; }
   const rcol = B.roofColour ? B.roofColour[i] : 0;
   if (rcol) { _c.setHex(rcol & 0xffffff); roof = [_c.r, _c.g, _c.b]; }
+  if (world.bory?.historic.has(i)) {
+    const lightDrum=i===world.bory.drum || i===world.bory.chapel;
+    wall=lin(lightDrum ? 0xe8d4ab : 0xe3ab60);
+    roof=lin(i===world.bory.gate || i===world.bory.chapel ? 0x536d60 : 0x535652);
+    roofSurface=SURFACE.sheet;
+    wallSurface=SURFACE.plaster;
+    style=3; bay=3.65; floorH=4.6;
+  }
   // jemná odchylka jasu, ať nejsou sousední domy stejné
   const k = 0.9 + r3 * 0.18;
   const layers = buildingLayers(style, district, wallSurface, roofSurface, rcol, world.buildingMaterials?.get(i));
@@ -302,7 +311,7 @@ function buildBuildings(world, list, replaced, district, facadeBuildings) {
     const top = world.bTop[i];
     const gable = (flags & BF.GABLE) !== 0;
     const nOuter0 = B.ringStart[B.bRing[i] + 1] - B.ringStart[B.bRing[i]];
-    const ridge = (flags & BF.RIDGE) !== 0 && B.bRing[i + 1] - B.bRing[i] === 1 && nOuter0 >= 3;
+    const ridge = ((flags & BF.RIDGE) !== 0 || world.bory?.wings.has(i)) && B.bRing[i + 1] - B.bRing[i] === 1 && nOuter0 >= 3;
     const inset = (flags & BF.INSET) && B.roofInset && B.bRing[i + 1] - B.bRing[i] === 1 && nOuter0 >= 3
       ? insetRing(vx, vz, B.ringStart[B.bRing[i]], nOuter0, B.roofInset[i] * 0.1) : null;
     let wallTop = gable || ridge || inset ? world.bWall[i] : top;
@@ -336,6 +345,8 @@ function buildBuildings(world, list, replaced, district, facadeBuildings) {
         buf.tri(a, c, b); buf.tri(a, d, c);
       }
     }
+    // Zaklenutí nad tamburem má vlastní obvodové prstence.
+    if (i === world.bory?.drum) continue;
     // střecha
     buf.surface = st.roofSurface; buf.layer = st.roofLayer;
     const nOuter = B.ringStart[r0 + 1] - B.ringStart[r0];
@@ -1806,6 +1817,7 @@ export class ChunkManager {
       ch.structure = w.structures?.build(ci, ch.group, this.solidMat);
       const fountains = w.fountainTiles?.get(ci);
       if (fountains) buildFountains(fountains,ch,QUALITY.waterDetail,PARAMS.get('kasny')!=='bez-proudu',env.time);
+      if (ci === w.bory?.tile) buildBory(w,ch,QUALITY.heritageDetail);
       if (ci === w.pavilion?.tile) buildPavilion(w, this.solidMat, ch);
       if (ci === w.plagueColumn?.tile) {
         ch.group.add(buildColumn(w, w.plagueColumn, this.solidMat, QUALITY.heritageDetail, ch));

@@ -561,3 +561,27 @@ test('tři další strany náměstí mají na dotykovém displeji všech 33 adre
     await ready();
   } finally { await context.close(); }
 });
+
+test('Bory na nízké kvalitě obnoví celý model i jeho kopuli po návratu z přeletu',async ({page})=>{
+  await page.goto(gameUrl('/?debug&quality=low&view=340&adapt=0'));
+  await page.waitForFunction(()=>window.__ready);
+  const ready=()=>page.waitForFunction(()=>{
+    const g=__game,s=g.world.bory;
+    g.chunks.update(s.cx,s.cz,340,40);
+    return g.scene.getObjectByName('Historická věznice Bory')?.material.map.image?.naturalWidth===2048;
+  });
+  await page.evaluate(()=>{__freeze(true);});
+  await ready();
+  const result=await page.evaluate(()=>{
+    const g=__game,w=g.world,s=w.bory,mesh=g.scene.getObjectByName('Historická věznice Bory');
+    let released=0;
+    for(const asset of [mesh.geometry,mesh.material,mesh.material.map]) asset.addEventListener('dispose',()=>released++);
+    const roof=w.roofAt(s.cx,s.cz), peak=s.roofs.heightAt(s.cx,s.cz);
+    g.chunks.update(0,0,340,0);
+    return {released,roof,peak,wings:s.wings.size};
+  });
+  expect(result.released).toBe(3);
+  expect(result.wings).toBe(7);
+  expect(result.roof).toBeCloseTo(result.peak,3);
+  await ready();
+});

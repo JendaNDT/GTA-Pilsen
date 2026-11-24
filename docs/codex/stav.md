@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Historická věznice Bory
+
+Větev `codex/bory-pruceli` doplňuje celý vnější model historické budovy. Uliční průčelí, kapli, paprskovitá křídla a kupoli lze porovnat ve čtyřech pohledech před změnou a po ní. Prošlo všech 300 testů JavaScriptu, produkční sestavení a 413 ze 414 prohlížečových kontrol. Zbývající zkouška dopravy u hlavního nádraží prošla při samostatném opakování. Pro příští památky platí kontrola ze země i z vrtulníku. [Snímky, zdroje a ověření](../E25/bory.md)
+
 ## Zbývající tři strany náměstí Republiky
 
 Na větvi `codex/stity-namesti` mají vlastní průčelí všechny domy č. 6–33 a 35–39 obrácené do náměstí. Hotové jsou adresní podklady, kresby, modely štítů, kontrola načtení po návratu a šest dvojic srovnávacích snímků. Všech 299 testů JavaScriptu a produkční sestavení prošly. Z 28 zkoušek Pythonu prošlo 27 a jedna vyžadující úplný nedistribuovaný archiv se přeskočila. V celém běhu prošlo 410 ze 412 prohlížečových kontrol. Po přemístění vzorků na současná noční okna i po samostatném opakování dopravy na Klatovské prošly také obě zbývající kontroly. [Podklady, snímky a podrobné ověření](../E25/stity-namesti.md)

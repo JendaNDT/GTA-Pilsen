@@ -78,6 +78,8 @@ npm run test:e2e     # testy v Chromiu nad dist/ (nejdřív npm run build)
    Aktualizuj README.
 10. Na konci napiš autorovi česky a bez žargonu, co se změnilo a co má ve hře vyzkoušet.
 
+U plzeňských památek zpracuj celý vnější model včetně zadní a bočních stran a střech. Ověř jej ze země i při pohledu z vrtulníku.
+
 ## Výkon
 
 - Rozpočet snímku pro 60 FPS na cílových zařízeních: fyzika do 4 ms, logika do 2 ms,

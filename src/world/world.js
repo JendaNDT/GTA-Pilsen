@@ -1,3 +1,4 @@
+import { createBorySite } from './bory.js';
 import { isFountainPool } from './fountain-shapes.js';
 import { createFountainSites, fountainContact, fountainRay, fountainSurface } from './fountain-site.js';
 import { createPavilionSite, nearPavilion, pavilionContact, pavilionRay, pavilionSurface } from './pavilion-site.js';
@@ -140,6 +141,7 @@ export class World {
     this._initCorners();
     this.forecourtWalls = stationRetainingWalls(this);
     this.fountainTiles = this.fountainLand ? createFountainSites(this) : new Map();
+    this.bory = PARAMS.get('bory') === 'puvodni' ? null : createBorySite(this);
     this.pavilion = PARAMS.get('pavilonek') === 'puvodni' ? null : createPavilionSite(this);
     for (const rail of this.pavilion?.rails ?? []) {
       if (!this.streetFixtures.has(rail.tile)) this.streetFixtures.set(rail.tile, []);
@@ -669,10 +671,14 @@ export class World {
     let h = Number.isFinite(imported) && imported <= maxY ? imported : -1e9;
     const fountains = this.fountainTiles?.get(this.chunkIndex(x,z));
     if (fountains) h=Math.max(h,fountainSurface(fountains,x,z,maxY));
+    if (this.bory && Math.abs(x-this.bory.cx)<190 && Math.abs(z-this.bory.cz)<190) {
+      const roof=this.bory.roofs.heightAt(x,z);
+      if(roof<=maxY) h=Math.max(h,roof);
+    }
     if (this.pavilion && nearPavilion(x,z)) h=Math.max(h,pavilionSurface(this.pavilion,x,z,maxY));
     for (let k = this.bCellStart[c], ke = this.bCellStart[c + 1]; k < ke; k++) {
       const i = this.bCellItems[k];
-      if (i === this.pavilion?.building) continue;
+      if (i === this.pavilion?.building || i === this.bory?.drum) continue;
       if (x < this.bMinX[i] || x > this.bMaxX[i] || z < this.bMinZ[i] || z > this.bMaxZ[i]) continue;
       if (i === this.plagueColumn?.building) {
         h = Math.max(h, columnSurface(this.plagueColumn, x, z, maxY));
