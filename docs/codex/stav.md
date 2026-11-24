@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Sloučení památek a dopravní větve
+
+Společné sestavení památek (`a78fff2`) a sledování kolon (`e1ddfa3`) prošlo všemi 285 testy JavaScriptu a produkčním sestavením. Na WebGL 2 a WebGPU prošlo celkem 400 ze 402 prohlížečových kontrol včetně památek a ranní dopravy. Na obou vykreslovačích selhala známá kontrola kontrastu nočních oken na náměstí. Pokus se silnějším rozjezdem je uložen v samostatné záplatě.
+
 ## Morový sloup na náměstí Republiky
 
 Větev `codex/morovy-sloup` navazuje na katedrálu. Původní budovu na půdorysu památky nahrazuje šest stupňů, kamenná balustráda, kovové oplocení a sloup s Madonou. Hra zohledňuje stupně a užší podstavec i při chůzi, nárazu auta nebo pohybu kamery. Prošlo 282 testů JavaScriptu, sestavení hry i 400 ze 402 prohlížečových kontrol. Obě selhání odpovídají původní zkoušce nočních oken na náměstí. [Pohledy od radnice i z náměstí a ověření](../E25/morovy-sloup.md)
@@ -23,6 +27,12 @@ Větev `codex/velke-divadlo` navazuje na synagogu. Divadlo má vlastní historic
 ## Velká synagoga v sadech Pětatřicátníků
 
 Na větvi `codex/velka-synagoga` má synagoga vlastní průčelí, kupole, římsy a hvězdy. Vlastní fasádu mají také oba přilehlé domy včetně výloh za zaobleným nárožím. Prošlo 272 testů JavaScriptu, produkční sestavení a 16 cílených prohlížečových zkoušek. V celé sadě prošlo 390 z 392 kontrol. Zbývající dvě kontroly nočních oken na náměstí selhaly i na původní verzi. Na nízké předvolbě se vzhled obnovil také po návratu do ulice v dotykové emulaci. [Srovnání ze stejného místa a výsledky zkoušek](../E25/synagoga.md)
+
+## Rozjezd a příčiny kolon (24. 11. 2026)
+
+Na větvi `codex/rozjezd-a-kolony` navazující na `f09c09f` přibylo sledování příčiny fronty přímo při rozhodování řidičů a MHD. Ve čtyřech dvojicích desetiminutových jízd stouply průjezdy na zelenou ze 407 na 477 a počet hlášených nárazů z 15 na 16. Pouze u silnějšího rozjezdu test zjistil v Ukrajinské jízdu pod plynem mimo vozovku. V běžné hře proto zůstává původní výkon motoru. Dvě vozidla, která se v pokusu blokovala, byla autobus 41 a sedan v Husově. Případné pravidlo pro jejich vyhnutí potřebuje ověřit prostor pro průjezd. [Měření, podmínky a návod pro zopakování](../E20/rozjezd-a-kolony.md)
+
+Prošlo všech 274 testů JavaScriptu, produkční sestavení a 388 z 390 prohlížečových zkoušek. Všechny dopravní zkoušky prošly. Obě selhání kontroly nočních oken na náměstí se zopakovala i na původním sestavení `f09c09f`. [Podrobnosti ověření](../E20/rozjezd-a-kolony.md#kontrola-výsledné-hry)
 
 ## Vzhled hlavního nádraží od Mikulášské
 

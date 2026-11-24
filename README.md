@@ -207,6 +207,8 @@ se zachová i při dalším spuštění hry.
 
 V E20 můžeš autem odstrčit zaparkovaný vůz nebo pocítit náraz tramvaje. Vrtulník při dlouhém přímém letu dosáhne přibližně 300 km/h. Když sjedeš autem do Radbuzy u Wilsonova mostu, vůz chvíli plave, nabere vodu a dosedne na mělčinu. Můžeš vystoupit a doplavat ke břehu. [Protokol E20, snímky a zkoušky ve hře](docs/E20.md).
 
+Při zkoušce ranní špičky lze sledovat, které auto nebo linka MHD zadržuje další účastníky. [Výsledky pokusu s rozjezdem a postup pro sledování kolon](docs/E20/rozjezd-a-kolony.md).
+
 Na vývojové větvi E21 reagují na náraz také lampy, dopravní značky, semafory a zábradlí. Auto se promáčkne v místě nárazu a může ztratit díl. Garáž si pamatuje poškození vlastního vozu a umí ho opravit. [Protokol E21 a snímky](docs/E21.md).
 
 Na větvi E22 mají Wilsonův most a vybrané lávky a železniční mosty půdorys podle městského měření. Na nábřeží a ve svazích přibyly zdi, pilíře a protihlukové stěny. U vody se vykreslují čtyři části jezů. Měřenou vrstvu lze vypnout parametrem `?structures=0`. [Srovnávací snímky, inventura a ověření E22](docs/E22.md).

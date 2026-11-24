@@ -420,8 +420,10 @@ export class Traffic {
     // Při souběhu dvou pruhů si řidič ještě před čárou ponechá místo k zařazení.
     state.entering = !stop && !!state.movement && limit > 0 && distance < 3 + speed * speed / 8;
     state.crossing = !stop && checkExit && control.directedHead && speed > 0 && distance < 2;
-    if (stop) stopping?.(distance + 0.45);
-    else if (checkExit && control.directedHead && limit > 0 && speed > 0 && distance <= speed * dt) {
+    if (stop) {
+      stopping?.(distance + 0.45);
+      if (distance < 1.4) this.onRuleWait?.(car, control, color, others, extra, checkExit);
+    } else if (checkExit && control.directedHead && limit > 0 && speed > 0 && distance <= speed * dt) {
       this.enterJunction(car, control);
     }
     return stop ? Math.min(limit, stopDistance(distance, dt)) : limit;
@@ -700,6 +702,7 @@ export class Traffic {
       w.edgePoint(car.edge, w.eLen[car.edge], car.lane, direction);
     }
     const distance = this.pedestrianDistance(car.x, car.z, direction, turn);
+    if (distance < car.halfLen + 1.7) this.onCrossingWait?.(car);
     stopping?.(distance - car.halfLen - 0.75);
     return Math.min(limit, stopDistance(distance - car.halfLen - 1.2, dt));
   }
@@ -737,12 +740,16 @@ export class Traffic {
     if (next) {
       // V trase MHD je s poloha čela vozu, nikoli jeho středu.
       limit = this.drivingRule(vehicle, next.control, next.distance - 0.55, dt, limit, others);
-      if (next.control.directedHead && vehicle.enteredSignal?.group !== next.control.group &&
-          others.some(car => car.mode === 'ai' && this.crossesTransit(car.junctionMovement, next.control))) {
-        limit = Math.min(limit, stopDistance(next.distance - 0.55, dt));
+      if (next.control.directedHead && vehicle.enteredSignal?.group !== next.control.group) {
+        const crossing = others.find(car => car.mode === 'ai' && this.crossesTransit(car.junctionMovement, next.control));
+        if (crossing) {
+          if (next.distance < 2) this.onTransitYield?.(vehicle, crossing);
+          limit = Math.min(limit, stopDistance(next.distance - 0.55, dt));
+        }
       }
     } else vehicle.trafficStop = null;
     const distance = this.pedestrianDistance(point.x, point.z, ahead);
+    if (distance <= 1.6) this.onCrossingWait?.(vehicle);
     limit = Math.min(limit, stopDistance(distance - 1.4, dt));
     if (next && limit > 0 && next.distance <= limit * dt) this.enterJunction(vehicle, next.control);
     return limit;

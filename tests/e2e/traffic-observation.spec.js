@@ -1,16 +1,18 @@
 import { waitForGame } from './ready.js';
 import { writeFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
+import { installTrafficMonitor } from './traffic-monitor.js';
 import { gameUrl } from './game-url.js';
 
 for (const site of ['Klatovská', 'hlavní nádraží']) {
   test('E20 – deset minut ranní špičky, ' + site, async ({ page }, info) => {
     test.setTimeout(Math.max(info.timeout, 240_000));
-    await page.addInitScript(() => {
-      let seed = 20261118;
+    const seed = Number(process.env.PLZEN_TRAFFIC_SEED || 20261118);
+    await page.addInitScript(installTrafficMonitor);
+    await page.addInitScript(seed => {
       Math.random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32);
-    });
-    await page.goto(gameUrl('/?debug&quality=high&adapt=0&date=2026-11-09&hour=7.5'));
+    }, seed);
+    await page.goto(gameUrl('/?debug&kolony=1&quality=high&adapt=0&date=2026-11-09&hour=7.5'));
     await waitForGame(page);
     const result = await page.evaluate(async (site) => {
       __play();
@@ -29,9 +31,10 @@ for (const site of ['Klatovská', 'hlavní nádraží']) {
       }
       for (let i = 0; i < 25; i++) g.colliders.update(g.player.x, g.player.z);
 
+      const monitor = window.observeTraffic(g);
       const seen = new Map(), flow = [], departures = [];
       let longestStop = 0, stoppedAt = null, peak = 0, samples = 0;
-      const queues = [];
+      const queues = [], chains = [];
       const movement = move => move && ({
         signal: move.control.id, lane: move.lane, exit: move.edge, exitLane: move.exitLane, left: move.left,
       });
@@ -50,6 +53,8 @@ for (const site of ['Klatovská', 'hlavní nádraží']) {
         for (let frame = 0; frame < 1800; frame++) {
           // Pozorovatel se rozhlíží na obě strany ulice. Každá otočka trvá minutu.
           g.camYaw += Math.PI * 2 / 1800;
+          g.trafficWaits.setEnabled(frame % 15 === 0);
+          monitor.lights();
           g.update(1 / 30);
           if (frame % 15) continue;
           peak = Math.max(peak, g.trafficBodies.dynamic.size);
@@ -68,6 +73,9 @@ for (const site of ['Klatovská', 'hlavní nádraží']) {
                 targetSpeed: body.input?.targetSpeed, rule: car.trafficStop?.rule.kind };
             }
             // Po dvou periodách už samotný bod na mapě neukáže příčinu fronty.
+            if ((stopped === 60 || stopped === 120 || stopped === 180) && chains.length < 180) {
+              chains.push({ time, stopped, chain: g.trafficWaits.chain(car) });
+            }
             if (stopped === 120 && queues.length < 12) {
               const rule = car.trafficStop?.rule;
               const near = o => o !== car && Math.hypot(o.x - car.x, o.z - car.z) < 45;
@@ -91,9 +99,9 @@ for (const site of ['Klatovská', 'hlavní nádraží']) {
         flow.push(Math.round(distance));
         await new Promise(requestAnimationFrame);
       }
-      return { site, cars: seen.size, peak, samples, flow, longestStop, stoppedAt, departures, queues };
+      return { site, cars: seen.size, peak, samples, flow, longestStop, stoppedAt, departures, queues, chains, ...monitor.totals() };
     }, site);
-    await writeFile(info.outputPath('pozorovani.json'), JSON.stringify(result, null, 2));
+    await writeFile(info.outputPath('pozorovani.json'), JSON.stringify({ seed, ...result }, null, 2));
     expect(result.cars).toBeGreaterThan(0);
     expect(Math.min(...result.flow), JSON.stringify(result)).toBeGreaterThan(0);
     expect(result.peak).toBeLessThanOrEqual(40);

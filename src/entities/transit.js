@@ -345,7 +345,7 @@ export class TransitManager {
       else this.game.audio.horn(v);
       v.hornWait = -6;
     }
-    let sampled = false;
+    let sampled = false, blocker = null;
     const check = (other) => {
       if (other === v || Math.abs((other.y ?? v.y) - v.y) > 3) return;
       const dx = other.x - frontPoint.x, dz = other.z - frontPoint.z;
@@ -358,8 +358,9 @@ export class TransitManager {
       }
       const gap = pathClearance(frontPoint.x, frontPoint.z, Math.atan2(tx, tz), 0, 1.25, other, this.drivingPath);
       const speed = (other.vx || 0) * tx + (other.vz || 0) * tz;
-      limit = Math.min(limit, Math.max(0, speed + (gap - 2.5 - v.v) * 1.2),
+      const allowed = Math.min(Math.max(0, speed + (gap - 2.5 - v.v) * 1.2),
         Math.sqrt(Math.max(0, speed) ** 2 + 4 * Math.max(0, gap - 2.5)));
+      if (allowed < limit) { limit = allowed; blocker = other; }
     };
     for (const other of nearby) {
       if (other === v || !other.visible || Math.hypot(other.x - v.x, other.z - v.z) > 65) continue;
@@ -368,6 +369,7 @@ export class TransitManager {
     for (const car of cars) check(car);
     if (playerOnFoot) check(player);
 
+    if (limit < 0.4 && blocker) this.onObstacle?.(v, blocker);
     const acceleration = v.v < limit ? 1.1 : 2.6;
     v.v += Math.sign(limit - v.v) * Math.min(Math.abs(limit - v.v), acceleration * dt);
     v.route.posAt(v.s + 16, v.side, aheadPoint);

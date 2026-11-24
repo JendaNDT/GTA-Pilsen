@@ -12,6 +12,7 @@ import { initMapSearch } from './game/map-search.js';
 import { initWorkUI } from './game/work-ui.js';
 import { resultText } from './game/missions.js';
 import { createFrameProfiler } from './game/frame-profiler.js';
+import { createTrafficWaits } from './game/traffic-waits.js';
 import { initPerfPanel } from './game/perf-panel.js';
 import { QUALITY, IS_TOUCH, IS_MOBILE, DEBUG, PARAMS } from './config.js';
 import { profilePixelRatio } from './world/image-quality.js';
@@ -377,6 +378,10 @@ async function boot() {
 
   if (DEBUG) {
     window.__perf = { summary: perf.summary, reset: perf.reset, renderStats: perf.renderStats };
+    if (PARAMS.get('kolony') === '1') {
+      game.trafficWaits = createTrafficWaits(game);
+      window.__kolony = minimum => game.trafficWaits.queues(minimum);
+    }
     window.__play = play;
     window.__step = (dt, n = 1) => { for (let i = 0; i < n; i++) game.update(dt); game.render(); };
     window.__freeze = (b) => { running = !b; };
