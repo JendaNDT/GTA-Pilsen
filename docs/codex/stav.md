@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Plzeňská radnice
+
+Větev `codex/radnice` navazuje na Nové divadlo. Na severní straně náměstí Republiky má radnice vlastní sgrafitové průčelí, trojici štítů a otevřenou věžičku. Ověřili jsme změnu času na ručičkách a jejich obnovu po návratu na náměstí v nízké kvalitě na dotykovém displeji v Chromiu. Prošlo 278 testů JavaScriptu, sestavení a 396 z 398 prohlížečových kontrol. Obě selhání odpovídají známé zkoušce kontrastu nočních oken na náměstí. [Snímky a ověření](../E25/radnice.md)
+
 ## Nové divadlo v Plzni
 
 Na větvi `codex/nove-divadlo` dostalo Nové divadlo nakloněné průčelí s otvory, červený sál a tmavé administrativní křídlo s prosklenými spojovacími chodbami. V nízké kvalitě prošla dotyková zkouška chůze až k foyer i pod přední spojovací chodbou na obou vykreslovačích. Prošlo 276 testů JavaScriptu a sestavení hry. V celé sadě prošlo 394 z 396 prohlížečových kontrol. Zbývající dvě kontroly kontrastu nočních oken na náměstí selhávaly už před úpravou. [Snímky a výsledky ověření](../E25/nove-divadlo.md)

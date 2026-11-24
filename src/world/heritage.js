@@ -2,6 +2,7 @@
 import { canopyTile, stationMaterials, stationSurfaces, stationTile } from './station-building.js';
 import { alignTheatreTerrace, theatreMaterial, theatreSurfaces, theatreTile } from './theatre.js';
 import { modernTheatreGeometry, modernTheatreMaterial, modernTheatreSite, modernTheatreTile } from './modern-theatre.js';
+import { townHallClock, townHallGeometry, townHallMaterial, townHallTile } from './town-hall.js';
 import { synagogueMaterial, synagogueSurface, synagogueTile } from './synagogue.js';
 import { forecourtBounds } from './station-forecourt.js';
 import * as THREE from 'three/webgpu';
@@ -16,6 +17,7 @@ import { env, makeBuildingMaterial, makeMillraceMaterial, makeSurfaceMaterial } 
 import { SURFACE } from './material-table.js';
 import { FORGE, buildForge, forgeRoofHeight } from './mill.js';
 
+const showTownHall = PARAMS.get('radnice') !== 'puvodni';
 const showTheatre = PARAMS.get('divadlo') !== 'puvodni';
 const showSynagogue = PARAMS.get('synagoga') !== 'puvodni';
 const stationTiles = new Set(PARAMS.get('pruceli') === 'puvodni' ? [] : [stationTile, canopyTile]);
@@ -127,7 +129,7 @@ export class Heritage {
       const tile = this.cells.get(ch.ci);
       const hasStreet = this.streets?.tiles.has(tile.name);
       const customFacade = stationTiles.has(tile.name) || (showSynagogue && tile.name === synagogueTile)
-        || (showTheatre && tile.name === theatreTile) || (this.modernTheatre && tile.name === modernTheatreTile);
+        || (showTownHall && tile.name === townHallTile) || (showTheatre && tile.name === theatreTile) || (this.modernTheatre && tile.name === modernTheatreTile);
       loadCityTile(tile.name, controller.signal, hasStreet || customFacade).then(async (pack) => {
         if (controller.signal.aborted) return;
         const { version, cx, cz } = pack.header;
@@ -180,6 +182,19 @@ export class Heritage {
       const pack = owner.cityData;
       const geometry = cityMesh(pack, '');
       const sections = [...(pack.scenery ?? [])];
+      if (showTownHall && entry.name === townHallTile) {
+        const facade = townHallGeometry(pack, geometry);
+        if (facade) {
+          const material = townHallMaterial(env.night);
+          add(facade, material).name = 'Plzeňská radnice';
+          const clock = townHallClock(material);
+          clock.setTime(this.hour ?? 0);
+          this.clock = clock;
+          owner.townHallClock = clock;
+          group.add(clock);
+          owner.disposables.push(material, material.map, ...clock.children.map(hand => hand.geometry));
+        }
+      }
       if (showSynagogue && entry.name === synagogueTile) {
         const front = synagogueSurface(pack, geometry);
         if (front) {
@@ -273,6 +288,7 @@ export class Heritage {
 
   dispose(ch) {
     ch.cityRequest?.abort();
+    if (ch.townHallClock && this.clock === ch.townHallClock) this.clock = null;
     for (const visual of ch.streetVisuals ?? []) this.world.breakables.detach(visual);
     if (!ch.heritage?.city) return;
     for (const key of ch.heritage.roofChunks) {
@@ -283,7 +299,9 @@ export class Heritage {
     for (const i of this.cells.get(ch.ci).replacements) this.replaced.delete(i);
   }
 
-  updateForge(hour, dt) {
+  updateTime(hour, dt) {
+    this.hour = hour;
+    this.clock?.setTime(hour);
     this.forgeWorking = this.forgeIndex >= 0 && hour >= 9 && hour < 17;
     if (this.forgeWorking) this.forgeAngle = (this.forgeAngle + dt * 0.72) % (Math.PI * 2);
   }

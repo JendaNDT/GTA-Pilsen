@@ -275,3 +275,42 @@ test('Nové divadlo na telefonu dovolí projít portálem a pod spojovací chodb
     expect(errors).toEqual([]);
   } finally {await context.close();}
 });
+
+test('radnice na dotykovém displeji ukáže herní čas také po návratu na náměstí', async ({browser}) => {
+  const context = await browser.newContext({hasTouch:true,isMobile:true,viewport:{width:844,height:390}});
+  try {
+    const page = await context.newPage();
+    const errors = [];
+    page.on('pageerror',error => errors.push(error.message));
+    await page.goto(gameUrl('/?debug&quality=low&view=340&adapt=0'));
+    await page.waitForFunction(() => window.__ready);
+    await page.getByRole('button',{name:'Hrát',exact:true}).tap();
+    await page.evaluate(() => { window.__freeze(true); window.__game.player.place(7,-46); });
+    const waitForFacade = () => page.waitForFunction(() => {
+      const g = window.__game;
+      g.chunks.update(7,-46,340,40,g.player.y);
+      return g.scene.getObjectByName('Plzeňská radnice')?.material.map.image?.naturalWidth>0;
+    });
+    await waitForFacade();
+    const result = await page.evaluate(() => {
+      const g = window.__game, facade = g.scene.getObjectByName('Plzeňská radnice');
+      const clock = g.scene.getObjectByName('Radniční hodiny');
+      window.__setClock(null,3.5);
+      const angles = clock.children.map(hand => hand.rotation.z);
+      let released = 0;
+      for (const asset of [facade.geometry,facade.material,facade.material.map,...clock.children.map(hand => hand.geometry)]) {
+        asset.addEventListener('dispose',() => released++);
+      }
+      g.chunks.update(-1200,-2600,340,0);
+      window.__setClock(null,6.25);
+      return {angles,released,unloaded:!g.scene.getObjectByName('Radniční hodiny')};
+    });
+    expect(result.angles[0]).toBeCloseTo(-3.5*Math.PI/6,6);
+    expect(result.angles[1]).toBeCloseTo(-7*Math.PI,6);
+    expect(result).toMatchObject({released:5,unloaded:true});
+    await waitForFacade();
+    const angle = await page.evaluate(() => window.__game.scene.getObjectByName('Radniční hodiny').children[0].rotation.z);
+    expect(angle).toBeCloseTo(-6.25*Math.PI/6,6);
+    expect(errors).toEqual([]);
+  } finally {await context.close();}
+});

@@ -278,7 +278,7 @@ export class Game {
       this.vehicles.spawnTimer = 0;
       this.peds.timer = 0;
     }
-    this.chunks.heritage.updateForge(this.hour, 0);
+    this.chunks.heritage.updateTime(this.hour, 0);
     this.updateWeather();
     this.env.setHour(this.hour, this.clock.day);
     this.hud.clock(this.clock, this.clockVisible);
@@ -983,7 +983,7 @@ export class Game {
     this.shifts.show();
     this._updateWanted(dt);
     this._updateCamera(dt);
-    this.chunks.heritage.updateForge(this.hour, dt);
+    this.chunks.heritage.updateTime(this.hour, dt);
     this.particles.update(dt, this.vehicles.cars, this.focus, QUALITY.waterDetail);
     this.audio.update(dt, input.moveY);
     this.env.update(this.camera);
