@@ -1,3 +1,4 @@
+import { buildColumn } from './plague-column.js';
 import { SolidBuf } from './solid-buffer.js';
 import { paintStreetPaving } from './street-furniture.js';
 import { buildingLayers } from './facade-surfaces.js';
@@ -293,7 +294,7 @@ function buildBuildings(world, list, replaced, district, facadeBuildings) {
   const buf = new Buf();
   for (const i of list) {
     const flags = B.flags[i];
-    if ((flags & BF.HAS_PARTS) || replaced.has(i) || facadeBuildings?.has(i)) continue;
+    if ((flags & BF.HAS_PARTS) || i === world.plagueColumn?.building || replaced.has(i) || facadeBuildings?.has(i)) continue;
     const st = styleFor(world, i, district);
     const kind = B.kind[i];
     const top = world.bTop[i];
@@ -1800,6 +1801,9 @@ export class ChunkManager {
       add(m, geo);
     } else if (ch.stage === 1) {
       ch.structure = w.structures?.build(ci, ch.group, this.solidMat);
+      if (ci === w.plagueColumn?.tile) {
+        ch.group.add(buildColumn(w, w.plagueColumn, this.solidMat, QUALITY.heritageDetail, ch));
+      }
       ch.heritage = this.heritage.build(ci, ch);
       this._buildBuildings(ci, ch);
     } else if (ch.stage === 2) {
@@ -1868,6 +1872,7 @@ export class ChunkManager {
 
   _dispose(ch) {
     if (ch.structure) this.world.structures.dispose(ch.structure);
+    for (const rail of ch.columnRails ?? []) this.world.breakables.detach(rail);
     this.scene.remove(ch.group);
     this.heritage.dispose(ch);
     ch.regularBuildings?.geometry.dispose();

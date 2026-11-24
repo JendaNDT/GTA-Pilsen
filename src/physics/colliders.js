@@ -1,3 +1,4 @@
+import { columnCollision } from '../world/plague-column-site.js';
 import { RoadFurnitureBodies } from './road-furniture.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
 import { CHUNK } from '../config.js';
@@ -112,7 +113,8 @@ export class TileColliders {
     sidewalkTriangles(w, ci, emit);
     const theatre = w.heritage.modernTheatre;
     for (const i of w.bChunks[ci] ?? []) {
-      if (!theatre?.collisionSkip.has(i)) building(w, i, this.replaced.has(i) || i === w.heritage.forgeIndex, emit);
+      if (i === w.plagueColumn?.building) columnCollision(w.plagueColumn, emit);
+      else if (!theatre?.collisionSkip.has(i)) building(w, i, this.replaced.has(i) || i === w.heritage.forgeIndex, emit);
     }
     if (theatre?.ci === ci) modernTheatreCollision(w, theatre, emit);
     if (ci === w.heritage.forgeChunk) forgeRoofFaces(w, w.heritage.forgeIndex, (a, b, c) => roof(emit, a, b, c));

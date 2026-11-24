@@ -356,3 +356,45 @@ test('katedrála i radnice ukážou stejný čas a po návratu obnoví hodiny na
     expect(errors).toEqual([]);
   } finally {await context.close();}
 });
+
+test('morový sloup na nízké kvalitě má stupně, průchozí okolí a po návratu zachová poškození oplocení', async ({browser}) => {
+  const context = await browser.newContext({hasTouch:true,isMobile:true,viewport:{width:844,height:390}});
+  try {
+    const page=await context.newPage();
+    await page.goto(gameUrl('/?debug&quality=low&adapt=0&view=340'));
+    await page.waitForFunction(()=>window.__ready);
+    await page.getByRole('button',{name:'Hrát',exact:true}).tap();
+    await page.evaluate(()=>{ __freeze(true); __game.player.place(-23,-38); });
+    const load=()=>page.waitForFunction(()=>{
+      __game.chunks.update(-23,-38,340,40);
+      return Boolean(__game.scene.getObjectByName('Morový sloup'));
+    });
+    await load();
+    const result=await page.evaluate(()=>{
+      const g=__game, w=g.world, site=w.plagueColumn;
+      const id=site.fixtures[0].id, mesh=g.scene.getObjectByName('Morový sloup').levels[0].object.children[0];
+      let released=false;
+      mesh.geometry.addEventListener('dispose',()=>{released=true;});
+      const top=w.roofAt(-23.31,-48.98)-site.ground, blocked=w.blocked(-14,-48.98,.35);
+      const step=w.roofAt(-19.05,-48.12)-site.ground;
+      // Postava jde z volné dlažby kolmo na jižní pole plotu.
+      const fence=site.fixtures[2], nx=-Math.sin(fence.yaw), nz=Math.cos(fence.yaw);
+      const sx=fence.x+nx*2.3, sz=fence.z+nz*2.3;
+      for (let i=0;i<28;i++) g.colliders.update(sx,sz);
+      g.player.place(sx,sz,w.heightAt(sx,sz)+.1);
+      for (let i=0;i<35;i++) g.player.update(1/60,0,0,false,false);
+      for (let i=0;i<160;i++) g.player.update(1/60,-nx,-nz,false,false);
+      const distance=(g.player.x-fence.x)*nx+(g.player.z-fence.z)*nz;
+      w.breakables.damage(id,'broken',g.clock.now);
+      g.chunks.update(-1200,-2600,340,0);
+      return {id,top,step,distance,blocked,released,unloaded:!w.breakables.visuals.has(id)};
+    });
+    expect(result).toMatchObject({blocked:false,released:true,unloaded:true});
+    expect(result.distance).toBeGreaterThan(.2);
+    expect(result.distance).toBeLessThan(.7);
+    expect(result.top).toBeCloseTo(15.36,2);
+    expect(result.step).toBeCloseTo(.165,2);
+    await load();
+    expect(await page.evaluate(id=>__game.world.breakables.visuals.has(id) && __game.world.breakables.state(id),result.id)).toBe('broken');
+  } finally { await context.close(); }
+});

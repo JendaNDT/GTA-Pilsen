@@ -1,3 +1,4 @@
+import { columnContact, columnRay, columnSurface, createColumnSite } from './plague-column-site.js';
 import { stationForecourtOffsets, stationRetainingWalls } from './station-forecourt.js';
 import { bridgeApproach, bridgeBankOffsets, stationRampOffsets } from './road-profile.js';
 import { streetLamps } from './lamps.js';
@@ -134,6 +135,8 @@ export class World {
     this._initRoadGrades();
     this._initCorners();
     this.forecourtWalls = stationRetainingWalls(this);
+    this.plagueColumn = createColumnSite(this);
+    if (this.plagueColumn) this.streetFixtures.set(this.plagueColumn.tile, this.plagueColumn.fixtures.slice());
     this.treeTypes = new Map(data.treeTypes?.trees);
     this.forestTypes = new Map(data.treeTypes?.land);
     this.trees = data.trees;
@@ -526,6 +529,10 @@ export class World {
         const c = cz * this.gcols + cx;
         for (let k = this.bCellStart[c], ke = this.bCellStart[c + 1]; k < ke; k++) {
           const i = this.bCellItems[k];
+          if (i === this.plagueColumn?.building) {
+            if (columnContact(this.plagueColumn, hit, r, y, yTop)) { any = true; moved = true; }
+            continue;
+          }
           x = hit.x; z = hit.z;
           if (x + r < this.bMinX[i] || x - r > this.bMaxX[i] || z + r < this.bMinZ[i] || z - r > this.bMaxZ[i]) continue;
           const importedRoof = !fixedMapOnly && this.heritage?.replaced.has(i) && y > this.bGround[i] + 2.5
@@ -649,6 +656,10 @@ export class World {
     for (let k = this.bCellStart[c], ke = this.bCellStart[c + 1]; k < ke; k++) {
       const i = this.bCellItems[k];
       if (x < this.bMinX[i] || x > this.bMaxX[i] || z < this.bMinZ[i] || z > this.bMaxZ[i]) continue;
+      if (i === this.plagueColumn?.building) {
+        h = Math.max(h, columnSurface(this.plagueColumn, x, z, maxY));
+        continue;
+      }
       if (Number.isFinite(imported) && this.heritage.replaced.has(i)) continue;
       const top = this.bTop[i];
       if (top <= h || top > maxY) continue;
@@ -685,6 +696,10 @@ export class World {
         const i = this.bCellItems[k];
         if (seen.has(i)) continue;
         seen.add(i);
+        if (i === this.plagueColumn?.building) {
+          tBest = Math.min(tBest, columnRay(this.plagueColumn, x0, z0, x1, z1, y));
+          continue;
+        }
         if (this.bTop[i] <= y) continue;
         if (Math.min(x0, x1) > this.bMaxX[i] || Math.max(x0, x1) < this.bMinX[i] || Math.min(z0, z1) > this.bMaxZ[i] || Math.max(z0, z1) < this.bMinZ[i]) continue;
         for (let rg = B.bRing[i], r1 = B.bRing[i + 1]; rg < r1; rg++) {

@@ -363,6 +363,7 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
   Pro další ulice a pro chodce hra používá odhad. [Dopravní detektory](https://opendata.plzen.eu/public/opendata/detail/160) ·
   [Hodinové profily PoliVisu](https://polivisuapi.plzen.eu/api/)
 
+- Morový sloup před Císařským domem má vlastní model podle fotografie od autora hry. Půdorys a natočení pocházejí z OpenStreetMap (ODbL), zpracování kamene, zlacení a soch je vlastní tvorba projektu. [Sloup ve hře a zdroje](docs/E25/morovy-sloup.md)
 - Katedrála sv. Bartoloměje stojí na měřeném modelu centra Plzně. Kresba pískovce, břidlice, měděné krytiny, oken a portálů, ciferníky a doplněné střešní detaily jsou vlastní tvorba projektu podle fotografií dodaných autorem hry. [Katedrála před úpravou a po ní](docs/E25/katedrala.md)
 - Průčelí plzeňské radnice, kresba sgrafit, ciferník, stupňovité štíty a měděná věžička jsou vlastní tvorba projektu podle fotografií dodaných autorem hry. Umístění, šířka průčelí a hřeben střechy vycházejí z městského 3D modelu. [Radnice před úpravou a po ní](docs/E25/radnice.md)
 - Perforovaná stěna Nového divadla, kresba jeho fasád, prosklené chodby a betonová koule jsou vlastní tvorba projektu. Výšky a obrysy budov vycházejí z městského měření a půdorysy spojovacích chodeb z OpenStreetMap (ODbL). [Snímky Nového divadla ve hře](docs/E25/nove-divadlo.md)

@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Morový sloup na náměstí Republiky
+
+Větev `codex/morovy-sloup` navazuje na katedrálu. Původní budovu na půdorysu památky nahrazuje šest stupňů, kamenná balustráda, kovové oplocení a sloup s Madonou. Hra zohledňuje stupně a užší podstavec i při chůzi, nárazu auta nebo pohybu kamery. Prošlo 282 testů JavaScriptu, sestavení hry i 400 ze 402 prohlížečových kontrol. Obě selhání odpovídají původní zkoušce nočních oken na náměstí. [Pohledy od radnice i z náměstí a ověření](../E25/morovy-sloup.md)
+
 ## Katedrála sv. Bartoloměje
 
 Na větvi `codex/katedrala` má katedrála na náměstí Republiky vlastní kamenné zdivo, gotická okna a portály, čtyři funkční ciferníky a měděnou špici. Prošlo 280 testů JavaScriptu a produkční sestavení. V dotykové zkoušce na WebGL 2 i WebGPU souhlasily hodiny katedrály s radnicí a obnovily se po návratu na náměstí. V úplné sadě prošlo 397 ze 400 prohlížečových zkoušek. Kontrola kontrastu nočních oken selhala na obou vykreslovačích, pozorování ranní špičky u Klatovské na WebGPU. Obě potíže se projevily i ve verzi s původní katedrálou. [Srovnávací snímky a měření](../E25/katedrala.md)
