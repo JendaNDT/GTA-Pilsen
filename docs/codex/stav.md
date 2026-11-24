@@ -1,5 +1,9 @@
 # Stav etapy E27
 
+## Oprava kamery při rozjezdu auta
+
+Oprava vychází z revize `47b808d`. Kamera za autem přebírá polohu a natočení právě vykreslené karoserie. Stejná poloha slouží i ke kontrole překážek mezi autem a kamerou. Při třech sekundách rovného rozjezdu se 120 aktualizacemi obrazu za sekundu původní směr pohledu míjel očekávaný cíl až o 2,1–2,2 cm. Po opravě klesla největší měřená odchylka mezi kroky fyziky pod 0,1 mm na WebGL 2 i WebGPU. Prošlo všech 308 jednotkových zkoušek, produkční sestavení a osm cílených prohlížečových kontrol rozjezdu, tunelu Valík a kamenného okraje mostu.
+
 ## E27 – Herní mapa a orientace
 
 Mapa je hotová na větvi `codex/herni-mapa` z revize `a496a1a`. Otevře okolí hráče, umožní posun a přiblížení, ukáže skutečnou hranici pohybu a vyžádá si potvrzení cíle. Při kontrole na počítači a emulovaném telefonu fungoval výběr lávky, hledání zastávek i návrat k hráči. Prošlo 308 jednotkových testů a produkční sestavení. Ve společném běhu prošlo 420 z 422 prohlížečových kontrol. Obě zkoušky původního ovládání uspěly po doplnění kroku potvrzení cíle. [Zadání](E27.md) · [Snímky a výsledky měření](../E27.md)

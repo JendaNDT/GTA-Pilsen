@@ -786,7 +786,10 @@ export class Game {
 
   // ------------------------------------------------------------- kamera ----
   _updateCamera(dt) {
-    const f = this.focus, w = this.world;
+    const w = this.world;
+    // Mezi kroky fyziky kamera sleduje stejnou polohu a natočení jako vykreslená karoserie.
+    const carMesh = this.mode === 'car' && this.driver ? this.car.mesh : null;
+    const f = carMesh?.position ?? this.focus;
     this.camYaw -= input.lookDX * 0.0052;
     this.camPitch = clamp(this.camPitch + input.lookDY * 0.004, 0.04, 1.35);
     if (input.zoom) this.zoom = clamp(this.zoom * (input.zoom > 0 ? 1.12 : 0.89), 0.55, 3.2);
@@ -795,7 +798,10 @@ export class Game {
     let height = 1.5, base = 5.2, follow = null;
     if (this.mode === 'car') {
       height = 1.25; base = 7.2 + Math.min(4.5, Math.abs(this.car.speed) * 0.075);
-      if (Math.abs(this.car.speed) > 1.5) follow = this.car.speed < -1.5 && this.car.reverseTime > 0.8 ? this.car.yaw + Math.PI : this.car.yaw;
+      if (Math.abs(this.car.speed) > 1.5) {
+        follow = carMesh?.rotation.y ?? this.car.yaw;
+        if (this.car.speed < -1.5 && this.car.reverseTime > 0.8) follow += Math.PI;
+      }
     } else if (this.mode === 'heli') { height = 2; base = 15; if (this.heli.speed > 3 || !this.heli.landed) follow = this.heli.yaw; }
     else if (this.mode === 'transit') { height = 2.6; base = this.ride.isTram ? 20 : 15; follow = this.ride.yaw; }
     else if (Math.hypot(this.player.vx, this.player.vz) > 1.2 && this.lookIdle > 1.6) follow = this.player.yaw;
@@ -860,7 +866,7 @@ export class Game {
     }
     _v.set(f.x + fx * 1.5, ty + 0.2, f.z + fz * 1.5);
     cam.lookAt(_v);
-    const speed = Math.hypot(f.vx || 0, f.vz || 0);
+    const speed = Math.hypot(this.focus.vx || 0, this.focus.vz || 0);
     const fov = 60 + Math.min(14, speed * 0.3);
     if (Math.abs(cam.fov - fov) > 0.1) { cam.fov += (fov - cam.fov) * Math.min(1, dt * 3); cam.updateProjectionMatrix(); }
     this.camInfo = this.camInfo || {};
