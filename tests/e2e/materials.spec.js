@@ -63,8 +63,13 @@ test('E15 – obloha má ve dne mraky a v noci ztmavne', { tag: '@webgpu' }, asy
 test('E15 – některá okna na náměstí v noci svítí a sousední zůstávají tmavá', { tag: '@webgpu' }, async ({ page, baseURL }) => {
   await openMaterialGame(page, baseURL);
   await renderReferenceView(page, reference.views.find((view) => view.id === 'namesti-noc'));
-  const [litRed, , litBlue] = await averageRegion(page, { x: 40, y: 331, width: 8, height: 8 });
-  const [darkRed] = await averageRegion(page, { x: 52, y: 333, width: 8, height: 8 });
+  await page.waitForFunction(()=>{
+    const fronts=__game.scene.getObjectsByProperty('name','Domy na náměstí Republiky');
+    return fronts.some(mesh=>mesh.geometry.userData.squareAddresses.includes(32) && mesh.material.map.image?.complete);
+  });
+  // Dvě sousední okna téhož patra západní řady, vlevo od hotelu Central.
+  const [litRed, , litBlue] = await averageRegion(page, { x: 94, y: 351, width: 8, height: 8 });
+  const [darkRed] = await averageRegion(page, { x: 116, y: 351, width: 8, height: 8 });
   expect(litRed - darkRed).toBeGreaterThan(100);
   expect(litRed - litBlue).toBeGreaterThan(12);
 });

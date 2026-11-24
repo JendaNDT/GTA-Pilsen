@@ -4,7 +4,8 @@ import { alignTheatreTerrace, theatreMaterial, theatreSurfaces, theatreTile } fr
 import { modernTheatreGeometry, modernTheatreMaterial, modernTheatreSite, modernTheatreTile } from './modern-theatre.js';
 import { cathedralGeometry, cathedralHands, cathedralMaterial, cathedralTile } from './cathedral.js';
 import { museumGeometry, museumMaterial, museumTile } from './museum.js';
-import { hasNorthSquare, northSquareGeometry, northSquareMaterial } from './north-square.js';
+import { hasSquareFronts, squareFrontGeometry, squareFrontMaterial } from './square-fronts.js';
+import { hasNorthSquare, northSquareGeometry } from './north-square.js';
 import { townHallClock, townHallGeometry, townHallMaterial, townHallTile } from './town-hall.js';
 import { synagogueMaterial, synagogueSurface, synagogueTile } from './synagogue.js';
 import { forecourtBounds } from './station-forecourt.js';
@@ -134,7 +135,7 @@ export class Heritage {
       this.fetching++;
       const tile = this.cells.get(ch.ci);
       const hasStreet = this.streets?.tiles.has(tile.name);
-      const customFacade = (showNorthSquare && hasNorthSquare(tile.name)) || stationTiles.has(tile.name) || (showSynagogue && tile.name === synagogueTile)
+      const customFacade = (showNorthSquare && (hasNorthSquare(tile.name) || hasSquareFronts(tile.name))) || stationTiles.has(tile.name) || (showSynagogue && tile.name === synagogueTile)
         || (showMuseum && tile.name === museumTile)
         || (showCathedral && tile.name === cathedralTile) || (showTownHall && tile.name === townHallTile) || (showTheatre && tile.name === theatreTile) || (this.modernTheatre && tile.name === modernTheatreTile);
       loadCityTile(tile.name, controller.signal, hasStreet || customFacade).then(async (pack) => {
@@ -222,14 +223,8 @@ export class Heritage {
           owner.disposables.push(material, material.map, ...clock.children.map(hand => hand.geometry));
         }
       }
-      if (showNorthSquare && hasNorthSquare(entry.name)) {
-        const front = northSquareGeometry(entry.name, pack, geometry, QUALITY.heritageDetail);
-        if (front) {
-          const material = northSquareMaterial(env.night);
-          add(front, material).name = 'Severní průčelí náměstí';
-          owner.disposables.push(material, material.map);
-        }
-      }
+      const north = showNorthSquare && hasNorthSquare(entry.name)
+        ? northSquareGeometry(entry.name, pack, geometry, QUALITY.heritageDetail) : null;
       if (showSynagogue && entry.name === synagogueTile) {
         const front = synagogueSurface(pack, geometry);
         if (front) {
@@ -264,6 +259,14 @@ export class Heritage {
           add(station.front, materials.front).name = 'Průčelí hlavního nádraží';
           add(station.copper, materials.copper).name = 'Kupole hlavního nádraží';
           owner.disposables.push(materials.front, materials.copper, materials.map);
+        }
+      }
+      if (showNorthSquare && hasSquareFronts(entry.name)) {
+        const front = squareFrontGeometry(entry.name, pack, geometry, QUALITY.heritageDetail, north);
+        if (front) {
+          const material = squareFrontMaterial(entry.name, env.night);
+          add(front, material).name = north ? 'Severní průčelí náměstí' : 'Domy na náměstí Republiky';
+          owner.disposables.push(material, material.map);
         }
       }
       const layers = [{ solid:new SolidBuf(), ranges:[], material:this.cityFar },

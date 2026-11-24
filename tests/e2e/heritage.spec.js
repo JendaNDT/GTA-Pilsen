@@ -529,3 +529,35 @@ test('šest severních domů a radnice se na telefonu znovu načtou po návratu'
     await ready();
   } finally {await context.close();}
 });
+
+test('tři další strany náměstí mají na dotykovém displeji všech 33 adres',async ({browser})=>{
+  const context=await browser.newContext({hasTouch:true,isMobile:true,viewport:{width:844,height:390}});
+  try {
+    const page=await context.newPage();
+    await page.goto(gameUrl('/?debug&quality=low&view=340&adapt=0'));
+    await page.waitForFunction(()=>window.__ready);
+    await page.getByRole('button',{name:'Hrát',exact:true}).tap();
+    await page.evaluate(()=>{ __freeze(true); __game.player.place(0,25); });
+    const ready=()=>page.waitForFunction(()=>{
+      __game.chunks.update(0,25,340,40);
+      const seen=[];
+      __game.scene.traverse(mesh=>{
+        if(mesh.geometry?.userData.squareAddresses && mesh.material.map.image?.naturalWidth===2048)
+          seen.push(...mesh.geometry.userData.squareAddresses);
+      });
+      return seen.length===33 && new Set(seen).size===33 && seen.includes(23) && seen.includes(36);
+    });
+    await ready();
+    const released=await page.evaluate(()=>{
+      let disposed=0;
+      __game.scene.traverse(mesh=>{
+        if(mesh.geometry?.userData.squareAddresses)
+          for(const part of [mesh.geometry,mesh.material,mesh.material.map]) part.addEventListener('dispose',()=>disposed++);
+      });
+      __game.chunks.update(-1200,-2600,340,0);
+      return disposed;
+    });
+    expect(released).toBe(12);
+    await ready();
+  } finally { await context.close(); }
+});

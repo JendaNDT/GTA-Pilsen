@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Zbývající tři strany náměstí Republiky
+
+Na větvi `codex/stity-namesti` mají vlastní průčelí všechny domy č. 6–33 a 35–39 obrácené do náměstí. Hotové jsou adresní podklady, kresby, modely štítů, kontrola načtení po návratu a šest dvojic srovnávacích snímků. Všech 299 testů JavaScriptu a produkční sestavení prošly. Z 28 zkoušek Pythonu prošlo 27 a jedna vyžadující úplný nedistribuovaný archiv se přeskočila. V celém běhu prošlo 410 ze 412 prohlížečových kontrol. Po přemístění vzorků na současná noční okna i po samostatném opakování dopravy na Klatovské prošly také obě zbývající kontroly. [Podklady, snímky a podrobné ověření](../E25/stity-namesti.md)
+
 ## Štíty severní strany náměstí
 
 Na větvi `codex/severni-stity` jsou průčelí č. 40, 41 a 2 až 5, římsy, vikýře a samostatná kresba šesti domů. Prošlo 294 testů JavaScriptu, sestavení a 407 ze 410 prohlížečových kontrol. Kontrola celé řady po návratu na náměstí prošla na obou vykreslovačích. Selhaly dvě známé kontroly nočních oken a jednou ranní špička na Klatovské, která při opakování prošla. [Podklady a ověření](../E25/severni-stity.md)
