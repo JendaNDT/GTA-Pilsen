@@ -1,4 +1,8 @@
-# Stav etapy E27
+# Stav etapy E28
+
+## Fabia II a pohyblivá kola
+
+Hotová je pětidveřová Fabia II včetně střechy a zádě, rejd předních kol a odvalování všech kol při jízdě i couvání. Pohyb používají také auta v provozu. Prošlo 313 jednotkových testů, produkční sestavení a 14 cílených kontrol v prohlížeči. [Zadání](E28.md) · [Snímky, měření a výsledek](../E28.md)
 
 ## Kratší dobrzdění při držení brzdy
 

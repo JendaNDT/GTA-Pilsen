@@ -48,7 +48,7 @@ function deform(car, name, point, normal, amount, spawn) {
     const original = source(target).attributes.position;
     const hidden = Object.entries(panels).filter(([key, part]) =>
       part.batch === batch && car.damage[key] === 1 && key !== name);
-    // Kola jsou v druhé části detailů a drží si vlastní tvar.
+    // Drobné vybavení za nárazníky má pevný tvar.
     const end = batch === 'detail' ? panels.rearBumper.start + panels.rearBumper.count : positions.count;
     for (let i = 0; i < end; i++) {
       if (hidden.some(([, part]) => i >= part.start && i < part.start + part.count)) continue;

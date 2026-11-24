@@ -10,7 +10,8 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { transitMaterial } from './transit-material.js';
 import { carPaint, carLenses } from './car-appearance.js';
 import { QUALITY } from '../config.js';
-import { carProfile, extrudeProfile, tumblehome } from './car-body.js';
+import { makeCarWheels } from './car-wheels.js';
+import { carChassis, carProfile, extrudeProfile, tumblehome } from './car-body.js';
 import { pageLook } from '../world/daylight.js';
 
 const _c = new THREE.Color();
@@ -138,7 +139,7 @@ export function getBodyMaterial(hex) {
 
 /** Parametry typů aut. Rozměry v metrech, rychlost v m/s. */
 export const CAR_TYPES = {
-  hatch: { name: 'Malé auto', len: 3.9, wid: 1.7, h: 1.45, hood: 0.9, trunk: 0.25, maxSpeed: 40, accel: 6.2, grip: 8.5, mass: 1.0 },
+  hatch: { name: 'Škoda Fabia II', len: 3.9, wid: 1.7, h: 1.45, hood: 0.9, trunk: 0.25, maxSpeed: 40, accel: 6.2, grip: 8.5, mass: 1.0 },
   sedan: { name: 'Sedan', len: 4.6, wid: 1.8, h: 1.42, hood: 1.15, trunk: 0.95, maxSpeed: 46, accel: 6.8, grip: 8.5, mass: 1.2 },
   kombi: { name: 'Kombi', len: 4.7, wid: 1.8, h: 1.48, hood: 1.15, trunk: 0.2, maxSpeed: 44, accel: 6.4, grip: 8.5, mass: 1.25 },
   suv: { name: 'SUV', len: 4.6, wid: 1.92, h: 1.72, hood: 1.1, trunk: 0.25, maxSpeed: 44, accel: 6.2, grip: 8.0, mass: 1.6, ride: 0.12 },
@@ -178,13 +179,13 @@ function shellPanels(body, type, ride, height, parts) {
 }
 
 const carGeo = new Map();
-// Podrobná karoserie se zaoblením na vyšších předvolbách, na nízké a s ?vzhled=puvodni zůstávají kvádry.
+// Na nízké předvolbě má Fabia stejný profil a jednodušší detaily.
 function carGeometry(type) {
   const detailed = QUALITY.name !== 'low' && pageLook() === 'novy';
   const key = `${detailed ? 'detail' : 'simple'}/${type.id}`;
   let g = carGeo.get(key);
   if (!g) {
-    g = detailed ? detailedCarGeometry(type) : simpleCarGeometry(type);
+    g = buildCarGeometry(type.id, detailed);
     carGeo.set(key, g);
   }
   return g;
@@ -194,7 +195,12 @@ function carGeometry(type) {
 /** Geometrie auta bez materiálů a světel scény (pro testy a převody). */
 export function buildCarGeometry(typeId, detailed = true) {
   const type = CAR_TYPES[typeId];
-  return detailed ? detailedCarGeometry(type) : simpleCarGeometry(type);
+  const fabia = typeId === 'hatch' && pageLook() === 'novy';
+  const g = detailed || fabia ? detailedCarGeometry(type, detailed, fabia) : simpleCarGeometry(type);
+  const wheel = new Parts(SURFACE.rubber, carSurfaces);
+  detailedWheel(wheel, g.wheelR, 0.24, 0, 0, 0, 1, detailed ? 14 : 8);
+  g.wheel = wheel.geometry();
+  return g;
 }
 
 function finishCarGeometry(body, det, panels, firstLamp, type, ride, lampY, wheelR) {
@@ -202,6 +208,12 @@ function finishCarGeometry(body, det, panels, firstLamp, type, ride, lampY, whee
   const hazards = new Parts(SURFACE.lamp);
   for (const side of [-1, 1]) for (const end of [-1, 1]) {
     hazards.box(0.14, 0.12, 0.08, side * wid * 0.42, lampY, end * len * 0.495, [1, 0.38, 0.01]);
+  }
+  if (type.id === 'hatch') {
+    for (let i = 0; i < hazards.p.length; i += 3) {
+      hazards.p[i + 2] += Math.sign(hazards.p[i + 2]) * 0.065;
+    }
+    roundHatchEnds(hazards, len / 2);
   }
   const g = { panels, body: body.geometry(), detail: det.geometry(), hazards: hazards.geometry(), wheelR };
   const lenses = new Float32Array(g.detail.attributes.position.count);
@@ -220,8 +232,7 @@ function finishCarGeometry(body, det, panels, firstLamp, type, ride, lampY, whee
 }
 
 /** Kolo s pneumatikou, ráfkem s pěti paprsky a nábojem. Vnější strana míří ve směru `side`. */
-function detailedWheel(det, r, w, x, y, z, side) {
-  const seg = 14;
+function detailedWheel(det, r, w, x, y, z, side, seg) {
   const outer = x + side * w / 2, inner = x - side * w / 2;
   for (let s = 0; s < seg; s++) {
     const a0 = (s / seg) * Math.PI * 2, a1 = ((s + 1) / seg) * Math.PI * 2, am = (a0 + a1) / 2;
@@ -245,22 +256,70 @@ function detailedWheel(det, r, w, x, y, z, side) {
   det.ring(0, r * 0.16, outer - side * 0.008, y, z, side, CHROME, 8, SURFACE.metal);
 }
 
-function detailedCarGeometry(type) {
+// Rohy nárazníku, kapoty i světel ustupují společně ke kolům.
+function roundHatchEnds(parts, halfLength) {
+  for (let i = 0; i < parts.p.length; i += 3) {
+    const x = parts.p[i], z = parts.p[i + 2];
+    const across = Math.max(0, Math.abs(x) - 0.23);
+    const depth = Math.abs(z) - (halfLength - 0.52);
+    if (across === 0 || depth <= 0) continue;
+    const bend = 0.74 * across * across;
+    parts.p[i + 2] -= Math.sign(z) * bend * depth;
+    const nz = parts.n[i + 2] / (1 - bend);
+    const nx = parts.n[i] + Math.sign(z * x) * 1.48 * across * depth * nz;
+    const ny = parts.n[i + 1], length = Math.hypot(nx, ny, nz);
+    parts.n[i] = nx / length;
+    parts.n[i + 1] = ny / length;
+    parts.n[i + 2] = nz / length;
+  }
+}
+
+function fabiaTrim(det, width, front, rear, belt, roof, cab) {
+  // Chromovaný lem masky, svislá žebra a kruhové mlhovky pod hlavními světly.
+  det.box(0.75, 0.205, 0.046, 0, belt - 0.153, front + 0.025, CHROME, 1.08);
+  det.box(0.685, 0.159, 0.025, 0, belt - 0.152, front + 0.057, DARK, 1.08);
+  for (let i = -4; i <= 4; i++) det.box(0.012, 0.143, 0.012, i * 0.071, belt - 0.147, front + 0.075, CHROME);
+  for (const side of [-1, 1]) {
+    det.box(0.22, 0.092, 0.04, side * width * 0.36, 0.505, front + 0.025, DARK, 0.91);
+    det.box(0.105, 0.055, 0.02, side * width * 0.36, 0.505, front + 0.051, CHROME, 0.83);
+  }
+  // Optika pod jedním krytem: vnitřní parabola, směrovka a světlý úsek zadní skupiny.
+  for (const side of [-1, 1]) {
+    const cx = side * width * 0.315, cy = belt - 0.15;
+    const ring = [];
+    for (let i = 0; i < 12; i++) {
+      const angle = i * Math.PI / 6;
+      ring.push([cx + 0.055 * Math.cos(angle), cy + 0.051 * Math.sin(angle), front + 0.059]);
+    }
+    det.polygon(ring, [0, 0, 1], CHROME);
+    det.box(0.048, 0.061, 0.014, side * width * 0.448, cy + 0.051, front + 0.061, lin(0xd19149));
+    det.box(0.125, 0.026, 0.016, side * width * 0.418, belt - 0.113, rear - 0.039, CHROME);
+  }
+  // Zapuštěné madlo pátých dveří, zadní stěrač a brzdové světlo pod hranou střechy.
+  det.box(0.37, 0.035, 0.024, 0, belt - 0.14, rear - 0.015, DARK);
+  det.box(0.43, 0.024, 0.023, 0.12, belt + 0.105, cab.rear + 0.018, DARK);
+  det.box(0.30, 0.028, 0.022, 0, roof - 0.015, cab.roofRear - 0.033, TAIL);
+  det.box(0.025, 0.175, 0.025, 0, roof + 0.096, cab.roofRear + 0.24, DARK, 0.42, 0.42, -0.075);
+}
+
+function detailedCarGeometry(type, detailed, fabia) {
+  if (fabia) type = { ...type, h: 1.51 };
   const prof = carProfile(type);
-  const { ride, wheelR, belt, wheelZ, wheelX, cab } = prof;
+  const { ride, wheelR, belt, wheelZ, cab } = prof;
   const { wid, h, len, id } = type;
   const fz = len / 2, rz = -len / 2;
   const body = new Parts(), det = new Parts(SURFACE.rubber, carSurfaces);
   const panels = {};
   // spodek karoserie s podběhy a kabina zúžená ke střeše
-  body.mesh(extrudeProfile(prof.lower, wid, { bevel: 0.07, segments: 3 }), WHITE);
+  body.mesh(extrudeProfile(prof.lower, wid, { bevel: 0.07, segments: detailed ? 3 : 1 }), WHITE);
   const cabW = wid - 0.1;
-  const narrow = (y) => tumblehome(y, belt, h, 0.82);
-  body.mesh(extrudeProfile(prof.cabin, cabW, { bevel: 0.05, segments: 2, narrow }), WHITE);
+  const roofWidth = fabia ? 0.9 : 0.82;
+  const narrow = (y) => tumblehome(y, belt, h, roofWidth);
+  body.mesh(extrudeProfile(prof.cabin, cabW, { bevel: 0.05, segments: detailed ? 2 : 1, narrow }), WHITE);
   const roof = h - 0.035;
   const along = (z0, z1, y) => z0 + (z1 - z0) * (y - belt) / (roof - belt);
   const halfCab = (y) => cabW / 2 * narrow(y);
-  const slope = (cabW / 2) * 0.18 / Math.max(0.1, h - belt);
+  const slope = (cabW / 2) * (1 - roofWidth) / Math.max(0.1, h - belt);
   const sideNormal = (s) => { const k = Math.hypot(1, slope); return [s / k, slope / k, 0]; };
   // kapota jako samostatný díl (může při nárazu odpadnout)
   const [[hzA, hyA], [hzB, hyB]] = prof.hood;
@@ -272,7 +331,8 @@ function detailedCarGeometry(type) {
   const fourDoors = !['sport', 'pickup', 'van'].includes(id);
   const yb = belt + 0.07, yt = roof - 0.075;
   const zF = (y) => along(cab.front, cab.roofFront, y) - 0.12;
-  const zR = id === 'van' ? () => cab.front - 1.3 : (y) => along(cab.rear, cab.roofRear, y) + 0.12;
+  const zR = id === 'van' ? () => cab.front - 1.3 : (y) =>
+    along(cab.rear, cab.roofRear, y) + (fabia ? 0.26 + 0.09 * (y - belt) : 0.12);
   const zB = fourDoors ? (zF(yb) + zR(yb)) / 2 + 0.08 : zR(yb);
   const doorFront = cab.front - 0.06, doorRear = fourDoors ? zB - 0.03 : Math.max(zR(yb), cab.front - 1.25);
   const dy0 = ride + 0.14, dy1 = belt - 0.04;
@@ -306,20 +366,41 @@ function detailedCarGeometry(type) {
   if (id !== 'van') pane(cab.rear, cab.roofRear, -1);
   // světla: dvě přední, dvě zadní, dvě couvací (pořadí čte materiál světel)
   const lampY = belt - (id === 'van' ? 0.13 : 0.19);
+  if (fabia) {
+    fabiaTrim(det, wid, fz, rz, belt, roof, cab);
+    body.box(cabW * 0.89, 0.055, 0.15, 0, roof, cab.roofRear, WHITE, 0.97);
+    for (const side of [1, -1]) {
+      const pillar = [[zB + 0.055, yb], [zB - 0.055, yb], [zB - 0.055, yt], [zB + 0.055, yt]]
+        .map(([z, y]) => [side * (halfCab(y) + 0.006), y, z]);
+      det.polygon(side > 0 ? pillar : pillar.reverse(), sideNormal(side), DARK);
+    }
+  }
   const firstLamp = det.p.length / 3;
-  for (const sx of [1, -1]) det.box(0.4, 0.1, 0.06, sx * wid * 0.33, lampY, fz - 0.01, HEAD, 0.92, 0.7);
-  for (const sx of [1, -1]) det.box(0.42, 0.11, 0.06, sx * wid * 0.33, lampY + 0.01, rz + 0.005, TAIL, 0.94, 0.8);
-  for (const sx of [1, -1]) det.box(0.1, 0.08, 0.06, sx * wid * 0.17, lampY + 0.01, rz + 0.0, WHITE);
+  if (fabia) {
+    for (const side of [1, -1]) {
+      const start = det.p.length;
+      det.box(0.41, 0.155, 0.085, side * wid * 0.35, lampY + 0.04, fz + 0.012, HEAD, 0.94, 0.87);
+      for (let i = start; i < det.p.length; i += 3) {
+        det.p[i + 1] += (Math.abs(det.p[i]) - wid * 0.35) * 0.27;
+      }
+    }
+    for (const side of [1, -1]) det.box(0.211, 0.38, 0.09, side * wid * 0.419, lampY, rz + 0.012, TAIL, 0.88);
+    for (const side of [1, -1]) det.box(0.136, 0.059, 0.024, side * wid * 0.417, lampY - 0.026, rz - 0.04, WHITE);
+  } else {
+    for (const sx of [1, -1]) det.box(0.4, 0.1, 0.06, sx * wid * 0.33, lampY, fz - 0.01, HEAD, 0.92, 0.7);
+    for (const sx of [1, -1]) det.box(0.42, 0.11, 0.06, sx * wid * 0.33, lampY + 0.01, rz + 0.005, TAIL, 0.94, 0.8);
+    for (const sx of [1, -1]) det.box(0.1, 0.08, 0.06, sx * wid * 0.17, lampY + 0.01, rz + 0.0, WHITE);
+  }
   panels.frontBumper = { batch: 'detail', start: det.p.length / 3, count: 36 };
-  det.box(wid * 0.97, 0.17, 0.13, 0, ride + 0.11, fz + 0.01, DARK, 0.98, 0.8);
+  det.box(wid * 0.97, fabia ? 0.065 : 0.17, 0.13, 0, ride + 0.11, fz + 0.01, DARK, 0.98, 0.8);
   panels.rearBumper = { batch: 'detail', start: det.p.length / 3, count: 36 };
-  det.box(wid * 0.97, 0.17, 0.13, 0, ride + 0.11, rz - 0.01, DARK, 0.98, 0.8);
+  det.box(wid * 0.97, fabia ? 0.065 : 0.17, 0.13, 0, ride + 0.11, rz - 0.01, DARK, 0.98, 0.8);
   // maska, značky, zrcátka, kliky, prahy a spáry dveří
-  det.box(wid * 0.4, 0.12, 0.05, 0, lampY - 0.03, fz + 0.005, DARK);
+  if (!fabia) det.box(wid * 0.4, 0.12, 0.05, 0, lampY - 0.03, fz + 0.005, DARK);
   // spodní sání mezi maskou a nárazníkem
   const intakeTop = lampY - 0.09, intakeBottom = ride + 0.2;
   det.box(wid * 0.52, intakeTop - intakeBottom, 0.04, 0, (intakeTop + intakeBottom) / 2, fz + 0.005, DARK, 0.96, 1);
-  det.box(0.52, 0.12, 0.03, 0, ride + 0.11, fz + 0.09, PLATE);   // přední značka na nárazníku
+  det.box(0.52, 0.12, 0.03, 0, ride + (fabia ? 0.22 : 0.11), fz + (fabia ? 0.043 : 0.09), PLATE);   // přední značka na nárazníku
   det.box(0.52, 0.12, 0.03, 0, ride + 0.33, rz - 0.015, PLATE);
   for (const sx of [-1, 1]) {
     det.box(0.07, 0.1, 0.17, sx * (wid / 2 + 0.07), belt + 0.11, cab.front - 0.16, DARK, 1, 0.8);
@@ -338,7 +419,11 @@ function detailedCarGeometry(type) {
     det.box(wid * 1.012, 0.16, len * 0.62, 0, ride + (belt - ride) * 0.5, -0.1, lin(0x1e56b3));
     det.box(wid * 1.016, 0.05, len * 0.62, 0, ride + (belt - ride) * 0.5, -0.1, lin(0xd8d820));
   }
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) detailedWheel(det, wheelR, 0.24, sx * wheelX, wheelR, sz * wheelZ, sx);
+
+  if (fabia) {
+    roundHatchEnds(body, fz);
+    roundHatchEnds(det, fz);
+  }
   return finishCarGeometry(body, det, panels, firstLamp, type, ride, lampY, wheelR);
 }
 
@@ -386,8 +471,7 @@ function simpleCarGeometry(type) {
   panels.rearBumper = { batch: 'detail', start: det.p.length / 3, count: 36 };
   det.box(wid * 0.98, 0.14, 0.1, 0, ride + 0.09, lz * 0.99, DARK);
   det.box(wid * 0.5, 0.12, 0.05, 0, ride + bodyH * 0.45, fz * 0.99, DARK);
-  const wx = wid / 2 - 0.12, wz = len / 2 - 0.82;
-  for (const sx of [-1, 1]) for (const sz of [-1, 1]) det.wheel(wheelR, 0.24, sx * wx, wheelR, sz * wz, TIRE);
+
   if (type.sign) det.box(0.5, 0.16, 0.22, 0, h + 0.06, zc, lin(0xf2c230));
   if (type.police) {
     det.box(wid * 0.55, 0.1, 0.26, 0, h + 0.04, zc, DARK);
@@ -448,7 +532,9 @@ export function makeCarMesh(typeId, colorHex) {
   const hazards = new THREE.Mesh(g.hazards, getDetailMaterial());
   hazards.visible = false;
   group.userData.hazards = hazards;
-  group.add(body, detail, hazards);
+  const wheels = makeCarWheels(g.wheel, getDetailMaterial(), carChassis(type), pageLook() === 'novy');
+  group.userData.wheels = wheels;
+  group.add(body, detail, hazards, wheels);
   group.userData.indicators = g.indicators.map(geometry => {
     const lamp = new THREE.Mesh(geometry, getDetailMaterial());
     lamp.visible = false;

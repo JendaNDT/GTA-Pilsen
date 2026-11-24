@@ -19,7 +19,7 @@ function cabinShape(type, belt) {
   if (id === 'pickup') return { front: base, roofFront: base - rise * 1.05, roofRear: base - 1.75, rear: base - 1.85 };
   if (id === 'sport') return { front: base, roofFront: base - rise * 1.9, roofRear: rz + trunk + rise * 1.2, rear: rz + trunk - 0.15 };
   if (trunk >= 0.6) return { front: base, roofFront: base - rise * 1.25, roofRear: rz + trunk + rise * 0.95, rear: rz + trunk };
-  if (id === 'hatch') return { front: base, roofFront: base - rise * 1.2, roofRear: rz + 0.1 + rise * 0.85, rear: rz + 0.1 };
+  if (id === 'hatch') return { front: base, roofFront: base - rise * 1.34, roofRear: rz + 0.32, rear: rz + 0.08 };
   return { front: base, roofFront: base - rise * 1.2, roofRear: rz + 0.1 + rise * 0.22, rear: rz + 0.07 };
 }
 

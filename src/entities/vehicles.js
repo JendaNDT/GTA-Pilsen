@@ -1,3 +1,4 @@
+import { updateCarWheels } from './car-wheels.js';
 import { EDGE_MARGIN } from '../world/travel-bounds.js';
 // Auta: jízdní fyzika hráče, běžný provoz, zaparkovaná auta a policie.
 import { enginePower, steeringPull, releasePanels } from './damage.js';
@@ -155,6 +156,7 @@ export class VehicleManager {
     this.game.audio.remove(car);
     this.scene.remove(car.mesh);
     releasePanels(car);
+    car.mesh.userData.wheels.dispose();
     if (car.mesh.userData.beacons) for (const b of car.mesh.userData.beacons) b.material.dispose();
   }
 
@@ -1223,7 +1225,10 @@ export class VehicleManager {
       if (c.mesh.userData.hazards) c.mesh.userData.hazards.visible =
         c.mode === 'loose' && c.crashed && Math.floor(this.game.time * 2.5) % 2 === 0;
       if (c.physical) c.physical.render(this.game.physics.clock.alpha);
-      else c.sync();
+      else {
+        c.sync();
+        if (c !== this.game.driver?.car) updateCarWheels(c, dt);
+      }
     }
   }
 

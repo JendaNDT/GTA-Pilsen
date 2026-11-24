@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { Vector3 } from 'three/webgpu';
+import { Matrix4, Vector3 } from 'three/webgpu';
 
 // Podrobná auta se staví od střední předvolby. Plátno pro světelný kužel stačí jednoduché.
 globalThis.window = {};
@@ -61,7 +61,7 @@ test('podrobná auta: díly pro poškození, pořadí světel a rozumný počet 
     assert.ok(Math.max(...[...lens.keys()].filter((i) => lens[i])) < g.panels.frontBumper.start);
     // směrovky: dvě poloviny po 72 vrcholech
     assert.deepEqual(g.indicators.map((x) => x.drawRange.count), [72, 72]);
-    const triangles = (bodyCount + detailCount) / 3;
+    const triangles = (bodyCount + detailCount + 4 * g.wheel.attributes.position.count) / 3;
     assert.ok(triangles < 2200, `${id}: ${triangles} trojúhelníků`);
     for (const geometry of [g.body, g.detail]) {
       const n = geometry.attributes.normal;
@@ -106,4 +106,34 @@ test('vyhlazení normál zachová ostrou hranu a vyhladí mírný ohyb', async (
   assert.ok(dot(normal(smooth, 0), normal(smooth, 3)) > 0.9999, 'mírný ohyb sdílí normálu na společné hraně');
   assert.ok(dot(normal(sharp, 0), normal(sharp, 3)) < 0.5, 'ostrá hrana má dvě různé normály');
   assert.ok(Math.abs(normal(sharp, 0)[1] - 1) < 1e-6, 'plocha u ostré hrany drží svou normálu');
+});
+
+test('Fabia má na obou předvolbách boční dveře a stejnou výšku střechy', () => {
+  const roof = [];
+  for (const detail of [false, true]) {
+    const g = buildCarGeometry('hatch', detail);
+    g.body.computeBoundingBox();
+    roof.push(g.body.boundingBox.max.y);
+    assert.ok(roof.at(-1) > 1.48);
+    assert.ok(g.panels.leftDoor && g.panels.rightDoor);
+  }
+  assert.ok(Math.abs(roof[0] - roof[1]) < 0.02);
+});
+
+test('kola v provozu odvalují vpřed i vzad a rejd má jen přední náprava', async () => {
+  const { updateCarWheels } = await import('../src/entities/car-wheels.js');
+  const car = new Car('sedan', 0x335566);
+  const wheels = car.mesh.userData.wheels;
+  const axes = () => Array.from({ length: 4 }, (_, i) => {
+    const m = new Matrix4();
+    wheels.getMatrixAt(i, m);
+    return new Vector3(1, 0, 0).transformDirection(m).multiplyScalar(i % 2 ? -1 : 1);
+  });
+  car.mode = 'ai'; car.speed = 4; car.steer = 0.3;
+  updateCarWheels(car, 0.05);
+  const axle = axes();
+  for (let i = 0; i < 4; i++) assert.ok(Math.abs(axle[i].z - (i < 2 ? Math.sin(0.3) : 0)) < 1e-6);
+  assert.ok(wheels.userData.roll > 0);
+  car.speed = -4; updateCarWheels(car, 0.05);
+  assert.ok(Math.abs(wheels.userData.roll) < 1e-7);
 });

@@ -36,3 +36,55 @@ test('E24 – dvě světla hráče sledují karoserii a přepnutí dálkových s
   expect(state.eyes).toBe(4);
   expect(errors).toEqual([]);
 });
+
+test('Fabia ukazuje rejd na místě i odvalování při jízdě a couvání @webgpu', async ({ page }) => {
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0&hour=12'));
+  await waitForGame(page);
+  const result = await page.evaluate(() => {
+    window.__freeze(true);
+    const g = window.__game, car = g.player.lastCar;
+    car.place(-23, 43, 0.4);
+    g._enterCar(car);
+    g.paused = false;
+    const wheels = car.mesh.userData.wheels;
+    const matrix = car.mesh.matrix.clone();
+    const read = () => Array.from({ length: 4 }, (_, i) => {
+      wheels.getMatrixAt(i, matrix);
+      const side = i % 2 ? -1 : 1;
+      return { steer: Math.atan2(-side * matrix.elements[2], side * matrix.elements[0]),
+        roll: Math.atan2(matrix.elements[9] * -side, matrix.elements[5]) };
+    });
+    const step = (steer, gas, count) => {
+      window.__setInput(steer, gas);
+      for (let i = 0; i < count; i++) g.update(1 / 60);
+      return read();
+    };
+    const right = step(1, 0, 60);
+    const left = step(-1, 0, 60);
+    step(0, 1, 60);
+    const spin = () => {
+      const previous = read();
+      g.update(1 / 60);
+      return read().map((wheel, i) => {
+        const difference = wheel.roll - previous[i].roll;
+        return Math.atan2(Math.sin(difference), Math.cos(difference));
+      });
+    };
+    const forward = spin();
+    step(0, -1, 175);
+    return { name: car.type.name, right, left, forward, reverse: spin(), speed: car.speed };
+  });
+  expect(result.name).toContain('Fabia');
+  for (let i = 0; i < 4; i++) {
+    if (i < 2) {
+      expect(result.right[i].steer).toBeLessThan(-0.3);
+      expect(result.left[i].steer).toBeGreaterThan(0.3);
+    } else {
+      expect(Math.abs(result.left[i].steer)).toBeLessThan(0.001);
+      expect(Math.abs(result.right[i].steer)).toBeLessThan(0.001);
+    }
+    expect(result.forward[i]).toBeGreaterThan(0.01);
+    expect(result.reverse[i]).toBeLessThan(-0.01);
+  }
+  expect(result.speed).toBeLessThan(-0.5);
+});

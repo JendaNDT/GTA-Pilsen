@@ -1,6 +1,7 @@
+import { updateCarWheels } from '../entities/car-wheels.js';
 import { dentCar, enginePower, steeringPull } from '../entities/damage.js';
 import { Euler, Quaternion, Vector3 } from 'three/webgpu';
-import { BodyPose } from './step.js';
+import { BodyPose, STEP_SECONDS } from './step.js';
 import { layers } from './world.js';
 
 // Zesílení provozní brzdy platí pouze při brzdění pedálem.
@@ -272,6 +273,7 @@ export class PlayerVehicle {
     const { mesh } = this.car;
     this.pose.interpolate(alpha, mesh.position, mesh.quaternion);
     mesh.translateY(-this.spec.height);
+    updateCarWheels(this.car, 0, this.wheels, (1 - alpha) * STEP_SECONDS);
   }
 
   dispose() {
