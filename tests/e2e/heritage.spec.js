@@ -398,3 +398,29 @@ test('morový sloup na nízké kvalitě má stupně, průchozí okolí a po náv
     expect(await page.evaluate(id=>__game.world.breakables.visuals.has(id) && __game.world.breakables.state(id),result.id)).toBe('broken');
   } finally { await context.close(); }
 });
+
+test('muzeum na dotykovém displeji načte průčelí i po odjezdu a návratu', async ({browser}) => {
+  const context = await browser.newContext({hasTouch:true,isMobile:true,viewport:{width:844,height:390}});
+  try {
+    const page = await context.newPage();
+    await page.goto(gameUrl('/?debug&quality=low&view=340&adapt=0'));
+    await page.waitForFunction(() => window.__ready);
+    await page.getByRole('button',{name:'Hrát',exact:true}).tap();
+    await page.evaluate(() => { window.__freeze(true); window.__game.player.place(145,315); });
+    const waitForMuseum = () => page.waitForFunction(() => {
+      const game = window.__game;
+      game.chunks.update(145,315,340,40,game.player.y);
+      return game.scene.getObjectByName('Západočeské muzeum')?.material.map.image?.naturalWidth===1536;
+    });
+    await waitForMuseum();
+    const released = await page.evaluate(() => {
+      const game = window.__game, mesh = game.scene.getObjectByName('Západočeské muzeum');
+      let count = 0;
+      for (const asset of [mesh.geometry,mesh.material,mesh.material.map]) asset.addEventListener('dispose',() => count++);
+      game.chunks.update(-1200,-2600,340,0);
+      return count;
+    });
+    expect(released).toBe(3);
+    await waitForMuseum();
+  } finally { await context.close(); }
+});

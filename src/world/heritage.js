@@ -3,6 +3,7 @@ import { canopyTile, stationMaterials, stationSurfaces, stationTile } from './st
 import { alignTheatreTerrace, theatreMaterial, theatreSurfaces, theatreTile } from './theatre.js';
 import { modernTheatreGeometry, modernTheatreMaterial, modernTheatreSite, modernTheatreTile } from './modern-theatre.js';
 import { cathedralGeometry, cathedralHands, cathedralMaterial, cathedralTile } from './cathedral.js';
+import { museumGeometry, museumMaterial, museumTile } from './museum.js';
 import { townHallClock, townHallGeometry, townHallMaterial, townHallTile } from './town-hall.js';
 import { synagogueMaterial, synagogueSurface, synagogueTile } from './synagogue.js';
 import { forecourtBounds } from './station-forecourt.js';
@@ -19,6 +20,7 @@ import { SURFACE } from './material-table.js';
 import { FORGE, buildForge, forgeRoofHeight } from './mill.js';
 
 const showCathedral = PARAMS.get('katedrala') !== 'puvodni';
+const showMuseum = PARAMS.get('muzeum') !== 'puvodni';
 const showTownHall = PARAMS.get('radnice') !== 'puvodni';
 const showTheatre = PARAMS.get('divadlo') !== 'puvodni';
 const showSynagogue = PARAMS.get('synagoga') !== 'puvodni';
@@ -131,6 +133,7 @@ export class Heritage {
       const tile = this.cells.get(ch.ci);
       const hasStreet = this.streets?.tiles.has(tile.name);
       const customFacade = stationTiles.has(tile.name) || (showSynagogue && tile.name === synagogueTile)
+        || (showMuseum && tile.name === museumTile)
         || (showCathedral && tile.name === cathedralTile) || (showTownHall && tile.name === townHallTile) || (showTheatre && tile.name === theatreTile) || (this.modernTheatre && tile.name === modernTheatreTile);
       loadCityTile(tile.name, controller.signal, hasStreet || customFacade).then(async (pack) => {
         if (controller.signal.aborted) return;
@@ -194,6 +197,14 @@ export class Heritage {
           add(hands.geometry, material, detail).name = 'Hodiny katedrály';
           owner.cathedralClock = this.cathedralClock = hands;
           owner.disposables.push(material,material.map);
+        }
+      }
+      if (showMuseum && entry.name === museumTile) {
+        const facade = museumGeometry(pack, geometry);
+        if (facade) {
+          const material = museumMaterial();
+          add(facade, material).name = 'Západočeské muzeum';
+          owner.disposables.push(material, material.map);
         }
       }
       if (showTownHall && entry.name === townHallTile) {

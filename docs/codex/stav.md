@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Západočeské muzeum
+
+Na větvi `codex/zapadoceske-muzeum` má hlavní budova v Kopeckého sadech vlastní portál, lodžii se třemi oblouky a tři otevřené střešní věžičky. Obě křídla a oblé nároží vycházejí z městského měření. Prošlo všech 286 testů JavaScriptu, produkční sestavení i kontrola muzea na obou vykreslovačích. V celé prohlížečové sadě prošlo 402 ze 404 zkoušek. Obě selhání odpovídají známé kontrole nočních oken na náměstí. [Srovnání tří pohledů a měření výkonu](../E25/zapadoceske-muzeum.md)
+
 ## Sloučení památek a dopravní větve
 
 Společné sestavení památek (`a78fff2`) a sledování kolon (`e1ddfa3`) prošlo všemi 285 testy JavaScriptu a produkčním sestavením. Na WebGL 2 a WebGPU prošlo celkem 400 ze 402 prohlížečových kontrol včetně památek a ranní dopravy. Na obou vykreslovačích selhala známá kontrola kontrastu nočních oken na náměstí. Pokus se silnějším rozjezdem je uložen v samostatné záplatě.

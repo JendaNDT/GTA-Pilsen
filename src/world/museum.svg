@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1536" height="1024" viewBox="0 0 1536 1024">
+<title>Západočeské muzeum – průčelí a opakující se pole křídel</title>
+<defs>
+  <pattern id="stone" width="54" height="28" patternUnits="userSpaceOnUse">
+    <rect width="54" height="28" fill="#dfd7c5"/><path fill="#cbb8aa" d="M0 16h54v10H0z"/>
+    <path d="M0 0h54M0 14h54M14 0v14m25 0v14" fill="none" stroke="#aa9c8c" stroke-width=".8"/>
+  </pattern>
+  <linearGradient id="glass" x1="0" x2=".7" y2="1" gradientUnits="objectBoundingBox">
+    <stop stop-color="#262c31"/><stop offset=".42" stop-color="#58616a"/><stop offset=".63" stop-color="#75808a"/><stop offset="1" stop-color="#46413d"/>
+  </linearGradient>
+  <linearGradient id="shaft"><stop stop-color="#a59b88"/><stop offset=".28" stop-color="#f0e9d9"/><stop offset=".57" stop-color="#ded5c2"/><stop offset="1" stop-color="#a79d8c"/></linearGradient>
+  <pattern id="balusters" width="10" height="20" patternUnits="userSpaceOnUse">
+    <rect width="10" height="20" fill="#736b60"/><path d="M1 0h8L6 5q5 5 0 10l2 3H2l2-4Q0 9 4 5z" fill="#e8dfce"/>
+  </pattern>
+  <g id="arch">
+    <path d="M-31 0v-76a31 31 0 0 1 62 0V0z" fill="#f3ecdc" stroke="#aa9f8f" stroke-width="2"/>
+    <path d="M-26 -2v-74a26 26 0 0 1 52 0v74z" fill="url(#glass)" stroke="#70665c" stroke-width="3"/>
+    <path d="M0 -100v98m-25-70h50m-49 38h48" fill="none" stroke="#4b4036" stroke-width="3"/>
+    <path d="M-26 0h52v12h-52z" fill="url(#balusters)"/><path d="M-31 0h62m-62 13h62" stroke="#f0e8d7" stroke-width="4"/>
+    <path d="M-5 -111h10l-2 13h-6z" fill="#e4dccb" stroke="#b5a995"/>
+  </g>
+  <g id="sash">
+    <path d="M-28 0v-78h56V0z" fill="#d8cdb9" stroke="#a09582" stroke-width="2"/>
+    <path d="M-23 -3v-70h46v70z" fill="url(#glass)" stroke="#7e6d5e" stroke-width="2"/>
+    <path d="M0 -73v70m-23-46h46" fill="none" stroke="#d4c7b3" stroke-width="3"/>
+    <path d="M-32 1h64m-64-81h64" stroke="#f0e6d2" stroke-width="4"/>
+  </g>
+  <g id="lancet">
+    <path d="M-11 0v-108a11 11 0 0 1 22 0V0z" fill="url(#glass)" stroke="#f3e9d7" stroke-width="3"/>
+    <path d="M-10 -85h20m-20 51h20M0 -84v49" stroke="#c5bba7" stroke-width="2"/>
+  </g>
+  <g id="triple"><use xlink:href="#lancet" x="-21"/><use xlink:href="#lancet"/><use xlink:href="#lancet" x="21"/>
+    <path d="M-33 3h66v8h-66z" fill="url(#balusters)"/><path d="M-37 13h74" stroke="#f5eddd" stroke-width="4"/>
+  </g>
+  <g id="frame"><path d="M-38 -2h76v-28h-76z" fill="#d0c5b1" stroke="#a89a85"/><path d="M-31 -6h62v-18h-62z" fill="#ddd3c2" stroke="#f2eadb"/>
+    <path d="M-28 -15q8 -12 14 -1t15 -1t15 1t13 -2m-58 1q15 15 28 0q17 14 29 0" fill="none" stroke="#b8aa95" stroke-width="2"/>
+  </g>
+  <pattern id="dentils" width="12" height="11" patternUnits="userSpaceOnUse"><rect width="12" height="11" fill="#b6aa96"/><path d="M2 0h7v8H2z" fill="#e6ddc9"/><path d="M2 8h7" stroke="#9b8e7c"/></pattern>
+  <g id="side"><use xlink:href="#sash" transform="translate(0 193) scale(1.03 1.34)"/>
+    <path d="M-40 85l40-17 40 17z" fill="#baaf9d" stroke="#f4ebda" stroke-width="4"/>
+    <use xlink:href="#frame" transform="translate(0 315) scale(1.06 1.48)"/>
+    <use xlink:href="#sash" transform="translate(0 438) scale(1.03 1.23)"/>
+    <path d="M-29 445h58v12h-58z" fill="url(#balusters)"/><use xlink:href="#sash" transform="translate(0 603) scale(.80 .75)"/>
+  </g>
+  <g id="pilaster"><rect x="-7" width="14" height="120" fill="url(#shaft)"/><path d="M-11 0h22v7h-22zm0 111h22v9h-22z" fill="#e9ddc9" stroke="#b4a68f"/></g>
+  <g id="figure" fill="#bba486" stroke="#8f7c65" stroke-width="1.5">
+    <circle cx="0" cy="-19" r="4"/><path d="M-3 -14q-6 4-5 14l-7 11h22l-4-11 5 4 2-3-7-9-3-6z"/><path d="M-5 4l-4 5m9-12 3 12" fill="none"/>
+  </g>
+  <pattern id="wing" x="18" y="699" width="80" height="314" patternUnits="userSpaceOnUse">
+    <rect width="80" height="314" fill="url(#stone)"/>
+    <path d="M0 0h80v12H0zM0 112h80v8H0zM0 181h80v6H0zM0 266h80v48H0z" fill="#c2b6a2"/>
+    <path d="M0 8h80m-80 7h80m-80 95h80m-80 11h80m-80 60h80m-80 85h80" stroke="#f0e8d6" stroke-width="3"/>
+    <use xlink:href="#arch" transform="translate(40 96) scale(.83 .67)"/>
+    <use xlink:href="#sash" transform="translate(40 175) scale(.72 .57)"/>
+    <use xlink:href="#sash" transform="translate(40 256) scale(.78 .73)"/>
+    <path d="M23 282h34v17H23z" fill="#595650" stroke="#a59a89" stroke-width="3"/>
+  </pattern>
+  <pattern id="tiles" patternTransform="scale(.28)" width="18" height="14" patternUnits="userSpaceOnUse">
+    <rect width="18" height="14" fill="#53545a"/><path d="M0 4h18M0 11h18M4 4v7m8 0v7m0-18v4" fill="none" stroke="#42464a" stroke-width="1"/>
+  </pattern>
+</defs>
+<rect width="1536" height="1024" fill="#d9cebc"/>
+<!-- Průčelí mezi vystouplými nárožími. -->
+<rect x="8" y="16" width="594" height="668" fill="url(#stone)"/>
+<path d="M12 503h586v176H12z" fill="#c4baa6"/>
+<path d="M12 533h586m-586 32h586m-586 31h586m-586 32h586m-586 31h586" stroke="#ac9f8c" stroke-width="2"/>
+<path d="M16 34h576v10H16z" fill="url(#dentils)"/>
+<path d="M18 45h572v4H18z" fill="#eee3cf"/>
+<rect x="146" y="48" width="316" height="163" fill="#b4a997"/>
+<use xlink:href="#arch" transform="translate(202 190) scale(1.22 1.18)"/><use xlink:href="#arch" transform="translate(304 190) scale(1.22 1.18)"/><use xlink:href="#arch" transform="translate(406 190) scale(1.22 1.18)"/>
+<use xlink:href="#pilaster" transform="translate(252 49) scale(1.24 1.32)"/><use xlink:href="#pilaster" transform="translate(356 49) scale(1.24 1.32)"/>
+<use xlink:href="#side" x="77"/><use xlink:href="#side" x="531"/>
+<use xlink:href="#triple" transform="translate(202 414) scale(1.2 1.45)"/><use xlink:href="#triple" transform="translate(304 414) scale(1.2 1.45)"/><use xlink:href="#triple" transform="translate(406 414) scale(1.2 1.45)"/>
+<path d="M12 28h584m-584 184h584m-584 11h584m-584 246h584m-584 10h584" stroke="#a99b87" stroke-width="6"/>
+<path d="M12 25h584m-584 183h584m-584 11h584m-584 247h584m-584 9h584" stroke="#f2eada" stroke-width="5"/>
+<use xlink:href="#arch" transform="translate(202 633) scale(.76 1.25)"/><use xlink:href="#arch" transform="translate(406 633) scale(.76 1.25)"/>
+<path d="M20 225h10v231H20zm111 0h10v231h-10zm336 0h10v231h-10zm111 0h10v231h-10z" fill="url(#shaft)"/>
+<path d="M162 435h80m22 0h80m22 0h80" stroke="#a99e8b" stroke-width="3"/>
+<!-- Pískovcový vstup, ostění a dvojice sedících figur. -->
+<path d="M242 670V477h124v193z" fill="#b69e7d"/>
+<path d="M260 670v-114a44 44 0 0 1 88 0v114z" fill="#d1ba96" stroke="#907d63" stroke-width="3"/>
+<path d="M270 670v-110a34 34 0 0 1 68 0v110z" fill="#463c33" stroke="#796750" stroke-width="4"/>
+<path d="M272 559a32 32 0 0 1 64 0z" fill="url(#glass)"/><path d="M273 565h63m-32 1v104m-24-92h17v67h-17zm31 0h17v67h-17z" fill="none" stroke="#796959" stroke-width="2"/>
+<path d="M242 643h14v-139h-14zm110 0h14v-139h-14z" fill="url(#shaft)"/>
+<path d="M240 648h18v-7h-18zm110 0h18v-7h-18zM243 510h13v-7h-13zm109 0h14v-7h-14z" fill="#cfbba0" stroke="#9d8669"/>
+<path d="M237 486h134m-129 12h124m-127 157h17m95 0h18" stroke="#d9c6a7" stroke-width="6"/>
+<path d="M277 481v-20l27-18 27 18v20z" fill="#c9b08b" stroke="#94826a" stroke-width="2"/>
+<use xlink:href="#figure" transform="translate(254 464)"/><use xlink:href="#figure" transform="translate(354 464) scale(-1 1)"/>
+<rect x="630" y="20" width="885" height="650" fill="url(#tiles)"/>
+<rect x="16" y="699" width="1504" height="314" fill="url(#wing)"/>
+<path d="M620 680h50" stroke="#e5dcca" stroke-width="14"/><path d="M680 680h50" stroke="#bda889" stroke-width="14"/>
+<path d="M740 680h50" stroke="#454744" stroke-width="14"/><path d="M800 680h50" stroke="#645f55" stroke-width="14"/>
+<path d="M865 680h45" stroke="#30363a" stroke-width="14"/>
+</svg>
