@@ -314,3 +314,45 @@ test('radnice na dotykovém displeji ukáže herní čas také po návratu na n�
     expect(errors).toEqual([]);
   } finally {await context.close();}
 });
+
+test('katedrála i radnice ukážou stejný čas a po návratu obnoví hodiny na nízké předvolbě', async ({browser}) => {
+  const context = await browser.newContext({hasTouch:true,isMobile:true,viewport:{width:844,height:390}});
+  try {
+    const page = await context.newPage();
+    const errors = [];
+    page.on('pageerror',error => errors.push(error.message));
+    await page.goto(gameUrl('/?debug&quality=low&view=340&adapt=0'));
+    await page.waitForFunction(() => window.__ready);
+    await page.getByRole('button',{name:'Hrát',exact:true}).tap();
+    await page.evaluate(() => { window.__freeze(true); window.__game.player.place(9,42); });
+    const waitForSquare = () => page.waitForFunction(() => {
+      const g = window.__game;
+      g.chunks.update(9,42,340,40,g.player.y);
+      return g.scene.getObjectByName('Katedrála sv. Bartoloměje')?.material.map.image?.naturalWidth>0
+        && g.scene.getObjectByName('Radniční hodiny');
+    });
+    await waitForSquare();
+    const result = await page.evaluate(() => {
+      const g = window.__game;
+      window.__setClock(null,3.5);
+      const church = g.scene.getObjectByName('Katedrála sv. Bartoloměje');
+      const hands = g.scene.getObjectByName('Hodiny katedrály');
+      const tip = hands.geometry.attributes.position.getY(8);
+      const hour = g.scene.getObjectByName('Radniční hodiny').children[0].rotation.z;
+      let disposed = 0;
+      for (const asset of [church.geometry,church.material,church.material.map,hands.geometry]) {
+        asset.addEventListener('dispose',() => disposed++);
+      }
+      g.chunks.update(-1200,-2600,340,0);
+      window.__setClock(null,12);
+      return {hour,tip,disposed,unloaded:!g.scene.getObjectByName('Hodiny katedrály')};
+    });
+    expect(result.hour).toBeCloseTo(-3.5*Math.PI/6,6);
+    expect(result.tip).toBeCloseTo(51.77,2);
+    expect(result).toMatchObject({disposed:4,unloaded:true});
+    await waitForSquare();
+    const tip = await page.evaluate(() => window.__game.scene.getObjectByName('Hodiny katedrály').geometry.attributes.position.getY(8));
+    expect(tip).toBeCloseTo(54.99,2);
+    expect(errors).toEqual([]);
+  } finally {await context.close();}
+});

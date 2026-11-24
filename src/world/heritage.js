@@ -2,6 +2,7 @@
 import { canopyTile, stationMaterials, stationSurfaces, stationTile } from './station-building.js';
 import { alignTheatreTerrace, theatreMaterial, theatreSurfaces, theatreTile } from './theatre.js';
 import { modernTheatreGeometry, modernTheatreMaterial, modernTheatreSite, modernTheatreTile } from './modern-theatre.js';
+import { cathedralGeometry, cathedralHands, cathedralMaterial, cathedralTile } from './cathedral.js';
 import { townHallClock, townHallGeometry, townHallMaterial, townHallTile } from './town-hall.js';
 import { synagogueMaterial, synagogueSurface, synagogueTile } from './synagogue.js';
 import { forecourtBounds } from './station-forecourt.js';
@@ -17,6 +18,7 @@ import { env, makeBuildingMaterial, makeMillraceMaterial, makeSurfaceMaterial } 
 import { SURFACE } from './material-table.js';
 import { FORGE, buildForge, forgeRoofHeight } from './mill.js';
 
+const showCathedral = PARAMS.get('katedrala') !== 'puvodni';
 const showTownHall = PARAMS.get('radnice') !== 'puvodni';
 const showTheatre = PARAMS.get('divadlo') !== 'puvodni';
 const showSynagogue = PARAMS.get('synagoga') !== 'puvodni';
@@ -129,7 +131,7 @@ export class Heritage {
       const tile = this.cells.get(ch.ci);
       const hasStreet = this.streets?.tiles.has(tile.name);
       const customFacade = stationTiles.has(tile.name) || (showSynagogue && tile.name === synagogueTile)
-        || (showTownHall && tile.name === townHallTile) || (showTheatre && tile.name === theatreTile) || (this.modernTheatre && tile.name === modernTheatreTile);
+        || (showCathedral && tile.name === cathedralTile) || (showTownHall && tile.name === townHallTile) || (showTheatre && tile.name === theatreTile) || (this.modernTheatre && tile.name === modernTheatreTile);
       loadCityTile(tile.name, controller.signal, hasStreet || customFacade).then(async (pack) => {
         if (controller.signal.aborted) return;
         const { version, cx, cz } = pack.header;
@@ -182,6 +184,18 @@ export class Heritage {
       const pack = owner.cityData;
       const geometry = cityMesh(pack, '');
       const sections = [...(pack.scenery ?? [])];
+      if (showCathedral && entry.name === cathedralTile) {
+        const stone = cathedralGeometry(pack,geometry);
+        if (stone) {
+          const material = cathedralMaterial();
+          add(stone,material).name = 'Katedrála sv. Bartoloměje';
+          const hands = cathedralHands();
+          hands.setTime(this.hour ?? 0);
+          add(hands.geometry, material, detail).name = 'Hodiny katedrály';
+          owner.cathedralClock = this.cathedralClock = hands;
+          owner.disposables.push(material,material.map);
+        }
+      }
       if (showTownHall && entry.name === townHallTile) {
         const facade = townHallGeometry(pack, geometry);
         if (facade) {
@@ -263,7 +277,8 @@ export class Heritage {
         owner.streetVisuals.push(...attachRoadFurniture(this.world.breakables, group, props, material, ranges));
       }
       add(geometry, pack.street ? this.streetClose : this.cityClose, base);
-      add(cityMesh(pack, 'd'), this.cityFar, detail);
+      // V tomto listu obsahuje vrstva detailu jen původní okna katedrály.
+      if (!owner.cathedralClock) add(cityMesh(pack, 'd'), this.cityFar, detail);
       roofs = new HeritageRoofs();
       roofs.add({ p: geometry.attributes.position.array, indices: pack.roof }, 0);
       const [x0, z0, x1, z1] = entry.bounds;
@@ -288,6 +303,7 @@ export class Heritage {
 
   dispose(ch) {
     ch.cityRequest?.abort();
+    if (ch.cathedralClock && this.cathedralClock === ch.cathedralClock) this.cathedralClock = null;
     if (ch.townHallClock && this.clock === ch.townHallClock) this.clock = null;
     for (const visual of ch.streetVisuals ?? []) this.world.breakables.detach(visual);
     if (!ch.heritage?.city) return;
@@ -302,6 +318,7 @@ export class Heritage {
   updateTime(hour, dt) {
     this.hour = hour;
     this.clock?.setTime(hour);
+    this.cathedralClock?.setTime(hour);
     this.forgeWorking = this.forgeIndex >= 0 && hour >= 9 && hour < 17;
     if (this.forgeWorking) this.forgeAngle = (this.forgeAngle + dt * 0.72) % (Math.PI * 2);
   }

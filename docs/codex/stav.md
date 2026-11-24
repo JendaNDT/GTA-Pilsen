@@ -1,5 +1,9 @@
 # Stav etapy E26
 
+## Katedrála sv. Bartoloměje
+
+Na větvi `codex/katedrala` má katedrála na náměstí Republiky vlastní kamenné zdivo, gotická okna a portály, čtyři funkční ciferníky a měděnou špici. Prošlo 280 testů JavaScriptu a produkční sestavení. V dotykové zkoušce na WebGL 2 i WebGPU souhlasily hodiny katedrály s radnicí a obnovily se po návratu na náměstí. V úplné sadě prošlo 397 ze 400 prohlížečových zkoušek. Kontrola kontrastu nočních oken selhala na obou vykreslovačích, pozorování ranní špičky u Klatovské na WebGPU. Obě potíže se projevily i ve verzi s původní katedrálou. [Srovnávací snímky a měření](../E25/katedrala.md)
+
 ## Plzeňská radnice
 
 Větev `codex/radnice` navazuje na Nové divadlo. Na severní straně náměstí Republiky má radnice vlastní sgrafitové průčelí, trojici štítů a otevřenou věžičku. Ověřili jsme změnu času na ručičkách a jejich obnovu po návratu na náměstí v nízké kvalitě na dotykovém displeji v Chromiu. Prošlo 278 testů JavaScriptu, sestavení a 396 z 398 prohlížečových kontrol. Obě selhání odpovídají známé zkoušce kontrastu nočních oken na náměstí. [Snímky a ověření](../E25/radnice.md)
