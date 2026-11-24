@@ -363,6 +363,7 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
   Pro další ulice a pro chodce hra používá odhad. [Dopravní detektory](https://opendata.plzen.eu/public/opendata/detail/160) ·
   [Hodinové profily PoliVisu](https://polivisuapi.plzen.eu/api/)
 
+- Fasády Velkého divadla, balustráda, střešní ozdoby a členění měděné střechy jsou vlastní tvorba projektu. Tvar budovy vychází z městského měření a část parkové terasy z půdorysu OpenStreetMap (ODbL). [Srovnání ze dvou stran](docs/E25/velke-divadlo.md)
 - Fasády Velké synagogy a obou sousedních domů v sadech Pětatřicátníků, kupole, římsy a hvězdy jsou vlastní tvorba projektu Plzeň naplno. Poloha budov vychází z měřeného modelu města. [Snímky ulice před a po úpravě](docs/E25/synagoga.md)
 - Kresba průčelí hlavního nádraží, římsy, tabule, špice a materiál měděných kupolí jsou vlastní tvorba projektu Plzeň naplno. Podkladem tvaru je měřený model města uvedený níže.
 - Fotografické materiály fasád poskytla knihovna Poly Haven (CC0). Normály, drsnost a barva stěn se balí do atlasů spolu s pěti vlastními vzory střech. Projekt vytvořil také osm variant interiérů za okny. [Sedm materiálů a otisky](tools/facade-textures.json) · [Licence Poly Haven](https://polyhaven.com/license)

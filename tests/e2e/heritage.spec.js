@@ -177,3 +177,55 @@ test('Velká synagoga a oba domy se v nízké kvalitě načtou a po odjezdu uvol
   expect(result).toEqual({visible:true,disposed:3});
   expect(errors).toEqual([]);
 });
+
+test('Velké divadlo na telefonu načte terasu i zábradlí a obnoví je po návratu', async ({browser})=>{
+  const context=await browser.newContext({hasTouch:true,isMobile:true,viewport:{width:844,height:390}});
+  const page=await context.newPage();
+  const errors=[];
+  page.on('pageerror',error=>errors.push(error.message));
+  try {
+    await page.goto(gameUrl('/?debug&quality=low&view=340&adapt=0&hour=10'));
+    await page.waitForFunction(()=>window.__ready);
+    await page.getByRole('button',{name:'Hrát',exact:true}).tap();
+    await page.evaluate(()=>{ window.__freeze(true); window.__game.player.place(-316.25,208.91); });
+    const visits=[];
+    for(let pass=0;pass<2;pass++) {
+      await page.waitForFunction(()=>{
+        const g=window.__game;
+        g.chunks.update(-316.25,208.91,340,40,g.player.y);
+        return g.scene.getObjectByName('Velké divadlo')?.material.map.image?.naturalWidth>0;
+      });
+      visits.push(await page.evaluate(()=>{
+        const g=window.__game, w=g.world, mesh=g.scene.getObjectByName('Velké divadlo');
+        const rails=w.streetFixtures.get(w.chunkIndex(-316.25,208.91)).filter(f=>f.kind==='theatreGlass');
+        const id=rails[0].id;
+        const targetX=-326+(117*21-50*29)/Math.hypot(117,50);
+        const targetZ=237+(-50*21-117*29)/Math.hypot(117,50);
+        const distance=f=>Math.hypot(f.x-targetX,f.z-targetZ);
+        const edge=rails.reduce((near,f)=>distance(f)<distance(near)?f:near);
+        const dx=50/Math.hypot(117,50), dz=117/Math.hypot(117,50);
+        g.colliders.update(edge.x,edge.z);
+        g.player.place(edge.x+dx*1.3,edge.z+dz*1.3,edge.y+.3);
+        for(let i=0;i<90;i++) g.player.update(1/60,0,0,false,false);
+        const landed=Math.abs(g.player.y-edge.y)<.10;
+        for(let i=0;i<120;i++) g.player.update(1/60,-dx,-dz,false,false);
+        const gap=(g.player.x-edge.x)*dx+(g.player.z-edge.z)*dz;
+        const stopped=gap>.07 && gap<.8;
+        const attached=w.breakables.visuals.has(id);
+        const terrace=w.roofAt(-316.25,208.91);
+        window.__view(-346,12,252,-325,17,235);
+        let disposed=0;
+        for(const asset of [mesh.geometry,mesh.material,mesh.material.map]) asset.addEventListener('dispose',()=>disposed++);
+        g.chunks.update(-1200,-2600,340,0);
+        return {touch:navigator.maxTouchPoints,terrace,attached,disposed,id,count:rails.length,landed,stopped,
+          detached:!w.breakables.visuals.has(id)};
+      }));
+    }
+    expect(visits[0].touch).toBeGreaterThan(0);
+    expect(visits[0].terrace).toBeCloseTo(7.1,1);
+    expect(visits[0].count).toBeGreaterThan(10);
+    expect(visits[0]).toMatchObject({attached:true,disposed:3,detached:true,landed:true,stopped:true});
+    expect(visits[1]).toEqual(visits[0]);
+    expect(errors).toEqual([]);
+  }finally{await context.close();}
+});

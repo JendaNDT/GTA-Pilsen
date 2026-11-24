@@ -288,12 +288,12 @@ function insetRing(vx, vz, s, n, d) {
   return null;
 }
 
-function buildBuildings(world, list, replaced, district) {
+function buildBuildings(world, list, replaced, district, theatreTerrace) {
   const B = world.b, vx = world.bvx, vz = world.bvz;
   const buf = new Buf();
   for (const i of list) {
     const flags = B.flags[i];
-    if ((flags & BF.HAS_PARTS) || replaced.has(i)) continue;
+    if ((flags & BF.HAS_PARTS) || replaced.has(i) || i === theatreTerrace) continue;
     const st = styleFor(world, i, district);
     const kind = B.kind[i];
     const top = world.bTop[i];
@@ -1765,7 +1765,7 @@ export class ChunkManager {
 
   _buildBuildings(ci, ch) {
     const list = this.heritage.buildings(ci);
-    const geo = list ? buildBuildings(this.world, list, this.heritage.replaced, ch.district) : null;
+    const geo = list ? buildBuildings(this.world, list, this.heritage.replaced, ch.district, ch.theatreTerrace) : null;
     if (ch.regularBuildings) {
       ch.group.remove(ch.regularBuildings);
       ch.regularBuildings.geometry.dispose();

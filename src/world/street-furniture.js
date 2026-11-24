@@ -93,7 +93,25 @@ export function drawStreetFixture(solid, f, detailed = true) {
       solid.quad(base[i],base[j],top[j],top[i],color,.85);
     }
   };
-  if (f.kind === 'platformSign' || f.kind === 'platformGuide') {
+  if (f.kind==='theatreGlass') {
+    part(0,0,f.width,.035,.06,1.00,glass);
+    part(0,0,f.width,.095,1.06,.06,metal);
+    part(-f.width/2+.035,0,.07,.085,0,1.07,metal);
+  } else if (f.kind==='balustrade') {
+    const stone=[.78,.66,.48], dx=Math.cos(f.yaw), dz=Math.sin(f.yaw);
+    part(0,0,f.width,.30,0,.14,stone);
+    part(0,0,f.width,.36,.81,.18,stone);
+    const count=Math.ceil(f.width/.55);
+    const profile=[[.14,.12],[.38,.072],[.53,.135],[.70,.068],[.82,.11]];
+    for(let i=0;i<count;i++) {
+      const along=((i+.5)/count-.5)*f.width;
+      const vertex=([h,r],j)=>[f.x+along*dx+r*Math.cos(j*Math.PI/3),f.y+h,
+        f.z+along*dz+r*Math.sin(j*Math.PI/3)];
+      for(let k=1;k<profile.length;k++) for(let j=0;j<6;j++) {
+        solid.quad(vertex(profile[k-1],j),vertex(profile[k],j),vertex(profile[k],j+1),vertex(profile[k-1],j+1),stone);
+      }
+    }
+  } else if (f.kind === 'platformSign' || f.kind === 'platformGuide') {
     part(0, 0, .09, .09, 0, 2.04, metal);
     part(0, 0, f.width, f.depth, 2.04, .71, [.018,.082,.20]);
     part(0, 0, f.width, f.depth + .003, 2.65, .065, [.12,.62,.68]);

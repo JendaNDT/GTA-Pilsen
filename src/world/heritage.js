@@ -1,5 +1,6 @@
 // Měřené městské dlaždice a vlastní model vodního hamru.
 import { canopyTile, stationMaterials, stationSurfaces, stationTile } from './station-building.js';
+import { alignTheatreTerrace, theatreMaterial, theatreSurfaces, theatreTile } from './theatre.js';
 import { synagogueMaterial, synagogueSurface, synagogueTile } from './synagogue.js';
 import { forecourtBounds } from './station-forecourt.js';
 import * as THREE from 'three/webgpu';
@@ -14,6 +15,7 @@ import { env, makeBuildingMaterial, makeMillraceMaterial, makeSurfaceMaterial } 
 import { SURFACE } from './material-table.js';
 import { FORGE, buildForge, forgeRoofHeight } from './mill.js';
 
+const showTheatre = PARAMS.get('divadlo') !== 'puvodni';
 const showSynagogue = PARAMS.get('synagoga') !== 'puvodni';
 const stationTiles = new Set(PARAMS.get('pruceli') === 'puvodni' ? [] : [stationTile, canopyTile]);
 
@@ -78,6 +80,9 @@ export class Heritage {
       const group = override(ci);
       for (const i of buildings) group.add(i);
     }
+    if (showTheatre && manifest.tiles.some(tile=>tile[2]===theatreTile)) {
+      this.theatreTerrace=alignTheatreTerrace(world);
+    }
     const forge = world.buildingAt(FORGE.x, FORGE.z);
     this.forgeIndex = forge;
     this.forgeWorking = false;
@@ -119,7 +124,9 @@ export class Heritage {
       this.fetching++;
       const tile = this.cells.get(ch.ci);
       const hasStreet = this.streets?.tiles.has(tile.name);
-      loadCityTile(tile.name, controller.signal, hasStreet || stationTiles.has(tile.name) || (showSynagogue && tile.name === synagogueTile)).then(async (pack) => {
+      const customFacade = stationTiles.has(tile.name) || (showSynagogue && tile.name === synagogueTile)
+        || (showTheatre && tile.name === theatreTile);
+      loadCityTile(tile.name, controller.signal, hasStreet || customFacade).then(async (pack) => {
         if (controller.signal.aborted) return;
         const { version, cx, cz } = pack.header;
         const n = pack.p?.length;
@@ -170,11 +177,22 @@ export class Heritage {
     if (city) {
       const pack = owner.cityData;
       const geometry = cityMesh(pack, '');
+      const sections = [...(pack.scenery ?? [])];
       if (showSynagogue && entry.name === synagogueTile) {
         const front = synagogueSurface(pack, geometry);
         if (front) {
           const material = synagogueMaterial();
           add(front, material).name = 'Velká synagoga a sousední domy';
+          owner.disposables.push(material, material.map);
+        }
+      }
+      if (showTheatre && entry.name === theatreTile) {
+        const theatre = theatreSurfaces(pack, geometry, this.world, this.theatreTerrace);
+        if (theatre) {
+          owner.theatreTerrace = this.theatreTerrace;
+          const material = theatreMaterial();
+          add(theatre.geometry, material).name = 'Velké divadlo';
+          sections.push({id:'divadlo-zabradli', fixtures:theatre.fixtures, paving:[]});
           owner.disposables.push(material, material.map);
         }
       }
@@ -189,10 +207,10 @@ export class Heritage {
       }
       const layers = [{ solid:new SolidBuf(), ranges:[], material:this.cityFar },
         { solid:new SolidBuf(), ranges:[], material:this.streetGlass }];
-      for (const section of pack.scenery ?? []) {
+      for (const section of sections) {
         let fixtures = this.streetSections.get(section.id);
         if (!fixtures) {
-          fixtures = section.items.flatMap(item => streetFixtures(item, this.world));
+          fixtures = section.fixtures ?? section.items.flatMap(item => streetFixtures(item, this.world));
           this.streetSections.set(section.id, fixtures);
           const touched = new Set();
           for (const fixture of fixtures) {
