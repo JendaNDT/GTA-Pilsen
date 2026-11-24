@@ -1,4 +1,4 @@
-import { CAR_PRICE, UPGRADES } from './garage.js';
+import { CAR_PRICE, GARAGE, UPGRADES } from './garage.js';
 import { JOB_NAMES, resultText } from './missions.js';
 import { shiftName, shiftTime } from './shift-plans.js';
 import { SHIFT_STATUS } from './shift.js';
@@ -109,9 +109,9 @@ export function initWorkUI(game, play) {
     button.addEventListener('click', () => {
       const key = button.dataset.garage;
       if (key === 'navigate') {
-        garage.navigate();
         play();
         game.toggleMap(true);
+        game.areaMap.select({ ...GARAGE, exact: true }, true);
       } else {
         const message = garage.perform(key);
         updateGarage();

@@ -251,9 +251,9 @@ export class Jobs {
     return null;
   }
 
-  setWaypoint(x, z, name, stop = false) {
-    const walk = this.world.meta.walkingApproaches?.[name];
-    this.waypoint = stop ? { x, z } : walk ? { x: walk.at(-2), z: walk.at(-1), walk } : this._snap(x, z);
+  setWaypoint(x, z, name, stop = false, approach) {
+    const walk = approach ?? this.world.meta.walkingApproaches?.[name];
+    this.waypoint = stop && !approach ? { x, z } : walk ? { x: walk.at(-2), z: walk.at(-1), walk } : this._snap(x, z);
     this.routeTimer = 0;
     this.game.hud.toast(walk ? 'Cíl nastaven. Modré tečky vedou poslední úsek pěšky.' : 'Cíl nastaven – trasa je na minimapě.');
   }

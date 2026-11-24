@@ -1,13 +1,16 @@
 const normalize = (text) => text.toLowerCase().normalize('NFD')
   .replace(/\p{M}/gu, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 
-export function initMapSearch(world, setDestination, stops) {
+export function initMapSearch(world, selectPlace, stops, sites = []) {
   const form = document.getElementById('bigmap-search');
   const input = document.getElementById('bigmap-query');
   const list = document.getElementById('bigmap-results');
   const places = [...world.meta.places, ...world.meta.landmarks]
     .filter(([x, z]) => x >= world.playMinX && x <= world.playMaxX && z >= world.playMinZ && z <= world.playMaxZ)
     .map(([x, z, name]) => ({ x, z, name, key: normalize(name) }));
+  for (const site of sites) {
+    if (!places.some(place => place.name === site.name)) places.push({ ...site, key: normalize(site.name) });
+  }
   for (const [name, x, z, code] of stops) {
     const platform = code?.split('/')[1];
     const title = `${name} · ${platform ? `stanoviště ${platform}` : 'zastávka MHD'}`;
@@ -26,7 +29,7 @@ export function initMapSearch(world, setDestination, stops) {
   const choose = (place) => {
     input.value = '';
     list.replaceChildren();
-    setDestination(place);
+    selectPlace(place);
   };
 
   document.getElementById('bigmap-controls').addEventListener('keydown', (event) => {

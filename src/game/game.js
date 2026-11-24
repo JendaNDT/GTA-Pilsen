@@ -1071,20 +1071,11 @@ export class Game {
     this.mapOpen = force !== undefined ? force : !this.mapOpen;
     this.audio.setMapPaused(this.mapOpen);
     el.classList.toggle('hidden', !this.mapOpen);
-    if (this.mapOpen) this.drawBigMap();
-    else if (el.contains(document.activeElement)) document.activeElement.blur();
-  }
-
-  drawBigMap() {
-    const f = this.focus;
-    const found = this.jobs.landmarks.filter((l) => l.found).length;
-    this.mapToWorld = this.hud.bigMap(document.getElementById('bigmap-canvas'), {
-      px: f.x, pz: f.z, heading: f.yaw || 0, landmarks: this.jobs.landmarks, helis: this.helis,
-      markers: [...this.jobs.markers(), ...this.shifts.markers()], route: this.shifts.active?.path ?? this.jobs.route,
-      walkRoute: this.jobs.walkRoute,
-    });
-    document.getElementById('bigmap-legend').innerHTML =
-      `Památky: <b>${found}/${this.jobs.landmarks.length}</b> · tyrkysově garáž a vlastní auto · modré tečky vedou pěšky · červená příčka označuje uzavírku · klepnutím nastavíš cíl`;
+    if (this.mapOpen) this.areaMap.open();
+    else {
+      this.areaMap.close();
+      if (el.contains(document.activeElement)) document.activeElement.blur();
+    }
   }
 
   render() {

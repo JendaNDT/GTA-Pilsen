@@ -8,7 +8,7 @@ import { loadAll } from './data.js';
 import { Game } from './game/game.js';
 import { formatTime, HOUR_SECONDS } from './game/clock.js';
 import { initInput, input } from './game/input.js';
-import { initMapSearch } from './game/map-search.js';
+import { AreaMap } from './game/area-map.js';
 import { initWorkUI } from './game/work-ui.js';
 import { resultText } from './game/missions.js';
 import { createFrameProfiler } from './game/frame-profiler.js';
@@ -32,7 +32,7 @@ const HELP_HTML = IS_TOUCH ? `
     <tr><td>F</td><td>nastoupit / vystoupit nebo obsloužit dveře ve směně MHD</td></tr>
     <tr><td>✉</td><td>vzít rychlý rozvoz jídla nebo zrušit aktivní zakázku</td></tr>
     <tr><td>☰</td><td>zakázky, garáž a směny MHD</td></tr>
-    <tr><td>🗺</td><td>velká mapa (vyhledej místo nebo klepnutím nastav cíl)</td></tr>
+    <tr><td>🗺</td><td>mapa okolí (přibliž dvěma prsty, vyber místo a klepni na Navigovat sem)</td></tr>
     <tr><td>⛶</td><td>celá obrazovka (kde ji prohlížeč dovolí)</td></tr>
     <tr><td>Tah prstem</td><td>otáčení kamery</td></tr>
   </table>` : `
@@ -44,7 +44,7 @@ const HELP_HTML = IS_TOUCH ? `
     <tr><td>F nebo E</td><td>nastoupit / vystoupit nebo obsloužit dveře ve směně MHD</td></tr>
     <tr><td>W · S · Mezerník</td><td>ve směně MHD plyn · brzda · nouzová brzda</td></tr>
     <tr><td>J</td><td>vzít rychlý rozvoz jídla nebo zrušit aktivní zakázku</td></tr>
-    <tr><td>M</td><td>velká mapa (vyhledej místo nebo kliknutím nastav cíl)</td></tr>
+    <tr><td>M</td><td>mapa okolí (přibliž kolečkem, vyber místo a potvrď Navigovat sem)</td></tr>
     <tr><td>Myš</td><td>tažením otáčíš kameru, kolečkem přibližuješ</td></tr>
     ${DEBUG ? '<tr><td>F8 · F9</td><td>kolizní povrchy · panel měření výkonu</td></tr>' : ''}
     <tr><td>O</td><td>fotorežim · pohyb WASD, nahoru E, dolů Q, otáčení tažením</td></tr>
@@ -336,17 +336,8 @@ async function boot() {
     if (confirm('Opravdu začít od začátku? Smaže se celý uložený postup včetně peněz, auta, zakázek a objevených památek.')) { Game.clearSave(); location.reload(); }
   });
   $('btn-menu').addEventListener('click', openMenu);
-  $('bigmap-close').addEventListener('click', () => game.toggleMap(false));
+  game.areaMap = new AreaMap(game);
   $('minimap').addEventListener('click', () => { if (running) game.toggleMap(true); });
-  const setDestination = ({ x, z, name, stop }) => {
-    game.jobs.setWaypoint(x, z, name, stop);
-    game.toggleMap(false);
-  };
-  initMapSearch(game.world, setDestination, game.transit.timetable.stops);
-  $('bigmap-canvas').addEventListener('click', (e) => {
-    if (!game.mapToWorld) return;
-    setDestination(game.mapToWorld(e.clientX, e.clientY));
-  });
   addEventListener('resize', () => { game.resize(); if (!running && !game.graphicsBusy) game.render(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden && running) openMenu(); });
   addEventListener('pagehide', () => game.save());

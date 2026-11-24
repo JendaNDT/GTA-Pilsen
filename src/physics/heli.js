@@ -1,3 +1,4 @@
+import { EDGE_MARGIN } from '../world/travel-bounds.js';
 import { Euler, Quaternion, Vector3 } from 'three/webgpu';
 import { layers } from './world.js';
 
@@ -128,8 +129,8 @@ export class HelicopterBody {
     this.q.set(rotation.GetX(), rotation.GetY(), rotation.GetZ(), rotation.GetW());
     this.euler.setFromQuaternion(this.q);
     h.pitch = this.euler.x; h.yaw = this.euler.y; h.roll = this.euler.z;
-    h.x = clamp(pos.GetX(), h.world.playMinX + 40, h.world.playMaxX - 40);
-    h.z = clamp(pos.GetZ(), h.world.playMinZ + 40, h.world.playMaxZ - 40);
+    h.x = clamp(pos.GetX(), h.world.playMinX + EDGE_MARGIN.heli, h.world.playMaxX - EDGE_MARGIN.heli);
+    h.z = clamp(pos.GetZ(), h.world.playMinZ + EDGE_MARGIN.heli, h.world.playMaxZ - EDGE_MARGIN.heli);
     h.y = pos.GetY();
     h.vx = v.GetX(); h.vy = v.GetY(); h.vz = v.GetZ();
     const atBoundary = h.x !== pos.GetX() || h.z !== pos.GetZ();

@@ -1,3 +1,4 @@
+import { EDGE_MARGIN } from '../world/travel-bounds.js';
 // Hráč pěšky a chodci.
 import { WalkingCharacter } from '../physics/character.js';
 import { makePedMesh, poseCharacter } from './models.js';
@@ -82,8 +83,8 @@ export class Player {
     const contact = this.streetContact;
     contact.x = this.x; contact.z = this.z; contact.depth = 0;
     w.collideStreetObjects(contact, this.radius, this.y + 0.15);
-    const x = clamp(contact.x, w.playMinX + 20, w.playMaxX - 20);
-    const z = clamp(contact.z, w.playMinZ + 20, w.playMaxZ - 20);
+    const x = clamp(contact.x, w.playMinX + EDGE_MARGIN.foot, w.playMaxX - EDGE_MARGIN.foot);
+    const z = clamp(contact.z, w.playMinZ + EDGE_MARGIN.foot, w.playMaxZ - EDGE_MARGIN.foot);
     if (x !== this.x || z !== this.z) {
       this.x = x; this.z = z;
       this.character.place(x, this.y, z);

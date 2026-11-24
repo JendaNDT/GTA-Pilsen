@@ -55,7 +55,9 @@ test('chůze, navigace, auto, vrtulník a dokončení rozvozu', async ({ page })
   expect(await page.evaluate((p) => Math.hypot(__game.player.x - p.x, __game.player.z - p.z), start)).toBeGreaterThan(4);
   await action(page, 'KeyM');
   await expect(page.locator('#bigmap')).toBeVisible();
-  await page.locator('#bigmap-canvas').click();
+  await page.locator('#bigmap-canvas').click({ position: { x: 270, y: 170 } });
+  await expect(page.locator('#bigmap')).toBeVisible();
+  await page.getByRole('button', { name: 'Navigovat sem' }).click();
   await page.evaluate(() => __step(1 / 60));
   expect(await page.evaluate(() => __game.jobs.waypoint !== null && __game.jobs.route.length > 0)).toBe(true);
 
@@ -225,6 +227,8 @@ test('silniční trasy spojují Plzeň, Rokycany, Hrádek a Dobřív v obou smě
   await query.pressSequentially('rokycany');
   await expect(page.getByRole('button', { name: 'Rokycany', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Nádraží Rokycany', exact: true }).click();
+  await expect(page.locator('#bigmap')).toBeVisible();
+  await page.getByRole('button', { name: 'Navigovat sem' }).click();
   await expect(query).toBeHidden();
   await page.evaluate(() => window.__step(1 / 60));
   const stationRoute = await page.evaluate(() => window.__game.jobs.route);
@@ -234,6 +238,8 @@ test('silniční trasy spojují Plzeň, Rokycany, Hrádek a Dobřív v obou smě
   await action(page, 'KeyM');
   await query.fill('masarykovo namesti');
   await query.press('Enter');
+  await expect(page.locator('#bigmap')).toBeVisible();
+  await page.getByRole('button', { name: 'Navigovat sem' }).click();
   await expect(query).toBeHidden();
   await page.evaluate(() => window.__step(1 / 60));
   expect(await page.evaluate(() => window.__game.jobs.waypoint.x)).toBeCloseTo(15609, -1);
@@ -244,6 +250,8 @@ test('silniční trasy spojují Plzeň, Rokycany, Hrádek a Dobřív v obou smě
   await query.fill('dobriv');
   await expect(page.getByRole('button', { name: 'Dobřív', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Vodní hamr Dobřív', exact: true }).click();
+  await expect(page.locator('#bigmap')).toBeVisible();
+  await page.getByRole('button', { name: 'Navigovat sem' }).click();
   await page.evaluate(() => window.__step(1 / 60));
   expect(await page.evaluate(() => __game.jobs.route.at(-2))).toBeCloseTo(22692.9, 0);
 
@@ -351,6 +359,7 @@ test('E03 – pěší přístup k hamru, mosty a hranice pro chůzi, jízdu a le
   await action(page, 'KeyM');
   await page.getByRole('searchbox').fill('vodni hamr');
   await page.getByRole('button', { name: 'Vodní hamr Dobřív', exact: true }).click();
+  await page.getByRole('button', { name: 'Navigovat sem' }).click();
 
   const result = await page.evaluate(() => {
     const g = __game, { world: w, player, jobs } = g;

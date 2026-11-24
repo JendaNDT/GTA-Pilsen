@@ -1,8 +1,8 @@
-# Stav etapy E26
+# Stav etapy E27
 
-## Herní mapa a orientace
+## E27 – Herní mapa a orientace
 
-Domluvené změny a příklady pro ověření na počítači i telefonu jsou v [zadání herní mapy](herni-mapa.md). Výchozí verze je `a496a1a`, pracovní větev `codex/herni-mapa`.
+Mapa je hotová na větvi `codex/herni-mapa` z revize `a496a1a`. Otevře okolí hráče, umožní posun a přiblížení, ukáže skutečnou hranici pohybu a vyžádá si potvrzení cíle. Při kontrole na počítači a emulovaném telefonu fungoval výběr lávky, hledání zastávek i návrat k hráči. Prošlo 308 jednotkových testů a produkční sestavení. Ve společném běhu prošlo 420 z 422 prohlížečových kontrol. Obě zkoušky původního ovládání uspěly po doplnění kroku potvrzení cíle. [Zadání](E27.md) · [Snímky a výsledky měření](../E27.md)
 
 ## Od muzea k Mlýnské strouze
 

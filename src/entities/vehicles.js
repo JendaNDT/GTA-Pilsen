@@ -1,3 +1,4 @@
+import { EDGE_MARGIN } from '../world/travel-bounds.js';
 // Auta: jízdní fyzika hráče, běžný provoz, zaparkovaná auta a policie.
 import { enginePower, steeringPull, releasePanels } from './damage.js';
 import { trackCarDirt } from './car-appearance.js';
@@ -242,7 +243,7 @@ export class VehicleManager {
       }
     }
     // okraj mapy
-    const m = 30;
+    const m = EDGE_MARGIN.car;
     if (car.x < w.playMinX + m) { car.x = w.playMinX + m; if (car.vx < 0) car.vx *= -0.3; }
     if (car.x > w.playMaxX - m) { car.x = w.playMaxX - m; if (car.vx > 0) car.vx *= -0.3; }
     if (car.z < w.playMinZ + m) { car.z = w.playMinZ + m; if (car.vz < 0) car.vz *= -0.3; }

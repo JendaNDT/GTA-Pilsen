@@ -77,8 +77,6 @@ export class MapTiles {
     g.fillStyle = MAP_BG; g.fillRect(0, 0, this.PX, this.PX);
     g.setTransform(s, 0, 0, s, -x0 * s, -z0 * s);
     const land = this.land[tz * this.cols + tx];
-    if (land) for (const i of land) { this.landPath(g, i); g.fillStyle = MAP_LAND[w.l.cls[i]] || MAP_BG; g.fill('evenodd'); }
-    g.lineCap = 'round'; g.lineJoin = 'round';
     const c0x = Math.floor((x0 - w.minX) / CHUNK) - 1, c0z = Math.floor((z0 - w.minZ) / CHUNK) - 1;
     const n = this.T / CHUNK + 2;
     const each = (fn) => {
@@ -88,6 +86,14 @@ export class MapTiles {
         fn(cz * w.cols + cx);
       }
     };
+    this.drawLayers(g, land, each);
+    return cv;
+  }
+
+  drawLayers(g, land, each) {
+    const w = this.world;
+    if (land) for (const i of land) { this.landPath(g, i); g.fillStyle = MAP_LAND[w.l.cls[i]] || MAP_BG; g.fill('evenodd'); }
+    g.lineCap = 'round'; g.lineJoin = 'round';
     each((ci) => this.drawRoads(g, ci, false));
     each((ci) => this.drawRoads(g, ci, true));
     // koleje tramvají
@@ -119,7 +125,7 @@ export class MapTiles {
       }
       g.fill();
     });
-    return cv;
+
   }
 
   get(tx, tz) {
@@ -365,73 +371,7 @@ export class Hud {
       for (let k = 2; k < r.pts.length; k += 2) g.lineTo(r.pts[k], r.pts[k + 1]);
       g.stroke();
     }
-    this._drawClosures(g, Math.min(devicePixelRatio || 1, 2) / s);
     return { cv, s };
   }
 
-  /** Vykreslí velkou mapu do daného plátna; vrací funkci pro převod kliknutí na souřadnice světa. */
-  bigMap(canvas, state) {
-    const w = this.world;
-    // mapa má poměr stran herního území a vejde se na obrazovku
-    const aspect = (w.playMaxX - w.playMinX) / (w.playMaxZ - w.playMinZ);
-    const cssH = Math.floor(Math.min(innerHeight * 0.8, Math.max(40, innerHeight - 140), (innerWidth * 0.96) / aspect));
-    const cssW = Math.floor(cssH * aspect);
-    const dpr = Math.min(devicePixelRatio || 1, 2);
-    const pw = Math.floor(cssW * dpr), ph = Math.floor(cssH * dpr);
-    canvas.style.width = `${cssW}px`; canvas.style.height = `${cssH}px`;
-    if (!this.big || this.big.cv.width !== pw || this.big.cv.height !== ph) this.big = this._bigBase(pw, ph);
-    canvas.width = pw; canvas.height = ph;
-    const g = canvas.getContext('2d');
-    g.drawImage(this.big.cv, 0, 0);
-    const s = this.big.s;
-    const X = (x) => (x - w.playMinX) * s, Z = (z) => (z - w.playMinZ) * s;
-    const dot = (x, z, r, fill, stroke = '#101820') => {
-      g.beginPath(); g.arc(X(x), Z(z), r * dpr, 0, Math.PI * 2); g.fillStyle = fill; g.fill(); g.lineWidth = 1.5 * dpr; g.strokeStyle = stroke; g.stroke();
-    };
-    for (const lm of state.landmarks) dot(lm.x, lm.z, lm.found ? 4.5 : 3, lm.found ? '#f2b632' : '#7d8790');
-    for (const h of state.helis) dot(h.x, h.z, 4, '#7fd0ff');
-    if (state.route && state.route.length >= 4) {
-      g.beginPath(); g.moveTo(X(state.px), Z(state.pz));
-      for (let i = 0; i < state.route.length; i += 2) g.lineTo(X(state.route[i]), Z(state.route[i + 1]));
-      g.strokeStyle = '#f2b632'; g.lineWidth = 3 * dpr; g.lineJoin = 'round'; g.stroke();
-    }
-    g.save();
-    g.setTransform(s, 0, 0, s, -w.playMinX * s, -w.playMinZ * s);
-    this._drawWalk(g, state.walkRoute, dpr / s);
-    g.restore();
-    for (const m of state.markers) dot(m.x, m.z, 6, m.color);
-    // Nejdřív pojmenuj města, potom přidej čitelné názvy obcí a čtvrtí.
-    const priority = { city: 0, town: 0, village: 1, suburb: 2 };
-    const labels = w.meta.places.filter((p) => priority[p[3]] !== undefined)
-      .sort((a, b) => priority[a[3]] - priority[b[3]]);
-    const occupied = [];
-    g.textAlign = 'center'; g.lineJoin = 'round'; g.strokeStyle = '#101820'; g.lineWidth = 3 * dpr;
-    for (const [x, z, name, type] of labels) {
-      if (x < w.playMinX || x > w.playMaxX || z < w.playMinZ || z > w.playMaxZ) continue;
-      const town = priority[type] === 0;
-      const size = (town ? 13 : 11) * dpr;
-      g.font = `${town ? 'bold ' : ''}${size}px system-ui, sans-serif`;
-      const half = g.measureText(name).width / 2 + 3 * dpr;
-      const cx = Math.max(half, Math.min(pw - half, X(x)));
-      const cz = Math.max(size + 2 * dpr, Math.min(ph - 3 * dpr, Z(z) - (town ? 12 : 3) * dpr));
-      const rect = { left: cx - half, right: cx + half, top: cz - size, bottom: cz + 3 * dpr };
-      if (occupied.some((other) => rect.left < other.right && rect.right > other.left
-        && rect.top < other.bottom && rect.bottom > other.top)) continue;
-      occupied.push(rect);
-      g.fillStyle = town ? '#f5f1e6' : 'rgba(245,241,230,.88)';
-      g.strokeText(name, cx, cz);
-      g.fillText(name, cx, cz);
-    }
-    // hráč
-    g.save();
-    g.translate(X(state.px), Z(state.pz));
-    g.rotate(Math.PI - state.heading);
-    g.beginPath(); g.moveTo(0, -11 * dpr); g.lineTo(7.5 * dpr, 8 * dpr); g.lineTo(0, 4 * dpr); g.lineTo(-7.5 * dpr, 8 * dpr); g.closePath();
-    g.fillStyle = '#fff'; g.fill(); g.lineWidth = 2 * dpr; g.strokeStyle = '#101820'; g.stroke();
-    g.restore();
-    return (clientX, clientY) => {
-      const r = canvas.getBoundingClientRect();
-      return { x: w.playMinX + ((clientX - r.left) / r.width) * pw / s, z: w.playMinZ + ((clientY - r.top) / r.height) * ph / s };
-    };
-  }
 }

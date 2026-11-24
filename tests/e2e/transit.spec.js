@@ -86,6 +86,8 @@ test('E08 – přestup z tramvaje na autobus po skutečné jízdě a výstupu', 
   const platform = page.getByRole('button', { name: 'Náměstí Republiky · stanoviště 4', exact: true });
   await expect(platform).toBeVisible();
   await platform.click();
+  await expect(page.locator('#map-name')).toHaveText('Náměstí Republiky · stanoviště 4');
+  await page.getByRole('button',{ name:'Navigovat sem' }).click();
   const transfer = await page.evaluate(() => {
     const g = window.__game, table = g.transit.timetable;
     const station = table.stops.findIndex(([name, , , code]) => name === 'Náměstí Republiky' && code === '54717/4');

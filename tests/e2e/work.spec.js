@@ -34,7 +34,9 @@ test('E10 – taxi, příjem ze zakázek a vlastní auto po obnovení hry', asyn
   await expect(page.getByRole('button', { name: /Koupit malé auto/ })).toBeDisabled();
   await page.getByRole('button', { name: 'Najít garáž na mapě' }).click();
   await expect(page.locator('#bigmap')).toBeVisible();
-  await page.getByRole('button', { name: 'Zavřít mapu' }).click();
+  await expect(page.locator('#map-name')).toHaveText('Garáž u hlavního nádraží');
+  expect(await page.evaluate(() => __game.jobs.waypoint)).toBeNull();
+  await page.getByRole('button', { name: 'Navigovat sem' }).click();
   await freeze(page);
   const start = await page.evaluate(() => {
     const g = window.__game, car = g.player.lastCar;

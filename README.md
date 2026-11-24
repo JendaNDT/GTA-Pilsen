@@ -67,7 +67,7 @@ Vydání 0.2.0 (23. 11. 2026, revize `99b1463`) obsahuje společnou fyziku vozid
 | L | přepnout v autě dálková světla |
 | O | fotorežim, uložit snímek lze i přes menu na telefonu |
 | J | vzít rychlý rozvoz jídla nebo zrušit rozpracovanou zakázku |
-| M | velká mapa (vyhledej místo nebo kliknutím nastav cíl) |
+| M | [mapa okolí hráče](docs/E27.md) (posun tažením, přiblížení kolečkem nebo dvěma prsty, výběr cíle přes **Navigovat sem**) |
 | C · H · L · R | kamera · klakson · dálková světla · vrátit na silnici |
 | O | otevřít nebo zavřít fotorežim |
 | F8 · F9 | v režimu `?debug` zobrazit kolize nebo otevřít měření výkonu |
