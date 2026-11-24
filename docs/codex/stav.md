@@ -1,3 +1,9 @@
+# E20 – samovolný vzlet po nastoupení
+
+Výchozí revize `2f2d335`. Pružiny ližin přidávaly sílu také při stání prázdného vrtulníku s uspaným tělesem. Jolt nasčítanou sílu zpracoval v prvním kroku po nastoupení. Po šesti sekundách čekání u FN Lochotín byl původní vzestup bez stisku mezerníku 147,88 m. Podvozek nyní přeskočí výpočet sil na prázdném spícím tělese. Po probuzení počítá síly pro právě probíhající krok.
+
+Při opakování na střeše FN Lochotín se vrtulník zvedl o méně než milimetr. Také na náměstí, u pivovaru a na Borech zůstal vrtulník při desetisekundovém roztáčení rotoru bez povelu na místě. Prošlo 320 jednotkových testů, produkční sestavení a osm prohlížečových zkoušek letu na WebGL 2 a WebGPU včetně vzletu na povel a přistání na střeše.
+
 # Oprava obrazu při otáčení kamery (E24)
 
 Výchozí revize `54969a0`. Na náměstí Republiky se při předvolbě Ultra v 11.30 na WebGL 2 při otáčení kolem stojícího auta objevil široký zlatavý pás s ostrým okrajem. Odlesk objektivu byl vypnutý. Na stejné kameře pás zmizel při nastavení nulové hustoty objemových slunečních paprsků. V běžném zobrazení se proto tento průchod vůbec nevytváří. Pro srovnání jej lze výslovně vyžádat pomocí `?quality=ultra&rays=1`.

@@ -48,7 +48,7 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
   trase řídíš plyn, brzdy a dveře. Odměnu určí obsluha zastávek, rozpis, pravidla a plynulost.
 - **Policie**: za krádež auta nebo nebezpečnou jízdu po tobě jde, dá se ujet nebo skončit s pokutou.
 - **Vrtulníky**: stojí na heliportech (FN Lochotín, pivovar, Bory) a na náměstí Republiky,
-  přistávat jde i na střechách.
+  přistávat jde i na střechách. Po nastoupení se roztočí rotor. Pro vzlet podrž mezerník nebo dotykové tlačítko ▲.
 - **Měřené centrum.** Čtyři mapové listy městského 3D modelu dodávají zaměřené střechy a římsy.
   Materiály plzeňských domů vycházejí z typu budovy a městského obvodu. U vodního hamru v Dobřívě
   uvidíš šindelovou střechu, dřevěné vantroky a čtyři otáčející se vodní kola.

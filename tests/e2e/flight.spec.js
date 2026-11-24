@@ -83,3 +83,40 @@ test('E20 – vypnutí letové asistence se načte z uložené hry', async ({ pa
   await page.waitForFunction(() => window.__ready);
   expect(await page.evaluate(() => __game.heliAssist)).toBe(false);
 });
+
+test('zaparkovaný vrtulník po nastoupení počká na povel ke vzletu', async ({ page }) => {
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0&hour=10'));
+  await page.waitForFunction(() => window.__ready);
+  await page.getByRole('button', { name: 'Hrát', exact: true }).click();
+  const parked = await page.evaluate(() => {
+    __freeze(true);
+    const g = __game, h = g.helis[0];
+    g.player.place(h.x + 2.6, h.z, h.y);
+    for (let i = 0; i < 360; i++) g.update(1 / 60);
+    return { y: h.y, asleep: !h.physical.body.IsActive(), landed: h.landed };
+  });
+  expect(parked).toMatchObject({ asleep: true, landed: true });
+  await page.keyboard.down('f');
+  const idle = await page.evaluate(() => {
+    const g = __game;
+    g.update(1 / 60);
+    const h = g.heli;
+    let max = h.y;
+    for (let i = 0; i < 300; i++) {
+      g.update(1 / 60);
+      max = Math.max(max, h.y);
+    }
+    return { max, landed: h.landed, rotor: h.rotor };
+  });
+  await page.keyboard.up('f');
+  expect(idle.max - parked.y).toBeLessThan(0.1);
+  expect(idle.landed).toBe(true);
+  expect(idle.rotor).toBeGreaterThan(25);
+  await page.keyboard.down('Space');
+  const flying = await page.evaluate(() => {
+    for (let i = 0; i < 180; i++) __game.update(1 / 60);
+    return __game.heli.y;
+  });
+  await page.keyboard.up('Space');
+  expect(flying - parked.y).toBeGreaterThan(5);
+});

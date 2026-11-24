@@ -86,6 +86,11 @@ export class HelicopterBody {
   drive(dt, forward, turn, lift, assisted) {
     const { heli: h, body, vec, point } = this;
     this.impactCooldown = Math.max(0, this.impactCooldown - dt);
+    // Jolt u spícího tělesa nespotřebuje síly pružin. Jinak se při nastoupení sečtou do jediného odrazu.
+    if (!body.IsActive()) {
+      if (!h.occupied) return;
+      this.physics.bodies.ActivateBody(body.GetID());
+    }
     const clearance = this.suspension();
     const power = clamp((h.rotor - 10) / 16, 0, 1);
     const terrain = h.world.heightAt(h.x, h.z);
@@ -120,7 +125,6 @@ export class HelicopterBody {
     vec.Set(pitchTorque * cos + rollTorque * sin, (-turn * 1.5 - omega.GetY()) * 12500 * power,
       -pitchTorque * sin + rollTorque * cos);
     body.AddTorque(vec);
-    if (h.occupied) this.physics.bodies.ActivateBody(body.GetID());
   }
 
   read() {
