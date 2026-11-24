@@ -145,3 +145,30 @@ test('E30 – linka v Radobyčicích počká na auto vedle zálivu a vrátí se 
   expect(result.advance).toBeGreaterThan(17);
   expect(Math.abs(result.offset)).toBeLessThan(0.3);
 });
+
+test('E30 – ranní Klatovská se na střední kvalitu zaplní auty i chodci', async ({ page }) => {
+  await page.goto(gameUrl('/?debug&quality=medium&adapt=0&hour=7.5'));
+  await waitForGame(page);
+  const counts = await page.evaluate(() => {
+    __freeze(true);
+    __play();
+    const g = __game;
+    const [edge] = [...g.trafficRhythm.measured].find(([, entry]) =>
+      entry.curve.id === 'klatovska-jih' && entry.distance === 0);
+    const point = g.world.edgePoint(edge, 58, 0, {});
+    g.player.place(point.x - point.tz * 10, point.z + point.tx * 10);
+    let seed = 42;
+    const random = Math.random;
+    try {
+      Math.random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32);
+      for (let frame = 0; frame < 1800; frame++) {
+        g.camYaw += Math.PI / 900;
+        g.update(1 / 30);
+      }
+      return { cars: g.vehicles.cars.filter(car => car.mode === 'ai').length, peds: g.peds.peds.length };
+    } finally { Math.random = random; }
+  });
+  expect(counts.cars).toBeGreaterThanOrEqual(29);
+  expect(counts.cars).toBeLessThanOrEqual(32);
+  expect(counts.peds).toBeGreaterThanOrEqual(14);
+});

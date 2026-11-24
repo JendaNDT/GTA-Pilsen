@@ -1164,11 +1164,11 @@ export class VehicleManager {
     // doplňování provozu a zaparkovaných aut
     this.spawnTimer -= dt;
     if (this.spawnTimer <= 0) {
-      this.spawnTimer = 0.12;
       let ai = 0, parked = 0, police = 0;
       for (const c of this.cars) { if (c.mode === 'ai') ai++; else if (c.mode === 'parked') parked++; else if (c.mode === 'police') police++; }
       const density = this.game.trafficRhythm.carDensity(px, pz, this.game.clock);
       const target = Math.ceil(QUALITY.traffic * (0.12 + 0.88 * density));
+      this.spawnTimer = ai + 3 < target ? 0.08 : 0.12;
       if (ai < target) this.spawnTraffic(px, pz, cam, { typeId: Math.random() < 0.035 ? 'police' : null });
       if (ai > target && cam) {
         const offscreen = this.cars.find((c) => c.mode === 'ai' && c !== player.lastCar &&

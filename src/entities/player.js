@@ -262,12 +262,12 @@ export class PedManager {
     const w = this.world;
     this.timer -= dt;
     if (this.timer <= 0) {
-      this.timer = 0.2;
       const density = this.game.trafficRhythm.pedestrianWeight(player.x, player.z, this.game.clock);
       const target = Math.ceil(QUALITY.peds * (0.1 + 0.9 * density));
       for (const v of this.game.transit.vehicles) servicePlatform(this, v, player, target);
       const waitingForTransit = this.peds.some(p => p.state === 'platform');
       const streetTarget = target - Number(waitingForTransit);
+      this.timer = this.peds.length + 3 < streetTarget ? 0.13 : 0.2;
       if (this.peds.length < streetTarget) this.spawn(player.x, player.z, cam);
       if (this.peds.length > target && cam) {
         const offscreen = this.peds.findIndex((p) => p.state === 'walk' &&

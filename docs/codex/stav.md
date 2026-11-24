@@ -2,6 +2,14 @@
 
 Dokončené jsou reakce na čekající chodce, cílené pěší cesty včetně celé trasy od muzea přes lávku, výměna cestujících a výjezd linkového vozu ze zálivu. Prošlo 320 jednotkových testů, sestavení, čtyři nové herní scénáře na obou vykreslovačích a rozpočty všech čtyř předvoleb. Základem je revize `7a6b269`. [Zadání](E30.md) · [Ověření, snímky a rozsah pokrytí](../E30.md)
 
+## Hustší provoz v okolí hráče
+
+Na všech předvolbách je mírně vyšší cílový počet jedoucích aut i chodců. Když do cíle chybějí alespoň čtyři, hra častěji hledá vhodnou silnici nebo chodník. Místo, den v týdnu a hodina nadále určují, jak rušno kolem hráče bude.
+
+Při dvou minutách na stejném místě na Klatovské v pondělí v 7.30, na střední kvalitu a se stejným výchozím generátorem náhody, se každých dvacet sekund spočítala auta běžného provozu a postavy v simulovaném okolí. Před změnou (revize `983b4d6`) šlo o 26 aut a 12–13 chodců. Po změně to bylo 30–32 aut a 16–17 chodců. Jde o okolí hráče včetně ulic za kamerou.
+
+Prošlo 320 jednotkových testů, produkční sestavení a sedm cílených kontrol v prohlížeči. Ty ověřily hustotu na Klatovské na obou vykreslovačích, volný přechod a koleje na Tylově a rozpočty všech čtyř předvoleb. Nástroj `tools/measure_map.mjs --work` na Apple M4 při nízké kvalitě a WebGL 2 naměřil při jízdě 95. percentil práce snímku 3,8 ms před změnou a 3,9 ms po ní. Při přeletu naměřil 3,6 ms v obou verzích.
+
 # Stav etapy E29
 
 ## Modely ostatních aut

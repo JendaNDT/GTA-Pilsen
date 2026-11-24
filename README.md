@@ -37,7 +37,8 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
   Auta dávají přednost a zastavují u stopek. Světla pro chodce, auta a MHD na křižovatce mají
   společný herní cyklus. U rychloměru se zobrazuje doložený limit pro směr jízdy.
 - **Denní rytmus ulic.** Na měřených tazích v centru i dalších částech Plzně se provoz mění
-  podle hodinových profilů pro pracovní den a víkend. Auta při zaplněném výjezdu čekají před
+  podle hodinových profilů pro pracovní den a víkend. Počet aut a chodců v okolí hráče závisí také
+  na zvolené grafické kvalitě. U zastávek přibývají lidé podle blížících se odjezdů. Auta při zaplněném výjezdu čekají před
   křižovatkou i na zelenou.
 - **Zakázky.** Rozvážej jídlo nebo voz zákazníky po skutečných adresách. Rozvoz k Boleváku můžeš
   splnit autem přes Lochotín a Bolevec nebo tramvají a autobusem s pěším předáním u rybníka.
