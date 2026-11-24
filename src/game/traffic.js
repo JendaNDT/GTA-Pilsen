@@ -7,7 +7,7 @@ const stopDistance = (distance, dt) => {
   return Math.min(Math.sqrt(11 * remaining), dt > 0 ? remaining / dt : Infinity);
 };
 const clamp = (x, hi) => Math.max(0, Math.min(hi, x));
-const exitStart = {}, exitEnd = {};
+const exitStart = {}, exitEnd = {}, crossingStart = {}, crossingEnd = {};
 
 function addTo(map, key, entry) {
   if (!map.has(key)) map.set(key, []);
@@ -49,6 +49,7 @@ export class Traffic {
     this.crossings = [];
     this.controls = [];
     this.users = new Map();
+    this.waitingWalkers = new Map();
 
     // Vzdálenost začátku každého úseku od začátku dopředné hrany.
     this.progress = new Float32Array(world.rpx.length);
@@ -368,17 +369,51 @@ export class Traffic {
     return false;
   }
 
-  canWalk(crossing, cars = []) {
+  leaveCrossing(person) {
+    this.users.delete(person);
+    this.waitingWalkers.delete(person);
+  }
+
+  routeCrossingDistance(car, crossing, reach) {
+    if (car.mode !== 'ai' || car.edge < 0 || car.edge == null) return Infinity;
+    const w = this.world;
+    for (const edge of [car.edge, car.next]) {
+      if (edge == null || edge < 0) continue;
+      const offset = edge === car.edge ? -car.s : w.eLen[car.edge] - car.s;
+      if (offset > reach) continue;
+      const stop = this.crossingsByEdge.get(edge)?.find(entry => entry.crossing === crossing);
+      if (!stop || stop.s + offset < -2 || stop.s + offset > reach + 2) continue;
+      // Střed zebry může být i na opačné půlce dělené silnice. Ověříme vlastní pruh.
+      const lane = edge === car.edge ? car.lane : car.nextLane;
+      const start = Math.max(0, stop.s - 4);
+      w.edgePoint(edge, start, lane, crossingStart);
+      w.edgePoint(edge, Math.min(w.eLen[edge], stop.s + 4), lane, crossingEnd);
+      const gap = offset + start + intersects(crossingStart.x, crossingStart.z, crossingEnd.x, crossingEnd.z, crossing);
+      if (gap >= 0 && gap <= reach) return gap;
+    }
+    return Infinity;
+  }
+
+  canWalk(crossing, cars = [], transit = [], person) {
     if (crossing.group && !this.signalsOff(crossing.group)) return this.phase(crossing.group) === 'walk';
-    const { x, z, dx, dz } = crossing;
-    return !cars.some((car) => {
-      if (car.mode === 'parked') return false;
+    const occupied = car => {
+      if (car.mode === 'parked' || Math.abs(car.y - person?.y) > 3) return false;
       const vx = car.vx || 0, vz = car.vz || 0;
-      const speed = Math.hypot(vx, vz), distance = Math.hypot(car.x - x, car.z - z);
-      const ahead = intersects(car.x, car.z, car.x + vx * 1.6, car.z + vz * 1.6, crossing);
-      return (speed < 0.6 && distance < 6 && Math.abs((car.x - x) * dz - (car.z - z) * dx) < 2.2)
-        || ahead < Infinity;
-    });
+      const speed = Math.hypot(vx, vz);
+      const dx = car.x - crossing.x, dz = car.z - crossing.z;
+      const fx = Math.sin(car.yaw), fz = Math.cos(car.yaw);
+      const half = car.halfLen ?? 2, width = car.radius ?? 1;
+      const normal = Math.abs(fx * crossing.dz - fz * crossing.dx);
+      const tangent = Math.abs(fx * crossing.dx + fz * crossing.dz);
+      if (Math.abs(dx * crossing.dz - dz * crossing.dx) < half * normal + width * tangent + 0.45 &&
+          Math.abs(dx * crossing.dx + dz * crossing.dz) < crossing.length / 2 + half * tangent + width * normal) return true;
+      if (speed < 0.35) return false;
+      const horizon = Math.min(6, crossing.length / (person?.speed ?? 1.4));
+      const reach = horizon + half / speed;
+      return Number.isFinite(this.routeCrossingDistance(car, crossing, speed * reach)) ||
+        Number.isFinite(intersects(car.x, car.z, car.x + vx * reach, car.z + vz * reach, crossing));
+    };
+    return !cars.some(occupied) && !transit.some(occupied);
   }
 
   drivingRule(car, control, distance, dt, limit, others, extra = [], stopping, checkExit = false) {
@@ -693,27 +728,37 @@ export class Traffic {
           !!first || !!control.directedHead);
       }
     }
-    if (!this.users.size) return limit;
-    const direction = { x: car.x + Math.sin(car.yaw) * 20, z: car.z + Math.cos(car.yaw) * 20 };
+    if (!this.users.size && !this.waitingWalkers.size) return limit;
+    const reach = Math.min(65, Math.max(20, car.speed ** 2 / 5 + car.halfLen + 4));
+    const direction = { x: car.x + Math.sin(car.yaw) * reach, z: car.z + Math.cos(car.yaw) * reach };
     let turn = null;
     if (car.next >= 0 && w.eLen[car.edge] - car.s < 16) {
       turn = {};
       w.edgePoint(car.next, 14, car.nextLane, turn);
       w.edgePoint(car.edge, w.eLen[car.edge], car.lane, direction);
     }
-    const distance = this.pedestrianDistance(car.x, car.z, direction, turn);
+    const distance = this.pedestrianDistance(car.x, car.z, direction, turn, car);
     if (distance < car.halfLen + 1.7) this.onCrossingWait?.(car);
     stopping?.(distance - car.halfLen - 0.75);
-    return Math.min(limit, stopDistance(distance - car.halfLen - 1.2, dt));
+    const room = Math.max(0, distance - car.halfLen - 1.2);
+    return Math.min(limit, Math.sqrt(5 * room), stopDistance(room, dt));
   }
 
-  pedestrianDistance(x, z, ahead, turn) {
+  pedestrianDistance(x, z, ahead, turn, car, frontOffset = car?.halfLen ?? 0) {
+    if (!this.users.size && (!car || !this.waitingWalkers.size)) return Infinity;
     let best = Infinity;
-    for (const crossing of this.users.values()) {
-      if (Math.hypot(x - crossing.x, z - crossing.z) > 40) continue;
-      best = Math.min(best, intersects(x, z, ahead.x, ahead.z, crossing));
-      if (turn) best = Math.min(best, Math.hypot(x - ahead.x, z - ahead.z)
-        + intersects(ahead.x, ahead.z, turn.x, turn.z, crossing));
+    const distanceTo = crossing => {
+      const first = Math.min(car ? this.routeCrossingDistance(car, crossing, 65) : Infinity,
+        intersects(x, z, ahead.x, ahead.z, crossing));
+      if (!turn || first < Infinity) return first;
+      return Math.hypot(x - ahead.x, z - ahead.z) + intersects(ahead.x, ahead.z, turn.x, turn.z, crossing);
+    };
+    for (const crossing of this.users.values()) best = Math.min(best, distanceTo(crossing));
+    if (car) for (const [person, crossing] of this.waitingWalkers) {
+      if (Math.abs(person.y - car.y) > 3 || crossing.group && !this.signalsOff(crossing.group)) continue;
+      const d = distanceTo(crossing);
+      const room = d - frontOffset - 1.2;
+      if (room >= -0.5 && (car.speed ?? car.v) ** 2 <= 7 * Math.max(0.25, room)) best = Math.min(best, d);
     }
     return best;
   }
@@ -748,9 +793,10 @@ export class Traffic {
         }
       }
     } else vehicle.trafficStop = null;
-    const distance = this.pedestrianDistance(point.x, point.z, ahead);
+    const distance = this.pedestrianDistance(point.x, point.z, ahead, null, vehicle.isTram ? null : vehicle, 0);
     if (distance <= 1.6) this.onCrossingWait?.(vehicle);
-    limit = Math.min(limit, stopDistance(distance - 1.4, dt));
+    const room = Math.max(0, distance - 1.4);
+    limit = Math.min(limit, Math.sqrt(5 * room), stopDistance(room, dt));
     if (next && limit > 0 && next.distance <= limit * dt) this.enterJunction(vehicle, next.control);
     return limit;
   }

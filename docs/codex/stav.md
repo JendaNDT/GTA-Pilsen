@@ -1,3 +1,7 @@
+# Stav etapy E30
+
+Dokončené jsou reakce na čekající chodce, cílené pěší cesty včetně celé trasy od muzea přes lávku, výměna cestujících a výjezd linkového vozu ze zálivu. Prošlo 320 jednotkových testů, sestavení, čtyři nové herní scénáře na obou vykreslovačích a rozpočty všech čtyř předvoleb. Základem je revize `7a6b269`. [Zadání](E30.md) · [Ověření, snímky a rozsah pokrytí](../E30.md)
+
 # Stav etapy E29
 
 ## Modely ostatních aut

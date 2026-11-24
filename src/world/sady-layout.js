@@ -62,7 +62,7 @@ export const beds = [
   [-16.1,296,8,1.5,.1],[47.4,301.6,12,1.6,.115],[79.6,305,13,1.7,.115],[104.8,309,7.4,1.5,.12],
   ...easternBeds,
 ];
-const walks = [
+export const gardenWalks = [
   [[-243,286],[-240.8,281.5],[-233.6,275.7],[-233.1,263.3],[-229.8,255.8]],
   [[-233.6,275.7],[-217.7,280.8],[-200.7,284.5],[-190,282.3],[-179.9,284.9],[-171.9,293.3],[-140.4,298.7]],
   [[-200.7,284.5],[-202.8,302]], [[-179.9,284.9],[-176.7,271.2]],
@@ -93,7 +93,7 @@ export function paintSady(ctx,x,z,span) {
   const east = x+span >= 116 && x <= 419 && z+span >= -173 && z <= 305;
   if (!west && !east) return;
   const outlines = west && east ? [...lawns,...easternLawns] : west ? lawns : easternLawns;
-  const paths = west && east ? [...walks,...easternWalks] : west ? walks : easternWalks;
+  const paths = west && east ? [...gardenWalks,...easternWalks] : west ? gardenWalks : easternWalks;
   const path=points=>{
     ctx.beginPath();ctx.moveTo(...points[0]);
     for(const p of points.slice(1)) ctx.lineTo(...p);

@@ -695,7 +695,7 @@ export class Game {
       ped.x += fz * side * 0.08; ped.z -= fx * side * 0.08;
       return;
     }
-    this.world.traffic.users.delete(ped);
+    this.world.traffic.leaveCrossing(ped);
     ped.crossing = null;
     ped.state = 'down'; ped.timer = 7;
     ped.vx = vx * 0.9; ped.vz = vz * 0.9;

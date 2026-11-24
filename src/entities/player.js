@@ -1,3 +1,5 @@
+import { followParkTrip, parkCrossing, parkTrip } from './pedestrian-walks.js';
+import { servicePlatform, stepPassenger } from './platform-passengers.js';
 import { EDGE_MARGIN } from '../world/travel-bounds.js';
 // Hráč pěšky a chodci.
 import { WalkingCharacter } from '../physics/character.js';
@@ -121,6 +123,7 @@ export class Player {
 
 class Ped {
   constructor(variant) {
+    this.id = variant;
     this.mesh = makePedMesh(variant);
     this.x = 0; this.y = 0; this.z = 0; this.yaw = 0; this.speed = 1.2 + Math.random() * 0.5;
     this.edge = -1; this.s = 0; this.side = 0;
@@ -146,7 +149,16 @@ export class PedManager {
   spawn(px, pz, cam) {
     const w = this.world;
     const a = Math.random() * Math.PI * 2, d = 35 + Math.random() * 110;
-    const ci = w.chunkIndex(px + Math.cos(a) * d, pz + Math.sin(a) * d);
+    const sampleX = px + Math.cos(a) * d, sampleZ = pz + Math.sin(a) * d;
+    const trip = w.sady && Math.abs(sampleX) < 450 && Math.abs(sampleZ) < 350 && Math.random() < 0.55
+      ? parkTrip(sampleX, sampleZ) : null;
+    if (trip && Math.hypot(px - trip.x, pz - trip.z) > 32 && !w.blocked(trip.x, trip.z, 0.4) &&
+        !this.peds.some(p => Math.hypot(p.x - trip.x, p.z - trip.z) < 2)) {
+      const p = this._person(trip.x, trip.z);
+      p.trip = trip;
+      return;
+    }
+    const ci = w.chunkIndex(sampleX, sampleZ);
     if (ci < 0) return;
     const list = w.trafficEdges[ci];
     if (!list) return;
@@ -164,12 +176,19 @@ export class PedManager {
     }
     if (w.blocked(_pt.x, _pt.z, 0.5) || w.isWater(_pt.x, _pt.z)) return;
     if (Math.random() >= this.game.trafficRhythm.pedestrianWeight(_pt.x, _pt.z, this.game.clock)) return;
-    const p = new Ped(this.seq++);
+    const p = this._person(_pt.x, _pt.z);
     p.edge = e; p.s = s; p.side = side;
-    p.x = _pt.x; p.z = _pt.z; p.yaw = Math.atan2(_pt.tx, _pt.tz);
-    p.y = w.walkY(p.x, p.z, w.heightAt(p.x, p.z) + 1);
+    p.yaw = Math.atan2(_pt.tx, _pt.tz);
+  }
+
+  _person(x, z) {
+    const p = new Ped(this.seq++);
+    p.x = x; p.z = z;
+    p.y = this.world.walkY(x, z, this.world.heightAt(x, z) + 1);
+    p.mesh.position.set(x, p.y, z);
     this.peds.push(p);
     this.scene.add(p.mesh);
+    return p;
   }
 
   /** Chodec vyhozený z auta. */
@@ -185,7 +204,7 @@ export class PedManager {
 
   remove(i) {
     this.game.falls.finish(this.peds[i]);
-    this.world.traffic.users.delete(this.peds[i]);
+    this.world.traffic.leaveCrossing(this.peds[i]);
     this.peds[i].mesh.skeleton.dispose();
     this.scene.remove(this.peds[i].mesh);
     this.peds.splice(i, 1);
@@ -196,7 +215,7 @@ export class PedManager {
     if (!list) return;
     if (p.planEdge !== p.edge) {
       p.planEdge = p.edge;
-      p.plan = this.seq % 3 !== 0 ? list.find((stop) => stop.s > p.s + 3) : null;
+      p.plan = (p.id + p.edge) % 3 !== 0 ? list.find((stop) => stop.s > p.s + 3) : null;
     }
     if (!p.plan || p.s < p.plan.s - 0.8) return;
     const { crossing, s } = p.plan;
@@ -211,7 +230,8 @@ export class PedManager {
   _stepCrossing(p, dt, cars) {
     const plan = p.crossing, traffic = this.world.traffic;
     if (p.state === 'crossWait') {
-      if (!traffic.canWalk(plan.crossing, cars)) return 0;
+      if (!traffic.canWalk(plan.crossing, cars, this.game.transit.obstacles, p)) return 0;
+      traffic.waitingWalkers.delete(p);
       p.state = 'crossing';
       traffic.users.set(p, plan.crossing);
     }
@@ -223,10 +243,13 @@ export class PedManager {
       p.x = target[0]; p.z = target[1];
       if (onRoad) {
         traffic.users.delete(p);
-        p.state = 'walk'; p.s = plan.s + 0.2; p.side = -p.side; p.crossing = null;
+        p.state = 'walk'; p.crossing = null;
+        if (p.trip) p.trip.index += p.trip.direction;
+        else { p.s = plan.s + 0.2; p.side = -p.side; }
       } else {
         p.yaw = Math.atan2(plan.to[0] - p.x, plan.to[1] - p.z);
         p.state = 'crossWait';
+        if (!plan.crossing.unmarked) traffic.waitingWalkers.set(p, plan.crossing);
       }
     } else {
       p.x += dx * step / d; p.z += dz * step / d;
@@ -242,7 +265,10 @@ export class PedManager {
       this.timer = 0.2;
       const density = this.game.trafficRhythm.pedestrianWeight(player.x, player.z, this.game.clock);
       const target = Math.ceil(QUALITY.peds * (0.1 + 0.9 * density));
-      if (this.peds.length < target) this.spawn(player.x, player.z, cam);
+      for (const v of this.game.transit.vehicles) servicePlatform(this, v, player, target);
+      const waitingForTransit = this.peds.some(p => p.state === 'platform');
+      const streetTarget = target - Number(waitingForTransit);
+      if (this.peds.length < streetTarget) this.spawn(player.x, player.z, cam);
       if (this.peds.length > target && cam) {
         const offscreen = this.peds.findIndex((p) => p.state === 'walk' &&
           (p.x - player.x) ** 2 + (p.z - player.z) ** 2 > 85 ** 2 &&
@@ -258,7 +284,7 @@ export class PedManager {
       if (this.game.falls.active.has(p)) continue;
       const surface = w.walkY(p.x, p.z, p.y);
       if (p.y - surface > 5 && this.game.falls.enabled && d2 <= 80 ** 2) {
-        w.traffic.users.delete(p); p.crossing = null;
+        w.traffic.leaveCrossing(p); p.crossing = null;
         p.state = 'down';
         this.game.falls.start(p, 0, -1, 0);
         continue;
@@ -292,7 +318,11 @@ export class PedManager {
           }
         }
       }
-      if (p.crossing) {
+      if (p.platformCooldown) p.platformCooldown = Math.max(0, p.platformCooldown - dt);
+      if (p.state === 'board' || p.state === 'alight' || p.state === 'platform') {
+        moving = stepPassenger(p, dt);
+        if (p.state === 'aboard') { this.remove(i); continue; }
+      } else if (p.crossing) {
         moving = this._stepCrossing(p, dt, cars);
       } else if (p.state === 'flee') {
         p.timer -= dt;
@@ -304,6 +334,17 @@ export class PedManager {
         if (p.timer <= 0) {
           if (p.edge < 0) { this.remove(i); continue; }
           p.state = 'walk';
+        }
+      } else if (p.trip) {
+        p.crossing = parkCrossing(p.trip);
+        if (p.crossing) {
+          p.state = 'crossApproach';
+          moving = this._stepCrossing(p, dt, cars);
+        } else {
+          moving = followParkTrip(p, dt);
+          if (w.collideCircle(p.x, p.z, 0.31, p.y + 0.24, p.y + 1.6)) {
+            p.x = w.hit.x; p.z = w.hit.z;
+          }
         }
       } else if (p.edge >= 0) {
         this._selectCrossing(p);

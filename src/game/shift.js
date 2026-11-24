@@ -84,7 +84,11 @@ export class Shifts {
     const g = this.game, run = this.active, stop = this.stop, v = run.vehicle;
     if (run.pending) { this.pay(); return; }
     if (v.doorsOpen) {
-      if (run.dwell < STOP_DWELL) { g.hud.toast('Nech cestujícím čas na nástup a výstup.'); return; }
+      const exchanging = g.peds?.peds.some(p => p.service === v && (p.state === 'board' || p.state === 'alight'));
+      if (run.dwell < STOP_DWELL || exchanging) {
+        g.hud.toast('Nech cestujícím čas na nástup a výstup.');
+        return;
+      }
       v.doorsOpen = false;
       v.wait = 0;
       g.audio.transitDoors(v, false);

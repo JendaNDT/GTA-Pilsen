@@ -66,3 +66,18 @@ export function setTransitDoors(doors, fraction) {
     right.position.x = gap;
   }
 }
+
+const indicatorGeometry = new THREE.BoxGeometry(0.14, 0.16, 0.12);
+const indicatorMaterial = new THREE.MeshBasicMaterial({ color: 0xffb41a });
+
+export function addDepartureIndicator(body, length) {
+  const group = new THREE.Group();
+  for (const end of [-1, 1]) {
+    const light = new THREE.Mesh(indicatorGeometry, indicatorMaterial);
+    light.position.set(1.13, 0.93, end * (length / 2 - 0.03));
+    group.add(light);
+  }
+  group.visible = false;
+  body.add(group);
+  return group;
+}

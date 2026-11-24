@@ -1,10 +1,11 @@
 import { Vector3 } from 'three/webgpu';
 import { STOP_DWELL, Timetable } from '../game/timetable.js';
+import { berthOffset, canYieldAtPullout, pulloutGap, stopBerth } from '../game/bus-departure.js';
 import { pathClearance } from '../game/ai-turn.js';
 import { DAY_SECONDS } from '../game/clock.js';
 import { DRIVABLE_MAX, RF } from '../config.js';
 import { makeTrolleybus, TROLLEY_LEN } from './models.js';
-import { addTransitDisplay, addTransitDoors, setTransitDoors } from './transit-details.js';
+import { addDepartureIndicator, addTransitDisplay, addTransitDoors, setTransitDoors } from './transit-details.js';
 import {
   BUS_SECTION, makeSorBus, makeTatraCar, makeTatraCoupler, makeTramJoint, makeTramSection,
   setModelDoors, TATRA_SECTIONS, TRAM_SECTIONS,
@@ -116,10 +117,14 @@ class TransitVehicle {
     this.doorFraction = 0;
     this.waitingForSpace = false;
     this.stopTarget = null;
+    this.passengerCount = state.index > 0 ? 2 : 0;
     this.followSchedule(state);
   }
 
   followSchedule({ s, index, wait }) {
+    this.departureLane = null;
+    this.berth = null;
+    this.berthIndex = -1;
     this.enteredSignal = null;
     this.stoppedInTraffic = 0;
     this.s = s;
@@ -228,6 +233,7 @@ export class TransitManager {
             : [v.route.type === 'bus' ? makeSorBus() : makeTrolleybus()];
           v.joints = v.meshes.slice(1).map(makeTramJoint);
         }
+        if (!v.isTram) v.indicator = addDepartureIndicator(v.meshes[0], v.len);
         v.display = addTransitDisplay(v.meshes[0], v.sections[0].length, v.route.ref, v.destination);
         if (v.route.type === 'trolleybus') v.doors = addTransitDoors(v.meshes[0], TROLLEY_SECTION.doors);
       }
@@ -304,7 +310,12 @@ export class TransitManager {
       if (contraflow) v.lane = Math.min(2.5, Math.max(v.lane, w[road.road] / 2 - 1.3));
       v.limitTimer = 0.5;
     }
-    v.side += (v.lane - v.side) * Math.min(1, dt * 4);
+    if (v.berthIndex !== v.stopIndex && (!v.berth || v.s >= v.berth.s + 17)) {
+      v.berthIndex = v.stopIndex;
+      v.berth = stopBerth(v, this.timetable);
+    }
+    const target = v.lane + berthOffset(v.berth, v.s);
+    v.side += (target - v.side) * Math.min(1, dt * 4);
   }
 
   _drive(v, dt, now, nearby, cars, playerOnFoot, player) {
@@ -314,10 +325,22 @@ export class TransitManager {
       v.wait = Math.max(0, v.wait - dt);
       if (v.wait > 0) return;
       if (v.stopIndex === v.stops.length - 1 && this.game.ride === v) this.game._alight(true);
+      if (v.berth && v.stopIndex < v.stops.length - 1) {
+        v.departureLane = v.berth.lane;
+        v.releaseS = v.s + 17;
+      }
       v.stopIndex++;
       v.stopTarget = null;
       v.doorsOpen = false;
       if (v.stopIndex >= v.stops.length && !trip.exit) return;
+    }
+
+    if (v.departureLane) {
+      if (v.s >= v.releaseS) v.departureLane = null;
+      else if (v.v < 0.25 && cars.some(car => {
+        const gap = pulloutGap(v, v.departureLane, car);
+        return gap < 45 && !canYieldAtPullout(gap, car.speed);
+      })) return;
     }
 
     // Zkušební průjezdy podél trasy mohou nastavit polohu bez posunu hodin.
@@ -372,7 +395,7 @@ export class TransitManager {
     if (limit < 0.4 && blocker) this.onObstacle?.(v, blocker);
     const acceleration = v.v < limit ? 1.1 : 2.6;
     v.v += Math.sign(limit - v.v) * Math.min(Math.abs(limit - v.v), acceleration * dt);
-    v.route.posAt(v.s + 16, v.side, aheadPoint);
+    v.route.posAt(v.s + Math.max(16, v.v ** 2 / 5 + 5), v.side, aheadPoint);
     v.v = this.world.traffic.transitLimit(v, frontPoint, aheadPoint, dt, v.v, cars);
     const advance = v.v * dt;
     if (stop && advance >= remaining && v.v < 2.3) this._arrive(v, v.stopIndex, now);
@@ -405,7 +428,7 @@ export class TransitManager {
       for (const k of collisionPoints) this.heavy.push({ x: x + fx * k, y, z: z + fz * k, r: 1.35, vx, vz });
       const footprint = v.footprints[index];
       Object.assign(footprint, { x, y, z, vx, vz, yaw, halfLen: length / 2, radius: 1.4,
-        stoppedInTraffic: v.stoppedInTraffic, control: v.enteredSignal });
+        stoppedInTraffic: v.stoppedInTraffic, control: v.enteredSignal, departureLane: v.departureLane });
       this.obstacles.push(footprint);
       if (index === (v.isTram ? 1 : 0)) Object.assign(v, { x, y, z, yaw, vx, vz });
     }
@@ -431,6 +454,7 @@ export class TransitManager {
       jointAxis.set(0, 0, 1).applyQuaternion(joint.quaternion);
       joint.scale.z = Math.abs(jointFront.sub(jointRear).dot(jointAxis)) + 0.63;
     }
+    if (v.indicator) v.indicator.visible = !!v.departureLane && this.world.traffic.time % 0.8 < 0.4;
     const target = Number(v.doorsOpen);
     if (v.doorFraction !== target) {
       v.doorFraction += Math.sign(target - v.doorFraction) * Math.min(Math.abs(target - v.doorFraction), dt * DOOR_SPEED);

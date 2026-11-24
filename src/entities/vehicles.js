@@ -1,3 +1,4 @@
+import { canYieldAtPullout, pulloutGap } from '../game/bus-departure.js';
 import { updateCarWheels } from './car-wheels.js';
 import { EDGE_MARGIN } from '../world/travel-bounds.js';
 // Auta: jízdní fyzika hráče, běžný provoz, zaparkovaná auta a policie.
@@ -500,6 +501,13 @@ export class VehicleManager {
     if (pointAt) car.queued = false;
     const check = (o) => {
       const dx = o.x - car.x, dz = o.z - car.z;
+      if (o.departureLane) {
+        const room = pulloutGap(o, o.departureLane, car);
+        if (canYieldAtPullout(room, car.speed)) {
+          const allowed = Math.sqrt(5 * Math.max(0, room - 2));
+          if (allowed < limit) { limit = allowed; blocker = o; }
+        }
+      }
       if (dx * dx + dz * dz > 900 || Math.abs((o.y === undefined ? car.y : o.y) - car.y) > 3) return;
       const ahead = dx * fx + dz * fz;
       if (ahead < 0.4 || ahead > 28) return;

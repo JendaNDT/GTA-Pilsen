@@ -11,6 +11,8 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 ## Co ve hře je
 
+- Řidiči pouštějí lidi čekající u zebry. V sadech můžeš potkat chodce mířící od muzea ke Strouze, u hlavního nádraží sledovat výstup a nástup a v Radobyčicích výjezd autobusu ze zálivu. [Chování provozu ve hře](docs/E30.md)
+
 - **Z Plzně až do Dobříva.** Území má 33,2 × 19,7 km (zhruba 653 km²). Do Rokycan dojedeš
   po D5 nebo po místních silnicích a dál přes Hrádek do Dobříva. Mapa obsahuje 103 tisíc budov
   (přibližně tři čtvrtiny s výškou z měření ČÚZK), 41 tisíc silnic a cest, řeky, rybníky, lesy a parky.
@@ -340,6 +342,8 @@ U přiložené historické datové sady není původní datum doloženo. Proto m
 zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 
 ## Zdroje a licence dat
+
+- Pěší trasa od muzea ke Strouze a poloha zastávkových zálivů vycházejí z místního výřezu dat přispěvatelů OpenStreetMap (ODbL). Stanoviště, spoje a směry využívají již distribuovaný jízdní řád PMDP.
 
 - Fyziku počítá [Jolt Physics 1.1.1](https://github.com/jrouwe/JoltPhysics.js) od Jorrita Rouweho ([licence MIT](https://github.com/jrouwe/JoltPhysics.js/blob/main/LICENSE)).
 - Sedan, kombi, SUV, dodávka, sportovní kupé, pick-up a výbava taxislužby a policie jsou vlastní modely projektu. [Přehled aut ve hře](docs/E29.md)
