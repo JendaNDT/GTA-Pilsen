@@ -117,7 +117,8 @@ export class PostFX {
       image = vec4(image.rgb.add(this.glow.rgb), image.a);
     }
 
-    if (QUALITY.name === 'ultra' && environment?.csm && PARAMS.get('rays') !== '0') {
+    // Při jízdě vrhá objemový průchod přes auto ostré pásy. Zapíná se jen pro srovnávací snímek.
+    if (QUALITY.name === 'ultra' && environment?.csm && PARAMS.get('rays') === '1') {
       this.rayLight = new THREE.DirectionalLight();
       const rays = godrays(this.depth, camera, this.rayLight);
       rays.raymarchSteps.value = 20;

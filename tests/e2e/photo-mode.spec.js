@@ -52,7 +52,7 @@ test('E24 – klávesa fotorežimu v mapě ponechá funkční návrat do hry @we
   expect(errors).toEqual([]);
 });
 
-test('E24 – ultra spojuje sluneční paprsky, volitelný odlesk a vektory pohybu @webgpu', async ({page}) => {
+test('E24 – ultra na vyžádání spojuje sluneční paprsky, volitelný odlesk a vektory pohybu @webgpu', async ({page}) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   page.on('console', m => {
@@ -60,7 +60,7 @@ test('E24 – ultra spojuje sluneční paprsky, volitelný odlesk a vektory pohy
   });
   await page.setViewportSize({width:400,height:280});
   // Pevné datum: zkouška míří kamerou do slunce, jehož poloha se mění podle dne.
-  await page.goto(gameUrl('/?debug&quality=ultra&view=350&adapt=0&weather=clear&date=2026-11-09&hour=12'));
+  await page.goto(gameUrl('/?debug&quality=ultra&rays=1&view=350&adapt=0&weather=clear&date=2026-11-09&hour=12'));
   await waitForGame(page);
   const state = await page.evaluate(async () => {
     __freeze(true);

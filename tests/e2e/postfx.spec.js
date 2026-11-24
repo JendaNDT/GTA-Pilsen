@@ -23,7 +23,7 @@ for (const quality of ['ultra', 'high', 'medium', 'low']) {
       const aoTexture = postfx.ambientOcclusion?.getTextureNode().value;
       const ambient = aoTexture ? [aoTexture.image.width, aoTexture.image.height] : null;
       return { method: postfx.antialias, calls, supportsTargets, ambient, glow: Boolean(postfx.glow), tables: postfx.luts.length,
-        air: postfx.air?.field.image.width, oldFog: Boolean(game.scene.fog),
+        rays: Boolean(postfx.rays), air: postfx.air?.field.image.width, oldFog: Boolean(game.scene.fog),
         size: [target.width, target.height],
         textures: target.textures.map(({ name }) => name), depth: Boolean(target.depthTexture) };
     });
@@ -31,6 +31,7 @@ for (const quality of ['ultra', 'high', 'medium', 'low']) {
     expect(frame.method).toBe(temporal ? 'traa' : quality === 'low' ? 'fxaa' : 'smaa');
     expect(frame.textures).toEqual(temporal ? ['output', 'normal', 'velocity'] : ['output']);
     expect(frame.ambient).toEqual(temporal ? frame.size.map((size) => Math.round(size * 0.5)) : null);
+    expect(frame.rays).toBe(false);
     expect(frame.glow).toBe(quality !== 'low');
     expect(frame.tables).toBe(3);
     expect(frame.air).toBe(256);

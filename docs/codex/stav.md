@@ -1,3 +1,9 @@
+# Oprava obrazu při otáčení kamery (E24)
+
+Výchozí revize `54969a0`. Na náměstí Republiky se při předvolbě Ultra v 11.30 na WebGL 2 při otáčení kolem stojícího auta objevil široký zlatavý pás s ostrým okrajem. Odlesk objektivu byl vypnutý. Na stejné kameře pás zmizel při nastavení nulové hustoty objemových slunečních paprsků. V běžném zobrazení se proto tento průchod vůbec nevytváří. Pro srovnání jej lze výslovně vyžádat pomocí `?quality=ultra&rays=1`.
+
+Ověřeny byly dva šikmé pohledy na hotové sestavení. Prošlo 320 jednotkových testů, produkční sestavení a čtyři zkoušky v Chromiu pro běžné i výslovně vyžádané vykreslení paprsků na WebGL 2 a WebGPU. [Původní obraz](../E24/pruhy-pred.jpg) · [Stejný pohled po opravě](../E24/pruhy-po.jpg)
+
 # Stav etapy E30
 
 Dokončené jsou reakce na čekající chodce, cílené pěší cesty včetně celé trasy od muzea přes lávku, výměna cestujících a výjezd linkového vozu ze zálivu. Prošlo 320 jednotkových testů, sestavení, čtyři nové herní scénáře na obou vykreslovačích a rozpočty všech čtyř předvoleb. Základem je revize `7a6b269`. [Zadání](E30.md) · [Ověření, snímky a rozsah pokrytí](../E30.md)
