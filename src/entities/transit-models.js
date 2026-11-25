@@ -25,6 +25,9 @@ export const TRAM_SECTIONS = [
 export const BUS_SECTION = {
   length: 12, doors: [4.69, -0.63, -4.23], wheels: [3.3, -2.6], front: true, rear: true,
 };
+export const TROLLEY_SECTION = {
+  length: 11.8, doors: [3.9, -1.5], wheels: [2.52, -3.36], front: true, rear: true,
+};
 const TATRA_LENGTH = 15.1;
 const TATRA_DOORS = [6.02, 0.09, -5.96];
 const TATRA_STEPS = [0.78, 0.36, 0.78];
@@ -44,6 +47,7 @@ const BUS = {
   paint: RED, trim: WHITE, glass: BUS_GLASS, doorWidth: 1.20, doorBottom: 0.34, doorTop: 2.48,
 };
 
+const TROLLEY = { ...BUS, paint: color(0x238453), stripe: 0.59 };
 const transitSurfaces = new Map([
   [TRAM_GLASS, SURFACE.glass], [BUS_GLASS, SURFACE.glass], [REFLECTION, SURFACE.glass],
   [METAL, SURFACE.transitMetal], [RUBBER, SURFACE.rubber], [DARK, SURFACE.rubber],
@@ -108,6 +112,24 @@ function sideBody(parts, style, section, lo, hi, tram) {
       }
       from = b;
     }
+    if (style === TROLLEY) {
+      const skin = surface + side * 0.002;
+      for (const axle of section.wheels) {
+        // Horní půlkruh lemuje kolo a doplňuje lak do rohů obdélníkového výřezu.
+        for (let i = 0; i < 12; i++) {
+          const point = (j) => {
+            const angle = j * Math.PI / 12;
+            return [skin, 0.485 + 0.515 * Math.sin(angle), axle + 0.54 * Math.cos(angle)];
+          };
+          const a = point(i), b = point(i + 1);
+          face(parts, [a, b, [skin, 1.01, b[2]], [skin, 1.01, a[2]]], trim, [side, 0, 0]);
+        }
+      }
+      const cove = [[lo, 0.66], [lo + 0.47, 0.66], [lo + 1.21, 1.03], [lo, 1.03]];
+      face(parts, cove.map(([z, y]) => [skin, y, z]), paint, [side, 0, 0]);
+      for (let i = 0; i < 4; i++) panel(parts, skin + side * 0.003, lo + 0.12, lo + 0.48,
+        0.70 + i * 0.064, 0.724 + i * 0.064, DARK, side);
+    }
     for (const z of section.doors) {
       if (side < 0) {
         // Za skutečným otvorem v boku je podlaha, ostění a madlo.
@@ -123,7 +145,7 @@ function sideBody(parts, style, section, lo, hi, tram) {
   }
   // Horní boční rádius a zaoblený přechod na střechu.
   const length = hi - lo;
-  parts.box(w * 2, style.roof - top, length, 0, (style.roof + top) / 2, (lo + hi) / 2, tram ? YELLOW : RED, 0.86);
+  parts.box(w * 2, style.roof - top, length, 0, (style.roof + top) / 2, (lo + hi) / 2, style.paint, 0.86);
   if (!tram) parts.box(w * 1.69, 0.015, length - 0.06, 0, style.roof, (lo + hi) / 2, WHITE, 0.99);
   parts.box(w * 1.54, 0.12, length, 0, bottom + 0.04, (lo + hi) / 2, DARK);
 }
@@ -134,6 +156,12 @@ function doorLeaf(parts, style, side, z) {
   const x = side * (halfWidth + 0.021);
   panel(parts, x, lo, hi, doorBottom, doorTop, RUBBER, side);
   const surface = x + side * 0.004;
+  if (style === TROLLEY) {
+    panel(parts, surface, lo + 0.045, hi - 0.045, doorBottom + 0.18, doorTop - 0.075, glass, side);
+    panel(parts, surface + side * 0.002, lo + 0.045, hi - 0.045, 1.18, 1.22, METAL, side);
+    panel(parts, surface + side * 0.002, lo + 0.08, hi - 0.08, doorTop - 0.24, doorTop - 0.20, REFLECTION, side);
+    return;
+  }
   panel(parts, surface, lo + 0.022, hi - 0.022, doorBottom + 0.035, doorTop - 0.025, paint, side);
   if (style === BUS) panel(parts, surface + side * 0.002, lo + 0.045, hi - 0.045, stripe, sill, trim, side);
   panel(parts, surface + side * 0.004, lo + 0.061, hi - 0.061, style === TRAM ? 0.81 : sill, doorTop - 0.10, glass, side);
@@ -204,8 +232,8 @@ function cab(parts, lamps, style, end, side) {
       const paint = tram
         ? row <= 2 ? YELLOW : row === 3 ? WHITE : row === 8 && outer === 1 ? YELLOW
           : row === 5 ? TRAM_GLASS : DARK
-        : row <= 2 ? RED : row === 4 && Math.min(Math.abs(lo), Math.abs(hi)) < 0.9
-          ? BUS_GLASS : row === 6 && outer === 1 ? RED : DARK;
+        : row <= 2 ? style.paint : row === 4 && Math.min(Math.abs(lo), Math.abs(hi)) < 0.9
+          ? BUS_GLASS : row === 6 && outer === 1 ? style.paint : DARK;
       const [p, q, r, s] = [point(a, lo, 0), point(a, hi, 0), point(b, hi, 0), point(b, lo, 0)];
       facets.push([p, q, r], [p, r, s]);
       face(parts, [p, q, r, s], paint, [0, 0, side]);
@@ -230,7 +258,17 @@ function cab(parts, lamps, style, end, side) {
     x + Math.cos(i * Math.PI / 5) * r, y + Math.sin(i * Math.PI / 5) * r,
   ]), paint, 0.035);
 
-  if (!tram && side > 0) {
+  if (style === TROLLEY && side > 0) {
+    // Světlá maska spojuje oba světlomety pod dolní hranou panoramatického skla.
+    details(parts, [[-1.20, 1.16], [1.20, 1.16], [1.13, 0.76], [0.72, 0.71],
+      [0.50, 0.84], [-0.50, 0.84], [-0.72, 0.71], [-1.13, 0.76]], WHITE);
+    for (const s of [-1, 1]) {
+      details(parts, [[s*0.60, 0.97], [s*1.13, 1.06], [s*1.10, 0.81], [s*0.75, 0.78]], DARK, 0.021);
+      details(lamps, [[s*0.69, 0.945], [s*1.06, 1.01], [s*1.05, 0.96], [s*0.76, 0.90]], HEAD, 0.031);
+      lamp(s*0.93, 0.865, 0.049, HEAD);
+    }
+    badge(parts, 0, 0.57, 0.46, 0.105, WHITE);
+  } else if (!tram && side > 0) {
     for (const s of [-1, 1]) {
       details(parts, [[0, 0.93], [s * 0.69, 1.06], [s * 1.05, 1.17], [s * 0.99, 1.07], [s * 0.70, 0.97], [0, 0.84]], WHITE);
       details(parts, [[s * 0.63, 0.65], [s * 0.95, 0.52], [s * 1.12, 0.72], [s * 1.10, 1.04], [s * 0.74, 0.89]], METAL);
@@ -283,11 +321,55 @@ function equipment(parts, style, section) {
     if (!section.front && !section.rear) {
       pantograph(parts, 3.4, 0, METAL);
     }
+  } else if (style === TROLLEY) {
+    trolleyEquipment(parts);
   } else {
     parts.box(1.71, 0.16, 3.16, 0, 2.91, -1.74, WHITE, 0.91, 0.89);
     for (const z of [-2.87, -2.73, -2.59, -2.45, -2.31, -2.17]) {
       parts.box(0.9, 0.01, 0.044, 0, 2.995, z, DARK);
     }
+  }
+}
+
+// Sběrače, izolátory i stahovací lana patří do jedné sdílené geometrie karoserie.
+function trolleyRod(parts, x, y, z, endX, endY, endZ, radius, endRadius, paint) {
+  const axis = new THREE.Vector3(endX - x, endY - y, endZ - z);
+  const cylinder = new THREE.CylinderGeometry(endRadius, radius, axis.length(), 8);
+  cylinder.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), axis.normalize()));
+  cylinder.translate((x + endX) / 2, (y + endY) / 2, (z + endZ) / 2);
+  parts.mesh(cylinder.toNonIndexed(), paint);
+  cylinder.dispose();
+}
+
+function trolleyEquipment(parts) {
+  for (const side of [-1, 1]) for (const axle of TROLLEY_SECTION.wheels) {
+    const x = side * 1.259;
+    parts.ring(0.165, 0.237, x, 0.485, axle, side, METAL, 16, SURFACE.transitMetal);
+    parts.ring(0.095, 0.165, x, 0.485, axle, side, DARK, 16, SURFACE.rubber);
+    for (let i = 0; i < 6; i++) {
+      const angle = i * Math.PI / 3;
+      parts.box(0.014, 0.038, 0.038, x, 0.485 + 0.13 * Math.sin(angle), axle + 0.13 * Math.cos(angle), METAL);
+    }
+  }
+  const roof = TROLLEY.roof;
+  parts.box(1.68, 0.33, 2.6, 0, roof + 0.17, 3.02, WHITE, 0.88, 0.9);
+  for (const side of [-1, 1]) {
+    for (let i = 0; i < 7; i++) {
+      parts.box(0.38, 0.012, 0.077, side * 0.40, roof + 0.342, 2.34 + i * 0.22, METAL);
+    }
+    const x = side * 0.34, tipX = side * 0.43;
+    for (const z of [-0.25, 0.79]) {
+      parts.box(0.19, 0.19, 0.19, x, roof + 0.10, z, DARK);
+      parts.box(0.27, 0.045, 0.27, x, roof + 0.13, z, WHITE);
+    }
+    parts.box(0.34, 0.13, 1.46, x, roof + 0.25, 0.25, METAL, 0.91);
+    parts.box(0.25, 0.21, 0.42, x, roof + 0.38, 0.52, DARK);
+    trolleyRod(parts, x, roof + 0.43, 0.52, tipX, 5.36, -5.84, 0.066, 0.036, METAL);
+    trolleyRod(parts, x, roof + 0.31, -0.39, x, roof + 0.85, -0.93, 0.078, 0.052, DARK);
+    parts.box(0.095, 0.09, 0.40, tipX, 5.39, -5.91, DARK, 0.78);
+    const reelX = side * 0.63;
+    parts.box(0.31, 0.36, 0.14, reelX, 1.55, -5.90, METAL, 0.88);
+    trolleyRod(parts, tipX, 5.35, -6.04, reelX, 1.64, -5.98, 0.017, 0.017, DARK);
   }
 }
 
@@ -331,7 +413,7 @@ function makeSection(section, style) {
   if (section.front) {
     group.userData.sign = style === TRAM
       ? { y: 2.66, z: 4.276, tilt: -0.35, width: 1.58, sideX: 1.259, sideY: 2.65, sideZ: -0.50 }
-      : { y: 2.34, z: 5.879, tilt: -0.08, width: 1.65, sideX: 1.284, sideY: 2.58, sideZ: 2.00 };
+      : { y: 2.34, z: section.length / 2 - 0.121, tilt: -0.08, width: 1.65, sideX: 1.284, sideY: 2.58, sideZ: 2.00 };
   }
 
   if (!leafGeometry.has(style)) {
@@ -354,6 +436,7 @@ function mountDoors(group, geometry, centers, width, leaves) {
 }
 
 export const makeTramSection = (section) => makeSection(section, TRAM);
+export const makeTrolleybus = () => makeSection(TROLLEY_SECTION, TROLLEY);
 export const makeSorBus = () => makeSection(BUS_SECTION, BUS);
 
 export function setModelDoors(group, fraction) {

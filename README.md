@@ -355,6 +355,8 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 
 ## Zdroje a licence dat
 
+Zelenobílý městský trolejbus je vlastní model projektu Plzeň naplno. [Snímky z ulice a shora](docs/E39.md)
+
 - Pěší trasa od muzea ke Strouze a poloha zastávkových zálivů vycházejí z místního výřezu dat přispěvatelů OpenStreetMap (ODbL). Stanoviště, spoje a směry využívají již distribuovaný jízdní řád PMDP.
 
 - Fyziku počítá [Jolt Physics 1.1.1](https://github.com/jrouwe/JoltPhysics.js) od Jorrita Rouweho ([licence MIT](https://github.com/jrouwe/JoltPhysics.js/blob/main/LICENSE)).

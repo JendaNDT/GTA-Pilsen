@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { DoubleSide, FrontSide, Texture } from 'three/webgpu';
+import { DoubleSide, FrontSide, Matrix4, Texture } from 'three/webgpu';
 
 globalThis.matchMedia = () => ({ matches: false });
 globalThis.window = {};
@@ -8,7 +8,7 @@ globalThis.location = { search: '?quality=low' };
 const { makeBuildingMaterial, makeDecalMaterial, makeMillraceMaterial, makeTerrainMaterial } = await import('../src/world/materials.js');
 const { SURFACE } = await import('../src/world/material-table.js');
 const { makeCarMesh } = await import('../src/entities/models.js');
-const { makeSorBus, makeTatraCar, makeTramJoint } = await import('../src/entities/transit-models.js');
+const { makeTrolleybus, makeSorBus, makeTatraCar, makeTramJoint, setModelDoors, TROLLEY_SECTION } = await import('../src/entities/transit-models.js');
 
 test('povrchy mají fyzikální vlastnosti podle druhu a sdílejí původní barvy', () => {
   for (const { roughness, metalness } of Object.values(SURFACE)) {
@@ -32,13 +32,33 @@ test('povrchy mají fyzikální vlastnosti podle druhu a sdílejí původní bar
     return surface.array;
   };
   assert.ok(checkGeometry(car.children[1]).includes(expectedGlass));
-  for (const vehicle of [makeSorBus(), makeTatraCar()]) {
+  for (const vehicle of [makeTrolleybus(), makeSorBus(), makeTatraCar()]) {
     const properties = checkGeometry(vehicle.children[0]);
     assert.ok(properties.some((value, i) => i % 2 === 1 && value === expectedMetal));
     assert.ok(checkGeometry(vehicle.userData.doors.mesh).includes(expectedGlass));
   }
   checkGeometry(makeTramJoint());
   assert.equal(makeMillraceMaterial(false).roughness, SURFACE.water.roughness);
+});
+
+test('trolejbusy sdílejí karoserii se dvěma sběrači a každý vůz otevírá vlastní křídla dveří', () => {
+  const a = makeTrolleybus(), b = makeTrolleybus();
+  const shell = a.children[0].geometry;
+  assert.equal(shell, b.children[0].geometry);
+  const positions = shell.getAttribute('position');
+  const shoes = new Set();
+  for (let i = 0; i < positions.count; i++) {
+    if (positions.getY(i) > 5.3 && positions.getZ(i) < -5.7) shoes.add(Math.sign(positions.getX(i)));
+  }
+  assert.deepEqual(shoes, new Set([-1, 1]));
+  const leaves = a.userData.doors.mesh, matrix = new Matrix4();
+  assert.equal(leaves.count, 2 * TROLLEY_SECTION.doors.length);
+  const centerZ = (mesh, i) => { mesh.getMatrixAt(i, matrix); return matrix.elements[14]; };
+  setModelDoors(a, 1);
+  for (const [i, z] of TROLLEY_SECTION.doors.entries()) {
+    assert.ok(centerZ(leaves, 2 * i) < z - 0.7 && centerZ(leaves, 2 * i + 1) > z + 0.7);
+    assert.ok(Math.abs(centerZ(b.userData.doors.mesh, 2 * i) - z) < 0.4);
+  }
 });
 
 test('fasády sdílejí uzly podle detailu a druhu, ale lze měnit stranu jednotlivých materiálů', () => {

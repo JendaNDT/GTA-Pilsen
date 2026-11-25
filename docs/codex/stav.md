@@ -1,3 +1,7 @@
+# E39 · Model městského trolejbusu
+
+Hotový je zelenobílý vůz se dvěma sběrači a pohyblivými prosklenými dveřmi. Prošlo 329 jednotkových testů, sestavení a 26 cílených prohlížečových zkoušek včetně linek 16 a 49. [Porovnání modelů a měření](../E39.md)
+
 # E38 · Ovládání pěší postavy
 
 Pěšky lze zvednout pohled až kolmo vzhůru. Po tomto doplnění prošlo sestavení, 328 jednotkových testů a 12 cílených zkoušek kamery a ovládání v Chromiu.

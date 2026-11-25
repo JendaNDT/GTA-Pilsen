@@ -7,7 +7,6 @@ import { parts as ragdollParts } from '../physics/ragdoll.js';
 import { HAIR_STYLES, ORIGINAL_CHARACTER, stylizedPart } from './character-shape.js';
 import { characterPose } from './character-pose.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { transitMaterial } from './transit-material.js';
 import { carPaint, carLenses } from './car-appearance.js';
 import { QUALITY } from '../config.js';
 import { fabiaNose, fabiaHood, fabiaFrontLip, fabiaDoors, fabiaLampHousings, fabiaBulbs, fabiaIndicator } from './fabia.js';
@@ -550,32 +549,6 @@ export function makeCarMesh(typeId, colorHex) {
     group.userData.beacons = [l, r];
   }
   return group;
-}
-
-// ------------------------------------------------------------ trolejbus ----
-const TRANSIT_GLASS = lin(0x3b4d5f), TROLLEY_GREEN = lin(0x2f9a57), TROLLEY_GREY = lin(0xdedfdc);
-const trolleySurfaces = new Map([[TRANSIT_GLASS, SURFACE.glass], [DARK, SURFACE.transitMetal], [HEAD, SURFACE.lamp], [TAIL, SURFACE.lamp]]);
-let trolleyGeo;
-export const TROLLEY_LEN = 11.8;
-export function makeTrolleybus() {
-  if (!trolleyGeo) {
-    const p = new Parts(SURFACE.transitPaint, trolleySurfaces);
-    const L = TROLLEY_LEN, W = 2.5;
-    p.box(W, 1.0, L, 0, 0.85, 0, TROLLEY_GREEN, 1, 0.995);
-    p.box(W * 0.985, 1.2, L * 0.985, 0, 1.95, 0, TRANSIT_GLASS, 0.95, 0.99);
-    p.box(W * 0.94, 0.42, L * 0.99, 0, 2.76, 0, TROLLEY_GREY, 0.92, 0.98);
-    for (const sx of [-1, 1]) {
-      p.box(0.3, 0.14, 0.06, sx * 0.8, 0.95, L / 2, HEAD);
-      p.box(0.3, 0.14, 0.06, sx * 0.8, 0.95, -L / 2, TAIL);
-      for (const z of [L / 2 - 2.4, -L / 2 + 3]) p.wheel(0.48, 0.3, sx * 1.1, 0.48, z, TIRE);
-      p.box(0.06, 0.06, 6.2, sx * 0.35, 3.75, -L / 2 + 2.2, DARK);
-    }
-    p.box(0.9, 0.5, 0.5, 0, 3.2, 1.2, DARK);
-    trolleyGeo = p.geometry();
-  }
-  const mesh = new THREE.Mesh(trolleyGeo, transitMaterial);
-  mesh.castShadow = true;
-  return mesh;
 }
 
 // -------------------------------------------------------------- postavy ----

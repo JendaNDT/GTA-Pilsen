@@ -4,11 +4,10 @@ import { berthOffset, canYieldAtPullout, pulloutGap, stopBerth } from '../game/b
 import { pathClearance } from '../game/ai-turn.js';
 import { DAY_SECONDS } from '../game/clock.js';
 import { DRIVABLE_MAX, RF } from '../config.js';
-import { makeTrolleybus, TROLLEY_LEN } from './models.js';
-import { addDepartureIndicator, addTransitDisplay, addTransitDoors, setTransitDoors } from './transit-details.js';
+import { addDepartureIndicator, addTransitDisplay } from './transit-details.js';
 import {
   BUS_SECTION, makeSorBus, makeTatraCar, makeTatraCoupler, makeTramJoint, makeTramSection,
-  setModelDoors, TATRA_SECTIONS, TRAM_SECTIONS,
+  makeTrolleybus, TROLLEY_SECTION, setModelDoors, TATRA_SECTIONS, TRAM_SECTIONS,
 } from './transit-models.js';
 
 export const TRANSIT_NAME = { tram: 'tramvaj', trolleybus: 'trolejbus', bus: 'autobus' };
@@ -21,7 +20,6 @@ const roadPoint = {};
 const jointFront = new Vector3();
 const jointRear = new Vector3();
 const jointAxis = new Vector3();
-const TROLLEY_SECTION = { length: TROLLEY_LEN, doors: [3.9, -1.5] };
 export const SECTIONS = { tram: TRAM_SECTIONS, bus: [BUS_SECTION], trolleybus: [TROLLEY_SECTION] };
 const VIEW_DISTANCE = 520;
 const DOOR_SPEED = 3;
@@ -235,7 +233,6 @@ export class TransitManager {
         }
         if (!v.isTram) v.indicator = addDepartureIndicator(v.meshes[0], v.len);
         v.display = addTransitDisplay(v.meshes[0], v.sections[0].length, v.route.ref, v.destination);
-        if (v.route.type === 'trolleybus') v.doors = addTransitDoors(v.meshes[0], TROLLEY_SECTION.doors);
       }
       for (const mesh of v.meshes) this.scene.add(mesh);
       for (const joint of v.joints) this.scene.add(joint);
@@ -458,8 +455,7 @@ export class TransitManager {
     const target = Number(v.doorsOpen);
     if (v.doorFraction !== target) {
       v.doorFraction += Math.sign(target - v.doorFraction) * Math.min(Math.abs(target - v.doorFraction), dt * DOOR_SPEED);
-      if (v.doors) setTransitDoors(v.doors, v.doorFraction);
-      else for (const mesh of v.meshes) setModelDoors(mesh, v.doorFraction);
+      for (const mesh of v.meshes) setModelDoors(mesh, v.doorFraction);
     }
   }
 
@@ -532,7 +528,7 @@ export class TransitManager {
         const across = dz * fx - dx * fz, along = dx * fx + dz * fz;
         if (across < 0.8) continue;
         const doors = v.sections[index].doors;
-        for (let i = 0; i < (v.doors ? 1 : doors.length); i++) {
+        for (let i = 0; i < (v.route.type === 'trolleybus' ? 1 : doors.length); i++) {
           const door = doors[i];
           const d = (across - 2.6) ** 2 + (along - door) ** 2;
           if (d < 5.5 ** 2 && d < distance) { distance = d; best = v; }
