@@ -59,6 +59,7 @@ const FILES = [
   ['trafficProfiles', 'data/traffic-profiles.json', 212_000],
   ['landscape', 'data/landscape.bin', 1_354_000],
   ['gradeSeparations', 'data/grade-separations.json', 460_000],
+  ['stopSurvey', 'data/stop-survey.json', 18500],
   ['soundPlaces', 'data/sound-places.json', 2_000],
   ['streetDetails', 'detail/streets/index.json', 600],
   ['heritage', 'detail/city/index.json', 75_000],
@@ -167,6 +168,8 @@ const gradeProfiles = rows => Array.isArray(rows) && rows.every(row => Array.isA
   Array.isArray(row[2]) && row[2].length >= 2 && row[2].every(Number.isFinite));
 
 const optionalLayers = {
+  stopSurvey: data => data?.platforms && typeof data.platforms === 'object' &&
+    rowsOf(Object.values(data.platforms),4),
   soundPlaces: data => rowsOf(data?.weirs, 2),
   treeTypes: data => rowsOf(data?.trees, 2) && rowsOf(data?.land, 2),
   buildingMaterials: data => rowsOf(data?.surfaces, 3),
@@ -231,6 +234,7 @@ export async function loadAll(onProgress) {
       !streets.sections.every(s => s && typeof s.id === 'string' && /^[a-z0-9-]+$/.test(s.id) &&
         s.name === s.id + '.bin' && Array.isArray(s.tiles))) delete out.streetDetails;
   out.orthophotoSources = { terrain: fingerprint('terrain'), land: fingerprint('land') };
+  if (out.stopSurvey?.osm !== out.meta.osmTimestamp) delete out.stopSurvey;
   out.soundPlaces = out.soundPlaces && out.soundPlaces.osm === out.meta.osmTimestamp ? out.soundPlaces.weirs : [];
   return out;
 }

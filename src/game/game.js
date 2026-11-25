@@ -205,7 +205,7 @@ export class Game {
     this.audio = new GameAudio(this);
     this.vehicles = new VehicleManager(this.scene, this.world, this);
     this.peds = new PedManager(this.scene, this.world, this);
-    this.transit = new TransitManager(this.scene, this.world, this, data.timetable);
+    this.transit = new TransitManager(this.scene, this.world, this, data.timetable, data.stopSurvey?.platforms);
     this.clock = new GameClock();
     this.trafficRhythm = new TrafficRhythm(this.world, data.trafficProfiles, this.transit.timetable);
     this.chunks.roadWear = roadWear(this.world, this.trafficRhythm.measured);
@@ -327,8 +327,11 @@ export class Game {
   }
 
   updateDepartures() {
-    this.hud.departures(this.mode === 'foot'
-      ? this.transit.timetable.departures(this.player.x, this.player.z, this.clock, undefined, this.transit.active) : null);
+    if (this.mode !== 'foot') return this.hud.departures(null);
+    const {x,z} = this.player, {timetable,active} = this.transit;
+    const board = this.world.transitStops.nearest(x,z);
+    const stop = board >= 0 ? board : timetable.nearest(x,z);
+    this.hud.departures(stop >= 0 ? timetable.departuresAt(stop,this.clock,undefined,active) : null);
   }
 
   // ----------------------------------------------------------- ukládání ----

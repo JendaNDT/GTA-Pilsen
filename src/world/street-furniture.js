@@ -16,10 +16,10 @@ export function streetCorners(x, y, z, yaw, width, depth) {
   ]);
 }
 
-export function streetFixtures(item, world) {
+export function streetFixtures(item, world, groundY) {
   const model = STREET_MODELS[item.kind];
   if (!model) return [];
-  const {x,z,yaw} = item, y = world.heightAt(x,z), tile = world.chunkIndex(x,z);
+  const {x,z,yaw} = item, y = groundY ?? world.heightAt(x,z), tile = world.chunkIndex(x,z);
   const part = (piece, across, along, width, depth, bottom, height, impulse) => {
     const px = x + across*Math.cos(yaw) - along*Math.sin(yaw);
     const pz = z + across*Math.sin(yaw) + along*Math.cos(yaw);

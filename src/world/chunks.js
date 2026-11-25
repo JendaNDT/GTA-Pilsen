@@ -5,6 +5,7 @@ import { buildBory } from './bory.js';
 import { buildPavilion } from './pavilion.js';
 import { buildColumn } from './plague-column.js';
 import { SolidBuf } from './solid-buffer.js';
+import { buildStopBoards } from './stop-boards.js';
 import { paintStreetPaving } from './street-furniture.js';
 import { buildingLayers } from './facade-surfaces.js';
 import { attachRoadFurniture } from './road-furniture.js';
@@ -1910,6 +1911,7 @@ export class ChunkManager {
     if (ch.tex) ch.tex.dispose();
     if (ch.terrainMat) ch.terrainMat.dispose();
     ch.traffic?.dispose();
+    for (const visual of ch.stopBoards ?? []) this.world.breakables.detach(visual);
     for (const visual of ch.roadFurniture ?? []) this.world.breakables.detach(visual);
     if (ch.lamps) {
       for (const visual of ch.lamps.visuals) this.world.breakables.detach(visual);
@@ -1981,6 +1983,14 @@ export class ChunkManager {
       if (ch.heritage) this.heritage.update(ch.heritage, x, z, y);
       if (ch.lamps) { ch.lamps.poles.visible = d < 560; ch.lamps.pools.visible = night && d < 1100; }
       // v dálce stačí silnice nakreslené v textuře země; přesná síť a čáry jen poblíž
+      const stopItems = w.transitStops?.tiles.get(ci);
+      if (stopItems && ch.stage >= 3) {
+        // Výška letu neovlivňuje dohled, vrtulník vidí vybavení pod sebou.
+        const near = d < 310 && stopItems.some(f => (f.x-x)**2 + (f.z-z)**2 < 125**2);
+        if (near && !ch.stopMesh) buildStopBoards(w,ch,w.transitStops.fixtures(ci),this.heritage.streetGlass);
+        if (ch.stopMesh) ch.stopMesh.visible = near;
+        if (ch.stopGlass) ch.stopGlass.visible = near;
+      }
       if (ch.asphalt) ch.asphalt.visible = d < 800;
       if (ch.marks) ch.marks.visible = d < 480;
       if (ch.sidewalks) ch.sidewalks.visible = d < SIDEWALK_VIEW;

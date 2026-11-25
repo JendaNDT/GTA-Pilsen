@@ -278,6 +278,7 @@ export class Heritage {
           this.streetSections.set(section.id, fixtures);
           const touched = new Set();
           for (const fixture of fixtures) {
+            if (this.world.transitStops?.authoredIds.has(fixture.id)) continue;
             const tiles = this.world.streetFixtures;
             if (!tiles.has(fixture.tile)) tiles.set(fixture.tile, []);
             tiles.get(fixture.tile).push(fixture);
@@ -287,6 +288,7 @@ export class Heritage {
           installStreetPaving(this.world, section.paving);
         }
         for (const fixture of fixtures) {
+          if (this.world.transitStops?.authoredIds.has(fixture.id)) continue;
           const {solid,ranges} = layers[fixture.piece === 'sklo' ? 1 : 0];
           const start = solid.p.length;
           drawStreetFixture(solid, fixture, QUALITY.heritageDetail);

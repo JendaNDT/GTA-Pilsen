@@ -30,6 +30,8 @@ export function attachRoadFurniture(registry, group, geometry, material, ranges)
             for (const name of ['normal', 'color']) {
               geo.setAttribute(name, new Float32BufferAttribute(geometry.getAttribute(name).array.slice(start, end), 3));
             }
+            const uv = geometry.getAttribute('uv');
+            if (uv) geo.setAttribute('uv', new Float32BufferAttribute(uv.array.slice(start/3*2,end/3*2),2));
             geo.translate(-fixture.x, -fixture.y, -fixture.z);
             fragment = new Mesh(geo, material);
             fragment.castShadow = fragment.receiveShadow = true;

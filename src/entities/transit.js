@@ -1,5 +1,6 @@
 import { Vector3 } from 'three/webgpu';
 import { STOP_DWELL, Timetable } from '../game/timetable.js';
+import { installTransitStops } from '../world/transit-stops.js';
 import { berthOffset, canYieldAtPullout, pulloutGap, stopBerth } from '../game/bus-departure.js';
 import { pathClearance } from '../game/ai-turn.js';
 import { DAY_SECONDS } from '../game/clock.js';
@@ -144,7 +145,7 @@ class TransitVehicle {
 }
 
 export class TransitManager {
-  constructor(scene, world, game, schedule) {
+  constructor(scene, world, game, schedule, survey) {
     this.scene = scene;
     this.world = world;
     this.game = game;
@@ -161,6 +162,7 @@ export class TransitManager {
     this.obstacles = [];
     this.drivingPath = Array.from({ length: 7 }, () => ({}));
     this.timetable = new Timetable(schedule, routes);
+    world.transitStops = installTransitStops(world,schedule,routes,survey);
     this.seen = new Map();
     this.serviceDay = null;
   }

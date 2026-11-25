@@ -62,7 +62,8 @@ export class RoadFurnitureBodies {
   buildRailMesh(ci) {
     this.removeRailMesh(ci);
     if (!this.tiles.has(ci)) return;
-    const edges = [...(this.world.bridgeEdges.get(ci) ?? []), ...(this.world.streetFixtures?.get(ci) ?? [])];
+    const edges = [...(this.world.bridgeEdges.get(ci) ?? []), ...(this.world.streetFixtures?.get(ci) ?? []),
+      ...(this.world.transitStops?.fixtures(ci) ?? [])];
     if (!edges.length) return;
     const positions = [], footPositions = [], ids = [];
     edges.forEach((edge, index) => {

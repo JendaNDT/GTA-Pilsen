@@ -410,6 +410,10 @@ Zelenobílý městský trolejbus je vlastní model projektu Plzeň naplno. [Sní
   [Městské části](https://opendata.plzen.eu/public/opendata/detail/108)
   Město u sady 3D uvádí, že neobsahuje autorská díla a databáze nepodléhá autorskoprávní ochraně ani zvláštnímu právu pořizovatele. [Podmínky užití v katalogu města](https://opendata.plzen.eu/public/opendata/dataset/37)
 - Obrysy tramvajových ostrůvků a osy nástupišť v Šumavské vycházejí z OpenStreetMap (ODbL). Dlažba před hlavní budovou používá profil z DMR 5G ČÚZK a rozměry podle OpenStreetMap. Oboustranné označníky, opěrné zdi a kovové sloupky jsou vlastní modely projektu. [Podklady a srovnání ve hře](docs/E25/nadrazi.md)
+- Každé z 705 stanovišť jízdního řádu má oboustranný označník s názvem, číslem a linkami.
+  U označníku se pěšímu hráči zobrazí odjezdy z daného stanoviště. Polohy, přístřešky
+  a lavičky využívají místní výřez OpenStreetMap (© přispěvatelé, ODbL), čísla a linky
+  přibalený jízdní řád PMDP. Modely a kresba tabulí jsou vlastní. [Ukázka v Koterově](docs/E40/koterov.jpg)
 - Odjezdy tramvají, trolejbusů a autobusů vycházejí z GTFS Plzeňských městských dopravních podniků, a.s.
   Hra přiřazuje zastávky ke kolejím a silnicím OpenStreetMap a ořezává spoje na okraji herního území.
   [Jízdní řády PMDP](https://opendata.plzen.eu/public/opendata/detail/187) ·

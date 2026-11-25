@@ -1,3 +1,7 @@
+# E40 · Zastávky MHD
+
+Dokončeno pro 705 stanovišť. Prošlo 331 jednotkových testů, 30 kontrol nástrojů, produkční sestavení a 38 cílených zkoušek v Chromiu. Ověřen je přestup, výběr odjezdů u označníku, provoz bez podkladu OSM a rozpočet všech předvoleb. [Snímky, podklady a měření](../E40.md)
+
 # E39 · Model městského trolejbusu
 
 Hotový je zelenobílý vůz se dvěma sběrači a pohyblivými prosklenými dveřmi. Prošlo 329 jednotkových testů, sestavení a 26 cílených prohlížečových zkoušek včetně linek 16 a 49. [Porovnání modelů a měření](../E39.md)
