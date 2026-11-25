@@ -11,6 +11,8 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 ## Co ve hře je
 
+- **Úvod a pauza.** Při prvním spuštění uvidíš náměstí Republiky. Uložená hra nabídne poslední polohu a tlačítko **Pokračovat**. Během hraní otevřeš pauzu klávesou Esc nebo tlačítkem nabídky. Můžeš si prohlédnout mapu, nastavit cíl a vrátit se stejným autem do stejné chvíle. [Ukázky menu](docs/E42.md)
+
 - Po potvrzení cíle na mapě zůstane značka na vybraném místě. Pěšky se můžeš nechat vést od muzea k lávce u Strouhy nebo na zastávku Slovany. [Pěší navigace](docs/E34.md)
 
 - Řidiči pouštějí lidi čekající u zebry. V sadech můžeš potkat chodce mířící od muzea ke Strouze, u hlavního nádraží sledovat výstup a nástup a v Radobyčicích výjezd autobusu ze zálivu. [Chování provozu ve hře](docs/E30.md)
@@ -78,7 +80,7 @@ Vydání 0.2.0 (23. 11. 2026, revize `99b1463`) obsahuje společnou fyziku vozid
 | C · H · L · R | kamera · klakson · dálková světla · vrátit na silnici |
 | O | otevřít nebo zavřít fotorežim |
 | F8 · F9 | v režimu `?debug` zobrazit kolize nebo otevřít měření výkonu |
-| N · Esc | posunout čas o 3 hodiny · menu se zakázkami, garáží a směnami MHD |
+| N · Esc | posunout čas o 3 hodiny · otevřít pauzu nebo se vrátit o jednu úroveň zpět |
 | ⛶ · F11 | celá obrazovka; po kliknutí na **Hrát** se zapne sama (vypíná se v **Nastavení**), Esc ji ukončí |
 
 Na telefonu určuje rychlost chůze vychýlení páčky. V poslední třetině její dráhy přejde postava plynule do běhu. [Ovládání pěšky a ukázka zatáčky](docs/E38.md)

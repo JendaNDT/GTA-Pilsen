@@ -22,6 +22,7 @@ test('potvrzený nový začátek přežije odchod ze stránky i druhé obnovení
   await seed(page, { v: 2, money: 2713, found: ['Synagoga'] });
   await page.goto(url());
   await waitForGame(page);
+  await page.locator('#btn-save').click();
   page.once('dialog', dialog => dialog.dismiss());
   await page.locator('#btn-reset').click();
   expect(await page.evaluate(() => __game.money)).toBe(2713);
@@ -58,6 +59,7 @@ for (const fallback of [false, true]) {
     await waitForGame(other);
     expect(await other.evaluate(() => __game.money)).toBe(1150);
     await expect(page.locator('#btn-transfer')).toBeVisible();
+    await other.locator('#btn-save').click();
     other.once('dialog', dialog => dialog.accept());
     await other.locator('#btn-reset').click();
     await waitForGame(page);
@@ -87,6 +89,7 @@ test('chyba při smazání zachová postup a dovolí reset zopakovat', async ({ 
       throw new Error('Zkušební chyba při mazání');
     };
   });
+  await page.locator('#btn-save').click();
   const messages = [];
   page.on('dialog', async dialog => {
     messages.push(dialog.message());

@@ -266,7 +266,7 @@ export class Jobs {
         this.arrivalRoad = { x: road.x, z: road.z, y: w.roadSurfaceY(road.road,road.seg,road.t,road.x,road.z), edge, along };
       }
     }
-    this.waypoint = { x, z };
+    this.waypoint = { x, z, name: name || 'Vybrané místo' };
     if (walk) this.waypoint.walk = walk;
     this.roadStatus = null;
     this.routeTimer = 0;

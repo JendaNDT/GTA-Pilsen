@@ -29,7 +29,7 @@ test('Mapa u muzea dovolí prohlédnout pěší lávku, hranici území a potvrd
   await page.getByRole('searchbox').fill('lavka pres strouhu');
   await page.getByRole('button',{name:'Dřevěná lávka přes Strouhu'}).click();
   await expect(page.locator('#map-name')).toHaveText('Dřevěná lávka přes Strouhu');
-  expect(await page.evaluate(()=>__game.jobs.waypoint)).toEqual({x:0,z:80});
+  expect(await page.evaluate(()=>__game.jobs.waypoint)).toEqual({x:0,z:80,name:'Původní cíl'});
   await page.getByRole('button',{name:'Navigovat sem'}).click();
   await expect(map).toBeHidden();
   expect(await page.evaluate(()=>__game.jobs.waypoint.walk.at(-2))).toBeCloseTo(289.5);

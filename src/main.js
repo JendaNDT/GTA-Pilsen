@@ -9,6 +9,7 @@ import { acquireSaveLock } from './game/save-session.js';
 import { Game } from './game/game.js';
 import { formatTime, HOUR_SECONDS } from './game/clock.js';
 import { initInput, input } from './game/input.js';
+import { initMenu } from './game/menu.js';
 import { AreaMap } from './game/area-map.js';
 import { initWorkUI } from './game/work-ui.js';
 import { resultText } from './game/missions.js';
@@ -208,6 +209,13 @@ async function boot() {
   }
   bar.style.width = '100%';
   game._updateCamera(0.016);
+  const initialCamera = !game.hasSave && {
+    position: game.camera.position.clone(), rotation: game.camera.quaternion.clone()
+  };
+  if (initialCamera) {
+    game.camera.position.set(-32, 7, 108);
+    game.camera.lookAt(1, 25, 4);
+  }
   game.env.update(game.camera);
   loadText.textContent = 'Připravuji vykreslování…';
   await game.env.prepareSkyLight();
@@ -217,7 +225,6 @@ async function boot() {
 
   $('loading').classList.add('hidden');
   $('menu-buttons').classList.remove('hidden');
-  $('btn-play').textContent = game.hasSave ? 'Pokračovat' : 'Hrát';
   $('panel-help').innerHTML = HELP_HTML;
   $('panel-about').innerHTML = ABOUT_HTML(data.meta, rendering);
   if (IS_TOUCH) $('touch').classList.remove('hidden');
@@ -236,16 +243,19 @@ async function boot() {
     showClock();
     if (!game.save()) clockStatus.textContent = game.saveError;
     updateWork();
+    navigation.refresh();
     if (!game.graphicsBusy) game.render();
   };
+  let mapFromPause = false;
   const openMenu = () => {
+    if (game.mapOpen) game.toggleMap(false);
     running = false; input.enabled = false; game.paused = true;
     syncMouseLock();
     perfPanel?.close();
     menu.classList.remove('hidden'); game.hud.show(false);
     game.audio.suspend(); game.save();
-    $('btn-play').textContent = 'Pokračovat';
-    updateWork();
+    input.pressed.clear();
+    navigation.show(true);
   };
   const play = () => {
     // Prohlížeč dovolí celou obrazovku jen hned po kliknutí, proto dřív než cokoli dalšího.
@@ -255,6 +265,11 @@ async function boot() {
     perf?.reset();
     game.audio.start(); game.audio.resume();
     if (firstPlay) {
+      if (initialCamera) {
+        game.camera.position.copy(initialCamera.position);
+        game.camera.quaternion.copy(initialCamera.rotation);
+        game.postfx?.resetHistory();
+      }
       firstPlay = false;
       if (!game.hasSave && !game.shifts.active) {
         game.hud.toast('Vítej v Plzni! Stojíš na náměstí Republiky.', 'big', 5000);
@@ -269,7 +284,13 @@ async function boot() {
   let photoFromPlay = false;
   const photo = new PhotoMode(game, canvas, () => {
     photo.close();
-    if (photoFromPlay) play(); else openMenu();
+    if (photoFromPlay) play();
+    else {
+      menu.classList.remove('hidden');
+      game.render();
+      navigation.show(!firstPlay);
+      $('btn-photo').focus();
+    }
   });
   const openPhoto = () => {
     if (game.graphicsBusy || game.mapOpen) return;
@@ -306,24 +327,27 @@ async function boot() {
   };
   for (const name of ['fullscreenchange', 'webkitfullscreenchange']) document.addEventListener(name, showFullscreen);
   fullscreenButton.addEventListener('click', () => { void toggleFullscreen(); });
-  const updateWork = initWorkUI(game, play);
+  const updateWork = initWorkUI(game, play, () => navigation.refresh());
   updateWork();
-  const sections = ['jobs', 'garage', 'shifts', 'help', 'about', 'settings'];
-  for (const name of sections) {
-    $('btn-' + name).addEventListener('click', () => {
-      const open = $('panel-' + name).classList.contains('hidden');
-      for (const other of sections) {
-        const visible = open && name === other;
-        $('panel-' + other).classList.toggle('hidden', !visible);
-        if ($('btn-' + other).hasAttribute('aria-expanded')) $('btn-' + other).setAttribute('aria-expanded', visible);
-      }
-      if (open && ['jobs', 'garage', 'shifts'].includes(name)) {
-        updateWork();
-        $('panel-' + name).scrollIntoView({ block: 'nearest' });
-      }
-      if (open && name === 'settings') showClock();
-    });
-  }
+  const navigation = initMenu(game, updateWork, showClock);
+  navigation.show(false);
+  $('btn-map').onclick = () => {
+    mapFromPause = true;
+    menu.classList.add('hidden');
+    game.toggleMap(true);
+    $('bigmap-canvas').focus({ preventScroll: true });
+  };
+  document.addEventListener('keydown', event => {
+    if (event.defaultPrevented) return;
+    if (event.code !== 'Escape' && !(mapFromPause && event.code === 'KeyM')) return;
+    if (menu.classList.contains('hidden') && !mapFromPause) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.repeat) return;
+    input.pressed.clear();
+    if (mapFromPause) game.toggleMap(false);
+    else if (!navigation.back() && !firstPlay) play();
+  });
   $('weather-mode').value = game.weather.mode;
   $('weather-mode').addEventListener('change', event => game.setWeatherMode(event.target.value));
   $('show-clock').checked = game.clockVisible;
@@ -384,7 +408,13 @@ async function boot() {
     else alert('Postup se nepodařilo smazat. Zkus to znovu.');
   });
   $('btn-menu').addEventListener('click', openMenu);
-  game.areaMap = new AreaMap(game);
+  game.areaMap = new AreaMap(game, () => {
+    if (!mapFromPause) return;
+    mapFromPause = false;
+    menu.classList.remove('hidden');
+    navigation.show(true);
+    $('btn-map').focus({ preventScroll: true });
+  });
   $('minimap').addEventListener('click', () => { if (running) game.toggleMap(true); });
   addEventListener('resize', () => { game.resize(); if (!running && !game.graphicsBusy) game.render(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden && running) openMenu(); });

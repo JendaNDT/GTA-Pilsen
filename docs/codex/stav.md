@@ -1,3 +1,7 @@
+# E42 · Úvodní nabídka a pauza
+
+Hotovo. Úvod zobrazuje poslední polohu uložené hry. Pauza ukazuje cíl a dovoluje otevřít mapu i během jízdy. Prošlo produkční sestavení, 334 testů JavaScriptu a 58 cílených zkoušek v Chromiu. Ověřen je i návrat z mapy na dotykovém telefonu v emulaci. [Snímky a měření](../E42.md)
+
 # E41 · Veřejné osvětlení
 
 Ověřeno všech 43 578 sloupů. Z nich 2 339 vychází z poloh v OpenStreetMap. U zastávky U Prodejny je odstup od označníku 9,23 metru. Prošlo produkční sestavení, 334 testů JavaScriptu, 31 kontrol Pythonu a 32 cílených zkoušek v Chromiu. [Snímky, měření a odchylky](../E41.md)

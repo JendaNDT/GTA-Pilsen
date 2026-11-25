@@ -3,7 +3,7 @@ import { JOB_NAMES, resultText } from './missions.js';
 import { shiftName, shiftTime } from './shift-plans.js';
 import { SHIFT_STATUS } from './shift.js';
 
-export function initWorkUI(game, play) {
+export function initWorkUI(game, play, refreshMenu) {
   const $ = (id) => document.getElementById(id);
   const { jobs, garage, shifts } = game;
   const garageButtons = document.querySelectorAll('[data-garage]');
@@ -81,10 +81,12 @@ export function initWorkUI(game, play) {
     shifts.end('cancelled');
     $('shift-feedback').textContent = '';
     updateShifts();
+    refreshMenu();
   });
   $('shift-retry').addEventListener('click', () => {
     $('shift-feedback').textContent = shifts.pay() ?? '';
     updateShifts();
+    refreshMenu();
   });
 
   for (const button of document.querySelectorAll('[data-job]')) {
@@ -99,10 +101,12 @@ export function initWorkUI(game, play) {
     jobs.end('cancelled', 'Zrušeno hráčem');
     $('job-feedback').textContent = '';
     updateJobs();
+    refreshMenu();
   });
   $('job-retry').addEventListener('click', () => {
     $('job-feedback').textContent = jobs.pay() ?? '';
     updateJobs();
+    refreshMenu();
   });
   for (const button of document.querySelectorAll('[data-work-resume]')) button.addEventListener('click', play);
   for (const button of garageButtons) {

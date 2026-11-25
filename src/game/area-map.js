@@ -8,7 +8,8 @@ const distanceText = metres => metres < 1000 ? Math.round(metres) + ' m'
   : (metres / 1000).toLocaleString('cs-CZ', { maximumFractionDigits: 1 }) + ' km';
 
 export class AreaMap {
-  constructor(game) {
+  constructor(game, onClose) {
+    this.onClose = onClose;
     this.game = game;
     this.canvas = el('bigmap-canvas');
     this.pointers = new Map();
@@ -69,6 +70,7 @@ export class AreaMap {
     this.pointers.clear();
     el('bigmap-query').value = '';
     el('bigmap-results').replaceChildren();
+    this.onClose?.();
   }
 
   render() {

@@ -30,6 +30,8 @@ test('změna herního času přeruší směnu až po potvrzení', async ({ page 
   await boot(page);
   await start(page, 'tram/1/53408/3');
   await page.locator('#btn-menu').click();
+  const stop = await page.evaluate(() => window.__game.shifts.stop.name);
+  await expect(page.locator('#menu-objective')).toHaveText('Linka 1 · ' + stop);
   await page.getByRole('button', { name: 'Nastavení', exact: true }).click();
   await page.locator('#game-time').fill('18:30');
   const submit = page.getByRole('button', { name: 'Nastavit čas', exact: true });
