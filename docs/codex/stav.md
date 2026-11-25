@@ -1,5 +1,7 @@
 # E38 · Ovládání pěší postavy
 
+Pěšky lze zvednout pohled až kolmo vzhůru. Po tomto doplnění prošlo sestavení, 328 jednotkových testů a 12 cílených zkoušek kamery a ovládání v Chromiu.
+
 Dokončen je náklon při běhu do zatáčky, volná kamera na myši a plynulý běh na dotykové páčce. Prošlo 328 jednotkových testů, sestavení a 28 cílených zkoušek ve dvou vykreslovačích. [Snímky a výsledky měření](../E38.md)
 
 # Převzetí auditu a zvuků do hlavní větve

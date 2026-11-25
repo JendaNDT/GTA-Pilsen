@@ -67,7 +67,7 @@ Vydání 0.2.0 (23. 11. 2026, revize `99b1463`) obsahuje společnou fyziku vozid
 | Klávesa | Co dělá |
 | --- | --- |
 | W A S D / šipky | chůze, řízení |
-| Myš | tažením otáčíš kameru. V nastavení můžeš zapnout volné rozhlížení při chůzi. Kliknutím do hry zachytíš kurzor, Esc ho uvolní. |
+| Myš | tažením otáčíš kameru. Pěšky se můžeš podívat i přímo nad hlavu. V nastavení můžeš zapnout volné rozhlížení při chůzi. Kliknutím do hry zachytíš kurzor, Esc ho uvolní. |
 | Shift | běh (ve vrtulníku klesání) |
 | Mezerník | ruční brzda, skok, ve vrtulníku stoupání |
 | F nebo E | nastoupit / vystoupit, ve směně MHD dveře |

@@ -801,7 +801,7 @@ export class Game {
     const carMesh = this.mode === 'car' && this.driver ? this.car.mesh : null;
     const f = carMesh?.position ?? this.focus;
     this.camYaw -= input.lookDX * 0.0052;
-    this.camPitch = clamp(this.camPitch + input.lookDY * 0.004, 0.04, 1.35);
+    this.camPitch = clamp(this.camPitch + input.lookDY * 0.004, this.mode === 'foot' ? -Math.PI / 2 : 0.04, 1.35);
     if (input.zoom) this.zoom = clamp(this.zoom * (input.zoom > 0 ? 1.12 : 0.89), 0.55, 3.2);
     if (input.lookDX || input.lookDY) this.lookIdle = 0; else this.lookIdle += dt;
 
@@ -823,7 +823,9 @@ export class Game {
     this.camYaw = wrapAngle(this.camYaw);
 
     const fx = Math.sin(this.camYaw), fz = Math.cos(this.camYaw);
-    const cp = Math.cos(this.camPitch), sp = Math.sin(this.camPitch);
+    // U vodorovného pohledu se zastaví oběh kolem postavy. Výš se otáčí už jen pohled.
+    const orbitPitch = Math.max(0.04, this.camPitch);
+    const cp = Math.cos(orbitPitch), sp = Math.sin(orbitPitch);
     const ty = (f.y || 0) + height;
     let dist = base * this.zoom;
     const cx = f.x - fx * dist * cp, cz = f.z - fz * dist * cp, cy = ty + dist * sp;
@@ -876,6 +878,12 @@ export class Game {
     }
     _v.set(f.x + fx * 1.5, ty + 0.2, f.z + fz * 1.5);
     cam.lookAt(_v);
+    if (this.camPitch < orbitPitch) {
+      const direction = _v.sub(cam.position);
+      const elevation = Math.atan2(direction.y, Math.hypot(direction.x, direction.z));
+      const fraction = (orbitPitch - this.camPitch) / (orbitPitch + Math.PI / 2);
+      cam.rotateX(fraction * (Math.PI / 2 - elevation));
+    }
     const speed = Math.hypot(this.focus.vx || 0, this.focus.vz || 0);
     const fov = 60 + Math.min(14, speed * 0.3);
     if (Math.abs(cam.fov - fov) > 0.1) { cam.fov += (fov - cam.fov) * Math.min(1, dt * 3); cam.updateProjectionMatrix(); }

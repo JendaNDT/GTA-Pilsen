@@ -98,6 +98,27 @@ test('při odmítnutí zámku funguje tažení myší až do uvolnění tlačít
   expect(await yaw()).toBe(after);
 });
 
+test('pěší kamera se tažením podívá kolmo vzhůru a vrátí se k obzoru', async ({ page }) => {
+  await start(page);
+  await page.locator('#btn-play').click();
+  const direction = () => page.evaluate(() => {
+    const g = __game, c = g.camera;
+    return c.getWorldDirection(c.position.clone()).y;
+  });
+  await page.mouse.move(365, 530);
+  await page.mouse.down();
+  await page.mouse.move(365, 25, { steps: 8 });
+  await expect.poll(direction).toBeGreaterThan(0.999999);
+  const clearance = await page.evaluate(() => {
+    const g = __game, p = g.camera.position;
+    return p.y - g.world.heightAt(p.x, p.z);
+  });
+  expect(clearance).toBeGreaterThanOrEqual(0.69);
+  await page.mouse.move(365, 445, { steps: 8 });
+  await page.mouse.up();
+  await expect.poll(direction).toBeLessThan(0.1);
+});
+
 test.describe('dotykové ovládání', () => {
   test.use({ hasTouch: true });
   test('páčka plynule přidává rychlost i přes původní hranici běhu a po puštění zastaví', async ({ page }) => {
