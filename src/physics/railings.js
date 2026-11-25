@@ -170,7 +170,7 @@ export function exteriorBridgeEdges(world, paths, visit) {
 export function indexBridgeEdges(world, visit) {
   const paths = [];
   for (let i = 0; i < world.rCount; i++) {
-    const flags = world.r.flags[i], measured = world.rondel?.elevated.has(i);
+    const flags = world.r.flags[i], measured = world.elevatedWidths?.has(i);
     if ((flags & RF.SHARED_DECK) || (!(flags & RF.BRIDGE) && !measured)) continue;
     const a = world.rOff[i], b = world.rOff[i + 1] - 1;
     const path = densePath(world.rpx, world.rpz, world.rpy, a, b, a, b, Infinity);

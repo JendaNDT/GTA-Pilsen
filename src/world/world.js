@@ -18,6 +18,7 @@ import { TurnRules } from './turns.js';
 import { Traffic } from '../game/traffic.js';
 import { prazdrojDeck, identifyPrazdrojBridge } from './prazdroj-bridge.js';
 import { indexBridgeEdges } from '../physics/railings.js';
+import { surveyedApproaches, approachHeight } from './underpasses.js';
 import { prepareRondel } from './rondel.js';
 import { buildRoadGrades, corridorWeight, gradeBlend, gradeCross, gradeHeight, gradeShore, gradeSurface, shoreLift, CORRIDOR_FALLOFF, CORRIDOR_MARGIN,
   SHORE_BACK, SHORE_FADE, SHORE_FILL, SHORE_PLATEAU, SHORE_REACH, SHORE_WATER } from './road-grade.js';
@@ -81,6 +82,11 @@ export class World {
     this._initTerrain(data.terrain);
     this._initTerrainDetail(data.landscape);
     this._initGradeTerrain(grades);
+    this.originalGradeTiles = new Set(this.gradeTerrain.keys());
+    this.underpassTiles = new Set();
+    if (grades) for (const [i, j, cm] of data.underpasses?.terrain ?? []) {
+      this._setGradeOffset(i * grades.grid, j * grades.grid, cm, true, this.underpassTiles);
+    }
     for (const [x, z, delta] of stationForecourtOffsets(this)) this._setGradeOffset(x, z, delta, true);
     this.buildingMaterials = new Map(data.buildingMaterials?.surfaces.map(([i,wall,roof])=>[i,[wall,roof]]));
     this._initBuildings(data.buildings);
@@ -100,6 +106,13 @@ export class World {
       for (let k = start; k < end; k++) this.rpy[k] += model.lift;
     }
     this.rondel = prepareRondel(this);
+    this.elevatedWidths = new Map(this.rondel.elevated);
+    const platforms = this._applyGradeProfiles(grades && data.underpasses?.decks, road => {
+      if (road >= this.rCount) return null;
+      const a = this.rOff[road], b = this.rOff[road + 1] - 1;
+      return [[this.rpx[a], this.rpz[a], this.rpx[b], this.rpz[b]], this.rpy.subarray(a, b + 1)];
+    });
+    for (const road of platforms) this.elevatedWidths.set(road, this.r.w[road] / 2 + 0.12);
     this.archedBridges = new Map(data.roads.header.archedBridges ?? []);
     this.tunnelRoads = new Set(data.roads.header.tunnels ?? []);
     this.tunnels = [...this.tunnelRoads].map((road) => new Tunnel(this, road));
@@ -143,6 +156,7 @@ export class World {
     }
     // V tomto výřezu končí nájezd 2725 u měřeného horního pásu 64.
     this.roadApproach = bridgeApproach(this, 64, 2725);
+    this.upperApproaches = surveyedApproaches(this, grades && data.underpasses?.approaches);
     this._initBridges();
     this.bridgeEdges = indexBridgeEdges(this);
     this._initRoadGrades();
@@ -275,13 +289,14 @@ export class World {
     }
   }
 
-  _setGradeOffset(x, z, delta, relative = false) {
+  _setGradeOffset(x, z, delta, relative = false, touched) {
     const ix = (x - this.minX) / CHUNK, iz = (z - this.minZ) / CHUNK;
     // Stejný upravený vrchol patří oběma sousedům na hraně dlaždice.
     for (const cx of Number.isInteger(ix) ? [ix - 1, ix] : [Math.floor(ix)]) {
       for (const cz of Number.isInteger(iz) ? [iz - 1, iz] : [Math.floor(iz)]) {
         if (cx < 0 || cx >= this.cols || cz < 0 || cz >= this.rows) continue;
         const tile = cz * this.cols + cx;
+        touched?.add(tile);
         if (!this.gradeTerrain.has(tile)) this.gradeTerrain.set(tile, new Int16Array(this.gradeStride ** 2));
         const u = (ix - cx) * (this.gradeStride - 1), v = (iz - cz) * (this.gradeStride - 1);
         const heights = this.gradeTerrain.get(tile), index = v * this.gradeStride + u;
@@ -303,7 +318,9 @@ export class World {
     return updated;
   }
 
-  bridgeSupportAllowed(x, z) {
+  bridgeSupportAllowed(x, z, ground, underside, halfWidth) {
+    // Celá patka musí ležet mimo spodní cestu, i když je pod horním mostem další nájezd.
+    if (this.onCarriageway(x, z, ground, Math.SQRT2 * halfWidth, RC.TRACK, underside)) return false;
     return !(this.gradeSupportClearance ?? []).some(([cx, cz, radius]) =>
       (x * 10 - cx) ** 2 + (z * 10 - cz) ** 2 < radius ** 2);
   }
@@ -360,7 +377,7 @@ export class World {
     const seg = [];     // x1, z1, y1, x2, z2, y2, poloviční šířka, druh (0 silnice, 1 tramvaj, 2 železnice)
     const R = this.r, px = this.rpx, pz = this.rpz, py = this.rpy;
     for (let i = 0; i < this.rCount; i++) {
-      if (!(R.flags[i] & RF.BRIDGE) && !this.rondel?.elevated.has(i)) continue;
+      if (!(R.flags[i] & RF.BRIDGE) && !this.elevatedWidths?.has(i)) continue;
       if (R.flags[i] & RF.SHARED_DECK) continue;
       const cls = R.cls[i];
       const hw = this.deckHalfWidth(i);
@@ -373,6 +390,11 @@ export class World {
     if (this.roadApproach) {
       const { path, halfWidth } = this.roadApproach;
       seg.push(path.x[0], path.z[0], path.y[0], path.x.at(-1), path.z.at(-1), path.y.at(-1), halfWidth, 0);
+    }
+    for (const [road, entry] of this.upperApproaches ?? []) {
+      for (const { path } of entry.spans) for (let k = 0; k < path.n - 1; k++) {
+        seg.push(path.x[k], path.z[k], path.y[k], path.x[k+1], path.z[k+1], path.y[k+1], R.w[road] / 2, 0);
+      }
     }
     this.bridgeEndWidths = new Map();
     for (const rail of this.rails) {
@@ -411,7 +433,7 @@ export class World {
     const calibration = this.deckCalibrations?.get(road);
     if (calibration) return calibration.halfWidth;
     if (road === this.prazdrojRoad) return 1.55;
-    const measured = this.rondel?.elevated.get(road);
+    const measured = this.elevatedWidths?.get(road);
     if (measured !== undefined) return measured;
     // Wilsonův most má podle městské dokumentace včetně chodníků 15 metrů.
     if (this.roadNames?.[this.r.name?.[road]] === 'Wilsonův most') return 7.5;
@@ -910,7 +932,7 @@ export class World {
         const d = (x - qx) * (x - qx) + (z - qz) * (z - qz);
         if (d >= maxSquared || d >= best) continue;
         let score = d;
-        if (Number.isFinite(y) && (layered || (R.flags[road] & RF.BRIDGE) || this.rondel?.elevated.has(road))) {
+        if (Number.isFinite(y) && (layered || (R.flags[road] & RF.BRIDGE) || this.elevatedWidths?.has(road))) {
           const level = this.roadSurfaceY(road, k, t, qx, qz);
           score += 4 * Math.max(0, Math.abs(level - y) - 1.2) ** 2;
         }
@@ -937,7 +959,7 @@ export class World {
     if (new URLSearchParams(globalThis.location?.search ?? '').get('silnice') === 'puvodni') return;
     const R = this.r;
     const raised = (road) => (R.flags[road] & (RF.BRIDGE | RF.TUNNEL | RF.SHARED_DECK)) !== 0 ||
-      this.tunnelRoads.has(road) || this.rondel?.elevated.has(road) || this.gradeRoads.has(road);
+      this.tunnelRoads.has(road) || this.elevatedWidths?.has(road) || this.gradeRoads.has(road);
     const include = (road) => R.cls[road] <= DRIVABLE_MAX && !raised(road) && !this.rondel?.trackAccess?.has(road);
     // Ručně doladěná místa (nájezd na horní pás, břeh u mostu, rampa u nádraží, podjezdy) zůstávají.
     const special = new Set([this.roadApproach?.road, 155, 33139, 33140, ...this.tunnelApproaches.keys()]);
@@ -946,7 +968,7 @@ export class World {
     // napojení na terén. Na běžné mosty z mapy se profil napojí na výšku mostovky.
     // Každá buňka zná konce ze svého okolí, dotaz tak potřebuje jediné vyhledání.
     const calibrated = (road) => (R.flags[road] & (RF.TUNNEL | RF.SHARED_DECK)) !== 0 || this.deckCalibrations.has(road) ||
-      this.archedBridges.has(road) || this.tunnelRoads.has(road) || this.rondel?.elevated.has(road) || this.gradeRoads.has(road);
+      this.archedBridges.has(road) || this.tunnelRoads.has(road) || this.elevatedWidths?.has(road) || this.gradeRoads.has(road);
     const ends = new Map();
     for (let road = 0; road < this.rCount; road++) {
       if (R.cls[road] > DRIVABLE_MAX || !calibrated(road)) continue;
@@ -1244,7 +1266,7 @@ export class World {
     const special = new Set([this.roadApproach?.road, 155, 33139, 33140, ...this.tunnelApproaches.keys()]);
     const usable = (road) => R.cls[road] <= RC.LIVING && !(R.flags[road] & (RF.BRIDGE | RF.TUNNEL | RF.SHARED_DECK | RF.AISLE)) &&
       !this.tunnelRoads.has(road) && !this.gradeRoads.has(road) && !special.has(road) &&
-      !this.rondel?.elevated.has(road) && !this.rondel?.ring.has(road) && !this.rondel?.trackAccess?.has(road);
+      !this.elevatedWidths?.has(road) && !this.rondel?.ring.has(road) && !this.rondel?.trackAccess?.has(road);
     const walls = (x0, z0, x1, z1, visit) => this.forWalls(x0, z0, x1, z1, visit);
     const skip = (x, z) => this.sidewalkExcluded(x, z) || this.keepsTerrain(x, z) > 0;
     const roads = (x, z, a, b) => this.insideOtherCarriageway(a, x, z, 0.2, b);
@@ -1671,8 +1693,14 @@ export class World {
 
   /** Výška příslušné silnice, i když stejným bodem prochází jiná úroveň. */
   roadSurfaceY(road, seg, t, x, z) {
-    if (this.r.flags[road] & RF.BRIDGE || this.rondel?.elevated.has(road) || this.tunnelRoads?.has(road)) {
+    if (this.r.flags[road] & RF.BRIDGE || this.elevatedWidths?.has(road) || this.tunnelRoads?.has(road)) {
       return this.rpy[seg] + (this.rpy[seg + 1] - this.rpy[seg]) * t;
+    }
+    const entry = this.upperApproaches?.get(road);
+    if (entry) {
+      const k = seg - this.rOff[road], s = entry.stations[k] + t * (entry.stations[k+1] - entry.stations[k]);
+      const y = approachHeight(entry, s);
+      if (Number.isFinite(y)) return y;
     }
     const graded = this.roadGradeY(road, seg, t);
     let terrain;
@@ -1695,9 +1723,10 @@ export class World {
   }
 
   /** Zahrnuje celou šířku všech překrývajících se vozovek v téže výšce i asfalt zaoblených rohů. */
-  onCarriageway(x, z, y, padding = 0, maxClass = DRIVABLE_MAX) {
+  onCarriageway(x, z, y, padding = 0, maxClass = DRIVABLE_MAX, upper = y + 2.5) {
+    const inHeight = level => level > y - 2.5 && level < upper;
     const corner = this.cornerAsphaltAt(x, z);
-    if (corner && Math.abs(this.cornerY(corner, x, z) - y) < 2.5) return true;
+    if (corner && inHeight(this.cornerY(corner, x, z))) return true;
     const range = this.maxRoadHalfWidth + padding;
     const minCol = Math.max(0, Math.floor((x - range - this.minX) / COLL_CELL));
     const maxCol = Math.min(this.gcols - 1, Math.floor((x + range - this.minX) / COLL_CELL));
@@ -1713,7 +1742,7 @@ export class World {
         const t = length2 ? Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / length2)) : 0;
         const px = ax + t * dx, pz = az + t * dz;
         if ((px - x) ** 2 + (pz - z) ** 2 <= (this.r.w[road] / 2 + padding) ** 2 &&
-            Math.abs(this.roadSurfaceY(road, k, t, px, pz) - y) < 2.5) return true;
+            inHeight(this.roadSurfaceY(road, k, t, px, pz))) return true;
       }
     }
     return false;

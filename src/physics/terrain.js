@@ -1,5 +1,6 @@
 import { TUNNEL_HEIGHT, TUNNEL_PORTAL_CUT } from '../world/tunnels.js';
 
+import { localGradeIndices } from '../world/terrain-indices.js';
 import { riverBed } from './water.js';
 import { densePath, pathNormal } from '../world/road-profile.js';
 import { gradeBlend, gradeCross, stripLift } from '../world/road-grade.js';
@@ -106,6 +107,15 @@ export function terrainTriangles(world, ci, x0, z0, size, emit) {
     triangle(p, b, c);
     triangle(p, c, q);
   };
+  // Nový zářez potřebuje dvoumetrové trojúhelníky pouze v okolí změněných uzlů.
+  if (size === 256 && world.underpassTiles?.has(ci) && !world.originalGradeTiles.has(ci)) {
+    const n = size / step, coarse = Math.min(roads, bed ? 4 : Infinity, world.terrainDetail.has(ci) ? world.tDetailG : world.tG);
+    const indices = localGradeIndices(n, coarse / step, world.gradeTerrain.get(ci));
+    const vertices = new Array((n + 1) ** 2);
+    const point = i => (vertices[i] ??= vertex(x0 + (i % (n + 1)) * step, z0 + Math.floor(i / (n + 1)) * step));
+    for (let k = 0; k < indices.length; k += 3) surface(point(indices[k]), point(indices[k + 1]), point(indices[k + 2]));
+    return;
+  }
   if (near) return refinedGrid(near, base, x0, z0, size, vertex, surface);
   const row = [];
   for (let x = x0; x <= x0 + size; x += step) row.push(vertex(x, z0));

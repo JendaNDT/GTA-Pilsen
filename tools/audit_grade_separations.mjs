@@ -13,6 +13,7 @@ const { RC, RF } = await import(new URL('src/config.js', root));
 const data = { meta: JSON.parse(fs.readFileSync('public/data/meta.json', 'utf8')) };
 const patch = 'public/data/grade-separations.json';
 if (!baseline && fs.existsSync(patch)) data.gradeSeparations = JSON.parse(fs.readFileSync(patch, 'utf8'));
+if (!baseline && fs.existsSync('public/data/underpasses.json')) data.underpasses = JSON.parse(fs.readFileSync('public/data/underpasses.json', 'utf8'));
 for (const name of ['roads', 'rails', 'terrain', 'landscape', 'buildings', 'land', 'trees']) {
   const v = fs.readFileSync('public/data/' + name + '.bin');
   const packed = v.buffer.slice(v.byteOffset, v.byteOffset + v.byteLength);
@@ -31,7 +32,7 @@ function add(kind, index, pts, flags, label, className, layer, profile, drivable
     const [x,z,y] = pts[i-1], [bx,bz,by] = pts[i];
     const dx = bx-x, dz = bz-z, dy = by-y;
     if (Math.hypot(dx,dz) < 0.02) continue;
-    const s = { id: segments.length, feature, x,z,y,dx,dz,dy };
+    const s = { id: segments.length, feature, segment: i - 1, x,z,y,dx,dz,dy };
     segments.push(s);
     for (let u = Math.floor(Math.min(x,bx)/64); u <= Math.floor(Math.max(x,bx)/64); u++) {
       for (let v = Math.floor(Math.min(z,bz)/64); v <= Math.floor(Math.max(z,bz)/64); v++) {
@@ -46,7 +47,7 @@ for (let i=0;i<w.rCount;i++) {
   const a=w.rOff[i], b=w.rOff[i+1], flags=w.r.flags[i], cls=w.r.cls[i];
   if (flags & RF.SHARED_DECK) continue;
   const label = w.roadNames[w.r.name[i]] || 'bez názvu';
-  const profile = Boolean(flags & RF.BRIDGE) || w.tunnelRoads.has(i) || w.rondel.elevated.has(i);
+  const profile = Boolean(flags & RF.BRIDGE) || w.tunnelRoads.has(i) || w.elevatedWidths.has(i);
   const pts = Array.from({length:b-a},(_,k)=>[w.rpx[a+k],w.rpz[a+k],w.rpy[a+k]]);
   add('road',i,pts,flags,label,Object.keys(RC)[cls],w.r.layer[i],profile,cls <= RC.SERVICE && !(flags & RF.PRIVATE));
 }
@@ -54,6 +55,14 @@ for (const [i,r] of w.rails.entries()) {
   add('rail',i,Array.from({length:r.pts.length/2},(_,k)=>[r.pts[k*2],r.pts[k*2+1],r.y?.[k] ?? w.heightAt(r.pts[k*2],r.pts[k*2+1])+SURF]),
     r.flags,r.cls === 0 ? 'tramvajové koleje' : 'železnice',r.cls===0?'tram':'rail',r.flags & RF.BRIDGE ? 1 : 0,Boolean(r.y),true);
 }
+function surface(segment, t, x, z) {
+  const { feature } = segment;
+  if (feature.kind === 'road' && w.upperApproaches.has(feature.index)) {
+    return w.roadSurfaceY(feature.index, w.rOff[feature.index] + segment.segment, t, x, z);
+  }
+  return feature.profile ? segment.y + t * segment.dy : w.heightAt(x, z) + SURF;
+}
+
 function intersection(a,b) {
   const cross = a.dx*b.dz - a.dz*b.dx;
   if (Math.abs(cross) < Math.hypot(a.dx,a.dz)*Math.hypot(b.dx,b.dz)*0.28) return null;
@@ -63,8 +72,8 @@ function intersection(a,b) {
   const x=a.x+t*a.dx,z=a.z+t*a.dz;
   if (a.feature.pts.some(([px,pz])=>Math.hypot(px-x,pz-z)<0.15) &&
     b.feature.pts.some(([px,pz])=>Math.hypot(px-x,pz-z)<0.15)) return null;
-  const ya = a.feature.profile ? a.y+t*a.dy : w.heightAt(x,z)+SURF;
-  const yb = b.feature.profile ? b.y+u*b.dy : w.heightAt(x,z)+SURF;
+  const ya = surface(a, t, x, z);
+  const yb = surface(b, u, x, z);
   const aAbove = (a.feature.flags & RF.BRIDGE) || (!(a.feature.flags & RF.TUNNEL) && (b.feature.flags & RF.TUNNEL));
   let [top, bottom] = aAbove ? [a, b] : [b, a];
   if (top.feature.flags & RF.BRIDGE && bottom.feature.flags & RF.BRIDGE) {

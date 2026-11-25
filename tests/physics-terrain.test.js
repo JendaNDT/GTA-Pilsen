@@ -18,12 +18,17 @@ async function pack(name) {
 }
 
 /** Celý svět z distribuovaných dat (bez barevné mapy podkladu, která potřebuje plátno). */
-async function profileWorld() {
+async function profileWorld(withStructures = false) {
   const data = {};
   for (const name of ['buildings', 'roads', 'land', 'terrain', 'rails', 'trees', 'landscape']) data[name] = await pack(name + '.bin');
   const json = async (file) => JSON.parse(await readFile(new URL('../public/data/' + file, import.meta.url)));
   data.meta = await json('meta.json');
   data.gradeSeparations = await json('grade-separations.json');
+  data.underpasses = await json('underpasses.json');
+  if (withStructures) {
+    data.structures = { index: await json('../detail/structures/index.json') };
+    data.streetDetails = await json('../detail/streets/index.json');
+  }
   // vodní plochy a břehy ano (fyzika řeky, nábřeží), hrubou masku povrchů z plátna ne
   class ProfileWorld extends World { _initLand(land) { this._initWater(land); } }
   return new ProfileWorld(data);
@@ -353,4 +358,100 @@ test('boky mapových přístřešků končí u střechy a sousední zdi mají p�
     assert.ok(Math.abs(w.bBase[i] - expected) < .001, 'Spodní hrana objektu ' + i);
   }
   assert.ok(roofs > 0);
+});
+
+test('pod Rondel, Prokopovou a dalšími mosty mají kola v místě původního hrbolu plynulý podklad', async () => {
+  const w = await profileWorld(), cache = new Map();
+  // Tři body z jedné jízdní stopy, vždy po dvou metrech. Měříme odchylku od místního sklonu.
+  const sites = [
+    ['Rondel z centra', [-150.10, -839.79], [-150.83, -841.65], [-151.56, -843.51]],
+    ['Rondel do centra', [-155.62, -745.78], [-155.57, -743.78], [-155.52, -741.78]],
+    ['Prokopova', [141.29, 710.62], [141.52, 712.60], [141.75, 714.59]],
+    ['K Valše', [-2962.78, 4341.89], [-2960.78, 4341.96], [-2958.78, 4342.04]],
+    ['U Ježíška', [304.15, 714.24], [303.15, 712.51], [302.16, 710.77]],
+    ['Třemošenská', [-987.06, -10007.93], [-987.54, -10009.87], [-988.02, -10011.81]],
+    ['polní cesta v Černicích', [4283.42, 4534.12], [4285.28, 4534.87], [4287.14, 4535.61]],
+  ];
+  for (const [name, ...points] of sites) {
+    const [a, b, c] = points.map(([x, z]) => physicsTerrainHeight(w, cache, x, z));
+    assert.ok(Math.abs(b - (a + c) / 2) < 0.025, name + ' – podklad pro kola');
+    const [x, z] = points[1];
+    const deck = w.deckAt(x, z, Infinity);
+    assert.ok(deck > b + 2, name + ' – prostor pod konstrukcí');
+    assert.equal(w.bridgeSupportAllowed(x, z, b, deck - 0.5, 0.9), false, name + ' – pilíř v jízdní stopě');
+  }
+});
+
+test('novější zaměření odděluje podjezd u fakulty, obchvat a lávky od spodní silnice', async () => {
+  const w = await profileWorld();
+  for (const [name, x, z, minimum] of [
+    ['obchvat na silnici 232', 14341.32, -858.21, 5.8],
+    ['příjezd u lékařské fakulty', -317.97, -1675.34, 3.8],
+    ['spojovací lávka v nemocnici', 198.52, -1601.53, 8],
+    ['Koterov, ulice U Seřadiště', 2855.45, 3640.87, 5.8],
+    ['U Planetária', -1090.26, 829.71, 4.6],
+    ['lávka přes nádraží', 23066.04, -2873.49, 7],
+  ]) {
+    const ground = w.heightAt(x, z);
+    assert.ok(w.deckAt(x, z, Infinity) - ground >= minimum, name + ' – oddělení úrovní');
+    assert.ok(Math.abs(w.groundY(x, z, ground) - ground) < 0.12, name + ' – spodní jízdní pás');
+  }
+});
+
+test('kola ve všech 320 měřitelných úsecích přejedou místo největší zjištěné nerovnosti pod 10 cm', async () => {
+  const { RoadStructures } = await import('../src/physics/structures.js');
+  const { roadSurfaceTriangles, cornerTriangles } = await import('../src/physics/terrain.js');
+  const w = await profileWorld(true), structures = new RoadStructures(w);
+  // Každá trojice má délku čtyř metrů. Třetí souřadnice označuje původně zvolenou jízdní
+  // úroveň, aby se při nové kontrole nepovažovala mostovka nad autem za podklad jeho kol.
+  const sites = JSON.parse(await readFile(new URL('./fixtures/underpass-wheels.json', import.meta.url)));
+  assert.equal(sites.length, 320);
+  const cells = new Map(), tiles = new Set();
+  const cell = (x, z) => x * 65536 + z;
+  const probes = sites.map(([road, ...points]) => ({
+    road,
+    points: points.map(([x, z, level]) => {
+      const point = { x, z, level, height: -Infinity };
+      const key = cell(Math.floor(x / 8), Math.floor(z / 8));
+      if (!cells.has(key)) cells.set(key, []);
+      cells.get(key).push(point);
+      tiles.add(w.chunkIndex(x, z));
+      return point;
+    }),
+  }));
+  function collector(terrain) {
+    return (a, b, c) => {
+      const ux = b[0] - a[0], uz = b[2] - a[2], vx = c[0] - a[0], vz = c[2] - a[2];
+      const determinant = ux * vz - uz * vx;
+      if (Math.abs(determinant) < 1e-8 || (!terrain && determinant > 0)) return;
+      const left = Math.floor(Math.min(a[0], b[0], c[0]) / 8), right = Math.floor(Math.max(a[0], b[0], c[0]) / 8);
+      const top = Math.floor(Math.min(a[2], b[2], c[2]) / 8), bottom = Math.floor(Math.max(a[2], b[2], c[2]) / 8);
+      for (let x = left; x <= right; x++) for (let z = top; z <= bottom; z++) {
+        const points = cells.get(cell(x, z));
+        if (!points) continue;
+        for (const p of points) {
+          const dx = p.x - a[0], dz = p.z - a[2];
+          const t = (dx * vz - dz * vx) / determinant, u = (ux * dz - uz * dx) / determinant;
+          if (t < -1e-6 || u < -1e-6 || t + u > 1 + 1e-6) continue;
+          const y = a[1] + (b[1] - a[1]) * t + (c[1] - a[1]) * u;
+          if (terrain || y <= p.level + 0.65) p.height = Math.max(p.height, y);
+        }
+      }
+    };
+  }
+  const ground = collector(true), deck = collector(false), neighbors = new Set();
+  for (const tile of tiles) {
+    terrainTriangles(w, tile, w.minX + tile % w.cols * 256, w.minZ + Math.floor(tile / w.cols) * 256, 256, ground);
+    for (const dx of [-1, 0, 1]) for (const dz of [-1, 0, 1]) neighbors.add(tile + dx + dz * w.cols);
+  }
+  for (const tile of neighbors) {
+    roadSurfaceTriangles(w, tile, deck);
+    cornerTriangles(w, tile, deck);
+    structures.emit(tile, deck);
+  }
+  for (const { road, points } of probes) {
+    const [a, b, c] = points;
+    const bump = Math.abs(b.height - (a.height + c.height) / 2);
+    assert.ok(bump < 0.10, `Úsek ${road} v bodě ${b.x}, ${b.z}: ${(100 * bump).toFixed(1)} cm.`);
+  }
 });

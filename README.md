@@ -11,6 +11,8 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 ## Co ve hře je
 
+- Spodní Karlovarská pod Rondelem, Prokopova, K Valše i další podjezdy mají upravený povrch pro jízdu. [Měření a stejné pohledy před opravou a po ní](docs/E48.md)
+
 - Před spuštěním se připraví celé okolí do jednoho kilometru od hráče, také při pokračování z uložené pozice. [Načítání a měření za jízdy](docs/E47.md)
 
 - Po dopadení za lehčí čin se objevíš pěšky u nejbližší služebny. Pokud jsi během pátrání srazil chodce, vrátíš se po zatčení před věznici Bory. Služebny můžeš vyhledat v mapě třeba zadáním „služebna Rokycany“. [Pravidla a ověření míst](docs/E46.md)
@@ -391,6 +393,7 @@ Zelenobílý městský trolejbus je vlastní model projektu Plzeň naplno. [Sní
 - Terén vychází z digitálního modelu reliéfu DMR 5G a výšky budov z rozdílu digitálního modelu
   povrchu DMP 1G a DMR 5G © [ČÚZK](https://www.cuzk.cz). Terén je pro hru zjednodušený na síť
   po 8 metrech, na vybraných dlaždicích po 4 metrech. Pod silnicemi je zarovnaný.
+- Výšky podjezdů doplňuje model povrchu ČÚZK z obrazové korelace (DMP OK, CC BY 4.0). U lékařské fakulty jsme ověřili výškové body DTM Plzeňského kraje, U Planetária model 3D budov centra Plzně 2024 a v Koterově rozměry stavby od SUDOP Praha. [Zdroje a použitá měření](docs/E48.md)
 - Letecké snímky otevřené krajiny vycházejí z [Ortofota ČR © ČÚZK](https://atom.cuzk.gov.cz/ORTOFOTO/ORTOFOTO.xml),
   [licence CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Snímkování z roku 2025
   je převzorkované do herní mapy, oříznuté na otevřenou krajinu a barevně sjednocené.

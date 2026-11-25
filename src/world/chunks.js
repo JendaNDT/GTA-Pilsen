@@ -24,7 +24,9 @@ import { treeType } from './tree-models.js';
 import { waterTile } from './water.js';
 import { terrainClassMask } from './terrain-classes.js';
 import { terrainMaskTexture } from './terrain-detail.js';
+import { trimSurfaceToCamera } from './surface-visibility.js';
 import { localGradeIndices } from './terrain-indices.js';
+import { approachHeight } from './underpasses.js';
 import { terrainGridStep } from '../physics/terrain.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
 import { CHUNK, QUALITY, PARAMS, BK, BF, RC, RF, LC, DRIVABLE_MAX } from '../config.js';
@@ -543,6 +545,14 @@ function trimApproach(D, start, end) {
 /** Výšky hladkého profilu silnice pro zahuštěnou čáru (vozovka i značení leží na profilu). */
 // V ručně doladěných místech zůstane NaN a pás tam kopíruje terén jako dřív.
 function gradeDense(world, D, road, s) {
+  const entry = world.upperApproaches?.get(road);
+  if (entry) {
+    let along = entry.stations[s - world.rOff[road]];
+    D.apron = D.x.map((x, k) => {
+      if (k) along += Math.hypot(x - D.x[k - 1], D.z[k] - D.z[k - 1]);
+      return approachHeight(entry, along);
+    });
+  }
   const grade = world.roadGrade;
   if (!(grade?.start[road] >= 0)) return;
   let station = grade.station[s] + Math.hypot(D.x[0] - world.rpx[s], D.z[0] - world.rpz[s]);
@@ -573,6 +583,10 @@ function denseCross(D, k, t, x, z) {
  * v přechodu k chráněným místům, u volných konců a bez profilu z terénu.
  */
 function denseY(world, D, k, t, x, z) {
+  if (D.apron && Number.isFinite(D.apron[k])) {
+    const next = D.apron[Math.min(k + 1, D.n - 1)];
+    if (!t || Number.isFinite(next)) return t ? D.apron[k] + t * (next - D.apron[k]) : D.apron[k];
+  }
   if (!D.y) return world.heightAt(x, z) + SURF;
   const k1 = Math.min(D.n - 1, k + 1);
   const y = D.y[k] + (D.y[k1] - D.y[k]) * t;
@@ -696,8 +710,9 @@ function bridgeSlab(world, solid, D, hw, topCol, supports = true, depth = BRIDGE
       const t = Math.min(1, Math.max(0, 1 - acc / len));
       const x = D.x[k] + (D.x[k + 1] - D.x[k]) * t, z = D.z[k] + (D.z[k + 1] - D.z[k]) * t;
       const yb = y0 + (y1 - y0) * t - T, g = world.heightAt(x, z);
-      if (yb - g > 2.5 && world.bridgeSupportAllowed(x, z)) {
-        solid.box(x, g - 0.6, yb, z, Math.min(0.9, hw * 0.35), COL.concrete);
+      const halfWidth = Math.min(0.9, hw * 0.35);
+      if (yb - g > 2.5 && world.bridgeSupportAllowed(x, z, g, yb, halfWidth)) {
+        solid.box(x, g - 0.6, yb, z, halfWidth, COL.concrete);
       }
     }
   }
@@ -939,9 +954,9 @@ function* buildRoads(world, ci, manager) {
       if (world.tunnelRoads.has(i) || (flags & RF.SHARED_DECK) || world.rondel?.trackAccess.has(i)) continue;
       const bridge = (flags & RF.BRIDGE) !== 0;
       const paved = cls <= DRIVABLE_MAX || cls === RC.PEDESTRIAN;
-      const measured = world.rondel?.elevated.get(i);
+      const measured = world.elevatedWidths?.get(i);
       const ring = world.rondel?.ring.has(i);
-      if (!paved && !bridge && measured === undefined) continue; // běžné chodníky jsou v textuře země
+      if (!paved && !bridge && measured === undefined && !world.upperApproaches?.has(i)) continue; // běžné chodníky jsou v textuře země
       const hw = w / 2;
       const raised = bridge || measured !== undefined;
       const D = densePath(px, pz, raised ? py : null, s, e, a, b, bridge ? 1e9 : surfaceStep);
@@ -1167,7 +1182,7 @@ function buildTerrain(world, ci, cx0, cz0) {
   g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
   // Dlaždice sdílejí čísla vrcholů v paměti. Každá ale uvolňuje vlastní atribut ve vykreslovači.
   const coarseStep = (world.terrainDetail.has(ci) ? world.tDetailG : world.tG) / G;
-  const indices = ci === world.bankTerrainTile && grade && coarseStep >= 2 && coarseStep % 2 === 0 && N % coarseStep === 0
+  const indices = (ci === world.bankTerrainTile || world.underpassTiles?.has(ci)) && grade && coarseStep >= 2 && coarseStep % 2 === 0 && N % coarseStep === 0
     ? localGradeIndices(N, coarseStep, world.gradeTerrain.get(ci)) : terrainIndices.get(N);
   g.setIndex(new THREE.BufferAttribute(indices, 1));
   g.computeBoundingSphere();
@@ -1853,6 +1868,7 @@ export class ChunkManager {
       ch.terrainMat = makeTerrainMaterial(ch.tex, portals, pavingChunk(x0, z0), QUALITY.heritageDetail, mask, water);
       const m = new THREE.Mesh(geo, ch.terrainMat);
       m.receiveShadow = true; m.renderOrder = 5;
+      if (QUALITY.name === 'low') trimSurfaceToCamera(m);
       add(m, geo);
     } else if (ch.stage === 1) {
       ch.structure = w.structures?.build(ci, ch.group, this.solidMat);
@@ -1891,6 +1907,10 @@ export class ChunkManager {
       const order = (base) => ORIGINAL_IMAGE ? base : decalOrder(base, ci, w.cols);
       if (roads.asphalt) { const m = new THREE.Mesh(roads.asphalt, this.asphaltMat); m.renderOrder = order(14); m.receiveShadow = true; add(m, roads.asphalt); ch.asphalt = m; }
       if (roads.marks) { const m = new THREE.Mesh(roads.marks, this.marksMat); m.renderOrder = order(16); m.receiveShadow = true; add(m, roads.marks); ch.marks = m; }
+      if (QUALITY.name === 'low') {
+        if (ch.asphalt) trimSurfaceToCamera(ch.asphalt);
+        if (ch.marks) trimSurfaceToCamera(ch.marks);
+      }
       const entries = w.traffic.chunks.get(ci);
       if (entries && (entries.signs.length || entries.heads.length || entries.posts?.length)) {
         ch.traffic = buildTrafficMeshes(w, entries);
@@ -1923,7 +1943,7 @@ export class ChunkManager {
     const solid = new SolidBuf();
     for (let q = 0; q < pieces.length; q += 3) {
       const i = pieces[q];
-      if (!w.sidewalks[i] || w.tunnelRoads.has(i) || w.rondel?.trackAccess.has(i) || w.rondel?.elevated.has(i)) continue;
+      if (!w.sidewalks[i] || w.tunnelRoads.has(i) || w.rondel?.trackAccess.has(i) || w.elevatedWidths?.has(i)) continue;
       drawSidewalks(w, solid, i, pieces[q + 1], pieces[q + 2]);
     }
     for (const corner of w.cornerTiles?.get(ci) ?? []) {

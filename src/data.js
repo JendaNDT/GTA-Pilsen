@@ -59,6 +59,7 @@ const FILES = [
   ['trafficProfiles', 'data/traffic-profiles.json', 212_000],
   ['landscape', 'data/landscape.bin', 1_354_000],
   ['gradeSeparations', 'data/grade-separations.json', 460_000],
+  ['underpasses', 'data/underpasses.json', 438_000],
   ['lampSurvey', 'data/lamp-survey.json', 75_000],
   ['stopSurvey', 'data/stop-survey.json', 18500],
   ['soundPlaces', 'data/sound-places.json', 2_000],
@@ -176,6 +177,11 @@ const optionalLayers = {
   soundPlaces: data => rowsOf(data?.weirs, 2),
   treeTypes: data => rowsOf(data?.trees, 2) && rowsOf(data?.land, 2),
   buildingMaterials: data => rowsOf(data?.surfaces, 3),
+  underpasses: data => data?.version === 1 && rowsOf(data.terrain, 3) &&
+    data.terrain.every(row => row.every(Number.isSafeInteger)) && gradeProfiles(data.decks) &&
+    Array.isArray(data.approaches) && data.approaches.every(row => Array.isArray(row) && row.length === 4 &&
+      row.slice(0, 3).every(Number.isSafeInteger) && row[0] >= 0 && row[1] >= 0 && row[2] > row[1] &&
+      Array.isArray(row[3]) && row[3].length >= 2 && row[3].every(Number.isSafeInteger)),
   gradeSeparations: data => data?.version === 1 && data.grid === 2 &&
     rowsOf(data.terrain, 3) && rowsOf(data.clear ?? [], 3) && gradeProfiles(data.roads) &&
     gradeProfiles(data.rails) && rowsOf(data.trackUnderpasses ?? [], 6) &&
@@ -221,6 +227,7 @@ export async function loadAll(onProgress) {
     out.landscape.header.sources?.[name] === fingerprint(name))) delete out.landscape;
   if (out.gradeSeparations && (!out.landscape || !['terrain', 'roads', 'rails', 'landscape'].every((name) =>
     out.gradeSeparations.sources?.[name] === fingerprint(name)))) delete out.gradeSeparations;
+  if (out.underpasses && (!out.gradeSeparations || out.underpasses.source !== fingerprint('gradeSeparations'))) delete out.underpasses;
   if (out.treeTypes && (out.treeTypes.osm !== out.meta.osmTimestamp ||
     !['trees','land'].every(name => out.treeTypes.sources?.[name] === fingerprint(name)))) delete out.treeTypes;
   if (out.buildingMaterials && (out.buildingMaterials.osm !== out.meta.osmTimestamp ||

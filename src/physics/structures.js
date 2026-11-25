@@ -10,11 +10,14 @@ export class RoadStructures {
     this.tiles = new Map();
     for (let i = 0; i < world.rCount; i++) {
       const flags = world.r.flags[i];
-      if (flags & RF.SHARED_DECK || (!(flags & RF.BRIDGE) && !world.rondel?.elevated.has(i))) continue;
+      if (flags & RF.SHARED_DECK || (!(flags & RF.BRIDGE) && !world.elevatedWidths?.has(i))) continue;
       const a = world.rOff[i], b = world.rOff[i + 1] - 1;
       const path = densePath(world.rpx, world.rpz, world.rpy, a, b, a, b, 4);
       this.strip(offsetDeck(path, world.deckCalibrations.get(i)), world.deckHalfWidth(i),
         null, i === world.prazdrojRoad ? prazdrojThickness : undefined);
+    }
+    for (const [road, entry] of world.upperApproaches ?? []) {
+      for (const { path } of entry.spans) this.strip(path, world.r.w[road] / 2, null);
     }
     if (world.roadApproach) this.strip(world.roadApproach.path, world.roadApproach.halfWidth, null);
     for (const rail of world.rails) if (rail.y) {

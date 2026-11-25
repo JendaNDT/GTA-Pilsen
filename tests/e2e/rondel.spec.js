@@ -68,11 +68,19 @@ test('Rondel má průjezdný okruh i obě úrovně u mostů', async ({ page }) =
 
     const lower = world.nearestRoad(-137, -707, 6, 13, 0, {}, world.heightAt(-137, -707), true);
     const through = roadPath(lower.road).filter(([, z]) => z < -700 && z > -885);
-    return { sections: ring.length, closed: path === first, upper: drive(loop, true), lower: drive(through, false),
+    const bumps = [
+      [[-150.10, -839.79], [-150.83, -841.65], [-151.56, -843.51]],
+      [[-155.62, -745.78], [-155.57, -743.78], [-155.52, -741.78]],
+    ].map(points => {
+      const [a, b, c] = points.map(([x, z]) => world.heightAt(x, z));
+      return Math.abs(b - (a + c) / 2);
+    });
+    return { bumps, sections: ring.length, closed: path === first, upper: drive(loop, true), lower: drive(through, false),
       street: world.roadNames[r.name[lower.road]] };
   });
   expect(result.sections).toBeGreaterThanOrEqual(9);
   expect(result.closed).toBe(true);
+  expect(Math.max(...result.bumps)).toBeLessThan(0.025);
   expect(result.street).toBe('Karlovarská');
   for (const pass of [result.upper, result.lower]) {
     expect(pass.completed, JSON.stringify(result)).toBe(true);
