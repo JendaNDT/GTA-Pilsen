@@ -46,7 +46,7 @@ const HELP_HTML = IS_TOUCH ? `
     <tr><td>W · S · Mezerník</td><td>ve směně MHD plyn · brzda · nouzová brzda</td></tr>
     <tr><td>J</td><td>vzít rychlý rozvoz jídla nebo zrušit aktivní zakázku</td></tr>
     <tr><td>M</td><td>mapa okolí (přibliž kolečkem, vyber místo a potvrď Navigovat sem)</td></tr>
-    <tr><td>Myš</td><td>tažením otáčíš kameru, kolečkem přibližuješ</td></tr>
+    <tr><td>Myš</td><td>tažením otáčíš kameru, kolečkem přibližuješ. Při volném rozhlížení pěšky klikni do hry a otáčej myší. Esc uvolní kurzor.</td></tr>
     ${DEBUG ? '<tr><td>F8 · F9</td><td>kolizní povrchy · panel měření výkonu</td></tr>' : ''}
     <tr><td>O</td><td>fotorežim · pohyb WASD, nahoru E, dolů Q, otáčení tažením</td></tr>
     <tr><td>C · H · L · R</td><td>kamera · klakson · dálková světla · vrátit na silnici</td></tr>
@@ -190,7 +190,8 @@ async function boot() {
   };
   if (!canSave) $('save-status').textContent = 'Prohlížeč nyní neumožňuje ukládání postupu.';
   const perf = DEBUG || PARAMS.get('adapt') !== '0' ? createFrameProfiler(game, { sampleEvery: DEBUG ? 1 : 16 }) : null;
-  initInput(canvas);
+  const syncMouseLock = initInput(canvas, () =>
+    input.enabled && game.freeLook && game.mode === 'foot' && !game.mapOpen && !game.paused);
   if (PARAMS.has('hour') || PARAMS.has('date')) {
     game.setClock(PARAMS.get('date'), PARAMS.has('hour') ? +PARAMS.get('hour') : game.hour);
   }
@@ -239,6 +240,7 @@ async function boot() {
   };
   const openMenu = () => {
     running = false; input.enabled = false; game.paused = true;
+    syncMouseLock();
     perfPanel?.close();
     menu.classList.remove('hidden'); game.hud.show(false);
     game.audio.suspend(); game.save();
@@ -273,6 +275,7 @@ async function boot() {
     if (game.graphicsBusy || game.mapOpen) return;
     photoFromPlay = running;
     running = false; input.enabled = false; game.paused = true;
+    syncMouseLock();
     input.pressed.clear();
     game.audio.suspend();
     game.hud.show(false); menu.classList.add('hidden');
@@ -337,6 +340,10 @@ async function boot() {
   const heliAssist = $('heli-assist');
   heliAssist.checked = game.heliAssist;
   heliAssist.addEventListener('change', () => { game.heliAssist = heliAssist.checked; game.save(); });
+  const freeLook = $('free-look');
+  freeLook.checked = game.freeLook;
+  freeLook.disabled = !canvas.requestPointerLock;
+  freeLook.addEventListener('change', () => { game.freeLook = freeLook.checked; game.save(); });
   const steering = $('steering');
   steering.value = game.steering;
   steering.addEventListener('change', () => { game.steering = steering.value; game.save(); });
@@ -423,6 +430,7 @@ async function boot() {
       game.update(dt, elapsed);
       game.render();
     }
+    syncMouseLock();
     if (perf) game.adapt(elapsed, perf.summary);
   };
   await renderer.setAnimationLoop(loop);

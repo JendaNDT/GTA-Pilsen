@@ -4,10 +4,11 @@ import { IS_TOUCH } from '../config.js';
 export const input = {
   moveX: 0,          // -1 vlevo … 1 vpravo
   moveY: 0,          // -1 vzad … 1 vpřed
-  run: false,
+  runAmount: 0,
   handbrake: false,  // mezerník (ruční brzda / skok / stoupání)
   lift: 0,
   down: false,       // Shift ve vrtulníku = klesání
+  freeLooking: false,
   lookDX: 0, lookDY: 0, zoom: 0,
   pressed: new Set(),
   enabled: false,
@@ -34,8 +35,20 @@ function refreshKeys() {
 const kb = { x: 0, y: 0, run: false, space: false };
 const touch = { x: 0, y: 0, gas: false, brake: false, hand: false, active: false };
 
-export function initInput(canvas) {
+export function initInput(canvas, allowFreeLook) {
+  let dragging = false;
+  const locked = () => document.pointerLockElement === canvas;
+  const release = () => {
+    dragging = false;
+    input.lookDX = input.lookDY = 0;
+    if (locked()) document.exitPointerLock();
+  };
   addEventListener('keydown', (e) => {
+    if (e.code === 'Escape' && locked()) {
+      e.preventDefault();
+      release();
+      return;
+    }
     if (!input.enabled) { if (e.code === 'Escape') input.pressed.add('menu'); return; }
     if (e.code === 'Space' || e.code.startsWith('Arrow')) e.preventDefault();
     if (!e.repeat && KEYMAP[e.code]) input.pressed.add(KEYMAP[e.code]);
@@ -43,19 +56,35 @@ export function initInput(canvas) {
     refreshKeys();
   });
   addEventListener('keyup', (e) => { keys.delete(e.code); refreshKeys(); });
-  addEventListener('blur', () => { keys.clear(); refreshKeys(); });
+  addEventListener('blur', () => { keys.clear(); refreshKeys(); release(); });
 
   // myš: tažením se otáčí kamera, kolečkem se přibližuje
-  let dragging = false;
-  canvas.addEventListener('mousedown', (e) => { dragging = true; e.preventDefault(); });
+  canvas.addEventListener('pointerdown', async (e) => {
+    if (e.pointerType !== 'mouse' || !input.enabled) return;
+    dragging = true;
+    if (e.button === 0 && allowFreeLook() && !locked() && canvas.requestPointerLock) {
+      try {
+        await canvas.requestPointerLock();
+      } catch {
+        // Prohlížeč může zámek odmítnout. Kamera se pak stále ovládá tažením.
+      }
+    }
+  });
+  document.addEventListener('pointerlockchange', () => {
+    input.freeLooking = locked() && allowFreeLook();
+    dragging = false;
+    input.lookDX = input.lookDY = 0;
+    if (locked() && !allowFreeLook()) release();
+  });
   addEventListener('mouseup', () => { dragging = false; });
   addEventListener('mousemove', (e) => {
-    if (dragging && input.enabled) { input.lookDX += e.movementX; input.lookDY += e.movementY; }
+    if (input.enabled && (locked() ? allowFreeLook() : dragging)) { input.lookDX += e.movementX; input.lookDY += e.movementY; }
   });
   canvas.addEventListener('wheel', (e) => { input.zoom += Math.sign(e.deltaY); e.preventDefault(); }, { passive: false });
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
   if (IS_TOUCH) initTouch(canvas);
+  return () => { if (locked() && !allowFreeLook()) release(); };
 }
 
 let updateTouchLabels;
@@ -147,7 +176,8 @@ export function pollInput(mode) {
   }
   input.moveX = Math.abs(x) < 0.12 ? 0 : x;
   input.moveY = Math.abs(y) < 0.12 ? 0 : y;
-  input.run = kb.run || (touch.active && Math.hypot(touch.x, touch.y) > 0.85);
+  const sprint = touch.active ? Math.max(0, Math.min(1, (Math.hypot(touch.x, touch.y) - 0.7) / 0.3)) : 0;
+  input.runAmount = kb.run ? 1 : sprint * sprint * (3 - 2 * sprint);
   input.handbrake = kb.space || touch.hand;
   input.down = kb.run;
   input.lift = Number(input.handbrake || touch.gas) - Number(input.down || touch.brake);

@@ -57,25 +57,27 @@ export class Player {
     this.y = y === null ? w.groundY(x, z, w.heightAt(x, z) + 1) : y;
     this.vy = 0; this.vx = this.vz = 0; this.grounded = true;
     this.fallStart = this.y;
+    this.turn = 0;
     this.character?.place(this.x, this.y, this.z);
     this.sync(0);
   }
 
   /** dirX/dirZ = požadovaný směr pohybu ve světě (délka 0–1). */
-  update(dt, dirX, dirZ, run, jump) {
+  update(dt, dirX, dirZ, runAmount, jump) {
     const w = this.world;
     const len = Math.hypot(dirX, dirZ);
     this.swimming = this.y <= w.heightAt(this.x, this.z) + 0.3 && w.isWater(this.x, this.z) &&
       (!w.onRoad(this.x, this.z, 0.3) || w.deckAt(this.x, this.z, Infinity) > this.y + 1.8);
-    let speed = this.swimming ? 1.7 : run ? 6.4 : 2.4;
+    let speed = this.swimming ? 1.7 : 2.4 + 4 * runAmount;
     if (this.stun > 0) { this.stun -= dt; speed = 0; jump = false; }
+    const yawBefore = this.yaw;
     let tvx = 0, tvz = 0;
     if (len > 0.05) {
       tvx = (dirX / Math.max(1, len)) * speed; tvz = (dirZ / Math.max(1, len)) * speed;
       const want = Math.atan2(dirX, dirZ);
       this.yaw += clamp(wrapAngle(want - this.yaw), -12 * dt, 12 * dt);
     }
-    const yawBefore = this.yaw, wasGrounded = this.grounded;
+    const wasGrounded = this.grounded;
     const k = Math.min(1, dt * (this.grounded ? 12 : 2.5));
     this.vx += (tvx - this.vx) * k; this.vz += (tvz - this.vz) * k;
     this.setWalking(true);

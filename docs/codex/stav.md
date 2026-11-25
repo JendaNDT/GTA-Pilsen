@@ -1,3 +1,7 @@
+# E38 · Ovládání pěší postavy
+
+Dokončen je náklon při běhu do zatáčky, volná kamera na myši a plynulý běh na dotykové páčce. Prošlo 328 jednotkových testů, sestavení a 28 cílených zkoušek ve dvou vykreslovačích. [Snímky a výsledky měření](../E38.md)
+
 # Převzetí auditu a zvuků do hlavní větve
 
 Opravy E31–E36 byly sloučeny se zvukovými úpravami E37 nad revizí `529da10`. Společné sestavení prošlo 328 testy JavaScriptu, 29 testy datových nástrojů a 52 cílenými zkouškami v Chromiu na WebGL 2 a WebGPU. Ty zahrnují předávání uložené hry, mapu a pěší trasy, rozvoz, vrtulník, načítání volitelných vrstev, potopení auta i zvuky. Známé omezení posledního zápisu při pádu celého prohlížeče popisuje [protokol převzetí](../E36.md).

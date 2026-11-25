@@ -57,6 +57,7 @@ export class Game {
   constructor(renderer, data, physics) {
     this.physics = physics;
     this.steering = 'arcade';
+    this.freeLook = false;
     this.heliAssist = true;
     this.driver = null;
     this.falls = new Falls(this);
@@ -109,7 +110,7 @@ export class Game {
       if (this.mode === 'foot' && !this.falls.active.has(this.player)) {
         const fx = Math.sin(this.camYaw), fz = Math.cos(this.camYaw);
         const dx = fx * input.moveY - fz * input.moveX, dz = fz * input.moveY + fx * input.moveX;
-        this.fallDamage += this.player.update(dt, dx, dz, input.run, input.handbrake);
+        this.fallDamage += this.player.update(dt, dx, dz, input.runAmount, input.handbrake);
         // Virtuální kapsle může ustoupit před kapotou ještě před dotykem vnitřního tělesa.
         const contacts = this.player.character.character.GetActiveContacts();
         for (let i = 0; i < contacts.size(); i++) {
@@ -355,6 +356,7 @@ export class Game {
       }
       const found = new Set(s.found || []);
       for (const lm of this.jobs.landmarks) lm.found = found.has(lm.name);
+      this.freeLook = s.freeLook === true;
       this.heliAssist = s.heliAssist !== false;
       this.steering = s.steering === 'realistic' ? 'realistic' : 'arcade';
       this.garage.load(s.garage);
@@ -396,6 +398,7 @@ export class Game {
       localStorage.setItem(SAVE_KEY, JSON.stringify({
         v: 2, money: this.money, date: formatDay(this.clock.day), hour: this.hour, clockVisible: this.clockVisible,
         clockMode: this.clock.followsPrague ? 'prague' : 'manual',
+        freeLook: this.freeLook,
         soundEnabled: !this.audio.muted, orthophotoEnabled: this.orthophotoEnabled,
         flareEnabled: this.flareEnabled, motionEnabled: this.motionEnabled, fullscreenEnabled: this.fullscreenEnabled, weatherMode: this.weather.mode, particlesEnabled: this.particles.enabled, fallsEnabled: this.falls.enabled, graphics: this.graphics, steering: this.steering, heliAssist: this.heliAssist,
         car: this.mode === 'car' ? {
@@ -811,7 +814,7 @@ export class Game {
       }
     } else if (this.mode === 'heli') { height = 2; base = 15; if (this.heli.speed > 3 || !this.heli.landed) follow = this.heli.yaw; }
     else if (this.mode === 'transit') { height = 2.6; base = this.ride.isTram ? 20 : 15; follow = this.ride.yaw; }
-    else if (Math.hypot(this.player.vx, this.player.vz) > 1.2 && this.lookIdle > 1.6) follow = this.player.yaw;
+    else if (!input.freeLooking && Math.hypot(this.player.vx, this.player.vz) > 1.2 && this.lookIdle > 1.6) follow = this.player.yaw;
     if (this.camMode === 1) base *= 1.9;
     if (follow !== null && this.lookIdle > (this.mode === 'foot' ? 1.6 : 0.9)) {
       const rate = this.mode === 'foot' ? 0.9 : 2.6;

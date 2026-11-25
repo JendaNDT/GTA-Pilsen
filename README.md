@@ -67,6 +67,7 @@ Vydání 0.2.0 (23. 11. 2026, revize `99b1463`) obsahuje společnou fyziku vozid
 | Klávesa | Co dělá |
 | --- | --- |
 | W A S D / šipky | chůze, řízení |
+| Myš | tažením otáčíš kameru. V nastavení můžeš zapnout volné rozhlížení při chůzi. Kliknutím do hry zachytíš kurzor, Esc ho uvolní. |
 | Shift | běh (ve vrtulníku klesání) |
 | Mezerník | ruční brzda, skok, ve vrtulníku stoupání |
 | F nebo E | nastoupit / vystoupit, ve směně MHD dveře |
@@ -79,6 +80,8 @@ Vydání 0.2.0 (23. 11. 2026, revize `99b1463`) obsahuje společnou fyziku vozid
 | F8 · F9 | v režimu `?debug` zobrazit kolize nebo otevřít měření výkonu |
 | N · Esc | posunout čas o 3 hodiny · menu se zakázkami, garáží a směnami MHD |
 | ⛶ · F11 | celá obrazovka; po kliknutí na **Hrát** se zapne sama (vypíná se v **Nastavení**), Esc ji ukončí |
+
+Na telefonu určuje rychlost chůze vychýlení páčky. V poslední třetině její dráhy přejde postava plynule do běhu. [Ovládání pěšky a ukázka zatáčky](docs/E38.md)
 
 Na dotykové obrazovce se objeví páčka a tlačítka. Telefon automaticky použije nižší grafickou
 kvalitu. Na počítači ji lze zapnout parametrem `?quality=low`. Ve vyšší kvalitě zobrazí `?wet=1`
