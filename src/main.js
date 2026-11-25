@@ -202,32 +202,41 @@ async function boot() {
     game.setClock(PARAMS.get('date'), PARAMS.has('hour') ? +PARAMS.get('hour') : game.hour);
   }
 
-  // představí okolí startu, ať hra nezačíná v prázdnu
-  const f = game.focus;
-  // nejdřív terén v celém dohledu a úplně dostavěné okolí startu; zbytek se dostaví za hry
-  game.chunks.update(f.x, f.z, QUALITY.view, 0);
-  const total = Math.max(1, game.chunks.pendingStart);
-  while (game.chunks.pendingStart > 0) {
-    game.chunks.update(f.x, f.z, QUALITY.view, 6);
-    bar.style.width = `${80 + Math.round((1 - game.chunks.pendingStart / total) * 20)}%`;
-    await new Promise((r) => setTimeout(r, 0));
-  }
-  bar.style.width = '100%';
+  loadText.textContent = 'Připravuji okolí do 1 km…';
+  await game.chunks.prepareStart(game.focus, QUALITY.view, fraction => {
+    bar.style.width = `${80 + Math.round(fraction * 15)}%`;
+  });
   game._updateCamera(0.016);
   const initialCamera = !game.hasSave && {
     position: game.camera.position.clone(), rotation: game.camera.quaternion.clone()
   };
-  if (initialCamera) {
-    game.camera.position.set(-32, 7, 108);
-    game.camera.lookAt(1, 25, 4);
-  }
   game.env.update(game.camera);
   loadText.textContent = 'Připravuji vykreslování…';
   await game.env.prepareSkyLight();
   if (game.postfx) await game.postfx.prepare();
   else await renderer.compileAsync(game.scene, game.camera);
+  canvas.style.visibility = 'hidden';
+  const facing = game.camera.quaternion.clone();
+  const up = new THREE.Vector3(0, 1, 0);
+  for (let i = 0; i < 8; i++) {
+    game.camera.quaternion.copy(facing);
+    game.camera.rotateOnWorldAxis(up, i * Math.PI / 4);
+    game.env.update(game.camera);
+    game.render();
+    await new Promise(resolve => setTimeout(resolve, 0));
+  }
+  await renderer.backend.device?.queue.onSubmittedWorkDone();
+  game.camera.quaternion.copy(facing);
+  if (initialCamera) {
+    game.camera.position.set(-32, 7, 108);
+    game.camera.lookAt(1, 25, 4);
+  }
+  game.postfx?.resetHistory();
+  game.env.update(game.camera);
+  bar.style.width = '100%';
   game.render();
 
+  canvas.style.visibility = '';
   $('loading').classList.add('hidden');
   $('menu-buttons').classList.remove('hidden');
   $('panel-help').innerHTML = HELP_HTML;

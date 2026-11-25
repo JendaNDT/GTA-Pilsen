@@ -1231,12 +1231,7 @@ export class Game {
     this.env.setHour(this.hour, this.clock.day);
     this.env.update(this.camera);
     this.postfx = createPostFX(this.renderer, this.scene, this.camera, this.world, this.env);
-    const { x, y, z } = this.focus;
-    this.chunks.update(x, z, QUALITY.view, 0, y);
-    while (this.chunks.pendingStart > 0) {
-      this.chunks.update(x, z, QUALITY.view, 6, y);
-      await new Promise(requestAnimationFrame);
-    }
+    await this.chunks.prepareStart(this.focus, QUALITY.view);
     await this.env.prepareSkyLight();
     if (this.postfx) await this.postfx.prepare();
     else await this.renderer.compileAsync(this.scene, this.camera);

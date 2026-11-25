@@ -11,6 +11,8 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 ## Co ve hře je
 
+- Před spuštěním se připraví celé okolí do jednoho kilometru od hráče, také při pokračování z uložené pozice. [Načítání a měření za jízdy](docs/E47.md)
+
 - Po dopadení za lehčí čin se objevíš pěšky u nejbližší služebny. Pokud jsi během pátrání srazil chodce, vrátíš se po zatčení před věznici Bory. Služebny můžeš vyhledat v mapě třeba zadáním „služebna Rokycany“. [Pravidla a ověření míst](docs/E46.md)
 
 - **Plzeňské dominanty.** Jubilejní branou Prazdroje se dá projet. Z vrtulníku rozeznáš tribuny ve Štruncových sadech, střechy Techmanie i vějíř lochotínského amfiteátru. [Všech dvanáct míst před úpravou a po ní](docs/E43.md)

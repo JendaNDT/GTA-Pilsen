@@ -1,3 +1,7 @@
+# E47 · Kilometr okolí před startem
+
+Dokončeno pro novou i uloženou hru. Za jízdy se příprava silnic dělí podle času. Prošlo sestavení, 351 testů JavaScriptu a 34 cílených zkoušek v Chromiu. Na stejné trase klesl počet kroků dostavování nad 10 ms ze 14 na 6. Výkon na skutečném telefonu zůstává neověřený. [Snímky a srovnání](../E47.md)
+
 # E46 · Návrat po zatčení
 
 Hra používá 25 pojmenovaných služeben na území celé mapy. Po dopadení za sražení chodce hráče vrátí před věznici Bory. Závažnost se uchovává i po uložení během honičky. Všech 26 míst návratu prošlo kontrolou ve hře. Prošlo sestavení, 350 jednotkových testů a 48 zkoušek v Chromiu. U druhé rokycanské služebny v Dělostřelců zůstává otevřená otázka současného provozu. [Výběr míst, snímky a výsledky testů](../E46.md)

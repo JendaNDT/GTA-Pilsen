@@ -1,3 +1,4 @@
+import { START_RADIUS, inStartArea } from './start-area.js';
 import { paintStadium } from './dominanty/grounds.js';
 import { inSady, paintSady } from './sady-layout.js';
 import { buildSady } from './sady-model.js';
@@ -898,7 +899,7 @@ function buildTunnel(world, tunnel) {
   return { solid: solid.geometry(), lights: lights.geometry() };
 }
 
-function buildRoads(world, ci, manager) {
+function* buildRoads(world, ci, manager) {
   const pieces = world.rPieces[ci];
   const R = world.r, px = world.rpx, pz = world.rpz, py = world.rpy, off = world.rOff;
   const asphalt = QUALITY.roadDetail ? new RoadBuf() : new DecalBuf(), marks = new DecalBuf(), solid = new SolidBuf();
@@ -925,9 +926,13 @@ function buildRoads(world, ci, manager) {
     const covered = ORIGINAL_IMAGE ? null : Uint8Array.from({ length: D.n }, (_, k) => world.insideOtherCarriageway(-1, D.x[k], D.z[k]) ? 1 : 0);
     ribbon(world, asphalt, D, 1.25, COL.tramBed, 0, 0.004, false, false, false, null, covered);
   };
-  if (rails && !ORIGINAL_IMAGE) for (const ri of rails) if (world.rails[ri].cls === 0) tramBed(ri);
+  if (rails && !ORIGINAL_IMAGE) for (const ri of rails) {
+    if (world.rails[ri].cls === 0) tramBed(ri);
+    yield;
+  }
   if (pieces) {
     for (let q = 0; q < pieces.length; q += 3) {
+      if (q % 12 === 0) yield;
       const i = pieces[q], s = pieces[q + 1], e = pieces[q + 2];
       const a = off[i], b = off[i + 1] - 1;
       const cls = R.cls[i], w = R.w[i], flags = R.flags[i];
@@ -1004,6 +1009,7 @@ function buildRoads(world, ci, manager) {
       if (up) asphalt.i.push(ids[0], ids[k], ids[k + 1]); else asphalt.i.push(ids[0], ids[k + 1], ids[k]);
     }
   }
+  yield;
   const apron = world.roadApproach;
   if (apron?.tile === ci) {
     ribbon(world, asphalt, apron.path, apron.halfWidth, roadColor(R.cls[apron.road]), 0, 0, false, false, false);
@@ -1031,6 +1037,7 @@ function buildRoads(world, ci, manager) {
   // koleje
   if (rails) {
     for (const ri of rails) {
+      yield;
       const rail = world.rails[ri];
       const D = railPath(ri);
       if (rail.cls === 0) { if (ORIGINAL_IMAGE) tramBed(ri); }
@@ -1049,6 +1056,7 @@ function buildRoads(world, ci, manager) {
     drawClosure(world, solid, fixture.closure);
     furniture.push({ fixture, start, end: solid.p.length });
   }
+  yield;
   const traffic = world.traffic.chunks.get(ci);
   if (traffic) drawTrafficMarkings(world, marks, traffic);
   return { asphalt: asphalt.geometry(), marks: marks.geometry(), solid: solid.geometry(), furniture };
@@ -1827,7 +1835,7 @@ export class ChunkManager {
   }
 
   /** Provede další krok stavby dlaždice. */
-  _step(ci, ch, focusX, focusZ) {
+  _step(ci, ch, focusX, focusZ, deadline) {
     const w = this.world;
     const cx = ci % w.cols, cz = Math.floor(ci / w.cols);
     const x0 = w.minX + cx * CHUNK, z0 = w.minZ + cz * CHUNK;
@@ -1861,11 +1869,19 @@ export class ChunkManager {
       ch.heritage = this.heritage.build(ci, ch);
       this._buildBuildings(ci, ch);
     } else if (ch.stage === 2) {
-      if (w.sidewalks) {
-        if (ch.dist < SIDEWALK_BUILD) this._buildSidewalks(ci, ch);
+      if (!ch.roadWork && w.sidewalks) {
+        if (ch.startTile || ch.dist < SIDEWALK_BUILD) this._buildSidewalks(ci, ch);
         else ch.sidewalkPending = true;
       }
-      const roads = buildRoads(w, ci, this);
+      // Buffer podrží rozpracovanou silnici do příštího snímku. Síť připojíme až celou.
+      ch.roadWork ??= buildRoads(w, ci, this);
+      let part;
+      do {
+        part = ch.roadWork.next();
+        if (!part.done && performance.now() >= deadline) return;
+      } while (!part.done);
+      ch.roadWork = null;
+      const roads = part.value;
       if (roads.solid) { const m = new THREE.Mesh(roads.solid, this.solidMat); m.castShadow = true; m.receiveShadow = true; add(m, roads.solid); }
       if (roads.furniture.length) ch.roadFurniture = attachRoadFurniture(w.breakables, ch.group,
         roads.solid, this.solidMat, roads.furniture);
@@ -1947,27 +1963,48 @@ export class ChunkManager {
     this.world.removeObstacles(ch.obstacles);
   }
 
+  async prepareStart({ x, y, z }, view, progress) {
+    this.lastCenter = -1;
+    this.update(x, z, view, 0, y, true);
+    const total = Math.max(1, this.pendingStart);
+    let detailDeadline;
+    do {
+      this.update(x, z, view, 6, y, true);
+      progress?.(Math.min(1, 1 - this.pendingStart / total));
+      if (!this.pendingStart) {
+        // Nepovinný síťový detail smí dorazit později i při nedostupném serveru.
+        detailDeadline ??= performance.now() + 1500;
+        if (!(this.heritage.fetching || this.orthophotoPending || this.world.structures?.loading)
+          || performance.now() >= detailDeadline) break;
+      }
+      await new Promise(resolve => setTimeout(resolve, this.pendingStart ? 0 : 16));
+    } while (true);
+  }
+
   /** Udržuje načtené dlaždice kolem bodu; za jedno volání provede nejvýš `budget` kroků stavby. */
-  update(x, z, view, budget = 1, y) {
+  update(x, z, view, budget = 1, y, preparing = false) {
+    const deadline = !preparing && budget > 0 && budget <= 2 ? performance.now() + 3 : Infinity;
     const w = this.world;
     const ccx = Math.floor((x - w.minX) / CHUNK), ccz = Math.floor((z - w.minZ) / CHUNK);
     const center = ccz * 4096 + ccx;
     const newCenter = center !== this.lastCenter || this._view !== view;
     if (newCenter) {
       this.lastCenter = center; this._view = view;
-      const rad = Math.ceil(view / CHUNK) + 1;
+      const rad = Math.ceil((preparing ? Math.max(view, START_RADIUS) : view) / CHUNK) + 1;
       const want = new Set();
       for (let dz = -rad; dz <= rad; dz++) for (let dx = -rad; dx <= rad; dx++) {
         const cx = ccx + dx, cz = ccz + dz;
         if (cx < 0 || cz < 0 || cx >= w.cols || cz >= w.rows) continue;
-        if (Math.hypot(dx, dz) * CHUNK > view + CHUNK * 0.8) continue;
+        const centerX = w.minX + (cx + 0.5) * CHUNK, centerZ = w.minZ + (cz + 0.5) * CHUNK;
+        const visible = Math.hypot(dx, dz) * CHUNK <= view + CHUNK * 0.8;
+        const startTile = preparing && inStartArea(x, z, centerX, centerZ, CHUNK);
+        if (!visible && !startTile) continue;
         const ci = cz * w.cols + cx;
         want.add(ci);
         if (!this.chunks.has(ci)) {
           const group = new THREE.Group();
           group.matrixAutoUpdate = false;
           this.scene.add(group);
-          const centerX = w.minX + (cx + 0.5) * CHUNK, centerZ = w.minZ + (cz + 0.5) * CHUNK;
           const orthoTile = this.orthophoto && this.landIndex.polys[ci]?.some((i) => ORTHOPHOTO_LAND.has(w.l.cls[i]))
             ? orthophotoTile(ci, w.cols, CHUNK) : null;
           this.chunks.set(ci, {
@@ -1977,9 +2014,18 @@ export class ChunkManager {
             cx: centerX, cz: centerZ,
           });
         }
+        const ch = this.chunks.get(ci);
+        if (preparing) ch.startTile = startTile;
+        ch.group.visible = visible;
       }
       for (const [ci, ch] of this.chunks) {
-        if (!want.has(ci)) { this._dispose(ch); this.chunks.delete(ci); }
+        if (want.has(ci)) continue;
+        if (ch.startTile && inStartArea(x, z, ch.cx, ch.cz, CHUNK)) {
+          ch.group.visible = false;
+        } else {
+          this._dispose(ch);
+          this.chunks.delete(ci);
+        }
       }
     }
     // vzdálenosti, viditelnost lamp a výběr práce: nejdřív terén všude, pak detaily od nejbližších
@@ -2005,7 +2051,7 @@ export class ChunkManager {
       }
       if (ch.stage >= 2 && ch.cityData) {
         todo.push([d + 1e6 - 0.01, ci, ch, true]);
-        if (d < 520) pendingStart++;
+        if (preparing && ch.startTile) pendingStart++;
       }
       if (ch.heritage) this.heritage.update(ch.heritage, x, z, y);
       if (ch.lamps) { ch.lamps.poles.visible = d < 560; ch.lamps.pools.visible = night && d < 1100; }
@@ -2028,7 +2074,7 @@ export class ChunkManager {
       }
       if (ch.stage < STAGES) {
         pending++;
-        if (ch.stage === 0 || d < 520) pendingStart += ch.stage === 0 && d >= 520 ? 1 : STAGES - ch.stage;
+        if (preparing) pendingStart += ch.startTile ? STAGES - ch.stage : Number(ch.stage === 0);
         todo.push([ch.stage === 0 ? d : d + 1e6, ci, ch]);
       }
       else if (this.texNear !== this.texFar && ch.tex) {
@@ -2065,19 +2111,20 @@ export class ChunkManager {
     if (todo.length) {
       todo.sort((a, b) => a[0] - b[0]);
       for (let k = 0; k < todo.length && done < budget; k++) {
+        if (done && performance.now() >= deadline) break;
         const [, ci, ch, city] = todo[k];
         if (city) {
           ch.heritage = this.heritage.build(ci, ch);
           this._buildBuildings(ci, ch);
           this.heritage.update(ch.heritage, x, z, y);
-          if (ch.dist < 520) pendingStart--;
+          if (preparing && ch.startTile) pendingStart--;
           done++;
           continue;
         }
-        this._step(ci, ch, x, z); done++;
+        this._step(ci, ch, x, z, deadline); done++;
         if (ch.stage === 2 && ch.heritage) this.heritage.update(ch.heritage, x, z, y);
         if (ch.stage >= STAGES) pending--;
-        if (ch.stage === 1 || ch.dist < 520) pendingStart--;
+        if (preparing && (ch.stage === 1 || ch.startTile)) pendingStart--;
       }
     } else if (rebake && !orthoRebake && budget > 0) {
       const ch = rebake[2];
@@ -2086,7 +2133,7 @@ export class ChunkManager {
       ch.tex = tex; ch.texSize = rebake[3];
       ch.terrainMat.map = tex;
     }
-    if (sidewalkJob && done < budget) { this._buildSidewalks(sidewalkJob.ci, sidewalkJob); done++; }
+    if (sidewalkJob && done < budget && performance.now() < deadline) { this._buildSidewalks(sidewalkJob.ci, sidewalkJob); done++; }
     this.grass?.update(x, z, y, budget);
     this.pending = pending;
     this.pendingStart = Math.max(0, pendingStart);    // kolik kroků zbývá, než jde hrát (terén všude + okolí hotové)
