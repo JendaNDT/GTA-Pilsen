@@ -117,7 +117,8 @@ export class TileColliders {
     for (const site of w.fountainTiles?.get(ci) ?? []) triangles.push(...site.solid);
     const theatre = w.heritage.modernTheatre;
     for (const i of w.bChunks[ci] ?? []) {
-      if (i === w.pavilion?.building) pavilionCollision(w.pavilion, emit);
+      if (i === w.heritage.breweryGate?.building) triangles.push(...w.heritage.breweryGate.triangles);
+      else if (i === w.pavilion?.building) pavilionCollision(w.pavilion, emit);
       else if (i === w.bory?.drum) building(w,i,true,emit,w.bWall[i]);
       else if (i === w.plagueColumn?.building) columnCollision(w.plagueColumn, emit);
       else if (!theatre?.collisionSkip.has(i)) building(w, i, this.replaced.has(i) || i === w.heritage.forgeIndex, emit);

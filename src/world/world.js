@@ -565,6 +565,10 @@ export class World {
         const c = cz * this.gcols + cx;
         for (let k = this.bCellStart[c], ke = this.bCellStart[c + 1]; k < ke; k++) {
           const i = this.bCellItems[k];
+          if (i === this.heritage?.breweryGate?.building) {
+            if (fountainContact(this.heritage.breweryGate.surfaces,hit,r,y,yTop)) { any=true; moved=true; }
+            continue;
+          }
           if (i === this.pavilion?.building) continue;
           if (i === this.plagueColumn?.building) {
             if (columnContact(this.plagueColumn, hit, r, y, yTop)) { any = true; moved = true; }
@@ -704,6 +708,10 @@ export class World {
     if (this.pavilion && nearPavilion(x,z)) h=Math.max(h,pavilionSurface(this.pavilion,x,z,maxY));
     for (let k = this.bCellStart[c], ke = this.bCellStart[c + 1]; k < ke; k++) {
       const i = this.bCellItems[k];
+      if (i === this.heritage?.breweryGate?.building) {
+        h=Math.max(h,fountainSurface(this.heritage.breweryGate.surfaces,x,z,maxY));
+        continue;
+      }
       if (i === this.pavilion?.building || i === this.bory?.drum) continue;
       if (x < this.bMinX[i] || x > this.bMaxX[i] || z < this.bMinZ[i] || z > this.bMaxZ[i]) continue;
       if (i === this.plagueColumn?.building) {
@@ -756,6 +764,11 @@ export class World {
       for (let k = this.bCellStart[c], ke = this.bCellStart[c + 1]; k < ke; k++) {
         const i = this.bCellItems[k];
         if (seen.has(i) || i === this.pavilion?.building) continue;
+        if (i === this.heritage?.breweryGate?.building) {
+          seen.add(i);
+          tBest=Math.min(tBest,fountainRay(this.heritage.breweryGate.surfaces,x0,z0,x1,z1,y));
+          continue;
+        }
         seen.add(i);
         if (i === this.plagueColumn?.building) {
           tBest = Math.min(tBest, columnRay(this.plagueColumn, x0, z0, x1, z1, y));

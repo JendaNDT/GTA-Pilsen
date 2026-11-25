@@ -11,6 +11,8 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 ## Co ve hře je
 
+- **Plzeňské dominanty.** Jubilejní branou Prazdroje se dá projet. Z vrtulníku rozeznáš tribuny ve Štruncových sadech, střechy Techmanie i vějíř lochotínského amfiteátru. [Všech dvanáct míst před úpravou a po ní](docs/E43.md)
+
 - **Úvod a pauza.** Při prvním spuštění uvidíš náměstí Republiky. Uložená hra nabídne poslední polohu a tlačítko **Pokračovat**. Během hraní otevřeš pauzu klávesou Esc nebo tlačítkem nabídky. Můžeš si prohlédnout mapu, nastavit cíl a vrátit se stejným autem do stejné chvíle. [Ukázky menu](docs/E42.md)
 
 - Po potvrzení cíle na mapě zůstane značka na vybraném místě. Pěšky se můžeš nechat vést od muzea k lávce u Strouhy nebo na zastávku Slovany. [Pěší navigace](docs/E34.md)
@@ -356,6 +358,8 @@ U přiložené historické datové sady není původní datum doloženo. Proto m
 zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 
 ## Zdroje a licence dat
+
+- Exteriéry dvanácti dominant, kresba fasád, krytin a nápisů jsou vlastní tvorba projektu Plzeň naplno. Vycházejí ze stávajícího zaměření Plzně 2024, půdorysů OpenStreetMap (ODbL) a terénu ČÚZK. [Fotografické předlohy jednotlivých modelů a snímky ze hry](docs/E43.md)
 
 - Mapované sloupy veřejného osvětlení pocházejí z OpenStreetMap (ODbL). Hra v mezerách osvětlení doplňuje vlastní lampy. [Ověření osvětlení](docs/E41.md)
 

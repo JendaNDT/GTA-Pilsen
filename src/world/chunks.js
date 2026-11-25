@@ -1,3 +1,4 @@
+import { paintStadium } from './dominanty/grounds.js';
 import { inSady, paintSady } from './sady-layout.js';
 import { buildSady } from './sady-model.js';
 import { buildFountains } from './fountains.js';
@@ -303,12 +304,12 @@ function insetRing(vx, vz, s, n, d) {
   return null;
 }
 
-function buildBuildings(world, list, replaced, district, facadeBuildings) {
+function buildBuildings(world, list, replaced, district, facadeBuildings, exteriorBuildings) {
   const B = world.b, vx = world.bvx, vz = world.bvz;
   const buf = new Buf();
   for (const i of list) {
     const flags = B.flags[i];
-    if ((flags & BF.HAS_PARTS) || i === world.plagueColumn?.building || i === world.pavilion?.building || replaced.has(i) || facadeBuildings?.has(i)) continue;
+    if ((flags & BF.HAS_PARTS) || i === world.plagueColumn?.building || i === world.pavilion?.building || replaced.has(i) || facadeBuildings?.has(i) || exteriorBuildings?.has(i)) continue;
     const st = styleFor(world, i, district);
     const kind = B.kind[i];
     const top = world.bTop[i];
@@ -1440,6 +1441,7 @@ function drawGround(mgr, ci, S, tile, bitmap) {
       }
     }
   };
+  if (mgr.heritage.iconsEnabled && cx0 < 595 && cx0 + CHUNK > 495 && cz0 < -215 && cz0 + CHUNK > -341) paintStadium(g);
   stroke(0);
   paintStreetPaving(g, world.streetPaving?.get(ci));
   stroke(1);
@@ -1811,7 +1813,7 @@ export class ChunkManager {
 
   _buildBuildings(ci, ch) {
     const list = this.heritage.buildings(ci);
-    const geo = list ? buildBuildings(this.world, list, this.heritage.replaced, ch.district, ch.facadeBuildings) : null;
+    const geo = list ? buildBuildings(this.world, list, this.heritage.replaced, ch.district, ch.facadeBuildings, ch.exteriorBuildings) : null;
     if (ch.regularBuildings) {
       ch.group.remove(ch.regularBuildings);
       ch.regularBuildings.geometry.dispose();
@@ -1855,6 +1857,7 @@ export class ChunkManager {
       if (ci === w.plagueColumn?.tile) {
         ch.group.add(buildColumn(w, w.plagueColumn, this.solidMat, QUALITY.heritageDetail, ch));
       }
+      this.heritage.buildOuter(ci, ch);
       ch.heritage = this.heritage.build(ci, ch);
       this._buildBuildings(ci, ch);
     } else if (ch.stage === 2) {

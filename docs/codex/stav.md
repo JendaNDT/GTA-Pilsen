@@ -1,3 +1,7 @@
+# E43 · Dvanáct plzeňských dominant
+
+Hotových je všech dvanáct exteriérů včetně střech a zadních křídel. Každé místo má porovnání ze stejné kamery na zemi i ze vzduchu. Prošlo 347 jednotkových testů a 46 cílených zkoušek v Chromiu na WebGL 2 a WebGPU, včetně opětovného načtení míst a rozpočtů vykreslování. [Modely, předlohy a měření](../E43.md)
+
 # E42 · Úvodní nabídka a pauza
 
 Hotovo. Úvod zobrazuje poslední polohu uložené hry. Pauza ukazuje cíl a dovoluje otevřít mapu i během jízdy. Prošlo produkční sestavení, 334 testů JavaScriptu a 58 cílených zkoušek v Chromiu. Ověřen je i návrat z mapy na dotykovém telefonu v emulaci. [Snímky a měření](../E42.md)

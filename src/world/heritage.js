@@ -1,3 +1,8 @@
+import { gateSite } from './dominanty/gate-collision.js';
+import { sheets, dressSurvey } from './dominanty/survey.js';
+import { Exterior, exteriorMaterial } from './dominanty/mesh.js';
+import { measuredDetails } from './dominanty/measured-details.js';
+import { outerTiles, buildOuterSite } from './dominanty/outer-sites.js';
 // Měřené městské dlaždice a vlastní model vodního hamru.
 import { canopyTile, stationMaterials, stationSurfaces, stationTile } from './station-building.js';
 import { alignTheatreTerrace, theatreMaterial, theatreSurfaces, theatreTile } from './theatre.js';
@@ -60,6 +65,9 @@ function cityMesh(pack, prefix) {
 export class Heritage {
   constructor(world, manifest) {
     this.world = world;
+    this.iconsEnabled = PARAMS.get('dominanty') !== 'puvodni';
+    this.breweryGate = this.iconsEnabled ? gateSite(world) : null;
+    this.outerSites = this.iconsEnabled ? outerTiles(world) : new Map();
     this.streets = world.streetDetails ? new StreetDetails(world.streetDetails) : null;
     world.heritage = this;
     this.cells = new Map();
@@ -135,7 +143,7 @@ export class Heritage {
       this.fetching++;
       const tile = this.cells.get(ch.ci);
       const hasStreet = this.streets?.tiles.has(tile.name);
-      const customFacade = (showNorthSquare && (hasNorthSquare(tile.name) || hasSquareFronts(tile.name))) || stationTiles.has(tile.name) || (showSynagogue && tile.name === synagogueTile)
+      const customFacade = (this.iconsEnabled && !!sheets[tile.name]) || (showNorthSquare && (hasNorthSquare(tile.name) || hasSquareFronts(tile.name))) || stationTiles.has(tile.name) || (showSynagogue && tile.name === synagogueTile)
         || (showMuseum && tile.name === museumTile)
         || (showCathedral && tile.name === cathedralTile) || (showTownHall && tile.name === townHallTile) || (showTheatre && tile.name === theatreTile) || (this.modernTheatre && tile.name === modernTheatreTile);
       loadCityTile(tile.name, controller.signal, hasStreet || customFacade).then(async (pack) => {
@@ -168,6 +176,26 @@ export class Heritage {
     return top;
   }
 
+  addExterior(geo, group, owner, name) {
+    if (!geo) return;
+    this.exteriorMat ??= exteriorMaterial();
+    const mesh = new THREE.Mesh(geo, this.exteriorMat);
+    mesh.castShadow = mesh.receiveShadow = true;
+    mesh.name = name;
+    group.add(mesh);
+    owner.disposables.push(geo);
+    return mesh;
+  }
+
+  buildOuter(ci, owner) {
+    const sites = this.outerSites.get(ci);
+    if (!sites) return;
+    const buf = new Exterior();
+    buildOuterSite(buf, this.world, sites);
+    this.addExterior(buf.geometry(), owner.group, owner, sites[0].site.name);
+    owner.exteriorBuildings = new Set(sites.map(record => record.id));
+  }
+
   build(ci, owner) {
     const entry = this.cells.get(ci);
     const city = !!(entry && owner.cityData);
@@ -175,7 +203,7 @@ export class Heritage {
     const group = new THREE.Group();
     group.name = city ? 'Měřené budovy Plzně' : 'Vodní hamr Dobřív';
     const base = [], detail = [], wheels = [], night = [], roofChunks = [];
-    let roofs = null;
+    let roofs = null, exterior = null;
     const add = (geo, mat, layer) => {
       if (!geo) return null;
       const mesh = new THREE.Mesh(geo, mat);
@@ -302,6 +330,15 @@ export class Heritage {
         add(props, material, detail);
         owner.streetVisuals.push(...attachRoadFurniture(this.world.breakables, group, props, material, ranges));
       }
+      if (this.iconsEnabled && sheets[entry.name]) {
+        const buf = new Exterior();
+        if (dressSurvey(buf, this.world, pack, geometry, entry.name)) {
+          measuredDetails(buf, this.world, entry.name);
+          const mesh = this.addExterior(buf.geometry(), group, owner, 'Dominanty Plzně');
+          mesh.geometry.computeBoundingBox();
+          exterior = {mesh, shell:geometry, nearCount:geometry.drawRange.count};
+        }
+      }
       add(geometry, pack.street ? this.streetClose : this.cityClose, base);
       // V tomto listu obsahuje vrstva detailu jen původní okna katedrály.
       if (!owner.cathedralClock) add(cityMesh(pack, 'd'), this.cityFar, detail);
@@ -324,7 +361,7 @@ export class Heritage {
     }
     owner.group.add(group);
     const x = city ? entry.x : FORGE.x, z = city ? entry.z : FORGE.z;
-    return { group, base, detail, wheels, night, city, roofs, roofChunks, x, z, y: this.world.heightAt(x, z) };
+    return { group, base, detail, wheels, night, exterior, city, roofs, roofChunks, x, z, y: this.world.heightAt(x, z) };
   }
 
   dispose(ch) {
@@ -352,6 +389,15 @@ export class Heritage {
   update(chunk, x, z, y = chunk.y) {
     const distance = Math.hypot(Math.max(0, Math.abs(chunk.x - x) - (chunk.city ? CHUNK * 0.5 : 0)),
       Math.max(0, Math.abs(chunk.z - z) - (chunk.city ? CHUNK * 0.5 : 0)), chunk.y - y);
+    if (chunk.exterior) {
+      const {mesh,shell,nearCount} = chunk.exterior;
+      const {min,max} = mesh.geometry.boundingBox;
+      const range = Math.hypot(Math.max(min.x-x,0,x-max.x),Math.max(min.z-z,0,z-max.z),Math.max(0,y-max.y));
+      // V dálce se původní měřená silueta vejde zpět do jediného volání za celou dlaždici.
+      mesh.visible = range < (QUALITY.heritageDetail ? 400 : 265);
+      mesh.castShadow = range < 145;
+      shell.setDrawRange(0,mesh.visible ? nearCount : shell.index.count);
+    }
     const near = distance < (QUALITY.heritageDetail ? 260 : 175);
     const mat = chunk.city ? (near ? this.cityClose : this.cityFar) : (near ? this.close : this.far);
     for (const mesh of chunk.base) {
