@@ -11,6 +11,8 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 ## Co ve hře je
 
+- Na mostě Generála Pattona jsou oba jízdní pásy volné. Lampy z Jízdecké a Lochotínské se vejdou pod most. [Pohled z mostu a z Jízdecké před opravou a po ní](docs/E50.md)
+
 - Příjezd ke kruhovému objezdu na Roudné je vyhlazený v obou směrech. Úprava jízdního povrchu pokračuje přes křižovatky v celé mapě. [Srovnání, jízdní zkoušky a měření všech silnic](docs/E49.md)
 
 - Spodní Karlovarská pod Rondelem, Prokopova, K Valše i další podjezdy mají upravený povrch pro jízdu. [Měření a stejné pohledy před opravou a po ní](docs/E48.md)

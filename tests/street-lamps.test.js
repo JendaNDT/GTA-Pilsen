@@ -10,7 +10,7 @@ function street(rows = []) {
   const world = {
     rPieces: [[0, 0, 1]], r: { cls: [RC.RESIDENTIAL], flags: [0], w: [6] },
     rpx: [0, 190], rpz: [0, 0],
-    chunkIndex: x => Math.floor(x / 200), heightAt: () => 2, buildingAt: () => -1,
+    chunkIndex: x => Math.floor(x / 200), heightAt: () => 2, deckAt: () => -1e9, buildingAt: () => -1,
     isWater: () => false, collideCircle: () => false, blocksTramTrack: () => false,
     insideOtherCarriageway: (_, x, z) => Math.abs(z) < 3.15,
     nearestRoad: (x, z) => Math.abs(z) < 18 ? {road: 0, x, z: 0, dx: 1, dz: 0, dist: Math.abs(z)} : null
@@ -50,4 +50,15 @@ test('sloup ve vozovce ustoupí za obrubník, vynechá vybavení i nepoužiteln�
   assert.ok(Math.hypot(corrected.x - 38, corrected.z - 4) >= 2.4);
   assert.ok(!lamps.some(l => l.id.endsWith('osm-11')));
   assert.ok(lamps.some(l => !l.id.includes('osm-')));
+});
+
+test('svítidlo se vejde pod spodní desku i když pod most zasahuje jen výložník', () => {
+  const w = street([[42, 70, 4]]);
+  w.deckAt = (x, z, max) => z < 3 ? [9, 8, -1e9].find(y => y <= max) : -1e9;
+  const lamp = streetLamps(w, 0).find(l => l.id.endsWith('osm-42'));
+  assert.ok(lamp.height > 4.5);
+  assert.ok(lamp.y + lamp.height + 0.14 < 8 - 0.94);
+  w.deckAt = (x, z, max) => z < 3 && max >= 5 ? 5 : -1e9;
+  w.lampSurvey = indexLampSurvey(w, [[42, 70, 4]]);
+  assert.ok(!streetLamps(w, 0).some(l => l.id.endsWith('osm-42')));
 });

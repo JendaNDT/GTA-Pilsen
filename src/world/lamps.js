@@ -1,5 +1,6 @@
 import { DRIVABLE_MAX, RC, RF } from '../config.js';
 import { breakableId } from '../physics/breakables.js';
+import { BRIDGE_THICKNESS } from './road-profile.js';
 import { hash } from './hash.js';
 
 export function indexLampSurvey(world, rows) {
@@ -36,10 +37,29 @@ function poleGround(world, x, z) {
   return y;
 }
 
-function lampAt(id, x, y, z, tall, dx, dz) {
+function lampAt(world, id, x, y, z, tall, dx, dz) {
   const reach = dx || dz ? (tall ? 3 : 1.6) : 0;
-  return { id, x, y, z, height: tall ? 9 : 6.2, head: tall ? 0.7 : 0.5, reach,
-    lightX: x + dx * reach, lightZ: z + dz * reach, radius: tall ? 14 : 10 };
+  const head = tall ? 0.7 : 0.5;
+  let height = tall ? 9 : 6.2;
+  // Pod mostem se musí vejít i konec výložníku a celé svítidlo. Při více
+  // mostovkách nad sebou použijeme nejnižší desku nad patou lampy.
+  const reserve = BRIDGE_THICKNESS + 0.30;
+  const forward = reach ? dx : 1, sideways = reach ? dz : 0;
+  const end = reach + (reach ? 0.2 * reach : 0.32);
+  const steps = Math.ceil((end + 0.32) / 0.5);
+  for (let i = 0; i <= steps; i++) {
+    const along = -0.32 + (end + 0.32) * i / steps;
+    for (const across of [-head / 2, 0, head / 2]) {
+      const px = x + forward * along - sideways * across, pz = z + sideways * along + forward * across;
+      let deck = world.deckAt(px, pz, y + height + reserve);
+      while (deck > y) {
+        height = Math.min(height, deck - y - reserve);
+        if (height < 4.5) return null;
+        deck = world.deckAt(px, pz, deck - 0.001);
+      }
+    }
+  }
+  return { id, x, y, z, height, head, reach, lightX: x + dx * reach, lightZ: z + dz * reach, radius: tall ? 14 : 10 };
 }
 
 function surveyedLamp(world, entry) {
@@ -64,7 +84,7 @@ function surveyedLamp(world, entry) {
     !(world.r.flags[road.road] & (RF.TUNNEL | RF.BRIDGE));
   const dx = paved ? road.x - x : 0, dz = paved ? road.z - z : 0;
   const len = Math.hypot(dx, dz) || 1;
-  return entry.lamp = lampAt(entry.id, x, y, z, paved && world.r.cls[road.road] <= RC.SECONDARY, dx / len, dz / len);
+  return entry.lamp = lampAt(world, entry.id, x, y, z, paved && world.r.cls[road.road] <= RC.SECONDARY, dx / len, dz / len);
 }
 
 function nearSurvey(world, x, z) {
@@ -113,7 +133,9 @@ export function streetLamps(world, ci) {
         const y = poleGround(world, x, z);
         if (y === null) continue;
         const id = breakableId('lamp', ci, [i, s, k, index].join('.'));
-        lamps.push(lampAt(id, x, y, z, tall, inwardX, inwardZ));
+        const lamp = lampAt(world, id, x, y, z, tall, inwardX, inwardZ);
+        if (!lamp) continue;
+        lamps.push(lamp);
         if (lamps.length - mappedCount === 90) return lamps;
       }
       acc -= len;
