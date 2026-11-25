@@ -11,6 +11,8 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 ## Co ve hře je
 
+- Po dopadení za lehčí čin se objevíš pěšky u nejbližší služebny. Pokud jsi během pátrání srazil chodce, vrátíš se po zatčení před věznici Bory. Služebny můžeš vyhledat v mapě třeba zadáním „služebna Rokycany“. [Pravidla a ověření míst](docs/E46.md)
+
 - **Plzeňské dominanty.** Jubilejní branou Prazdroje se dá projet. Z vrtulníku rozeznáš tribuny ve Štruncových sadech, střechy Techmanie i vějíř lochotínského amfiteátru. [Všech dvanáct míst před úpravou a po ní](docs/E43.md)
 
 - **Úvod a pauza.** Při prvním spuštění uvidíš náměstí Republiky. Uložená hra nabídne poslední polohu a tlačítko **Pokračovat**. Během hraní otevřeš pauzu klávesou Esc nebo tlačítkem nabídky. Můžeš si prohlédnout mapu, nastavit cíl a vrátit se stejným autem do stejné chvíle. [Úvod a pauza](docs/E42.md) · [Čitelnost položek a nastavení na telefonu](docs/E45.md)
@@ -358,6 +360,8 @@ U přiložené historické datové sady není původní datum doloženo. Proto m
 zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 
 ## Zdroje a licence dat
+
+- Venkovní místa návratu u služeben jsou vlastní herní úpravou adresních bodů © ČÚZK, RÚIAN ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)), a stávající mapy OpenStreetMap. Názvy a působení byly porovnány s veřejnými adresáři policie a měst. [Přehled podkladů](docs/E46.md)
 
 - Dvojvěží, portály a kresba rozet kostela sv. Jana Nepomuckého jsou vlastní tvorba projektu podle dvou fotografií od autora hry a městského zaměření Plzně. [Nové pohledy z ulice a z vrtulníku](docs/E44.md)
 - Exteriéry dvanácti dominant, kresba fasád, krytin a nápisů jsou vlastní tvorba projektu Plzeň naplno. Vycházejí ze stávajícího zaměření Plzně 2024, půdorysů OpenStreetMap (ODbL) a terénu ČÚZK. [Fotografické předlohy jednotlivých modelů a snímky ze hry](docs/E43.md)

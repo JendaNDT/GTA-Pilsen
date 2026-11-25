@@ -150,7 +150,7 @@ export function drawAreaMap(canvas, game, view, selected) {
   }
   if (scale >= 1.1) for (const site of game.areaMap.sites) {
     if (!insideMap(screenBounds,site.x,site.z) || site.walk) continue;
-    dot(site.x,site.z,2.5,'#afc2a7');
+    dot(site.x,site.z,site.police ? 3.5 : 2.5,site.police ? '#8ccaff' : '#afc2a7');
     label(site.x,site.z,site.name,11,'#d5e5cf');
   }
   for (const [x,z,name,type] of game.areaMap.places) {

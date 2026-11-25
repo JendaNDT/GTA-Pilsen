@@ -20,7 +20,10 @@ export function initMapSearch(world, selectPlace, stops, sites = []) {
   const matches = () => {
     const query = normalize(input.value);
     if (!query) return [];
-    return places.filter((place) => place.key.includes(query))
+    const words = query.split(' ');
+    return places.filter(place => place.police
+      ? words.every(word => ('sluzebna ' + place.key).includes(word))
+      : place.key.includes(query))
       .sort((a, b) => Number(b.key === query) - Number(a.key === query)
         || Number(b.key.startsWith(query)) - Number(a.key.startsWith(query))
         || Number(Boolean(a.stop)) - Number(Boolean(b.stop))

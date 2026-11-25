@@ -1,3 +1,4 @@
+import { POLICE_STATIONS } from './police-stations.js';
 import { initMapSearch } from './map-search.js';
 import { MapView, insideMap } from './map-view.js';
 import { drawAreaMap } from './map-drawing.js';
@@ -20,6 +21,7 @@ export class AreaMap {
       .sort((a,b)=>priority[a[3]] - priority[b[3]]);
     this.sites = (world.sady?.solids ?? []).filter(site => !site.wall)
       .map(({ x, z, name, walk }) => ({ x, z, name, walk, exact: true }));
+    this.sites.push(...POLICE_STATIONS.map(station => ({ ...station, exact: true, police: true })));
     initMapSearch(world, place => this.select(place, true), game.transit.timetable.stops, this.sites);
     this.bindGestures();
     el('map-cancel').onclick = () => {

@@ -66,6 +66,9 @@ const ABOUT_HTML = (meta, rendering) => `
   <p>Na mostě tě u kraje zastaví zábradlí. Na historických kamenných mostech tě zachytí zídka.
   Po prudkém nárazu nebo pádu z výšky postava spadne a zase vstane. Fyzikální pády můžeš vypnout v nastavení.</p>
   <h3>Zdroje dat</h3>
+  <p>Místa návratu u služeben vznikla podle adresních bodů RÚIAN © ČÚZK
+  (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>)
+  a herní mapy OpenStreetMap. Názvy jsme ověřili v adresářích policie a měst.</p>
   <p>Grafiku vykresluje <a href="https://threejs.org" target="_blank" rel="noopener">three.js 0.187.0</a>
   (autoři three.js, licence <a href="https://github.com/mrdoob/three.js/blob/r187/LICENSE" target="_blank" rel="noopener">MIT</a>).
   Aktuální vykreslování: <strong>${rendering}</strong>.</p>

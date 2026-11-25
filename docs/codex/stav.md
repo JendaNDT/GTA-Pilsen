@@ -1,3 +1,7 @@
+# E46 · Návrat po zatčení
+
+Hra používá 25 pojmenovaných služeben na území celé mapy. Po dopadení za sražení chodce hráče vrátí před věznici Bory. Závažnost se uchovává i po uložení během honičky. Všech 26 míst návratu prošlo kontrolou ve hře. Prošlo sestavení, 350 jednotkových testů a 48 zkoušek v Chromiu. U druhé rokycanské služebny v Dělostřelců zůstává otevřená otázka současného provozu. [Výběr míst, snímky a výsledky testů](../E46.md)
+
 # E45 · Čitelnost herního menu
 
 Upraveny barvy ovládacích prvků a rozložení na úvodní obrazovce i v pauze. [Porovnání a ověření](../E45.md)

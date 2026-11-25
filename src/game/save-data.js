@@ -15,8 +15,12 @@ export function parseSave(raw) {
   const counters = s.stats && typeof s.stats === 'object' && !Array.isArray(s.stats) ? s.stats : {};
   const stats = Object.fromEntries(Object.entries(counters).filter(([, value]) =>
     Number.isSafeInteger(value) && value >= 0));
+  const pursuit = s.pursuit;
   return {
     ...s,
+    pursuit: Number.isInteger(pursuit?.stars) && pursuit.stars >= 1 && pursuit.stars <= 5 &&
+      typeof pursuit.reason === 'string' && pursuit.reason.length > 0 && pursuit.reason.length <= 100
+      ? { stars: pursuit.stars, reason: pursuit.reason, serious: pursuit.serious === true } : null,
     money: Number.isSafeInteger(s.money) && s.money >= 0 ? s.money : 500,
     stats,
     found: Array.isArray(s.found) ? s.found.filter(name => typeof name === 'string') : [],

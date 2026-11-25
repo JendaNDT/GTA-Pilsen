@@ -1,3 +1,4 @@
+import { arrestDestination } from './police-stations.js';
 import { wheelTrail } from '../fx/wheel-trails.js';
 import { NightLights } from '../world/night-lights.js';
 import { Particles } from '../fx/particles.js';
@@ -178,7 +179,7 @@ export class Game {
       if (this.propertyHits.has(fixture.id)) return;
       this.propertyHits.add(fixture.id);
       if (this.propertyHits.size === 1 || this.propertyHits.size % 3 === 0) {
-        this.addWanted(1, 'Poškození veřejného majetku', true);
+        this.addWanted(1, 'Poškození veřejného majetku', { separateEvent: true });
       }
     };
     this.world = new World(data);
@@ -222,6 +223,7 @@ export class Game {
     this.mode = 'foot'; this.car = null; this.heli = null; this.ride = null;
     this.focus = this.player;
     this.money = 500; this.wanted = 0; this.cool = 0; this.bust = 0;
+    this.pursuitOffence = null;
     this.stats = {};
     this.time = 0; this.envTimer = 0; this.placeTimer = 0; this.promptTimer = 0; this.saveTimer = 20;
     this.camYaw = 2.4; this.camPitch = 0.3; this.zoom = 1; this.camDist = 6; this.lookIdle = 9; this.camMode = 0;
@@ -339,6 +341,10 @@ export class Game {
     const s = readSave();
     let x = START.x, z = START.z;
     if (s) {
+      if (s.pursuit) {
+        this.wanted = s.pursuit.stars;
+        this.pursuitOffence = { reason: s.pursuit.reason, serious: s.pursuit.serious };
+      }
       this.money = s.money ?? 500; this.stats = s.stats || {};
       const day = s.clockMode === 'manual' ? parseDay(s.date) : null;
       if (day !== null && Number.isFinite(s.hour) && s.hour >= 0 && s.hour < 24) this.clock.set(day, s.hour);
@@ -408,6 +414,7 @@ export class Game {
           model: f.typeId, color: f.color, x: f.x, z: f.z, y: f.y, yaw: f.yaw,
           health: f.health, dirt: f.dirt, owned: f === this.garage.active,
         } : null,
+        pursuit: this.wanted && this.pursuitOffence ? { stars: this.wanted, ...this.pursuitOffence } : null,
         stats: this.stats, x: Math.round(safe.x), z: Math.round(safe.z),
         found: this.jobs.landmarks.filter((l) => l.found).map((l) => l.name),
         garage: this.garage.snapshot(), job: this.jobs.snapshot(), shift: this.shifts.snapshot(),
@@ -509,12 +516,14 @@ export class Game {
   // -------------------------------------------------------------- akce ----
   addMoney(n) { this.money = Math.max(0, this.money + n); this.hud.money(this.money); }
 
-  addWanted(n, reason, separateEvent = false) {
-    if (this.wantedCool > 0 && !separateEvent) return;
+  addWanted(n, reason, { separateEvent = false, serious = false } = {}) {
+    // Srážka s chodcem se do důvodu zatčení započítá i během prodlevy mezi hvězdami.
+    if (serious || !this.pursuitOffence) this.pursuitOffence = { reason, serious };
+    this.cool = 0;
+    if (this.wantedCool > 0 && !separateEvent && this.wanted > 0) return;
     this.wantedCool = 2.5;
     const before = this.wanted;
     this.wanted = Math.min(5, this.wanted + n);
-    this.cool = 0;
     if (this.wanted > before) this.hud.toast(`${reason} – jde po tobě policie!`, 'bad');
   }
 
@@ -720,7 +729,7 @@ export class Game {
     this.audio.crash(5, ped);
     if (car === this.car) {
       this.jobs.onCrash(speed);
-      this.addWanted(1, 'Srazil jsi chodce');
+      this.addWanted(1, 'Srazil jsi chodce', { serious: true });
     }
   }
 
@@ -761,23 +770,36 @@ export class Game {
     this._toFoot(s ? s[0] : START.x, s ? s[1] : START.z);
     this.jobs.interrupt('Ošetření v nemocnici', false);
     this.player.health = 100;
-    this.wanted = 0;
+    this._endPursuit();
     this.hud.toast(`Probral ses v nemocnici${s && s[3] ? ` (${s[3]})` : ''}. Ošetření: ${fee} Kč.`, 'bad', 5000);
     this.save();
   }
 
   _busted() {
-    const s = this._serviceNear('police');
+    const offence = this.pursuitOffence;
+    const destination = arrestDestination(this.focus, offence?.serious);
     const fine = Math.min(this.money, Math.max(200, Math.round(this.money * 0.1 / 10) * 10));
     this.addMoney(-fine);
     this.shifts.end('interrupted', `Zatčení a pokuta ${fine} Kč`, false);
-    this._toFoot(s ? s[0] : START.x, s ? s[1] : START.z);
+    this._toFoot(destination.x, destination.z);
+    this.player.yaw = this.camYaw = destination.yaw;
+    this.camPitch = 0.12;
     this.jobs.interrupt(`Zatčení a pokuta ${fine} Kč`, false);
-    this.wanted = 0; this.bust = 0; this.cool = 0;
+    this._endPursuit();
     this.stats.busted = (this.stats.busted || 0) + 1;
-    this.hud.toast(`Zatčen! Pokuta ${fine} Kč.`, 'bad', 5000);
+    const reason = offence ? ` Důvod: ${offence.reason}.` : '';
+    this.hud.toast(`Zatčen! Pokuta ${fine} Kč. ${destination.name}.${reason}`, 'bad', 6500);
     this.audio.fail();
     this.save();
+  }
+
+  _endPursuit() {
+    this.wanted = 0;
+    this.bust = 0;
+    this.cool = 0;
+    this.wantedCool = 0;
+    this.pursuitOffence = null;
+    this.vehicles.crashPoints = 0;
   }
 
   _updateWanted(dt) {
@@ -788,7 +810,7 @@ export class Game {
       if (near > 125) this.cool += dt; else this.cool = 0;
       if (this.cool > 11 + 3 * this.wanted) {
         this.wanted--; this.cool = 0;
-        if (this.wanted === 0) { this.hud.toast('Policie tě ztratila.'); this.vehicles.crashPoints = 0; }
+        if (this.wanted === 0) { this._endPursuit(); this.hud.toast('Policie tě ztratila.'); }
       }
       const speed = Math.hypot(f.vx || 0, f.vz || 0);
       if (near < 9 && speed < 2.2 && (this.mode === 'foot' || this.mode === 'car')) this.bust += dt;
