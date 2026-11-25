@@ -119,3 +119,31 @@ test('čtyři okrajové areály obsadí skutečné půdorysy a mají konečnou g
   }
   assert.equal(seen.size, 15);
 });
+
+test('Chodské náměstí má dvě zlacené špice, tři rozety a vstupy nad skutečným chodníkem', () => {
+  const buf = new Exterior();
+  const terrain = 17.6;
+  measuredDetails(buf, { baseElevation: 313.2, heightAt: () => terrain }, '-384-896.bin');
+  const vertices = (column, row) => {
+    const points = [];
+    for (let i = 0; i < buf.cells.length; i += 2) {
+      if (buf.cells[i] === column && buf.cells[i + 1] === row) {
+        const start = i / 2 * 3;
+        points.push(buf.points.slice(start, start + 3));
+      }
+    }
+    return points;
+  };
+  const portals = vertices(2, 0);
+  assert.equal(portals.length, 3 * 6);
+  for (const [, y] of portals) assert.ok(y > terrain && y < terrain + 6);
+  const roses = vertices(6, 0);
+  const centers = new Set();
+  for (let i = 0; i < roses.length; i += 3) centers.add(roses[i].join(','));
+  assert.equal(centers.size, 3);
+  const finials = new Set();
+  for (let i = 0; i < buf.points.length; i += 3) {
+    if (buf.points[i + 1] > 77.8) finials.add(Math.round(buf.points[i + 2] / 5));
+  }
+  assert.equal(finials.size, 2);
+});

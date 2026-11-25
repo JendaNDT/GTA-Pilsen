@@ -1,3 +1,7 @@
+# E44 · Kostel sv. Jana Nepomuckého
+
+Hotová je oprava dvojvěží, rozet a trojice portálů včetně schodů nad chodníkem. Kostel jsme porovnali ze čtyř stejných pohledů před úpravou a po ní. [Snímky a měření výkonu](../E44.md)
+
 # E43 · Dvanáct plzeňských dominant
 
 Hotových je všech dvanáct exteriérů včetně střech a zadních křídel. Každé místo má porovnání ze stejné kamery na zemi i ze vzduchu. Prošlo 347 jednotkových testů a 46 cílených zkoušek v Chromiu na WebGL 2 a WebGPU, včetně opětovného načtení míst a rozpočtů vykreslování. [Modely, předlohy a měření](../E43.md)

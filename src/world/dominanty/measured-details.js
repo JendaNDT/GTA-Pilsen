@@ -1,3 +1,4 @@
+import { churchOfStJohn } from './kostel-jana.js';
 import { frame } from './mesh.js';
 
 const stone = 0xbba57c,
@@ -349,6 +350,9 @@ export function measuredDetails(buf, w, name) {
       break;
     case '896--384.bin':
       waterTower(buf, w);
+      break;
+    case '-384-896.bin':
+      churchOfStJohn(buf, w);
       break;
     case '-128-384.bin':
       beseda(buf, w);

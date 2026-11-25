@@ -359,6 +359,7 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 
 ## Zdroje a licence dat
 
+- Dvojvěží, portály a kresba rozet kostela sv. Jana Nepomuckého jsou vlastní tvorba projektu podle dvou fotografií od autora hry a městského zaměření Plzně. [Nové pohledy z ulice a z vrtulníku](docs/E44.md)
 - Exteriéry dvanácti dominant, kresba fasád, krytin a nápisů jsou vlastní tvorba projektu Plzeň naplno. Vycházejí ze stávajícího zaměření Plzně 2024, půdorysů OpenStreetMap (ODbL) a terénu ČÚZK. [Fotografické předlohy jednotlivých modelů a snímky ze hry](docs/E43.md)
 
 - Mapované sloupy veřejného osvětlení pocházejí z OpenStreetMap (ODbL). Hra v mezerách osvětlení doplňuje vlastní lampy. [Ověření osvětlení](docs/E41.md)

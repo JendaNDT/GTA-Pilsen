@@ -2,7 +2,7 @@ import * as THREE from 'three/webgpu';
 import { attribute, dFdx, dFdy, texture, uv, vec2 } from 'three/tsl';
 
 const names =
-  'plain tile metal brick beseda church cloister market factory modern depot farm barn brewery plaster spire rose door gate-sign beseda-sign tech-sign depo-sign tower-sign amfi-sign pinnacle bell lookout seats townchurch stone planet-sign stage church-front friary-front'.split(
+  'plain tile metal brick beseda church cloister market factory modern depot farm barn brewery plaster spire rose door gate-sign beseda-sign tech-sign depo-sign tower-sign amfi-sign pinnacle bell lookout seats townchurch stone planet-sign stage steeple-tiles friary-front portal-jana zvonice dvojokno okno-jana rozeta-jana obloucky'.split(
     ' ',
   );
 const cells = new Map(names.map((name, i) => [name, [i % 8, 4 - Math.floor(i / 8)]]));

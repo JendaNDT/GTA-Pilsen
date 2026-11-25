@@ -116,13 +116,14 @@ function dressFace(buf, w, pack, pos, normals, roofs, kind, start, end) {
       ];
   const x = pos.getX(first),
     z = pos.getZ(first);
-  if (!onRoof && kind === 'church' && x + 472 - (z - 1019) * 0.14 < 6.3 && Math.abs(nx) > 0.48) {
-    surface = 'church-front';
-    tint = 0xffffff;
-    project = ([px, y, pz]) => [
-      Math.max(0.002, Math.min(0.998, ((pz - 1019) * 0.99 + (px + 472) * 0.14) / 32 + 0.5)),
-      Math.max(0.002, Math.min(0.998, (y + w.baseElevation - 328.8) / 45.2)),
-    ];
+  if (kind === 'church') {
+    // Obě celé zvonice dostanou vlastní čtyři štíty a lomenou stanovou střechu.
+    // Hřeben měřené lodi končí pod úrovní všech stěn zvonic.
+    if (highest > 360) return;
+    if (!onRoof) {
+      surface = 'plain';
+      tint = 0xe6d2ae;
+    }
   }
   if (!onRoof && kind === 'friary' && x < 70 && Math.abs(nx) > 0.55) {
     surface = 'friary-front';
