@@ -9,7 +9,7 @@ const MAX_EFFECTS = IS_MOBILE ? 5 : 8;
 const MAX_PACKS = IS_MOBILE ? 2 : 4;
 const SPEECH_LIFETIME = 1.8;
 const ONE_SHOTS = {
-  horn: (beep) => [beep('triangle', 395, 391, 0.38, 0.36), beep('square', 320, 319, 0.35, 0.11)],
+  horn: (beep) => [beep('horn', 380, 396, 0.36, 0.17, 0, 0.27), beep('horn', 463, 479, 0.35, 0.13, 0.009, 0.26)],
   bell: (beep) => [beep('sine', 1130, 1120, 0.44, 0.36), beep('sine', 1735, 1729, 0.31, 0.19),
     beep('sine', 1130, 1120, 0.39, 0.29, 0.19), beep('sine', 1735, 1729, 0.28, 0.13, 0.19)],
   open: (beep, air) => [air(0.58, 2080, 0.24, 0, 'bandpass'), beep('triangle', 122, 68, 0.125, 0.19, 0.12)],
@@ -153,7 +153,7 @@ export class GameAudio {
     return road && road.dist <= world.r.w[road.road] * 0.5 + 0.8 && world.r.cls[road.road] <= DRIVABLE_MAX ? 'road' : 'loose';
   }
 
-  update(dt, throttle) {
+  update(dt) {
     if (!this.available) return;
     this.timer -= dt;
     if (this.timer > 0) return;
@@ -196,7 +196,7 @@ export class GameAudio {
     const vehicleState = (source, speed, engine, siren) => {
       const previous = this.loops.get(source)?.speed ?? speed;
       const change = Math.min(1, Math.max(0, (speed - previous) / (elapsed * 3)));
-      return { speed, power: source === g.car ? Math.min(1, Math.abs(throttle)) : change, engine, siren };
+      return { speed, power: source === g.car ? (source.engineLoad ?? 0) : change, engine, siren };
     };
     for (const car of g.vehicles.cars) {
       const speed = Math.abs(car.speed);
@@ -273,9 +273,9 @@ export class GameAudio {
       nodes = [speech];
       duration = clip.duration;
     } else {
-      const beep = (wave, f0, f1, seconds, level, offset = 0) => {
+      const beep = (wave, f0, f1, seconds, level, offset = 0, hold = 0) => {
         duration = Math.max(duration, offset + seconds);
-        return tone(ctx, channel.input, t + offset, wave, f0, f1, seconds, level);
+        return tone(ctx, channel.input, t + offset, wave === 'horn' ? this.buffers.hornWave : wave, f0, f1, seconds, level, hold);
       };
       const air = (seconds, freq, level, offset = 0, filter) => {
         duration = Math.max(duration, offset + seconds);

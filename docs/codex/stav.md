@@ -1,3 +1,7 @@
+# E37 · Přepracování zvuku silničních vozidel
+
+Hotový je motor aut a autobusů, odvalování pneumatik a klakson. Při převzetí do hlavní větve prošlo 321 testů JavaScriptu, produkční sestavení a osm zvukových zkoušek v Chromiu na WebGL 2 i WebGPU. [Zadání](E37.md) · [Poslech před a po](../E37/auto-pred-a-po.wav)
+
 # E20 – samovolný vzlet po nastoupení
 
 Výchozí revize `2f2d335`. Pružiny ližin přidávaly sílu také při stání prázdného vrtulníku s uspaným tělesem. Jolt nasčítanou sílu zpracoval v prvním kroku po nastoupení. Po šesti sekundách čekání u FN Lochotín byl původní vzestup bez stisku mezerníku 147,88 m. Podvozek nyní přeskočí výpočet sil na prázdném spícím tělese. Po probuzení počítá síly pro právě probíhající krok.

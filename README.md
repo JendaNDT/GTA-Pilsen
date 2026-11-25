@@ -29,6 +29,7 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
   jízdního řádu. V mapě najdeš jednotlivá stanoviště a u nich odjezdy s cílem spoje. Do vozu
   nastoupíš klávesou F u otevřených dveří. Tabule zohledňuje polohu viditelných vozů.
 - **Prostorový zvuk.** Každý motor, klakson a hlášení zastávky zní od svého vozidla.
+  U aut slyšíš změnu otáček při řazení. Šum pneumatik sleduje rychlost vozu. [Poslech před a po](docs/E37/auto-pred-a-po.wav)
   U vody je slyšet tok nebo jez. U hamru zní mechanismus během práce kol. Zvuk lze vypnout v nastavení.
 - **Auta**: zaparkovaná i v provozu, osm typů, jízdní fyzika se smykem a poškozením. Od střední
   kvality mají oblou karoserii s podběhy, okny a ráfky, na nízké kvalitě zůstávají jednodušší.
