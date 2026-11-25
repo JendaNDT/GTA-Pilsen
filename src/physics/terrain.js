@@ -1,4 +1,4 @@
-import { TUNNEL_HEIGHT, TUNNEL_PORTAL_CUT } from '../world/tunnels.js';
+import { terrainCuts, TUNNEL_HEIGHT, TUNNEL_PORTAL_CUT } from '../world/tunnels.js';
 
 import { localGradeIndices } from '../world/terrain-indices.js';
 import { riverBed } from './water.js';
@@ -49,6 +49,8 @@ function portalPlanes(p) {
   const along = ([x, , z]) => (x - p.x) * p.dx + (z - p.z) * p.dz;
   const across = ([x, , z]) => -(x - p.x) * p.dz + (z - p.z) * p.dx;
   const sides = [(v) => p.width - across(v), (v) => p.width + across(v)];
+  if (p.clearance !== undefined) return [[...sides, v => along(v) - p.start, v => p.end - along(v),
+    v => p.y + along(v) * p.slope + p.clearance - v[1]]];
   return [
     [...sides, (v) => along(v) + TUNNEL_PORTAL_CUT.approach, (v) => -along(v)],
     [...sides, along, (v) => TUNNEL_PORTAL_CUT.depth - along(v),
@@ -64,7 +66,12 @@ export function terrainTriangles(world, ci, x0, z0, size, emit) {
   const base = Math.min(terrainGridStep(world, ci), bed ? 4 : Infinity);
   const near = roads < Infinity && base > ROAD_STEP && size === 256 ? world.roadNearTile(ci) : null;
   const step = near ? base : Math.min(base, roads);
-  const holes = world.tunnels.flatMap((t) => t.portalCuts(x0, z0, size)).flatMap(portalPlanes);
+  const holes = terrainCuts(world, x0, z0, size).map(p => {
+    const from = p.start ?? -TUNNEL_PORTAL_CUT.approach, to = p.end ?? TUNNEL_PORTAL_CUT.depth;
+    const ax = p.x + from * p.dx, bx = p.x + to * p.dx, az = p.z + from * p.dz, bz = p.z + to * p.dz;
+    return { planes: portalPlanes(p), x0: Math.min(ax, bx) - p.width, x1: Math.max(ax, bx) + p.width,
+      z0: Math.min(az, bz) - p.width, z1: Math.max(az, bz) + p.width };
+  });
   // terén pod pásem vozovky a do CLAMP_PAD za jejím okrajem leží pod pásem (viz roadClampAt)
   const dryHeight = (x, z) => {
     const y = world.heightAt(x, z);
@@ -79,7 +86,11 @@ export function terrainTriangles(world, ci, x0, z0, size, emit) {
   };
   const triangle = holes.length ? (a, b, c) => {
     let pieces = [[a, b, c]];
-    for (const planes of holes) pieces = pieces.flatMap((p) => subtract(p, planes));
+    for (const hole of holes) {
+      if (Math.min(a[0], b[0], c[0]) > hole.x1 || Math.max(a[0], b[0], c[0]) < hole.x0 ||
+          Math.min(a[2], b[2], c[2]) > hole.z1 || Math.max(a[2], b[2], c[2]) < hole.z0) continue;
+      for (const planes of hole.planes) pieces = pieces.flatMap(p => subtract(p, planes));
+    }
     for (const poly of pieces) for (let i = 2; i < poly.length; i++) emit(poly[0], poly[i - 1], poly[i]);
   } : emit;
   // Na rozhraní vody a souše musí mít oba povrchy společnou hranu.
@@ -216,8 +227,8 @@ export function roadSurfaceTriangles(world, ci, emit) {
       const y = world.roadGradeAt(road, station);
       // ručně doladěná místa (konce mostů, podjezdy) zůstávají jen na terénu
       if (y !== y) { previous = null; continue; }
-      // v přechodu k nim a u nenapojených konců jede auto po plynule upraveném terénu
-      if (gradeBlend(grade, road, station) < 1) { previous = null; continue; }
+      // V přechodu k chráněnému bodu se pás plynule přiblíží terénu.
+      const blend = gradeBlend(grade, road, station);
       const lift = stripLift(grade, road, station), slope = gradeCross(grade, road, station) * hw;
       // V křižovatce leží pás ve společné výšce všech vozovek. Aby se překrývající pásy
       // různých silnic shodovaly, dělí se tam napříč na JUNCTION_PARTS dílů.
@@ -234,6 +245,7 @@ export function roadSurfaceTriangles(world, ci, emit) {
           const shared = world.junctionSurfaceAt(x, z);
           if (shared === shared) h = shared;
         }
+        if (blend < 1) h = (1 - blend) * world.heightAt(x, z) + blend * h;
         points.push([x, h + lift, z]);
       }
       const section = { points, parts };

@@ -35,7 +35,7 @@ async function profileWorld(withStructures = false) {
 }
 
 /** Výška sítě terénu fyziky v bodě (nejvyšší trojúhelník nad ním, NaN mimo síť). */
-function physicsTerrainHeight(w, cache, x, z) {
+function physicsTerrainHeight(w, cache, x, z, ceiling = Infinity) {
   const ci = w.chunkIndex(x, z);
   if (!cache.has(ci)) {
     const list = [];
@@ -50,7 +50,7 @@ function physicsTerrainHeight(w, cache, x, z) {
     const l2 = ((c[2] - a[2]) * (x - c[0]) + (a[0] - c[0]) * (z - c[2])) / d;
     if (l1 < -1e-7 || l2 < -1e-7 || l1 + l2 > 1 + 1e-7) continue;
     const y = l1 * a[1] + l2 * b[1] + (1 - l1 - l2) * c[1];
-    if (!(y <= best)) best = y;
+    if (y <= ceiling && !(y <= best)) best = y;
   }
   return best;
 }
@@ -453,5 +453,57 @@ test('kola ve všech 320 měřitelných úsecích přejedou místo největší z
     const [a, b, c] = points;
     const bump = Math.abs(b.height - (a.height + c.height) / 2);
     assert.ok(bump < 0.10, `Úsek ${road} v bodě ${b.x}, ${b.z}: ${(100 * bump).toFixed(1)} cm.`);
+  }
+});
+
+test('osm krátkých podjezdů má mezi vjezdy souvislou spodní vozovku a oddělený povrch náspu', async () => {
+  const world = await profileWorld(true), cache = new Map();
+  const { RoadStructures } = await import('../src/physics/structures.js');
+  const structures = new RoadStructures(world), floors = new Map();
+  assert.deepEqual([...world.coveredRoads.keys()], [754, 5044, 19788, 19790, 19792, 19813, 19815, 29945]);
+  for (const [road, tube] of world.coveredRoads) {
+    let roof = false;
+    for (const cut of tube.cuts) {
+      for (let s = 1; s < cut.length - 1; s += 2) {
+        const x = cut.x + s * cut.dx, z = cut.z + s * cut.dz, floor = cut.y + s * cut.slope;
+        const ground = physicsTerrainHeight(world, cache, x, z);
+        assert.ok(!(ground > floor + 0.1 && ground < floor + tube.clearance - 0.01), 'zemina v průjezdu ' + road);
+        if (ground > floor + tube.clearance) roof = true;
+        const ci = world.chunkIndex(x, z);
+        if (!floors.has(ci)) {
+          const triangles = [];
+          // Fyzika kolem auta drží i sousední dlaždice. Pás protínající hranici
+          // patří do dlaždice svého středu a může podpírat kola i za ní.
+          for (let row = -1; row <= 1; row++) for (let col = -1; col <= 1; col++) {
+            structures.emit(ci + row * world.cols + col, (a, b, c) => triangles.push([a, b, c]));
+          }
+          floors.set(ci, triangles);
+        }
+        const height = physicsTerrainHeight(world, floors, x, z, floor + 0.1);
+        assert.ok(Math.abs(height - floor) < 0.05, 'chybí podklad pro kola ' + road + ' v ' + s + ' m');
+      }
+    }
+    assert.ok(roof, 'chybí horní terén ' + road);
+  }
+  const { sampleRoad } = await import('../tools/audit_road_ride.mjs');
+  const { roadSurfaceTriangles } = await import('../src/physics/terrain.js');
+  const approaches = new Map();
+  for (const [road, ends] of world.coveredApproaches) for (const end of ends) {
+    const length = world.roadGrade.station[world.rOff[road + 1] - 1];
+    for (let distance = 0.5; distance < Math.min(12, length); distance++) {
+      const p = sampleRoad(world, road, end.start ? distance : length - distance, 0);
+      const ci = world.chunkIndex(p.x, p.z);
+      if (!approaches.has(ci)) {
+        const faces = [];
+        for (let row = -1; row <= 1; row++) for (let col = -1; col <= 1; col++) {
+          roadSurfaceTriangles(world, ci + row * world.cols + col, (a, b, c) => faces.push([a, b, c]));
+        }
+        approaches.set(ci, faces);
+      }
+      const ground = physicsTerrainHeight(world, cache, p.x, p.z);
+      const asphalt = physicsTerrainHeight(world, approaches, p.x, p.z);
+      const surface = Math.max(Number.isFinite(ground) ? ground : -Infinity, Number.isFinite(asphalt) ? asphalt : -Infinity);
+      assert.ok(Math.abs(surface - p.y) < 0.06, 'nerovný vjezd ' + road + ' ve vzdálenosti ' + distance);
+    }
   }
 });

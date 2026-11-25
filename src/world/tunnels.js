@@ -3,7 +3,7 @@ const APPROACH = 34;
 const PORTAL_CUT = 32;
 
 export class Tunnel {
-  constructor(world, road) {
+  constructor(world, road, approach = APPROACH) {
     this.road = road;
     this.halfWidth = world.r.w[road] / 2 + 0.9;
     const a = world.rOff[road], b = world.rOff[road + 1] - 1;
@@ -11,21 +11,22 @@ export class Tunnel {
     for (let k = a; k <= b; k++) {
       points.push({ x: world.rpx[k], z: world.rpz[k], y: world.rpy[k] });
     }
-    this.portals = [this.portal(world, points[0], points[1]),
-      this.portal(world, points.at(-1), points.at(-2))];
-    this.points = [this.portals[0].outside, ...points, this.portals[1].outside];
+    this.portals = [this.portal(world, points[0], points[1], approach),
+      this.portal(world, points.at(-1), points.at(-2), approach)];
+    this.approach = approach;
+    this.points = approach ? [this.portals[0].outside, ...points, this.portals[1].outside] : points;
     this.minX = Math.min(...this.points.map((p) => p.x)) - this.halfWidth - 5;
     this.maxX = Math.max(...this.points.map((p) => p.x)) + this.halfWidth + 5;
     this.minZ = Math.min(...this.points.map((p) => p.z)) - this.halfWidth - 5;
     this.maxZ = Math.max(...this.points.map((p) => p.z)) + this.halfWidth + 5;
   }
 
-  portal(world, p, inside) {
+  portal(world, p, inside, approach) {
     const length = Math.hypot(inside.x - p.x, inside.z - p.z);
     const dx = (inside.x - p.x) / length, dz = (inside.z - p.z) / length;
-    const x = p.x - dx * APPROACH, z = p.z - dz * APPROACH;
+    const x = p.x - dx * approach, z = p.z - dz * approach;
     return {
-      ...p, dx, dz, outside: { x, z, y: world.heightAt(x, z) + 0.05 },
+      ...p, dx, dz, outside: { x, z, y: approach ? world.heightAt(x, z) + 0.05 : p.y },
       width: this.halfWidth, slope: (inside.y - p.y) / length,
     };
   }
@@ -43,6 +44,7 @@ export class Tunnel {
     for (let i = 0; i < pts.length - 1; i++) {
       const a = pts[i], b = pts[i + 1];
       const dx = b.x - a.x, dz = b.z - a.z, length = Math.hypot(dx, dz);
+      if (!length) continue;
       const fraction = ((x - a.x) * dx + (z - a.z) * dz) / (length * length);
       const last = i === pts.length - 2;
       if ((i === 0 && fraction < 0) || (last && fraction > 1)) continue;
@@ -55,7 +57,7 @@ export class Tunnel {
       result.tunnel = this;
       result.x = cx; result.z = cz;
       result.floor = a.y + (b.y - a.y) * t;
-      result.inside = i > 0 && !last;
+      result.inside = !this.approach || (i > 0 && !last);
       result.distance = Math.sqrt(d2);
     }
     return found ? result : null;
@@ -63,3 +65,12 @@ export class Tunnel {
 }
 
 export const TUNNEL_PORTAL_CUT = { approach: APPROACH, depth: PORTAL_CUT };
+
+export function terrainCuts(world, x, z, size) {
+  const cuts = world.tunnels.flatMap(t => t.portalCuts(x, z, size));
+  for (const tube of world.coveredRoads?.values() ?? []) {
+    if (x > tube.maxX || z > tube.maxZ || x + size < tube.minX || z + size < tube.minZ) continue;
+    cuts.push(...tube.cuts);
+  }
+  return cuts;
+}

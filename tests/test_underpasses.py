@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
-from build_underpasses import paint, smooth_junctions
+from build_underpasses import Ground, paint, smooth_junctions
 
 
 class Rovina:
@@ -14,6 +14,12 @@ class Rovina:
 
 
 class Podjezdy(unittest.TestCase):
+    def test_vyska_mezi_uzly_pouzije_stejnou_uhlopricku_jako_teren(self):
+        ground = Ground.__new__(Ground)
+        ground.nodes = lambda xy: xy[:, 0] * xy[:, 1]
+        xy = np.array([[0.5, 0.5], [1.5, 1.5], [2., 2.]])
+        np.testing.assert_allclose(ground.at(xy), [0., 2., 4.])
+
     def test_zarez_na_svahu_zachova_spad_a_konci_za_krajnici(self):
         ground = Rovina()
         changes = {}

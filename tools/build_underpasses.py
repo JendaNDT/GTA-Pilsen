@@ -19,7 +19,8 @@ STEP = 2
 # Známé hladiny vozovek a značky průjezdné výšky mají přednost před DMR přes násep.
 # V K Valše a u nádraží jsou uvnitř tunelu vidět jen koleje nebo zástavba nad ním.
 LEVELS = {6794: (315.80, 315.65), 6918: (315.10, 315.10)}
-ABUTMENTS = [998, 1005, 2429, 2731, 2771, 4168, 4857, 6861, 11362, 14138, 15373, 21543, 21797, 24098, 25961, 19490, 19492, 31162, 34831, 31440, 26432]
+# Otevřené spojky s prudkým zlomem u měřené opěry v celosíťové kontrole E49.
+ABUTMENTS = [3878, 2725, 5040, 371, 108, 1567, 280, 16266, 2730, 1475, 6273, 21541, 998, 1005, 2429, 2731, 2771, 4168, 4857, 6861, 11362, 14138, 15373, 21543, 21797, 24098, 25961, 19490, 19492, 31162, 34831, 31440, 26432]
 
 
 def smooth(values, radius):
@@ -51,6 +52,16 @@ class Ground:
             if patch is not None:
                 heights[at] += patch.sample(xy[at], triangle=True)
         return heights + np.array([self.grades.get(tuple(k), 0) * .01 for k in xy // STEP])
+
+    def at(self, xy):
+        """Výška skutečné herní plochy i mezi uzly dvoumetrové sítě."""
+        origin = np.floor(xy / STEP) * STEP
+        u, v = ((xy - origin) / STEP).T
+        a = self.nodes(origin)
+        b = self.nodes(origin + [STEP, 0])
+        c = self.nodes(origin + [0, STEP])
+        d = self.nodes(origin + [STEP, STEP])
+        return a + (b - a) * u + (c - a) * v + np.maximum(0, u + v - 1) * (a + d - b - c)
 
 
 def road_path(pack, ends, road, reach=50):
@@ -294,14 +305,17 @@ def build(raw, output):
         samples = np.linspace(0, total, max(2, int(math.ceil(total / STEP)) + 1))
         xy = line.at(samples)
         raw_height = smooth(raster.sample(xy), 4)
-        y = raw_height.copy()
+        # Předchozí vrstvy už mohou u opěry obsahovat vysoký násep.
+        # Na vnějším konci se napojíme na jeho skutečný herní povrch.
+        game_ground = ground.at(xy)
+        y = game_ground + .05
         influence = np.zeros(len(samples))
         for end in (0, -1):
             anchor = bridge_ends.get(tuple(np.rint(line.points[end] * 10).astype(int)))
             if not anchor:
                 continue
             distance = samples if end == 0 else total - samples
-            reach = min(total, max(24, min(80, 18 * abs(raw_height[end] - np.mean(anchor)))))
+            reach = min(total, max(60, min(105, 22 * abs(raw_height[end] - np.mean(anchor)))))
             far = min(len(y)-1, int(np.argmin(np.abs(distance - reach))))
             progress = np.minimum(1, distance / reach)
             if road == 2429:
@@ -311,9 +325,48 @@ def build(raw, output):
             weight = ease(1 - np.maximum(0, distance - reach * .65) / (reach * .35))
             y += weight * (plane - y)
             influence = np.maximum(influence, weight)
-        if all(tuple(np.rint(p * 10).astype(int)) in bridge_ends for p in line.points[[0,-1]]) and total < 25:
+        if all(tuple(np.rint(p * 10).astype(int)) in bridge_ends for p in line.points[[0,-1]]) and total < 100:
             y = np.interp(samples, [0,total], [np.mean(bridge_ends[tuple(np.rint(p*10).astype(int))]) for p in line.points[[0,-1]]])
-        paint(banks, xy, y - .05, influence, roads['w'][road] / 2, ground)
+        if road == 25961:
+            # Krátká spojka u Vinohradské končí nad zářezem. Výšku odvodíme
+            # z mostu a z navazující ulice. Uprostřed zářezu je v DMR spodní cesta.
+            street = Line(roads, 13340)
+            length = street.along[-1]
+            reach = 60
+            stations = np.linspace(length - reach, length, reach // STEP + 1)
+            street_xy = street.at(stations)
+            distance = length - stations
+            # Spojka je kratší než 12 m. Sklon se mění přes celý úsek až na pevnou
+            # zem ve Vinohradské, aby na rozhraní nevznikl vrchol.
+            bridge = Line(roads, 25960)
+            start_y = y[0]
+            bridge_start = np.mean(bridge_ends[tuple(np.rint(bridge.points[0] * 10).astype(int))])
+            start_slope = (start_y - bridge_start) / bridge.along[-1]
+            end_y, beyond = ground.at(street.at(length - np.array([reach, reach + 8]))) + .05
+            end_slope = (beyond - end_y) / 8
+            span = total + reach
+            def profile(along):
+                u = along / span
+                blend = ease(u)
+                return ((1-blend)*start_y + blend*end_y + span*u*(1-u)*((1-u)*start_slope-u*end_slope))
+            y = profile(samples)
+            influence[:] = 1
+            street_y = profile(total + distance)
+            weight = np.ones(len(stations))
+            approaches.append([13340, round(stations[0]*100), round(length*100),
+                               np.rint(street_y*100).astype(int).tolist()])
+            paint(banks, street_xy, street_y - .05, weight, roads['w'][13340] / 2, ground)
+        ground_y = y - .05
+        if road == 2725:
+            # Krátká měřená opěra mostu 64 má vlastní sklon. U její paty se zemina
+            # dotkne vozovky a dále již pokračuje dlouhý vyhlazený nájezd.
+            bridge = Line(roads, 64)
+            slope = (measured[64][0] - measured[64][1]) / bridge.along[1]
+            distance = total - samples
+            taper = ease(np.clip((26 - distance) / 14, 0, 1))
+            y += taper * (measured[64][0] + slope * distance - y)
+            ground_y = y - .05 + .075 * taper
+        paint(banks, xy, ground_y, (influence > 0).astype(float), roads['w'][road] / 2, ground)
         indices = np.flatnonzero(influence)
         for region in np.split(indices, np.flatnonzero(np.diff(indices) > 1) + 1):
             if len(region) < 2:

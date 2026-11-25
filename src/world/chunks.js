@@ -1,3 +1,4 @@
+import { coveredFaces, coveredFloor, coveredHeight } from './covered-roads.js';
 import { START_RADIUS, inStartArea } from './start-area.js';
 import { paintStadium } from './dominanty/grounds.js';
 import { inSady, paintSady } from './sady-layout.js';
@@ -36,7 +37,7 @@ import { Parts, getDetailMaterial } from '../entities/models.js';
 import { SURF } from './world.js';
 import { gradeBlend, gradeCross } from './road-grade.js';
 import { cornerSidewalkSections, sidewalkQuads, sidewalkSections, sidewalkWidth } from './sidewalks.js';
-import { TUNNEL_HEIGHT } from './tunnels.js';
+import { terrainCuts, TUNNEL_HEIGHT } from './tunnels.js';
 import { buildTrafficMeshes } from './traffic-meshes.js';
 import { detailRequestLimit, Heritage, pavingChunk } from './heritage.js';
 import { FORGE, forgeXZ } from './mill.js';
@@ -591,14 +592,15 @@ function denseY(world, D, k, t, x, z) {
   const k1 = Math.min(D.n - 1, k + 1);
   const y = D.y[k] + (D.y[k1] - D.y[k]) * t;
   if (y !== y) return world.heightAt(x, z) + SURF;
-  const b = D.blend ? Math.min(D.blend[k], D.blend[k1]) : 1;
-  if (b < 1) return world.heightAt(x, z) + SURF;
-  // v křižovatce společná výška všech vozovek (jen u silnic s profilem)
-  if (D.blend && world.inJunction(x, z)) {
+  let surface = y + denseCross(D, k, t, x, z);
+  if (D.covered) return coveredHeight(D.covered, x, z, surface);
+  if (!D.blend) return surface;
+  if (world.inJunction(x, z)) {
     const shared = world.junctionSurfaceAt(x, z);
-    if (shared === shared) return shared + SURF;
+    if (Number.isFinite(shared)) surface = shared + SURF;
   }
-  return y + denseCross(D, k, t, x, z);
+  const blend = D.blend[k] + t * (D.blend[k1] - D.blend[k]);
+  return blend < 1 ? (1 - blend) * (world.heightAt(x, z) + SURF) + blend * surface : surface;
 }
 
 // Barvy chodníku: žulový obrubník, líc ve stínu, dlažba v měřených čtvrtích a asfaltový chodník.
@@ -958,21 +960,33 @@ function* buildRoads(world, ci, manager) {
       const ring = world.rondel?.ring.has(i);
       if (!paved && !bridge && measured === undefined && !world.upperApproaches?.has(i)) continue; // běžné chodníky jsou v textuře země
       const hw = w / 2;
-      const raised = bridge || measured !== undefined;
-      const D = densePath(px, pz, raised ? py : null, s, e, a, b, bridge ? 1e9 : surfaceStep);
+      const covered = world.coveredRoads?.get(i);
+      const raised = bridge || measured !== undefined || Boolean(covered);
+      const D = densePath(px, pz, raised ? py : null, s, e, a, b, bridge ? 1e9 : covered ? 1 : surfaceStep);
+      D.covered = covered;
       const approach = world.tunnelApproaches.get(i);
       const start = s === a && approach?.start, end = e === b && approach?.end;
       if ((start || end) && !trimApproach(D, start, end)) continue;
       if (!raised) gradeDense(world, D, i, s);
       const col = ring ? COL.asphalt : bridge && cls <= DRIVABLE_MAX ? COL.bridge : roadColor(cls);
-      const surfaceWidth = measured === undefined ? hw : measured - (ring ? 0.16 : 0.12);
+      const surfaceWidth = covered?.halfWidth ?? (measured === undefined ? hw : measured - (ring ? 0.16 : 0.12));
       const curb = manager.roadVerge[i] && !raised && cls !== RC.PRIMARY_LINK && cls !== RC.SECONDARY_LINK;
       const road = QUALITY.roadDetail && cls <= DRIVABLE_MAX ? {
         start: manager.roadStations[s] + Math.hypot(D.x[0]-px[s],D.z[0]-pz[s]),
         lane: 2 * surfaceWidth / Math.max(1,R.lanes[i]), width: curb ? surfaceWidth : -surfaceWidth,
         wear: manager.roadWear[i]
       } : null;
-      ribbon(world, asphalt, D, surfaceWidth, col, 0, 0, s === a && !start, e === b && !end, hw > 2.2 && !raised, road);
+      if (covered) {
+        const vertex = ([x, y, z, along, across]) => asphalt.v(x, y, z, col, (road?.start ?? 0) + along, across, road);
+        // Asfalt a čáry se vrství přes pevný povrch. Pod otvorem v terénu
+        // musí i podlaha zapsat svou vzdálenost do hloubkové mapy.
+        const base = ([x, y, z]) => [x, y - 0.03, z];
+        coveredFloor(covered, D, (a, b, c, d) => {
+          solid.quad(base(a), base(b), base(c), base(d), col);
+          asphalt.quad(vertex(a), vertex(b), vertex(c), vertex(d));
+        });
+      } else ribbon(world, asphalt, D, surfaceWidth, col, 0, 0, s === a && !start, e === b && !end, hw > 2.2 && !raised, road);
+      if (covered) coveredFaces(world, covered, D, (a, b, c, d) => solid.quad(a, b, c, d, COL.concrete));
       if (bridge) {
         const arches = world.archedBridges.get(i);
         const calibration = world.deckCalibrations.get(i);
@@ -1859,7 +1873,7 @@ export class ChunkManager {
       const geo = buildTerrain(w, ci, x0, z0);
       ch.texSize = ch.dist < 420 ? this.texNear : this.texFar;
       ch.tex = this._texture(ci, ch, ch.texSize);
-      const portals = w.tunnels.flatMap((tunnel) => tunnel.portalCuts(x0, z0, CHUNK));
+      const portals = terrainCuts(w, x0, z0, CHUNK);
       const classes = QUALITY.terrainDetail && terrainClassMask(w.l, this.landIndex.polys[ci], LAND_GROUP, x0, z0, CHUNK);
       const mask = classes ? terrainMaskTexture(classes) : null;
       if (mask) ch.disposables.push(mask);

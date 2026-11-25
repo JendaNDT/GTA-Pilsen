@@ -59,7 +59,7 @@ const FILES = [
   ['trafficProfiles', 'data/traffic-profiles.json', 212_000],
   ['landscape', 'data/landscape.bin', 1_354_000],
   ['gradeSeparations', 'data/grade-separations.json', 460_000],
-  ['underpasses', 'data/underpasses.json', 438_000],
+  ['underpasses', 'data/underpasses.json', 492_000],
   ['lampSurvey', 'data/lamp-survey.json', 75_000],
   ['stopSurvey', 'data/stop-survey.json', 18500],
   ['soundPlaces', 'data/sound-places.json', 2_000],

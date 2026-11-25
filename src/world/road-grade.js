@@ -1,3 +1,5 @@
+import { roadContinuations } from './road-continuation.js';
+
 // Hladký podélný profil silnic. Dřív silnice kopírovala trojúhelníky terénu po 8 m,
 // takže auto i vykreslená vozovka dostávaly v každém zlomu terénu ráz a terén
 // místy prorůstal asfaltem. Profil vzniká z výšek terénu v ose silnice, vyhlazuje se
@@ -372,15 +374,16 @@ export function buildRoadGrades(world, include, pinned, baseHeight, step = GRADE
       const seg = station[p + 1] - station[p];
       const t = seg > 0 ? (s - station[p]) / seg : 0;
       const x = rpx[p] + (rpx[p + 1] - rpx[p]) * t, z = rpz[p] + (rpz[p + 1] - rpz[p]) * t;
-      samples[i] = baseHeight(x, z);
+      const apron = options.approach?.(road, s, length, x, z);
+      samples[i] = Number.isFinite(apron) ? apron - STRIP_LIFT : baseHeight(x, z);
       if (lift) lift[i] = options.shore(road, x, z, -(rpz[p + 1] - rpz[p]) / (seg || 1), (rpx[p + 1] - rpx[p]) / (seg || 1));
     }
     if (lift && lift.some((v) => v > 0)) {
       const lifted = new Float64Array(n);
       for (let i = 0; i < n; i++) lifted[i] = samples[i] + lift[i];
-      raw[road] = smoothProfile(lifted);
+      raw[road] = lifted;
       shoreRaw[road] = smoothProfile(lift);
-    } else raw[road] = smoothProfile(samples);
+    } else raw[road] = samples;
     // Ručně doladěný terén (podjezdy, nájezdy, rampy) zůstává beze změny.
     // Ještě KEEP_MARGIN za ním silnice kopíruje terén, teprve potom začíná přechod.
     if (keep) {
@@ -392,7 +395,7 @@ export function buildRoadGrades(world, include, pinned, baseHeight, step = GRADE
         while (p < b - 2 && station[p + 1] < s) p++;
         const seg = station[p + 1] - station[p];
         const t = seg > 0 ? (s - station[p]) / seg : 0;
-        flags[i] = keep(rpx[p] + (rpx[p + 1] - rpx[p]) * t, rpz[p] + (rpz[p + 1] - rpz[p]) * t);
+        flags[i] = keep(rpx[p] + (rpx[p + 1] - rpx[p]) * t, rpz[p] + (rpz[p + 1] - rpz[p]) * t, road);
         if (flags[i]) any = true;
       }
       if (any) {
@@ -408,6 +411,36 @@ export function buildRoadGrades(world, include, pinned, baseHeight, step = GRADE
       }
     }
     start[road] = total; count[road] = n; total += n;
+  }
+  // Filtr čte i za koncem dílu. Jinak se každý kratičký díl přichytí ke dvěma
+  // jednotlivým hodnotám výškopisu a na průběžné silnici vznikne série hřbetů.
+  if (options.width) {
+    const links = roadContinuations(world, raw, station);
+    const extended = (road, s, hops = 0) => {
+      const a = rOff[road], b = rOff[road + 1] - 1, length = station[b], values = raw[road];
+      const outside = s < 0 ? -s : s - length;
+      if (outside <= 0) return profileAt(values, 0, values.length, s, step);
+      const next = links.get(s < 0 ? a : b);
+      if (next && hops < 24) return extended(next.road, next.from + next.sign * outside, hops + 1);
+      const end = s < 0 ? 0 : length;
+      return 2 * profileAt(values, 0, values.length, end, step)
+        - profileAt(values, 0, values.length, 2 * end - s, step);
+    };
+    const filtered = [];
+    for (let road = 0; road < rCount; road++) {
+      if (!raw[road]) continue;
+      const width = options.width(road), pad = 3 * Math.floor(width / 2), n = count[road];
+      const path = new Float64Array(n + 2 * pad);
+      path.set(raw[road], pad);
+      for (let i = 0; i < pad; i++) path[i] = extended(road, (i - pad) * step);
+      const length = station[rOff[road + 1] - 1];
+      const filled = (n - 1) * step > length ? n - 1 : n;
+      for (let i = pad + filled; i < path.length; i++) path[i] = extended(road, (i - pad) * step);
+      filtered[road] = smoothProfile(path, width).subarray(pad, pad + n);
+    }
+    for (let road = 0; road < rCount; road++) if (filtered[road]) raw[road] = filtered[road];
+  } else {
+    for (let road = 0; road < rCount; road++) if (raw[road]) raw[road] = smoothProfile(raw[road]);
   }
   // Společné body (křižovatky, napojení na mosty): stejná výška pro všechny silnice.
   const key = (p) => `${Math.round(rpx[p] * 10)},${Math.round(rpz[p] * 10)}`;
@@ -445,7 +478,7 @@ export function buildRoadGrades(world, include, pinned, baseHeight, step = GRADE
   for (const members of nodes.values()) {
     if (members.length < 2) continue;
     // V ručně doladěném místě (konec mostu, podjezd) a těsně za ním zůstává původní napojení.
-    if (keep && keep(rpx[members[0][1]], rpz[members[0][1]])) continue;
+    if (keep && members.every(([road, p]) => keep(rpx[p], rpz[p], road))) continue;
     if (members.some(([road, p]) => keptFlags.get(road)?.[Math.min(count[road] - 1, Math.round(station[p] / step))])) continue;
     if (foreign && members.some(([road]) => !raw[road] && !pinned(road))) {
       for (const [road, p] of members) if (raw[road]) free(road, p);
@@ -464,7 +497,7 @@ export function buildRoadGrades(world, include, pinned, baseHeight, step = GRADE
       if (!raw[road]) continue;
       const here = profileAt(raw[road], 0, raw[road].length, station[p], step);
       // neobvyklý skok (rampa k mostu, jiná úroveň): silnice zůstane na terénu
-      if (Math.abs(target - here) > (fixed.length ? 0.4 : 2)) { free(road, p); continue; }
+      if (!fixed.some(([index]) => world.coveredRoads?.has(index)) && Math.abs(target - here) > (fixed.length ? 0.4 : 2)) { free(road, p); continue; }
       linked.push([road, p]);
       if (!constraints.has(road)) constraints.set(road, []);
       constraints.get(road).push([station[p], target]);
@@ -509,7 +542,7 @@ export function buildRoadGrades(world, include, pinned, baseHeight, step = GRADE
   const cross = options.cross ? buildCross(world, { start, count, station, step, total }, baseHeight, options, crossPairs, bankStops, joints, shoreRaw) : null;
   for (let road = 0; road < rCount; road++) {
     if (!raw[road]) continue;
-    const pins = [...(constraints.get(road) ?? []), ...(keptSamples.get(road) ?? [])];
+    const pins = [...(constraints.get(road) ?? []), ...(keptSamples.get(road) ?? []), ...(options.anchors?.(road) ?? [])];
     const pinnedProfile = pinProfile(raw[road], step, pins);
     heights.set(pinnedProfile, start[road]);
     // Vzdálenost k nejbližšímu chráněnému vzorku nebo nenapojenému konci určí váhu profilu.

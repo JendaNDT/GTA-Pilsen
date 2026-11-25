@@ -1,3 +1,7 @@
+# E49 · Plynulá jízda po silnicích
+
+Prověřeno 18 481 silničních dílů a napojení v celé mapě. Na severním příjezdu k Rondelu klesla největší dvanáctimetrová vlna ze 49 na 4 cm. Při 89 až 90 km/h držela kola na obou jízdních pásech. Překročení jedné z měřených mezí zůstává na 1 477 dílech. Prošlo sestavení, 360 jednotkových zkoušek JavaScriptu, 33 testů Pythonu a 26 cílených zkoušek v Chromiu. [Výsledky, souřadnice, snímky a zkoušky](../E49.md)
+
 # E48 · Spodní vozovky pod mosty
 
 Upravené jsou oba směry Karlovarské pod Rondelem, Prokopova, K Valše a další podjezdy v celé mapě. Z 322 prověřovaných překryvů šla čtyřmetrová nerovnost změřit ve 320. Nejvyšší odchylka pod koly byla 9,55 cm. U dvou dotyků na hraně cesty byl měřitelný příjezd. Prošlo sestavení, 356 testů JavaScriptu, 32 testů Pythonu a všech 30 různých cílených zkoušek v Chromiu včetně jízdy a rozpočtů všech předvoleb. Podlaha uzavřené lávky ve FN Lochotín má pouze odhadnutou výšku. [Snímky před opravou a po ní, seznam úseků a ověření](../E48.md)

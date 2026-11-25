@@ -169,6 +169,7 @@ function getTerrainNodes(paving, detail, portalCount, terrainDetail, waterDetail
   const map = materialReference('map', 'texture');
   const portalAxes = materialReference('portalAxes', 'vec4');
   const portalProfiles = materialReference('portalProfiles', 'vec3');
+  const portalBounds = materialReference('portalBounds', 'vec3');
   const profile = PAVING[paving];
   const close = terrainDetail ? terrainDetailNodes(env.cam) : null;
   const field = waterDetail ? materialReference('waterField', 'texture') : null;
@@ -242,10 +243,11 @@ function getTerrainNodes(paving, detail, portalCount, terrainDetail, waterDetail
         const offset = positionWorld.xz.sub(axis.xy);
         const along = offset.dot(axis.zw).toVar();
         const across = offset.dot(vec2(axis.w.negate(), axis.z)).abs();
-        const below = positionWorld.y.lessThan(portal.x.add(along.mul(portal.y), TUNNEL_HEIGHT + 0.5));
+        const bounds = vec3(portalBounds.element(i)).toVar();
+        const below = positionWorld.y.lessThan(portal.x.add(along.mul(portal.y), bounds.z.abs()));
         Discard(across.lessThan(portal.z)
-          .and(along.greaterThanEqual(-TUNNEL_PORTAL_CUT.approach), along.lessThan(TUNNEL_PORTAL_CUT.depth))
-          .and(along.lessThan(0).or(below)));
+          .and(along.greaterThanEqual(bounds.x), along.lessThan(bounds.y))
+          .and(bounds.z.lessThan(0).and(along.lessThan(0)).or(below)));
       });
     }
     return vec4(surface.get('color'), 1);
@@ -289,6 +291,8 @@ export function makeTerrainMaterial(tex, portals = [], paving = 0, detail = fals
   if (mask) mat.terrainClasses = mask;
   if (water) mat.waterField = water;
   if (portals.length) {
+    mat.portalBounds = portals.map(p => new THREE.Vector3(p.start ?? -TUNNEL_PORTAL_CUT.approach,
+      p.end ?? TUNNEL_PORTAL_CUT.depth, p.clearance ?? -(TUNNEL_HEIGHT + 0.5)));
     mat.portalAxes = portals.map((p) => new THREE.Vector4(p.x, p.z, p.dx, p.dz));
     mat.portalProfiles = portals.map((p) => new THREE.Vector3(p.y, p.slope, p.width));
   }

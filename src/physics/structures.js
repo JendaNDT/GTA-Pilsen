@@ -1,3 +1,4 @@
+import { coveredFaces, coveredFloor } from '../world/covered-roads.js';
 import {segmentHalfWidth} from '../world/rail-deck.js';
 import { CHUNK, COLL_CELL, RF } from '../config.js';
 import { prazdrojThickness } from '../world/prazdroj-bridge.js';
@@ -24,6 +25,12 @@ export class RoadStructures {
       const xs = [], zs = [];
       for (let i = 0; i < rail.pts.length; i += 2) { xs.push(rail.pts[i]); zs.push(rail.pts[i + 1]); }
       this.strip(rail.deck ?? densePath(xs, zs, rail.y, 0, xs.length - 1, 0, xs.length - 1, 4), rail.cls === 1 ? 2.4 : 1.7);
+    }
+    for (const [road, tube] of world.coveredRoads ?? []) {
+      const a = world.rOff[road], b = world.rOff[road + 1] - 1;
+      const floor = densePath(world.rpx, world.rpz, world.rpy, a, b, a, b, 1);
+      coveredFloor(tube, floor, (a, b, c, d) => this.quad(a.slice(0, 3), b.slice(0, 3), c.slice(0, 3), d.slice(0, 3)));
+      coveredFaces(world, tube, floor, (a, b, c, d) => this.quad(a, b, c, d));
     }
     for (const tunnel of world.tunnels) {
       const pts = tunnel.points, end = pts.length - 1;

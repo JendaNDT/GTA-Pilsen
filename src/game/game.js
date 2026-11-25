@@ -862,9 +862,10 @@ export class Game {
     let camX = f.x - fx * dist * cp, camZ = f.z - fz * dist * cp;
     let camY = ty + dist * sp;
     const tunnel = w.tunnelAt(f.x, f.z, f.y);
+    const clearance = tunnel?.tunnel.clearance ?? TUNNEL_HEIGHT;
     if (this.tunnelLight) {
       this.tunnelLight.visible = Boolean(tunnel?.inside);
-      if (tunnel?.inside) this.tunnelLight.position.set(f.x, tunnel.floor + TUNNEL_HEIGHT - 0.45, f.z);
+      if (tunnel?.inside) this.tunnelLight.position.set(f.x, tunnel.floor + clearance - 0.45, f.z);
     }
     if (tunnel) {
       const tube = tunnel.tunnel, sampled = {};
@@ -875,7 +876,7 @@ export class Game {
         if (!tube.position(x, z, tube.halfWidth - 0.3, sampled)) break;
         camX = x; camZ = z; floor = sampled.floor; camY = ty + d * sp;
       }
-      camY = clamp(camY, floor + 0.7, floor + TUNNEL_HEIGHT - 0.35);
+      camY = clamp(camY, floor + 0.7, floor + clearance - 0.35);
     } else {
       // Kamera zůstane nad terénem. U portálu respektuj výšku otevřeného zářezu.
       const ground = (x, z) => w.tunnelAt(x, z, Infinity)?.floor ?? w.heightAt(x, z);

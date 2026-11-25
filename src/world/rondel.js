@@ -27,11 +27,14 @@ function ringElevation(x, z) {
 /** Doplní profily do stejných os, které používá vykreslování, graf a kolize. */
 export function prepareRondel(world) {
   const { r, rCount, rOff, rpx, rpz, rpy, baseElevation } = world;
-  const ring = new Set(), elevated = new Map(), trackAccess = new Set(), walls = new Map();
+  const through = new Set(), ring = new Set(), elevated = new Map(), trackAccess = new Set(), walls = new Map();
   for (let road = 0; road < rCount; road++) {
     const a = rOff[road], b = rOff[road + 1] - 1;
     const x = rpx[a], z = rpz[a], ex = rpx[b], ez = rpz[b];
     const name = world.roadNames[r.name[road]];
+    if (name === 'Karlovarská' && r.cls[road] === RC.PRIMARY) {
+      for (let k = a; k <= b; k++) if (inRing(rpx[k], rpz[k])) through.add(road);
+    }
     if (name === 'Rondel' && (r.flags[road] & RF.ROUNDABOUT) && inRing(x, z) && inRing(ex, ez)) {
       ring.add(road);
       elevated.set(road, Math.max(r.w[road] / 2 + 0.30, r.lanes[road] === 1 ? 3.55 : 3.9));
@@ -58,6 +61,13 @@ export function prepareRondel(world) {
     }
   }
 
+  // Také připojovací pruhy od okruhu vedou po vlastní niveletě až k nejbližšímu uzlu.
+  const exits = new Set();
+  for (const road of ring) for (const k of [rOff[road], rOff[road + 1] - 1]) exits.add(rpx[k] + '/' + rpz[k]);
+  for (let road = 0; road < rCount; road++) {
+    if (r.cls[road] !== RC.PRIMARY_LINK || world.roadNames[r.name[road]] !== 'Karlovarská') continue;
+    if ([rOff[road], rOff[road + 1] - 1].some(k => exits.has(rpx[k] + '/' + rpz[k]))) through.add(road);
+  }
   if (ring.size) {
     for (const path of WALLS) {
       for (let i = 1; i < path.length; i++) {
@@ -69,5 +79,5 @@ export function prepareRondel(world) {
       }
     }
   }
-  return { ring, elevated, trackAccess, walls };
+  return { ring, through, elevated, trackAccess, walls };
 }
