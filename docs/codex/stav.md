@@ -1,3 +1,7 @@
+# E45 · Čitelnost herního menu
+
+Upraveny barvy ovládacích prvků a rozložení na úvodní obrazovce i v pauze. [Porovnání a ověření](../E45.md)
+
 # E44 · Kostel sv. Jana Nepomuckého
 
 Hotová je oprava dvojvěží, rozet a trojice portálů včetně schodů nad chodníkem. Kostel jsme porovnali ze čtyř stejných pohledů před úpravou a po ní. [Snímky a měření výkonu](../E44.md)

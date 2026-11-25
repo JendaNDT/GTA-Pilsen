@@ -48,7 +48,8 @@ export function initWorkUI(game, play, refreshMenu) {
   let offers = [];
   const showDirection = () => {
     const offer = offers.find(({ id }) => id === select.value);
-    $('shift-direction').textContent = offer ? `Směr ${offer.destination} · odjezd ${shiftTime(offer.departure)}` : 'Žádné dostupné spoje';
+    $('shift-direction').textContent = offer
+      ? `Nástup ${offer.from} · konec směny ${offer.to}. Směr ${offer.destination} · odjezd ${shiftTime(offer.departure)}` : 'Žádné dostupné spoje';
   };
   function updateShifts() {
     const run = shifts.active, last = shifts.last;

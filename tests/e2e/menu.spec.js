@@ -63,3 +63,54 @@ test('dotykem z rozvozu na mapu a zpátky, uložená poloha po obnovení', async
     await expect(page.locator('#menu-objective')).toBeHidden();
   } finally { await context.close(); }
 });
+
+test('položky všech podnabídek mají čitelný text a vejdou se do telefonu', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  await start(page);
+  // Kontrast počítáme z barev skutečných prvků včetně nativních tlačítek prohlížeče.
+  const unreadableButtons = scope => scope.locator('button:visible').evaluateAll(buttons => {
+    function light(css) {
+      const channels = css.match(/[\d.]+/g).slice(0, 3).map(value => {
+        const s = Number(value) / 255;
+        return s <= .04045 ? s / 12.92 : ((s + .055) / 1.055) ** 2.4;
+      });
+      return .2126 * channels[0] + .7152 * channels[1] + .0722 * channels[2];
+    }
+    return buttons.filter(button => {
+      const style = getComputedStyle(button);
+      const fg = light(style.color), bg = light(style.backgroundColor);
+      return (Math.max(fg, bg) + .05) / (Math.min(fg, bg) + .05) < 4.5 ||
+        button.scrollWidth > button.clientWidth + 1 || parseFloat(style.fontSize) < 16;
+    }).map(button => button.textContent.trim());
+  });
+  const menu = page.locator('#menu'), card = page.locator('#menu-card'), sheet = page.locator('#menu-sheet');
+  for (const viewport of [{width:320,height:568}, {width:780,height:360}]) {
+    await page.setViewportSize(viewport);
+    expect(await unreadableButtons(menu)).toEqual([]);
+    for (const section of ['settings','jobs','garage','shifts','help','about','save']) {
+      const trigger = page.locator('#btn-' + section);
+      await trigger.click();
+      await expect(page.locator('#panel-' + section)).toBeVisible();
+      expect(await unreadableButtons(sheet)).toEqual([]);
+      if (section === 'shifts') {
+        const select = page.locator('#shift-offer');
+        const option = select.locator('option').last();
+        await select.selectOption(await option.getAttribute('value'));
+        const [from, to] = (await option.textContent()).split(' · ')[1].split(' → ');
+        await expect(page.locator('#shift-direction')).toContainText(from + ' · konec směny ' + to);
+      }
+      for (const box of [card,sheet]) {
+        expect(await box.evaluate(el => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
+      }
+      const last = page.locator('#panel-' + section).locator('button:visible,input:visible,a:visible,td:visible,p:visible').last();
+      await last.scrollIntoViewIfNeeded();
+      await expect(last).toBeInViewport();
+      expect((await last.boundingBox()).y).toBeLessThan((await page.locator('#credits').boundingBox()).y);
+      await page.locator('#menu-back').click();
+      await expect(trigger).toBeFocused();
+    }
+  }
+  await page.locator('#btn-photo').click();
+  await expect(page.locator('#photo-controls')).toBeVisible();
+  expect(await unreadableButtons(page.locator('#photo-controls'))).toEqual([]);
+});
