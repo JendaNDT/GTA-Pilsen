@@ -97,6 +97,7 @@ test('zaparkovaný vrtulník po nastoupení počká na povel ke vzletu', async (
   });
   expect(parked).toMatchObject({ asleep: true, landed: true });
   await page.keyboard.down('f');
+  await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
   const idle = await page.evaluate(() => {
     const g = __game;
     g.update(1 / 60);

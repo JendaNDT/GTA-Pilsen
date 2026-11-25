@@ -1,3 +1,15 @@
+# Opravy po auditu · E31–E36
+
+Společná herní revize `803c780` má opravy osmi reprodukovaných problémů. Prošlo 327 jednotkových testů, 29 kontrol nástrojů, produkční sestavení a všech 474 prohlížečových zkoušek. Místní sestavení je připravené ke hraní. Veřejné vydání je pozdržené kvůli ztrátě posledního zápisu po násilném ukončení celého prohlížeče. Původní test nástupu do vrtulníku občas ztratil stisk F při ručním krokování. Po cílené reprodukci a opravě prošel na obou vykreslovačích. Další výsledky a omezení shrnuje [převzetí hry](../E36.md).
+
+[Uložená hra](../E31.md) · [Start a data](../E32.md) · [Rozvoz a let](../E33.md) · [Pěší navigace](../E34.md) · [Měření výkonu](../E35.md) · [Archiv Godotu](../E36-godot.md)
+
+Při přípravě zadání prošlo 320 testů JavaScriptu, produkční sestavení a kontrola všech 52 místních odkazů v přehledu a šesti zadáních. Sestavení upozornilo na velikost hlavního balíčku a fyziky Jolt. Náklady startu se měří v E35.
+
+# Audit hry · 25. listopadu 2026
+
+Prověřena hlavní větev `42d7571`. Audit popisuje osm reprodukovaných problémů webové hry včetně resetu postupu, přepsání uložení druhou kartou a posunu pěšího cíle. Prošlo 320 testů JavaScriptu, sestavení a 21 vybraných prohlížečových zkoušek. U Pythonu protokol rozlišuje běžný běh na macOS a opakování se všemi podklady. Součástí jsou výsledky Godotu, měření nízké předvolby a ranní špičky na M4. [Nálezy, ověření a doporučené pořadí oprav](../audit-hry-2026-11-25.md)
+
 # E20 – samovolný vzlet po nastoupení
 
 Výchozí revize `2f2d335`. Pružiny ližin přidávaly sílu také při stání prázdného vrtulníku s uspaným tělesem. Jolt nasčítanou sílu zpracoval v prvním kroku po nastoupení. Po šesti sekundách čekání u FN Lochotín byl původní vzestup bez stisku mezerníku 147,88 m. Podvozek nyní přeskočí výpočet sil na prázdném spícím tělese. Po probuzení počítá síly pro právě probíhající krok.

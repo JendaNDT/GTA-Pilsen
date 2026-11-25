@@ -5,6 +5,7 @@ import { PhysicsWorld } from './physics/world.js';
 // Start hry: načtení dat, menu a hlavní smyčka.
 import * as THREE from 'three/webgpu';
 import { loadAll } from './data.js';
+import { acquireSaveLock } from './game/save-session.js';
 import { Game } from './game/game.js';
 import { formatTime, HOUR_SECONDS } from './game/clock.js';
 import { initInput, input } from './game/input.js';
@@ -14,7 +15,7 @@ import { resultText } from './game/missions.js';
 import { createFrameProfiler } from './game/frame-profiler.js';
 import { createTrafficWaits } from './game/traffic-waits.js';
 import { initPerfPanel } from './game/perf-panel.js';
-import { QUALITY, IS_TOUCH, IS_MOBILE, DEBUG, PARAMS } from './config.js';
+import { QUALITY, IS_TOUCH, IS_MOBILE, DEBUG, PARAMS, refreshSavedGraphics } from './config.js';
 import { profilePixelRatio } from './world/image-quality.js';
 import { enterFullscreen, fullscreenOnPlay, fullscreenSupported, isFullscreen, toggleFullscreen } from './game/fullscreen.js';
 
@@ -125,7 +126,35 @@ function fail(e) {
   loadText.textContent = `Hru se nepodařilo spustit: ${e.message}`;
 }
 
+let releaseSaveLock, leaveGame;
+let departed = false;
+addEventListener('pagehide', () => {
+  departed = true;
+  leaveGame?.();
+  releaseSaveLock?.();
+});
+addEventListener('pageshow', event => { if (event.persisted) location.reload(); });
+
 async function boot() {
+  const transfer = $('btn-transfer');
+  const channel = typeof BroadcastChannel === 'function' ? new BroadcastChannel('plzen-predani-hry') : null;
+  transfer.onclick = () => channel?.postMessage('prevzit');
+  let canSave = true, onLockLost;
+  try {
+    releaseSaveLock = await acquireSaveLock(() => {
+      loadText.textContent = 'Hra je otevřená v jiné kartě. Po jejím zavření zde načtu aktuální postup.';
+      transfer.hidden = !channel;
+    }, () => {
+      canSave = false;
+      onLockLost?.();
+    });
+  } catch {
+    canSave = false;
+  }
+  if (departed) { releaseSaveLock?.(); return; }
+  transfer.hidden = true;
+  loadText.textContent = 'Načítám město…';
+  refreshSavedGraphics();
   const renderer = new THREE.WebGPURenderer({
     canvas, antialias: !IS_MOBILE, powerPreference: 'high-performance',
     forceWebGL: PARAMS.get('renderer') === 'webgl',
@@ -145,13 +174,21 @@ async function boot() {
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.0;
 
-  const data = await loadAll((p) => { bar.style.width = `${Math.round(p * 75)}%`; });
-  loadText.textContent = 'Načítám fyziku vozidel…';
-  const physics = new PhysicsWorld(await loadJolt());
+  const [data, jolt] = await Promise.all([
+    loadAll(p => { bar.style.width = `${Math.round(p * 75)}%`; }),
+    loadJolt(),
+  ]);
+  const physics = new PhysicsWorld(jolt);
   bar.style.width = '80%';
   loadText.textContent = 'Stavím město…';
   await new Promise((r) => setTimeout(r, 30));
   const game = new Game(renderer, data, physics);
+  game.saveEnabled = canSave;
+  onLockLost = () => {
+    game.saveEnabled = false;
+    $('save-status').textContent = 'Spojení s uloženým postupem se přerušilo. Obnov stránku pro nové načtení.';
+  };
+  if (!canSave) $('save-status').textContent = 'Prohlížeč nyní neumožňuje ukládání postupu.';
   const perf = DEBUG || PARAMS.get('adapt') !== '0' ? createFrameProfiler(game, { sampleEvery: DEBUG ? 1 : 16 }) : null;
   initInput(canvas);
   if (PARAMS.has('hour') || PARAMS.has('date')) {
@@ -335,14 +372,27 @@ async function boot() {
   $('orthophoto-enabled').checked = Boolean(game.chunks.orthophoto) && game.orthophotoEnabled;
   $('orthophoto-enabled').addEventListener('change', (event) => game.setOrthophotoEnabled(event.target.checked));
   $('btn-reset').addEventListener('click', () => {
-    if (confirm('Opravdu začít od začátku? Smaže se celý uložený postup včetně peněz, auta, zakázek a objevených památek.')) { Game.clearSave(); location.reload(); }
+    if (!confirm('Opravdu začít od začátku? Smaže se celý uložený postup včetně peněz, auta, zakázek a objevených památek.')) return;
+    if (game.clearSave()) location.reload();
+    else alert('Postup se nepodařilo smazat. Zkus to znovu.');
   });
   $('btn-menu').addEventListener('click', openMenu);
   game.areaMap = new AreaMap(game);
   $('minimap').addEventListener('click', () => { if (running) game.toggleMap(true); });
   addEventListener('resize', () => { game.resize(); if (!running && !game.graphicsBusy) game.render(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden && running) openMenu(); });
-  addEventListener('pagehide', () => game.save());
+  leaveGame = () => {
+    if (!firstPlay) game.save();
+    game.saveEnabled = false;
+    channel?.close();
+  };
+  if (channel) channel.onmessage = ({ data }) => {
+    if (data !== 'prevzit' || !game.saveEnabled || running || photo.active || game.graphicsBusy) return;
+    if (!firstPlay && !game.save()) return;
+    // Čekající karta má požadavek ve frontě. Stará stránka už nesmí znovu zapsat.
+    game.saveEnabled = false;
+    location.reload();
+  };
 
   const loop = (now) => {
     if (photo.active) {
@@ -350,7 +400,11 @@ async function boot() {
       last = now;
       return;
     }
-    if (!running) { input.pressed.clear(); return; }
+    if (!running) {
+      // Při ručním krokování v ladicím režimu přečte stisk až následující krok.
+      if (!input.enabled) input.pressed.clear();
+      return;
+    }
     if (input.pressed.delete('photo')) {
       openPhoto();
       if (photo.active) return;
@@ -394,4 +448,7 @@ async function boot() {
   if (PARAMS.has('autoplay')) play();
 }
 
-boot().catch(fail);
+boot().catch(error => {
+  releaseSaveLock?.();
+  fail(error);
+});

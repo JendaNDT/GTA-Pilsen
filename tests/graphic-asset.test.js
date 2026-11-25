@@ -80,3 +80,27 @@ test('na barevné tabulky čeká start s jedním limitem a atlas se může nač�
   assert.equal(signals.get('luts/soumrak.cube'), startup);
   assert.equal(signals.get('luts/noc.cube'), startup);
 });
+
+test('poškozené volitelné vrstvy se přeskočí jednotlivě a chyba terénu pojmenuje soubor', async t => {
+  const { loadAll } = await import('../src/data.js');
+  const replacements = new Map();
+  t.mock.method(globalThis, 'fetch', async url => new Response(
+    replacements.has(url) ? replacements.get(url) : await readFile('public' + url)));
+  const meta = JSON.parse(await readFile('public/data/meta.json'));
+  const grades = JSON.parse(await readFile('public/data/grade-separations.json'));
+  replacements.set('/data/sound-places.json', '{');
+  replacements.set('/data/grade-separations.json', JSON.stringify({ ...grades, rails: [null] }));
+  const city = await loadAll(() => {});
+  assert.deepEqual(city.soundPlaces, []);
+  assert.equal(city.gradeSeparations, undefined);
+  assert.ok(city.treeTypes.trees.length && city.heritage.tiles.length);
+  replacements.clear();
+  replacements.set('/data/sound-places.json', JSON.stringify({ osm: meta.osmTimestamp, weirs: [null] }));
+  assert.deepEqual((await loadAll(() => {})).soundPlaces, []);
+  replacements.clear();
+  const healthy = await loadAll(() => {});
+  assert.ok(healthy.soundPlaces.length && healthy.buildingMaterials.surfaces.length);
+  assert.ok(healthy.gradeSeparations.rails.length && healthy.structures.index);
+  replacements.set('/data/terrain.bin', 'neplatný terén');
+  await assert.rejects(loadAll(() => {}), /povinných dat data\/terrain\.bin/);
+});

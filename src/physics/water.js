@@ -59,6 +59,30 @@ export function riverBed(world, x0, z0, size) {
   };
 }
 
+// Obálku sestavíme jen vozu, který se skutečně potápí. Rozměry typu zahrnují podvozek.
+function submergedBounds(car) {
+  const bounds = { halfWidth: car.type.wid / 2, halfLength: car.type.len / 2, top: car.type.h, bottom: 0 };
+  if (!car.mesh) return bounds;
+  const { body, detail } = car.mesh.userData.batches;
+  for (const part of [body, detail, ...(car.mesh.userData.beacons ?? [])]) {
+    if (!part.geometry.boundingBox) part.geometry.computeBoundingBox();
+    const { min, max } = part.geometry.boundingBox, p = part.position;
+    bounds.halfWidth = Math.max(bounds.halfWidth, -min.x - p.x, max.x + p.x);
+    bounds.halfLength = Math.max(bounds.halfLength, -min.z - p.z, max.z + p.z);
+    bounds.top = Math.max(bounds.top, max.y + p.y);
+    bounds.bottom = Math.min(bounds.bottom, min.y + p.y);
+  }
+  return bounds;
+}
+
+function highestBodyPoint(centerY, q, height, bounds) {
+  const { x, y, z, w } = q;
+  const upY = 1 - 2 * (x * x + z * z);
+  return centerY + upY * ((upY >= 0 ? bounds.top : bounds.bottom) - height)
+    + 2 * Math.abs(x * y + z * w) * bounds.halfWidth
+    + 2 * Math.abs(y * z - x * w) * bounds.halfLength;
+}
+
 export class Water {
   constructor(physics) {
     this.physics = physics;
@@ -87,12 +111,14 @@ export class Water {
     car.floodTime = age + dt;
     vehicle.controller.SetDriverInput(0, 0, 0, 0);
     if (car.mode !== 'player') car.mode = 'loose';
-    // Nejvyšší bod obálky karoserie i při náklonu po sjezdu z břehu.
-    const q = body.GetRotation(), x = q.GetX(), y = q.GetY(), z = q.GetZ(), w = q.GetW();
-    const upY = 1 - 2 * (x * x + z * z);
-    const roof = body.GetPosition().GetY() - upY * vehicle.spec.height + Math.max(0, upY) * car.type.h + Math.abs(x * y + z * w) * car.type.wid +
-      Math.abs(y * z - x * w) * car.type.len;
-    if (age >= 6 && roof < surface - 0.02) this.sunk.add(car);
+    if (age >= 6) {
+      const bounds = vehicle.submergedBounds ??= submergedBounds(car);
+      const { position, rotation, previousPosition, previousRotation } = vehicle.pose;
+      const height = vehicle.spec.height;
+      // I na začátku interpolace musí být poslední viditelná střecha pod hladinou.
+      if (highestBodyPoint(position.y, rotation, height, bounds) < surface - 0.02 &&
+          highestBodyPoint(previousPosition.y, previousRotation, height, bounds) < surface - 0.02) this.sunk.add(car);
+    }
     return age === 0;
   }
 

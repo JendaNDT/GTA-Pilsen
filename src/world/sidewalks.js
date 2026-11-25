@@ -146,8 +146,8 @@ export function sidewalkQuads(sections, quad) {
  * Vrací [levá strana, pravá strana] nebo null, když silnice chodník nemá. Řez je neplatný
  * v ústí jiné silnice, v ruční úpravě E25, na vodě a tam, kde je k domu méně než MIN_SIDEWALK.
  */
-export function sidewalkSections(world, road, s, e) {
-  const width = world.sidewalks?.[road] ?? 0;
+export function sidewalkSections(world, road, s, e, widths = world.sidewalks) {
+  const width = widths?.[road] ?? 0;
   if (!width) return null;
   const a = world.rOff[road], b = world.rOff[road + 1] - 1;
   const path = stationPath(world.rpx, world.rpz, s, e, a, b, SIDEWALK_STEP, world.sidewalkCuts?.get(road));
@@ -167,7 +167,7 @@ export function sidewalkSections(world, road, s, e) {
         !world.sidewalkExcluded(cx, cz) && !world.sidewalkExcluded(ex, ez) &&
         !world.insideOtherCarriageway(road, cx, cz, 0.3) && !world.insideOtherCarriageway(road, mx, mz, 0) &&
         !world.insideOtherCarriageway(road, ex, ez, 0) &&
-        !world.insideSidewalkOf(road, mx, mz) && !world.isWater(mx, mz);
+        !world.insideSidewalkOf(road, mx, mz, widths) && !world.isWater(mx, mz);
       sides[q].push({ valid, cx, cz, ox, oz, width: w, road: surface, terrain, profile: sidewalkProfile(surface, terrain, w) });
     }
   }

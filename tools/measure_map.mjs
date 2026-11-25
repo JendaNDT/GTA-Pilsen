@@ -1,4 +1,5 @@
 // Měří běžnou smyčku hry v Chromiu. Jízda a let mají pevné výchozí body.
+import { frameBudgets } from '../src/game/frame-budget.js';
 import { chromium } from '@playwright/test';
 import { webgpuFlags } from '../tests/e2e/browser-flags.js';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -14,7 +15,7 @@ if (rush && release) throw new Error('Špičku a vydání měř samostatně.');
 const url = new URL(args.find((arg) => !arg.startsWith('--')) || 'http://127.0.0.1:4173/');
 url.searchParams.set('debug', '');
 if (work) {
-  url.searchParams.set('adapt', '0');
+  url.searchParams.set('adapt', args.includes('--adaptive') ? '1' : '0');
   if (rush) url.searchParams.set('quality', 'high');
   if (!url.searchParams.has('date')) url.searchParams.set('date', rush ? '2026-11-09' : '2026-11-17');
   if (!url.searchParams.has('hour')) url.searchParams.set('hour', rush ? '7.5' : '10');
@@ -36,7 +37,7 @@ const scenarios = rush ? [{ name: 'rush', mode: 'traffic', site: 'Klatovská tř
 if (release || work) report.quality = url.searchParams.get('quality') ?? 'high';
 if (work) {
   report.work = { date: url.searchParams.get('date'), hour: +url.searchParams.get('hour'),
-    durationMs: 10_000, chromiumFlags: workFlags };
+    adaptive: url.searchParams.get('adapt') !== '0', durationMs: 10_000, chromiumFlags: workFlags };
 }
 
 try {
@@ -140,6 +141,17 @@ try {
         const pedal = game.driver ? 0.38 : 0.27;
         window.__setInput(0, mode === 'traffic' ? 0 : mode === 'car' ? (pilot ? pedal : 0.55) : 1);
         const physicsTimes = [];
+        const obstacleSearch = { calls:0, candidates:0, ms:0 };
+        const vehicles = game.vehicles, originalLimit = vehicles._obstacleLimit;
+        if (mode === 'traffic') vehicles._obstacleLimit = function(car,limit,ignore,pointAt) {
+          const start = performance.now();
+          const result = originalLimit.call(this,car,limit,ignore,pointAt);
+          obstacleSearch.ms += performance.now() - start;
+          obstacleSearch.calls++;
+          obstacleSearch.candidates += this.cars.length - 1 + this.obstacles.length -
+            Number(ignore && (this.cars.includes(ignore) || this.obstacles.includes(ignore)) || false);
+          return result;
+        };
         let peakCars = 0, peakDriven = 0;
         const physics = game.physics;
         const originalStep = physics?.step;
@@ -177,6 +189,7 @@ try {
           previous = now;
         }
         if (work && physics) physics.step = originalStep;
+        if (mode === 'traffic') vehicles._obstacleLimit = originalLimit;
         physicsTimes.sort((a, b) => a - b);
         const measurement = work ? window.__perf.summary() : null;
         if (work && !measurement.workMs) throw new Error('Měření práce snímku nezískalo žádné vzorky.');
@@ -194,11 +207,12 @@ try {
           maxFrameMs: +frames.at(-1).toFixed(1),
           framesOver50Ms: frames.filter((value) => value > 50).length,
           ...(work && { measurement }),
-          ...(mode === 'traffic' && { peakCars, peakDriven }),
+          ...(mode === 'traffic' && { peakCars, peakDriven, obstacleSearch }),
           ...(physicsTimes.length > 0 && { physicsSteps: physicsTimes.length,
             physicsP95Ms: physicsTimes[Math.ceil(physicsTimes.length * 0.95) - 1] }),
         };
       }, { mode, pilot, site, work });
+      if (work) report[name].budgets = frameBudgets(report[name].measurement, report.work.durationMs / 1000);
       if (site) report[name].site = site;
     }
     await context.close();
@@ -211,6 +225,8 @@ try {
     await writeFile(output, json);
   }
   process.stdout.write(json);
+  if (work && scenarios.some(({ name }) =>
+      Object.values(report[name].budgets).some(budget => budget.status !== 'splněno'))) process.exitCode = 1;
   if (rush && (report.rush.physicsP95Ms > 4 || !report.rush.physicsSteps ||
       report.rush.peakCars !== 40 || !report.rush.peakDriven)) process.exitCode = 1;
   if (release && (report.carEast.metres < 25 || report.heliCenter.chunks < 2 || !report.heliCenter.cityTiles)) process.exitCode = 1;

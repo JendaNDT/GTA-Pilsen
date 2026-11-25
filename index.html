@@ -61,8 +61,8 @@
       <button id="tb-gas" class="tb">▲</button>
       <button id="tb-brake" class="tb">▼</button>
       <button id="tb-hand" class="tb">⎵</button>
-      <button id="tb-job" class="tb">✉</button>
-      <button id="tb-map" class="tb">🗺</button>
+      <button id="tb-job" class="tb" aria-label="Přijmout nebo zrušit rozvoz">✉</button>
+      <button id="tb-map" class="tb" aria-label="Otevřít mapu">🗺</button>
     </div>
     <button id="btn-menu" title="Menu">☰</button>
     <button id="btn-fullscreen" class="hidden" title="Celá obrazovka" aria-label="Celá obrazovka" aria-pressed="false">⛶</button>
@@ -84,7 +84,7 @@
       <div class="map-compass" aria-label="Sever nahoře">▴ S</div>
       <div class="map-tools">
         <div class="map-zoom"><button id="map-zoom-in" aria-label="Přiblížit">+</button><button id="map-zoom-out" aria-label="Oddálit">−</button></div>
-        <button id="map-home">Moje poloha</button><button id="map-overview">Celá oblast</button>
+        <button id="map-cancel" hidden>Zrušit cíl</button><button id="map-home">Moje poloha</button><button id="map-overview">Celá oblast</button>
       </div>
       <div id="map-scale"></div>
       <div id="map-selection" hidden>
@@ -92,7 +92,7 @@
         <button id="map-go">Navigovat sem</button>
       </div>
     </div>
-    <div id="bigmap-legend"><span><i class="map-key-player">▲</i> Tvoje poloha</span>
+    <div id="bigmap-legend"><span id="map-route-status" aria-live="polite"></span><span><i class="map-key-player">▲</i> Tvoje poloha</span>
       <span><i class="map-key-route">━</i> Trasa</span><span><i class="map-key-walk">···</i> Pěšky</span>
       <span><i class="map-key-closure">╱</i> Uzavírka</span><span><i class="map-key-limit">▧</i> Mimo oblast</span></div>
   </div>
@@ -104,6 +104,7 @@
       <div id="loading">
         <div id="bar"><i></i></div>
         <div id="loadtext">Načítám město…</div>
+        <button id="btn-transfer" hidden>Převzít hru z pozastavené karty</button>
       </div>
       <div id="menu-buttons" class="hidden">
         <button id="btn-photo">Fotorežim</button>
@@ -116,6 +117,7 @@
         <button id="btn-settings" aria-controls="panel-settings" aria-expanded="false">Nastavení</button>
         <button id="btn-reset" class="ghost">Začít od začátku</button>
       </div>
+      <div id="save-status" role="status"></div>
       <div id="rotate-tip">Tip: otoč telefon na šířku, hraje se to líp.</div>
       <div id="panel-help" class="panel hidden"></div>
       <div id="panel-about" class="panel hidden"></div>

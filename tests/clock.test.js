@@ -40,6 +40,13 @@ test('plzeňské hodiny používají datum v Plzni a zohlední letní čas', () 
 
 test('balík PMDP skutečně používá výjimku a po konci opakuje běžný týden', () => {
   const t = new Timetable(dataset);
+  const { days, weekly, profiles } = dataset.calendar;
+  assert.deepEqual(t.profile(t.startDay), profiles[days[0]]);
+  assert.deepEqual(t.profile(t.endDay), profiles[days.at(-1)]);
+  for (const day of [t.startDay - 1, t.endDay + 1]) {
+    assert.deepEqual(t.profile(day), profiles[weekly[weekday(day)]]);
+    assert.ok(t.events(day).length > 0);
+  }
   const monday = parseDay('2026-11-16'), holiday = parseDay('2026-11-17'), sunday = parseDay('2026-11-15');
   assert.equal(weekday(t.monday), 0);
   assert.equal(t.profile(holiday), t.profile(sunday));
