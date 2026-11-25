@@ -51,7 +51,8 @@ export class LampBodies {
     const { Jolt, bodies } = this.physics;
     const height = head ? 0.14 : lamp.height;
     const width = head ? lamp.head : 0.16;
-    this.position.Set(lamp.x, lamp.y + (head ? lamp.height + height / 2 : height / 2), lamp.z);
+    this.position.Set(head ? lamp.lightX ?? lamp.x : lamp.x, lamp.y + (head ? lamp.height + height / 2 : height / 2),
+      head ? lamp.lightZ ?? lamp.z : lamp.z);
     this.vector.Set(width / 2, height / 2, width / 2);
     const shape = head ? new Jolt.BoxShape(this.vector) : new Jolt.CylinderShape(height / 2, 0.1, 0.02);
     const settings = new Jolt.BodyCreationSettings(shape, this.position, this.rotation,

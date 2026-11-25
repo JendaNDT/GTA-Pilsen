@@ -7,7 +7,7 @@ import { createPavilionSite, nearPavilion, pavilionContact, pavilionRay, pavilio
 import { columnContact, columnRay, columnSurface, createColumnSite } from './plague-column-site.js';
 import { stationForecourtOffsets, stationRetainingWalls } from './station-forecourt.js';
 import { bridgeApproach, bridgeBankOffsets, stationRampOffsets } from './road-profile.js';
-import { streetLamps } from './lamps.js';
+import { indexLampSurvey, streetLamps } from './lamps.js';
 import { breakableId, Breakables } from '../physics/breakables.js';
 // Herní svět: dekódování dat, prostorové indexy, kolize, silniční graf.
 import { PARAMS, CHUNK, COLL_CELL, DRIVABLE_MAX, RF, RC, LC, BF, BK } from '../config.js';
@@ -67,6 +67,7 @@ export class World {
     this.playMinX = b.minX; this.playMaxX = b.maxX; this.playMinZ = b.minZ; this.playMaxZ = b.maxZ;
     this.cols = Math.ceil((this.maxX - this.minX) / CHUNK);
     this.rows = Math.ceil((this.maxZ - this.minZ) / CHUNK);
+    this.lampSurvey = indexLampSurvey(this, data.lampSurvey?.lamps ?? []);
     this.streetDetails = data.streetDetails;
     this.streetFixtures = new Map();
     this.streetPaving = new Map();

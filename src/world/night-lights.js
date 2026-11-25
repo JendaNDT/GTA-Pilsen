@@ -85,7 +85,7 @@ export class NightLights {
         lamp = this.selected[i];
       light.visible = !!lamp?.intact;
       if (!light.visible) continue;
-      light.position.set(lamp.x, lamp.y + lamp.height - 0.15, lamp.z);
+      light.position.set(lamp.lightX, lamp.y + lamp.height - 0.15, lamp.lightZ);
       light.intensity = night * (lamp.height > 7 ? 115 : 75);
     }
     const nearest = this.cars.length

@@ -1601,31 +1601,55 @@ const LAMP_POLE = lin(0x3a3f45), LAMP_HEAD = lin(SURFACE.lamp.emissive);
 const lampSurfaces = new Map([[LAMP_HEAD, SURFACE.lamp]]);
 const lampGeometry = new Map();
 const lampMatrix = new THREE.Matrix4();
+const lampScale = new THREE.Vector3();
 const hiddenLamp = new THREE.Matrix4().makeScale(0, 0, 0);
+
+function lampTransform(lamp) {
+  const yaw = Math.atan2(lamp.z - lamp.lightZ, lamp.lightX - lamp.x);
+  // Obě výšky sdílejí model, střed svítidla se škáluje přesně na konec výložníku.
+  lampScale.set(lamp.reach ? lamp.reach / 1.6 : 1, lamp.height / 6.2, lamp.head / 0.5);
+  return lampMatrix.makeRotationY(yaw).scale(lampScale).setPosition(lamp.x, lamp.y, lamp.z);
+}
+
+function lampTube(radius, length, sides, horizontal, x, y) {
+  const cylinder = new THREE.CylinderGeometry(radius, radius, length, sides, 1, true);
+  if (horizontal) cylinder.rotateZ(Math.PI / 2);
+  cylinder.translate(x, y, 0);
+  const faces = cylinder.toNonIndexed();
+  cylinder.dispose();
+  return faces;
+}
 
 function buildLamps(world, ci) {
   const entries = world.lampsInTile(ci);
   if (!entries.length) return null;
   const poles = new THREE.Group();
-  const instances = new Map();
+  const instances = new Map(), counts = new Map();
   for (const lamp of entries) {
-    let batch = instances.get(lamp.height);
+    lamp.reach ??= Math.hypot(lamp.lightX - lamp.x, lamp.lightZ - lamp.z);
+    lamp.hasArm = lamp.reach > 0;
+    counts.set(lamp.hasArm, (counts.get(lamp.hasArm) ?? 0) + 1);
+  }
+  for (const lamp of entries) {
+    let batch = instances.get(lamp.hasArm);
     if (!batch) {
-      let geometry = lampGeometry.get(lamp.height);
+      let geometry = lampGeometry.get(lamp.hasArm);
       if (!geometry) {
         const parts = new Parts(SURFACE.metal, lampSurfaces);
-        parts.box(0.16, lamp.height + 0.5, 0.16, 0, lamp.height / 2 - 0.25, 0, LAMP_POLE);
-        parts.box(lamp.head, 0.14, lamp.head, 0, lamp.height + 0.07, 0, LAMP_HEAD);
+        parts.mesh(lampTube(0.1, 6.7, 4, false, 0, 2.85), LAMP_POLE);
+        if (lamp.hasArm) parts.mesh(lampTube(0.08, 1.6, 3, true, 0.8, 6.14), LAMP_POLE);
+        const head = new THREE.OctahedronGeometry(1).scale(0.32, 0.14, 0.25);
+        parts.mesh(head.translate(lamp.hasArm ? 1.6 : 0, 6.2, 0), LAMP_HEAD);
         geometry = parts.geometry();
-        lampGeometry.set(lamp.height, geometry);
+        lampGeometry.set(lamp.hasArm, geometry);
       }
-      batch = new THREE.InstancedMesh(geometry, getDetailMaterial(), entries.filter(e => e.height === lamp.height).length);
+      batch = new THREE.InstancedMesh(geometry, getDetailMaterial(), counts.get(lamp.hasArm));
       batch.count = 0;
-      instances.set(lamp.height, batch);
+      instances.set(lamp.hasArm, batch);
       poles.add(batch);
     }
     lamp.instance = batch.count++;
-    batch.setMatrixAt(lamp.instance, lampMatrix.makeTranslation(lamp.x, lamp.y, lamp.z));
+    batch.setMatrixAt(lamp.instance, lampTransform(lamp));
   }
   // Pevné meze zahrnují i sloupy, které při návratu do dlaždice čekají na opravu.
   for (const batch of instances.values()) batch.computeBoundingSphere();
@@ -1655,8 +1679,8 @@ function buildLamps(world, ci) {
     let shown = false;
     return { id: lamp.id, show(intact) {
       lamp.intact = intact;
-      const batch = instances.get(lamp.height);
-      batch.setMatrixAt(lamp.instance, intact ? lampMatrix.makeTranslation(lamp.x, lamp.y, lamp.z) : hiddenLamp);
+      const batch = instances.get(lamp.hasArm);
+      batch.setMatrixAt(lamp.instance, intact ? lampTransform(lamp) : hiddenLamp);
       batch.instanceMatrix.needsUpdate = true;
       const start = index * 54;
       for (let i = start; i < start + 54; i++) pg.index.array[i] = intact ? pi[i] : pi[start];

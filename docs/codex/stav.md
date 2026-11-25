@@ -1,3 +1,7 @@
+# E41 · Veřejné osvětlení
+
+Ověřeno všech 43 578 sloupů. Z nich 2 339 vychází z poloh v OpenStreetMap. U zastávky U Prodejny je odstup od označníku 9,23 metru. Prošlo produkční sestavení, 334 testů JavaScriptu, 31 kontrol Pythonu a 32 cílených zkoušek v Chromiu. [Snímky, měření a odchylky](../E41.md)
+
 # E40 · Zastávky MHD
 
 Dokončeno pro 705 stanovišť. Prošlo 331 jednotkových testů, 30 kontrol nástrojů, produkční sestavení a 38 cílených zkoušek v Chromiu. Ověřen je přestup, výběr odjezdů u označníku, provoz bez podkladu OSM a rozpočet všech předvoleb. [Snímky, podklady a měření](../E40.md)

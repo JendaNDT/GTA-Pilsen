@@ -21,6 +21,8 @@ test('E23 – centrum ve 22 hodin osvítí 128 lamp a po zhasnutí jedna zmizí 
       lamp = rig.selected[0];
     const index = rig.selected.indexOf(lamp);
     const before = rig.lamps.filter((l) => l.visible).length;
+    const aligned = rig.selected.every((item, i) =>
+      rig.lamps[i].position.x === item.lightX && rig.lamps[i].position.z === item.lightZ);
     const visual = [...g.chunks.chunks.values()]
       .flatMap((ch) => ch.lamps?.visuals ?? [])
       .find((v) => v.id === lamp.id);
@@ -33,8 +35,8 @@ test('E23 – centrum ve 22 hodin osvítí 128 lamp a po zhasnutí jedna zmizí 
     const clustered = g.renderer.lighting === rig.clustered;
     __setClock('2026-11-09', 12);
     g.render();
-    return { before, off, clustered, day: !rig.group.visible, headlights: rig.cars.length };
+    return { before, aligned, off, clustered, day: !rig.group.visible, headlights: rig.cars.length };
   });
-  expect(result).toEqual({ before: 128, off: true, clustered: true, day: true, headlights: 8 });
+  expect(result).toEqual({ before: 128, aligned: true, off: true, clustered: true, day: true, headlights: 8 });
   expect(errors).toEqual([]);
 });
