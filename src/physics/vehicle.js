@@ -224,7 +224,9 @@ export class PlayerVehicle {
     // Mírné brzdění motorem po puštění plynu postupně slábne při dojezdu.
     const coastBrake = arcade && !throttle ? Math.min(0.09, Math.abs(speed) * 0.012) / ARCADE_SERVICE_BRAKE_BOOST : 0;
     car.steer += (Math.max(-1, Math.min(1, steer + steeringPull(car))) * limit - car.steer) * Math.min(1, dt * steeringRate);
-    this.controller.SetDriverInput(braking ? 0 : throttle * traction * enginePower(car),
+    const driveInput = braking ? 0 : throttle * traction * enginePower(car);
+    car.engineLoad = Math.min(1, Math.abs(driveInput));
+    this.controller.SetDriverInput(driveInput,
       car.steer, braking ? (abs ? 0.8 : 1) : coastBrake, handbrake ? 1 : 0);
     if (throttle || handbrake || steer) this.physics.bodies.ActivateBody(this.body.GetID());
     if (arcade && !handbrake && !steer && Math.abs(speed) > 4) {

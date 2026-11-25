@@ -1,6 +1,6 @@
 const VEHICLES = {
-  car: { wave: 'sawtooth', tone: 35, rise: 105, level: 0.044, noise: 0.048 },
-  bus: { wave: 'sawtooth', tone: 29, rise: 67, level: 0.066, noise: 0.061 },
+  car: { wave: 'sawtooth', tone: 27, rise: 174, level: 0.044, noise: 0.048 },
+  bus: { wave: 'sawtooth', tone: 24, rise: 76, level: 0.066, noise: 0.061 },
   tram: { wave: 'triangle', tone: 79, rise: 185, level: 0.076, noise: 0.105 },
   trolleybus: { wave: 'triangle', tone: 92, rise: 190, level: 0.065, noise: 0.061 },
 };
@@ -46,6 +46,13 @@ export function soundBuffers(ctx) {
   };
   const tau = Math.PI * 2;
   return {
+    // Vlastní průběhy sdílí všechny vozy v jednom zvukovém kontextu.
+    carWave: ctx.createPeriodicWave(new Float32Array(11),
+      Float32Array.of(0, 0.70, 1, 0.27, 0.48, 0.09, 0.27, 0.05, 0.16, 0.04, 0.07)),
+    busWave: ctx.createPeriodicWave(new Float32Array(11),
+      Float32Array.of(0, 1, 0.42, 0.77, 0.12, 0.38, 0.09, 0.21, 0.04, 0.10, 0.04)),
+    hornWave: ctx.createPeriodicWave(new Float32Array(7),
+      Float32Array.of(0, 0.77, 1, 0.46, 0.17, 0.12, 0.04)),
     noise: make(2, random),
     rotor: make(2, (t) => {
       const phase = (t * 24) % 1;
@@ -72,6 +79,8 @@ export class LoopVoice {
     this.kind = kind;
     if (this.profile) {
       this.motor = this.layer(ctx, 'lowpass', this.profile.wave);
+      if (kind === 'car') this.motor.source.setPeriodicWave(buffers.carWave);
+      if (kind === 'bus') this.motor.source.setPeriodicWave(buffers.busWave);
       this.rolling = this.layer(ctx, 'bandpass', buffers.noise);
     } else {
       this.bed = this.layer(ctx, kind === 'weir' ? 'bandpass' : 'lowpass', buffers[kind] ?? buffers.noise);
@@ -103,14 +112,18 @@ export class LoopVoice {
       const p = this.profile;
       const rate = Number.isFinite(state.rpm) ? Math.min(1, state.rpm / 6500) : Math.min(1, speed / (this.kind === 'car' ? 27 : 14));
       const electric = this.kind === 'tram' || this.kind === 'trolleybus';
-      target(this.motor.source.frequency, p.tone + p.rise * rate + power * (electric ? 18 : 24));
-      target(this.motor.filter.frequency, 260 + rate * 1150 + power * 510);
-      target(this.motor.gain.gain, engine ? p.level * (electric ? 0.13 + rate * 0.48 + power * 0.45 : 0.4 + rate * 0.42 + power * 0.36) : 0);
+      const motorPitch = electric ? p.tone + p.rise * rate + power * 18
+        : p.tone + p.rise * rate;
+      target(this.motor.source.frequency, motorPitch);
+      target(this.motor.filter.frequency, electric ? 260 + rate * 1150 + power * 510 : 220 + rate * 820 + power * 1380);
+      target(this.motor.gain.gain, engine ? p.level * (electric ? 0.13 + rate * 0.48 + power * 0.45 : 0.42 + rate * 0.36 + power * 0.65) : 0);
       const rough = road === 'loose';
-      const rolling = this.kind === 'tram' ? 510 + rate * 1000 : rough ? 900 + rate * 600 : 380 + rate * 1040;
+      const rollingRate = Math.min(1, speed / 27);
+      const rolling = this.kind === 'tram' ? 510 + rate * 1000
+        : rough ? 480 + rollingRate * 460 : 650 + rollingRate * 1450;
       target(this.rolling.filter.frequency, skid > 0.1 ? 1750 : rolling);
-      target(this.rolling.filter.Q, this.kind === 'tram' ? 1.15 : rough ? 0.55 : 0.78);
-      target(this.rolling.gain.gain, p.noise * rate * (rough ? 1.65 : 1) + skid * 0.106);
+      target(this.rolling.filter.Q, this.kind === 'tram' ? 1.15 : rough ? 0.85 : 0.58);
+      target(this.rolling.gain.gain, p.noise * (this.kind === 'tram' ? rate : rollingRate) * (rough ? 1.65 : 1) + skid * 0.106);
       if (siren && !this.siren) this.siren = this.layer(ctx, 'lowpass', 'triangle');
       if (this.siren) {
         target(this.siren.source.frequency, 665 + 185 * Math.sin(t * 5.8));
@@ -137,18 +150,20 @@ export class LoopVoice {
   }
 }
 
-export function tone(ctx, out, time, type, f0, f1, duration, volume) {
+export function tone(ctx, out, time, type, f0, f1, duration, volume, hold = 0) {
   const source = ctx.createOscillator();
-  source.type = type;
+  if (typeof type === 'string') source.type = type;
+  else source.setPeriodicWave(type);
   source.frequency.setValueAtTime(f0, time);
-  source.frequency.exponentialRampToValueAtTime(f1, time + duration);
-  return envelope(ctx, source, out, time, duration, volume);
+  source.frequency.exponentialRampToValueAtTime(f1, time + (hold ? 0.035 : duration));
+  return envelope(ctx, source, out, time, duration, volume, null, hold);
 }
 
-function envelope(ctx, source, out, time, duration, volume, filter) {
+function envelope(ctx, source, out, time, duration, volume, filter, hold = 0) {
   const gain = ctx.createGain();
   gain.gain.setValueAtTime(0.0004, time);
   gain.gain.exponentialRampToValueAtTime(Math.max(0.0005, volume), time + 0.014);
+  if (hold) gain.gain.exponentialRampToValueAtTime(volume * 0.84, time + hold);
   gain.gain.exponentialRampToValueAtTime(0.0004, time + duration);
   source.connect(filter ?? gain);
   if (filter) filter.connect(gain);

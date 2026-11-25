@@ -991,7 +991,7 @@ export class Game {
     this._updateCamera(dt);
     this.chunks.heritage.updateTime(this.hour, dt);
     this.particles.update(dt, this.vehicles.cars, this.focus, QUALITY.waterDetail);
-    this.audio.update(dt, input.moveY);
+    this.audio.update(dt);
     this.env.update(this.camera);
     const fast = Math.hypot(this.focus.vx || 0, this.focus.vz || 0) > 18;
     this.chunks.update(this.focus.x, this.focus.z, QUALITY.view, fast ? 2 : 1, this.focus.y);

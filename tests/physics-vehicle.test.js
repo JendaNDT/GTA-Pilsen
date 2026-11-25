@@ -415,3 +415,17 @@ test('záznam fronty označí vůz omezující rychlost a zapomene překážku p
   assert.ok(limit(near) > 0.4);
   assert.equal(blocker, null);
 });
+
+test('zatížení motoru pro zvuk odpovídá pohonu při rozjezdu, brzdění a couvání', () => {
+  const { car, tick, close } = track('hatch');
+  try {
+    for (let i = 0; i < 100; i++) tick(1);
+    assert.ok(car.speed > 2 && car.engineLoad > 0);
+    tick(-1);
+    assert.equal(car.engineLoad, 0);
+    for (let i = 0; i < 180; i++) tick(-1);
+    assert.ok(car.speed < -1 && car.engineLoad > 0);
+    tick(1);
+    assert.equal(car.engineLoad, 0);
+  } finally { close(); }
+});

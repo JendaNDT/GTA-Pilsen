@@ -199,3 +199,36 @@ test('E09 – kola hamru a zvuk se zastaví spolu, náhon zůstane slyšet', asy
   await expect(page.getByRole('checkbox', { name: 'Zvuk hry' })).not.toBeChecked();
   expect(errors).toEqual([]);
 });
+
+test('odvalování na místě utichne a při stejném tempu nezávisí na otáčkách motoru', async ({ page }) => {
+  const errors = await boot(page);
+  await page.evaluate(() => {
+    const g = __game, car = g.player.lastCar;
+    g._enterCar(car);
+    Object.assign(car, { speed: 0, rpm: 4000, skid: 0 });
+    g.audio.update(0.1);
+  });
+  const params = () => page.evaluate(() => {
+    const voice = __game.audio.loops.get(__game.car);
+    return [voice.rolling.gain.gain.value, voice.rolling.filter.frequency.value];
+  });
+  const drive = async (speed, rpm) => {
+    const start = await page.evaluate(([speed, rpm]) => {
+      Object.assign(__game.car, { speed, rpm });
+      __game.audio.update(0.1);
+      return __game.audio.ctx.currentTime;
+    }, [speed, rpm]);
+    // Parametry filtru a hlasitosti dobíhají v čase zvukového zařízení.
+    await page.waitForFunction(t => __game.audio.ctx.currentTime >= t + 0.65, start);
+  };
+  expect((await params())[0]).toBe(0);
+  await drive(12, 4000);
+  const [level, frequency] = await params();
+  expect(level).toBeGreaterThan(0.019);
+  await drive(12, 1000);
+  await page.waitForFunction(() => __game.audio.loops.get(__game.car).motor.source.frequency.value < 56);
+  const [afterLevel, afterFrequency] = await params();
+  expect(Math.abs(afterLevel - level)).toBeLessThan(0.0001);
+  expect(Math.abs(afterFrequency - frequency)).toBeLessThan(2);
+  expect(errors).toEqual([]);
+});
