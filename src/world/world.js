@@ -1397,8 +1397,7 @@ export class World {
   }
 
   /** Leží bod na chodníku důležitější silnice? Tam chodník silnice road v rohu křižovatky končí. */
-  insideSidewalkOf(road, x, z) {
-    const widths = this.sidewalks;
+  insideSidewalkOf(road, x, z, widths = this.sidewalks) {
     if (!widths) return false;
     const own = sidewalkPriority(this, road);
     const cx = Math.floor((x - this.minX) / COLL_CELL), cz = Math.floor((z - this.minZ) / COLL_CELL);

@@ -6,6 +6,7 @@ export const input = {
   moveY: 0,          // -1 vzad … 1 vpřed
   run: false,
   handbrake: false,  // mezerník (ruční brzda / skok / stoupání)
+  lift: 0,
   down: false,       // Shift ve vrtulníku = klesání
   lookDX: 0, lookDY: 0, zoom: 0,
   pressed: new Set(),
@@ -57,7 +58,20 @@ export function initInput(canvas) {
   if (IS_TOUCH) initTouch(canvas);
 }
 
+let updateTouchLabels;
 function initTouch(canvas) {
+  const gas = document.getElementById('tb-gas'), brake = document.getElementById('tb-brake');
+  const hand = document.getElementById('tb-hand'), action = document.getElementById('tb-act');
+  let shownMode;
+  updateTouchLabels = mode => {
+    if (mode === shownMode) return;
+    shownMode = mode;
+    gas.setAttribute('aria-label', mode === 'heli' ? 'Stoupat' : mode === 'foot' ? 'Jít vpřed' : 'Plyn');
+    brake.setAttribute('aria-label', mode === 'heli' ? 'Klesat' : mode === 'foot' ? 'Jít vzad' : 'Brzdit');
+    hand.setAttribute('aria-label', mode === 'heli' ? 'Stoupat' : mode === 'foot' ? 'Skočit' : 'Ruční brzda');
+    action.setAttribute('aria-label', mode === 'foot' ? 'Nastoupit' : mode === 'shift' ? 'Obsloužit dveře' : 'Vystoupit');
+  };
+  updateTouchLabels('foot');
   document.body.classList.add('touch');
   const stick = document.getElementById('stick');
   const knob = stick.querySelector('i');
@@ -94,6 +108,12 @@ function initTouch(canvas) {
     el.addEventListener('touchend', off, { passive: false });
     el.addEventListener('touchcancel', off, { passive: false });
   };
+  window.addEventListener('blur', () => {
+    stickId = lookId = null;
+    Object.assign(touch, { x: 0, y: 0, active: false, gas: false, brake: false, hand: false });
+    knob.style.transform = '';
+    for (const button of [gas, brake, hand]) button.classList.remove('on');
+  });
   hold('tb-gas', 'gas'); hold('tb-brake', 'brake'); hold('tb-hand', 'hand');
   const tap = (id, action) => {
     document.getElementById(id).addEventListener('touchstart', (e) => { input.pressed.add(action); e.preventDefault(); }, { passive: false });
@@ -117,17 +137,20 @@ function initTouch(canvas) {
 }
 
 /** Spojí klávesnici a dotyk do výsledného stavu; volat jednou za snímek. */
-export function pollInput() {
+export function pollInput(mode) {
+  updateTouchLabels?.(mode);
   let x = kb.x, y = kb.y;
   if (touch.active) { x = touch.x; y = touch.y; }
-  if (touch.gas) y = 1;
-  if (touch.brake) y = -1;
+  if (mode !== 'heli') {
+    if (touch.gas) y = 1;
+    if (touch.brake) y = -1;
+  }
   input.moveX = Math.abs(x) < 0.12 ? 0 : x;
   input.moveY = Math.abs(y) < 0.12 ? 0 : y;
   input.run = kb.run || (touch.active && Math.hypot(touch.x, touch.y) > 0.85);
   input.handbrake = kb.space || touch.hand;
   input.down = kb.run;
-  input.touchDrive = touch.gas || touch.brake;
+  input.lift = Number(input.handbrake || touch.gas) - Number(input.down || touch.brake);
   if (input.debugSteer !== undefined) { input.moveX = input.debugSteer; input.moveY = input.debugThr; }
 }
 

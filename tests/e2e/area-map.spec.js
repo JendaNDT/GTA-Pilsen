@@ -71,3 +71,30 @@ test('Dvěma prsty lze na telefonu přiblížit a posunout mapu bez změny cíle
     expect((await state()).scale).toBeCloseTo(initial.scale);
   } finally { await ctx.close(); }
 });
+
+test('potvrzený bod v Kopeckého sadech zůstane na místě po změně dopravy', async ({ page }) => {
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0'));
+  await page.waitForFunction(() => window.__ready);
+  await page.locator('#btn-play').click();
+  await page.evaluate(() => {
+    __freeze(true);
+    __game.toggleMap(true);
+    __game.areaMap.select({ x: -103, z: 290, name: 'Vybrané místo' });
+  });
+  await page.locator('#map-go').click();
+  const positions = await page.evaluate(() => {
+    const g = __game;
+    const positions = [];
+    for (const mode of ['car', 'foot']) {
+      g.mode = mode;
+      g.jobs.routeTimer = 0;
+      g.jobs.update(0);
+      g.toggleMap(true);
+      const { x, z } = g.jobs.waypoint;
+      positions.push([x, z, g.jobs.wpBeacon.position.x, g.jobs.wpBeacon.position.z]);
+      g.toggleMap(false);
+    }
+    return positions;
+  });
+  expect(positions).toEqual([[-103,290,-103,290],[-103,290,-103,290]]);
+});

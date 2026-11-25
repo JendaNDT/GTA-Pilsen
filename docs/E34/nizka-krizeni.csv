@@ -1,0 +1,149 @@
+zeměpisná šířka,zeměpisná délka,výškový rozdíl (m),horní cesta,horní typ,dolní cesta,dolní typ,horní profil,dolní profil,výsledek
+49.755216,13.576603,-2.19,bez názvu,PATH,bez názvu,SECONDARY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.746631,13.354817,-0.13,tramvajové koleje,tram,bez názvu,PATH,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.741127,13.361231,-0.07,bez názvu,RESIDENTIAL,U Planetária,RESIDENTIAL,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.682427,13.365084,-0.05,bez názvu,TRUNK,bez názvu,TRACK,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.7466,13.354783,-0.05,tramvajové koleje,tram,bez názvu,PATH,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.762563,13.373188,-0.04,bez názvu,FOOTWAY,alej Svobody,RESIDENTIAL,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.730228,13.377598,-0.04,bez názvu,FOOTWAY,bez názvu,RESIDENTIAL,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.77325,13.69774,-0.02,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.775175,13.624085,-0.02,bez názvu,FOOTWAY,bez názvu,SERVICE,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.773213,13.697771,-0.01,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.773167,13.69781,0,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.741132,13.361288,0,bez názvu,FOOTWAY,U Planetária,RESIDENTIAL,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.846717,13.373851,0,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.702307,13.334218,0,železnice,rail,bez názvu,PATH,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.773133,13.697839,0.01,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.738072,13.602284,0.01,železnice,rail,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.718784,13.377186,0.01,železnice,rail,bez názvu,PATH,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.725326,13.390087,0.02,bez názvu,SECONDARY,bez názvu,CYCLEWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.761376,13.383486,0.02,bez názvu,FOOTWAY,bez názvu,RESIDENTIAL,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.755216,13.657336,0.02,železnice,rail,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.755251,13.657326,0.03,železnice,rail,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.823679,13.580012,0.03,železnice,rail,bez názvu,PATH,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.818898,13.396676,0.04,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.773335,13.697668,0.06,bez názvu,FOOTWAY,bez názvu,SERVICE,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.818853,13.396645,0.06,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.738036,13.602289,0.07,železnice,rail,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.79409,13.388477,0.07,železnice,rail,bez názvu,CYCLEWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.818811,13.396615,0.08,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.764209,13.664941,0.09,bez názvu,SECONDARY,bez názvu,PATH,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.822881,13.388143,0.09,železnice,rail,bez názvu,TRACK,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.741056,13.36121,0.1,bez názvu,RESIDENTIAL,bez názvu,SERVICE,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.818773,13.396587,0.11,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.818694,13.396532,0.13,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.746536,13.354709,0.15,Vejprnická,SECONDARY,bez názvu,PATH,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.822281,13.369564,0.15,železnice,rail,bez názvu,TRACK,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.818735,13.39656,0.16,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.682472,13.364938,0.18,bez názvu,TRUNK,bez názvu,TRACK,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.741051,13.361266,0.19,bez názvu,FOOTWAY,bez názvu,SERVICE,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.696234,13.471304,0.22,železnice,rail,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.719909,13.368338,0.26,železnice,rail,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.743616,13.392386,0.27,bez názvu,FOOTWAY,bez názvu,SERVICE,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.743583,13.392426,0.31,bez názvu,FOOTWAY,bez názvu,SERVICE,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.743394,13.611475,0.32,železnice,rail,bez názvu,TRACK,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.68714,13.327351,0.32,železnice,rail,bez názvu,TRACK,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.768854,13.504195,0.33,železnice,rail,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.761899,13.380355,0.36,bez názvu,FOOTWAY,bez názvu,RESIDENTIAL,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.714765,13.417223,0.37,bez názvu,CYCLEWAY,U Seřadiště,TRUNK,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.736527,13.337608,0.42,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.74004,13.362471,0.44,bez názvu,FOOTWAY,U Planetária,RESIDENTIAL,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.750635,13.379461,0.46,bez názvu,FOOTWAY,Kamenická,RESIDENTIAL,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.746693,13.354889,0.5,Vejprnická,SECONDARY,bez názvu,PATH,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.698163,13.431111,0.55,bez názvu,MOTORWAY,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.743361,13.6115,0.59,železnice,rail,bez názvu,TRACK,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.77817,13.380338,0.62,bez názvu,FOOTWAY,bez názvu,SERVICE,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.757749,13.667752,0.64,železnice,rail,bez názvu,TRACK,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.727467,13.310954,0.66,bez názvu,CYCLEWAY,bez názvu,TRUNK,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.716183,13.643728,0.66,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.727547,13.310885,0.67,bez názvu,CYCLEWAY,bez názvu,SERVICE,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.740137,13.362486,0.7,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.727383,13.311027,0.71,bez názvu,CYCLEWAY,bez názvu,TRUNK,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.727363,13.311044,0.73,bez názvu,CYCLEWAY,bez názvu,TRUNK_LINK,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.69819,13.430945,0.77,bez názvu,MOTORWAY,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.698221,13.430754,0.83,bez názvu,TRUNK,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.741228,13.36126,0.85,bez názvu,RESIDENTIAL,U Planetária,RESIDENTIAL,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.741798,13.361477,0.9,bez názvu,RESIDENTIAL,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.743721,13.392255,0.92,bez názvu,FOOTWAY,Železniční,SECONDARY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.703788,13.444456,0.93,železnice,rail,bez názvu,TRACK,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.749966,13.315791,0.93,železnice,rail,bez názvu,CYCLEWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.741772,13.361467,0.94,bez názvu,RESIDENTIAL,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.741691,13.361435,1.07,bez názvu,RESIDENTIAL,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.714752,13.417033,1.07,bez názvu,CYCLEWAY,U Seřadiště,TRUNK,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.71627,13.643771,1.12,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.74122,13.361323,1.12,bez názvu,FOOTWAY,U Planetária,RESIDENTIAL,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.716263,13.643768,1.13,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.757719,13.667784,1.16,železnice,rail,bez názvu,TRACK,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.741804,13.361552,1.18,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.796176,13.38611,1.2,bez názvu,TRUNK,bez názvu,UNCLASSIFIED,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.741775,13.361541,1.23,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.71622,13.643746,1.24,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.716215,13.643744,1.26,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.709989,13.283081,1.29,bez názvu,MOTORWAY_LINK,bez názvu,TRACK,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.741537,13.361375,1.31,bez názvu,RESIDENTIAL,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.714778,13.417448,1.37,bez názvu,CYCLEWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.823481,13.579704,1.38,železnice,rail,bez názvu,PATH,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.741686,13.361506,1.39,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.7415,13.36136,1.41,bez názvu,RESIDENTIAL,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.714779,13.41746,1.41,bez názvu,CYCLEWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.741488,13.361356,1.43,bez názvu,RESIDENTIAL,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.746972,13.385119,1.48,Tyršova,PRIMARY,bez názvu,CYCLEWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.714782,13.417529,1.48,bez názvu,CYCLEWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.720098,13.341945,1.49,železnice,rail,bez názvu,TRACK,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.714787,13.417613,1.51,bez názvu,CYCLEWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.714791,13.417678,1.51,bez názvu,CYCLEWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.698134,13.431294,1.51,bez názvu,TRUNK,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.741418,13.361328,1.57,bez názvu,RESIDENTIAL,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.796158,13.386248,1.57,bez názvu,TRUNK,bez názvu,UNCLASSIFIED,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.734621,13.408267,1.59,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.743086,13.386203,1.6,železnice,rail,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.750009,13.315803,1.62,železnice,rail,bez názvu,CYCLEWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.709244,13.421983,1.64,bez názvu,TRUNK,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.742995,13.386211,1.66,železnice,rail,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.741521,13.361441,1.67,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.741305,13.361284,1.68,bez názvu,RESIDENTIAL,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.741384,13.361315,1.69,bez názvu,RESIDENTIAL,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.77043,13.439762,1.7,bez názvu,CYCLEWAY,Hlavní,TERTIARY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.719679,13.359601,1.71,bez názvu,TRUNK,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.741483,13.361426,1.74,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.743035,13.386208,1.74,železnice,rail,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.74134,13.361298,1.75,bez názvu,RESIDENTIAL,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.741476,13.361424,1.75,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.743065,13.348243,1.78,Domažlická,PRIMARY,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.746815,13.623966,1.81,železnice,rail,V Rybníčkách,TRACK,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.741295,13.361352,1.95,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.749645,13.380367,1.96,bez názvu,FOOTWAY,Tyršova,PRIMARY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.692491,13.431251,1.99,bez názvu,TRUNK,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.741408,13.361397,2.01,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.69299,13.43106,2.11,bez názvu,SERVICE,bez názvu,MOTORWAY_LINK,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.741374,13.361383,2.11,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.73985,13.532309,2.13,bez názvu,MOTORWAY,bez názvu,TRACK,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.74133,13.361366,2.13,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.743176,13.386194,2.14,železnice,rail,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.739918,13.37437,2.17,železnice,rail,bez názvu,CYCLEWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.746803,13.384869,2.19,Tyršova,PRIMARY,bez názvu,CYCLEWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.692451,13.431107,2.21,bez názvu,TRUNK,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.734592,13.408237,2.22,bez názvu,FOOTWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.736694,13.409252,2.33,Lobezská,TERTIARY,bez názvu,CYCLEWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.743012,13.348458,2.36,Domažlická,PRIMARY,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.700505,13.471036,2.44,Husova,SECONDARY,bez názvu,CYCLEWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.719815,13.359674,2.47,bez názvu,TRUNK,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.749569,13.380333,2.57,bez názvu,FOOTWAY,Tyršova,PRIMARY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.749834,13.379468,2.59,bez názvu,FOOTWAY,Tyršova,PRIMARY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.719987,13.381062,2.61,železnice,rail,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.745285,13.341006,2.65,bez názvu,CYCLEWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.740497,13.582491,2.68,železnice,rail,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.726384,13.357436,2.72,bez názvu,CYCLEWAY,bez názvu,TRUNK,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.745323,13.341019,2.73,bez názvu,CYCLEWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.726395,13.357585,2.74,bez názvu,CYCLEWAY,bez názvu,TRUNK,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.694204,13.401094,2.74,bez názvu,TERTIARY,bez názvu,PATH,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.740797,13.379685,2.74,železnice,rail,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.744812,13.331986,2.75,bez názvu,FOOTWAY,Lábkova,TERTIARY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.743223,13.38619,2.76,železnice,rail,bez názvu,FOOTWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.691486,13.430246,2.83,bez názvu,FOOTWAY,bez názvu,MOTORWAY_LINK,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.726276,13.357527,2.85,bez názvu,CYCLEWAY,bez názvu,TRUNK,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.749855,13.379365,2.85,bez názvu,FOOTWAY,Tyršova,PRIMARY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.750656,13.379345,2.91,bez názvu,FOOTWAY,Kamenická,RESIDENTIAL,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.726329,13.357661,2.91,tramvajové koleje,tram,bez názvu,CYCLEWAY,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.726265,13.357377,2.93,bez názvu,CYCLEWAY,bez názvu,TRUNK,True,False,Ověřit průchodnost a skutečnou světlost v podkladu
+49.789469,13.384653,2.93,bez názvu,CYCLEWAY,železnice,rail,True,False,Ověřit průchodnost a skutečnou světlost v podkladu

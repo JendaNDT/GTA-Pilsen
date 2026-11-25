@@ -5,6 +5,8 @@ Každá etapa plánu má vlastní soubor s úplným zadáním. Codex si sám na�
 Přehled etap a jejich vztahy jsou v [plánu](../plan-presnost-a-vzhled.md). Popis jednotlivých
 vylepšení je v [katalogu](../fyzika-a-grafika.md).
 
+Etapy E31–E36 navazují na audit hry. Jejich pořadí, závislosti a odkazy na jednotlivá zadání shrnuje [plán oprav](../plan-oprav-po-auditu.md).
+
 ## Pořadí a volba modelu
 
 Model a úroveň uvažování vychází z popisu OpenAI: Astra je nejschopnější model pro náročnou

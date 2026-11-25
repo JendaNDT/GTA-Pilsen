@@ -41,3 +41,26 @@ test('vrtulník omezí šikmý let na 300 km/h ve vodorovné rovině a zachová 
     assert.equal(v.GetY(), 7);
   } finally { flight.dispose(); physics.dispose(); }
 });
+
+test('asistence nakloní vrtulník dovnitř levé i pravé zatáčky', async () => {
+  const physics = new PhysicsWorld(await loadJolt());
+  try {
+    for (const yaw of [0, Math.PI / 2]) {
+      const x = Math.cos(yaw), z = -Math.sin(yaw);
+      for (const turn of [-1, 1]) {
+        const h = helicopter({ yaw, speed: 18, vx: -18 * z, vz: 18 * x });
+        const flight = new HelicopterBody(physics, h);
+        try {
+          for (let i = 0; i < 60; i++) {
+            flight.drive(1 / 60, 0, turn, 0, true);
+            physics.engine.Step(1 / 60, 1);
+            flight.read();
+          }
+          assert.ok(Math.sin(h.yaw - yaw) * turn < 0);
+          assert.ok((h.vx * x + h.vz * z) * turn < 0);
+          assert.ok((h.x * x + h.z * z) * turn < 0);
+        } finally { flight.dispose(); }
+      }
+    }
+  } finally { physics.dispose(); }
+});

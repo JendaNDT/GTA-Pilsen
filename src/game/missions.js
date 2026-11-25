@@ -1,4 +1,5 @@
 // Zakázky (rozvoz jídla), objevování památek, navigace k cíli.
+import { WalkingGuide } from './walking-guide.js';
 import { DRIVABLE_MAX } from '../config.js';
 import { makeBeacon, makePedMesh } from '../entities/models.js';
 import { LANDMARK_INFO } from './landmarks.js';
@@ -25,6 +26,7 @@ export class Jobs {
   constructor(game) {
     this.game = game;
     this.world = game.world;
+    this.walking = new WalkingGuide(this.world);
     this.job = null;
     this.last = null;
     this.waypoint = null;
@@ -53,7 +55,7 @@ export class Jobs {
 
   _snap(x, z) {
     const r = this.world.nearestRoad(x, z, 60, DRIVABLE_MAX, 0, _road, undefined, true);
-    return r ? { x: r.x, z: r.z } : { x, z };
+    return r ? { x: r.x, z: r.z, y: this.world.roadSurfaceY(r.road, r.seg, r.t, r.x, r.z) } : { x, z };
   }
 
   _routeLength(ax, az, bx, bz) {
@@ -253,9 +255,31 @@ export class Jobs {
 
   setWaypoint(x, z, name, stop = false, approach) {
     const walk = approach ?? this.world.meta.walkingApproaches?.[name];
-    this.waypoint = stop && !approach ? { x, z } : walk ? { x: walk.at(-2), z: walk.at(-1), walk } : this._snap(x, z);
+    const rx = walk?.[0] ?? x, rz = walk?.[1] ?? z;
+    const road = this.world.nearestRoad(rx, rz, 180, DRIVABLE_MAX, 0, _road, this.world.groundY(rx, rz), true);
+    this.arrivalRoad = null;
+    if (road) {
+      const w = this.world, edge = w.edgeOfPt[road.seg];
+      if (edge >= 0) {
+        let along = Math.hypot(road.x - w.rpx[road.seg], road.z - w.rpz[road.seg]);
+        for (let k = w.eA[edge]; k < road.seg; k++) along += Math.hypot(w.rpx[k+1]-w.rpx[k], w.rpz[k+1]-w.rpz[k]);
+        this.arrivalRoad = { x: road.x, z: road.z, y: w.roadSurfaceY(road.road,road.seg,road.t,road.x,road.z), edge, along };
+      }
+    }
+    this.waypoint = { x, z };
+    if (walk) this.waypoint.walk = walk;
+    this.roadStatus = null;
     this.routeTimer = 0;
     this.game.hud.toast(walk ? 'Cíl nastaven. Modré tečky vedou poslední úsek pěšky.' : 'Cíl nastaven – trasa je na minimapě.');
+  }
+
+  get displayedRoad() {
+    return this.waypoint && !this.job && this.game.mode === 'foot' ? null : this.route;
+  }
+
+  get displayedWalk() {
+    if (!this.waypoint || this.job) return this.walkRoute;
+    return this.game.mode === 'foot' ? this.walking.path : this.walkRoute ?? this.walking.path;
   }
 
   get walkRoute() {
@@ -292,9 +316,10 @@ export class Jobs {
       if (j.time <= 0) { this.end('expired', 'Bez odměny'); return; }
     }
     const t = this.target(), d = Math.hypot(t.x - p.x, t.z - p.z);
-    const ground = this.world.groundY(t.x, t.z);
+    const ground = j.type === 'food' && Number.isFinite(t.y) ? t.y : this.world.groundY(t.x, t.z);
     const at = (radius) => d < radius && Math.abs(p.y - ground) < 4.5;
     const foot = g.mode === 'foot', driver = g.mode === 'car' && g.car.health > 0;
+    const foodAt = () => (foot || driver) && at(11) && speed < 7;
     const taxiAt = () => at(6.5) && speed < 1.6;
     const walk = () => foot && at(8) && speed < 5.5;
     let instruction;
@@ -308,7 +333,7 @@ export class Jobs {
       case 'pickup':
         instruction = j.type === 'taxi' ? `Zastav u zákazníka · <b>${plain(j.name)}</b>`
           : `Vyzvedni jídlo · <b>${plain(j.name)}</b>${j.kind ? ` (${j.kind})` : ''}`;
-        if (j.type === 'taxi' ? taxiAt() : j.type === 'food' ? d < 11 && speed < 7 : (foot || driver) && at(10) && speed < 4) {
+        if (j.type === 'taxi' ? taxiAt() : j.type === 'food' ? foodAt() : (foot || driver) && at(10) && speed < 4) {
           j.time = j.limit;
           advance(j.type === 'car' ? 'drive' : j.type === 'transit' ? 'board' : 'drop');
           if (this.passenger) this.passenger.visible = false;
@@ -324,7 +349,7 @@ export class Jobs {
           if (p.skid > 0.45) j.comfort = Math.max(0, j.comfort - 7 * dt);
           j.speed = speed;
         }
-        if (j.type === 'taxi' ? taxiAt() : d < 11 && speed < 7) this._complete();
+        if (j.type === 'taxi' ? taxiAt() : foodAt()) this._complete();
         break;
       case 'drive': {
         const park = j.index === j.steps.length - 1;
@@ -363,11 +388,13 @@ export class Jobs {
       this.beacon.visible = false;
       hud.mission(null);
     }
+    this.walking.update(this.job ? null : this.waypoint, g.mode, p, this.arrivalRoad);
     if (this.waypoint) {
       this.wpBeacon.visible = !this.job;
       this.wpBeacon.position.set(this.waypoint.x, this.world.groundY(this.waypoint.x, this.waypoint.z), this.waypoint.z);
       const walk = this.waypoint.walk;
-      if ((!walk || g.mode === 'foot') && Math.hypot(this.waypoint.x - p.x, this.waypoint.z - p.z) < (walk ? 7 : 22)) {
+      if ((!walk || g.mode === 'foot') && Math.abs(this.wpBeacon.position.y - p.y) < 4.5 &&
+          Math.hypot(this.waypoint.x - p.x, this.waypoint.z - p.z) < (walk || g.mode === 'foot' ? 7 : 12)) {
         this.waypoint = null; this.wpBeacon.visible = false;
         if (!this.job) { this.route = null; hud.toast('Jsi v cíli.'); }
       }
@@ -384,7 +411,11 @@ export class Jobs {
       this.routeTimer = 2.2;
       const w = this.world;
       const walk = this.walkRoute;
-      const dx = walk ? walk[0] : tgt.x, dz = walk ? walk[1] : tgt.z;
+      const drivingToPin = tgt === this.waypoint && g.mode === 'car';
+      const arrival = drivingToPin && this.arrivalRoad ? this.arrivalRoad : tgt;
+      const useWalkApproach = walk && arrival === tgt;
+      const dx = useWalkApproach ? walk[0] : arrival.x;
+      const dz = useWalkApproach ? walk[1] : arrival.z;
       const atApproach = walk && (Math.hypot(p.x - dx, p.z - dz) < 25
         || (g.mode === 'foot' && Math.hypot(p.x - tgt.x, p.z - tgt.z) < 84));
       let start = w.nearestNode(p.x, p.z, 250, p.y), incoming = -1, sameEdge = false;
@@ -395,12 +426,15 @@ export class Jobs {
           const edge = w.edgeOfPt[position.seg];
           if (edge >= 0) incoming = forward ? edge : w.reverseEdge(edge);
           if (incoming >= 0) start = w.eTo[incoming];
-          sameEdge = tgt.edge === incoming && Math.hypot(p.x - tgt.x, p.z - tgt.z) < 60;
+          sameEdge = arrival.edge === incoming && Math.hypot(p.x - tgt.x, p.z - tgt.z) < 60;
         }
       }
-      const destination = tgt.edge === undefined ? w.nearestNode(dx, dz, 250) : w.eFrom[tgt.edge];
+      const destination = arrival.edge === undefined ? w.nearestNode(dx, dz, 250, arrival.y) : w.eFrom[arrival.edge];
       const ride = this.job?.phase === 'ride' && this.job.vehicle === g.ride ? g.ride : null;
-      const path = atApproach || sameEdge || ride ? [] : w.findPath(start, destination, 18000, incoming);
+      let path = null;
+      if (!drivingToPin || this.arrivalRoad) {
+        path = atApproach || sameEdge || ride ? [] : w.findPath(start, destination, 18000, incoming);
+      }
       if (ride) {
         const stop = ride.event.trip.stops.find(({ stop }, i) => i >= ride.stopIndex && stop === tgt.i);
         const pts = [];
@@ -415,15 +449,20 @@ export class Jobs {
           const A = w.eA[e], B = w.eB[e], step = A < B ? 1 : -1;
           for (let k = A; ; k += step) { pts.push(w.rpx[k], w.rpz[k]); if (k === B) break; }
         }
-        if (tgt.edge !== undefined && !sameEdge) {
-          for (let s = 0; s < tgt.along; s += 8) {
-            const pos = w.edgePoint(tgt.edge, s, 0, {});
+        if (arrival.edge !== undefined && !sameEdge) {
+          for (let s = 0; s < arrival.along; s += 8) {
+            const pos = w.edgePoint(arrival.edge, s, 0, {});
             pts.push(pos.x, pos.z);
           }
         }
         pts.push(dx, dz);
         this.route = pts;
-      } else this.route = [dx, dz];
+      } else {
+        this.route = null;
+      }
+      const status = drivingToPin && !path ? 'Příjezd po silnici se nepodařilo najít.' : null;
+      if (status && status !== this.roadStatus) hud.toast(status);
+      this.roadStatus = status;
     }
 
     // památky

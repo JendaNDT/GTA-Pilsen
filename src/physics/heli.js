@@ -119,7 +119,7 @@ export class HelicopterBody {
     const pitchRate = cos * omega.GetX() - sin * omega.GetZ();
     const rollRate = sin * omega.GetX() + cos * omega.GetZ();
     const pitch = assisted ? (forward * ASSISTED_PITCH - h.pitch) * 5 : forward * 0.9;
-    const roll = assisted ? (-turn * Math.min(0.22, h.speed * 0.018) - h.roll) * 5 : 0;
+    const roll = assisted ? (turn * Math.min(0.22, h.speed * 0.018) - h.roll) * 5 : 0;
     const pitchTorque = (pitch - pitchRate) * 16500 * power;
     const rollTorque = (roll - rollRate) * 4300 * power;
     vec.Set(pitchTorque * cos + rollTorque * sin, (-turn * 1.5 - omega.GetY()) * 12500 * power,

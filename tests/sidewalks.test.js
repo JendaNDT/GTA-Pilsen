@@ -94,6 +94,9 @@ test('řezy chodníku: obě strany, konec u domu a mezera v ústí jiné silnice
     isWater: () => false,
   };
   const [left, right] = sidewalkSections(world, 0, 0, 1);
+  const low = { ...world, sidewalks: null };
+  assert.equal(sidewalkSections(low, 0, 0, 1), null);
+  assert.deepEqual(sidewalkSections(low, 0, 0, 1, world.sidewalks), [left, right]);
   assert.equal(left.length, right.length);
   assert.ok(left.length >= 13);                      // řezy nejvýš po 8 m
   const at = (list, x) => list.reduce((best, s) => (Math.abs(s.cx - x) < Math.abs(best.cx - x) ? s : best));

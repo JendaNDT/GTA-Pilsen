@@ -43,7 +43,8 @@ import { input, pollInput, endFrame } from './input.js';
 import { GameClock, HOUR_SECONDS, formatDay, parseDay } from './clock.js';
 import { roadWear } from '../world/road-surface.js';
 import { TrafficRhythm } from './traffic-rhythm.js';
-import { automaticQuality, PROFILES, resolutionScale, SAVE_KEY } from './graphics-quality.js';
+import { readSave, SAVE_KEY } from './save-data.js';
+import { automaticQuality, PROFILES, resolutionScale } from './graphics-quality.js';
 import { profilePixelRatio } from '../world/image-quality.js';
 
 const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -102,9 +103,7 @@ export class Game {
       for (const h of this.helis) {
         if (!h.physical) continue;
         h.spinRotor(dt);
-        const touchLift = IS_TOUCH && input.touchDrive;
-        const lift = Number(input.handbrake) - Number(input.down) + (touchLift ? input.moveY : 0);
-        h.physical.drive(dt, touchLift ? 0 : input.moveY, input.moveX, clamp(lift, -1, 1), this.heliAssist);
+        h.physical.drive(dt, input.moveY, input.moveX, input.lift, this.heliAssist);
       }
       this.driver?.drive(dt, input.moveY, input.moveX, input.handbrake, this.steering === 'arcade', this.tireSurface);
       if (this.mode === 'foot' && !this.falls.active.has(this.player)) {
@@ -237,6 +236,7 @@ export class Game {
     this.garage = new Garage(this);
     this.jobs = new Jobs(this);
     this.shifts = new Shifts(this);
+    this.saveEnabled = true;
     this._load();
     this.applyOptics();
     this.chunks.setOrthophotoEnabled(this.orthophotoEnabled);
@@ -332,10 +332,9 @@ export class Game {
 
   // ----------------------------------------------------------- ukládání ----
   _load() {
-    let s = null;
-    try { s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); } catch { s = null; }
+    const s = readSave();
     let x = START.x, z = START.z;
-    if (s && (s.v === 1 || s.v === 2)) {
+    if (s) {
       this.money = s.money ?? 500; this.stats = s.stats || {};
       const day = s.clockMode === 'manual' ? parseDay(s.date) : null;
       if (day !== null && Number.isFinite(s.hour) && s.hour >= 0 && s.hour < 24) this.clock.set(day, s.hour);
@@ -388,6 +387,7 @@ export class Game {
   }
 
   _writeSave(changes = {}) {
+    if (!this.saveEnabled) return false;
     try {
       const f = this.focus;
       const tube = this.world.tunnelAt(f.x, f.z, f.y);
@@ -426,7 +426,14 @@ export class Game {
     return true;
   }
 
-  static clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch { /* nic */ } }
+  clearSave() {
+    if (!this.saveEnabled) return false;
+    try {
+      localStorage.removeItem(SAVE_KEY);
+      this.saveEnabled = false;
+      return true;
+    } catch { return false; }
+  }
 
   /** Najde poblíž volné místo (mimo budovy a vodu). */
   _clearSpot(x, z, r) {
@@ -875,8 +882,10 @@ export class Game {
 
   // -------------------------------------------------------------- krok ----
   update(dt, elapsed = dt) {
+    this.logicMs = this.physicsMs = null;
     if (this.paused) return;
-    pollInput();
+    const logicStart = DEBUG ? performance.now() : 0;
+    pollInput(this.shifts.active ? 'shift' : this.mode);
     if (input.pressed.has('map')) this.toggleMap();
     if (this.mapOpen) { endFrame(); return; }
 
@@ -935,7 +944,9 @@ export class Game {
     }
     this.trafficBodies.update(this, dt);
     this.fallDamage = 0;
+    const physicsStart = DEBUG ? performance.now() : 0;
     this.physics.update(elapsed);
+    const physicsEnd = DEBUG ? performance.now() : 0;
     for (const [ped, hit] of this.pedHits) this.applyPedHit(ped, hit);
     this.pedHits.clear();
     if (this.driver?.impactSpeed > 0) {
@@ -988,6 +999,10 @@ export class Game {
     this.jobs.update(dt);
     this.shifts.show();
     this._updateWanted(dt);
+    if (DEBUG) {
+      this.logicMs = physicsStart - logicStart + (performance.now() - physicsEnd);
+      this.physicsMs = physicsEnd - physicsStart;
+    }
     this._updateCamera(dt);
     this.chunks.heritage.updateTime(this.hour, dt);
     this.particles.update(dt, this.vehicles.cars, this.focus, QUALITY.waterDetail);
@@ -1069,7 +1084,7 @@ export class Game {
     if (this.mode === 'foot' && lc && this.vehicles.cars.includes(lc) && Math.hypot(lc.x - f.x, lc.z - f.z) < 500) {
       markers.push({ x: lc.x, z: lc.z, color: '#ffffff', size: 4.5 });
     }
-    hud.minimap(f.x, f.z, this.camYaw, f.yaw || 0, markers, this.shifts.active?.path ?? this.jobs.route, this.jobs.walkRoute);
+    hud.minimap(f.x, f.z, this.camYaw, f.yaw || 0, markers, this.shifts.active?.path ?? this.jobs.displayedRoad, this.jobs.displayedWalk);
   }
 
   toggleMap(force) {

@@ -21,6 +21,13 @@ export class AreaMap {
       .map(({ x, z, name, walk }) => ({ x, z, name, walk, exact: true }));
     initMapSearch(world, place => this.select(place, true), game.transit.timetable.stops, this.sites);
     this.bindGestures();
+    el('map-cancel').onclick = () => {
+      game.jobs.waypoint = null;
+      game.jobs.walking.clear();
+      if (!game.jobs.job) game.jobs.route = null;
+      this.clearPreview();
+      this.redraw();
+    };
     el('map-home').onclick = () => {
       this.view.home(game.focus.x, game.focus.z);
       this.clearPreview();
@@ -65,6 +72,8 @@ export class AreaMap {
   }
 
   render() {
+    el('map-cancel').hidden = !this.game.jobs.waypoint;
+    el('map-route-status').textContent = this.game.jobs.waypoint ? this.game.jobs.roadStatus || this.game.jobs.walking.status || '' : '';
     drawAreaMap(this.canvas, this.game, this.view, this.selected);
     const length = 86 / this.view.scale;
     const magnitude = 10 ** Math.floor(Math.log10(length));
@@ -96,6 +105,8 @@ export class AreaMap {
         place.name = (road && world.roadNames[world.r.name[road.road]]) || 'Vybrané místo';
       }
     }
+    const approach = place.walk ?? (!place.stop && world.meta.walkingApproaches?.[place.name]);
+    if (approach) place = { ...place, x: approach.at(-2), z: approach.at(-1), walk: approach };
     const allowed = insideMap(this.view.area, place.x, place.z);
     this.selected = place;
     if (center) this.view.home(place.x,place.z);

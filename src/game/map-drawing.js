@@ -118,13 +118,13 @@ export function drawAreaMap(canvas, game, view, selected) {
       if (scale >= .8) signs.unshift([bridge.x, bridge.z]);
     }
   }
-  const route = shifts.active?.path ?? jobs.route;
+  const route = shifts.active?.path ?? jobs.displayedRoad;
   if (route?.length >= 4) {
     g.beginPath(); g.moveTo(focus.x, focus.z);
     for (let i=0; i<route.length; i+=2) g.lineTo(route[i],route[i+1]);
     g.strokeStyle = '#ffbf48'; g.lineWidth = 3.5/scale; g.lineJoin = 'round'; g.stroke();
   }
-  hud._drawWalk(g, jobs.walkRoute, 1/scale);
+  hud._drawWalk(g, jobs.displayedWalk, 1/scale);
   hud._drawClosures(g, 1/scale);
   g.restore();
   drawBoundary(g, view);

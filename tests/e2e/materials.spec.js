@@ -110,7 +110,7 @@ test('E15 – proudění náhonu mění odlesk a lampy osvětlují povrch', asyn
 test('E15 – světlomety auta zůstávají v noci jasné', async ({ page, baseURL }) => {
   await openMaterialGame(page, baseURL);
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
-  await page.evaluate((date) => {
+  const bulbs = await page.evaluate((date) => {
     window.__freeze(true);
     const game = window.__game, car = game.player.lastCar;
     window.__setClock(date, 22);
@@ -120,11 +120,23 @@ test('E15 – světlomety auta zůstávají v noci jasné', async ({ page, baseU
     const { x, y, z, yaw } = car;
     const dx = Math.sin(yaw), dz = Math.cos(yaw);
     window.__view(x + dx * 4, y + 1.15, z + dz * 4, x + dx * 1.5, y + 0.75, z + dz * 1.5);
+    const mesh = car.mesh.userData.batches.detail;
+    const { position, aLens } = mesh.geometry.attributes;
+    const canvas = game.renderer.domElement;
+    return [-1, 1].map(side => {
+      const i = aLens.array.findIndex((id, index) => id === 1 && Math.sign(position.getX(index)) === side);
+      if (i < 0) throw new Error('Chybí přední žárovka na straně ' + side);
+      const center = mesh.localToWorld(mesh.position.clone().fromBufferAttribute(position, i)).project(game.camera);
+      return { x: Math.round((1 + center.x) * canvas.width / 2) - 1,
+        y: Math.round((1 - center.y) * canvas.height / 2) - 1, width: 3, height: 3 };
+    });
   }, reference.date);
-  const [headlight] = await averageRegion(page, { x: 470, y: 380, width: 16, height: 16 });
-  const [bumper] = await averageRegion(page, { x: 632, y: 426, width: 16, height: 16 });
-  expect(headlight).toBeGreaterThan(190);
-  expect(headlight - bumper).toBeGreaterThan(160);
+  const [bumper] = await averageRegion(page, { x: 632, y: 482, width: 16, height: 6 });
+  for (const bulb of bulbs) {
+    const [headlight] = await averageRegion(page, bulb);
+    expect(headlight, JSON.stringify(bulb)).toBeGreaterThan(190);
+    expect(headlight - bumper).toBeGreaterThan(160);
+  }
 });
 
 test('E15 – voda pod Wilsonovým mostem zůstává modrá', { tag: '@webgpu' }, async ({ page, baseURL }) => {

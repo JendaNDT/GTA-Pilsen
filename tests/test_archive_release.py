@@ -124,13 +124,14 @@ class ReleaseArchiveTest(unittest.TestCase):
                 write_zip = archive_release.write_zip
                 def change_during_pack(archive, files, tree, *executable):
                     hashes = write_zip(archive, files, tree, *executable)
-                    if tree == root / "dist":
+                    if tree.resolve() == (root / "dist").resolve():
                         (root / "public/test.bin").write_text("nová dlaždice")
                     return hashes
 
                 output = root / "zmenene"
                 with patch.object(archive_release, "write_zip", change_during_pack), self.assertRaises(SystemExit):
                     run("0.2.0")
+                self.assertEqual((root / "public/test.bin").read_text(), "nová dlaždice")
                 self.assertFalse(output.exists())
                 (root / "public/test.bin").write_text("dlaždice")
 

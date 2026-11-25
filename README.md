@@ -11,6 +11,8 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 ## Co ve hře je
 
+- Po potvrzení cíle na mapě zůstane značka na vybraném místě. Pěšky se můžeš nechat vést od muzea k lávce u Strouhy nebo na zastávku Slovany. [Pěší navigace](docs/E34.md)
+
 - Řidiči pouštějí lidi čekající u zebry. V sadech můžeš potkat chodce mířící od muzea ke Strouze, u hlavního nádraží sledovat výstup a nástup a v Radobyčicích výjezd autobusu ze zálivu. [Chování provozu ve hře](docs/E30.md)
 
 - **Z Plzně až do Dobříva.** Území má 33,2 × 19,7 km (zhruba 653 km²). Do Rokycan dojedeš
@@ -169,6 +171,11 @@ npm run build
 Výsledek je ve složce `dist/` – obyčejné statické soubory, které jde nahrát na jakýkoli hosting.
 
 ## Kontroly před odesláním změn
+
+[Plán oprav po auditu](docs/plan-oprav-po-auditu.md) · [Stav jednotlivých etap](docs/codex/stav.md)
+
+[Audit hry z 25. listopadu 2026](docs/audit-hry-2026-11-25.md) uvádí ověřené chyby, nedodělky a měření výkonu.
+[Plán oprav po auditu](docs/plan-oprav-po-auditu.md) řadí opravy do šesti etap a popisuje, jak je převzít ve hře.
 
 Výchozí pohledy, měření práce snímku a rozpočet vykreslování jsou v
 [protokolu E13](docs/E13.md). Panel výkonu v režimu `?debug&adapt=0` otevřeš klávesou

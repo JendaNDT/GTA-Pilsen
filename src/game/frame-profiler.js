@@ -113,7 +113,7 @@ export function createFrameProfiler(game, { sampleEvery = 1 } = {}) {
     game.render();
     const renderMs = performance.now() - renderStart;
     const sample = {
-      at, updateMs: updatedAt - at, renderMs,
+      at, updateMs: updatedAt - at, renderMs, logicMs: game.logicMs, physicsMs: game.physicsMs,
       gpuMs: null, ...readRenderStats(renderer),
     };
     if (timed) void measureGpu(sample);
@@ -129,7 +129,11 @@ export function createFrameProfiler(game, { sampleEvery = 1 } = {}) {
     const last = samples.at(-1);
     const frames = samples.slice(first).filter((frame) => last.at - frame.at <= windowMs);
     const gpu = frames.flatMap((frame) => frame.gpuMs === null ? [] : [frame.gpuMs]);
+    const logic = frames.map(f => f.logicMs).filter(Number.isFinite);
+    const physics = frames.map(f => f.physicsMs).filter(Number.isFinite);
     return {
+      logicMs: percentiles(logic), logicSamples: logic.length,
+      physicsMs: percentiles(physics), physicsSamples: physics.length, renderSamples: frames.length,
       durationMs: last ? Math.min(WINDOW_MS, last.at - startedAt) : 0,
       frames: frames.length,
       updateMs: percentiles(frames.map((f) => f.updateMs)),

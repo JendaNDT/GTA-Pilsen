@@ -1725,8 +1725,9 @@ export class ChunkManager {
     }
     // Chodníky s obrubníkem: od střední předvolby, vypne je ?chodniky=0. Platí pro celou hru
     // (vykreslení, fyziku i chodce), změna předvolby se projeví po novém načtení.
+    world.walkingWidths = Float32Array.from(this.roadVerge, (context, i) => sidewalkWidth(world.r.cls[i], world.r.flags[i], context));
     if (QUALITY.roadDetail && PARAMS.get('chodniky') !== '0' && world.sidewalks === undefined) {
-      world.sidewalks = Float32Array.from(this.roadVerge, (context, i) => sidewalkWidth(world.r.cls[i], world.r.flags[i], context));
+      world.sidewalks = world.walkingWidths;
       world.sidewalkPaving = Uint8Array.from(this.roadVerge, (context) => context === 2 ? 1 : 0);
     } else if (world.sidewalks === undefined) world.sidewalks = null;
     this.scratch = new Map();

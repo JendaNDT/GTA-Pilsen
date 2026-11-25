@@ -1,5 +1,3 @@
-export const SAVE_KEY = 'plzen-naplno-v1';
-
 const high = { pointLights: 128, headLights: 8, grassRadius: 50, particles: 384, debris: 200, ragdolls: 4, view: 1600, pixelRatio: 2, traffic: 50, peds: 32, parked: 70, treesPerForestChunk: 320,
   shadowCascades: 3, shadowSize: 2048, shadowFar: 750, clouds: 5,
   carLights: true, groundTex: 512, groundTexFar: 256, heritageDetail: true, terrainDetail: true, roadDetail: true, waterDetail: true, treeDetail: true };
@@ -18,8 +16,8 @@ export const PROFILES = {
 export function graphicsPreferences(saved) {
   const choice = saved?.choice;
   return {
-    choice: Object.hasOwn(PROFILES, choice) ? choice : 'auto',
-    automatic: Object.hasOwn(PROFILES, saved?.automatic) ? saved.automatic : null,
+    choice: typeof choice === 'string' && Object.hasOwn(PROFILES, choice) ? choice : 'auto',
+    automatic: typeof saved?.automatic === 'string' && Object.hasOwn(PROFILES, saved.automatic) ? saved.automatic : null,
   };
 }
 

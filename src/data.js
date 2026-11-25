@@ -159,35 +159,49 @@ export async function loadStructureCore(search = globalThis.location?.search, ve
   } catch { return null; }
 }
 
+const signedLayers = new Set(['heritage', 'streetDetails', 'collisionRoofs']);
+const rowsOf = (rows, length) => Array.isArray(rows) && rows.every(row =>
+  Array.isArray(row) && row.length === length && row.every(Number.isFinite));
+const gradeProfiles = rows => Array.isArray(rows) && rows.every(row => Array.isArray(row) &&
+  Number.isSafeInteger(row[0]) && row[0] >= 0 && rowsOf([row[1]], 4) &&
+  Array.isArray(row[2]) && row[2].length >= 2 && row[2].every(Number.isFinite));
+
+const optionalLayers = {
+  soundPlaces: data => rowsOf(data?.weirs, 2),
+  treeTypes: data => rowsOf(data?.trees, 2) && rowsOf(data?.land, 2),
+  buildingMaterials: data => rowsOf(data?.surfaces, 3),
+  gradeSeparations: data => data?.version === 1 && data.grid === 2 &&
+    rowsOf(data.terrain, 3) && rowsOf(data.clear ?? [], 3) && gradeProfiles(data.roads) &&
+    gradeProfiles(data.rails) && rowsOf(data.trackUnderpasses ?? [], 6) &&
+    Array.isArray(data.railAbutments ?? []) && (data.railAbutments ?? []).every(Number.isSafeInteger),
+  collisionRoofs: data => Array.isArray(data?.tiles),
+  streetDetails: data => Array.isArray(data?.sections),
+  heritage: data => Array.isArray(data?.tiles) && Array.isArray(data?.districts),
+  landscape: data => ArrayBuffer.isView(data?.tiles) && ArrayBuffer.isView(data?.offsets),
+};
+
 export async function loadAll(onProgress) {
   const totalSize = FILES.reduce((s, f) => s + f[2], 0);
   let loaded = 0;
   const bump = (n) => { loaded += n; onProgress(Math.min(1, loaded / totalSize)); };
   const base = import.meta.env?.BASE_URL || '/';
   const structureRequest = loadStructureCore();
-  const results = await Promise.all(FILES.map(([name, url]) => {
-    const optional = ['landscape', 'soundPlaces', 'gradeSeparations', 'treeTypes', 'buildingMaterials',
-      'streetDetails', 'heritage', 'collisionRoofs'].includes(name);
-    const request = fetchBuffer(base + url, bump, optional ? AbortSignal.timeout(12000) : undefined);
-    return optional ? request.catch(() => null) : request;
-  }));
   const out = {};
-  FILES.forEach(([name, url], i) => {
-    if ((['soundPlaces','gradeSeparations','treeTypes','buildingMaterials'].includes(name)) && !results[i]) return;
-    if (['heritage','streetDetails','collisionRoofs'].includes(name)) {
-      if (matchesGraphicAsset(url, results[i])) out[name] = JSON.parse(new TextDecoder().decode(results[i]));
-      return;
+  const results = await Promise.all(FILES.map(async ([name, url]) => {
+    const validate = optionalLayers[name];
+    try {
+      const buffer = await fetchBuffer(base + url, bump, validate ? AbortSignal.timeout(12000) : undefined);
+      if (signedLayers.has(name) && !matchesGraphicAsset(url, buffer)) throw new Error('nesouhlasí otisk');
+      const value = url.endsWith('.json') ? JSON.parse(new TextDecoder().decode(buffer)) : parsePack(buffer);
+      if (validate && !validate(value)) throw new Error('neplatná struktura vrstvy');
+      out[name] = value;
+      return buffer;
+    } catch (error) {
+      if (!validate) throw new Error('Chyba povinných dat ' + url + ' · ' + error.message, { cause: error });
+      console.warn('Vynechávám volitelnou vrstvu ' + url + ' · ' + error.message);
+      return null;
     }
-    if (name === 'landscape') {
-      if (results[i]?.byteLength > 8) {
-        try { out.landscape = parsePack(results[i]); } catch { /* základní síť stačí k hraní */ }
-      }
-      return;
-    }
-    out[name] = url.endsWith('.json')
-      ? JSON.parse(new TextDecoder().decode(new Uint8Array(results[i])))
-      : parsePack(results[i]);
-  });
+  }));
   const fingerprints = new Map();
   const fingerprint = (name) => {
     if (!fingerprints.has(name)) fingerprints.set(name, assetFingerprint(results[FILES.findIndex(([key]) => key === name)]));

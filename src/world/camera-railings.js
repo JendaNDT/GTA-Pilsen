@@ -6,7 +6,7 @@ const corners = Array.from({length:8}, () => new Vector3());
 const faces = [[0,1,5,4],[1,2,6,5],[2,3,7,6],[3,0,4,7],[4,5,6,7],[3,2,1,0]];
 
 // Kamera sleduje viditelný tvar včetně sklonu. Skrytý díl po odlomení výhled neomezuje.
-export function cameraRailFraction(world, x, y, z, bx, by, bz) {
+export function cameraRailFraction(world, x, y, z, bx, by, bz, fixtures = world.bridgeEdges) {
   ray.origin.set(x,y,z);
   ray.direction.set(bx-x,by-y,bz-z);
   const length = ray.direction.length();
@@ -20,7 +20,7 @@ export function cameraRailFraction(world, x, y, z, bx, by, bz) {
   const endCol = Math.min(world.cols-1,col(maxX+4)), endRow = Math.min(world.rows-1,row(maxZ+4));
   for (let iz = Math.max(0,row(minZ-4)); iz <= endRow; iz++) {
     for (let ix = Math.max(0,col(minX-4)); ix <= endCol; ix++) {
-      const edges = world.bridgeEdges.get(iz*world.cols+ix);
+      const edges = fixtures.get(iz*world.cols+ix);
       if (!edges) continue;
       for (const edge of edges) {
         if (edge.x < minX-4 || edge.x > maxX+4 || edge.z < minZ-4 || edge.z > maxZ+4 ||

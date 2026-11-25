@@ -1,5 +1,7 @@
 // Společné konstanty a nastavení podle zařízení.
-import { graphicsPreferences, PROFILES, SAVE_KEY } from './game/graphics-quality.js';
+import { graphicsPreferences, PROFILES } from './game/graphics-quality.js';
+
+import { readSave } from './game/save-data.js';
 
 export const IS_TOUCH = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
 export const IS_MOBILE = IS_TOUCH && Math.min(screen.width, screen.height) < 900;
@@ -11,9 +13,7 @@ export const PARAMS = params;
 export const CHUNK = 256;            // velikost dlaždice světa v metrech
 export const COLL_CELL = 64;         // buňka kolizní mřížky
 
-let storedGraphics;
-try { storedGraphics = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null')?.graphics; } catch { /* stará nebo nedostupná uložená hra */ }
-export const SAVED_GRAPHICS = graphicsPreferences(storedGraphics);
+export let SAVED_GRAPHICS;
 export const QUALITY_OVERRIDE = Object.hasOwn(PROFILES, params.get('quality')) ? params.get('quality') : null;
 export const DEFAULT_QUALITY = IS_MOBILE ? 'low' : 'high';
 export const QUALITY = {};
@@ -24,8 +24,12 @@ export function applyQualityProfile(name) {
   if (params.has('view')) QUALITY.view = +params.get('view');
 }
 
-applyQualityProfile(QUALITY_OVERRIDE ?? (SAVED_GRAPHICS.choice === 'auto'
-  ? SAVED_GRAPHICS.automatic ?? DEFAULT_QUALITY : SAVED_GRAPHICS.choice));
+export function refreshSavedGraphics() {
+  SAVED_GRAPHICS = graphicsPreferences(readSave()?.graphics);
+  applyQualityProfile(QUALITY_OVERRIDE ?? (SAVED_GRAPHICS.choice === 'auto'
+    ? SAVED_GRAPHICS.automatic ?? DEFAULT_QUALITY : SAVED_GRAPHICS.choice));
+}
+refreshSavedGraphics();
 
 // třídy silnic (stejné číslování jako v tools/build_data.py)
 export const RC = {

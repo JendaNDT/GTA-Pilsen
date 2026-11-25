@@ -1,0 +1,78 @@
+{
+  "mistni": {
+    "baseline": {
+      "studená": {
+        "cache": "studená",
+        "menuMs": 5332,
+        "bytes": 31310821,
+        "coreBytes": 27240558,
+        "transferBytes": 31326421,
+        "controllableMs": 6068
+      },
+      "zahřátá": {
+        "cache": "zahřátá",
+        "menuMs": 4515,
+        "bytes": 31543597,
+        "coreBytes": 27244272,
+        "transferBytes": 10489420,
+        "controllableMs": 4949
+      }
+    },
+    "candidate": {
+      "studená": {
+        "cache": "studená",
+        "menuMs": 4521,
+        "bytes": 31543600,
+        "coreBytes": 27244275,
+        "transferBytes": 31560400,
+        "controllableMs": 4971
+      },
+      "zahřátá": {
+        "cache": "zahřátá",
+        "menuMs": 4607,
+        "bytes": 31543600,
+        "coreBytes": 27244275,
+        "transferBytes": 10489420,
+        "controllableMs": 4982
+      }
+    }
+  },
+  "omezena": {
+    "baseline": {
+      "studená": {
+        "cache": "studená",
+        "menuMs": 26162,
+        "bytes": 27809306,
+        "coreBytes": 25773523,
+        "transferBytes": 27818006,
+        "controllableMs": 27281
+      },
+      "zahřátá": {
+        "cache": "zahřátá",
+        "menuMs": 13221,
+        "bytes": 28905974,
+        "coreBytes": 25921425,
+        "transferBytes": 10598831,
+        "controllableMs": 13704
+      }
+    },
+    "candidate": {
+      "studená": {
+        "cache": "studená",
+        "menuMs": 26108,
+        "bytes": 27809309,
+        "coreBytes": 25773526,
+        "transferBytes": 27818009,
+        "controllableMs": 27008
+      },
+      "zahřátá": {
+        "cache": "zahřátá",
+        "menuMs": 13339,
+        "bytes": 29115977,
+        "coreBytes": 26131428,
+        "transferBytes": 10808831,
+        "controllableMs": 13738
+      }
+    }
+  }
+}

@@ -1,0 +1,560 @@
+{
+  "revize": "42d75715cb2ee76ceb7311088cda679553c00dc5",
+  "nastroj": "tools/measure_map.mjs",
+  "behy": {
+    "nizka": {
+      "browser": "159.0.8154.6",
+      "viewport": "1920 × 1080",
+      "pilot": false,
+      "centerFlight": false,
+      "coldStartMs": [
+        2873,
+        2842,
+        2877
+      ],
+      "quality": "low",
+      "work": {
+        "date": "2026-11-17",
+        "hour": 10,
+        "durationMs": 10000,
+        "chromiumFlags": [
+          "--disable-gpu-vsync",
+          "--disable-frame-rate-limit"
+        ]
+      },
+      "renderer": "WebGL 2",
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Version 27.2.1 (Build 26B131))",
+      "car": {
+        "metres": 103,
+        "start": [
+          100,
+          528
+        ],
+        "end": [
+          123,
+          628
+        ],
+        "chunks": 1,
+        "maxPending": 0,
+        "shadowEnabled": false,
+        "drawingBuffer": [
+          1920,
+          1080
+        ],
+        "cityTiles": 36,
+        "fps": 341.9,
+        "p95FrameMs": 3.7,
+        "maxFrameMs": 74.2,
+        "framesOver50Ms": 3,
+        "measurement": {
+          "durationMs": 9972.5,
+          "frames": 3420,
+          "updateMs": {
+            "median": 0.10000002384185791,
+            "p95": 0.7999999523162842,
+            "p99": 1.5
+          },
+          "renderMs": {
+            "median": 2.600000023841858,
+            "p95": 3.200000047683716,
+            "p99": 3.8000000715255737
+          },
+          "workMs": {
+            "median": 2.700000047683716,
+            "p95": 3.5,
+            "p99": 4.200000047683716
+          },
+          "gpuMs": {
+            "median": 4.209708,
+            "p95": 5.567125,
+            "p99": 10.038666
+          },
+          "gpuSamples": 42,
+          "renderStats": {
+            "calls": 139,
+            "triangles": 322608,
+            "geometries": 219,
+            "textures": 68
+          },
+          "pixelRatio": 1,
+          "shadows": false
+        },
+        "physicsSteps": 604,
+        "physicsP95Ms": 0.7000000476837158
+      },
+      "heli": {
+        "metres": 250,
+        "start": [
+          23421,
+          0
+        ],
+        "end": [
+          23671,
+          0
+        ],
+        "chunks": 2,
+        "maxPending": 7,
+        "shadowEnabled": false,
+        "drawingBuffer": [
+          1920,
+          1080
+        ],
+        "cityTiles": 0,
+        "fps": 474,
+        "p95FrameMs": 3.7,
+        "maxFrameMs": 6.6,
+        "framesOver50Ms": 0,
+        "measurement": {
+          "durationMs": 9997.600000023842,
+          "frames": 4741,
+          "updateMs": {
+            "median": 0,
+            "p95": 0.2999999523162842,
+            "p99": 0.3999999761581421
+          },
+          "renderMs": {
+            "median": 2.3000000715255737,
+            "p95": 3.5,
+            "p99": 3.8000000715255737
+          },
+          "workMs": {
+            "median": 2.399999976158142,
+            "p95": 3.5,
+            "p99": 3.8000000715255737
+          },
+          "gpuMs": {
+            "median": 2.325708,
+            "p95": 4.994708,
+            "p99": 4.994708
+          },
+          "gpuSamples": 19,
+          "renderStats": {
+            "calls": 55,
+            "triangles": 149880,
+            "geometries": 45,
+            "textures": 54
+          },
+          "pixelRatio": 1,
+          "shadows": false
+        },
+        "physicsSteps": 604,
+        "physicsP95Ms": 0.30000007152557373
+      }
+    },
+    "webgl2_stiny_1": {
+      "browser": "159.0.8154.6",
+      "viewport": "1920 × 1080",
+      "pilot": false,
+      "centerFlight": false,
+      "coldStartMs": [
+        4122,
+        4184
+      ],
+      "quality": "high",
+      "work": {
+        "date": "2026-11-09",
+        "hour": 7.5,
+        "durationMs": 10000,
+        "chromiumFlags": [
+          "--disable-gpu-vsync",
+          "--disable-frame-rate-limit"
+        ]
+      },
+      "renderer": "WebGL 2",
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Version 27.2.1 (Build 26B131))",
+      "rush": {
+        "metres": 0,
+        "start": [
+          -383,
+          316
+        ],
+        "end": [
+          -383,
+          316
+        ],
+        "chunks": 1,
+        "maxPending": 0,
+        "shadowEnabled": true,
+        "drawingBuffer": [
+          1920,
+          1080
+        ],
+        "cityTiles": 64,
+        "fps": 82.2,
+        "p95FrameMs": 14.4,
+        "maxFrameMs": 74.8,
+        "framesOver50Ms": 1,
+        "measurement": {
+          "durationMs": 9936.800000071526,
+          "frames": 822,
+          "updateMs": {
+            "median": 3.1999999284744263,
+            "p95": 4.200000047683716,
+            "p99": 5.200000047683716
+          },
+          "renderMs": {
+            "median": 8.799999952316284,
+            "p95": 9.600000023841858,
+            "p99": 10.600000023841858
+          },
+          "workMs": {
+            "median": 12,
+            "p95": 13.299999952316284,
+            "p99": 14.699999928474426
+          },
+          "gpuMs": {
+            "median": 28.752624,
+            "p95": 36.899874,
+            "p99": 39.392499
+          },
+          "gpuSamples": 262,
+          "renderStats": {
+            "calls": 1259,
+            "triangles": 1732210,
+            "geometries": 421,
+            "textures": 308
+          },
+          "pixelRatio": 1,
+          "shadows": true
+        },
+        "peakCars": 40,
+        "peakDriven": 23,
+        "physicsSteps": 603,
+        "physicsP95Ms": 2.799999952316284,
+        "site": "Klatovská třída"
+      }
+    },
+    "webgl2_stiny_2": {
+      "browser": "159.0.8154.6",
+      "viewport": "1920 × 1080",
+      "pilot": false,
+      "centerFlight": false,
+      "coldStartMs": [
+        4108,
+        4361
+      ],
+      "quality": "high",
+      "work": {
+        "date": "2026-11-09",
+        "hour": 7.5,
+        "durationMs": 10000,
+        "chromiumFlags": [
+          "--disable-gpu-vsync",
+          "--disable-frame-rate-limit"
+        ]
+      },
+      "renderer": "WebGL 2",
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Version 27.2.1 (Build 26B131))",
+      "rush": {
+        "metres": 0,
+        "start": [
+          -383,
+          316
+        ],
+        "end": [
+          -383,
+          316
+        ],
+        "chunks": 1,
+        "maxPending": 0,
+        "shadowEnabled": true,
+        "drawingBuffer": [
+          1920,
+          1080
+        ],
+        "cityTiles": 64,
+        "fps": 67.2,
+        "p95FrameMs": 17.4,
+        "maxFrameMs": 71.6,
+        "framesOver50Ms": 1,
+        "measurement": {
+          "durationMs": 9938,
+          "frames": 673,
+          "updateMs": {
+            "median": 4.5,
+            "p95": 5.299999952316284,
+            "p99": 8.100000023841858
+          },
+          "renderMs": {
+            "median": 10.5,
+            "p95": 11.899999976158142,
+            "p99": 12.899999976158142
+          },
+          "workMs": {
+            "median": 14.700000047683716,
+            "p95": 17,
+            "p99": 19.899999976158142
+          },
+          "gpuMs": {
+            "median": 21.056041,
+            "p95": 28.870416,
+            "p99": 34.797458
+          },
+          "gpuSamples": 296,
+          "renderStats": {
+            "calls": 1227,
+            "triangles": 1715105,
+            "geometries": 420,
+            "textures": 308
+          },
+          "pixelRatio": 1,
+          "shadows": true
+        },
+        "peakCars": 40,
+        "peakDriven": 26,
+        "physicsSteps": 605,
+        "physicsP95Ms": 4,
+        "site": "Klatovská třída"
+      }
+    },
+    "webgl2_bez_stinu_1": {
+      "browser": "159.0.8154.6",
+      "viewport": "1920 × 1080",
+      "pilot": false,
+      "centerFlight": false,
+      "coldStartMs": [
+        4011,
+        4353
+      ],
+      "quality": "high",
+      "work": {
+        "date": "2026-11-09",
+        "hour": 7.5,
+        "durationMs": 10000,
+        "chromiumFlags": [
+          "--disable-gpu-vsync",
+          "--disable-frame-rate-limit"
+        ]
+      },
+      "renderer": "WebGL 2",
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Version 27.2.1 (Build 26B131))",
+      "rush": {
+        "metres": 0,
+        "start": [
+          -383,
+          316
+        ],
+        "end": [
+          -383,
+          316
+        ],
+        "chunks": 1,
+        "maxPending": 0,
+        "shadowEnabled": false,
+        "drawingBuffer": [
+          1920,
+          1080
+        ],
+        "cityTiles": 64,
+        "fps": 97,
+        "p95FrameMs": 17.3,
+        "maxFrameMs": 93.8,
+        "framesOver50Ms": 24,
+        "measurement": {
+          "durationMs": 9960.300000071526,
+          "frames": 971,
+          "updateMs": {
+            "median": 2.8000000715255737,
+            "p95": 5.900000095367432,
+            "p99": 9.400000095367432
+          },
+          "renderMs": {
+            "median": 4.700000047683716,
+            "p95": 6.899999976158142,
+            "p99": 7.299999952316284
+          },
+          "workMs": {
+            "median": 7.400000095367432,
+            "p95": 12.5,
+            "p99": 15.699999928474426
+          },
+          "gpuMs": {
+            "median": 28.501999,
+            "p95": 38.928916,
+            "p99": 40.786416
+          },
+          "gpuSamples": 200,
+          "renderStats": {
+            "calls": 430,
+            "triangles": 743419,
+            "geometries": 335,
+            "textures": 300
+          },
+          "pixelRatio": 1,
+          "shadows": false
+        },
+        "peakCars": 40,
+        "peakDriven": 24,
+        "physicsSteps": 593,
+        "physicsP95Ms": 4.100000023841858,
+        "site": "Klatovská třída"
+      }
+    },
+    "webgl2_bez_stinu_2": {
+      "browser": "159.0.8154.6",
+      "viewport": "1920 × 1080",
+      "pilot": false,
+      "centerFlight": false,
+      "coldStartMs": [
+        3944,
+        4192
+      ],
+      "quality": "high",
+      "work": {
+        "date": "2026-11-09",
+        "hour": 7.5,
+        "durationMs": 10000,
+        "chromiumFlags": [
+          "--disable-gpu-vsync",
+          "--disable-frame-rate-limit"
+        ]
+      },
+      "renderer": "WebGL 2",
+      "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Version 27.2.1 (Build 26B131))",
+      "rush": {
+        "metres": 0,
+        "start": [
+          -383,
+          316
+        ],
+        "end": [
+          -383,
+          316
+        ],
+        "chunks": 1,
+        "maxPending": 0,
+        "shadowEnabled": false,
+        "drawingBuffer": [
+          1920,
+          1080
+        ],
+        "cityTiles": 64,
+        "fps": 102.2,
+        "p95FrameMs": 18.4,
+        "maxFrameMs": 77,
+        "framesOver50Ms": 8,
+        "measurement": {
+          "durationMs": 9955.200000047684,
+          "frames": 1023,
+          "updateMs": {
+            "median": 3.200000047683716,
+            "p95": 5.100000023841858,
+            "p99": 8.100000023841858
+          },
+          "renderMs": {
+            "median": 5.200000047683716,
+            "p95": 6,
+            "p99": 6.400000095367432
+          },
+          "workMs": {
+            "median": 8,
+            "p95": 10.899999976158142,
+            "p99": 13.399999976158142
+          },
+          "gpuMs": {
+            "median": 27.874,
+            "p95": 29.708166,
+            "p99": 31.073749
+          },
+          "gpuSamples": 243,
+          "renderStats": {
+            "calls": 463,
+            "triangles": 761425,
+            "geometries": 343,
+            "textures": 301
+          },
+          "pixelRatio": 1,
+          "shadows": false
+        },
+        "peakCars": 40,
+        "peakDriven": 27,
+        "physicsSteps": 603,
+        "physicsP95Ms": 3.799999952316284,
+        "site": "Klatovská třída"
+      }
+    },
+    "webgpu_stiny": {
+      "browser": "159.0.8154.6",
+      "viewport": "1920 × 1080",
+      "pilot": false,
+      "centerFlight": false,
+      "coldStartMs": [
+        3941,
+        4256
+      ],
+      "quality": "high",
+      "work": {
+        "date": "2026-11-09",
+        "hour": 7.5,
+        "durationMs": 10000,
+        "chromiumFlags": [
+          "--disable-gpu-vsync",
+          "--disable-frame-rate-limit"
+        ]
+      },
+      "renderer": "WebGPU",
+      "gpu": "apple / metal-3",
+      "rush": {
+        "metres": 0,
+        "start": [
+          -383,
+          316
+        ],
+        "end": [
+          -383,
+          316
+        ],
+        "chunks": 1,
+        "maxPending": 0,
+        "shadowEnabled": true,
+        "drawingBuffer": [
+          1920,
+          1080
+        ],
+        "cityTiles": 64,
+        "fps": 64.1,
+        "p95FrameMs": 19.6,
+        "maxFrameMs": 55.3,
+        "framesOver50Ms": 1,
+        "measurement": {
+          "durationMs": 9948.899999976158,
+          "frames": 641,
+          "updateMs": {
+            "median": 4.700000047683716,
+            "p95": 5.700000047683716,
+            "p99": 9.600000023841858
+          },
+          "renderMs": {
+            "median": 11.399999976158142,
+            "p95": 12.5,
+            "p99": 13.400000095367432
+          },
+          "workMs": {
+            "median": 16.09999990463257,
+            "p95": 18.600000023841858,
+            "p99": 22.09999990463257
+          },
+          "gpuMs": {
+            "median": 15.269888,
+            "p95": 19.398656,
+            "p99": 20.97152
+          },
+          "gpuSamples": 180,
+          "renderStats": {
+            "calls": 1289,
+            "triangles": 1752110,
+            "geometries": 416,
+            "textures": 308
+          },
+          "pixelRatio": 1,
+          "shadows": true
+        },
+        "peakCars": 40,
+        "peakDriven": 14,
+        "physicsSteps": 604,
+        "physicsP95Ms": 3.8000000715255737,
+        "site": "Klatovská třída"
+      }
+    }
+  }
+}

@@ -22,10 +22,10 @@ export function parkCrossing(trip) {
 }
 
 // Stejné osy pěšin jako na povrchu parku a v pěší navigaci na lávku.
-const walks = [museumWalk, ...gardenWalks, ...easternWalks];
+export const parkWalks = [museumWalk, ...gardenWalks, ...easternWalks];
 export function parkTrip(x, z, radius = 24) {
   let best = radius ** 2, trip = null;
-  for (const path of walks) {
+  for (const path of parkWalks) {
     if (path.length < 2) continue;
     for (const direction of [1, -1]) {
       const start = direction === 1 ? 0 : path.length - 1;
