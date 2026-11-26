@@ -55,7 +55,30 @@ export function waterOptics(point, field, env) {
       1, broad.mul(0.65).sub(fine.mul(0.25)).add(cross.mul(0.30)).mul(strength)).normalize();
   })();
 
-  const ripple = Fn(() => {
+  const shade = (view, foam) => {
+    const fresnel = view.dot(normal).saturate().oneMinus().pow(4.5).mul(0.65).add(0.045);
+    const shallows = mix(vec3(0.092, 0.225, 0.270), vec3(0.28, 0.27, 0.16), lake);
+    const depth = smoothstep(0.01, 0.82, field.b);
+    const bed = mix(shallows, vec3(0.033, 0.132, 0.180), depth);
+    // Dvě rozbíhající se pěnové stopy za zaměřeným středním pilířem Wilsonova mostu.
+    const downstream = float(450).sub(point.y);
+    const center = downstream.mul(0.11).add(202.76);
+    const sides = point.x.sub(center).abs().sub(downstream.max(0).mul(0.18).add(1.45)).abs();
+    const wake = smoothstep(0.10, 1.4, sides).oneMinus().mul(
+      smoothstep(0, 3, downstream), smoothstep(10, 32, downstream).oneMinus());
+    const foamStream = smoothstep(0.54, 0.87, valueNoise(point.sub(flow.mul(env.time)).mul(vec2(1.75, 0.67))))
+      .mul(river, field.b, wake.mul(0.22).add(0.055));
+    const tint = mix(mix(bed, env.sky, fresnel), vec3(0.62, 0.73, 0.74), foam.max(foamStream));
+    const glint = reflect(view.negate(), normal).dot(env.sunDir).saturate().pow(105)
+      .mul(env.night.oneMinus(), 0.44);
+    return { tint, glint };
+  };
+  return { normal, weight, shade };
+}
+
+export function waterImpactRings(point, field, env) {
+  const flow = field.rg.mul(255).sub(128).div(127);
+  return Fn(() => {
     const result = float(0).toVar();
     If(env.time.sub(latestWaterRipple).lessThan(2.35), () => {
       Loop(waterRipples.length, ({ i }) => {
@@ -70,25 +93,4 @@ export function waterOptics(point, field, env) {
     });
     return result;
   })();
-
-  const shade = (view, foam) => {
-    const fresnel = view.dot(normal).saturate().oneMinus().pow(4.5).mul(0.65).add(0.045);
-    const shallows = mix(vec3(0.092, 0.225, 0.270), vec3(0.28, 0.27, 0.16), lake);
-    const depth = smoothstep(0.01, 0.82, field.b);
-    const bed = mix(shallows, vec3(0.033, 0.132, 0.180), depth);
-    // Dvě rozbíhající se pěnové stopy za zaměřeným středním pilířem Wilsonova mostu.
-    const downstream = float(450).sub(point.y);
-    const center = downstream.mul(0.11).add(202.76);
-    const sides = point.x.sub(center).abs().sub(downstream.max(0).mul(0.18).add(1.45)).abs();
-    const wake = smoothstep(0.10, 1.4, sides).oneMinus().mul(
-      smoothstep(0, 3, downstream), smoothstep(10, 32, downstream).oneMinus());
-    const foamStream = smoothstep(0.54, 0.87, valueNoise(point.sub(flow.mul(env.time)).mul(vec2(1.75, 0.67))))
-      .mul(river, field.b, wake.mul(0.22).add(0.055));
-    const foamTint = vec3(0.62, 0.73, 0.74);
-    const tint = mix(mix(bed, env.sky, fresnel), foamTint, foam.max(foamStream).max(ripple.mul(0.50)));
-    const glint = reflect(view.negate(), normal).dot(env.sunDir).saturate().pow(105)
-      .mul(env.night.oneMinus(), 0.44);
-    return { tint, glint };
-  };
-  return { normal, weight, shade };
 }

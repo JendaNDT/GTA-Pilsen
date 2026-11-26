@@ -6,6 +6,7 @@ import { PlayerVehicle } from '../src/physics/vehicle.js';
 import { riverBed, Water } from '../src/physics/water.js';
 import { terrainTriangles } from '../src/physics/terrain.js';
 import { sampleWater, waterLevelAt, waterWalking } from '../src/world/water-profile.js';
+import { indexWaterCurrents } from '../src/world/water-current.js';
 
 test('dno na kraji řeky navazuje na suchou vozovku v původní výšce', () => {
   const world = { water: [{ i: 0, x0: 2, z0: -4, x1: 18, z1: 12 }],
@@ -105,7 +106,10 @@ test('Jolt unáší plovoucí auto po řece a stojatá voda jej nechá na míst�
 
 test('výška hladiny souhlasí pro plavce i geometrii a na hraně úseku přejde do terénu', () => {
   const world = { improvedWater: true, baseElevation: 313.2, heightAt: () => -10,
-    nearestShore: () => null };
+    waterAreaAt: () => 4, nearestShore(x, z, reach, area) {
+      assert.equal(area, 4);
+      return null;
+    } };
   const center = waterLevelAt(world, 201, 495, -10);
   assert.ok(Math.abs(center - (300.95 - 313.2)) < 1e-9);
   assert.equal(center, sampleWater(world, 201, 495, {}).level);
@@ -113,4 +117,26 @@ test('výška hladiny souhlasí pro plavce i geometrii a na hraně úseku přejd
   assert.equal(waterLevelAt({ ...world, nearestShore: () => [0, 0, 0] }, 201, 495, -10), -10);
   assert.equal(waterLevelAt({ ...world, improvedWater: false }, 201, 495, -10), -10);
   assert.ok(Math.abs(waterLevelAt(world, 1350, -3200, -10) - (311.4 - 313.2)) < 1e-9);
+});
+
+test('mapovaný proud navazuje přes hranici buněk a za hrází nerozhýbe jiný polygon', () => {
+  const land = { lCls: [0, 2, 3], lStart: [0, 2, 4, 6],
+    lx: [-300, 2300, -300, 2300, -300, 2300], lz: [0, 0, 1000, 1000, 2200, 2200] };
+  const areaAt = (x, z) => z < 28 ? 0 : z < 63 ? 1 : z < 137 ? 2 : 3;
+  const world = {
+    improvedWater: true, waterCurrents: indexWaterCurrents(land),
+    waterAreaAt: areaAt, landContains: (area, x, z) => areaAt(x, z) === area,
+    nearestShore: () => [0, 0, 20], heightAt: () => 0,
+  };
+  assert.equal(sampleWater(world, 95.9, 0, {}).vx, 0.55);
+  assert.equal(sampleWater(world, 96.1, 0, {}).vx, 0.55);
+  assert.equal(sampleWater(world, 96, 42, {}).vx, 0);
+  assert.equal(sampleWater(world, 96, 100, {}).vx, 0.27);
+  assert.equal(sampleWater(world, 96, 220, {}).vx, 0);
+  const margin = sampleWater(world, 274, 0, {});
+  assert.ok(margin.vx > 0 && margin.vx < 0.55);
+  assert.equal(sampleWater(world, 278, 0, {}).vx, 0);
+  const bank = sampleWater({ ...world, nearestShore: () => [0, 0, 2] }, 96, 0, {});
+  assert.ok(bank.vx > 0 && bank.vx < 0.1);
+  assert.equal(sampleWater({ ...world, improvedWater: false }, 96, 0, {}).vx, 0);
 });

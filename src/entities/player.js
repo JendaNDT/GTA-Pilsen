@@ -77,9 +77,9 @@ export class Player {
     this.waterContact = w.isWater(this.x, this.z) &&
       this.y <= sampleWater(w, this.x, this.z, water).level + 0.3 &&
       (!w.onRoad(this.x, this.z, 0.3) || w.deckAt(this.x, this.z, Infinity) > this.y + 1.8);
-    this.wading = this.waterContact && water.pilot
+    this.wading = this.waterContact && w.improvedWater
       ? waterWalking(water.depth, water.level - this.y, this.swimming) : 0;
-    this.swimming = this.waterContact && (!water.pilot || this.wading === 1);
+    this.swimming = this.waterContact && (!w.improvedWater || this.wading === 1);
     const drySpeed = 2.4 + 4 * runAmount;
     let speed = this.swimming ? 1.7 : drySpeed * (1 - this.wading * 0.76);
     if (this.stun > 0) { this.stun -= dt; speed = 0; jump = false; }
@@ -130,7 +130,7 @@ export class Player {
   sync(moving) {
     // ve vodě je vidět hlava a ramena: při šlapání vody je postava rovně, při plavání skloněná
     const swimDepth = !this.swimming ? 0 : ORIGINAL_CHARACTER ? 1.05 : moving > 0.2 ? 1.17 : 1.3;
-    const depth = this.swimming && this.water.pilot
+    const depth = this.swimming && this.world.improvedWater
       ? Math.max(0, swimDepth - (this.water.level - this.y)) : swimDepth;
     this.mesh.position.set(this.x, this.y - depth, this.z);
     this.mesh.rotation.y = this.yaw;

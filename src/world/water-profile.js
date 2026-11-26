@@ -1,3 +1,5 @@
+import { mapWaterCurrent } from './water-current.js';
+
 // Pilotní úseky ve světových souřadnicích. Rychlost Radbuzy je herní odhad.
 export const RADBUZA = { minX: 145, maxX: 300, minZ: 338, maxZ: 534, speed: 0.55, elevation: 300.95 };
 export const OSTENDE = { minX: 1040, maxX: 1710, minZ: -3440, maxZ: -2980, speed: 0, elevation: 311.4 };
@@ -59,17 +61,26 @@ function levelAt(world, pilot, x, z, terrain, distance) {
 
 export function waterLevelAt(world, x, z, terrain) {
   const pilot = world.improvedWater && waterPilotAt(x, z);
-  return pilot ? levelAt(world, pilot, x, z, terrain, world.nearestShore(x, z, 4)?.[2] ?? 4) : terrain;
+  if (!pilot) return terrain;
+  const distance = world.nearestShore(x, z, 4, world.waterAreaAt?.(x, z))?.[2] ?? 4;
+  return levelAt(world, pilot, x, z, terrain, distance);
 }
 
 export function sampleWater(world, x, z, out) {
-  const pilot = world.improvedWater ? waterPilotAt(x, z) : null;
-  const distance = pilot ? world.nearestShore(x, z, 30)?.[2] ?? 30 : 0;
-  const depth = waterDepthFromShore(distance);
+  const improved = world.improvedWater;
+  const pilot = improved ? waterPilotAt(x, z) : null;
+  const area = improved ? world.waterAreaAt?.(x, z) : -1;
+  const distance = improved ? world.nearestShore(x, z, BANK_RANGE, area)?.[2] ?? BANK_RANGE : 0;
   out.level = levelAt(world, pilot, x, z, world.heightAt(x, z), distance);
-  out.depth = depth;
-  out.pilot = pilot;
-  waterCurrent(pilot, x, z, distance, out);
+  out.depth = waterDepthFromShore(distance);
+  mapWaterCurrent(world, area, x, z, distance, out);
+  if (pilot) {
+    const vx = out.vx, vz = out.vz;
+    const baseWeight = 1 - waterPilotWeight(pilot, x, z);
+    waterCurrent(pilot, x, z, distance, out);
+    out.vx += vx * baseWeight;
+    out.vz += vz * baseWeight;
+  }
   return out;
 }
 

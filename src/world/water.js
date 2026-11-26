@@ -1,6 +1,7 @@
 import { DataTexture, LinearFilter } from 'three/webgpu';
 import { LC } from '../config.js';
 import { fillLandPolygon } from './terrain-classes.js';
+import { WATER_CURRENT_REACH } from './water-current.js';
 import { RADBUZA, waterCurrent, waterPilotAt, waterPilotWeight } from './water-profile.js';
 
 // Metry od břehu se počítají i v okolních dlaždicích, aby na jejich hraně nevznikla mělčina.
@@ -8,7 +9,7 @@ export function waterField(land, polygons, lines, weirs, x, z, size = 256, pixel
   const ids = polygons.filter((id) => land.cls[id] === LC.WATER);
   if (!ids.length) return null;
   const step = size / pixels,
-    reach = 48,
+    reach = WATER_CURRENT_REACH,
     pad = Math.ceil(reach / step) + 1,
     n = pixels + 2 * pad;
   const originX = x - pad * step,

@@ -26,7 +26,7 @@ import { ChunkManager } from '../world/chunks.js';
 import { Environment } from '../world/scene.js';
 import { createPostFX } from '../world/postfx.js';
 import { env } from '../world/materials.js';
-import { waterLevelAt, waterPilotAt } from '../world/water-profile.js';
+import { waterLevelAt } from '../world/water-profile.js';
 import { latestWaterRipple, waterRipples } from '../world/water-optics.js';
 import { VehicleManager, Car, wrapAngle } from '../entities/vehicles.js';
 import { snowDepth, weatherFog, cloudCover } from '../world/weather-surfaces.js';
@@ -271,7 +271,7 @@ export class Game {
 
   splashWater(entity, level, strength) {
     const { x, z } = entity;
-    if (!QUALITY.waterDetail || !this.world.improvedWater || !waterPilotAt(x, z)) return;
+    if (!QUALITY.waterDetail || !this.world.improvedWater) return;
     waterRipples[this.waterRipple % waterRipples.length].set(x, z, this.time, strength);
     this.waterRipple++;
     latestWaterRipple.value = this.time;

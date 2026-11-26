@@ -13,7 +13,7 @@ import { SURFACE } from './material-table.js';
 import { hash21, valueNoise } from './material-noise.js';
 import { detailFadeRange } from './image-quality.js';
 import { TUNNEL_HEIGHT, TUNNEL_PORTAL_CUT } from './tunnels.js';
-import { riverStreaks, waterOptics } from './water-optics.js';
+import { riverStreaks, waterImpactRings, waterOptics } from './water-optics.js';
 
 export const env = {
   windows: uniform(new THREE.Vector4()).setGroup(renderGroup),
@@ -246,6 +246,10 @@ function getTerrainNodes(paving, detail, portalCount, terrainDetail, waterDetail
         const streak = riverStreaks(point, waterField, env);
         const weight = streak.mul(waterMask, mix(0.30, 0.12, env.night));
         color.assign(mix(color, vec3(0.58, 0.71, 0.74), weight));
+        if (waterDetail) {
+          const ring = waterImpactRings(point, waterField, env);
+          color.assign(mix(color, vec3(0.62, 0.73, 0.74), waterMask.mul(ring, 0.50)));
+        }
       }
     });
     return terrainSurface(color, sunGlint, roughness);

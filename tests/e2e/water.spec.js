@@ -258,3 +258,72 @@ test('E51 – přepínač původní vody vrátí Radbuze původní výšku a vyp
   expect(result.drift).toBeLessThan(0.07);
   expect(result.sampled).toBeCloseTo(result.level, 2);
 });
+
+test('E51 – mimo pilotní místa Mže unáší plavce, rybník dovolí brodění a Radbuza unese auto', async ({ page }) => {
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0&hour=10'));
+  await page.waitForFunction(() => window.__ready);
+  await page.getByRole('button', { name: 'Hrát', exact: true }).click();
+  const result = await page.evaluate(() => {
+    window.__freeze(true);
+    window.__setInput(0, 0);
+    const g = window.__game;
+    const { player, world, colliders } = g;
+    const prepare = (x, z) => { for (let i = 0; i < 25; i++) colliders.update(x, z); };
+    const drift = (x, z) => {
+      prepare(x, z);
+      player.place(x, z, world.heightAt(x, z));
+      for (let i = 0; i < 300; i++) player.update(1 / 60, 0, 0, false, false);
+      return { x: player.x - x, z: player.z - z, swimming: player.swimming };
+    };
+    const mze = drift(140.2, -390.2);
+    const pond = drift(224, -4775);
+
+    prepare(224, -4823);
+    player.place(224, -4823);
+    let waded = false;
+    for (let i = 0; i < 1400 && !player.swimming; i++) {
+      player.update(1 / 60, 0, 1, false, false);
+      waded ||= player.grounded && player.wading > 0.12 && player.wading < 1;
+    }
+    const swam = player.swimming;
+
+    const car = player.lastCar, x = 261.4, z = 717.4;
+    prepare(x, z);
+    car.place(x, z, Math.PI, world.heightAt(x, z) + 0.2);
+    g._enterCar(car);
+    for (let i = 0; i < 174; i++) g.update(1 / 60);
+    return { mze, pond, waded, swam, car: { x: car.x - x, z: car.z - z, flooded: car.floodTime } };
+  });
+  expect(result.mze.swimming && result.pond.swimming, JSON.stringify(result)).toBe(true);
+  expect(result.mze.x).toBeGreaterThan(1.8);
+  expect(result.mze.z).toBeLessThan(-0.2);
+  expect(Math.hypot(result.pond.x, result.pond.z)).toBeLessThan(0.08);
+  expect(result.waded && result.swam, JSON.stringify(result)).toBe(true);
+  expect(result.car.flooded).toBeGreaterThan(2);
+  expect(result.car.x).toBeLessThan(-0.25);
+  expect(result.car.z).toBeLessThan(-0.45);
+});
+
+test('E51 – pád do Mže vytvoří kruh a tříšť i mimo pilotní úsek', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto(gameUrl('/?debug&quality=high&adapt=0&view=500&hour=10'));
+  await page.waitForFunction(() => window.__ready);
+  await page.getByRole('button', { name: 'Hrát', exact: true }).click();
+  const result = await page.evaluate(() => {
+    window.__freeze(true);
+    window.__setInput(0, 0);
+    const { world, player, colliders, particles } = window.__game;
+    const g = window.__game, x = 140.2, z = -390.2, y = world.heightAt(x, z);
+    for (let i = 0; i < 25; i++) colliders.update(x, z);
+    player.place(x, z, y + 3);
+    const particlesAtEntry = particles.cursor;
+    for (let i = 0; i < 145; i++) g.update(1 / 60);
+    window.__view(x - 15, y + 5, z + 10, x, y, z);
+    return { ripples: g.waterRipple, spray: particles.cursor - particlesAtEntry, swimming: player.swimming };
+  });
+  expect(result.ripples).toBe(1);
+  expect(result.spray).toBeGreaterThan(0);
+  expect(result.swimming).toBe(true);
+  expect(errors).toEqual([]);
+});
