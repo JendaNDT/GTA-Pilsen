@@ -1,6 +1,6 @@
 # E56 · Cyklistická navigace
 
-Hotová trasa mezi Západočeským muzeem a DEPO 2015 je průjezdná v obou směrech. Prošlo produkční sestavení, 391 testů JavaScriptu, 34 testů Pythonu s jedním přeskočeným případem a 78 cílených prohlížečových případů včetně opakované dotykové zkoušky v obou vykreslovačích. Měření kola s aktivní trasou splnilo všechny časové rozpočty. Dobíhá kontrolní měření auta a letu. [Zadání](E56.md) · [Protokol a snímky](../E56.md)
+Hotová trasa mezi Západočeským muzeem a DEPO 2015 je průjezdná v obou směrech. Prošlo produkční sestavení, 391 testů JavaScriptu, 34 úspěšných testů Pythonu a jeden přeskočený případ a 78 cílených prohlížečových případů včetně opakované dotykové zkoušky v obou vykreslovačích. Časové rozpočty splnila jízda na kole s aktivní trasou, jízda autem i let. E56 je dokončená nad herní revizí `5f8e32a`. [Zadání](E56.md) · [Protokol a snímky](../E56.md)
 
 # E55 · Celá síť sdílených elektrokol
 
