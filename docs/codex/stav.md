@@ -1,3 +1,7 @@
+# Převzetí E52 a E53 do mainu
+
+Na grafické opravy z revize `cdaa5fd` navazuje vstup do městských aktivit ve Škodalandu a nabídka tří jízd taxi. Společné sestavení prošlo 377 testy JavaScriptu a 98 cílenými prohlížečovými zkouškami na WebGL 2 a WebGPU. Ověřeny byly také dotyk, uložená hra, rozvozy, opravené okraje silnic a kolejiště i rozpočty všech čtyř grafických předvoleb. [E52](../E52.md) · [E53](../E53.md)
+
 # Převzetí grafických oprav do mainu
 
 Opravy chodníků u kolejí, překryvu asfaltu a grafických zkoušek jsou ověřené nad stavem hlavní větve po E51 (`f16ae3c`). Prošlo produkční sestavení, všech 369 testů JavaScriptu a 52 cílených zkoušek v Chromiu na WebGL 2 a WebGPU, včetně všech čtyř grafických předvoleb. [Chodníky u kolejí](../chodniky-u-koleji.md) · [Okraje silnic](../okraje-silnic.md)
