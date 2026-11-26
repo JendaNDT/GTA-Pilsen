@@ -1,3 +1,7 @@
+# Oprava chodníků u tramvajových kolejí
+
+Na Slovanské, Lidické a Skvrňanské se obrubníky odsunuly za tramvajové pásy. Ověřeno na revizi `e012088`. Prošlo všech 375 jednotkových zkoušek, produkční sestavení a 56 cílených běhů v Chromiu na WebGL 2 a WebGPU. Měření na pevné kameře ukázalo na nízkou předvolbu stejný počet vykreslovacích volání a trojúhelníků. [Srovnávací snímky a výsledky](../chodniky-u-koleji.md)
+
 # E51 · Voda u Wilsonova mostu a u Ostende
 
 Dokončeno nad revizí `5eeaae8`. Radbuza unáší plavce a plovoucí auta, u Ostende hráč prochází mělčinou. Výpočet výšky hladiny sdílí grafika a fyzika. Při vstupu do vody kreslí střední a vyšší předvolba kruhy a tříšť.
