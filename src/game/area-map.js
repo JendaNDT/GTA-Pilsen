@@ -22,6 +22,7 @@ export class AreaMap {
       .sort((a,b)=>priority[a[3]] - priority[b[3]]);
     this.sites = (world.sady?.solids ?? []).filter(site => !site.wall)
       .map(({ x, z, name, walk }) => ({ x, z, name, walk, exact: true }));
+    this.sites.push(...game.bikes.mapSites());
     this.sites.push(...POLICE_STATIONS.map(station => ({ ...station, exact: true, police: true })));
     this.sites.push(...ACTIVITY_SITES.map(site => ({ ...site, exact: true, activity: true })));
     initMapSearch(world, place => this.select(place, true), game.transit.timetable.stops, this.sites);
@@ -59,7 +60,7 @@ export class AreaMap {
     const { world, mode, focus } = this.game;
     this.view = new MapView(travelBounds(world,mode), this.canvas.clientWidth, this.canvas.clientHeight, focus.x, focus.z);
     this.clearPreview();
-    el('map-mode').textContent = ({foot:'Pěšky',car:'Autem',heli:'Vrtulníkem',transit:'MHD'})[mode];
+    el('map-mode').textContent = ({foot:'Pěšky',bike:'Na kole',car:'Autem',heli:'Vrtulníkem',transit:'MHD'})[mode];
     this.render();
   }
 
@@ -103,7 +104,7 @@ export class AreaMap {
       let closest = Infinity, nearest = null;
       for (const site of [...this.sites, ...this.game.jobs.landmarks]) {
         const distance = Math.hypot(site.x-place.x, site.z-place.z);
-        const hitRadius = site.activity ? 12 / this.view.scale : range;
+        const hitRadius = site.activity || site.bike ? 12 / this.view.scale : range;
         if (distance < hitRadius && distance < closest) { closest = distance; nearest = site; }
       }
       if (nearest) place = nearest;
@@ -121,7 +122,7 @@ export class AreaMap {
     el('map-name').textContent = allowed ? place.title ?? place.name : 'Mimo herní oblast';
     el('map-distance').textContent = distanceText(Math.hypot(place.x-focus.x,place.z-focus.z)) + ' od tebe';
     const access = el('map-access');
-    access.textContent = (allowed && place.access) || '';
+    access.textContent = allowed ? place.bike ? this.game.bikes.access(place) : place.access ?? '' : '';
     access.hidden = !access.textContent;
     el('map-go').hidden = !allowed;
     this.redraw();

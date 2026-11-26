@@ -97,9 +97,9 @@ function initTouch(canvas) {
   updateTouchLabels = mode => {
     if (mode === shownMode) return;
     shownMode = mode;
-    gas.setAttribute('aria-label', mode === 'heli' ? 'Stoupat' : mode === 'foot' ? 'Jít vpřed' : 'Plyn');
+    gas.setAttribute('aria-label', mode === 'heli' ? 'Stoupat' : mode === 'foot' ? 'Jít vpřed' : mode === 'bike' ? 'Šlapat' : 'Plyn');
     brake.setAttribute('aria-label', mode === 'heli' ? 'Klesat' : mode === 'foot' ? 'Jít vzad' : 'Brzdit');
-    hand.setAttribute('aria-label', mode === 'heli' ? 'Stoupat' : mode === 'foot' ? 'Skočit' : 'Ruční brzda');
+    hand.setAttribute('aria-label', mode === 'heli' ? 'Stoupat' : mode === 'foot' ? 'Skočit' : mode === 'bike' ? 'Brzda elektrokola' : 'Ruční brzda');
     action.setAttribute('aria-label', mode === 'foot' ? 'Nastoupit' : mode === 'shift' ? 'Obsloužit dveře' : 'Vystoupit');
   };
   updateTouchLabels('foot');

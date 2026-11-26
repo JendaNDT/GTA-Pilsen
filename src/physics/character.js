@@ -42,7 +42,7 @@ export class WalkingCharacter {
     this.character.RefreshContacts(...this.filters, this.allocator);
   }
 
-  move(dt, player, jump) {
+  move(dt, player, jump, curbHeight = 0.35) {
     const { character, velocity, physics } = this;
     const grounded = player.grounded;
     const previousY = player.y;
@@ -63,7 +63,7 @@ export class WalkingCharacter {
     velocity.Set(player.vx, vertical, player.vz);
     character.SetLinearVelocity(velocity);
     const contacts = character.GetActiveContacts();
-    let stepHeight = 0.35;
+    let stepHeight = curbHeight;
     for (let i = 0; i < contacts.size(); i++) {
       const hit = contacts.at(i);
       if (hit.mUserData === layers.RAILING || hit.mUserData === layers.FOOT_RAIL) { stepHeight = 0; break; }

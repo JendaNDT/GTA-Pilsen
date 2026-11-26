@@ -9,7 +9,7 @@ export function initMapSearch(world, selectPlace, stops, sites = []) {
     .filter(([x, z]) => x >= world.playMinX && x <= world.playMaxX && z >= world.playMinZ && z <= world.playMaxZ)
     .map(([x, z, name]) => ({ x, z, name, key: normalize(name) }));
   for (const site of sites) {
-    if (site.activity || !places.some(place => place.name === site.name)) {
+    if (site.activity || site.bike || !places.some(place => place.name === site.name)) {
       places.push({ ...site, key: normalize(site.name), aliasKeys: site.aliases?.map(normalize) });
     }
   }

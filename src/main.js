@@ -62,7 +62,7 @@ const ABOUT_HTML = (meta, rendering) => `
   půdorysy a výšky budov, silnice a mosty, linky MHD, parky, restaurace i adresy.</p>
   <p>Co se dá dělat: chodit, půjčovat si auta, vozit se tramvají, trolejbusem i autobusem, létat vrtulníkem,
   rozvážet jídlo ze skutečných podniků, vozit zákazníky, koupit si vlastní auto, jet směnu řidiče MHD,
-  objevovat památky, zahrát si tři jamky minigolfu ve Škodalandu a ujíždět policii.</p>
+  objevovat památky, zahrát si minigolf, půjčit si sdílené elektrokolo a ujíždět policii.</p>
   <p>Na mostě tě u kraje zastaví zábradlí. Na historických kamenných mostech tě zachytí zídka.
   Po prudkém nárazu nebo pádu z výšky postava spadne a zase vstane. Fyzikální pády můžeš vypnout v nastavení.</p>
   <h3>Zdroje dat</h3>
@@ -87,6 +87,7 @@ const ABOUT_HTML = (meta, rendering) => `
   <p>Vstup ve Škodalandu vychází z herní mapy OpenStreetMap (ODbL) a terénu ČÚZK (CC BY 4.0).
   Název a adresu ověřuje <a href="https://sport.plzen.eu/Sportoviste/d/skodaland-ceske-udoli" target="_blank" rel="noopener">Sportovní Plzeň</a>.
   Zkušební trasa, její značení a dráhy minigolfu, překážky, půjčovna, míček a vlajky jsou vlastní tvorba projektu.</p>
+  <p>Polohy pilotních stanovišť Pilsen Bike vycházejí z veřejného zdroje PMDP / Freebike ve formátu GBFS 3.0 (výchozí licence CC0). Model elektrokola a označníku jsou vlastní tvorba projektu.</p>
   <p>Barevné tabulky pro den, soumrak a noc vznikly přímo pro tuto hru.</p>
   <p>Letecké snímky krajiny © ČÚZK. Podkladem je <a href="https://atom.cuzk.gov.cz/ORTOFOTO/ORTOFOTO.xml"
   target="_blank" rel="noopener">Ortofoto ČR</a> s licencí
@@ -298,6 +299,8 @@ async function boot() {
       } else if (game.activities.interrupted) {
         game.hud.toast(game.activities.interruptedGolf ? 'Minigolf byl při načtení přerušen.'
           : 'Zkušební trasa byla při načtení přerušena.', '', 5800);
+      } else if (game.bikes.interrupted) {
+        game.hud.toast('Půjčené elektrokolo se vrátilo na výchozí stanoviště.', '', 5800);
       } else if (game.shifts.last?.state === 'interrupted' && game.shifts.last.note === 'Načtení uložené hry') {
         game.hud.toast('Rozpracovaná směna byla při načtení přerušena.', 'bad', 5800);
       } else if (game.jobs.last?.state === 'interrupted' && game.jobs.last.note === 'Načtení uložené hry') {

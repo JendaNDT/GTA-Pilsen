@@ -40,6 +40,8 @@ import { Heli } from '../entities/heli.js';
 import { Hud } from './hud.js';
 import { Jobs } from './missions.js';
 import { Activities } from './activities.js';
+import { SharedBikes } from './shared-bikes.js';
+import { BIKE_COLOR } from './bike-stations.js';
 import { Garage } from './garage.js';
 import { Shifts } from './shift.js';
 import { GameAudio } from './audio.js';
@@ -133,6 +135,7 @@ export class Game {
           if (car) this.queuePedHit(this.player, car, contact.mLinearVelocity);
         }
       }
+      if (this.mode === 'bike') this.bikes.step(dt, input);
       if (this.driver) this.stepWater(this.driver, dt);
       for (const vehicle of this.trafficBodies.dynamic.values()) this.stepWater(vehicle, dt);
       physics.engine.Step(dt, 1);
@@ -251,6 +254,7 @@ export class Game {
     this.jobs = new Jobs(this);
     this.shifts = new Shifts(this);
     this.activities = new Activities(this);
+    this.bikes = new SharedBikes(this);
     this.saveEnabled = true;
     this._load();
     this.applyOptics();
@@ -401,6 +405,7 @@ export class Game {
       this.jobs.load(s.job);
       this.shifts.load(s.shift);
       activityReturn = this.activities.load(s.activity);
+      this.bikes.load(s.bikeShare);
       if (activityReturn) ({ x, z, yaw: this.camYaw } = activityReturn);
       this.hasSave = true;
     }
@@ -449,7 +454,7 @@ export class Game {
         stats: this.stats, x: Math.round(safe.x), z: Math.round(safe.z),
         found: this.jobs.landmarks.filter((l) => l.found).map((l) => l.name),
         garage: this.garage.snapshot(), job: this.jobs.snapshot(), shift: this.shifts.snapshot(),
-        activity: this.activities.snapshot(),
+        activity: this.activities.snapshot(), bikeShare: this.bikes.snapshot(),
         ...changes,
       }));
       return true;
@@ -658,6 +663,7 @@ export class Game {
     if (this.falls.active.has(this.player) || this.player.stun > 0) return;
     if (this.shifts.active) return this.shifts.doors();
     if (this.mode === 'car') return this._exitCar();
+    if (this.mode === 'bike') return this.bikes.action();
     if (this.mode === 'heli') return this._exitHeli();
     if (this.mode === 'transit') return this._alight();
     return this._footAction()?.run() ?? null;
@@ -669,6 +675,8 @@ export class Game {
     const activity = this.activities.choice();
     if (activity) return { label: activity.label, run: () => this.activities.act(activity) };
     if (this.activities.playingGolf) return null;
+    const bike = this.bikes.footChoice();
+    if (bike) return bike;
     const h = this._nearestHeli();
     if (h) return { label: 'Nasednout do vrtulníku', run: () => this._enterHeli(h) };
     const v = this.transit.boardable(p.x, p.z, p.y);
@@ -683,6 +691,7 @@ export class Game {
   /** Klávesa R: vrátí hráče (i s autem) na nejbližší silnici. */
   unstuck() {
     if (this.activities.playingGolf) return this.activities.end('cancelled');
+    if (this.mode === 'bike') return this.bikes.recover();
     if (this.falls.active.has(this.player) || this.player.stun > 0) return;
     const f = this.focus, w = this.world;
     if (this.mode === 'transit' || this.mode === 'heli') return;
@@ -750,7 +759,8 @@ export class Game {
 
   applyPedHit(ped, { car, vx, vz, speed }) {
     if (ped === this.player) {
-      if (this.mode !== 'foot' || speed <= 4) return;
+      if ((this.mode !== 'foot' && this.mode !== 'bike') || speed <= 4) return;
+      if (this.mode === 'bike') this.bikes.leave(this.bikes.leavePoint() ?? this.bikes.lastDry);
       ped.stun = 2;
       ped.vx = vx * 0.5; ped.vz = vz * 0.5;
       this.audio.crash(speed, car); this.shake = 0.6;
@@ -798,6 +808,7 @@ export class Game {
   }
 
   _toFoot(x, z) {
+    this.bikes.interrupt();
     this.activities.end('interrupted', false);
     this.falls.finish(this.player);
     this.player.stun = 0;
@@ -886,7 +897,8 @@ export class Game {
         follow = carMesh?.rotation.y ?? this.car.yaw;
         if (this.car.speed < -1.5 && this.car.reverseTime > 0.8) follow += Math.PI;
       }
-    } else if (this.mode === 'heli') { height = 2; base = 15; if (this.heli.speed > 3 || !this.heli.landed) follow = this.heli.yaw; }
+    } else if (this.mode === 'bike') { height = 1.15; base = 4.6; follow = f.yaw; }
+    else if (this.mode === 'heli') { height = 2; base = 15; if (this.heli.speed > 3 || !this.heli.landed) follow = this.heli.yaw; }
     else if (this.mode === 'transit') { height = 2.6; base = this.ride.isTram ? 20 : 15; follow = this.ride.yaw; }
     else if (!input.freeLooking && Math.hypot(this.player.vx, this.player.vz) > 1.2 && this.lookIdle > 1.6) follow = this.player.yaw;
     if (this.camMode === 1) base *= 1.9;
@@ -1013,7 +1025,8 @@ export class Game {
       this.driver = null;
     }
     this.colliders.update(this.focus.x, this.focus.z);
-    this.player.setWalking(this.mode === 'foot' && !this.activities.golf.ball && !this.falls.active.has(this.player));
+    this.player.setWalking((this.mode === 'bike' || (this.mode === 'foot' && !this.activities.golf.ball)) &&
+      !this.falls.active.has(this.player));
     if (this.activities.golf.ball) this.activities.golf.input(dt, input.moveX, input.moveY);
     if (this.mode === 'car' && !this.driver) this.driver = this.trafficBodies.takeCar(this.car) ?? new PlayerVehicle(this.physics, this.car);
     if (this.car?.physicsTeleport && this.driver) {
@@ -1071,7 +1084,7 @@ export class Game {
     const obs = this.vehicles.obstacles;
     obs.length = 0;
     for (const o of this.transit.obstacles) obs.push(o);
-    if (onFoot) obs.push(p);
+    if (onFoot || this.mode === 'bike') obs.push(p);
     // stojící vrtulníky jsou pro auta pevná překážka
     const heavy = this.transit.heavy.slice();
     for (const h of this.helis) {
@@ -1086,6 +1099,7 @@ export class Game {
     this.jobs.update(dt);
     this.shifts.show();
     this.activities.update(dt);
+    this.bikes.update();
     this._updateWanted(dt);
     if (DEBUG) {
       this.logicMs = physicsStart - logicStart + (performance.now() - physicsEnd);
@@ -1110,6 +1124,7 @@ export class Game {
     hud.wanted(this.wanted);
     hud.health(this.player.health);
     if (this.mode === 'car') hud.speed(this.car.speed * 3.6, `${this.car === this.garage.active ? 'Vlastní · ' : ''}${this.car.type.name}${this.car.health < 40 ? ' · poškozené' : ''}`);
+    else if (this.mode === 'bike') hud.speed(this.bikes.speed * 3.6, 'Sdílené elektrokolo');
     else if (this.mode === 'heli') hud.speed(this.heli.speed * 3.6, `Vrtulník · výška ${Math.round(this.heli.y)} m`);
     else if (this.mode === 'transit') hud.speed(this.ride.v * 3.6, `${TRANSIT_NAME[this.ride.route.type]} ${this.ride.route.ref} → ${this.ride.destination}`);
     else hud.speed(null);
@@ -1141,6 +1156,9 @@ export class Game {
         actionLabel = this._footAction()?.label;
         if (actionLabel) html = `<kbd>${key}</kbd>${plain(actionLabel)}`;
         else if (this.player.swimming) html = 'Plaveš…';
+      } else if (this.mode === 'bike') {
+        actionLabel = this.bikes.rideLabel();
+        html = `<kbd>${key}</kbd>${plain(actionLabel)}`;
       } else if (this.shifts.active) {
         html = IS_TOUCH ? '▲ Plyn · ▼ Brzda · F Dveře' : 'W Plyn · S Brzda · F Dveře';
       } else if (this.mode === 'transit') {
@@ -1157,6 +1175,11 @@ export class Game {
     if (this.mode === 'foot' || this.mode === 'transit') {
       for (const [, x, z] of this.transit.timetable.nearby(f.x, f.z, 240)) {
         markers.push({ x, z, color: '#8ee1d9', size: 2.8, local: true });
+      }
+    }
+    for (const station of this.bikes.stations) {
+      if (Math.hypot(station.x - f.x, station.z - f.z) < 330) {
+        markers.push({ x: station.x, z: station.z, color: BIKE_COLOR, size: 3.5, local: true });
       }
     }
     for (const c of this.vehicles.cars) if (c.mode === 'police') markers.push({ x: c.x, z: c.z, color: Math.floor(this.time * 4) % 2 ? '#3d8bfd' : '#e2483d', size: 4.5, local: true });

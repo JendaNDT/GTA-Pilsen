@@ -1,3 +1,7 @@
+# E55 · Pilot sdílených elektrokol
+
+Dvě skutečná stanoviště u Západočeského muzea a DEPA2015 jsou v mapě a umožňují výpůjčku a vrácení. Prošel souvislý průjezd dlouhý 1 175 m, 385 testů JavaScriptu, produkční build i 50 cílených běhů v Chromiu. Probíhá měření výkonu. Naváže celá síť skutečných stanovišť. [Zadání](E55.md) · [Snímky a ověření](../E55.md)
+
 # E54 · Minigolf ve Škodalandu
 
 Půjčovna a všechny tři jamky jsou hratelné. Druhá využívá odraz od mantinelu, třetí má dvě cesty kolem ostrůvku. Hráč mezi jamkami chodí pěšky a osobní rekord se ukládá po dohrání série. Prošlo sestavení, 383 testů JavaScriptu, 48 cílených zkoušek v Chromiu a opakování osmi běhů minigolfu po úpravě ovládání klávesou Enter. E54 je dokončená nad herní revizí `56f0cf8`. Časové rozpočty vyšly při hře třetí jamky, jízdě i letu na nízkou předvolbu. [Zadání](E54.md) · [Protokol a snímky](../E54.md)

@@ -302,16 +302,18 @@ export class Jobs {
     if (walk) this.waypoint.walk = walk;
     this.roadStatus = null;
     this.routeTimer = 0;
-    this.game.hud.toast(walk ? 'Cíl nastaven. Modré tečky vedou poslední úsek pěšky.' : 'Cíl nastaven – trasa je na minimapě.');
+    this.game.hud.toast(this.game.mode === 'bike' ? 'Cíl označen na mapě.' :
+      walk ? 'Cíl nastaven. Modré tečky vedou poslední úsek pěšky.' : 'Cíl nastaven – trasa je na minimapě.');
   }
 
   get displayedRoad() {
-    if (this.game.activities?.active) return null;
+    if (this.game.activities?.active || this.game.mode === 'bike') return null;
     return this.waypoint && !this.job && this.game.mode === 'foot' ? null : this.route;
   }
 
   get displayedWalk() {
     if (this.game.activities?.active) return this.game.activities.path;
+    if (this.game.mode === 'bike') return null;
     if (!this.waypoint || this.job) return this.walkRoute;
     return this.game.mode === 'foot' ? this.walking.path : this.walkRoute ?? this.walking.path;
   }
@@ -440,7 +442,7 @@ export class Jobs {
 
     // navigační trasa
     this.routeTimer -= dt;
-    const tgt = activity ? null : this.target();
+    const tgt = activity || g.mode === 'bike' ? null : this.target();
     if (!tgt) this.route = null;
     else if (this.routeTimer <= 0) {
       this.routeTimer = 2.2;
