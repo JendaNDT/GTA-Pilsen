@@ -10,6 +10,12 @@ Na Karlovarské, v Kaplířově a v Zahradní zůstal v kontrolovaných bodech t
 
 Na Slovanské, Lidické a Skvrňanské se obrubníky odsunuly za tramvajové pásy. Ověřeno na revizi `e012088`. Prošlo všech 375 jednotkových zkoušek, produkční sestavení a 56 cílených běhů v Chromiu na WebGL 2 a WebGPU. Měření na pevné kameře ukázalo na nízkou předvolbu stejný počet vykreslovacích volání a trojúhelníků. [Srovnávací snímky a výsledky](../chodniky-u-koleji.md)
 
+# E52 · Místa a průběh městských aktivit
+
+- Příprava místa. Vybrán pěší bod v odstupu od budovy Škodalandu, přístup z obou stanovišť U Přehrady a samostatný bod návratu. V jízdním řádu je vybrán spoj linky 1 do Bolevce. Přesné reference patří do protokolu.
+- Zbývá mapa a hledání, společná akce, zkušební trasa a ověření.
+- [Zadání](E52.md)
+
 # E53 · Taxi podle potřeb cestujícího
 
 Dokončeno nad herní revizí `797ee34`. Taxi nabízí běžnou jízdu, spěch na nádraží a klidnou jízdu. Karty ukazují nástup, cíl a odměnu ještě před přijetím. U obou zastávek se kontroluje směr a správný obrubník. E53 navazuje přímo na E51 přes existující nabídku Zakázky.

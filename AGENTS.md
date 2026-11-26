@@ -77,6 +77,7 @@ npm run test:e2e     # testy v Chromiu nad dist/ (nejdřív npm run build)
    měření výkonu, snímky před a po a známé odchylky. Starší protokoly nepřepisuj.
    Aktualizuj README.
 10. Na konci napiš autorovi česky a bez žargonu, co se změnilo a co má ve hře vyzkoušet.
+    Vždy doporuč jeden nejvhodnější další krok vývoje a stručně vysvětli proč.
 
 U plzeňských památek zpracuj celý vnější model včetně zadní a bočních stran a střech. Ověř jej ze země i při pohledu z vrtulníku.
 
