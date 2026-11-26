@@ -72,8 +72,8 @@
     <div id="bigmap-controls">
       <div class="map-title"><h2 id="map-heading">Mapa oblasti</h2><span id="map-mode"></span></div>
       <form id="bigmap-search" role="search">
-        <input id="bigmap-query" type="search" aria-label="Najít obec, památku nebo zastávku"
-          placeholder="Najít místo nebo zastávku" autocomplete="off" enterkeyhint="go">
+        <input id="bigmap-query" type="search" aria-label="Vyhledat v mapě"
+          placeholder="Najít místo, zastávku nebo aktivitu" autocomplete="off" enterkeyhint="go">
         <ul id="bigmap-results" aria-label="Výsledky hledání" aria-live="polite"></ul>
       </form>
       <div id="bigmap-date"><time></time></div>
@@ -88,13 +88,13 @@
       </div>
       <div id="map-scale"></div>
       <div id="map-selection" hidden>
-        <div aria-live="polite"><strong id="map-name"></strong><small id="map-distance"></small></div>
+        <div aria-live="polite"><strong id="map-name"></strong><small id="map-distance"></small><small id="map-access" hidden></small></div>
         <button id="map-go">Navigovat sem</button>
       </div>
     </div>
     <div id="bigmap-legend"><span id="map-route-status" aria-live="polite"></span><span><i class="map-key-player">▲</i> Tvoje poloha</span>
       <span><i class="map-key-route">━</i> Trasa</span><span><i class="map-key-walk">···</i> Pěšky</span>
-      <span><i class="map-key-closure">╱</i> Uzavírka</span><span><i class="map-key-limit">▧</i> Mimo oblast</span></div>
+      <span><i class="map-key-activity">●</i> Aktivita</span><span><i class="map-key-closure">╱</i> Uzavírka</span><span><i class="map-key-limit">▧</i> Mimo oblast</span></div>
   </div>
 
   <div id="menu" data-screen="start">

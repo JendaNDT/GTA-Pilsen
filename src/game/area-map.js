@@ -1,3 +1,4 @@
+import { ACTIVITY_SITES } from './activity-sites.js';
 import { POLICE_STATIONS } from './police-stations.js';
 import { initMapSearch } from './map-search.js';
 import { MapView, insideMap } from './map-view.js';
@@ -22,6 +23,7 @@ export class AreaMap {
     this.sites = (world.sady?.solids ?? []).filter(site => !site.wall)
       .map(({ x, z, name, walk }) => ({ x, z, name, walk, exact: true }));
     this.sites.push(...POLICE_STATIONS.map(station => ({ ...station, exact: true, police: true })));
+    this.sites.push(...ACTIVITY_SITES.map(site => ({ ...site, exact: true, activity: true })));
     initMapSearch(world, place => this.select(place, true), game.transit.timetable.stops, this.sites);
     this.bindGestures();
     el('map-cancel').onclick = () => {
@@ -98,10 +100,11 @@ export class AreaMap {
     const { world, focus } = this.game;
     if (insideMap(this.view.area, place.x, place.z) && !place.name) {
       const range = Math.min(28, 14 / this.view.scale);
-      let closest = range, nearest = null;
+      let closest = Infinity, nearest = null;
       for (const site of [...this.sites, ...this.game.jobs.landmarks]) {
         const distance = Math.hypot(site.x-place.x, site.z-place.z);
-        if (distance < closest) { closest = distance; nearest = site; }
+        const hitRadius = site.activity ? 12 / this.view.scale : range;
+        if (distance < hitRadius && distance < closest) { closest = distance; nearest = site; }
       }
       if (nearest) place = nearest;
       else {
@@ -117,6 +120,9 @@ export class AreaMap {
     el('map-selection').hidden = false;
     el('map-name').textContent = allowed ? place.title ?? place.name : 'Mimo herní oblast';
     el('map-distance').textContent = distanceText(Math.hypot(place.x-focus.x,place.z-focus.z)) + ' od tebe';
+    const access = el('map-access');
+    access.textContent = (allowed && place.access) || '';
+    access.hidden = !access.textContent;
     el('map-go').hidden = !allowed;
     this.redraw();
   }

@@ -223,7 +223,7 @@ test('silniční trasy spojují Plzeň, Rokycany, Hrádek a Dobřív v obou smě
   test.setTimeout(Math.max(test.info().timeout, 210_000));
   await boot(page, FIXED_DAY);
   await action(page, 'KeyM');
-  const query = page.getByRole('searchbox', { name: 'Najít obec, památku nebo zastávku' });
+  const query = page.getByRole('searchbox', { name: 'Vyhledat v mapě' });
   await query.pressSequentially('rokycany');
   await expect(page.getByRole('button', { name: 'Rokycany', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Nádraží Rokycany', exact: true }).click();

@@ -1,5 +1,6 @@
 import { CHUNK, DRIVABLE_MAX, RC, RF } from '../config.js';
 import { insideMap } from './map-view.js';
+import { ACTIVITY_COLOR } from './activity-sites.js';
 
 function eachChunk(world, near, far, draw) {
   const left = Math.max(0, Math.floor((near.x - world.minX) / CHUNK) - 1);
@@ -149,9 +150,14 @@ export function drawAreaMap(canvas, game, view, selected) {
     if (detailed) label(m.x,m.z,m.name,12,'#f3dca6');
   }
   if (scale >= 1.1) for (const site of game.areaMap.sites) {
-    if (!insideMap(screenBounds,site.x,site.z) || site.walk) continue;
+    if (!insideMap(screenBounds,site.x,site.z) || site.walk || site.activity) continue;
     dot(site.x,site.z,site.police ? 3.5 : 2.5,site.police ? '#8ccaff' : '#afc2a7');
     label(site.x,site.z,site.name,11,'#d5e5cf');
+  }
+  for (const site of game.areaMap.sites) {
+    if (!site.activity || !insideMap(screenBounds,site.x,site.z)) continue;
+    dot(site.x,site.z,6,ACTIVITY_COLOR);
+    if (scale > .085) label(site.x,site.z,site.name,12,ACTIVITY_COLOR,-10);
   }
   for (const [x,z,name,type] of game.areaMap.places) {
     if (!insideMap(screenBounds,x,z)) continue;

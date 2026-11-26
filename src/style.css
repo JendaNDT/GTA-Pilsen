@@ -165,13 +165,13 @@ body.touch #prompt { bottom: 46%; }
 #map-selection { position: absolute; display: flex; align-items: center; gap: 15px; left: 10px; bottom: 10px;
   max-width: calc(100% - 125px); padding: 10px 13px; background: #19292ff5; border: 1px solid #677975; border-radius: 7px; }
 #map-selection[hidden], #map-go[hidden] { display: none; }
-#map-name, #map-distance { display: block; }
+#map-name, #map-distance, #map-access:not([hidden]) { display: block; }
 #map-go { border: 0; border-radius: 5px; padding: 9px 12px; background: #f2be67; color: #20251f; font-weight: bold !important; }
 #bigmap-legend { display: flex; flex-wrap: wrap; gap: 3px 15px; align-items: center; font-size: 12px; color: #cfdbd9; }
 #bigmap-legend span { white-space: nowrap; }
 #bigmap-legend i { font: bold 15px system-ui; }
 .map-key-player { color: white; } .map-key-route, .map-key-limit { color: #f1c275; }
-.map-key-walk { color: #a9e1dd; } .map-key-closure { color: #ff7268; }
+.map-key-walk { color: #a9e1dd; } .map-key-activity { color: #caa8fa; } .map-key-closure { color: #ff7268; }
 @media (max-width: 680px) {
   #bigmap { padding: 7px; gap: 6px; }
   #bigmap-controls { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 5px 9px;

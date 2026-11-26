@@ -9,7 +9,9 @@ export function initMapSearch(world, selectPlace, stops, sites = []) {
     .filter(([x, z]) => x >= world.playMinX && x <= world.playMaxX && z >= world.playMinZ && z <= world.playMaxZ)
     .map(([x, z, name]) => ({ x, z, name, key: normalize(name) }));
   for (const site of sites) {
-    if (!places.some(place => place.name === site.name)) places.push({ ...site, key: normalize(site.name) });
+    if (site.activity || !places.some(place => place.name === site.name)) {
+      places.push({ ...site, key: normalize(site.name), aliasKeys: site.aliases?.map(normalize) });
+    }
   }
   for (const [name, x, z, code] of stops) {
     const platform = code?.split('/')[1];
@@ -23,8 +25,9 @@ export function initMapSearch(world, selectPlace, stops, sites = []) {
     const words = query.split(' ');
     return places.filter(place => place.police
       ? words.every(word => ('sluzebna ' + place.key).includes(word))
-      : place.key.includes(query))
-      .sort((a, b) => Number(b.key === query) - Number(a.key === query)
+      : place.key.includes(query) || place.aliasKeys?.some(alias => alias.includes(query)))
+      .sort((a, b) => Number(b.key === query || b.aliasKeys?.includes(query) || false)
+        - Number(a.key === query || a.aliasKeys?.includes(query) || false)
         || Number(b.key.startsWith(query)) - Number(a.key.startsWith(query))
         || Number(Boolean(a.stop)) - Number(Boolean(b.stop))
         || (a.title ?? a.name).localeCompare(b.title ?? b.name, 'cs', { numeric: true })).slice(0, 6);
