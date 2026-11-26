@@ -1,3 +1,4 @@
+import { TramCabin } from './tram-cabin.js';
 import { arrestDestination } from './police-stations.js';
 import { wheelTrail } from '../fx/wheel-trails.js';
 import { NightLights } from '../world/night-lights.js';
@@ -108,6 +109,7 @@ export class Game {
     physics.step = (dt) => {
       this.transit.update(dt, this.focus, this.vehicles.cars, this.mode === 'foot', this.clock, input);
       const start = DEBUG ? performance.now() : 0;
+      this.cabin?.walk(dt, input.moveX, input.moveY);
       this.transitBodies.update(this.transit.vehicles, this.focus, dt);
       this.trafficBodies.drive(this, dt);
       for (const h of this.helis) {
@@ -436,7 +438,7 @@ export class Game {
   _writeSave(changes = {}) {
     if (!this.saveEnabled) return false;
     try {
-      const f = this.focus;
+      const f = this.cabin?.platform ?? this.focus;
       const tube = this.world.tunnelAt(f.x, f.z, f.y);
       const safe = tube?.inside ? tube.tunnel.portals.map((p) => p.outside)
         .reduce((a, b) => Math.hypot(a.x - f.x, a.z - f.z) < Math.hypot(b.x - f.x, b.z - f.z) ? a : b) : f;
@@ -451,7 +453,7 @@ export class Game {
           health: f.health, dirt: f.dirt, owned: f === this.garage.active,
         } : null,
         pursuit: this.wanted && this.pursuitOffence ? { stars: this.wanted, ...this.pursuitOffence } : null,
-        stats: this.stats, x: Math.round(safe.x), z: Math.round(safe.z),
+        stats: this.stats, x: this.cabin ? safe.x : Math.round(safe.x), z: this.cabin ? safe.z : Math.round(safe.z),
         found: this.jobs.landmarks.filter((l) => l.found).map((l) => l.name),
         garage: this.garage.snapshot(), job: this.jobs.snapshot(), shift: this.shifts.snapshot(),
         activity: this.activities.snapshot(), bikeShare: this.bikes.snapshot(),
@@ -631,6 +633,14 @@ export class Game {
   }
 
   _board(v) {
+    if (v.pilot && !this.shifts.active) {
+      const p = this.player, door = v.cabinDoorAt(p.x, p.z);
+      if (door === null) return;
+      this.cabin = new TramCabin(door, { x: p.x, y: p.y, z: p.z });
+      this.cabin.stop = v.stopIndex;
+      this.camera.near = 0.06;
+      this.camera.updateProjectionMatrix();
+    }
     this.ride = v; this.mode = 'transit'; this.focus = v;
     this.player.setWalking(false);
     this.player.mesh.visible = false;
@@ -639,13 +649,46 @@ export class Game {
     this.updateDepartures();
   }
 
+  _leaveCabin() {
+    if (!this.cabin) return;
+    this.cabin = null;
+    this.camera.near = 0.4;
+    this.camera.updateProjectionMatrix();
+  }
+
+  _cabinAction() {
+    const c = this.cabin;
+    if (c.seat) {
+      c.seat = null;
+      c.yaw = c.standingYaw;
+    } else if (c.door !== null) {
+      this._alight();
+    } else {
+      c.seat = c.nearbySeat();
+      if (c.seat) {
+        c.standingYaw = c.yaw;
+        c.yaw = Math.sign(c.seat.x) * Math.PI / 5;
+      }
+    }
+    this.promptTimer = 0;
+  }
+
   _alight(force = false) {
     const v = this.ride, p = this.player;
-    if (!force && !v.canAlight) { this.hud.toast('Vystoupit jde v zastávce po otevření dveří.'); return; }
-    const o = this.transit.exitPoint(v, {});
-    const c = this._clearSpot(o.x, o.z, 0.4);
+    if (!force && (!v.canAlight || this.cabin && (v.doorFraction < 0.85 || this.cabin.door === null))) {
+      this.hud.toast('Vystoupit jde v zastávce po otevření dveří.');
+      return;
+    }
+    const o = this.cabin && force ? this.cabin.platform
+      : this.transit.exitPoint(v, {}, this.cabin?.door ?? undefined);
+    if (this.cabin && !force && !this._platformClear(o)) {
+      this.hud.toast('U těchto dveří je překážka. Zkus jiné dveře.');
+      return;
+    }
+    const c = this.cabin ? o : this._clearSpot(o.x, o.z, 0.4);
+    this._leaveCabin();
     this.ride = null; this.mode = 'foot'; this.focus = p;
-    p.leaveVehicle(c.x, c.z, v.y);
+    p.leaveVehicle(c.x, c.z, c.y ?? v.y);
     this.jobs.onAlight(v);
     this.updateDepartures();
   }
@@ -666,7 +709,7 @@ export class Game {
     if (this.mode === 'car') return this._exitCar();
     if (this.mode === 'bike') return this.bikes.action();
     if (this.mode === 'heli') return this._exitHeli();
-    if (this.mode === 'transit') return this._alight();
+    if (this.mode === 'transit') return this.cabin ? this._cabinAction() : this._alight();
     return this._footAction()?.run() ?? null;
   }
 
@@ -681,7 +724,7 @@ export class Game {
     const h = this._nearestHeli();
     if (h) return { label: 'Nasednout do vrtulníku', run: () => this._enterHeli(h) };
     const v = this.transit.boardable(p.x, p.z, p.y);
-    if (v) return { label: `Nastoupit · ${TRANSIT_NAME[v.route.type]} ${v.route.ref} → ${v.destination}`, run: () => this._board(v) };
+    if (v) return { label: `Nastoupit · ${v.pilot ? 'průchozí vůz · ' : ''}${TRANSIT_NAME[v.route.type]} ${v.route.ref} → ${v.destination}`, run: () => this._board(v) };
     const car = this.vehicles.nearestEnterable(p.x, p.z, p.y);
     return car ? {
       label: `${car.mode === 'parked' || car.mode === 'loose' ? 'Nastoupit' : 'Sebrat auto'} · ${car.type.name}`,
@@ -815,6 +858,7 @@ export class Game {
     this.player.stun = 0;
     if (this.car) { this.car.mode = 'loose'; this.car.noDriver = true; this.car.wasAI = false; this.car = null; }
     if (this.heli) { this.heli.occupied = false; this.heli = null; }
+    this._leaveCabin();
     this.ride = null;
     this.mode = 'foot'; this.focus = this.player;
     const c = this._clearSpot(x, z, 0.5);
@@ -880,7 +924,28 @@ export class Game {
   }
 
   // ------------------------------------------------------------- kamera ----
+  _platformClear(point) {
+    const w = this.world;
+    return w.inBounds(point.x, point.z, 0) && w.buildingAt(point.x, point.z) < 0 &&
+      !w.blocked(point.x, point.z, 0.65) && !w.isWater(point.x, point.z);
+  }
+
+  _cabinCamera() {
+    const c = this.cabin, mesh = this.ride.meshes[0], cam = this.camera;
+    c.yaw = wrapAngle(c.yaw - input.lookDX * 0.0052);
+    c.pitch = clamp(c.pitch + input.lookDY * 0.004, -1.25, 1.25);
+    const pos = c.seat ?? c;
+    cam.position.set(pos.x, c.seat ? 1.93 : 2.44, pos.z).applyQuaternion(mesh.quaternion).add(mesh.position);
+    cam.quaternion.copy(mesh.quaternion);
+    cam.rotateY(Math.PI + c.yaw);
+    cam.rotateX(-c.pitch);
+    const direction = cam.getWorldDirection(_v);
+    this.camYaw = Math.atan2(direction.x, direction.z);
+    Object.assign(this.camInfo, { x: cam.position.x, z: cam.position.z, fx: direction.x, fz: direction.z });
+  }
+
   _updateCamera(dt) {
+    if (this.cabin) return this._cabinCamera();
     if (this.activities.golf.ball) return this.activities.golf.camera(dt, this.camera, this.camInfo);
     const w = this.world;
     // Mezi kroky fyziky kamera sleduje stejnou polohu a natočení jako vykreslená karoserie.
@@ -984,7 +1049,7 @@ export class Game {
     this.logicMs = this.physicsMs = null;
     if (this.paused) return;
     const logicStart = DEBUG ? performance.now() : 0;
-    pollInput(this.shifts.active ? 'shift' : this.mode);
+    pollInput(this.shifts.active ? 'shift' : this.cabin ? 'foot' : this.mode);
     if (this.activities.playingBowling) {
       if (!this.mapOpen) {
         if (input.pressed.has('action')) this.doAction();
@@ -1179,6 +1244,12 @@ export class Game {
         html = `<kbd>${key}</kbd>${plain(actionLabel)}`;
       } else if (this.shifts.active) {
         html = IS_TOUCH ? '▲ Plyn · ▼ Brzda · F Dveře' : 'W Plyn · S Brzda · F Dveře';
+      } else if (this.cabin) {
+        actionLabel = this.cabin.action;
+        const closed = actionLabel === 'Vystoupit' && (!this.ride.canAlight || this.ride.doorFraction < 0.85);
+        html = closed ? 'Dveře jsou zavřené' : actionLabel ? `<kbd>${key}</kbd>${actionLabel}` : 'Přejdi k sedadlu nebo ke dveřím';
+        const stop = this.ride.stops[this.ride.stopIndex];
+        if (stop) html += ` · ${plain(stop[1])}`;
       } else if (this.mode === 'transit') {
         const ride = this.ride, st = ride.stops[ride.stopIndex];
         const boundary = ride.event.trip.exit && ride.stopIndex === ride.stops.length - 1;

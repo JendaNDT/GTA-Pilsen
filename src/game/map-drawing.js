@@ -146,6 +146,13 @@ export function drawAreaMap(canvas, game, view, selected) {
     g.beginPath(); g.arc(u,v,r,0,Math.PI*2); g.fillStyle=color; g.fill();
     g.lineWidth=1.5; g.strokeStyle='#15242c'; g.stroke();
   }
+  for (const v of game.transit.vehicles) {
+    if (!v.pilot) continue;
+    const p = v.visible ? v.meshes[0].position : v;
+    if (!insideMap(screenBounds, p.x, p.z)) continue;
+    dot(p.x, p.z, 4.5, '#edb449');
+    label(p.x, p.z, '1 · Průchozí Tatra', 12, '#ffe9b5', -10);
+  }
   for (const m of jobs.landmarks) {
     if (!insideMap(screenBounds,m.x,m.z)) continue;
     dot(m.x,m.z,m.found?4.5:3,m.found?'#edb449':'#98a5ae');

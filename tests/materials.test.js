@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { DoubleSide, FrontSide, Matrix4, Texture } from 'three/webgpu';
+import { DoubleSide, FrontSide, Matrix4, Raycaster, Texture, Vector3 } from 'three/webgpu';
 
 globalThis.matchMedia = () => ({ matches: false });
 globalThis.window = {};
@@ -116,4 +116,20 @@ test('dlaždice sdílejí variantu terénních uzlů a mají vlastní texturu i 
   assert.equal(variants.size, 18);
   texA.dispose();
   texB.dispose();
+});
+
+test('obě boční okna pilotní Tatry propouštějí výhled ze sedadla i z ulice', () => {
+  const model = makeTatraCar(true);
+  model.updateMatrixWorld(true);
+  for (const side of [-1, 1]) {
+    for (const outside of [false, true]) {
+      const start = new Vector3(side * (outside ? 1.6 : 0.81), 1.93, 4.7);
+      const direction = new Vector3(side * (outside ? -1 : 1), 0, 0);
+      const ray = new Raycaster(start, direction, 0, 0.75);
+      const hits = ray.intersectObject(model);
+      assert.ok(hits.length > 0);
+      assert.ok(hits.every(hit => hit.object.material.transparent && hit.object.material.opacity < 0.15));
+    }
+  }
+  model.userData.doors.mesh.dispose();
 });

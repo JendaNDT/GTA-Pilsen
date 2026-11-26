@@ -103,6 +103,7 @@ const ABOUT_HTML = (meta, rendering) => `
   <a href="https://opendata.plzen.eu/public/opendata/detail/160" target="_blank" rel="noopener">měření dopravních smyček města Plzně</a>
   a z <a href="https://polivisuapi.plzen.eu/api/" target="_blank" rel="noopener">hodinových profilů PoliVisu</a>.
   Pro ostatní ulice a pro chodce hra používá odhad.</p>
+  <p>Průchozí interiér Tatry včetně sedadel, madel, světel a oken je vlastní model projektu Plzeň naplno.</p>
   <p>Rozety, portály, zvonice a střechy kostela sv. Jana Nepomuckého vytvořil projekt Plzeň naplno podle městského zaměření a dvou fotografií dodaných autorem hry.</p>
   <p>Modely dvanácti plzeňských dominant od Jubilejní brány po rozhlednu Chlum, včetně kreseb průčelí a střech, vytvořil projekt Plzeň naplno podle fotografických předloh. Jejich tvary vycházejí z otevřeného městského zaměření Plzně a půdorysů OpenStreetMap (ODbL).</p>
   <p>Morový sloup na náměstí Republiky má půdorys z OpenStreetMap (ODbL). Sochy, kámen, zlacení i ohrazení vytvořil projekt Plzeň naplno podle fotografie od autora hry a popisu Národního památkového ústavu.</p>
@@ -209,7 +210,7 @@ async function boot() {
   if (!canSave) $('save-status').textContent = 'Prohlížeč nyní neumožňuje ukládání postupu.';
   const perf = DEBUG || PARAMS.get('adapt') !== '0' ? createFrameProfiler(game, { sampleEvery: DEBUG ? 1 : 16 }) : null;
   const syncMouseLock = initInput(canvas, () =>
-    input.enabled && game.freeLook && game.mode === 'foot' && !game.activities.golf.ball && !game.activities.playingBowling && !game.mapOpen && !game.paused);
+    input.enabled && game.freeLook && (game.mode === 'foot' || game.cabin) && !game.activities.golf.ball && !game.activities.playingBowling && !game.mapOpen && !game.paused);
   if (PARAMS.has('hour') || PARAMS.has('date')) {
     game.setClock(PARAMS.get('date'), PARAMS.has('hour') ? +PARAMS.get('hour') : game.hour);
   }

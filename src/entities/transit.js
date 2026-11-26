@@ -1,3 +1,4 @@
+import { boardingDoor, PILOT_TRIP } from '../game/tram-cabin.js';
 import { Vector3 } from 'three/webgpu';
 import { STOP_DWELL, Timetable } from '../game/timetable.js';
 import { installTransitStops } from '../world/transit-stops.js';
@@ -100,6 +101,7 @@ class TransitVehicle {
     this.isTram = this.route.type === 'tram';
     // Herní střídání na spojích linek 1 a 2, stálé pro konkrétní spoj.
     this.isTatra = this.isTram && ['1', '2'].includes(this.route.ref) && Number(trip.id) % 2 === 0;
+    this.pilot = this.isTatra && trip.id === PILOT_TRIP && this.route.ref === '1';
     this.sections = this.isTatra ? TATRA_SECTIONS : SECTIONS[this.route.type];
     this.footprints = this.sections.map(() => ({}));
     this.len = this.sections.reduce((sum, { length }) => sum + length, 0);
@@ -131,6 +133,13 @@ class TransitVehicle {
     this.wait = wait;
     this.doorsOpen = wait > 0;
     this.stopTarget = this.doorsOpen ? this.stops[index] : null;
+  }
+
+  cabinDoorAt(x, z) {
+    if (!this.pilot || !this.visible || !this.canBoard || this.doorFraction < 0.85) return null;
+    const mesh = this.meshes[0], dx = x - mesh.position.x, dz = z - mesh.position.z;
+    const sin = Math.sin(mesh.rotation.y), cos = Math.cos(mesh.rotation.y);
+    return boardingDoor(dz * sin - dx * cos, dx * sin + dz * cos);
   }
 
   get canBoard() {
@@ -226,7 +235,7 @@ export class TransitManager {
     if (on) {
       if (!v.meshes) {
         if (v.isTatra) {
-          v.meshes = v.sections.map(makeTatraCar);
+          v.meshes = v.sections.map((_, i) => makeTatraCar(v.pilot && i === 0));
           v.joints = [makeTatraCoupler()];
         } else {
           v.meshes = v.isTram ? v.sections.map(makeTramSection)
@@ -453,6 +462,16 @@ export class TransitManager {
       jointAxis.set(0, 0, 1).applyQuaternion(joint.quaternion);
       joint.scale.z = Math.abs(jointFront.sub(jointRear).dot(jointAxis)) + 0.63;
     }
+    const cabin = this.game.ride === v && this.game.cabin;
+    if (cabin && v.canAlight && cabin.stop !== v.stopIndex) {
+      for (const door of v.sections[0].doors) {
+        const point = this.exitPoint(v, {}, door);
+        if (!this.game._platformClear(point)) continue;
+        cabin.platform = { ...point, y: v.meshes[0].position.y };
+        break;
+      }
+      cabin.stop = v.stopIndex;
+    }
     if (v.indicator) v.indicator.visible = !!v.departureLane && this.world.traffic.time % 0.8 < 0.4;
     const target = Number(v.doorsOpen);
     if (v.doorFraction !== target) {
@@ -524,7 +543,10 @@ export class TransitManager {
     let best = null, distance = Infinity;
     for (const v of this.vehicles) {
       if (!v.visible || !v.canBoard || Math.abs(v.y - y) > 2.5) continue;
+      const cabinDoor = v.cabinDoorAt(x, z);
+      if (v.pilot && cabinDoor === null) continue;
       for (const [index, mesh] of v.meshes.entries()) {
+        if (v.pilot && index !== 0) break;
         const dx = x - mesh.position.x, dz = z - mesh.position.z;
         const fx = Math.sin(mesh.rotation.y), fz = Math.cos(mesh.rotation.y);
         const across = dz * fx - dx * fz, along = dx * fx + dz * fz;
@@ -541,9 +563,8 @@ export class TransitManager {
   }
 
   /** Výstup u pravých předních dveří, podle natočení předního článku. */
-  exitPoint(v, out) {
+  exitPoint(v, out, longitudinal = v.sections[0].doors[0]) {
     const mesh = v.meshes?.[0];
-    const longitudinal = v.sections[0].doors[0];
     const yaw = mesh?.rotation.y ?? v.yaw;
     const fx = Math.sin(yaw), fz = Math.cos(yaw);
     let offset = 0;

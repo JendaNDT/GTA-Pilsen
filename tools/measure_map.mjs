@@ -1,4 +1,5 @@
 // Měří běžnou smyčku hry v Chromiu. Jízda a let mají pevné výchozí body.
+import { PILOT_TRIP } from '../src/game/tram-cabin.js';
 import { frameBudgets } from '../src/game/frame-budget.js';
 import { chromium } from '@playwright/test';
 import { webgpuFlags } from '../tests/e2e/browser-flags.js';
@@ -9,15 +10,17 @@ const args = process.argv.slice(2);
 const centerFlight = args.includes('--center-flight');
 const release = args.includes('--release');
 const rush = args.includes('--rush');
-const work = rush || args.includes('--work');
-const pilot = !rush && (release || centerFlight || args.includes('--pilot'));
+const tramCabin = args.includes('--tram-cabin');
+const work = tramCabin || rush || args.includes('--work');
+const pilot = !tramCabin && !rush && (release || centerFlight || args.includes('--pilot'));
+if (tramCabin && (rush || release)) throw new Error('Jízdu tramvají měř samostatně.');
 if (rush && release) throw new Error('Špičku a vydání měř samostatně.');
 const url = new URL(args.find((arg) => !arg.startsWith('--')) || 'http://127.0.0.1:4173/');
 url.searchParams.set('debug', '');
 if (work) {
   url.searchParams.set('adapt', args.includes('--adaptive') ? '1' : '0');
   if (rush) url.searchParams.set('quality', 'high');
-  if (!url.searchParams.has('date')) url.searchParams.set('date', rush ? '2026-11-09' : '2026-11-17');
+  if (!url.searchParams.has('date')) url.searchParams.set('date', rush || tramCabin ? '2026-11-09' : '2026-11-17');
   if (!url.searchParams.has('hour')) url.searchParams.set('hour', rush ? '7.5' : '10');
 }
 const workFlags = args.includes('--paced') ? [] : ['--disable-gpu-vsync', '--disable-frame-rate-limit'];
@@ -28,7 +31,7 @@ const browser = await chromium.launch({
   ...(work && { channel: 'chromium', args: workFlags }),
 });
 const report = { browser: browser.version(), viewport: '1920 × 1080', pilot, centerFlight, coldStartMs: [] };
-const scenarios = rush ? [{ name: 'rush', mode: 'traffic', site: 'Klatovská třída' }] : release ? [
+const scenarios = tramCabin ? [{ name: 'tram', mode: 'tram', site: 'Náměstí Republiky' }] : rush ? [{ name: 'rush', mode: 'traffic', site: 'Klatovská třída' }] : release ? [
   { name: 'car', mode: 'car', site: 'Plzeň' },
   { name: 'heli', mode: 'heli', site: 'Dobřív' },
   { name: 'carEast', mode: 'car', site: 'Hrádek' },
@@ -72,9 +75,25 @@ try {
     report.gpu = startup.adapter || gpu.auxAttributes?.glRenderer || null;
     if (mode) {
       await page.getByRole('button', { name: 'Hrát', exact: true }).click();
-      report[name] = await page.evaluate(async ({ mode, pilot, site, work }) => {
+      report[name] = await page.evaluate(async ({ mode, pilot, site, work, pilotTrip }) => {
         const game = window.__game, world = game.world;
-        if (mode === 'traffic') {
+        if (mode === 'tram') {
+          window.__freeze(true);
+          const table = game.transit.timetable;
+          const [, x, z] = table.stops.find(stop => stop[3] === '54717/1');
+          game.player.place(x, z);
+          window.__setClock('2026-11-09', 10.1);
+          const v = game.transit.vehicles.find(v => v.event.trip.id === pilotTrip);
+          for (let i = 0; i < 60 && !v?.canBoard; i++) game.update(1 / 60);
+          if (!v?.canBoard) throw new Error('Pilotní vůz nepřijel k nástupišti.');
+          const door = game.transit.exitPoint(v, {});
+          game.player.place(door.x, door.z, v.y);
+          for (let i = 0; i < 30 && v.doorFraction < 0.85; i++) game.update(1 / 60);
+          game.doAction();
+          if (!game.cabin) throw new Error('Měření vyžaduje cestujícího v prvním voze.');
+          for (let i = 0; i < 1800 && v.v < 1; i++) game.update(1 / 60);
+          if (v.v < 1) throw new Error('Měření vyžaduje jedoucí vůz.');
+        } else if (mode === 'traffic') {
           window.__freeze(true);
           const [edge] = [...game.trafficRhythm.measured].find(([, entry]) =>
             entry.curve.id === 'klatovska-jih' && entry.distance === 0);
@@ -139,7 +158,7 @@ try {
         const start = [focus.x, focus.z];
         // Na stejné trase musí pilot i s převodovkou Jolt projet do další dlaždice.
         const pedal = game.driver ? 0.38 : 0.27;
-        window.__setInput(0, mode === 'traffic' ? 0 : mode === 'car' ? (pilot ? pedal : 0.55) : 1);
+        window.__setInput(0, mode === 'traffic' || mode === 'tram' ? 0 : mode === 'car' ? (pilot ? pedal : 0.55) : 1);
         const physicsTimes = [];
         const obstacleSearch = { calls:0, candidates:0, ms:0 };
         const vehicles = game.vehicles, originalLimit = vehicles._obstacleLimit;
@@ -211,7 +230,7 @@ try {
           ...(physicsTimes.length > 0 && { physicsSteps: physicsTimes.length,
             physicsP95Ms: physicsTimes[Math.ceil(physicsTimes.length * 0.95) - 1] }),
         };
-      }, { mode, pilot, site, work });
+      }, { mode, pilot, site, work, pilotTrip: PILOT_TRIP });
       if (work) report[name].budgets = frameBudgets(report[name].measurement, report.work.durationMs / 1000);
       if (site) report[name].site = site;
     }
@@ -220,7 +239,7 @@ try {
   const json = JSON.stringify(report, null, 2) + '\n';
   if (work) {
     const output = args.find((arg) => arg.startsWith('--output='))?.slice('--output='.length)
-      ?? (rush ? 'data-raw/e20/vykon-spicka.json' : 'data-raw/e13/measure-work.json');
+      ?? (tramCabin ? 'data-raw/e59/jizda.json' : rush ? 'data-raw/e20/vykon-spicka.json' : 'data-raw/e13/measure-work.json');
     await mkdir(dirname(output), { recursive: true });
     await writeFile(output, json);
   }

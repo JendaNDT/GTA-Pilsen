@@ -1,5 +1,6 @@
 // Ručně modelované karoserie podle plzeňských vozů. Souřadnice jsou v metrech, +z je vpřed.
 import * as THREE from 'three/webgpu';
+import { CABIN_DOORS, CABIN_SEATS } from '../game/tram-cabin.js';
 import { Parts } from './models.js';
 import { transitMaterial as shellMat } from './transit-material.js';
 import { makeSurfaceMaterial } from '../world/materials.js';
@@ -29,7 +30,7 @@ export const TROLLEY_SECTION = {
   length: 11.8, doors: [3.9, -1.5], wheels: [2.52, -3.36], front: true, rear: true,
 };
 const TATRA_LENGTH = 15.1;
-const TATRA_DOORS = [6.02, 0.09, -5.96];
+const TATRA_DOORS = CABIN_DOORS;
 const TATRA_STEPS = [0.78, 0.36, 0.78];
 const TATRA_CAR = { length: 16.2, doors: TATRA_DOORS, axle: 3.2 };
 export const TATRA_SECTIONS = [TATRA_CAR, TATRA_CAR];
@@ -477,7 +478,7 @@ function setFoldingDoors(mesh, fraction) {
   mesh.instanceMatrix.needsUpdate = true;
 }
 
-function tatraSide(parts, end) {
+function tatraSide(parts, end, panes) {
   const width = TATRA_WIDTH / 2;
   const halfDoor = TATRA_DOOR_WIDTH / 2;
   const doorEdges = TATRA_DOORS.flatMap((z) => [z - halfDoor, z + halfDoor]);
@@ -495,6 +496,7 @@ function tatraSide(parts, end) {
       const bottom = arch ? 0.84 : 0.50 - dip(center) * 0.78;
       const band = (ay, by, cy, dy, paint) => face(parts,
         [[x, ay, a], [x, by, b], [x, cy, b], [x, dy, a]], paint, [side, 0, 0]);
+      if (panes && !opening) parts.box(0.055, 0.77, b - a, x - side * 0.03, 1.065, center, WHITE);
       if (opening) {
         panel(parts, x, a, b, bottom, Math.max(bottom, TATRA_STEPS[door]), YELLOW, side);
         panel(parts, x, a, b, TATRA_DOOR_TOP, 2.79, TATRA_GREY, side);
@@ -502,7 +504,7 @@ function tatraSide(parts, end) {
         band(bottom, bottom, stripeB, stripeA, YELLOW);
         band(stripeA, stripeB, stripeB + 0.105, stripeA + 0.105, WHITE);
         band(stripeA + 0.105, stripeB + 0.105, stripeB + 0.62, stripeA + 0.62, YELLOW);
-        band(stripeA + 0.62, stripeB + 0.62, 2.79, 2.79, TATRA_GREY);
+        if (!panes) band(stripeA + 0.62, stripeB + 0.62, 2.79, 2.79, TATRA_GREY);
       }
     }
     const openings = side < 0 ? [...TATRA_DOORS].sort((a, b) => a - b) : [];
@@ -514,6 +516,15 @@ function tatraSide(parts, end) {
         const bay = (limit - start) / count;
         const a = start + i * bay + 0.092, b = a + bay - 0.184;
         const low = 1.72 - dip((a + b) / 2) * 0.55, high = 2.72;
+        if (panes) {
+          const span = b - a;
+          parts.box(0.07, 1.43, 0.18, x, 2.10, a - 0.09, TATRA_GREY);
+          parts.box(0.07, 2.8 - high, span, x, (high + 2.8) / 2, (a + b) / 2, TATRA_GREY);
+          parts.box(0.07, low - 1.34, span, x, (low + 1.34) / 2, (a + b) / 2, TATRA_GREY);
+          parts.box(0.045, 0.03, span, x, 2.39, (a + b) / 2, METAL);
+          panel(panes, x, a, b, low, high, WHITE, side);
+          continue;
+        }
         const corner = 0.063, glassX = x + side * 0.008;
         face(parts, [[glassX, low, a + corner], [glassX, low, b - corner], [glassX, low + corner, b],
           [glassX, high - corner, b], [glassX, high, b - corner], [glassX, high, a + corner],
@@ -526,10 +537,10 @@ function tatraSide(parts, end) {
   }
   for (const [i, z] of TATRA_DOORS.entries()) {
     const step = TATRA_STEPS[i];
-    panel(parts, -0.45, z - halfDoor, z + halfDoor, step, TATRA_DOOR_TOP, DOOR_INTERIOR, -1);
+    if (!panes) panel(parts, -0.45, z - halfDoor, z + halfDoor, step, TATRA_DOOR_TOP, DOOR_INTERIOR, -1);
     parts.box(0.77, 0.045, TATRA_DOOR_WIDTH, -0.85, step - 0.02, z, METAL);
     if (i !== 1) parts.box(0.34, 0.045, TATRA_DOOR_WIDTH - 0.09, -1.06, step - 0.16, z, METAL);
-    for (const side of [-1, 1]) parts.box(0.77, TATRA_DOOR_TOP - step, 0.035, -0.85,
+    if (!panes) for (const side of [-1, 1]) parts.box(0.77, TATRA_DOOR_TOP - step, 0.035, -0.85,
       (TATRA_DOOR_TOP + step) / 2, z + side * halfDoor, DARK);
     parts.box(0.039, 1.45, 0.039, -0.85, step + 0.75, z + halfDoor - 0.13, YELLOW);
   }
@@ -594,12 +605,33 @@ function tatraEnd(parts, lamps, seam, side) {
   parts.box(0.31, 0.17, 0.17, 0, 0.62, side * (half + 0.48), DARK);
 }
 
-let tatraShell, tatraLamps, tatraLeaves;
-export function makeTatraCar() {
-  if (!tatraShell) {
+const tatraModels = new Map();
+const windowMat = new THREE.MeshBasicMaterial({
+  color: 0xbad9dc, transparent: true, opacity: 0.085, depthWrite: false, side: THREE.DoubleSide,
+});
+const seatPaint = color(0x9e503f), floorPaint = color(0x695b50);
+function tatraInterior(body, lights) {
+  body.box(2.42, 0.12, 13.57, 0, 0.76, 0, floorPaint);
+  body.box(2.4, 1.95, 0.08, 0, 1.8, 6.72, DOOR_INTERIOR);
+  body.box(2.35, 1.95, 0.08, 0, 1.8, -6.77, DOOR_INTERIOR);
+  for (const { x, z } of CABIN_SEATS) {
+    body.box(0.11, 0.4, 0.12, x, 1.02, z, METAL);
+    body.box(0.55, 0.11, 0.51, x, 1.23, z, seatPaint);
+    body.box(0.55, 0.46, 0.09, x, 1.51, z - 0.23, seatPaint);
+  }
+  for (const z of TATRA_DOORS) {
+    body.box(0.035, 1.95, 0.035, 0.59, 1.80, z, YELLOW);
+    lights.box(0.19, 0.028, 1.03, 0, 2.77, z, WHITE);
+  }
+  body.box(0.04, 0.04, 12.9, 0.59, 2.69, 0, YELLOW);
+}
+export function makeTatraCar(interior = false) {
+  if (!tatraModels.has(interior)) {
     const body = new Parts(SURFACE.transitPaint, transitSurfaces), lights = new Parts();
     const leaf = new Parts(SURFACE.transitPaint, transitSurfaces);
-    tatraSide(body, 6.82);
+    const panes = interior ? new Parts() : null;
+    tatraSide(body, 6.82, panes);
+    if (interior) tatraInterior(body, lights);
     tatraEnd(body, lights, 6.82, 1);
     tatraEnd(body, lights, 6.82, -1);
     for (const z of [-TATRA_CAR.axle, TATRA_CAR.axle]) {
@@ -618,16 +650,17 @@ export function makeTatraCar() {
       panel(leaf, side * 0.024, -0.073, 0.073, 0.54, 0.91, TRAM_GLASS, side);
       panel(leaf, side * 0.024, -0.073, 0.073, 0.14, 0.49, TRAM_GLASS, side);
     }
-    tatraShell = shade(body.geometry());
-    tatraLamps = lights.geometry();
-    tatraLeaves = leaf.geometry();
+    tatraModels.set(interior, { shell: shade(body.geometry()), lamps: lights.geometry(),
+      leaves: leaf.geometry(), panes: panes?.geometry() });
   }
   const group = new THREE.Group();
-  const shell = new THREE.Mesh(tatraShell, shellMat);
+  const model = tatraModels.get(interior);
+  const shell = new THREE.Mesh(model.shell, shellMat);
+  if (model.panes) group.add(new THREE.Mesh(model.panes, windowMat));
   shell.castShadow = true;
-  group.add(shell, new THREE.Mesh(tatraLamps, lampMat));
+  group.add(shell, new THREE.Mesh(model.lamps, lampMat));
   group.userData.sign = { y: 2.91, z: 7.25, tilt: -0.20, width: 1.17, color: '#c9db6a' };
-  mountDoors(group, tatraLeaves, TATRA_DOORS, TATRA_DOOR_WIDTH, 4);
+  mountDoors(group, model.leaves, TATRA_DOORS, TATRA_DOOR_WIDTH, 4);
   return group;
 }
 

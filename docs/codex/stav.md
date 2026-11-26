@@ -1,6 +1,6 @@
 # E59 · První průchozí vůz linky 1
 
-Výchozí revize `1fc8112`. Připravený je půdorys a zkoušky místního pohybu. Následuje zapojení do hry a souvislá jízda. [Zadání](E59.md)
+Výchozí revize `1fc8112`, půdorys a pohyb `3a325d7`. První vůz spoje 685462 je průchozí. Nástup na náměstí Republiky, sezení přes Hlavní poštu a výstup prostředními dveřmi Pod Záhorskem prošly na WebGL 2 i WebGPU. Prošlo 400 testů JavaScriptu, produkční sestavení a 34 testů Pythonu s jedním přeskočeným případem. Dokončuje se porovnání výkonu a závěrečná kontrola návazných směn. [Zadání](E59.md) · [Protokol a snímky](../E59.md)
 
 # Převzetí E54 až E57 do mainu
 
