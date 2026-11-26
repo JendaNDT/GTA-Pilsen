@@ -3,14 +3,16 @@ import { FixedStep } from './step.js';
 export const layers = Object.freeze({
   STATIC: 0, VEHICLE: 1, CHARACTER: 2, RAILING: 3,
   BREAKABLE: 4, DEBRIS: 5, TRANSIT: 6, SENSOR: 7, FOOT_RAIL: 8,
+  GOLF_LANE: 9, GOLF_BALL: 10,
 });
 
-const { STATIC, VEHICLE, CHARACTER, RAILING, BREAKABLE, DEBRIS, TRANSIT, SENSOR, FOOT_RAIL } = layers;
+const { STATIC, VEHICLE, CHARACTER, RAILING, BREAKABLE, DEBRIS, TRANSIT, SENSOR, FOOT_RAIL, GOLF_LANE, GOLF_BALL } = layers;
 const partners = [
   [STATIC, VEHICLE, CHARACTER, DEBRIS],
   [VEHICLE, VEHICLE, CHARACTER, RAILING, BREAKABLE, DEBRIS, TRANSIT, SENSOR],
   [CHARACTER, RAILING, BREAKABLE, DEBRIS, TRANSIT, SENSOR, FOOT_RAIL],
   [DEBRIS, DEBRIS, TRANSIT],
+  [GOLF_LANE, GOLF_BALL],
 ];
 
 export class PhysicsWorld {
@@ -28,7 +30,7 @@ export class PhysicsWorld {
     const moving = new Jolt.BroadPhaseLayer(1);
     for (const layer of Object.values(layers)) {
       broad.MapObjectToBroadPhaseLayer(layer,
-        [STATIC, RAILING, BREAKABLE, SENSOR, FOOT_RAIL].includes(layer) ? stationary : moving);
+        [STATIC, RAILING, BREAKABLE, SENSOR, FOOT_RAIL, GOLF_LANE].includes(layer) ? stationary : moving);
     }
     Jolt.destroy(stationary);
     Jolt.destroy(moving);
@@ -53,6 +55,7 @@ export class PhysicsWorld {
       const first = Jolt.wrapPointer(a, Jolt.Body);
       const second = Jolt.wrapPointer(b, Jolt.Body);
       const la = first.GetObjectLayer(), lb = second.GetObjectLayer();
+      if (la === GOLF_BALL || lb === GOLF_BALL) return;
       if ((la === CHARACTER && lb === VEHICLE) || (lb === CHARACTER && la === VEHICLE)) {
         this.onPedContact?.(la === CHARACTER ? first : second, la === VEHICLE ? first : second);
         return;
