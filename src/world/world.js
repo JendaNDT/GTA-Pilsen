@@ -2035,10 +2035,11 @@ export class World {
     return dA < dB ? this.eFrom[e] : this.eTo[e];
   }
 
-  /** A* – vrátí pole hran z uzlu a do uzlu b (nebo null). */
-  findPath(a, b, maxExpand = 6000, incoming = -1, initialContext = 0) {
+  /** A* – vrátí pole hran z uzlu a do uzlu b, případně s povoleným vjezdem na cílovou hranu. */
+  findPath(a, b, maxExpand = 6000, incoming = -1, initialContext = 0, destinationEdge = -1) {
     if (a < 0 || b < 0) return null;
-    if (a === b) return [];
+    const canArrive = (edge, context) => destinationEdge < 0 || this.turnContext(edge, destinationEdge, context) >= 0;
+    if (a === b && canArrive(incoming, initialContext)) return [];
     const best = new Map();
     const stateKey = (node, edge, context) => (context || this.turns?.relevant(edge))
       ? this.nodeCount + context * this.edgeCount + edge : node;
@@ -2078,7 +2079,7 @@ export class World {
       const key = pop();
       if (closed.has(key)) continue;
       const state = best.get(key), n = state.node;
-      if (n === b) {
+      if (n === b && canArrive(state.edge, state.context)) {
         const path = [];
         for (let at = state; at.previous; at = at.previous) path.push(at.edge);
         return path.reverse();

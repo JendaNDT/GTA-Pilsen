@@ -19,9 +19,10 @@ const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 const badRoad = RF.PRIVATE | RF.BRIDGE | RF.TUNNEL | RF.ROUNDABOUT;
 
 /** Hledá místo u pravého kraje vozovky a volné místo pro čekajícího chodce. */
-export function curbStop(world, x, z, radius = 58) {
+export function curbStop(world, x, z, radius = 58, { minWidth = 4, serviceEdge, accept } = {}) {
   const center = { x, z };
   const edges = new Set();
+  if (serviceEdge >= 0) edges.add(serviceEdge);
   for (let dz = -1; dz <= 1; dz++) for (let dx = -1; dx <= 1; dx++) {
     const i = world.chunkIndex(x + dx * CHUNK, z + dz * CHUNK);
     for (const e of world.trafficEdges[i] ?? []) edges.add(e);
@@ -29,7 +30,7 @@ export function curbStop(world, x, z, radius = 58) {
   let best = null, score = radius;
   for (const edge of edges) {
     const road = world.eRoad[edge], len = world.eLen[edge], width = world.r.w[road];
-    if (world.r.cls[road] < RC.TERTIARY || world.r.flags[road] & badRoad || len < 24 || width < 4) continue;
+    if (world.r.cls[road] < RC.TERTIARY || world.r.flags[road] & badRoad || len < 24 || width < minWidth) continue;
     const forward = world.eA[edge] < world.eB[edge];
     if (world.roadSpeed(road, forward) > 50) continue;
     const curb = Math.max(1.2, width / 2 - 1);
@@ -43,7 +44,9 @@ export function curbStop(world, x, z, radius = 58) {
       const waiting = world.edgePoint(edge, along, width / 2 + 0.85, {});
       if (world.blocked(p.x, p.z, 1.2) || world.isWater(p.x, p.z)
           || world.blocked(waiting.x, waiting.z, 0.45) || world.isWater(waiting.x, waiting.z)) continue;
-      best = { ...p, waiting, edge, along };
+      const stop = { ...p, waiting, edge, along };
+      if (accept && !accept(stop)) continue;
+      best = stop;
       score = d;
     }
   }

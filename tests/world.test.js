@@ -225,6 +225,8 @@ test('zákaz přes mezilehlý úsek platí jen po příjezdu z určené silnice'
   assert.equal(world.turnContext(via, to, world.turnContext(side, via)), 0);
   assert.equal(world.findPath(world.eFrom[from], world.eTo[to]), null);
   assert.deepEqual(world.findPath(world.eFrom[side], world.eTo[to]), [side, via, to]);
+  assert.equal(world.findPath(world.eFrom[from], world.eFrom[to], 100, -1, 0, to), null);
+  assert.deepEqual(world.findPath(world.eFrom[side], world.eFrom[to], 100, -1, 0, to), [side, via]);
 });
 
 test('pěší kapsle se u země vysune od sloupu a nad sloupem má volno', () => {

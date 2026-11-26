@@ -10,6 +10,12 @@ Na Karlovarské, v Kaplířově a v Zahradní zůstal v kontrolovaných bodech t
 
 Na Slovanské, Lidické a Skvrňanské se obrubníky odsunuly za tramvajové pásy. Ověřeno na revizi `e012088`. Prošlo všech 375 jednotkových zkoušek, produkční sestavení a 56 cílených běhů v Chromiu na WebGL 2 a WebGPU. Měření na pevné kameře ukázalo na nízkou předvolbu stejný počet vykreslovacích volání a trojúhelníků. [Srovnávací snímky a výsledky](../chodniky-u-koleji.md)
 
+# E53 · Taxi podle potřeb cestujícího
+
+- Krok 1 hotový. Na výchozích datech ověřeny tři směrové trasy, včetně přibližně 28 m volného pěšího přístupu od obrubníku ke spodnímu vstupu nádraží. Trasy z výchozí oblasti mají 2 321 m, 845 m a 2 169 m.
+- Zbývá připojit karty, zastavování, odměny a provést ověření ve hře. E53 navazuje přímo na E51 a používá existující nabídku Zakázky.
+- Prošlo 370 testů JavaScriptu a produkční sestavení. Pravidla skóre a směrové trasy mají nové zkoušky. [Zadání](E53.md)
+
 # E51 · Voda u Wilsonova mostu a u Ostende
 
 Dokončeno nad revizí `5eeaae8`. Radbuza unáší plavce a plovoucí auta, u Ostende hráč prochází mělčinou. Výpočet výšky hladiny sdílí grafika a fyzika. Při vstupu do vody kreslí střední a vyšší předvolba kruhy a tříšť.
