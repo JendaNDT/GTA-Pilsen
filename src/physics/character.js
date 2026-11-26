@@ -57,7 +57,7 @@ export class WalkingCharacter {
       }
     }
     if (player.swimming) {
-      vertical = Math.max(-2, Math.min(2, (player.world.heightAt(player.x, player.z) - player.y) * 8));
+      vertical = Math.max(-2, Math.min(2, ((player.water?.level ?? player.world.heightAt(player.x, player.z)) - player.y) * 8));
     }
     this.settings.mStickToFloorStepDown.Set(0, player.swimming ? 0 : -0.35, 0);
     velocity.Set(player.vx, vertical, player.vz);

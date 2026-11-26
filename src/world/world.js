@@ -1,5 +1,6 @@
 import { coveredRoads, coveredHeight } from './covered-roads.js';
 import { museumWaterPolygon } from './sady-layout.js';
+import { indexWaterCurrents } from './water-current.js';
 import { createSady } from './sady-model.js';
 import { createBorySite } from './bory.js';
 import { isFountainPool } from './fountain-shapes.js';
@@ -147,6 +148,7 @@ export class World {
     this.turns = new TurnRules(this, data.meta.traffic?.restrictions);
     this.breakables = new Breakables();
     this.traffic = new Traffic(this, data.meta.traffic);
+    this.improvedWater = PARAMS.get('voda') !== 'puvodni';
     this.gardenWaterLand = PARAMS.get('sady') === 'puvodni' ? null : new Set();
     this.fountainLand = PARAMS.get('kasny') === 'puvodni' ? null : new Set();
     this._initLand(data.land);
@@ -2120,7 +2122,7 @@ export class World {
             for (let cx = Math.floor(Math.min(ax, bx) / SHORE_CELL); cx <= Math.floor(Math.max(ax, bx) / SHORE_CELL); cx++) {
               const key = shoreKey(cx, cz);
               if (!shore.has(key)) shore.set(key, []);
-              shore.get(key).push(ax, az, bx, bz);
+              shore.get(key).push(ax, az, bx, bz, i);
             }
           }
         }
@@ -2128,10 +2130,11 @@ export class World {
     }
     this.water = water;
     this.shoreCells = shore;
+    this.waterCurrents = this.improvedWater ? indexWaterCurrents(L) : null;
   }
 
   /** Nejbližší bod břehové čáry do vzdálenosti reach: [x, z, vzdálenost], nebo null. */
-  nearestShore(x, z, reach) {
+  nearestShore(x, z, reach, area = -1) {
     const cells = this.shoreCells;
     if (!cells?.size) return null;
     let best = reach * reach, bx = NaN, bz = NaN;
@@ -2139,7 +2142,8 @@ export class World {
       for (let cx = Math.floor((x - reach) / SHORE_CELL); cx <= Math.floor((x + reach) / SHORE_CELL); cx++) {
         const list = cells.get(shoreKey(cx, cz));
         if (!list) continue;
-        for (let k = 0; k < list.length; k += 4) {
+        for (let k = 0; k < list.length; k += 5) {
+          if (area >= 0 && list[k + 4] !== area) continue;
           const ax = list[k], az = list[k + 1], ex = list[k + 2] - ax, ez = list[k + 3] - az, l2 = ex * ex + ez * ez;
           const t = l2 ? Math.max(0, Math.min(1, ((x - ax) * ex + (z - az) * ez) / l2)) : 0;
           const d2 = (ax + ex * t - x) ** 2 + (az + ez * t - z) ** 2;
@@ -2151,12 +2155,14 @@ export class World {
   }
 
   /** Leží bod ve vodní ploše? Přesný test bez hrubé masky. */
-  inWaterArea(x, z) {
+  inWaterArea(x, z) { return this.waterAreaAt(x, z) >= 0; }
+
+  waterAreaAt(x, z) {
     for (const w of this.water ?? []) {
       if (x < w.x0 || x > w.x1 || z < w.z0 || z > w.z1) continue;
-      if (this.landContains(w.i, x, z)) return true;
+      if (this.landContains(w.i, x, z)) return w.i;
     }
-    return false;
+    return -1;
   }
 
   /**
@@ -2269,11 +2275,7 @@ export class World {
     // rychlé vyloučení přes hrubou masku (včetně sousedních pixelů)
     const px = 1 / this.maskSX;
     if (!((this.maskAt(x, z) | this.maskAt(x + px, z) | this.maskAt(x - px, z) | this.maskAt(x, z + px) | this.maskAt(x, z - px)) & 4)) return false;
-    for (const w of this.water) {
-      if (x < w.x0 || x > w.x1 || z < w.z0 || z > w.z1) continue;
-      if (this.landContains(w.i, x, z)) return true;
-    }
-    return false;
+    return this.inWaterArea(x, z);
   }
 
   // ------------------------------------------------------------ koleje ----

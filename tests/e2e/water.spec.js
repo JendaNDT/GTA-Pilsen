@@ -146,3 +146,184 @@ test('E20 – plavec v mapě Radbuzy doplave na suchý břeh', { tag: '@webgpu' 
   expect(result).toMatchObject({ startedWet: true, atSurface: true, walked: true });
   expect(result.distance).toBeGreaterThan(1);
 });
+
+test('E51 – Radbuza plavce unáší a u Ostende se nejprve brodí', async ({ page }) => {
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0&hour=10'));
+  await page.waitForFunction(() => window.__ready);
+  const result = await page.evaluate(() => {
+    window.__freeze(true);
+    const { player, colliders, world, chunks } = window.__game;
+    const place = (x, z, y) => {
+      for (let i = 0; i < 25; i++) colliders.update(x, z);
+      player.place(x, z, y);
+    };
+    const step = (count, dz = 0) => {
+      for (let i = 0; i < count; i++) player.update(1 / 60, 0, dz, 0, false);
+    };
+    place(201, 495, world.heightAt(201, 495));
+    step(300);
+    const drift = [player.x - 201, player.z - 495, player.swimming];
+
+    place(1350, -3237);
+    let dry = false, waded = false, swam = false, wadingSpeed = Infinity;
+    for (let i = 0; i < 1800 && !swam; i++) {
+      step(1, 1);
+      dry ||= !player.waterContact;
+      if (!player.swimming && player.wading > 0.15 && player.grounded) {
+        waded = true;
+        wadingSpeed = Math.min(wadingSpeed, player.vz);
+      }
+      swam = player.swimming;
+    }
+    step(120);
+    const lakeZ = player.z;
+    step(180);
+    const lakeDrift = player.z - lakeZ;
+    for (let i = 0; i < 1800 && world.isWater(player.x, player.z); i++) step(1, -1);
+    step(20, -1);
+    const x = 1350, z = -3237;
+    for (let i = 0; i < 7; i++) chunks.update(x, z, 120, 60, player.y);
+    const tile = chunks.chunks.get(world.chunkIndex(x, z));
+    const ground = tile.group.children.find(mesh => mesh.material === tile.terrainMat);
+    const positions = ground.geometry.getAttribute('position');
+    let dryVertices = 0, dryError = 0;
+    for (let i = 0; i < positions.count; i++) {
+      const px = positions.getX(i), pz = positions.getZ(i);
+      if (Math.abs(px - x) > 15 || Math.abs(pz - z) > 12 || world.inWaterArea(px, pz) || world.onRoad(px, pz)) continue;
+      dryVertices++;
+      dryError = Math.max(dryError, Math.abs(positions.getY(i) - world.heightAt(px, pz)));
+    }
+    return { drift, dry, waded, swam, lakeDrift, wadingSpeed, dryVertices, dryError,
+      bank: !player.swimming && !world.isWater(player.x, player.z) && player.grounded, z: player.z };
+  });
+  expect(result.drift[2], JSON.stringify(result)).toBe(true);
+  expect(result.drift[1]).toBeLessThan(-1.7);
+  expect(Math.abs(result.drift[0])).toBeLessThan(1.1);
+  expect(result.dry && result.waded && result.swam, JSON.stringify(result)).toBe(true);
+  expect(result.wadingSpeed).toBeLessThan(2.2);
+  expect(Math.abs(result.lakeDrift)).toBeLessThan(0.1);
+  expect(result.dryVertices).toBeGreaterThan(4);
+  expect(result.dryError).toBeLessThan(0.1);
+  expect(result.bank, JSON.stringify(result)).toBe(true);
+});
+
+test('E51 – po pádu u Wilsonova mostu vznikne tříšť a plavec dosáhne kreslené hladiny', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto(gameUrl('/?debug&quality=high&adapt=0&view=550&hour=10'));
+  await page.waitForFunction(() => window.__ready);
+  await page.getByRole('button', { name: 'Hrát', exact: true }).click();
+  const result = await page.evaluate(() => {
+    window.__freeze(true);
+    window.__setInput(0, 0);
+    const g = window.__game, { player, world } = g;
+    const x = 201, z = 494, bottomOfFall = -12.25;
+    for (let i = 0; i < 25; i++) g.colliders.update(x, z);
+    player.place(x, z, bottomOfFall + 3);
+    const particleCursor = g.particles.cursor;
+    for (let i = 0; i < 145; i++) g.update(1 / 60);
+    window.__view(184, -4, 507, 201, -12.25, 485);
+    const tile = g.chunks.chunks.get(world.chunkIndex(x, z));
+    const ground = tile.group.children.find(mesh => mesh.material === tile.terrainMat);
+    const vertices = ground.geometry.getAttribute('position');
+    const center = [];
+    for (let i = 0; i < vertices.count; i++) {
+      if (Math.abs(vertices.getX(i) - x) < 5 && Math.abs(vertices.getZ(i) - z) < 5)
+        center.push(vertices.getY(i));
+    }
+    return { swimming: player.swimming, level: player.water.level, height: player.y, center,
+      ripples: g.waterRipple, particles: g.particles.cursor - particleCursor };
+  });
+  expect(result.swimming).toBe(true);
+  expect(result.ripples).toBe(1);
+  expect(result.particles).toBeGreaterThan(0);
+  expect(result.center.length).toBeGreaterThan(0);
+  for (const height of result.center) expect(height).toBeCloseTo(result.level, 2);
+  expect(result.height).toBeCloseTo(result.level, 1);
+  expect(errors).toEqual([]);
+});
+
+test('E51 – přepínač původní vody vrátí Radbuze původní výšku a vypne drift', async ({ page }) => {
+  await page.goto(gameUrl('/?debug&voda=puvodni&quality=low&adapt=0&hour=10'));
+  await page.waitForFunction(() => window.__ready);
+  const result = await page.evaluate(() => {
+    const { player, colliders, world } = window.__game;
+    const x = 201, z = 494, level = world.heightAt(x, z);
+    for (let i = 0; i < 25; i++) colliders.update(x, z);
+    player.place(x, z, level);
+    for (let i = 0; i < 300; i++) player.update(1 / 60, 0, 0, 0, false);
+    return { drift: Math.hypot(player.x - x, player.z - z), swimming: player.swimming, level, sampled: player.water.level };
+  });
+  expect(result.swimming).toBe(true);
+  expect(result.drift).toBeLessThan(0.07);
+  expect(result.sampled).toBeCloseTo(result.level, 2);
+});
+
+test('E51 – mimo pilotní místa Mže unáší plavce, rybník dovolí brodění a Radbuza unese auto', async ({ page }) => {
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0&hour=10'));
+  await page.waitForFunction(() => window.__ready);
+  await page.getByRole('button', { name: 'Hrát', exact: true }).click();
+  const result = await page.evaluate(() => {
+    window.__freeze(true);
+    window.__setInput(0, 0);
+    const g = window.__game;
+    const { player, world, colliders } = g;
+    const prepare = (x, z) => { for (let i = 0; i < 25; i++) colliders.update(x, z); };
+    const drift = (x, z) => {
+      prepare(x, z);
+      player.place(x, z, world.heightAt(x, z));
+      for (let i = 0; i < 300; i++) player.update(1 / 60, 0, 0, false, false);
+      return { x: player.x - x, z: player.z - z, swimming: player.swimming };
+    };
+    const mze = drift(140.2, -390.2);
+    const pond = drift(224, -4775);
+
+    prepare(224, -4823);
+    player.place(224, -4823);
+    let waded = false;
+    for (let i = 0; i < 1400 && !player.swimming; i++) {
+      player.update(1 / 60, 0, 1, false, false);
+      waded ||= player.grounded && player.wading > 0.12 && player.wading < 1;
+    }
+    const swam = player.swimming;
+
+    const car = player.lastCar, x = 261.4, z = 717.4;
+    prepare(x, z);
+    car.place(x, z, Math.PI, world.heightAt(x, z) + 0.2);
+    g._enterCar(car);
+    for (let i = 0; i < 174; i++) g.update(1 / 60);
+    return { mze, pond, waded, swam, car: { x: car.x - x, z: car.z - z, flooded: car.floodTime } };
+  });
+  expect(result.mze.swimming && result.pond.swimming, JSON.stringify(result)).toBe(true);
+  expect(result.mze.x).toBeGreaterThan(1.8);
+  expect(result.mze.z).toBeLessThan(-0.2);
+  expect(Math.hypot(result.pond.x, result.pond.z)).toBeLessThan(0.08);
+  expect(result.waded && result.swam, JSON.stringify(result)).toBe(true);
+  expect(result.car.flooded).toBeGreaterThan(2);
+  expect(result.car.x).toBeLessThan(-0.25);
+  expect(result.car.z).toBeLessThan(-0.45);
+});
+
+test('E51 – pád do Mže vytvoří kruh a tříšť i mimo pilotní úsek', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto(gameUrl('/?debug&quality=high&adapt=0&view=500&hour=10'));
+  await page.waitForFunction(() => window.__ready);
+  await page.getByRole('button', { name: 'Hrát', exact: true }).click();
+  const result = await page.evaluate(() => {
+    window.__freeze(true);
+    window.__setInput(0, 0);
+    const { world, player, colliders, particles } = window.__game;
+    const g = window.__game, x = 140.2, z = -390.2, y = world.heightAt(x, z);
+    for (let i = 0; i < 25; i++) colliders.update(x, z);
+    player.place(x, z, y + 3);
+    const particlesAtEntry = particles.cursor;
+    for (let i = 0; i < 145; i++) g.update(1 / 60);
+    window.__view(x - 15, y + 5, z + 10, x, y, z);
+    return { ripples: g.waterRipple, spray: particles.cursor - particlesAtEntry, swimming: player.swimming };
+  });
+  expect(result.ripples).toBe(1);
+  expect(result.spray).toBeGreaterThan(0);
+  expect(result.swimming).toBe(true);
+  expect(errors).toEqual([]);
+});

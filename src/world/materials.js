@@ -13,6 +13,7 @@ import { SURFACE } from './material-table.js';
 import { hash21, valueNoise } from './material-noise.js';
 import { detailFadeRange } from './image-quality.js';
 import { TUNNEL_HEIGHT, TUNNEL_PORTAL_CUT } from './tunnels.js';
+import { riverStreaks, waterImpactRings, waterOptics } from './water-optics.js';
 
 export const env = {
   windows: uniform(new THREE.Vector4()).setGroup(renderGroup),
@@ -161,8 +162,8 @@ function addPaving(landColor, profile, local, worldPosition, noise, detail) {
 // Texturu i souřadnice portálů síť bere z právě vykreslované dlaždice.
 const terrainNodes = new Map();
 const terrainSurface = struct({ color: 'vec3', glint: 'float', roughness: 'float' });
-function getTerrainNodes(paving, detail, portalCount, terrainDetail, waterDetail) {
-  const key = `${paving}/${detail}/${portalCount}/${terrainDetail}/${waterDetail}`;
+function getTerrainNodes(paving, detail, portalCount, terrainDetail, waterDetail, pilot, riverFlow) {
+  const key = `${paving}/${detail}/${portalCount}/${terrainDetail}/${waterDetail}/${pilot}/${riverFlow}`;
   const cached = terrainNodes.get(key);
   if (cached) return cached;
 
@@ -172,7 +173,9 @@ function getTerrainNodes(paving, detail, portalCount, terrainDetail, waterDetail
   const portalBounds = materialReference('portalBounds', 'vec3');
   const profile = PAVING[paving];
   const close = terrainDetail ? terrainDetailNodes(env.cam) : null;
-  const field = waterDetail ? materialReference('waterField', 'texture') : null;
+  const waterField = waterDetail || riverFlow ? materialReference('waterField', 'texture') : null;
+  const field = waterDetail ? waterField : null;
+  const optics = pilot && field ? waterOptics(positionWorld.xz, field, env) : null;
   const wave = waterDetail ? Fn(() => {
     const flow = field.rg.mul(255).sub(128).div(127).toVar();
     const drift = flow.mul(env.time).toVar();
@@ -213,6 +216,14 @@ function getTerrainNodes(paving, detail, portalCount, terrainDetail, waterDetail
         const foam = smoothstep(0.12, 0.72, field.a).mul(smoothstep(0.28, 0.68, ripple));
         const tint = mix(mix(bed, env.sky, fresnel.mul(0.58)), vec3(0.67, 0.77, 0.78), foam);
         color.assign(mix(landColor, tint, waterMask));
+        if (optics) {
+          const weight = optics.weight.mul(waterMask).toVar();
+          If(weight.greaterThan(0.001), () => {
+            const improved = optics.shade(view, foam);
+            color.assign(mix(color, improved.tint, weight));
+            sunGlint.assign(improved.glint.mul(weight, fade));
+          });
+        }
         roughness.assign(mix(roughness, mix(0.16, 0.62, foam), waterMask));
       } else {
         const p = point.mul(0.22);
@@ -230,6 +241,15 @@ function getTerrainNodes(paving, detail, portalCount, terrainDetail, waterDetail
           sunGlint.assign(spec.mul(env.night.oneMinus(), fade, waterMask));
         }
         color.assign(mix(landColor, water, waterMask));
+      }
+      if (riverFlow) {
+        const streak = riverStreaks(point, waterField, env);
+        const weight = streak.mul(waterMask, mix(0.30, 0.12, env.night));
+        color.assign(mix(color, vec3(0.58, 0.71, 0.74), weight));
+        if (waterDetail) {
+          const ring = waterImpactRings(point, waterField, env);
+          color.assign(mix(color, vec3(0.62, 0.73, 0.74), waterMask.mul(ring, 0.50)));
+        }
       }
     });
     return terrainSurface(color, sunGlint, roughness);
@@ -262,7 +282,14 @@ function getTerrainNodes(paving, detail, portalCount, terrainDetail, waterDetail
   const nodes = { colorNode, emissiveNode, roughnessNode: surface.get('roughness') };
   if (wave) {
     const coverage = smoothstep(0.35, 0.65, map.a).oneMinus();
-    nodes.normalNode = mix(close?.normal ?? normalViewGeometry, transformNormalToView(wave), coverage).normalize();
+    const normal = optics ? Fn(() => {
+      const result = wave.toVar();
+      If(coverage.mul(optics.weight).greaterThan(0.001), () => {
+        result.assign(mix(wave, optics.normal, optics.weight).normalize());
+      });
+      return result;
+    })() : wave;
+    nodes.normalNode = mix(close?.normal ?? normalViewGeometry, transformNormalToView(normal), coverage).normalize();
   } else if (close) nodes.normalNode = close.normal;
   terrainNodes.set(key, nodes);
   return nodes;
@@ -287,9 +314,12 @@ export function makeMillraceMaterial(detail) {
 
 /** Materiál terénu jedné dlaždice (textura země s vodou v průhlednosti). */
 export function makeTerrainMaterial(tex, portals = [], paving = 0, detail = false, mask = null, water = null) {
-  const mat = makeSurfaceMaterial(SURFACE.grass, { map: tex, ...getTerrainNodes(paving, detail, portals.length, Boolean(mask), Boolean(water)) });
+  const waterDetail = Boolean(water?.detail), riverFlow = Boolean(water?.riverFlow);
+  const mat = makeSurfaceMaterial(SURFACE.grass, {
+    map: tex, ...getTerrainNodes(paving, detail, portals.length, Boolean(mask), waterDetail, Boolean(waterDetail && water.pilot), riverFlow),
+  });
   if (mask) mat.terrainClasses = mask;
-  if (water) mat.waterField = water;
+  if (water) mat.waterField = water.field;
   if (portals.length) {
     mat.portalBounds = portals.map(p => new THREE.Vector3(p.start ?? -TUNNEL_PORTAL_CUT.approach,
       p.end ?? TUNNEL_PORTAL_CUT.depth, p.clearance ?? -(TUNNEL_HEIGHT + 0.5)));

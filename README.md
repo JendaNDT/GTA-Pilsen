@@ -11,6 +11,8 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 ## Co ve hře je
 
+- Na vodních plochách v celé mapě se dá brodit a v hlubší vodě plavat. V řekách s mapovanou osou toku proud unáší plavce i plovoucí auta. Na střední a vyšší kvalitě se při pádu do vody objeví tříšť a kruhy. [Fyzika na celé mapě](docs/E51/voda-na-cele-mape.md) · [Srovnání hladiny u Wilsonova mostu a Ostende](docs/E51.md) · [Viditelný proud](docs/E51/proud.md)
+
 - Na mostě Generála Pattona jsou oba jízdní pásy volné. Lampy z Jízdecké a Lochotínské se vejdou pod most. [Pohled z mostu a z Jízdecké před opravou a po ní](docs/E50.md)
 
 - Příjezd ke kruhovému objezdu na Roudné je vyhlazený v obou směrech. Úprava jízdního povrchu pokračuje přes křižovatky v celé mapě. [Srovnání, jízdní zkoušky a měření všech silnic](docs/E49.md)

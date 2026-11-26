@@ -1,3 +1,13 @@
+# E51 · Voda u Wilsonova mostu a u Ostende
+
+Dokončeno nad revizí `5eeaae8`. Radbuza unáší plavce a plovoucí auta, u Ostende hráč prochází mělčinou. Výpočet výšky hladiny sdílí grafika a fyzika. Při vstupu do vody kreslí střední a vyšší předvolba kruhy a tříšť.
+
+Prošlo produkční sestavení, 365 testů JavaScriptu a 50 z 52 cílených zkoušek v Chromiu. Zbývající dvě zkoušky měří jas světlometů a stejný výsledek se opakoval i na E50. Obě jízdy a oba lety na nízkou kvalitu splnily v nové verzi rozpočty. Ve vysoké předvolbě u mostu dosáhl čas GPU 12,50 ms při cíli 12 ms. [Zadání](E51.md) · [Snímky, výsledky a postup vyzkoušení](../E51.md)
+
+Proud v řekách je výraznější i na nízkou předvolbu. Po zvýraznění prošlo všech 365 testů JavaScriptu, sestavení a 28 různých cílených zkoušek v Chromiu. Nízká předvolba splnila rozpočty. V pevném pohledu u Wilsonova mostu na vysokou kvalitu vyšel čas GPU 14,97 ms při cíli 12 ms. Před zvýrazněním to bylo 14,21 ms. [Srovnání a výsledky](../E51/proud.md)
+
+Brodění funguje na celé mapě a v plochách se zakreslenou osou toku proud unáší plavce i plovoucí auta. Ověřeno v Mži, Kamenném rybníku a na Radbuze mimo původní úsek. Prošlo sestavení, 366 testů JavaScriptu a 42 cílených zkoušek v Chromiu. [Snímky, ověření a měření](../E51/voda-na-cele-mape.md)
+
 # E50 · Lampy pod mostem Generála Pattona
 
 Sloupy v Jízdecké a Lochotínské mají nově výšku 6,06 m a 4,78 m. Obě světla se vejdou pod most. Přejezd přímo nad každým z nich prošel při 44,7 km/h se všemi koly na vozovce. Prošlo sestavení, všech 361 jednotkových testů a 20 cílených zkoušek v Chromiu. [Měření, srovnávací snímky a výsledky kontrol](../E50.md)

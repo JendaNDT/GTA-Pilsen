@@ -1,6 +1,7 @@
 import { followParkTrip, parkCrossing, parkTrip } from './pedestrian-walks.js';
 import { servicePlatform, stepPassenger } from './platform-passengers.js';
 import { EDGE_MARGIN } from '../world/travel-bounds.js';
+import { sampleWater, waterWalking } from '../world/water-profile.js';
 // Hráč pěšky a chodci.
 import { WalkingCharacter } from '../physics/character.js';
 import { makePedMesh, poseCharacter } from './models.js';
@@ -23,6 +24,9 @@ export class Player {
     this.phase = 0;
     this.grounded = true;
     this.swimming = false;
+    this.wading = 0;
+    this.waterContact = false;
+    this.water = {};
     this.radius = 0.35; this.halfLen = 0.4;
     this.fallStart = 0;
     this.stun = 0;
@@ -58,6 +62,9 @@ export class Player {
     this.vy = 0; this.vx = this.vz = 0; this.grounded = true;
     this.fallStart = this.y;
     this.turn = 0;
+    this.swimming = false;
+    this.wading = 0;
+    this.waterContact = false;
     this.character?.place(this.x, this.y, this.z);
     this.sync(0);
   }
@@ -66,9 +73,15 @@ export class Player {
   update(dt, dirX, dirZ, runAmount, jump) {
     const w = this.world;
     const len = Math.hypot(dirX, dirZ);
-    this.swimming = this.y <= w.heightAt(this.x, this.z) + 0.3 && w.isWater(this.x, this.z) &&
+    const water = this.water;
+    this.waterContact = w.isWater(this.x, this.z) &&
+      this.y <= sampleWater(w, this.x, this.z, water).level + 0.3 &&
       (!w.onRoad(this.x, this.z, 0.3) || w.deckAt(this.x, this.z, Infinity) > this.y + 1.8);
-    let speed = this.swimming ? 1.7 : 2.4 + 4 * runAmount;
+    this.wading = this.waterContact && w.improvedWater
+      ? waterWalking(water.depth, water.level - this.y, this.swimming) : 0;
+    this.swimming = this.waterContact && (!w.improvedWater || this.wading === 1);
+    const drySpeed = 2.4 + 4 * runAmount;
+    let speed = this.swimming ? 1.7 : drySpeed * (1 - this.wading * 0.76);
     if (this.stun > 0) { this.stun -= dt; speed = 0; jump = false; }
     const yawBefore = this.yaw;
     let tvx = 0, tvz = 0;
@@ -76,6 +89,10 @@ export class Player {
       tvx = (dirX / Math.max(1, len)) * speed; tvz = (dirZ / Math.max(1, len)) * speed;
       const want = Math.atan2(dirX, dirZ);
       this.yaw += clamp(wrapAngle(want - this.yaw), -12 * dt, 12 * dt);
+    }
+    if (this.swimming) {
+      tvx += water.vx;
+      tvz += water.vz;
     }
     const wasGrounded = this.grounded;
     const k = Math.min(1, dt * (this.grounded ? 12 : 2.5));
@@ -113,7 +130,9 @@ export class Player {
   sync(moving) {
     // ve vodě je vidět hlava a ramena: při šlapání vody je postava rovně, při plavání skloněná
     const swimDepth = !this.swimming ? 0 : ORIGINAL_CHARACTER ? 1.05 : moving > 0.2 ? 1.17 : 1.3;
-    this.mesh.position.set(this.x, this.y - swimDepth, this.z);
+    const depth = this.swimming && this.world.improvedWater
+      ? Math.max(0, swimDepth - (this.water.level - this.y)) : swimDepth;
+    this.mesh.position.set(this.x, this.y - depth, this.z);
     this.mesh.rotation.y = this.yaw;
     const s = this.pose;
     s.speed = moving; s.phase = this.phase; s.time = this.time; s.idle = this.idle;
