@@ -1,6 +1,6 @@
 # E55 · Celá síť sdílených elektrokol
 
-Snímek Pilsen Bike z 26. listopadu 2026 obsahuje 152 stanovišť. Import ověřil příchod a místní nájezd na všech bodech. Devět umístění v herním světě se proti souřadnici poskytovatele posunulo o 1 až 4 m, obě místa pilotu zůstala přesně na původních souřadnicích. Prošlo produkční sestavení, 386 testů JavaScriptu a 32 testů Pythonu s jedním přeskočeným případem. Ve hře se dá půjčit a vrátit kolo na všech 152 místech. Prošlo 42 cílených zkoušek v Chromiu na WebGL 2 a WebGPU včetně pěšího příchodu a místní jízdy u každého stanoviště. Probíhá měření výkonu. [Zadání](E55.md)
+Snímek Pilsen Bike z 26. listopadu 2026 obsahuje 152 stanovišť. Import ověřil příchod a místní nájezd na všech bodech. Devět umístění v herním světě se proti souřadnici poskytovatele posunulo o 1 až 4 m, obě místa pilotu zůstala přesně na původních souřadnicích. Prošlo produkční sestavení, 386 testů JavaScriptu a 32 testů Pythonu s jedním přeskočeným případem. Ve hře se dá půjčit a vrátit kolo na všech 152 místech. Prošlo 42 cílených zkoušek v Chromiu na WebGL 2 a WebGPU včetně pěšího příchodu a místní jízdy u každého stanoviště. Rozšíření je dokončené nad herní revizí `1f9ca97`. V opakovaném měření na nízkou předvolbu vyšly časové rozpočty při jízdě na kole, jízdě autem i letu. [Zadání](E55.md) · [Protokol a snímky](../E55.md#síť-stanovišť-po-pilotu)
 
 # E55 · Pilot sdílených elektrokol
 
