@@ -1,6 +1,6 @@
 # E55 · Pilot sdílených elektrokol
 
-Dvě skutečná stanoviště u Západočeského muzea a DEPA2015 jsou v mapě a umožňují výpůjčku a vrácení. Prošel souvislý průjezd dlouhý 1 175 m, 385 testů JavaScriptu, produkční build i 50 cílených běhů v Chromiu. Probíhá měření výkonu. Naváže celá síť skutečných stanovišť. [Zadání](E55.md) · [Snímky a ověření](../E55.md)
+Dvě skutečná stanoviště u Západočeského muzea a DEPA2015 jsou v mapě a umožňují výpůjčku a vrácení. Prošel souvislý průjezd dlouhý 1 175 m, 385 testů JavaScriptu, produkční build i 50 cílených běhů v Chromiu. Pilot je dokončený nad herní revizí `919b978`. Rozpočty výkonu vyšly při jízdě na kole, jízdě autem i letu. Naváže celá síť skutečných stanovišť. [Zadání](E55.md) · [Snímky a ověření](../E55.md)
 
 # E54 · Minigolf ve Škodalandu
 
