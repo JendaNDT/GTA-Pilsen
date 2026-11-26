@@ -1,3 +1,11 @@
+# E51 · Voda u Wilsonova mostu a u Ostende
+
+Rozpracováno nad revizí `5eeaae8`. [Zadání](E51.md)
+
+- Proud a brodění · hotovo. Prošlo 364 zkoušek JavaScriptu, produkční sestavení a 10 cílených zkoušek v Chromiu přes WebGL 2 a WebGPU.
+- Hladina, odrazy a reakce na vstup · zbývá.
+- Snímky, měření a závěrečná zkouška · zbývá.
+
 # E50 · Lampy pod mostem Generála Pattona
 
 Sloupy v Jízdecké a Lochotínské mají nově výšku 6,06 m a 4,78 m. Obě světla se vejdou pod most. Přejezd přímo nad každým z nich prošel při 44,7 km/h se všemi koly na vozovce. Prošlo sestavení, všech 361 jednotkových testů a 20 cílených zkoušek v Chromiu. [Měření, srovnávací snímky a výsledky kontrol](../E50.md)

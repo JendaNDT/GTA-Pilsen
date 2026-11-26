@@ -146,3 +146,49 @@ test('E20 – plavec v mapě Radbuzy doplave na suchý břeh', { tag: '@webgpu' 
   expect(result).toMatchObject({ startedWet: true, atSurface: true, walked: true });
   expect(result.distance).toBeGreaterThan(1);
 });
+
+test('E51 – Radbuza plavce unáší a u Ostende se nejprve brodí', async ({ page }) => {
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0&hour=10'));
+  await page.waitForFunction(() => window.__ready);
+  const result = await page.evaluate(() => {
+    window.__freeze(true);
+    const { player, colliders, world } = window.__game;
+    const place = (x, z, y) => {
+      for (let i = 0; i < 25; i++) colliders.update(x, z);
+      player.place(x, z, y);
+    };
+    const step = (count, dz = 0) => {
+      for (let i = 0; i < count; i++) player.update(1 / 60, 0, dz, 0, false);
+    };
+    place(201, 495, world.heightAt(201, 495));
+    step(300);
+    const drift = [player.x - 201, player.z - 495, player.swimming];
+
+    place(1350, -3237);
+    let dry = false, waded = false, swam = false, wadingSpeed = Infinity;
+    for (let i = 0; i < 1800 && !swam; i++) {
+      step(1, 1);
+      dry ||= !player.waterContact;
+      if (!player.swimming && player.wading > 0.15 && player.grounded) {
+        waded = true;
+        wadingSpeed = Math.min(wadingSpeed, player.vz);
+      }
+      swam = player.swimming;
+    }
+    step(120);
+    const lakeZ = player.z;
+    step(180);
+    const lakeDrift = player.z - lakeZ;
+    for (let i = 0; i < 1800 && world.isWater(player.x, player.z); i++) step(1, -1);
+    step(20, -1);
+    return { drift, dry, waded, swam, lakeDrift, wadingSpeed,
+      bank: !player.swimming && !world.isWater(player.x, player.z) && player.grounded, z: player.z };
+  });
+  expect(result.drift[2], JSON.stringify(result)).toBe(true);
+  expect(result.drift[1]).toBeLessThan(-1.7);
+  expect(Math.abs(result.drift[0])).toBeLessThan(1.1);
+  expect(result.dry && result.waded && result.swam, JSON.stringify(result)).toBe(true);
+  expect(result.wadingSpeed).toBeLessThan(2.2);
+  expect(Math.abs(result.lakeDrift)).toBeLessThan(0.1);
+  expect(result.bank, JSON.stringify(result)).toBe(true);
+});

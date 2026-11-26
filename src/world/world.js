@@ -147,6 +147,7 @@ export class World {
     this.turns = new TurnRules(this, data.meta.traffic?.restrictions);
     this.breakables = new Breakables();
     this.traffic = new Traffic(this, data.meta.traffic);
+    this.improvedWater = PARAMS.get('voda') !== 'puvodni';
     this.gardenWaterLand = PARAMS.get('sady') === 'puvodni' ? null : new Set();
     this.fountainLand = PARAMS.get('kasny') === 'puvodni' ? null : new Set();
     this._initLand(data.land);

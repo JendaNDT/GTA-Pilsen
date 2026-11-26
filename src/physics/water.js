@@ -1,3 +1,5 @@
+import { sampleWater, waterDepthFromShore } from '../world/water-profile.js';
+
 // V terénním modelu je vidět hladina. Pro kolize odhadujeme dno podle vzdálenosti od břehu.
 const BANK_WIDTH = 8;
 const BANK_SLOPE = 0.12;
@@ -51,8 +53,7 @@ export function riverBed(world, x0, z0, size) {
         distance2 = Math.min(distance2, dx * dx + dz * dz);
       }
       const distance = Math.sqrt(distance2);
-      depth = Math.max(depth, Math.min(distance, BANK_WIDTH) * BANK_SLOPE +
-        Math.max(0, distance - BANK_WIDTH) * CHANNEL_SLOPE);
+      depth = Math.max(depth, waterDepthFromShore(distance));
     }
     lastZ = z;
     return depth;
@@ -91,6 +92,7 @@ export class Water {
     this.up = new Jolt.Vec3(0, 1, 0);
     this.current = new Jolt.Vec3(0, 0, 0);
     this.sunk = new Set();
+    this.surface = {};
   }
 
   step(vehicle, world, dt) {
@@ -99,9 +101,10 @@ export class Water {
       car.floodTime = 0;
       return false;
     }
-    const surface = world.heightAt(car.x, car.z);
+    const { level: surface, vx, vz } = sampleWater(world, car.x, car.z, this.surface);
     if (car.y > surface + car.type.len / 2) return false;
     this.point.Set(car.x, surface, car.z);
+    this.current.Set(vx, 0, vz);
     const age = car.floodTime || 0;
     const lift = Math.max(0.18, 1.95 - Math.max(0, age - 2) * 0.24);
     const wet = body.ApplyBuoyancyImpulse(this.point, this.up, lift, 0.65, 0.8, this.current,
