@@ -1,0 +1,78 @@
+{
+  "chain": [
+    {
+      "id": 1,
+      "type": "trolleybus",
+      "x": 88.28267707572591,
+      "z": 457.63060287345195,
+      "yaw": -1.8892647471017507,
+      "lane": 0,
+      "progress": 653.3732345371619,
+      "speed": 0,
+      "line": "49",
+      "reason": "přednost na křižovatce"
+    },
+    {
+      "id": 2,
+      "type": "hatch",
+      "x": 61.95313262939453,
+      "z": 470.04144287109375,
+      "yaw": 0.21492843036933462,
+      "edge": 51115,
+      "next": 51116,
+      "lane": 0,
+      "progress": 6.302099645871303,
+      "speed": 0,
+      "street": "Americká",
+      "reason": "přednost na křižovatce"
+    },
+    {
+      "id": 3,
+      "type": "kombi",
+      "x": 81.28727722167969,
+      "z": 477.98480224609375,
+      "yaw": 1.9379007190509596,
+      "edge": 51115,
+      "next": 51116,
+      "lane": 0,
+      "progress": 29.928388605072854,
+      "speed": 0,
+      "street": "Americká",
+      "reason": "překážka v dráze"
+    },
+    {
+      "id": 4,
+      "type": "hatch",
+      "x": 85.4140625,
+      "z": 475.8450622558594,
+      "yaw": 3.0102365548991874,
+      "edge": 51116,
+      "next": 51117,
+      "lane": 0,
+      "progress": 2.982455764661239,
+      "speed": 0,
+      "street": "Americká",
+      "reason": "přednost na křižovatce"
+    },
+    {
+      "id": 2,
+      "type": "hatch",
+      "x": 61.95313262939453,
+      "z": 470.04144287109375,
+      "yaw": 0.21492843036933462,
+      "edge": 51115,
+      "next": 51116,
+      "lane": 0,
+      "progress": 6.302099645871303,
+      "speed": 0,
+      "street": "Americká",
+      "reason": "cyklus"
+    }
+  ],
+  "lane": null,
+  "next": [
+    798.55,
+    "Mrakodrap"
+  ],
+  "wait": 0
+}

@@ -1,4 +1,4 @@
-import { ARTICULATED_TRIP, BUS_TRIP } from './game/tram-cabin.js';
+import { ARTICULATED_TRIP, BUS_TRIP, TROLLEY_TRIP } from './game/tram-cabin.js';
 import { BIKE_LICENSE } from './game/bike-stations.js';
 import packageInfo from '../package.json' with {type:'json'};
 import { PhotoMode } from './game/photo-mode.js';
@@ -104,7 +104,7 @@ const ABOUT_HTML = (meta, rendering) => `
   <a href="https://opendata.plzen.eu/public/opendata/detail/160" target="_blank" rel="noopener">měření dopravních smyček města Plzně</a>
   a z <a href="https://polivisuapi.plzen.eu/api/" target="_blank" rel="noopener">hodinových profilů PoliVisu</a>.
   Pro ostatní ulice a pro chodce hra používá odhad.</p>
-  <p>Interiéry Tatry, tříčlánkové tramvaje a autobusu SOR včetně sedadel, osvětlení, oken a průchozích měchů jsou vlastní tvorba projektu Plzeň naplno.</p>
+  <p>Interiéry Tatry, tříčlánkové tramvaje, autobusu SOR a trolejbusu linky 49 včetně sedadel, osvětlení, oken a průchozích měchů jsou vlastní tvorba projektu Plzeň naplno.</p>
   <p>Rozety, portály, zvonice a střechy kostela sv. Jana Nepomuckého vytvořil projekt Plzeň naplno podle městského zaměření a dvou fotografií dodaných autorem hry.</p>
   <p>Modely dvanácti plzeňských dominant od Jubilejní brány po rozhlednu Chlum, včetně kreseb průčelí a střech, vytvořil projekt Plzeň naplno podle fotografických předloh. Jejich tvary vycházejí z otevřeného městského zaměření Plzně a půdorysů OpenStreetMap (ODbL).</p>
   <p>Morový sloup na náměstí Republiky má půdorys z OpenStreetMap (ODbL). Sochy, kámen, zlacení i ohrazení vytvořil projekt Plzeň naplno podle fotografie od autora hry a popisu Národního památkového ústavu.</p>
@@ -359,6 +359,7 @@ async function boot() {
   $('btn-tram').addEventListener('click', () => boardFromMenu());
   $('btn-articulated').addEventListener('click', () => boardFromMenu(ARTICULATED_TRIP));
   $('btn-bus').addEventListener('click', () => boardFromMenu(BUS_TRIP));
+  $('btn-trolley').addEventListener('click', () => boardFromMenu(TROLLEY_TRIP));
   // Celá obrazovka: po kliknutí na Hrát (volba v nastavení) a tlačítkem ⛶ ve hře.
   const fullscreenButton = $('btn-fullscreen'), fullscreenChoice = $('fullscreen-play');
   const supported = fullscreenSupported();

@@ -1,3 +1,9 @@
+# E60 · Průchozí trolejbus linky 49
+
+Třetí krok nad revizí `8077df6` dokončuje katalog čtyř průchozích spojů. Na lince 49 lze od hlavního nádraží projít uličkou, svézt se vsedě přes Pařížskou a vystoupit druhými dveřmi u Mrakodrapu. Přestup z autobusu 33 v Pařížské prošel na dotykovém ovládání v obou vykreslovačích. Na nízkou předvolbu ve Full HD jízda dosáhla 60 snímků za sekundu a splnila čtyři časové rozpočty.
+
+Prošlo sestavení, 405 testů JavaScriptu a 34 testů Pythonu s jedním přeskočeným. V první sérii prošlo 21 z 24 prohlížečových zkoušek, při opakování pět z osmi jízd. Každý scénář včetně řidičských směn a jízdy původní Tatrou prošel alespoň jednou v obou vykreslovačích. Otevřené zůstává vzájemné blokování aut na Americké, občasné čekání tramvaje před Hlavní poštou a jedna odchylka 67 cm při výstupu z autobusu vedle osobního auta. [Katalog, snímky, přestup, měření a záznamy čekání](../E60.md#trolejbus-linky-49)
+
 # E60 · Průchozí autobus linky 33
 
 Druhý krok navazuje na revizi `5c5a4a4`. Spoj 688856 odjíždí v pondělí v 8:20 ze stanoviště 4 na náměstí Republiky směrem na hlavní nádraží. Přímý nástup je v nabídce, pěší nástup nabídnou otevřené dveře. Zkouška přestupu navázala na tramvaj 4 od zastávky U Práce. Z náměstí prošla jízda přes Goethovu k výstupu zadními dveřmi v Pařížské.

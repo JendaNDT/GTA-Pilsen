@@ -6,6 +6,7 @@ export const CABIN_SEATS = [-4.9, -3.85, -2.8, -1.75, 1.55, 2.6, 3.65, 4.7]
 
 export const ARTICULATED_TRIP = '685463';
 export const BUS_TRIP = '688856';
+export const TROLLEY_TRIP = '692185';
 
 const tatraLayout = [{ doors: CABIN_DOORS, seats: CABIN_SEATS, min: -6.53, max: 6.48 }];
 export const ARTICULATED_CABIN = [
@@ -19,6 +20,11 @@ export const BUS_CABIN = [{
   seats: [-3.07, -1.95, 0.63, 1.76, 2.94].flatMap(z => [-0.81, 0.81].map(x => ({ x, z }))),
 }];
 
+export const TROLLEY_CABIN = [{
+  length: 11.8, doors: [3.9, -1.5], wheelWells: [2.52, -3.36], min: -5, max: 4.96,
+  seats: [-4.35, -3.18, -0.25, 0.94, 2.19].flatMap(z => [-0.81, 0.81].map(x => ({ x, z }))),
+}];
+
 export const CABIN_SERVICES = [
   { trip: PILOT_TRIP, type: 'tram', ref: '1', layout: tatraLayout, stop: '54717/1',
     name: 'Průchozí tramvaj · linka 1', marker: '1 · Průchozí Tatra', aliases: ['Tatra'],
@@ -29,6 +35,9 @@ export const CABIN_SERVICES = [
   { trip: BUS_TRIP, type: 'bus', ref: '33', layout: BUS_CABIN, stop: '54717/4',
     name: 'Průchozí autobus · linka 33', marker: '33 · Průchozí autobus', aliases: ['SOR'],
     access: 'Spoj 688856 směr Hlavní nádraží. V pondělí 9. 11. 2026 odjezd v 8:20 ze stanoviště 4.' },
+  { trip: TROLLEY_TRIP, type: 'trolleybus', ref: '49', layout: TROLLEY_CABIN, stop: '53408/1',
+    name: 'Průchozí trolejbus · linka 49', marker: '49 · Průchozí trolejbus', aliases: [],
+    access: 'Spoj 692185 směr Karlov. V pondělí 9. 11. 2026 odjezd v 8:26 ze stanoviště 1 u hlavního nádraží.' },
 ];
 
 export function boardingDoor(across, along, doors = CABIN_DOORS) {

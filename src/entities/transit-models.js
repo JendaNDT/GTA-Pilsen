@@ -1,6 +1,6 @@
 // Ručně modelované karoserie podle plzeňských vozů. Souřadnice jsou v metrech, +z je vpřed.
 import * as THREE from 'three/webgpu';
-import { ARTICULATED_CABIN, BUS_CABIN, CABIN_DOORS, CABIN_SEATS } from '../game/tram-cabin.js';
+import { ARTICULATED_CABIN, BUS_CABIN, TROLLEY_CABIN, CABIN_DOORS, CABIN_SEATS } from '../game/tram-cabin.js';
 import { Parts } from './models.js';
 import { transitMaterial as shellMat } from './transit-material.js';
 import { makeSurfaceMaterial } from '../world/materials.js';
@@ -27,7 +27,7 @@ export const BUS_SECTION = {
   ...BUS_CABIN[0], wheels: BUS_CABIN[0].wheelWells, front: true, rear: true,
 };
 export const TROLLEY_SECTION = {
-  length: 11.8, doors: [3.9, -1.5], wheels: [2.52, -3.36], front: true, rear: true,
+  ...TROLLEY_CABIN[0], wheels: TROLLEY_CABIN[0].wheelWells, front: true, rear: true,
 };
 const TATRA_LENGTH = 15.1;
 const TATRA_DOORS = CABIN_DOORS;
@@ -423,7 +423,7 @@ function makeSection(section, style, interior = false) {
       }
       if (section.front) body.box(2.42, 2.4, 0.07, 0, 1.64, section.max + 0.24, DOOR_INTERIOR);
       if (section.rear) body.box(2.42, 2.4, 0.07, 0, 1.64, section.min - 0.24, DOOR_INTERIOR);
-      if (style === BUS) {
+      if (style !== TRAM) {
         body.box(2.45, 0.02, hi - lo, 0, style.top - 0.01, (lo + hi) / 2, WHITE);
         for (const x of [-0.62, 0.62]) body.box(0.04, 0.04, 9.4, x, 2.34, 0, YELLOW);
         for (const z of section.wheels) for (const x of [-1.04, 1.04]) {
@@ -451,12 +451,12 @@ function makeSection(section, style, interior = false) {
       : { y: 2.34, z: section.length / 2 - 0.121, tilt: -0.08, width: 1.65, sideX: 1.284, sideY: 2.58, sideZ: 2.00 };
   }
 
-  const busInterior = style === BUS && interior;
-  const leafKey = busInterior ? section : style;
+  const roadInterior = style !== TRAM && interior;
+  const leafKey = roadInterior ? section : style;
   if (!leafGeometry.has(leafKey)) {
     const leaf = new Parts(SURFACE.transitPaint, transitSurfaces);
     doorLeaf(leaf, style, -1, 0);
-    if (busInterior) {
+    if (roadInterior) {
       const x = -style.halfWidth, half = style.doorWidth / 4 - 0.012;
       panel(leaf, x, -half, half, style.doorBottom, style.sill, WHITE, 1);
       panel(leaf, x, -half, half, style.doorTop - 0.10, style.doorTop, DARK, 1);
@@ -479,7 +479,7 @@ function mountDoors(group, geometry, centers, width, leaves) {
 }
 
 export const makeTramSection = (section, interior = false) => makeSection(section, TRAM, interior);
-export const makeTrolleybus = () => makeSection(TROLLEY_SECTION, TROLLEY);
+export const makeTrolleybus = (interior = false) => makeSection(TROLLEY_SECTION, TROLLEY, interior);
 export const makeSorBus = (interior = false) => makeSection(BUS_SECTION, BUS, interior);
 
 export function setModelDoors(group, fraction) {

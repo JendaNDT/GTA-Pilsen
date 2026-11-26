@@ -1,0 +1,64 @@
+{
+  "chain": [
+    {
+      "id": 1,
+      "type": "bus",
+      "x": 68.3976556815819,
+      "z": 436.2201661049393,
+      "yaw": 0.10193084096377872,
+      "lane": 1.7,
+      "progress": 7233.813635860065,
+      "speed": 0,
+      "line": "33",
+      "reason": "přednost na křižovatce"
+    },
+    {
+      "id": 2,
+      "type": "hatch",
+      "x": 85.30908966064453,
+      "z": 476.18865966796875,
+      "yaw": 3.053459950946501,
+      "edge": 51116,
+      "next": 51117,
+      "lane": 0,
+      "progress": 2.4523723635324757,
+      "speed": 0,
+      "street": "Americká",
+      "reason": "přednost na křižovatce"
+    },
+    {
+      "id": 3,
+      "type": "pickup",
+      "x": 61.835391998291016,
+      "z": 469.5491638183594,
+      "yaw": 0.6329466769247085,
+      "edge": 51115,
+      "next": 51116,
+      "lane": 0,
+      "progress": 5.554452573692018,
+      "speed": 0,
+      "street": "Americká",
+      "reason": "obsazený výjezd"
+    },
+    {
+      "id": 2,
+      "type": "hatch",
+      "x": 85.30908966064453,
+      "z": 476.18865966796875,
+      "yaw": 3.053459950946501,
+      "edge": 51116,
+      "next": 51117,
+      "lane": 0,
+      "progress": 2.4523723635324757,
+      "speed": 0,
+      "street": "Americká",
+      "reason": "cyklus"
+    }
+  ],
+  "lane": null,
+  "next": [
+    7710.76,
+    "Pařížská"
+  ],
+  "wait": 0
+}

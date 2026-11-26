@@ -23,6 +23,7 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 - **Průchozí tramvaj linky 1.** V hlavní nabídce nebo v pauze klikni na **Nastoupit do průchozí tramvaje**. Tlačítko nastaví čas odjezdu a postaví tě přímo do uličky. Do prvního vozu spoje 685462 směrem na Bolevec můžeš nastoupit, projít se za jízdy, sednout si k oknu a v zastávce vystoupit jinými dveřmi. [Kde nastoupit a jak vůz ovládat](docs/E59.md)
 - **Článková tramvaj linky 1.** Tlačítko **Nastoupit do článkové tramvaje** tě postaví do předního článku spoje 685463. Uličkou můžeš projít až do zadního článku a v zastávce vystoupit jeho dveřmi. [Jízda článkovou tramvají](docs/E60.md)
+- **Průchozí trolejbus linky 49.** Zvol **Nastoupit do průchozího trolejbusu** nebo nastup předními dveřmi u hlavního nádraží. Spoj 692185 jede v 8:26 přes Pařížskou na Karlov. [Jízda trolejbusem](docs/E60.md#trolejbus-linky-49)
 - **Průchozí autobus linky 33.** Zvol **Nastoupit do průchozího autobusu** nebo přijď na stanoviště 4 na náměstí Republiky. Spoj 688856 jede v 8:20 přes Goethovu směrem na hlavní nádraží. [Jízda autobusem](docs/E60.md#autobus-linky-33)
 
 - **Bowling U Papírny.** Na Papírnické 3 otevři jednu dráhu klávesou F nebo dotykovým tlačítkem. Nastav směr a sílu, dohraj deset kol a ulož si osobní rekord. [Ovládání a zkoušky](docs/E57.md)
@@ -389,7 +390,7 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 
 ## Zdroje a licence dat
 
-- Interiéry Tatry, tříčlánkové tramvaje a autobusu SOR včetně sedadel, osvětlení, oken a průchozích měchů jsou vlastní tvorba projektu Plzeň naplno. Využívají stávající karoserie a herní jízdní řád PMDP.
+- Interiéry Tatry, tříčlánkové tramvaje, autobusu SOR a trolejbusu linky 49 včetně sedadel, osvětlení, oken a průchozích měchů jsou vlastní tvorba projektu Plzeň naplno. Využívají stávající karoserie a herní jízdní řád PMDP.
 
 - Souřadnice stanovišť Pilsen Bike pocházejí z veřejného zdroje PMDP / Freebike ve formátu GBFS 3.0. Zdroj neuvádí vlastní licenci a specifikace pro tento případ uvádí CC0. Model elektrokola a označník vytvořil projekt Plzeň naplno. [Data stanovišť](https://pmdpbike.admin.freebike.com/api/gbfs/v30/station_information) · [Licencování ve specifikaci GBFS](https://github.com/MobilityData/gbfs/blob/v3.0/gbfs.md#system_informationjson)
 

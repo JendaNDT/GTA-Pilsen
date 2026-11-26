@@ -142,7 +142,9 @@ class TransitVehicle {
       const mesh = this.meshes[index], dx = x - mesh.position.x, dz = z - mesh.position.z;
       const sin = Math.sin(mesh.rotation.y), cos = Math.cos(mesh.rotation.y);
       const door = boardingDoor(dz * sin - dx * cos, dx * sin + dz * cos, this.sections[index].doors);
-      if (door !== null) return { index, door };
+      if (door === null) continue;
+      if (this.route.type === 'trolleybus' && door !== this.sections[index].doors[0]) continue;
+      return { index, door };
     }
     return null;
   }
@@ -244,7 +246,7 @@ export class TransitManager {
           v.joints = [makeTatraCoupler()];
         } else {
           v.meshes = v.isTram ? v.sections.map(section => makeTramSection(section, !!v.cabinService))
-            : [v.route.type === 'bus' ? makeSorBus(!!v.cabinService) : makeTrolleybus()];
+            : [v.route.type === 'bus' ? makeSorBus(!!v.cabinService) : makeTrolleybus(!!v.cabinService)];
           v.joints = v.meshes.slice(1).map(() => makeTramJoint(!!v.cabinService));
         }
         if (!v.isTram) v.indicator = addDepartureIndicator(v.meshes[0], v.len);

@@ -642,7 +642,7 @@ export class Game {
     const event = service && table.events(day).find(e => e.day === day && e.trip.id === trip &&
       e.trip.route.type === service.type && e.trip.route.ref === service.ref);
     const index = event?.trip.stops.findIndex(s => table.stops[s.stop][3] === service.stop);
-    if (index == null || index < 0) return 'V jízdním řádu chybí průchozí spoj na náměstí Republiky.';
+    if (index == null || index < 0) return 'Průchozí spoj nemá v jízdním řádu zvolené nástupiště.';
 
     const [, x, z] = table.stops[event.trip.stops[index].stop];
     if (this.ride) this._alight(true);

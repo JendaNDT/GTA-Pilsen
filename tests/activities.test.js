@@ -1,4 +1,4 @@
-import { ARTICULATED_TRIP, BUS_TRIP, CABIN_SERVICES } from '../src/game/tram-cabin.js';
+import { ARTICULATED_TRIP, BUS_TRIP, TROLLEY_TRIP, CABIN_SERVICES } from '../src/game/tram-cabin.js';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
@@ -65,4 +65,23 @@ test('průchozí autobus 33 odjíždí ze stanoviště 4 a obsluhuje Goethovu a 
   assert.equal(times[2 * index + 1], 8 * 3600 + 20 * 60);
   assert.deepEqual(stops.slice(index, index + 3).map(([stop]) => table.stops[stop][0]),
     ['Náměstí Republiky', 'Goethova', 'Pařížská']);
+});
+
+test('jízdní řád trolejbusu 49 navazuje v Pařížské na autobus 33', () => {
+  const table = JSON.parse(readFileSync(new URL('../public/data/timetable.json', import.meta.url)));
+  const pilot = CABIN_SERVICES.find(service => service.trip === TROLLEY_TRIP);
+  const [, service, pattern, times] = table.trips.find(([id]) => id === pilot.trip);
+  const [route, stops, direction] = table.patterns[pattern];
+  const index = stops.findIndex(([stop]) => table.stops[stop][3] === pilot.stop);
+  assert.ok(index >= 0);
+  assert.equal(table.routes[route].ref, pilot.ref);
+  assert.equal(table.routes[route].type, pilot.type);
+  assert.equal(direction, 'Karlov');
+  assert.ok(table.calendar.profiles[table.calendar.days[0]].includes(service));
+  assert.deepEqual(stops.slice(index, index + 3).map(([stop]) => table.stops[stop][0]),
+    ['Hlavní nádraží', 'Pařížská', 'Mrakodrap']);
+  assert.deepEqual([0, 1, 2].map(i => times[2 * (index + i) + 1]), [30360, 30420, 30540]);
+  const [, , busPattern, busTimes] = table.trips.find(([id]) => id === BUS_TRIP);
+  const transfer = table.patterns[busPattern][1].findIndex(([stop]) => table.stops[stop][3] === '48984/2');
+  assert.equal(times[2 * (index + 1) + 1] - busTimes[2 * transfer], 180);
 });

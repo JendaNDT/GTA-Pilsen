@@ -36,7 +36,7 @@ const browser = await chromium.launch({
   ...(work && { channel: 'chromium', args: workFlags }),
 });
 const report = { browser: browser.version(), viewport: '1920 × 1080', pilot, centerFlight, coldStartMs: [] };
-const scenarios = cabin ? [{ name: service.type, mode: 'cabin', site: 'Náměstí Republiky' }] : rush ? [{ name: 'rush', mode: 'traffic', site: 'Klatovská třída' }] : release ? [
+const scenarios = cabin ? [{ name: service.type, mode: 'cabin' }] : rush ? [{ name: 'rush', mode: 'traffic', site: 'Klatovská třída' }] : release ? [
   { name: 'car', mode: 'car', site: 'Plzeň' },
   { name: 'heli', mode: 'heli', site: 'Dobřív' },
   { name: 'carEast', mode: 'car', site: 'Hrádek' },
@@ -81,26 +81,14 @@ try {
     report.gpu = startup.adapter || gpu.auxAttributes?.glRenderer || null;
     if (mode) {
       await page.getByRole('button', { name: 'Hrát', exact: true }).click();
-      report[name] = await page.evaluate(async ({ mode, pilot, site, work, pilotTrip, platform }) => {
+      report[name] = await page.evaluate(async ({ mode, pilot, site, work, pilotTrip }) => {
         const game = window.__game, world = game.world;
         if (mode === 'cabin') {
           window.__freeze(true);
-          const table = game.transit.timetable;
-          const [, x, z] = table.stops.find(stop => stop[3] === platform);
-          game.player.place(x, z);
-          const date = '2026-11-09', day = Date.parse(date) / 86_400_000;
-          const trip = table.events(day).find(e => e.trip.id === pilotTrip && e.day === day)?.trip;
-          const stop = trip?.stops.findIndex(s => table.stops[s.stop][3] === platform);
-          if (stop == null || stop < 0) throw new Error('Měřený spoj nemá nástupiště na náměstí Republiky.');
-          window.__setClock(date, trip.times[2 * stop + 1] / 3600);
-          const v = game.transit.vehicles.find(v => v.event.trip.id === pilotTrip);
-          for (let i = 0; i < 60 && !v?.canBoard; i++) game.update(1 / 60);
-          if (!v?.canBoard) throw new Error('Pilotní vůz nepřijel k nástupišti.');
-          const door = game.transit.exitPoint(v, {});
-          game.player.place(door.x, door.z, v.y);
-          for (let i = 0; i < 30 && v.doorFraction < 0.85; i++) game.update(1 / 60);
-          game.doAction();
-          if (!game.cabin) throw new Error('Měření vyžaduje cestujícího v prvním voze.');
+          const error = game.startCabinRide(pilotTrip);
+          if (error || !game.cabin) throw new Error(error || 'Při měření chybí cestující v interiéru.');
+          const v = game.ride;
+          site = v.stopTarget[1];
           for (let i = 0; i < 1800 && v.v < 1; i++) game.update(1 / 60);
           if (v.v < 1) throw new Error('Měření vyžaduje jedoucí vůz.');
         } else if (mode === 'traffic') {
@@ -226,6 +214,7 @@ try {
         const elapsed = frames.reduce((sum, value) => sum + value, 0);
         frames.sort((a, b) => a - b);
         return {
+          ...(mode === 'cabin' && { site }),
           metres: Math.round(Math.hypot(focus.x - start[0], focus.z - start[1])),
           start: start.map(Math.round), end: [Math.round(focus.x), Math.round(focus.z)],
           chunks: chunks.size, maxPending, shadowEnabled: game.env.sun.castShadow,
@@ -240,7 +229,7 @@ try {
           ...(physicsTimes.length > 0 && { physicsSteps: physicsTimes.length,
             physicsP95Ms: physicsTimes[Math.ceil(physicsTimes.length * 0.95) - 1] }),
         };
-      }, { mode, pilot, site, work, pilotTrip: cabinTrip, platform: service?.stop });
+      }, { mode, pilot, site, work, pilotTrip: cabinTrip });
       if (work) report[name].budgets = frameBudgets(report[name].measurement, report.work.durationMs / 1000);
       if (site) report[name].site = site;
     }
@@ -249,6 +238,7 @@ try {
   const json = JSON.stringify(report, null, 2) + '\n';
   if (work) {
     const cabinOutput = cabinTrip === PILOT_TRIP ? 'data-raw/e59/jizda.json'
+      : service?.type === 'trolleybus' ? 'data-raw/e60/trolejbus/jizda.json'
       : service?.type === 'bus' ? 'data-raw/e60/bus/jizda.json' : 'data-raw/e60/jizda.json';
     const output = args.find((arg) => arg.startsWith('--output='))?.slice('--output='.length)
       ?? (cabin ? cabinOutput : rush ? 'data-raw/e20/vykon-spicka.json' : 'data-raw/e13/measure-work.json');
