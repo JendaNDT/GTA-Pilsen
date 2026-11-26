@@ -39,6 +39,7 @@ import { TRANSIT_NAME, TransitManager } from '../entities/transit.js';
 import { Heli } from '../entities/heli.js';
 import { Hud } from './hud.js';
 import { Jobs } from './missions.js';
+import { Activities } from './activities.js';
 import { Garage } from './garage.js';
 import { Shifts } from './shift.js';
 import { GameAudio } from './audio.js';
@@ -248,6 +249,7 @@ export class Game {
     this.garage = new Garage(this);
     this.jobs = new Jobs(this);
     this.shifts = new Shifts(this);
+    this.activities = new Activities(this);
     this.saveEnabled = true;
     this._load();
     this.applyOptics();
@@ -365,7 +367,7 @@ export class Game {
   // ----------------------------------------------------------- ukládání ----
   _load() {
     const s = readSave();
-    let x = START.x, z = START.z;
+    let x = START.x, z = START.z, activityReturn;
     if (s) {
       if (s.pursuit) {
         this.wanted = s.pursuit.stars;
@@ -397,11 +399,13 @@ export class Game {
       this.garage.load(s.garage);
       this.jobs.load(s.job);
       this.shifts.load(s.shift);
+      activityReturn = this.activities.load(s.activity);
+      if (activityReturn) ({ x, z, yaw: this.camYaw } = activityReturn);
       this.hasSave = true;
     }
     const p = this._clearSpot(x, z, 0.6);
     this.player.place(p.x, p.z);
-    if (this.hasSave) this._restoreCar(s.car);
+    if (this.hasSave && !activityReturn) this._restoreCar(s.car);
   }
 
   _restoreCar(saved) {
@@ -444,6 +448,7 @@ export class Game {
         stats: this.stats, x: Math.round(safe.x), z: Math.round(safe.z),
         found: this.jobs.landmarks.filter((l) => l.found).map((l) => l.name),
         garage: this.garage.snapshot(), job: this.jobs.snapshot(), shift: this.shifts.snapshot(),
+        activity: this.activities.snapshot(),
         ...changes,
       }));
       return true;
@@ -653,14 +658,23 @@ export class Game {
     if (this.mode === 'car') return this._exitCar();
     if (this.mode === 'heli') return this._exitHeli();
     if (this.mode === 'transit') return this._alight();
+    return this._footAction()?.run() ?? null;
+  }
+
+  _footAction() {
     const p = this.player;
+    if (this.falls.active.has(p) || p.stun > 0 || this.shifts.active) return null;
+    const activity = this.activities.choice();
+    if (activity) return { label: activity.label, run: () => this.activities.act(activity) };
     const h = this._nearestHeli();
-    if (h) return this._enterHeli(h);
+    if (h) return { label: 'Nasednout do vrtulníku', run: () => this._enterHeli(h) };
     const v = this.transit.boardable(p.x, p.z, p.y);
-    if (v) return this._board(v);
+    if (v) return { label: `Nastoupit · ${TRANSIT_NAME[v.route.type]} ${v.route.ref} → ${v.destination}`, run: () => this._board(v) };
     const car = this.vehicles.nearestEnterable(p.x, p.z, p.y);
-    if (car) return this._enterCar(car);
-    return null;
+    return car ? {
+      label: `${car.mode === 'parked' || car.mode === 'loose' ? 'Nastoupit' : 'Sebrat auto'} · ${car.type.name}`,
+      run: () => this._enterCar(car),
+    } : null;
   }
 
   /** Klávesa R: vrátí hráče (i s autem) na nejbližší silnici. */
@@ -692,7 +706,10 @@ export class Game {
       this.car.place(r.x, r.z, Math.atan2(r.dx, r.dz), y);
       if (this.car !== this.garage.active) this.car.health = Math.max(this.car.health, 40);
     }
-    else this.player.place(r.x, r.z, y);
+    else {
+      this.player.place(r.x, r.z, y);
+      this.activities.end('cancelled');
+    }
     this.hud.toast('Zpět na silnici.');
   }
 
@@ -777,6 +794,7 @@ export class Game {
   }
 
   _toFoot(x, z) {
+    this.activities.end('interrupted', false);
     this.falls.finish(this.player);
     this.player.stun = 0;
     if (this.car) { this.car.mode = 'loose'; this.car.noDriver = true; this.car.wasAI = false; this.car = null; }
@@ -1061,6 +1079,7 @@ export class Game {
     this.peds.update(dt, this.focus, this.camInfo, this.vehicles.cars);
     this.jobs.update(dt);
     this.shifts.show();
+    this.activities.update(dt);
     this._updateWanted(dt);
     if (DEBUG) {
       this.logicMs = physicsStart - logicStart + (performance.now() - physicsEnd);
@@ -1111,16 +1130,11 @@ export class Game {
     if (this.promptTimer <= 0) {
       this.promptTimer = 0.15;
       const key = 'F';
-      let html = '';
+      let html = '', actionLabel;
       if (this.mode === 'foot') {
-        const p = this.player;
-        const h = this._nearestHeli();
-        const v = !h ? this.transit.boardable(p.x, p.z, p.y) : null;
-        const car = !h && !v ? this.vehicles.nearestEnterable(p.x, p.z, p.y) : null;
-        if (h) html = `<kbd>${key}</kbd>Nasednout do vrtulníku`;
-        else if (v) html = `<kbd>${key}</kbd>Nastoupit · ${TRANSIT_NAME[v.route.type]} ${plain(v.route.ref)} → ${plain(v.destination)}`;
-        else if (car) html = `<kbd>${key}</kbd>${car.mode === 'parked' || car.mode === 'loose' ? 'Nastoupit' : 'Sebrat auto'} · ${car.type.name}`;
-        else if (p.swimming) html = 'Plaveš…';
+        actionLabel = this._footAction()?.label;
+        if (actionLabel) html = `<kbd>${key}</kbd>${plain(actionLabel)}`;
+        else if (this.player.swimming) html = 'Plaveš…';
       } else if (this.shifts.active) {
         html = IS_TOUCH ? '▲ Plyn · ▼ Brzda · F Dveře' : 'W Plyn · S Brzda · F Dveře';
       } else if (this.mode === 'transit') {
@@ -1130,7 +1144,7 @@ export class Game {
         else if (st) html = `Příští zastávka · ${plain(st[1])}`;
         if (boundary) html += ' · poslední zastávka na mapě';
       } else if (this.mode === 'heli' && this.heli.landed && this.heli.speed < 2) html = `<kbd>${key}</kbd>Vystoupit`;
-      hud.prompt(html);
+      hud.prompt(html, actionLabel);
     }
     // minimapa
     const markers = [...this.jobs.markers(), ...this.shifts.markers()];

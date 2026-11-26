@@ -15,6 +15,8 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 - Na Slovanské a dalších tramvajových ulicích se obrubník přizpůsobí poloze kolejí. Světlé klíny v kolejišti na Slovanské zmizely. [Srovnání a ověření](docs/chodniky-u-koleji.md)
 
+- **Městské aktivity.** Na mapě vyhledej Škodaland nebo minigolf a nech se dovést k pěšímu vstupu ve V Lukách. Klávesou F nebo dotykovým tlačítkem můžeš projít zkušební pěší trasu, ukončit ji a zkusit znovu. [Příchod, ověření a snímky](docs/E52.md)
+
 - **Taxi podle potřeb cestujících.** V osobním autě otevři Zakázky a vyber běžnou jízdu, spěch na vlak nebo klidnou jízdu. Před přijetím vidíš nástup, cíl a výplatu. Zastav u pravého obrubníku ve směru jízdy. Za včasný příjezd na nádraží nebo plynulou jízdu můžeš získat bonus. [Trasy a ověření](docs/E53.md)
 
 - Na vodních plochách v celé mapě se dá brodit a v hlubší vodě plavat. V řekách s mapovanou osou toku proud unáší plavce i plovoucí auta. Na střední a vyšší kvalitě se při pádu do vody objeví tříšť a kruhy. [Fyzika na celé mapě](docs/E51/voda-na-cele-mape.md) · [Srovnání hladiny u Wilsonova mostu a Ostende](docs/E51.md) · [Viditelný proud](docs/E51/proud.md)
@@ -376,6 +378,8 @@ U přiložené historické datové sady není původní datum doloženo. Proto m
 zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 
 ## Zdroje a licence dat
+
+- Pěší přístup a umístění zkušební trasy ve Škodalandu vycházejí z OpenStreetMap (ODbL) a terénu ČÚZK (CC BY 4.0). Značení a trasa vznikly přímo pro hru. [Poloha a adresa areálu podle města](https://sport.plzen.eu/Sportoviste/d/skodaland-ceske-udoli)
 
 - Venkovní místa návratu u služeben jsou vlastní herní úpravou adresních bodů © ČÚZK, RÚIAN ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)), a stávající mapy OpenStreetMap. Názvy a působení byly porovnány s veřejnými adresáři policie a měst. [Přehled podkladů](docs/E46.md)
 

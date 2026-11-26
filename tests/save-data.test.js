@@ -22,3 +22,9 @@ test('platné památky a poloha zůstanou čitelné, neznámý formát se nepou�
   assert.deepEqual([s.found, s.x, s.z, s.money], [['Radnice'], 21, -13, 500]);
   for (const raw of [null, '[', 'null', '{"v":3}', '[]']) assert.equal(parseSave(raw), null);
 });
+
+test('uložený identifikátor aktivity přežije načtení a starší zápis má bezpečný výchozí stav', () => {
+  assert.equal(parseSave('{"v":2,"activity":"skodaland-minigolf"}').activity, 'skodaland-minigolf');
+  assert.equal(parseSave('{"v":2,"activity":{"x":50}}').activity, null);
+  assert.equal(parseSave('{"v":1}').activity, null);
+});

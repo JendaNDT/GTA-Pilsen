@@ -150,7 +150,7 @@ export class Hud {
     this.el = {
       hud: $('hud'), money: $('money'), wanted: $('wanted'), health: $('health').firstElementChild,
       street: $('street'), district: $('district'), mission: $('mission'), toast: $('toast'),
-      prompt: $('prompt'), speedo: $('speedo'), kmh: $('kmh'), speedlimit: $('speedlimit'), vehname: $('vehname'), clock: $('clock'),
+      prompt: $('prompt'), action: $('tb-act'), speedo: $('speedo'), kmh: $('kmh'), speedlimit: $('speedlimit'), vehname: $('vehname'), clock: $('clock'),
       clockTime: $('clock-time'), clockDay: $('clock-day'), mapDate: $('bigmap-date'),
       stopBoard: $('stop-board'), stopName: $('stop-name'), stopDepartures: $('stop-departures'), stopTransfer: $('stop-transfer'),
       minimap: $('minimap'), touch: $('touch'),
@@ -239,8 +239,9 @@ export class Hud {
       this.el.speedlimit.classList.toggle('hidden', !value);
     });
   }
-  prompt(html) {
+  prompt(html, actionLabel = 'Akce (F)') {
     this._set('prompt', html || '', (x) => { this.el.prompt.innerHTML = x; this.el.prompt.classList.toggle('hidden', !x); });
+    this._set('actionLabel', actionLabel, (x) => this.el.action.setAttribute('aria-label', x));
   }
   mission(html) {
     this._set('mission', html || '', (x) => { this.el.mission.innerHTML = x; this.el.mission.classList.toggle('hidden', !x); });

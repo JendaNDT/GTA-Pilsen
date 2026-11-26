@@ -26,6 +26,7 @@ export function parseSave(raw) {
     found: Array.isArray(s.found) ? s.found.filter(name => typeof name === 'string') : [],
     car: typeof s.car?.model === 'string' ? s.car : null,
     job: activity(s.job), shift: activity(s.shift),
+    activity: typeof s.activity === 'string' ? s.activity : null,
   };
 }
 

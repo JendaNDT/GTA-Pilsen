@@ -11,7 +11,8 @@ function locationName(world, { x, z }) {
   return [street, world.districtAt(x, z)].filter(Boolean).join(' · ') || 'Okolí Plzně';
 }
 
-export function menuObjective({ jobs, shifts }) {
+export function menuObjective({ activities, jobs, shifts }) {
+  if (activities?.active) return activities.active.site.title;
   if (shifts.active) {
     if (shifts.active.pending) return 'Uzavři výsledek v nabídce Směny MHD.';
     return `Linka ${shifts.active.offer.ref} · ${shifts.stop.name}`;

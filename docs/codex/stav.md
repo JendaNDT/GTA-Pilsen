@@ -14,7 +14,8 @@ Na Slovanské, Lidické a Skvrňanské se obrubníky odsunuly za tramvajové pá
 
 - Příprava místa. Vybrán pěší bod v odstupu od budovy Škodalandu, přístup z obou stanovišť U Přehrady a samostatný bod návratu. V jízdním řádu je vybrán spoj linky 1 do Bolevce. Přesné reference patří do protokolu.
 - Značka, vyhledávání a karta místa fungují. Prošlo 373 testů JavaScriptu, sestavení a osm případů mapy v obou vykreslovačích.
-- Zbývá společná akce, zkušební trasa a ověření příchodu ve dne i v noci.
+- Zkušební trasa má společnou výzvu pro klávesnici a dotyk, zrušení, dokončení a návrat po načtení. Vstup je na chodníku. Prošlo 374 testů JavaScriptu, sestavení a všech šest cílených běhů E52 ve dne i v noci. Při dokončení se značka cíle přesune zpět ke vstupu pro další pokus.
+- Probíhá úplná prohlížečová sada a srovnání měření. [Protokol a snímky](../E52.md)
 - [Zadání](E52.md)
 
 # E53 · Taxi podle potřeb cestujícího

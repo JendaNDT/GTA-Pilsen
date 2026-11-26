@@ -1,3 +1,4 @@
+import { ACTIVITY_COLOR } from './activity-sites.js';
 // Zakázky (rozvoz jídla), objevování památek, navigace k cíli.
 import { WalkingGuide } from './walking-guide.js';
 import { DRIVABLE_MAX } from '../config.js';
@@ -92,6 +93,7 @@ export class Jobs {
 
   taxiUnavailable() {
     const g = this.game;
+    if (g.activities?.active) return 'Nejdřív ukonči zkušební trasu.';
     if (g.shifts.active) return 'Nejdřív dokonči nebo zruš směnu MHD.';
     if (g.mode !== 'car' || !(g.car?.health > 0) || g.car.typeId === 'police') {
       return 'Nejdřív nastup do pojízdného osobního auta.';
@@ -105,6 +107,7 @@ export class Jobs {
 
   start(type, offer) {
     const g = this.game;
+    if (g.activities?.active) return 'Nejdřív ukonči zkušební trasu.';
     if (g.shifts.active) return 'Nejdřív dokonči nebo zruš směnu MHD.';
     if (this.job) return 'Nejdřív dokonči nebo zruš probíhající zakázku.';
     let task;
@@ -303,10 +306,12 @@ export class Jobs {
   }
 
   get displayedRoad() {
+    if (this.game.activities?.active) return null;
     return this.waypoint && !this.job && this.game.mode === 'foot' ? null : this.route;
   }
 
   get displayedWalk() {
+    if (this.game.activities?.active) return this.game.activities.path;
     if (!this.waypoint || this.job) return this.walkRoute;
     return this.game.mode === 'foot' ? this.walking.path : this.walkRoute ?? this.walking.path;
   }
@@ -411,14 +416,15 @@ export class Jobs {
 
   update(dt) {
     const g = this.game, p = g.focus, hud = g.hud;
+    const activity = g.activities?.active;
     const speed = Math.hypot(p.vx || 0, p.vz || 0);
     if (this.job) this._updateJob(dt, speed);
-    else if (!g.shifts.active) {
+    else if (!g.shifts.active && !activity) {
       this.beacon.visible = false;
       hud.mission(null);
     }
-    this.walking.update(this.job ? null : this.waypoint, g.mode, p, this.arrivalRoad);
-    if (this.waypoint) {
+    this.walking.update(this.job || activity ? null : this.waypoint, g.mode, p, this.arrivalRoad);
+    if (this.waypoint && !activity) {
       this.wpBeacon.visible = !this.job;
       this.wpBeacon.position.set(this.waypoint.x, this.world.groundY(this.waypoint.x, this.waypoint.z), this.waypoint.z);
       const walk = this.waypoint.walk;
@@ -434,7 +440,7 @@ export class Jobs {
 
     // navigační trasa
     this.routeTimer -= dt;
-    const tgt = this.target();
+    const tgt = activity ? null : this.target();
     if (!tgt) this.route = null;
     else if (this.routeTimer <= 0) {
       this.routeTimer = 2.2;
@@ -530,7 +536,9 @@ export class Jobs {
     const out = this.game.garage.markers();
     const t = this.job && this.target();
     if (t) out.push({ x: t.x, z: t.z, color: '#f2b632', size: 6.5 });
-    if (this.waypoint) out.push({ x: this.waypoint.x, z: this.waypoint.z, color: '#b07cff', size: 6 });
+    const activity = this.game.activities?.active;
+    if (activity) out.push({ ...activity.site.trial.target, color: ACTIVITY_COLOR, size: 6 });
+    else if (this.waypoint) out.push({ x: this.waypoint.x, z: this.waypoint.z, color: '#b07cff', size: 6 });
     return out;
   }
 }
