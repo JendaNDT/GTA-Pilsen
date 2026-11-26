@@ -10,7 +10,7 @@ async function openPilot(page, mobile = false) {
   await page.evaluate(() => {
     __freeze(true);
     __game.vehicles.spawnTimer = __game.peds.timer = 100_000;
-    const { player, world, colliders, bikes } = __game, a = bikes.stations[0];
+    const { player, world, colliders, bikes } = __game, a = bikes.stations.find(station => station.id === '43');
     player.place(a.x - 4.5, a.z - 1.5);
     for (let i = 0; i < 25; i++) colliders.update(player.x, player.z);
     for (let i = 0; i < 120; i++) {
@@ -28,13 +28,19 @@ test('E55 – obě skutečná stanoviště na mapě, jízda, sesednutí a přesu
   await openPilot(page);
   await page.evaluate(() => __game.toggleMap(true));
   await page.getByRole('searchbox').fill('Pilsen Bike');
-  for (const name of ['Západočeské muzeum', 'DEPO 2015']) {
+  await expect(page.locator('#bigmap-results li').first()).toHaveText('Západočeské muzeum · Pilsen Bike');
+  for (const name of ['Západočeské muzeum', 'DEPO 2015', 'Křimice (Zámecké náměstí)']) {
+    await page.getByRole('searchbox').fill('Pilsen Bike ' + name);
     await page.getByRole('button', { name: `${name} · Pilsen Bike` }).click();
     await expect(page.locator('#map-name')).toHaveText(`${name} · Pilsen Bike`);
     await expect(page.locator('#map-access')).toContainText('ve hře 1 /');
     await page.getByRole('searchbox').fill('Pilsen Bike');
   }
-  await page.getByRole('button', { name: 'Zavřít mapu' }).click();
+  await page.getByRole('button', { name: 'Navigovat sem' }).click();
+  expect(await page.evaluate(() => {
+    const { bikes, jobs } = __game, station = bikes.stations.find(point => point.id === '165');
+    return Math.hypot(jobs.waypoint.x - station.x, jobs.waypoint.z - station.z);
+  })).toBeLessThan(.01);
   await page.keyboard.press('f');
   const riding = await page.evaluate(() => {
     __step(1/60);
@@ -58,7 +64,7 @@ test('E55 – obě skutečná stanoviště na mapě, jízda, sesednutí a přesu
   await page.keyboard.press('f');
   await page.evaluate(() => {
     __step(1/60);
-    const g = __game, b = g.bikes.stations[1];
+    const g = __game, b = g.bikes.stations.find(station => station.id === '57');
     for(let i = 0; i < 25; i++) g.colliders.update(b.x, b.z);
     g.player.place(b.x, b.z, g.colliders.exitHeight(b.x, b.z, b.y));
     __step(1/60, 60);
@@ -77,10 +83,12 @@ test('E55 – obě skutečná stanoviště na mapě, jízda, sesednutí a přesu
   await page.evaluate(() => __step(.16));
   await expect(page.locator('#toast')).toContainText('Elektrokolo vráceno · DEPO 2015');
   expect(await page.evaluate(() => ({ mode: __game.mode, saved: JSON.parse(localStorage.getItem('plzen-naplno-v1')).bikeShare })))
-    .toEqual({ mode: 'foot', saved: { stock: { 43: 0, 57: 2 }, origin: null } });
+    .toMatchObject({ mode: 'foot', saved: { stock: { 43: 0, 57: 2, 165: 1 }, origin: null } });
   await page.reload();
   await waitForGame(page);
-  expect(await page.evaluate(() => __game.bikes.stock)).toEqual({ 43: 0, 57: 2 });
+  const stock = await page.evaluate(() => __game.bikes.stock);
+  expect(stock).toMatchObject({ 43: 0, 57: 2, 165: 1 });
+  expect(Object.keys(stock)).toHaveLength(152);
 });
 
 test('E55 – půjčení a brzdění při zatáčení na dotyku, obnovení vrátí rozjeté kolo', async ({ browser }) => {
@@ -114,6 +122,6 @@ test('E55 – půjčení a brzdění při zatáčení na dotyku, obnovení vrát
     await page.getByRole('button', { name: 'Pokračovat', exact: true }).tap();
     await expect(page.locator('#toast')).toContainText('Půjčené elektrokolo se vrátilo na výchozí stanoviště.');
     expect(await page.evaluate(() => ({ mode: __game.mode, stock: __game.bikes.stock, rental: __game.bikes.rental })))
-      .toEqual({ mode: 'foot', stock: { 43: 1, 57: 1 }, rental: null });
+      .toMatchObject({ mode: 'foot', stock: { 43: 1, 57: 1, 165: 1 }, rental: null });
   } finally { await context.close(); }
 });

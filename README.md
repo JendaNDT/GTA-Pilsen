@@ -17,7 +17,7 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 - **Městské aktivity.** Na mapě vyhledej Škodaland nebo minigolf a nech se dovést k pěšímu vstupu ve V Lukách. Klávesou F nebo dotykovým tlačítkem můžeš projít zkušební pěší trasu, ukončit ji a zkusit znovu. [Příchod, ověření a snímky](docs/E52.md)
 
-- **Sdílená elektrokola.** V mapě hledej Pilsen Bike. V pilotu si půjčíš kolo u Západočeského muzea nebo u DEPA2015 a vrátíš ho na kterémkoli z těchto dvou stanovišť. [Ovládání a ověření](docs/E55.md)
+- **Sdílená elektrokola.** V mapě hledej Pilsen Bike. Hra zahrnuje všech 152 stanovišť z ověřeného seznamu PMDP. Hledání ukáže nejbližší místa a zapůjčené kolo můžeš vrátit na libovolném stanovišti s volnou kapacitou. [Ovládání a ověření](docs/E55.md#síť-stanovišť-po-pilotu)
 
 - **Minigolf ve Škodalandu.** U půjčovny za příjezdovou cestou stiskni F. Nastav směr a sílu, zahraj tři různé jamky a mezi nimi dojdi ke značce. Na každou jamku máš sedm úderů. Nejlepší součet za celou partii se uloží. [Postup a snímky](docs/E54.md)
 
@@ -383,7 +383,7 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 
 ## Zdroje a licence dat
 
-- Souřadnice pilotních stanovišť Pilsen Bike pocházejí z veřejného zdroje PMDP / Freebike ve formátu GBFS 3.0. Zdroj neuvádí vlastní licenci a specifikace pro tento případ uvádí CC0. Model elektrokola a označník vytvořil projekt Plzeň naplno. [Data stanovišť](https://pmdpbike.admin.freebike.com/api/gbfs/v30/station_information) · [Licencování ve specifikaci GBFS](https://github.com/MobilityData/gbfs/blob/v3.0/gbfs.md#system_informationjson)
+- Souřadnice stanovišť Pilsen Bike pocházejí z veřejného zdroje PMDP / Freebike ve formátu GBFS 3.0. Zdroj neuvádí vlastní licenci a specifikace pro tento případ uvádí CC0. Model elektrokola a označník vytvořil projekt Plzeň naplno. [Data stanovišť](https://pmdpbike.admin.freebike.com/api/gbfs/v30/station_information) · [Licencování ve specifikaci GBFS](https://github.com/MobilityData/gbfs/blob/v3.0/gbfs.md#system_informationjson)
 
 - Pěší přístup a umístění zkušební trasy ve Škodalandu vycházejí z OpenStreetMap (ODbL) a terénu ČÚZK (CC BY 4.0). Značení, trasa a modely drah minigolfu, překážek, půjčovny, vlajek a míčku jsou vlastní tvorba projektu Plzeň naplno. [Poloha a adresa areálu podle města](https://sport.plzen.eu/Sportoviste/d/skodaland-ceske-udoli)
 

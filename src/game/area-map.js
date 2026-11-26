@@ -25,7 +25,7 @@ export class AreaMap {
     this.sites.push(...game.bikes.mapSites());
     this.sites.push(...POLICE_STATIONS.map(station => ({ ...station, exact: true, police: true })));
     this.sites.push(...ACTIVITY_SITES.map(site => ({ ...site, exact: true, activity: true })));
-    initMapSearch(world, place => this.select(place, true), game.transit.timetable.stops, this.sites);
+    initMapSearch(world, place => this.select(place, true), game.transit.timetable.stops, this.sites, () => game.focus);
     this.bindGestures();
     el('map-cancel').onclick = () => {
       game.jobs.waypoint = null;
@@ -45,7 +45,7 @@ export class AreaMap {
     el('map-go').onclick = () => {
       const place = this.selected;
       if (!place || !insideMap(this.view.area, place.x, place.z)) return;
-      game.jobs.setWaypoint(place.x, place.z, place.name, place.stop || place.exact, place.walk);
+      game.jobs.setWaypoint(place.x, place.z, place.name, place.stop || place.exact, place.bike ? null : place.walk);
       game.toggleMap(false);
     };
     el('bigmap-close').onclick = () => game.toggleMap(false);
@@ -113,7 +113,7 @@ export class AreaMap {
         place.name = (road && world.roadNames[world.r.name[road.road]]) || 'Vybrané místo';
       }
     }
-    const approach = place.walk ?? (!place.stop && world.meta.walkingApproaches?.[place.name]);
+    const approach = place.bike ? null : place.walk ?? (!place.stop && world.meta.walkingApproaches?.[place.name]);
     if (approach) place = { ...place, x: approach.at(-2), z: approach.at(-1), walk: approach };
     const allowed = insideMap(this.view.area, place.x, place.z);
     this.selected = place;

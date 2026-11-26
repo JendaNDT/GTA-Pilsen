@@ -1178,7 +1178,7 @@ export class Game {
       }
     }
     for (const station of this.bikes.stations) {
-      if (Math.hypot(station.x - f.x, station.z - f.z) < 330) {
+      if ((station.x - f.x) ** 2 + (station.z - f.z) ** 2 < 330 ** 2) {
         markers.push({ x: station.x, z: station.z, color: BIKE_COLOR, size: 3.5, local: true });
       }
     }

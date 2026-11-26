@@ -1,7 +1,11 @@
+import { BIKE_STATION_ALIASES } from './bike-stations.js';
+
 const normalize = (text) => text.toLowerCase().normalize('NFD')
   .replace(/\p{M}/gu, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 
-export function initMapSearch(world, selectPlace, stops, sites = []) {
+const bikeKeys = new Set(BIKE_STATION_ALIASES.map(normalize));
+
+export function initMapSearch(world, selectPlace, stops, sites, focus) {
   const form = document.getElementById('bigmap-search');
   const input = document.getElementById('bigmap-query');
   const list = document.getElementById('bigmap-results');
@@ -23,9 +27,16 @@ export function initMapSearch(world, selectPlace, stops, sites = []) {
     const query = normalize(input.value);
     if (!query) return [];
     const words = query.split(' ');
-    return places.filter(place => place.police
-      ? words.every(word => ('sluzebna ' + place.key).includes(word))
-      : place.key.includes(query) || place.aliasKeys?.some(alias => alias.includes(query)))
+    if (bikeKeys.has(query)) {
+      const { x, z } = focus();
+      const distance = place => (place.x - x) ** 2 + (place.z - z) ** 2;
+      return places.filter(place => place.bike).sort((a, b) => distance(a) - distance(b)).slice(0, 6);
+    }
+    return places.filter(place => {
+      if (place.police) return words.every(word => ('sluzebna ' + place.key).includes(word));
+      if (place.bike) return words.every(word => `${place.key} ${place.aliasKeys.join(' ')}`.includes(word));
+      return place.key.includes(query) || place.aliasKeys?.some(alias => alias.includes(query));
+    })
       .sort((a, b) => Number(b.key === query || b.aliasKeys?.includes(query) || false)
         - Number(a.key === query || a.aliasKeys?.includes(query) || false)
         || Number(b.key.startsWith(query)) - Number(a.key.startsWith(query))

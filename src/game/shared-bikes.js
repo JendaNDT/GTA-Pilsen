@@ -1,4 +1,5 @@
-import { BIKE_STATIONS, loadBikeStock } from './bike-stations.js';
+import { Group } from 'three/webgpu';
+import { BIKE_STATIONS, BIKE_STATION_ALIASES, loadBikeStock } from './bike-stations.js';
 import { BIKE_RADIUS, bikeTurn, pedalSpeed } from '../physics/bike-motion.js';
 import { makeBikeMesh, makeBikeStationPost, poseBikeRider } from '../entities/bike-model.js';
 import { EDGE_MARGIN } from '../world/travel-bounds.js';
@@ -12,9 +13,12 @@ const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
 export class SharedBikes {
   constructor(game) {
     this.game = game;
+    const { world } = game;
     this.stations = BIKE_STATIONS.map(station => {
-      const coordinates = game.world.gpsToWorld(station.lat, station.lon);
-      return { ...station, ...coordinates, y: game.world.groundY(coordinates.x, coordinates.z), meshes: [] };
+      const source = world.gpsToWorld(station.lat, station.lon);
+      const x = source.x + station.dx, z = source.z + station.dz;
+      const y = world.groundY(x, z, world.heightAt(source.x, source.z) + 1.8);
+      return { ...station, x, y, z, meshes: [] };
     });
     this.load(null);
     this.rental = null;
@@ -32,9 +36,16 @@ export class SharedBikes {
   }
 
   nearbyStation(player) {
-    if (player.swimming || this.game.world.onCarriageway(player.x, player.z, player.y)) return null;
-    return this.stations.find(s => Math.abs(player.y - s.y) < 1.65 &&
-      Math.hypot(player.x - s.x, player.z - s.z) < STATION_RADIUS);
+    if (player.swimming) return null;
+    let nearest = null, distance = STATION_RADIUS ** 2;
+    for (const station of this.stations) {
+      const squared = (player.x - station.x) ** 2 + (player.z - station.z) ** 2;
+      if (squared < distance && Math.abs(player.y - station.y) < 1.65) {
+        nearest = station;
+        distance = squared;
+      }
+    }
+    return nearest && !this.game.world.onCarriageway(player.x, player.z, player.y) ? nearest : null;
   }
 
   footChoice() {
@@ -232,27 +243,33 @@ export class SharedBikes {
   update() {
     const { scene, focus, world } = this.game;
     for (const station of this.stations) {
-      const near = Math.hypot(focus.x - station.x, focus.z - station.z) < 145;
-      if (near && !station.post) {
-        station.post = makeBikeStationPost();
-        station.post.position.set(station.x + Math.cos(station.yaw) * 1.45, station.y,
-          station.z - Math.sin(station.yaw) * 1.45);
-        station.post.rotation.y = station.yaw;
-        scene.add(station.post);
+      const near = (focus.x - station.x) ** 2 + (focus.z - station.z) ** 2 < 145 ** 2;
+      if (!near) {
+        station.display?.removeFromParent();
+        continue;
       }
-      if (!station.post) continue;
-      station.post.visible = near;
-      const count = this.stock[station.id];
-      if (near) while (station.meshes.length < count) {
+      const nx = Math.cos(station.yaw), nz = -Math.sin(station.yaw);
+      if (!station.display) {
+        station.display = new Group();
+        const post = makeBikeStationPost();
+        const x = station.x + nx * 1.45 * station.signSide;
+        const z = station.z + nz * 1.45 * station.signSide;
+        post.position.set(x, world.groundY(x, z, station.y + .5), z);
+        post.rotation.y = station.yaw;
+        station.display.add(post);
+      }
+      if (!station.display.parent) scene.add(station.display);
+      const shown = Math.min(this.stock[station.id], station.parking);
+      while (station.meshes.length < shown) {
         const model = makeBikeMesh();
-        const offset = station.meshes.length ? -0.8 * station.meshes.length : -0.45;
-        const x = station.x + Math.cos(station.yaw) * offset, z = station.z - Math.sin(station.yaw) * offset;
+        const offset = station.meshes.length ? -1.12 : -.45;
+        const x = station.x + nx * offset, z = station.z + nz * offset;
         model.position.set(x, world.groundY(x, z, station.y + .5), z);
         model.rotation.y = station.yaw;
         station.meshes.push(model);
-        scene.add(model);
+        station.display.add(model);
       }
-      for (const [i, model] of station.meshes.entries()) model.visible = near && i < count;
+      for (const [i, model] of station.meshes.entries()) model.visible = i < shown;
     }
     if (this.rental && this.game.mode !== 'bike') {
       const { x, y, z, yaw } = this.rental;
@@ -263,9 +280,9 @@ export class SharedBikes {
   }
 
   mapSites() {
-    return this.stations.map(station => ({
-      ...station, bike: true, exact: true,
-      title: `${station.name} · Pilsen Bike`, aliases: ['Pilsen Bike', 'sdílená kola', 'elektrokolo'],
+    return this.stations.map(({ id, name, x, z, capacity }) => ({
+      id, name, x, z, capacity, bike: true, exact: true,
+      title: `${name} · Pilsen Bike`, aliases: BIKE_STATION_ALIASES,
     }));
   }
 

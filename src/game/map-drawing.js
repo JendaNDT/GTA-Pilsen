@@ -158,8 +158,8 @@ export function drawAreaMap(canvas, game, view, selected) {
   for (const site of game.areaMap.sites) {
     if ((!site.activity && !site.bike) || !insideMap(screenBounds,site.x,site.z)) continue;
     const color = site.bike ? BIKE_COLOR : ACTIVITY_COLOR;
-    dot(site.x,site.z,6,color);
-    if (scale > .085) label(site.x,site.z,site.name,12,color,-10);
+    dot(site.x,site.z,site.bike ? 4.5 : 6,color);
+    if (scale > (site.bike ? .17 : .085)) label(site.x,site.z,site.name,12,color,-10);
   }
   for (const [x,z,name,type] of game.areaMap.places) {
     if (!insideMap(screenBounds,x,z)) continue;

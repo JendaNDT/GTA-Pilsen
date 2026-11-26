@@ -286,7 +286,7 @@ export class Jobs {
   }
 
   setWaypoint(x, z, name, stop = false, approach) {
-    const walk = approach ?? this.world.meta.walkingApproaches?.[name];
+    const walk = approach === undefined ? this.world.meta.walkingApproaches?.[name] : approach;
     const rx = walk?.[0] ?? x, rz = walk?.[1] ?? z;
     const road = this.world.nearestRoad(rx, rz, 180, DRIVABLE_MAX, 0, _road, this.world.groundY(rx, rz), true);
     this.arrivalRoad = null;

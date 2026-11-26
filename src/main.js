@@ -1,3 +1,4 @@
+import { BIKE_LICENSE } from './game/bike-stations.js';
 import packageInfo from '../package.json' with {type:'json'};
 import { PhotoMode } from './game/photo-mode.js';
 import { loadJolt } from './physics/jolt.js';
@@ -87,7 +88,7 @@ const ABOUT_HTML = (meta, rendering) => `
   <p>Vstup ve Škodalandu vychází z herní mapy OpenStreetMap (ODbL) a terénu ČÚZK (CC BY 4.0).
   Název a adresu ověřuje <a href="https://sport.plzen.eu/Sportoviste/d/skodaland-ceske-udoli" target="_blank" rel="noopener">Sportovní Plzeň</a>.
   Zkušební trasa, její značení a dráhy minigolfu, překážky, půjčovna, míček a vlajky jsou vlastní tvorba projektu.</p>
-  <p>Polohy pilotních stanovišť Pilsen Bike vycházejí z veřejného zdroje PMDP / Freebike ve formátu GBFS 3.0 (výchozí licence CC0). Model elektrokola a označníku jsou vlastní tvorba projektu.</p>
+  <p>Polohy stanovišť Pilsen Bike vycházejí z veřejného zdroje PMDP / Freebike ve formátu GBFS 3.0 (licence ${BIKE_LICENSE}). Model elektrokola a označníku jsou vlastní tvorba projektu.</p>
   <p>Barevné tabulky pro den, soumrak a noc vznikly přímo pro tuto hru.</p>
   <p>Letecké snímky krajiny © ČÚZK. Podkladem je <a href="https://atom.cuzk.gov.cz/ORTOFOTO/ORTOFOTO.xml"
   target="_blank" rel="noopener">Ortofoto ČR</a> s licencí
