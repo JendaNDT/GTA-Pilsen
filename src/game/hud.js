@@ -256,7 +256,7 @@ export class Hud {
   }
 
   /** Minimapa: střed = hráč, nahoře = směr pohledu kamery. */
-  minimap(px, pz, camYaw, heading, markers, route, walkRoute) {
+  minimap(px, pz, camYaw, heading, markers, route, walkRoute, bikeRoute) {
     this.frame++;
     if (this.frame % 2) return;
     this.tiles.budget = 1;
@@ -284,6 +284,7 @@ export class Hud {
       g.strokeStyle = '#f2b632'; g.lineWidth = 9; g.lineJoin = 'round'; g.lineCap = 'round'; g.globalAlpha = 0.9; g.stroke(); g.globalAlpha = 1;
     }
     this._drawWalk(g, walkRoute, 1 / k);
+    this._drawBike(g, bikeRoute, 1 / k);
     this._drawClosures(g, 1 / k);
     g.restore();
     // značky (držené na okraji, když jsou mimo)
@@ -319,6 +320,22 @@ export class Hud {
     for (let i = 2; i < route.length; i += 2) g.lineTo(route[i], route[i + 1]);
     g.setLineDash([1, 4].map((n) => n * pixel));
     g.lineWidth = 2.8 * pixel; g.lineCap = 'round'; g.strokeStyle = '#75d9ff'; g.stroke();
+    g.restore();
+  }
+
+  _drawBike(g, route, pixel) {
+    if (!route || route.length < 4) return;
+    g.save();
+    g.beginPath();
+    g.moveTo(route[0], route[1]);
+    for (let i = 2; i < route.length; i += 2) g.lineTo(route[i], route[i + 1]);
+    g.lineJoin = g.lineCap = 'round';
+    g.strokeStyle = '#183a30';
+    g.lineWidth = 6 * pixel;
+    g.stroke();
+    g.strokeStyle = '#55efae';
+    g.lineWidth = 3.4 * pixel;
+    g.stroke();
     g.restore();
   }
 

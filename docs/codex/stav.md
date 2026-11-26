@@ -1,6 +1,6 @@
 # E56 · Cyklistická navigace
 
-Datový podklad je hotový. Z herního výřezu OSM vzniklo 71 636 úseků pro kola a 307 omezení odbočení. Prošlo 386 testů JavaScriptu, produkční sestavení a 34 testů Pythonu s jedním přeskočeným případem. Navazuje výpočet a zobrazení první trasy. [Zadání](E56.md)
+Hotová trasa mezi Západočeským muzeem a DEPO 2015 je průjezdná v obou směrech. Prošlo produkční sestavení, 391 testů JavaScriptu, 34 testů Pythonu s jedním přeskočeným případem a 78 cílených prohlížečových případů včetně opakované dotykové zkoušky v obou vykreslovačích. Měření kola s aktivní trasou splnilo všechny časové rozpočty. Dobíhá kontrolní měření auta a letu. [Zadání](E56.md) · [Protokol a snímky](../E56.md)
 
 # E55 · Celá síť sdílených elektrokol
 

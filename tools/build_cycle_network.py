@@ -17,10 +17,13 @@ RESTRICTED = {"no", "private", "destination", "delivery", "customers", "permit",
 STREETS = {"primary", "secondary", "tertiary", "unclassified", "residential", "living_street",
            "service", "road", "track", "cycleway"} | {kind + "_link" for kind in ("primary", "secondary", "tertiary")}
 PATHS = {"footway", "path", "pedestrian", "bridleway", "trunk", "trunk_link"}
+ROUTABLE = STREETS | PATHS
 BLOCKING = {"gate", "lift_gate", "swing_gate", "block", "jersey_barrier", "planter", "rope",
             "fence", "turnstile", "full-height_turnstile", "kissing_gate", "cycle_barrier",
             "wicket_gate", "ditch", "barrier_board"}
 SURFACES = {"sand", "mud", "snow", "ice"}
+# Na dvou nájezdech Anglického nábřeží herní povrch zatím zastaví elektrokolo.
+GAME_CLOSURES = {frozenset((134749590, 134749595)), frozenset((134749615, 134749621))}
 
 
 def directions(tags):
@@ -28,17 +31,22 @@ def directions(tags):
     bike = tags.get("bicycle")
     kind = tags.get("highway")
     access = next((tags[key] for key in ("vehicle", "access") if key in tags), None)
-    if (kind not in STREETS | PATHS or tags.get("area") == "yes" or tags.get("indoor") == "yes"
+    if (kind not in ROUTABLE or tags.get("area") == "yes" or tags.get("indoor") == "yes"
         or tags.get("motorroad") == "yes" or tags.get("surface") in SURFACES
+        or tags.get("mtb") == "single track"
         or bike in RESTRICTED or tags.get("bicycle:conditional")
-        or (bike not in PUBLIC and (access in RESTRICTED or kind in PATHS))):
+        or tags.get("oneway:bicycle:conditional")
+        or (bike not in PUBLIC and (access in RESTRICTED or kind in PATHS
+                                     or tags.get("vehicle:conditional") or tags.get("access:conditional")))):
         return 0
     one = tags.get("oneway:bicycle")
     if one is None:
         opposite = ("opposite", "opposite_lane", "opposite_track", "opposite_share_busway")
         if any(tags.get(key) in opposite for key in ("cycleway", "cycleway:left", "cycleway:right", "cycleway:both")):
             one = "no"
-        elif kind not in ("footway", "path", "pedestrian", "bridleway"):
+        else:
+            if tags.get("oneway:conditional"):
+                return 0
             one = tags.get("oneway", "yes" if tags.get("junction") == "roundabout" else "no")
     mask = 2 if one == "-1" else 1 if one in ("yes", "1", "true") else 3
     for bit, name in ((1, "forward"), (2, "backward")):
@@ -79,7 +87,7 @@ def build(extract, stations):
             continue
         coords = [to_xz(*p) for p in points]
         for a, b, pa, pb in zip(ids, ids[1:], coords, coords[1:]):
-            if pa == pb or not inside(pa) or not inside(pb):
+            if pa == pb or not inside(pa) or not inside(pb) or frozenset((a, b)) in GAME_CLOSURES:
                 continue
             # Slepý konec ponechá příjezd k fyzické překážce bez průjezdu skrz ni.
             a = a if passable_node(extract["nodes"].get(a, (0, 0, {}))[2]) else (wid, len(start), a)

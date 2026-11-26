@@ -30,6 +30,7 @@ export class AreaMap {
     el('map-cancel').onclick = () => {
       game.jobs.waypoint = null;
       game.jobs.walking.clear();
+      game.jobs.cycling.clear();
       if (!game.jobs.job) game.jobs.route = null;
       this.clearPreview();
       this.redraw();
@@ -45,7 +46,7 @@ export class AreaMap {
     el('map-go').onclick = () => {
       const place = this.selected;
       if (!place || !insideMap(this.view.area, place.x, place.z)) return;
-      game.jobs.setWaypoint(place.x, place.z, place.name, place.stop || place.exact, place.bike ? null : place.walk);
+      game.jobs.setWaypoint(place.x, place.z, place.name, place.stop || place.exact, place.bike ? null : place.walk, place.bike ? place.id : undefined);
       game.toggleMap(false);
     };
     el('bigmap-close').onclick = () => game.toggleMap(false);
@@ -80,7 +81,10 @@ export class AreaMap {
 
   render() {
     el('map-cancel').hidden = !this.game.jobs.waypoint;
-    el('map-route-status').textContent = this.game.jobs.waypoint ? this.game.jobs.roadStatus || this.game.jobs.walking.status || '' : '';
+    const { jobs, mode } = this.game;
+    el('map-route-status').textContent = jobs.waypoint ?
+      (mode === 'bike' ? jobs.cycling.status : jobs.roadStatus || jobs.walking.status || '') : '';
+    el('map-key-cycling').hidden = mode !== 'bike';
     drawAreaMap(this.canvas, this.game, this.view, this.selected);
     const length = 86 / this.view.scale;
     const magnitude = 10 ** Math.floor(Math.log10(length));

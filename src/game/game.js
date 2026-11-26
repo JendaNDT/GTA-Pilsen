@@ -1190,7 +1190,7 @@ export class Game {
     if (this.mode === 'foot' && lc && this.vehicles.cars.includes(lc) && Math.hypot(lc.x - f.x, lc.z - f.z) < 500) {
       markers.push({ x: lc.x, z: lc.z, color: '#ffffff', size: 4.5 });
     }
-    hud.minimap(f.x, f.z, this.camYaw, f.yaw || 0, markers, this.shifts.active?.path ?? this.jobs.displayedRoad, this.jobs.displayedWalk);
+    hud.minimap(f.x, f.z, this.camYaw, f.yaw || 0, markers, this.shifts.active?.path ?? this.jobs.displayedRoad, this.jobs.displayedWalk, this.jobs.displayedBike);
   }
 
   toggleMap(force) {

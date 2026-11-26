@@ -17,7 +17,7 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 - **Městské aktivity.** Na mapě vyhledej Škodaland nebo minigolf a nech se dovést k pěšímu vstupu ve V Lukách. Klávesou F nebo dotykovým tlačítkem můžeš projít zkušební pěší trasu, ukončit ji a zkusit znovu. [Příchod, ověření a snímky](docs/E52.md)
 
-- **Sdílená elektrokola.** V mapě hledej Pilsen Bike. Hra zahrnuje všech 152 stanovišť z ověřeného seznamu PMDP. Hledání ukáže nejbližší místa a zapůjčené kolo můžeš vrátit na libovolném stanovišti s volnou kapacitou. [Ovládání a ověření](docs/E55.md#síť-stanovišť-po-pilotu)
+- **Sdílená elektrokola.** V mapě hledej Pilsen Bike. Hra zahrnuje všech 152 stanovišť z ověřeného seznamu PMDP. Hledání ukáže nejbližší místa a zapůjčené kolo můžeš vrátit na libovolném stanovišti s volnou kapacitou. [Ovládání a ověření](docs/E55.md#síť-stanovišť-po-pilotu) Na kole tlačítko Navigovat sem vykreslí zelenou trasu na mapě i minimapě. [Cyklistická navigace](docs/E56.md)
 
 - **Minigolf ve Škodalandu.** U půjčovny za příjezdovou cestou stiskni F. Nastav směr a sílu, zahraj tři různé jamky a mezi nimi dojdi ke značce. Na každou jamku máš sedm úderů. Nejlepší součet za celou partii se uloží. [Postup a snímky](docs/E54.md)
 
@@ -411,7 +411,7 @@ Zelenobílý městský trolejbus je vlastní model projektu Plzeň naplno. [Sní
   Schlinkert, licence MIT. [Místní oprava 4.0.8-plzen.1](vendor/picomatch/README.md)
   vychází z verze 4.0.7 a odstraňuje zaseknutí při opakovaných vzorech hledání souborů.
 
-- Mapová data © [přispěvatelé OpenStreetMap](https://www.openstreetmap.org/copyright), licence ODbL.
+- Mapová data © [přispěvatelé OpenStreetMap](https://www.openstreetmap.org/copyright), licence ODbL. Ze stejného výřezu vzniká také síť cest pro cyklistickou navigaci.
 - Terén vychází z digitálního modelu reliéfu DMR 5G a výšky budov z rozdílu digitálního modelu
   povrchu DMP 1G a DMR 5G © [ČÚZK](https://www.cuzk.cz). Terén je pro hru zjednodušený na síť
   po 8 metrech, na vybraných dlaždicích po 4 metrech. Pod silnicemi je zarovnaný.

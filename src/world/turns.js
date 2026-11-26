@@ -23,7 +23,7 @@ export class TurnRules {
       for (const from of rule.from.flatMap((road) => byRoad.get(road) || [])) {
         const node = world.eTo[from];
         if (rule.at) {
-          if (Math.hypot(world.nodeX[node] - rule.at[0], world.nodeZ[node] - rule.at[1]) > 0.18) continue;
+          if (rule.node === undefined ? Math.hypot(world.nodeX[node] - rule.at[0], world.nodeZ[node] - rule.at[1]) > 0.18 : rule.node !== node) continue;
           const targets = new Set(this.outgoing(world, node).filter((e) => outgoing.has(world.eRoad[e])
             && (!uTurn || !rule.from.includes(world.eRoad[e]) || world.eTo[e] === world.eFrom[from])));
           if (!targets.size) continue;

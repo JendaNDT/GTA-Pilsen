@@ -172,6 +172,7 @@ body.touch #prompt { bottom: 46%; }
 #bigmap-legend i { font: bold 15px system-ui; }
 .map-key-player { color: white; } .map-key-route, .map-key-limit { color: #f1c275; }
 .map-key-bike { color: #91e57d; }
+#map-key-cycling i { color: #55efae; }
 .map-key-walk { color: #a9e1dd; } .map-key-activity { color: #caa8fa; } .map-key-closure { color: #ff7268; }
 @media (max-width: 680px) {
   #bigmap { padding: 7px; gap: 6px; }

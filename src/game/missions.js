@@ -1,6 +1,7 @@
 import { ACTIVITY_COLOR } from './activity-sites.js';
 // Zakázky (rozvoz jídla), objevování památek, navigace k cíli.
 import { WalkingGuide } from './walking-guide.js';
+import { BikeGuide } from './bike-guide.js';
 import { DRIVABLE_MAX } from '../config.js';
 import { makeBeacon, makePedMesh } from '../entities/models.js';
 import { LANDMARK_INFO } from './landmarks.js';
@@ -42,6 +43,7 @@ export class Jobs {
     this.game = game;
     this.world = game.world;
     this.walking = new WalkingGuide(this.world);
+    this.cycling = new BikeGuide(this.world);
     this.job = null;
     this.last = null;
     this.waypoint = null;
@@ -285,7 +287,7 @@ export class Jobs {
     return null;
   }
 
-  setWaypoint(x, z, name, stop = false, approach) {
+  setWaypoint(x, z, name, stop = false, approach, bikeStation) {
     const walk = approach === undefined ? this.world.meta.walkingApproaches?.[name] : approach;
     const rx = walk?.[0] ?? x, rz = walk?.[1] ?? z;
     const road = this.world.nearestRoad(rx, rz, 180, DRIVABLE_MAX, 0, _road, this.world.groundY(rx, rz), true);
@@ -300,15 +302,23 @@ export class Jobs {
     }
     this.waypoint = { x, z, name: name || 'Vybrané místo' };
     if (walk) this.waypoint.walk = walk;
+    if (bikeStation) {
+      this.waypoint.bikeStation = bikeStation;
+      this.waypoint.y = this.game.bikes.stations.find(station => station.id === bikeStation)?.y;
+    }
     this.roadStatus = null;
     this.routeTimer = 0;
-    this.game.hud.toast(this.game.mode === 'bike' ? 'Cíl označen na mapě.' :
+    this.game.hud.toast(this.game.mode === 'bike' ? 'Cíl nastaven. Hledám cyklistickou trasu…' :
       walk ? 'Cíl nastaven. Modré tečky vedou poslední úsek pěšky.' : 'Cíl nastaven – trasa je na minimapě.');
   }
 
   get displayedRoad() {
     if (this.game.activities?.active || this.game.mode === 'bike') return null;
     return this.waypoint && !this.job && this.game.mode === 'foot' ? null : this.route;
+  }
+
+  get displayedBike() {
+    return this.game.mode === 'bike' ? this.cycling.path : null;
   }
 
   get displayedWalk() {
@@ -426,13 +436,18 @@ export class Jobs {
       hud.mission(null);
     }
     this.walking.update(this.job || activity ? null : this.waypoint, g.mode, p, this.arrivalRoad);
+    const ridingToTarget = g.mode === 'bike' && !this.job && !activity && !g.shifts.active;
+    this.cycling.update(ridingToTarget ? this.waypoint : null, p);
     if (this.waypoint && !activity) {
       this.wpBeacon.visible = !this.job;
-      this.wpBeacon.position.set(this.waypoint.x, this.world.groundY(this.waypoint.x, this.waypoint.z), this.waypoint.z);
+      this.wpBeacon.position.set(this.waypoint.x, this.waypoint.y ?? this.world.groundY(this.waypoint.x, this.waypoint.z), this.waypoint.z);
       const walk = this.waypoint.walk;
-      if ((!walk || g.mode === 'foot') && Math.abs(this.wpBeacon.position.y - p.y) < 4.5 &&
-          Math.hypot(this.waypoint.x - p.x, this.waypoint.z - p.z) < (walk || g.mode === 'foot' ? 7 : 12)) {
+      const distance = Math.hypot(this.waypoint.x - p.x, this.waypoint.z - p.z);
+      const arrived = g.mode === 'bike' ? !this.waypoint.bikeStation && distance < 6
+        : (!walk || g.mode === 'foot') && distance < (walk || g.mode === 'foot' ? 7 : 12);
+      if (arrived && Math.abs(this.wpBeacon.position.y - p.y) < 4.5) {
         this.waypoint = null; this.wpBeacon.visible = false;
+        this.cycling.clear();
         if (!this.job) { this.route = null; hud.toast('Jsi v cíli.'); }
       }
     } else this.wpBeacon.visible = false;

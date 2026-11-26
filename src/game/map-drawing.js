@@ -127,6 +127,7 @@ export function drawAreaMap(canvas, game, view, selected) {
     g.strokeStyle = '#ffbf48'; g.lineWidth = 3.5/scale; g.lineJoin = 'round'; g.stroke();
   }
   hud._drawWalk(g, jobs.displayedWalk, 1/scale);
+  hud._drawBike(g, jobs.displayedBike, 1/scale);
   hud._drawClosures(g, 1/scale);
   g.restore();
   drawBoundary(g, view);
