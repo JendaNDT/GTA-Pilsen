@@ -1,5 +1,7 @@
 # E59 · První průchozí vůz linky 1
 
+Na revizi `ec4c99a` dojel spoj ve všech 19 měřených jízdách k Hlavní poště za 48 až 73 sekund. Další tři jízdy prošly až k výstupu Pod Záhorskem. Příčina dřívější prodlevy zůstává otevřená. Při opakování má automatická zkouška uložit polohu vozu a důvody čekání. Prošlo produkční sestavení, všech 400 testů JavaScriptu a také celá jízda s výchozí hodnotou na WebGL 2 i WebGPU. [Opakování čekání před Hlavní poštou](../E59.md#opakování-čekání-před-hlavní-poštou)
+
 Po vyzkoušení autorem přibyl přímý nástup do uličky z hlavní nabídky i pauzy. Ověřena je také cesta od označníku a přechod z vnějšího pohledu jiné tramvaje. Delší snímek při vykreslení interiéru už hráče nevysadí. Po této opravě prošlo sestavení, 400 testů JavaScriptu a deset cílených prohlížečových zkoušek včetně jízdy přes dvě zastávky. [Postup po opravě](../E59.md#přímý-nástup-z-nabídky)
 
 Dokončeno na herní revizi `f493782` z větve `main` na `1fc8112`. Cestující nastoupil předními dveřmi Tatry na náměstí Republiky, za jízdy došel k sedadlu, projel Hlavní poštou a vystoupil prostředními dveřmi Pod Záhorskem. Ověřeny jsou také dotykové ovládání, výstup v přestupním uzlu, konečná a návrat na nástupiště po přerušení.

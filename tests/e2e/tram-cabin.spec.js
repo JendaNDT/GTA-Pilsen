@@ -8,32 +8,45 @@ test('E59 – první vůz Tatry přes Hlavní poštu do zastávky Pod Záhorskem
   test.setTimeout(240_000);
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  await page.addInitScript(() => {
-    let state = 1729;
+  const seed = Number(process.env.E59_SEED ?? 1729);
+  await page.addInitScript(seed => {
+    let state = seed;
     Math.random = () => ((state = (Math.imul(1664525, state) + 1013904223) >>> 0) / 2 ** 32);
-  });
-  await boot(page, 'quality=low&adapt=0&date=2026-11-09&hour=10.1', true);
+  }, seed);
+  await boot(page, 'quality=low&adapt=0&date=2026-11-09&hour=10.1&kolony=1', true);
   expect(await approach(page, '685462', 'Náměstí Republiky')).toEqual({ ref: '1', doorOpen: true, boardable: true });
   await action(page);
   expect(await page.evaluate(() => [__game.ride.event.trip.id, __game.cabin.door])).toEqual(['685462', 6.02]);
 
   // Čas běží po malých krocích. Po nástupu nepřesouváme vůz ani cestujícího.
   async function travel(until) {
-    return page.evaluate(async until => {
+    const result = await page.evaluate(async until => {
       const g = __game, v = g.ride, mesh = v.meshes[0], start = v.s, yaw = mesh.rotation.y;
-      let turn = 0, braking = false;
+      let turn = 0, braking = false, reached = false;
+      const waits = [];
       for (let i = 0; i < 8500; i++) {
         const speed = v.v;
         g.update(1 / 30);
         if (i % 90 === 89) await new Promise(resolve => setTimeout(resolve, 0));
         braking ||= speed > 1 && v.v < speed;
         turn = Math.max(turn, Math.abs(Math.atan2(Math.sin(mesh.rotation.y - yaw), Math.cos(mesh.rotation.y - yaw))));
-        if (until === 'rozjezd' ? v.v > 1 : v.stopTarget?.[1] === until && v.canAlight && v.doorFraction >= 0.85) break;
+        reached = until === 'rozjezd' ? v.v > 1 : v.stopTarget?.[1] === until && v.canAlight && v.doorFraction >= 0.85;
+        if (reached) break;
+        if (i % 450 === 449 && !v.doorsOpen && v.v < 0.4) {
+          waits.push({ seconds: (i + 1) / 30, metres: v.s - start, chain: g.trafficWaits.chain(v) });
+        }
       }
+      const wait = reached ? null : { samples: waits, final: g.trafficWaits.chain(v) };
       g.promptTimer = 0;
       window.__step(0);
-      return { stop: v.stopTarget?.[1], metres: v.s - start, speed: v.v, turn, braking };
+      return { stop: v.stopTarget?.[1], metres: v.s - start, speed: v.v, turn, braking, wait };
     }, until);
+    if (result.wait) {
+      const details = JSON.stringify({ seed, cíl: until, ...result }, null, 2);
+      await info.attach('Čekání tramvaje', { body: details, contentType: 'application/json' });
+      throw new Error('Tramvaj nedosáhla cíle během 283 sekund simulace. ' + details);
+    }
+    return result;
   }
   async function walk(key, steps) {
     await page.keyboard.down(key);
