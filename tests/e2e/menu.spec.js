@@ -87,7 +87,7 @@ test('položky všech podnabídek mají čitelný text a vejdou se do telefonu',
   for (const viewport of [{width:320,height:568}, {width:780,height:360}]) {
     await page.setViewportSize(viewport);
     expect(await unreadableButtons(menu)).toEqual([]);
-    for (const section of ['settings','jobs','garage','shifts','help','about','save']) {
+    for (const section of ['rides','settings','jobs','garage','shifts','help','about','save']) {
       const trigger = page.locator('#btn-' + section);
       await trigger.click();
       await expect(page.locator('#panel-' + section)).toBeVisible();
@@ -113,4 +113,42 @@ test('položky všech podnabídek mají čitelný text a vejdou se do telefonu',
   await page.locator('#btn-photo').click();
   await expect(page.locator('#photo-controls')).toBeVisible();
   expect(await unreadableButtons(page.locator('#photo-controls'))).toEqual([]);
+});
+
+test('E61 – výběr čtyř spojů z úvodu a pauzy podle linky, vozu a směru', async ({ page }) => {
+  await start(page);
+  const rides = page.getByRole('button', { name: 'Svézt se MHD', exact: true });
+  const options = page.locator('#ride-options').getByRole('button');
+  await expect(options).toHaveCount(0);
+  await rides.click();
+  await expect(options).toHaveCount(4);
+  await page.keyboard.press('Escape');
+  await expect(options).toHaveCount(0);
+  await expect(rides).toBeFocused();
+  for (const [name, id, destination] of [
+    ['1 Tramvaj Tatra Směr Bolevec', '685462', 'Bolevec'],
+    ['1 Článková tramvaj Směr Bolevec', '685463', 'Bolevec'],
+    ['33 Autobus SOR Směr Hlavní nádraží', '688856', 'Hlavní nádraží'],
+    ['49 Trolejbus Směr Karlov', '692185', 'Karlov'],
+  ]) {
+    await rides.click();
+    await page.getByRole('button', { name, exact: true }).click();
+    await expect(page.locator('#menu')).toBeHidden();
+    expect(await page.evaluate(() => [__game.ride.event.trip.id, __game.ride.destination, !!__game.cabin]))
+      .toEqual([id, destination, true]);
+    await page.locator('#btn-menu').click();
+    await expect(rides).toHaveAttribute('aria-expanded', 'false');
+  }
+});
+
+test('E61 – rozjetý rozvoz zobrazí důvod v nabídce spojů a zůstane aktivní', async ({ page }) => {
+  await start(page);
+  await page.locator('#btn-jobs').click();
+  await page.locator('[data-job="car"]').click();
+  await page.locator('#btn-menu').click();
+  await page.getByRole('button', { name: 'Svézt se MHD' }).click();
+  await page.getByRole('button', { name: '49 Trolejbus Směr Karlov' }).click();
+  await expect(page.locator('#ride-feedback')).toContainText('nejdřív ukonči rozjetou aktivitu');
+  await expect(page.locator('#panel-rides')).toBeVisible();
+  expect(await page.evaluate(() => !!__game.jobs.job && !__game.cabin)).toBe(true);
 });

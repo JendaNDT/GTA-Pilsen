@@ -197,6 +197,16 @@ body.touch #prompt { bottom: 46%; }
 .panel td { padding: 3px 0; vertical-align: top; }
 .panel td:first-child { width: 35%; padding-right: 14px; font-weight: 700; }
 .panel a { color: var(--amber); }
+#ride-options { display: grid; gap: 8px; margin-top: 10px; }
+#ride-options button {
+  display: grid; grid-template-columns: 2.75rem 1fr; column-gap: 12px;
+  align-items: center; text-align: left;
+}
+.ride-line {
+  grid-row: span 2; padding: 3px; border-radius: 4px; text-align: center;
+  background: var(--amber); color: var(--ink); font-size: 1.15rem;
+}
+#ride-options button span { color: #d3dad8; }
 .work-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .work-actions[hidden] { display: none; }
 .work-actions button { text-align: left; font-weight: 650; }

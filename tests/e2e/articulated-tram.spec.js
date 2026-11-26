@@ -11,9 +11,10 @@ test('E60 – přejít kloub jedničky v zatáčce a vystoupit dveřmi prostřed
   await page.goto(gameUrl('/?debug&quality=low&adapt=0&date=2026-11-09&hour=10.2166667&kolony=1'));
   await page.waitForFunction(() => window.__ready);
   // Od stisku tlačítka běží všechny jízdy stejným krokem, včetně prvního snímku.
-  await page.evaluate(() => document.getElementById('btn-articulated')
-    .addEventListener('click', () => __freeze(true), { once: true }));
-  await page.getByRole('button', { name: 'Nastoupit do článkové tramvaje' }).click();
+  await page.getByRole('button', { name: 'Svézt se MHD' }).click();
+  const start = page.getByRole('button', { name: '1 Článková tramvaj Směr Bolevec' });
+  await start.evaluate(button => button.addEventListener('click', () => __freeze(true), { once: true }));
+  await start.click();
   const trip = await page.evaluate(() => {
     __freeze(true);
     const g = __game, v = g.ride;
@@ -97,7 +98,8 @@ test.describe('dotyk v článkové tramvaji', () => {
   test.use({ hasTouch: true, viewport: { width: 844, height: 390 } });
   test('E60 – projít oběma měchy do zadního článku a vrátit se do předního', async ({ page }) => {
     await page.goto(gameUrl('/?debug&quality=low'));
-    await page.getByRole('button', { name: 'Nastoupit do článkové tramvaje' }).tap();
+    await page.getByRole('button', { name: 'Svézt se MHD' }).tap();
+    await page.getByRole('button', { name: '1 Článková tramvaj Směr Bolevec' }).tap();
     await page.evaluate(() => __freeze(true));
     for (const [direction, expected] of [[-1, 2], [1, 0]]) {
       const section = await page.evaluate(direction => {

@@ -160,10 +160,7 @@
         </div>
         <div id="menu-buttons" class="hidden">
           <button id="btn-play" class="primary">Hrát</button>
-          <button id="btn-tram">Nastoupit do průchozí tramvaje</button>
-          <button id="btn-articulated">Nastoupit do článkové tramvaje</button>
-          <button id="btn-bus">Nastoupit do průchozího autobusu</button>
-          <button id="btn-trolley">Nastoupit do průchozího trolejbusu</button>
+          <button id="btn-rides" aria-controls="panel-rides" aria-expanded="false">Svézt se MHD</button>
           <button id="btn-map" hidden>Mapa</button>
           <div class="menu-activities">
             <button id="btn-jobs" aria-controls="panel-jobs" aria-expanded="false">Zakázky</button>
@@ -183,6 +180,11 @@
       </div>
       <div id="menu-sheet" hidden>
         <button id="menu-back" type="button"><span aria-hidden="true">←</span> Zpět</button>
+        <section id="panel-rides" class="panel hidden" aria-labelledby="rides-heading">
+          <h3 id="rides-heading">Svézt se MHD</h3>
+          <div id="ride-options"></div>
+          <p id="ride-feedback" class="work-feedback" role="status"></p>
+        </section>
         <section id="panel-save" class="panel hidden">
           <h3>Uložená hra</h3>
           <p id="save-location"></p>

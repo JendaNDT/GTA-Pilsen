@@ -5,10 +5,10 @@ import { BUS_TRIP, TROLLEY_TRIP } from '../../src/game/tram-cabin.js';
 
 const rides = [
   { title: 'jízda autobusem 33 ze stanoviště 4 přes Goethovu a výstup zadními dveřmi', trip: BUS_TRIP,
-    button: 'Nastoupit do průchozího autobusu', hour: 8 + 20 / 60, seatSteps: 60, doorSteps: 246,
+    button: '33 Autobus SOR Směr Hlavní nádraží', hour: 8 + 20 / 60, seatSteps: 60, doorSteps: 246,
     firstStop: 'Goethova', secondStop: 'Pařížská', exitDoor: -4.23 },
   { title: 'jízda trolejbusem 49 od nádraží přes Pařížskou k Mrakodrapu', trip: TROLLEY_TRIP,
-    button: 'Nastoupit do průchozího trolejbusu', hour: 8 + 26 / 60, seatSteps: 58, doorSteps: 127,
+    button: '49 Trolejbus Směr Karlov', hour: 8 + 26 / 60, seatSteps: 58, doorSteps: 127,
     firstStop: 'Pařížská', secondStop: 'Mrakodrap', exitDoor: -1.5 },
 ];
 
@@ -19,6 +19,7 @@ for (const ride of rides) test('E60 – ' + ride.title, async ({ page }, info) =
     Math.random = () => ((seed = (Math.imul(1664525, seed) + 1013904223) >>> 0) / 2 ** 32);
   });
   await page.goto(gameUrl('/?debug&quality=low&kolony=1&adapt=0&date=2026-11-09&hour=' + ride.hour));
+  await page.getByRole('button', { name: 'Svézt se MHD' }).click();
   const start = page.getByRole('button', { name: ride.button });
   await page.waitForFunction(() => window.__ready);
   await start.evaluate(button => button.addEventListener('click', () => __freeze(true), { once: true }));

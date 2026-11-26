@@ -208,7 +208,8 @@ test('E59 – hledání spoje a výstup v přestupním uzlu Náměstí Republiky
 
 test('E59 – z hlavní nabídky přímo do uličky bez nastavování data a hledání spoje', async ({ page }, info) => {
   await page.goto(gameUrl('/?quality=low'));
-  await page.getByRole('button', { name: 'Nastoupit do průchozí tramvaje' }).click();
+  await page.getByRole('button', { name: 'Svézt se MHD' }).click();
+  await page.getByRole('button', { name: '1 Tramvaj Tatra Směr Bolevec' }).click();
   await expect(page.locator('#vehname')).toContainText('tramvaj 1 → Bolevec');
   await page.keyboard.down('w');
   try {
@@ -227,7 +228,8 @@ test('E59 – z vnějšího pohledu lze v pauze přejít do správného vozu', a
   await action(page);
   expect(await page.evaluate(() => __game.mode === 'transit' && !__game.cabin)).toBe(true);
   await page.locator('#btn-menu').click();
-  await page.getByRole('button', { name: 'Nastoupit do průchozí tramvaje' }).click();
+  await page.getByRole('button', { name: 'Svézt se MHD' }).click();
+  await page.getByRole('button', { name: '1 Tramvaj Tatra Směr Bolevec' }).click();
   expect(await page.evaluate(() => [__game.ride.event.trip.id, __game.cabin.x])).toEqual(['685462', 0]);
   await expect(page.locator('#vehname')).toContainText('tramvaj 1 → Bolevec');
 });

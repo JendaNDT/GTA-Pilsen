@@ -1,3 +1,7 @@
+# E61 · Společná nabídka jízd MHD
+
+Na větvi `etapa/E61` nad revizí `fa38686` otevírá volba **Svézt se MHD** z úvodu i z pauzy výběr čtyř vozů. U každého je linka, typ vozu a směr. Ověřen je nástup do všech čtyř interiérů, návrat z nabídky i zachování rozjetého rozvozu. Prošlo sestavení, 405 testů JavaScriptu a 12 cílených prohlížečových zkoušek. Měření v trolejbusu splnilo všechny čtyři časové rozpočty. [Ovládání, snímky a měření](../E61.md)
+
 # E60 · Průchozí trolejbus linky 49
 
 Třetí krok nad revizí `8077df6` dokončuje katalog čtyř průchozích spojů. Na lince 49 lze od hlavního nádraží projít uličkou, svézt se vsedě přes Pařížskou a vystoupit druhými dveřmi u Mrakodrapu. Přestup z autobusu 33 v Pařížské prošel na dotykovém ovládání v obou vykreslovačích. Na nízkou předvolbu ve Full HD jízda dosáhla 60 snímků za sekundu a splnila čtyři časové rozpočty.

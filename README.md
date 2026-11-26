@@ -21,10 +21,10 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 - **Minigolf ve Škodalandu.** U půjčovny za příjezdovou cestou stiskni F. Nastav směr a sílu, zahraj tři různé jamky a mezi nimi dojdi ke značce. Na každou jamku máš sedm úderů. Nejlepší součet za celou partii se uloží. [Postup a snímky](docs/E54.md)
 
-- **Průchozí tramvaj linky 1.** V hlavní nabídce nebo v pauze klikni na **Nastoupit do průchozí tramvaje**. Tlačítko nastaví čas odjezdu a postaví tě přímo do uličky. Do prvního vozu spoje 685462 směrem na Bolevec můžeš nastoupit, projít se za jízdy, sednout si k oknu a v zastávce vystoupit jinými dveřmi. [Kde nastoupit a jak vůz ovládat](docs/E59.md)
-- **Článková tramvaj linky 1.** Tlačítko **Nastoupit do článkové tramvaje** tě postaví do předního článku spoje 685463. Uličkou můžeš projít až do zadního článku a v zastávce vystoupit jeho dveřmi. [Jízda článkovou tramvají](docs/E60.md)
-- **Průchozí trolejbus linky 49.** Zvol **Nastoupit do průchozího trolejbusu** nebo nastup předními dveřmi u hlavního nádraží. Spoj 692185 jede v 8:26 přes Pařížskou na Karlov. [Jízda trolejbusem](docs/E60.md#trolejbus-linky-49)
-- **Průchozí autobus linky 33.** Zvol **Nastoupit do průchozího autobusu** nebo přijď na stanoviště 4 na náměstí Republiky. Spoj 688856 jede v 8:20 přes Goethovu směrem na hlavní nádraží. [Jízda autobusem](docs/E60.md#autobus-linky-33)
+- **Průchozí tramvaj linky 1.** V hlavní nabídce nebo v pauze klikni na **Svézt se MHD → Tramvaj Tatra**. Tlačítko nastaví čas odjezdu a postaví tě přímo do uličky. Do prvního vozu spoje 685462 směrem na Bolevec můžeš nastoupit, projít se za jízdy, sednout si k oknu a v zastávce vystoupit jinými dveřmi. [Výběr spoje](docs/E61.md) · [Kde nastoupit a jak vůz ovládat](docs/E59.md)
+- **Článková tramvaj linky 1.** Tlačítko **Svézt se MHD → Článková tramvaj** tě postaví do předního článku spoje 685463. Uličkou můžeš projít až do zadního článku a v zastávce vystoupit jeho dveřmi. [Jízda článkovou tramvají](docs/E60.md)
+- **Průchozí trolejbus linky 49.** Zvol **Svézt se MHD → Trolejbus** nebo nastup předními dveřmi u hlavního nádraží. Spoj 692185 jede v 8:26 přes Pařížskou na Karlov. [Jízda trolejbusem](docs/E60.md#trolejbus-linky-49)
+- **Průchozí autobus linky 33.** Zvol **Svézt se MHD → Autobus SOR** nebo přijď na stanoviště 4 na náměstí Republiky. Spoj 688856 jede v 8:20 přes Goethovu směrem na hlavní nádraží. [Jízda autobusem](docs/E60.md#autobus-linky-33)
 
 - **Bowling U Papírny.** Na Papírnické 3 otevři jednu dráhu klávesou F nebo dotykovým tlačítkem. Nastav směr a sílu, dohraj deset kol a ulož si osobní rekord. [Ovládání a zkoušky](docs/E57.md)
 

@@ -26,16 +26,16 @@ export const TROLLEY_CABIN = [{
 }];
 
 export const CABIN_SERVICES = [
-  { trip: PILOT_TRIP, type: 'tram', ref: '1', layout: tatraLayout, stop: '54717/1',
+  { trip: PILOT_TRIP, model: 'Tramvaj Tatra', destination: 'Bolevec', type: 'tram', ref: '1', layout: tatraLayout, stop: '54717/1',
     name: 'Průchozí tramvaj · linka 1', marker: '1 · Průchozí Tatra', aliases: ['Tatra'],
     access: 'První vůz spoje 685462 směr Bolevec. V pondělí 9. 11. 2026 odjezd v 10:06 ze stanoviště 1.' },
-  { trip: ARTICULATED_TRIP, type: 'tram', ref: '1', layout: ARTICULATED_CABIN, stop: '54717/1',
+  { trip: ARTICULATED_TRIP, model: 'Článková tramvaj', destination: 'Bolevec', type: 'tram', ref: '1', layout: ARTICULATED_CABIN, stop: '54717/1',
     name: 'Článková tramvaj · linka 1', marker: '1 · Článková tramvaj', aliases: [],
     access: 'Tři průchozí články spoje 685463 směr Bolevec. V pondělí 9. 11. 2026 odjezd v 10:13 ze stanoviště 1.' },
-  { trip: BUS_TRIP, type: 'bus', ref: '33', layout: BUS_CABIN, stop: '54717/4',
+  { trip: BUS_TRIP, model: 'Autobus SOR', destination: 'Hlavní nádraží', type: 'bus', ref: '33', layout: BUS_CABIN, stop: '54717/4',
     name: 'Průchozí autobus · linka 33', marker: '33 · Průchozí autobus', aliases: ['SOR'],
     access: 'Spoj 688856 směr Hlavní nádraží. V pondělí 9. 11. 2026 odjezd v 8:20 ze stanoviště 4.' },
-  { trip: TROLLEY_TRIP, type: 'trolleybus', ref: '49', layout: TROLLEY_CABIN, stop: '53408/1',
+  { trip: TROLLEY_TRIP, model: 'Trolejbus', destination: 'Karlov', type: 'trolleybus', ref: '49', layout: TROLLEY_CABIN, stop: '53408/1',
     name: 'Průchozí trolejbus · linka 49', marker: '49 · Průchozí trolejbus', aliases: [],
     access: 'Spoj 692185 směr Karlov. V pondělí 9. 11. 2026 odjezd v 8:26 ze stanoviště 1 u hlavního nádraží.' },
 ];

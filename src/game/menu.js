@@ -3,7 +3,7 @@ import { RC } from '../config.js';
 import { jobTitle } from './missions.js';
 
 const el = id => document.getElementById(id);
-const sections = ['jobs', 'garage', 'shifts', 'help', 'about', 'settings', 'save'];
+const sections = ['rides', 'jobs', 'garage', 'shifts', 'help', 'about', 'settings', 'save'];
 
 function locationName(world, { x, z }) {
   const road = world.nearestRoad(x, z, 45, RC.PEDESTRIAN);
@@ -55,6 +55,7 @@ export function initMenu(game, updateWork, showClock) {
     if (section) {
       if (['jobs', 'garage', 'shifts'].includes(section)) updateWork(section);
       if (section === 'settings') showClock();
+      if (section === 'rides') el('ride-feedback').textContent = '';
       el('menu-sheet').scrollTop = 0;
       el('menu-back').focus({ preventScroll: true });
       el('menu-sheet').scrollIntoView({ block: 'start' });

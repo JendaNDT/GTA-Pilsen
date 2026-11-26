@@ -1,4 +1,4 @@
-import { ARTICULATED_TRIP, BUS_TRIP, TROLLEY_TRIP } from './game/tram-cabin.js';
+import { CABIN_SERVICES } from './game/tram-cabin.js';
 import { BIKE_LICENSE } from './game/bike-stations.js';
 import packageInfo from '../package.json' with {type:'json'};
 import { PhotoMode } from './game/photo-mode.js';
@@ -350,16 +350,26 @@ async function boot() {
   $('btn-play').addEventListener('click', play);
   function boardFromMenu(trip) {
     const error = game.startCabinRide(trip);
-    if (error) { $('save-status').textContent = error; return; }
+    if (error) { $('ride-feedback').textContent = error; return; }
     play();
     game._updateCamera(0);
     game.hud.toast(IS_TOUCH ? 'Páčkou projdi uličkou. U sedadla klepni na akci.'
       : 'Klávesou W projdi uličkou, u sedadla stiskni F.');
   }
-  $('btn-tram').addEventListener('click', () => boardFromMenu());
-  $('btn-articulated').addEventListener('click', () => boardFromMenu(ARTICULATED_TRIP));
-  $('btn-bus').addEventListener('click', () => boardFromMenu(BUS_TRIP));
-  $('btn-trolley').addEventListener('click', () => boardFromMenu(TROLLEY_TRIP));
+  for (const service of CABIN_SERVICES) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    const line = document.createElement('strong');
+    line.className = 'ride-line';
+    line.textContent = service.ref;
+    const model = document.createElement('b');
+    model.textContent = service.model;
+    const direction = document.createElement('span');
+    direction.textContent = 'Směr ' + service.destination;
+    button.append(line, model, direction);
+    button.addEventListener('click', () => boardFromMenu(service.trip));
+    $('ride-options').append(button);
+  }
   // Celá obrazovka: po kliknutí na Hrát (volba v nastavení) a tlačítkem ⛶ ve hře.
   const fullscreenButton = $('btn-fullscreen'), fullscreenChoice = $('fullscreen-play');
   const supported = fullscreenSupported();
