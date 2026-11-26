@@ -50,6 +50,8 @@ export function initInput(canvas, allowFreeLook) {
       return;
     }
     if (!input.enabled) { if (e.code === 'Escape') input.pressed.add('menu'); return; }
+    if (e.target instanceof HTMLElement && e.target.closest('#minigolf-panel input, #minigolf-panel button') &&
+      (e.code === 'Space' || e.code === 'Enter' || (e.target instanceof HTMLInputElement && e.code.startsWith('Arrow')))) return;
     if (e.code === 'Space' || e.code.startsWith('Arrow')) e.preventDefault();
     if (!e.repeat && KEYMAP[e.code]) input.pressed.add(KEYMAP[e.code]);
     keys.add(e.code);

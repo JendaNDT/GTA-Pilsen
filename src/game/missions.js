@@ -93,7 +93,7 @@ export class Jobs {
 
   taxiUnavailable() {
     const g = this.game;
-    if (g.activities?.active) return 'Nejdřív ukonči zkušební trasu.';
+    if (g.activities?.active) return g.activities.blockingMessage;
     if (g.shifts.active) return 'Nejdřív dokonči nebo zruš směnu MHD.';
     if (g.mode !== 'car' || !(g.car?.health > 0) || g.car.typeId === 'police') {
       return 'Nejdřív nastup do pojízdného osobního auta.';
@@ -107,7 +107,7 @@ export class Jobs {
 
   start(type, offer) {
     const g = this.game;
-    if (g.activities?.active) return 'Nejdřív ukonči zkušební trasu.';
+    if (g.activities?.active) return g.activities.blockingMessage;
     if (g.shifts.active) return 'Nejdřív dokonči nebo zruš směnu MHD.';
     if (this.job) return 'Nejdřív dokonči nebo zruš probíhající zakázku.';
     let task;

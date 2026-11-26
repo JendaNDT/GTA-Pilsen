@@ -61,6 +61,16 @@ test('Jolt odrazí šikmý úder od lišty, vrátí odpálený míček a umožn�
     settle();
     assert.equal(golf.score.phase, 'holed');
     assert.equal(golf.score.strokes, 3);
+    golf.restart();
+    golf.strike(0, 0.5);
+    settle();
+    const lastStrike = golf.z;
+    assert.ok(lastStrike > 3);
+    golf.strike(0, 1);
+    settle();
+    assert.equal(golf.score.lastResult, 'out');
+    assert.equal(golf.score.strokes, 3);
+    assert.equal(golf.z, lastStrike);
   } finally {
     golf.dispose();
     world.dispose();

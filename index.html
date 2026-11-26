@@ -52,6 +52,21 @@
     </div>
     <div id="place"><b id="street"></b><span id="district"></span></div>
     <div id="mission" class="hidden"></div>
+    <section id="minigolf-panel" aria-labelledby="golf-title" hidden>
+      <header><h2 id="golf-title">Minigolf · jamka 1</h2><span id="golf-count"></span></header>
+      <div class="golf-controls">
+        <label for="golf-aim">Směr <span id="golf-aim-value"></span></label>
+        <input id="golf-aim" name="aim" type="range" min="-175" max="175" step="1" value="0">
+        <label for="golf-power">Síla <span id="golf-power-value"></span></label>
+        <input id="golf-power" name="power" type="range" min="0" max="100" step="1" value="70">
+      </div>
+      <p id="golf-status" role="status"></p>
+      <div class="golf-actions">
+        <button type="button" id="golf-hit">Odpálit <kbd>F</kbd></button>
+        <button type="button" id="golf-restart" hidden>Zkusit znovu</button>
+        <button type="button" id="golf-leave">Odejít</button>
+      </div>
+    </section>
     <div id="toast"></div>
     <div id="prompt" class="hidden"></div>
     <div id="speedo" class="hidden"><small id="speedlimit" class="hidden" aria-label="Rychlostní limit"></small><b id="kmh">0</b><span>km/h</span><em id="vehname"></em></div>

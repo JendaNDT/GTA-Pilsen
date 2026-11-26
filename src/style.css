@@ -341,3 +341,59 @@ body.touch #prompt { bottom: 46%; }
   #menu-sheet { max-height: none; }
 
 }
+
+#minigolf-panel {
+  left: max(14px, env(safe-area-inset-left));
+  bottom: max(68px, calc(env(safe-area-inset-bottom) + 60px));
+  width: min(336px, calc(100% - 28px));
+  box-sizing: border-box;
+  padding: 13px 15px;
+  border: 1px solid #728479;
+  border-radius: 14px;
+  background: #15251e;
+  color: #f5f2e7;
+  pointer-events: auto;
+}
+#minigolf-panel header, #minigolf-panel label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+#minigolf-panel h2 { margin: 0; font-size: 17px; }
+#golf-count, .golf-controls span { font-variant-numeric: tabular-nums; }
+#golf-count { color: #f4ce78; font-size: 13px; white-space: nowrap; }
+.golf-controls { margin-top: 9px; font-size: 13px; }
+.golf-controls input { display: block; width: 100%; margin: 0 0 4px; height: 27px; accent-color: #eaca77; }
+#golf-status { margin: 5px 0 8px; min-height: 1.2em; font-size: 13px; }
+.golf-actions { display: flex; gap: 8px; }
+.golf-actions button {
+  min-height: 40px;
+  padding: 6px 13px;
+  border: 1px solid #84998c;
+  border-radius: 8px;
+  background: #24382e;
+  color: inherit;
+  cursor: pointer;
+}
+#golf-hit[aria-disabled="false"], #golf-restart { border-color: #eaca77; background: #eaca77; color: #202a24; font-weight: 750; }
+#golf-hit[aria-disabled="true"] { opacity: 0.55; cursor: default; }
+#golf-hit kbd { margin-left: 4px; font-size: 11px; }
+#hud:has(#minigolf-panel:not([hidden])) #touch { display: none; }
+body.touch #golf-hit kbd { display: none; }
+@media (max-width: 640px) {
+  body.touch #minigolf-panel {
+    left: 50%;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+  }
+  body.touch .golf-actions button { min-height: 44px; }
+}
+@media (max-height: 480px) and (orientation: landscape) {
+  body.touch #minigolf-panel {
+    left: max(8px, env(safe-area-inset-left));
+    bottom: max(8px, env(safe-area-inset-bottom));
+    transform: none;
+    width: min(310px, 43vw);
+  }
+}

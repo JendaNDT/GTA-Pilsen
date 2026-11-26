@@ -7,7 +7,8 @@ export const ACTIVITY_SITES = [
     name: 'Škodaland',
     title: 'Škodaland · zkušební trasa',
     aliases: ['minigolf', 'V Lukách 34', 'V Lukách 2976/34', 'České údolí'],
-    access: 'V Lukách 34 · příchod pěšky od zastávky U Přehrady.',
+    access: 'V Lukách 34 · příchod pěšky od zastávky U Přehrady. Minigolf je u pěšiny za příjezdovou cestou.',
+    golf: { x: -1588, z: 3609.5, y: 5 },
     startLabel: 'Spustit zkušební trasu',
     returnPoint: { x: -1601, z: 3586, yaw: 2.55 },
     trial: {

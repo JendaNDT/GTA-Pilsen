@@ -6,6 +6,8 @@ export const FIRST_HOLE = Object.freeze({
 export const MINIGOLF_RADIUS = 0.067;
 export const CUP_RADIUS = 0.17;
 export const STROKE_LIMIT = 7;
+export const RAIL_HEIGHT = 0.19;
+export const RAIL_WIDTH = 0.09;
 
 export function golfWorldPoint(hole, x, z) {
   const c = Math.cos(hole.yaw), s = Math.sin(hole.yaw);

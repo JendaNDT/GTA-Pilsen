@@ -12,7 +12,7 @@ function locationName(world, { x, z }) {
 }
 
 export function menuObjective({ activities, jobs, shifts }) {
-  if (activities?.active) return activities.active.site.title;
+  if (activities?.active) return activities.title;
   if (shifts.active) {
     if (shifts.active.pending) return 'Uzavři výsledek v nabídce Směny MHD.';
     return `Linka ${shifts.active.offer.ref} · ${shifts.stop.name}`;

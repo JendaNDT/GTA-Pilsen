@@ -62,7 +62,7 @@ const ABOUT_HTML = (meta, rendering) => `
   půdorysy a výšky budov, silnice a mosty, linky MHD, parky, restaurace i adresy.</p>
   <p>Co se dá dělat: chodit, půjčovat si auta, vozit se tramvají, trolejbusem i autobusem, létat vrtulníkem,
   rozvážet jídlo ze skutečných podniků, vozit zákazníky, koupit si vlastní auto, jet směnu řidiče MHD,
-  objevovat památky, projít zkušební trasu ve Škodalandu a ujíždět policii.</p>
+  objevovat památky, zahrát si první jamku minigolfu ve Škodalandu a ujíždět policii.</p>
   <p>Na mostě tě u kraje zastaví zábradlí. Na historických kamenných mostech tě zachytí zídka.
   Po prudkém nárazu nebo pádu z výšky postava spadne a zase vstane. Fyzikální pády můžeš vypnout v nastavení.</p>
   <h3>Zdroje dat</h3>
@@ -86,7 +86,7 @@ const ABOUT_HTML = (meta, rendering) => `
   <p>Trasa chodců od muzea ke Strouze a zastávkové zálivy vycházejí z OpenStreetMap (ODbL). Názvy, čísla stanovišť a linky na označnících vycházejí z jízdního řádu PMDP. Polohy mapovaných sloupů veřejného osvětlení pocházejí z OpenStreetMap (ODbL). Polohy a údaje o lavičkách a přístřešcích čerpáme z OpenStreetMap (ODbL). Modely vybavení a kresbu tabulí vytvořil projekt.</p>
   <p>Vstup ve Škodalandu vychází z herní mapy OpenStreetMap (ODbL) a terénu ČÚZK (CC BY 4.0).
   Název a adresu ověřuje <a href="https://sport.plzen.eu/Sportoviste/d/skodaland-ceske-udoli" target="_blank" rel="noopener">Sportovní Plzeň</a>.
-  Zkušební trasa a její značení jsou vlastní návrh projektu.</p>
+  Zkušební trasa, její značení a dráha minigolfu s míčkem a vlajkou jsou vlastní tvorba projektu.</p>
   <p>Barevné tabulky pro den, soumrak a noc vznikly přímo pro tuto hru.</p>
   <p>Letecké snímky krajiny © ČÚZK. Podkladem je <a href="https://atom.cuzk.gov.cz/ORTOFOTO/ORTOFOTO.xml"
   target="_blank" rel="noopener">Ortofoto ČR</a> s licencí
@@ -204,7 +204,7 @@ async function boot() {
   if (!canSave) $('save-status').textContent = 'Prohlížeč nyní neumožňuje ukládání postupu.';
   const perf = DEBUG || PARAMS.get('adapt') !== '0' ? createFrameProfiler(game, { sampleEvery: DEBUG ? 1 : 16 }) : null;
   const syncMouseLock = initInput(canvas, () =>
-    input.enabled && game.freeLook && game.mode === 'foot' && !game.mapOpen && !game.paused);
+    input.enabled && game.freeLook && game.mode === 'foot' && !game.activities.playingGolf && !game.mapOpen && !game.paused);
   if (PARAMS.has('hour') || PARAMS.has('date')) {
     game.setClock(PARAMS.get('date'), PARAMS.has('hour') ? +PARAMS.get('hour') : game.hour);
   }
@@ -296,7 +296,8 @@ async function boot() {
         game.hud.toast('Vítej v Plzni! Stojíš na náměstí Republiky.', 'big', 5000);
         setTimeout(() => game.hud.toast(IS_TOUCH ? 'Tlačítkem F nastoupíš do auta, ✉ ti dá zakázku.' : 'Klávesou F nastoupíš do auta, J ti dá zakázku, M otevře mapu.', '', 7000), 1500);
       } else if (game.activities.interrupted) {
-        game.hud.toast('Zkušební trasa byla při načtení přerušena.', '', 5800);
+        game.hud.toast(game.activities.interruptedGolf ? 'Minigolf byl při načtení přerušen.'
+          : 'Zkušební trasa byla při načtení přerušena.', '', 5800);
       } else if (game.shifts.last?.state === 'interrupted' && game.shifts.last.note === 'Načtení uložené hry') {
         game.hud.toast('Rozpracovaná směna byla při načtení přerušena.', 'bad', 5800);
       } else if (game.jobs.last?.state === 'interrupted' && game.jobs.last.note === 'Načtení uložené hry') {

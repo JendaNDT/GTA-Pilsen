@@ -1,6 +1,6 @@
 # E54 · Minigolf ve Škodalandu
 
-Připraveny jsou pohyb míčku, odraz od mantinelu, záznam jamky podle polohy a rychlosti a limit sedmi úderů. Prošlo všech 380 testů JavaScriptu a produkční sestavení. Následuje zapojení první jamky do hry, potom další dvě jamky a osobní rekord. [Zadání](E54.md)
+První jamka je hratelná ve Škodalandu. Hotové jsou první dva kroky, včetně zamíření, úderu, odrazu, kamery za míčkem, penalizace, opakování a bezpečného návratu po načtení. Prošlo produkční sestavení, 380 testů JavaScriptu a 54 cílených běhů v Chromiu na WebGL 2 a WebGPU. Zbývají druhá a třetí jamka, přechod mezi nimi a rekord série. [Zadání](E54.md) · [Snímky a postup vyzkoušení](../E54.md)
 
 # Převzetí E52 a E53 do mainu
 

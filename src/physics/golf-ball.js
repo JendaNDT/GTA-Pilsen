@@ -1,8 +1,6 @@
-import { GolfScore, MINIGOLF_RADIUS, golfBallResult } from '../game/minigolf-rules.js';
+import { GolfScore, MINIGOLF_RADIUS, RAIL_HEIGHT, RAIL_WIDTH, golfBallResult } from '../game/minigolf-rules.js';
 import { layers } from './world.js';
 
-const RAIL_HEIGHT = 0.19;
-const RAIL_WIDTH = 0.09;
 
 export class GolfBall {
   constructor(physics, hole, surface) {

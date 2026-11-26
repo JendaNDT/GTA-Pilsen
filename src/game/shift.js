@@ -45,7 +45,7 @@ export class Shifts {
 
   start(id) {
     const g = this.game;
-    if (g.activities?.active) return 'Nejdřív ukonči zkušební trasu.';
+    if (g.activities?.active) return g.activities.blockingMessage;
     if (this.active || g.jobs.job) return 'Nejdřív ukonči rozpracovanou zakázku nebo směnu.';
     if (g.wanted) return 'Ke směně nastup až po skončení policejního pátrání.';
     if (g.mode !== 'foot') return 'Před nástupem do směny vystup z vozidla.';
