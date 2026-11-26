@@ -70,6 +70,38 @@
         <button type="button" id="golf-leave">Odejít</button>
       </div>
     </section>
+    <section id="bowling-panel" aria-labelledby="bowl-title" hidden>
+      <div class="bowl-scorecard">
+        <header><h2 id="bowl-title">Bowling U Papírny</h2><div><strong id="bowl-total">0 bodů</strong><small id="bowl-record"></small></div></header>
+        <ol id="bowl-frames" aria-label="Skóre deseti kol">
+          <li><small>1</small><b>·</b><span></span></li>
+          <li><small>2</small><b>·</b><span></span></li>
+          <li><small>3</small><b>·</b><span></span></li>
+          <li><small>4</small><b>·</b><span></span></li>
+          <li><small>5</small><b>·</b><span></span></li>
+          <li><small>6</small><b>·</b><span></span></li>
+          <li><small>7</small><b>·</b><span></span></li>
+          <li><small>8</small><b>·</b><span></span></li>
+          <li><small>9</small><b>·</b><span></span></li>
+          <li><small>10</small><b>·</b><span></span></li>
+        </ol>
+      </div>
+      <div class="bowl-console">
+        <p id="bowl-status" role="status"></p>
+        <div id="bowl-controls">
+          <label for="bowl-aim">Směr <span id="bowl-aim-value"></span></label>
+          <input id="bowl-aim" type="range" min="-35" max="35" value="0">
+          <label for="bowl-power">Síla <span id="bowl-power-value"></span></label>
+          <input id="bowl-power" type="range" min="25" max="100" value="75">
+        </div>
+        <div class="bowl-actions">
+          <button type="button" id="bowl-hit">Hodit <kbd>F</kbd></button>
+          <button type="button" id="bowl-restart" hidden>Nová partie</button>
+          <button type="button" id="bowl-retry" hidden>Znovu uložit výsledek</button>
+          <button type="button" id="bowl-leave">Odejít</button>
+        </div>
+      </div>
+    </section>
     <div id="toast"></div>
     <div id="prompt" class="hidden"></div>
     <div id="speedo" class="hidden"><small id="speedlimit" class="hidden" aria-label="Rychlostní limit"></small><b id="kmh">0</b><span>km/h</span><em id="vehname"></em></div>

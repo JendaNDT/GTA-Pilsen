@@ -4,6 +4,7 @@ import { BowlingRound, validBowlingRecord } from '../src/game/bowling-rules.js';
 import { BowlingLane } from '../src/physics/bowling-lane.js';
 import { loadJolt } from '../src/physics/jolt.js';
 import { STEP_SECONDS } from '../src/physics/step.js';
+import { parseSave } from '../src/game/save-data.js';
 
 const scores = (round, rolls) => rolls.forEach(pins => assert.equal(round.roll(pins), true));
 
@@ -71,4 +72,12 @@ test('koule v Jolt shodí celou sestavu, zvládne dohrávku i sklouzne do žláb
   } finally {
     lane.dispose();
   }
+});
+
+test('starší uložení zůstane čitelné a bowlingový rekord má rozsah 0 až 300', () => {
+  const get = stats => parseSave(JSON.stringify({ v: 2, stats })).stats;
+  assert.deepEqual(get({}), {});
+  assert.deepEqual(get({ bowlingBest: 0, minigolfBest: 8 }), { bowlingBest: 0, minigolfBest: 8 });
+  assert.deepEqual(get({ bowlingBest: 300 }), { bowlingBest: 300 });
+  assert.deepEqual(get({ bowlingBest: 301, minigolfBest: 8 }), { minigolfBest: 8 });
 });

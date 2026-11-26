@@ -410,3 +410,82 @@ body.touch .golf-actions kbd { display: none; }
     width: min(290px, 40vw);
   }
 }
+
+#bowling-panel {
+  inset: 0;
+  color: #f7ead5;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+#hud:has(#bowling-panel:not([hidden])) :is(#touch, #mapwrap, #place, #mission, #prompt, #topleft) { display: none; }
+.bowl-scorecard, .bowl-console {
+  position: absolute;
+  box-sizing: border-box;
+  padding: 12px 15px;
+  border: 1px solid #6f8172;
+  border-radius: 11px;
+  background: #142521f5;
+  box-shadow: 0 3px 16px #0e181695;
+}
+.bowl-scorecard {
+  top: max(12px, env(safe-area-inset-top));
+  left: 50%;
+  width: min(650px, calc(100% - 24px));
+  transform: translateX(-50%);
+}
+.bowl-scorecard header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+#bowl-title { margin: 0; font-size: clamp(14px, 2.3vw, 21px); }
+#bowl-total { color: #f3ca88; white-space: nowrap; }
+#bowl-record { margin-left: 8px; color: #c2d5bd; white-space: nowrap; }
+#bowl-frames {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 4px;
+  padding: 0;
+  margin: 7px 0 0;
+  list-style: none;
+}
+#bowl-frames li { display: grid; grid-template-rows: 13px 20px 17px; justify-items: center; border-radius: 4px; background: #263d34; }
+#bowl-frames li[data-current] { outline: 1px solid #edc47e; outline-offset: -1px; }
+#bowl-frames li small { color: #b5cab9; font-size: 10px; }
+#bowl-frames li b { font-size: 13px; align-self: center; white-space: nowrap; }
+#bowl-frames li span { font-size: 11px; color: #f4cf98; }
+.bowl-console {
+  bottom: max(67px, calc(env(safe-area-inset-bottom) + 62px));
+  left: max(12px, env(safe-area-inset-left));
+  width: min(330px, calc(100% - 24px));
+  pointer-events: auto;
+}
+#bowl-status { margin: 0 0 6px; min-height: 1.2em; font-size: 13px; }
+#bowl-controls label { display: flex; justify-content: space-between; font-size: 13px; }
+#bowl-controls input { display: block; width: 100%; height: 25px; margin: 0; accent-color: #f1c782; }
+.bowl-actions { display: flex; gap: 7px; margin-top: 6px; }
+.bowl-actions button {
+  min-height: 42px;
+  padding: 6px 11px;
+  border-radius: 7px;
+  border: 1px solid #839990;
+  background: #294238;
+  color: inherit;
+  cursor: pointer;
+}
+.bowl-actions :is(#bowl-hit, #bowl-restart, #bowl-retry) { background: #f1c782; color: #1e2c24; font-weight: 750; }
+.bowl-actions [aria-disabled="true"] { opacity: .53; cursor: default; }
+.bowl-actions kbd { margin-left: 3px; font-size: 11px; }
+body.touch .bowl-actions kbd { display: none; }
+@media (max-width: 600px) {
+  .bowl-scorecard { padding: 8px 9px; }
+  #bowl-frames li { grid-template-rows: 11px 17px 13px; }
+  #bowl-frames li b { font-size: 11px; letter-spacing: -.1px; }
+  #bowl-record { display: block; margin-left: 0; text-align: right; }
+  .bowl-console { left: 50%; bottom: max(12px, env(safe-area-inset-bottom)); transform: translateX(-50%); }
+  .bowl-actions button { min-height: 44px; }
+}
+@media (max-height: 480px) and (orientation: landscape) {
+  .bowl-scorecard { width: min(560px, calc(100% - 24px)); padding: 7px 10px; }
+  #bowl-frames li { grid-template-rows: 11px 15px 13px; }
+  .bowl-console {
+    width: min(260px, 36vw); left: max(8px, env(safe-area-inset-left));
+    bottom: max(54px, calc(env(safe-area-inset-bottom) + 50px)); transform: none; padding: 8px 10px;
+  }
+}

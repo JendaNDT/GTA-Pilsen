@@ -1,4 +1,5 @@
 import { validGolfRecord } from './minigolf-rules.js';
+import { validBowlingRecord } from './bowling-rules.js';
 
 export const SAVE_KEY = 'plzen-naplno-v1';
 
@@ -18,6 +19,7 @@ export function parseSave(raw) {
   const stats = Object.fromEntries(Object.entries(counters).filter(([, value]) =>
     Number.isSafeInteger(value) && value >= 0));
   if (!validGolfRecord(stats.minigolfBest)) delete stats.minigolfBest;
+  if (!validBowlingRecord(stats.bowlingBest)) delete stats.bowlingBest;
   const pursuit = s.pursuit;
   return {
     ...s,

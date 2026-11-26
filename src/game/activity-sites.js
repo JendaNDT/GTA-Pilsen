@@ -16,6 +16,15 @@ export const ACTIVITY_SITES = [
       path: [-1599, 3583, -1596, 3587, -1587.2, 3597.1, -1582, 3603],
     },
   },
+  {
+    id: 'papirny-bowling', bowling: true,
+    x: 638, z: 1217, y: 2.89,
+    name: 'Bowling U Papírny', title: 'Bowling U Papírny',
+    aliases: ['bowling', 'Papírnická 3', 'U Papírny', 'kuželky'],
+    access: 'Papírnická 3 · pěšky od Mikulášského náměstí.',
+    startLabel: 'Zahrát bowling',
+    returnPoint: { x: 638, z: 1217, yaw: -1.22 },
+  },
 ];
 
 export function atActivityPoint(player, point, radius = 3.5) {

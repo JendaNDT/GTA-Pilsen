@@ -63,7 +63,7 @@ const ABOUT_HTML = (meta, rendering) => `
   půdorysy a výšky budov, silnice a mosty, linky MHD, parky, restaurace i adresy.</p>
   <p>Co se dá dělat: chodit, půjčovat si auta, vozit se tramvají, trolejbusem i autobusem, létat vrtulníkem,
   rozvážet jídlo ze skutečných podniků, vozit zákazníky, koupit si vlastní auto, jet směnu řidiče MHD,
-  objevovat památky, zahrát si minigolf, půjčit si sdílené elektrokolo a ujíždět policii.</p>
+  objevovat památky, zahrát si minigolf nebo bowling, půjčit si sdílené elektrokolo a ujíždět policii.</p>
   <p>Na mostě tě u kraje zastaví zábradlí. Na historických kamenných mostech tě zachytí zídka.
   Po prudkém nárazu nebo pádu z výšky postava spadne a zase vstane. Fyzikální pády můžeš vypnout v nastavení.</p>
   <h3>Zdroje dat</h3>
@@ -89,6 +89,8 @@ const ABOUT_HTML = (meta, rendering) => `
   <p>Vstup ve Škodalandu vychází z herní mapy OpenStreetMap (ODbL) a terénu ČÚZK (CC BY 4.0).
   Název a adresu ověřuje <a href="https://sport.plzen.eu/Sportoviste/d/skodaland-ceske-udoli" target="_blank" rel="noopener">Sportovní Plzeň</a>.
   Zkušební trasa, její značení a dráhy minigolfu, překážky, půjčovna, míček a vlajky jsou vlastní tvorba projektu.</p>
+  <p>Polohu bowlingu U Papírny uvádí <a href="https://sport.plzen.cz/Sportoviste/d/bowling-u-papirny" target="_blank" rel="noopener">Sportovní Plzeň</a>.
+  Model herní dráhy, interiéru, koule a kuželek vytvořil projekt Plzeň naplno.</p>
   <p>Polohy stanovišť Pilsen Bike vycházejí z veřejného zdroje PMDP / Freebike ve formátu GBFS 3.0 (licence ${BIKE_LICENSE}). Model elektrokola a označníku jsou vlastní tvorba projektu.</p>
   <p>Barevné tabulky pro den, soumrak a noc vznikly přímo pro tuto hru.</p>
   <p>Letecké snímky krajiny © ČÚZK. Podkladem je <a href="https://atom.cuzk.gov.cz/ORTOFOTO/ORTOFOTO.xml"
@@ -207,7 +209,7 @@ async function boot() {
   if (!canSave) $('save-status').textContent = 'Prohlížeč nyní neumožňuje ukládání postupu.';
   const perf = DEBUG || PARAMS.get('adapt') !== '0' ? createFrameProfiler(game, { sampleEvery: DEBUG ? 1 : 16 }) : null;
   const syncMouseLock = initInput(canvas, () =>
-    input.enabled && game.freeLook && game.mode === 'foot' && !game.activities.golf.ball && !game.mapOpen && !game.paused);
+    input.enabled && game.freeLook && game.mode === 'foot' && !game.activities.golf.ball && !game.activities.playingBowling && !game.mapOpen && !game.paused);
   if (PARAMS.has('hour') || PARAMS.has('date')) {
     game.setClock(PARAMS.get('date'), PARAMS.has('hour') ? +PARAMS.get('hour') : game.hour);
   }
@@ -277,6 +279,7 @@ async function boot() {
     syncMouseLock();
     perfPanel?.close();
     menu.classList.remove('hidden'); game.hud.show(false);
+    $('btn-photo').disabled = game.activities.playingBowling;
     game.audio.suspend(); game.save();
     input.pressed.clear();
     navigation.show(true);
@@ -300,6 +303,7 @@ async function boot() {
         setTimeout(() => game.hud.toast(IS_TOUCH ? 'Tlačítkem F nastoupíš do auta, ✉ ti dá zakázku.' : 'Klávesou F nastoupíš do auta, J ti dá zakázku, M otevře mapu.', '', 7000), 1500);
       } else if (game.activities.interrupted) {
         game.hud.toast(game.activities.interruptedGolf ? 'Minigolf byl při načtení přerušen.'
+          : game.activities.interrupted.bowling ? 'Bowling byl při načtení přerušen.'
           : 'Zkušební trasa byla při načtení přerušena.', '', 5800);
       } else if (game.bikes.interrupted) {
         game.hud.toast('Půjčené elektrokolo se vrátilo na výchozí stanoviště.', '', 5800);
@@ -322,7 +326,7 @@ async function boot() {
     }
   });
   const openPhoto = () => {
-    if (game.graphicsBusy || game.mapOpen) return;
+    if (game.graphicsBusy || game.mapOpen || game.activities.playingBowling) return;
     photoFromPlay = running;
     running = false; input.enabled = false; game.paused = true;
     syncMouseLock();

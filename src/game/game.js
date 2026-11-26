@@ -659,6 +659,7 @@ export class Game {
   }
 
   doAction() {
+    if (this.activities.playingBowling) return this.activities.bowling.action();
     if (this.activities.golf.ball) return this.activities.golf.action();
     if (this.falls.active.has(this.player) || this.player.stun > 0) return;
     if (this.shifts.active) return this.shifts.doors();
@@ -690,7 +691,7 @@ export class Game {
 
   /** Klávesa R: vrátí hráče (i s autem) na nejbližší silnici. */
   unstuck() {
-    if (this.activities.playingGolf) return this.activities.end('cancelled');
+    if (this.activities.playingGolf || this.activities.playingBowling) return this.activities.end('cancelled');
     if (this.mode === 'bike') return this.bikes.recover();
     if (this.falls.active.has(this.player) || this.player.stun > 0) return;
     const f = this.focus, w = this.world;
@@ -984,6 +985,22 @@ export class Game {
     if (this.paused) return;
     const logicStart = DEBUG ? performance.now() : 0;
     pollInput(this.shifts.active ? 'shift' : this.mode);
+    if (this.activities.playingBowling) {
+      if (!this.mapOpen) {
+        if (input.pressed.has('action')) this.doAction();
+        if (input.pressed.has('reset')) this.activities.end('cancelled');
+        if (this.activities.playingBowling) {
+          const bowling = this.activities.bowling;
+          const physicsStart = DEBUG ? performance.now() : 0;
+          bowling.lane.world.update(elapsed);
+          if (DEBUG) this.physicsMs = performance.now() - physicsStart;
+          bowling.update(dt, input);
+          if (DEBUG) this.logicMs = performance.now() - logicStart - this.physicsMs;
+        }
+      }
+      endFrame();
+      return;
+    }
     if (input.pressed.has('map')) this.toggleMap();
     if (this.mapOpen) { endFrame(); return; }
 
@@ -992,6 +1009,7 @@ export class Game {
     this.crashCool -= dt; this.wantedCool -= dt;
     const p = this.player;
     if (input.pressed.has('action')) this.doAction();
+    if (this.activities.playingBowling) { endFrame(); return; }
     if (input.pressed.has('job')) this.jobs.toggle();
     if (input.pressed.has('camera')) this.camMode = (this.camMode + 1) % 2;
     if (input.pressed.has('reset')) this.unstuck();
@@ -1207,6 +1225,7 @@ export class Game {
 
   render() {
     this.renderer.info.reset();
+    if (this.activities.playingBowling) return this.activities.bowling.render(this.renderer, this.camera.aspect);
     const cam = this.camera.position;
     this.precipitation.update(this.weather, QUALITY.particles, !this.particles.enabled ||
       ((this.weather.rain || this.weather.flakes) && this.world.tunnelAt(cam.x, cam.z, cam.y)?.inside));
@@ -1219,7 +1238,7 @@ export class Game {
   }
 
   adapt(elapsed, measure) {
-    if (PARAMS.get('adapt') === '0' || this.graphicsBusy || this.mapOpen) return;
+    if (PARAMS.get('adapt') === '0' || this.graphicsBusy || this.mapOpen || this.activities.playingBowling) return;
     this.graphicsTime += elapsed;
     this.resolutionTime += elapsed;
     const choosing = this.graphicsTime >= 10 && !this.graphicsOverride && this.graphics.choice === 'auto' && !this.graphics.automatic;

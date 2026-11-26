@@ -1,6 +1,6 @@
 # E57 · Pilot bowlingu U Papírny
 
-Ověřeno volné místo před Papírnickou 3. Fyzika jedné dráhy v Jolt umí strike, spare i hod do žlábku. Pravidla počítají celý zápis deseti kol včetně bonusových hodů. Prošlo 395 testů JavaScriptu a produkční sestavení. Navazuje herna a ovládání. [Zadání](E57.md)
+Jedna dráha na Papírnické 3 je přístupná z mapy a hratelná v deseti kolech. Prošlo 396 testů JavaScriptu, produkční sestavení a 62 cílených prohlížečových zkoušek. Ověřeno bylo také dotykové ovládání, uložení rekordu a pěší přístup od Mikulášského náměstí. Dobíhá záznam výkonu a snímků. [Zadání](E57.md) · [Ovládání a ověření](../E57.md)
 
 # E56 · Cyklistická navigace
 

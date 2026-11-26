@@ -1,6 +1,7 @@
 import { makeBeacon } from '../entities/models.js';
 import { ACTIVITY_COLOR, ACTIVITY_SITES, atActivityPoint } from './activity-sites.js';
 import { Minigolf } from './minigolf.js';
+import { Bowling } from './bowling.js';
 
 const GOLF_SAVE_ID = 'skodaland-minigolf-kolo';
 
@@ -11,20 +12,25 @@ export class Activities {
     this.interrupted = null;
     this.interruptedGolf = false;
     this.golf = new Minigolf(game);
+    this.bowling = new Bowling(game);
   }
 
   get playingGolf() { return this.active?.kind === 'minigolf'; }
 
+  get playingBowling() { return this.active?.kind === 'bowling'; }
+
   get title() { return this.playingGolf ? 'Škodaland · minigolf' : this.active?.site.title; }
 
   get blockingMessage() {
+    if (this.playingBowling) return 'Nejdřív odejdi z bowlingu.';
     return this.playingGolf ? 'Nejdřív odejdi z minigolfu.' : 'Nejdřív ukonči zkušební trasu.';
   }
 
-  get path() { return this.playingGolf ? undefined : this.active?.site.trial.path; }
+  get path() { return this.playingGolf ? undefined : this.active?.site.trial?.path; }
 
   snapshot() {
     if (this.playingGolf) return this.golf.saved ? null : GOLF_SAVE_ID;
+    if (this.playingBowling && this.bowling.saved) return null;
     return this.active?.site.id ?? null;
   }
 
@@ -36,7 +42,7 @@ export class Activities {
 
   choice() {
     const { player, mode, jobs, shifts, world } = this.game;
-    if (mode !== 'foot') return null;
+    if (mode !== 'foot' || this.playingBowling) return null;
     if (this.playingGolf) {
       const entry = this.golf.nextEntry;
       if (!entry || !atActivityPoint(player, entry, 1.55) || world.onCarriageway(player.x, player.z, player.y)) return null;
@@ -52,7 +58,8 @@ export class Activities {
     const golf = ACTIVITY_SITES.find(site => site.golf && atActivityPoint(player, site.golf, 2.35));
     const site = golf ?? ACTIVITY_SITES.find(site => atActivityPoint(player, site));
     if (!site || world.onCarriageway(player.x, player.z, player.y)) return null;
-    return golf ? { site, kind: 'minigolf', label: 'Zahrát minigolf' } : { site, label: site.startLabel };
+    if (golf) return { site, kind: 'minigolf', label: 'Zahrát minigolf' };
+    return { site, kind: site.bowling ? 'bowling' : undefined, label: site.startLabel };
   }
 
   act(choice) {
@@ -68,19 +75,22 @@ export class Activities {
       g.hud.toast(g.saveError, 'bad');
     } else if (this.playingGolf) {
       this.golf.start();
+    } else if (this.playingBowling) {
+      this.bowling.start();
     }
   }
 
   end(result, save = true) {
     if (!this.active) return;
     const { elapsed } = this.active, g = this.game;
-    const minigolf = this.playingGolf;
+    const minigolf = this.playingGolf, bowling = this.playingBowling;
     if (minigolf) this.golf.end();
+    if (bowling) this.bowling.end();
     this.active = null;
     if (this.beacon) this.beacon.visible = false;
     g.hud.mission(null);
     if (!save) return;
-    if (!minigolf) {
+    if (!minigolf && !bowling) {
       const message = result === 'completed' ? `Zkušební trasa dokončena za ${Math.max(1, Math.ceil(elapsed))} s.`
         : 'Zkušební trasa ukončena.';
       g.hud.toast(message, 'big');
@@ -89,6 +99,7 @@ export class Activities {
   }
 
   update(dt) {
+    if (this.playingBowling) return;
     const { active, game } = this, { focus, jobs, shifts } = game;
     this.golf.nearby(focus);
     const golf = this.playingGolf;
