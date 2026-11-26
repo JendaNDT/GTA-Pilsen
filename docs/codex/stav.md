@@ -12,9 +12,9 @@ Na Slovanské, Lidické a Skvrňanské se obrubníky odsunuly za tramvajové pá
 
 # E53 · Taxi podle potřeb cestujícího
 
-- Krok 1 hotový. Ověřeny tři směrové trasy včetně příjezdu a krátkého pěšího přístupu ke spodnímu vstupu nádraží.
-- Krok 2 hotový. Nabídka Zakázky má tři karty s odměnou před přijetím. Nástup i výstup vyžadují správný směr a pravý kraj. Výplata s počítadlem zůstává v jediném zápisu.
-- Krok 3 probíhá. Prošlo 370 testů JavaScriptu, produkční sestavení a finální scénáře E53 na WebGL 2. V obou scénách měření nízké předvolby vyšly rozpočty. Starší test taxi, garáže a obnovení hry na o něco dřívějším sestavení prošel při běhu s jedním procesem. V souběžném běhu na výsledném sestavení vyčerpal čas při otevírání panelu. Ověřuje se s plnou sadou. [Zadání](E53.md) · [Protokol a snímky](../E53.md)
+Dokončeno nad herní revizí `797ee34`. Taxi nabízí běžnou jízdu, spěch na nádraží a klidnou jízdu. Karty ukazují nástup, cíl a odměnu ještě před přijetím. U obou zastávek se kontroluje směr a správný obrubník. E53 navazuje přímo na E51 přes existující nabídku Zakázky.
+
+Prošlo všech 370 testů JavaScriptu, produkční sestavení a všechny nové zkoušky taxi v obou vykreslovačích. Dosavadních osm běhů zakázek a garáže prošlo samostatně. Úplná sada prošla v 528 z 536 případů. Obě zkoušky kolony u hlavního nádraží prošly při opakování, celkem tedy prošlo 530 různých případů. Zbývajících šest odchylek se stejnou kontrolou potvrdilo i v E51. Měření na nízkou kvalitu vyšlo v rozpočtu za jízdy i za letu. [Zadání](E53.md) · [Protokol, snímky a postup vyzkoušení](../E53.md)
 
 # E51 · Voda u Wilsonova mostu a u Ostende
 
