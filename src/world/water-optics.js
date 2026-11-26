@@ -13,6 +13,31 @@ function areaWeight(point, area) {
   return smoothstep(0, WATER_PILOT_FADE, dx.min(dz));
 }
 
+export function riverStreaks(point, field, env) {
+  const result = float(0).toVar();
+  const flow = field.rg.mul(255).sub(128).div(127).toVar();
+  const speed = flow.length().toVar();
+  const fade = smoothstep(45, 165, env.cam.xz.sub(point).length()).oneMinus().toVar();
+  // Stojatá voda nemá v textuře směrový vektor. Dál od kamery se jemné stopy vytratí.
+  If(speed.greaterThan(0.06).and(fade.greaterThan(0.001)), () => {
+    const axis = flow.div(speed).toVar();
+    const coord = point.mul(0.72).toVar();
+    const stretch = axis.mul(0.83);
+    // Vzorek zůstává ve světových souřadnicích. Směr proudu ho jen posouvá a protahuje.
+    const sample = phase => {
+      const p = coord.sub(flow.mul(phase, 6 * 2.0 * 0.72)).toVar();
+      return mix(valueNoise(p), valueNoise(p.add(stretch)), 0.46);
+    };
+    // Dva posunuté cykly přecházejí jeden do druhého, takže stopy nezačínají znovu skokem.
+    const first = env.time.div(6).fract().toVar();
+    const second = first.add(0.5).fract();
+    const streak = mix(sample(first), sample(second), first.mul(2).sub(1).abs());
+    const wet = smoothstep(0.015, 0.22, field.b);
+    result.assign(smoothstep(0.56, 0.80, streak).mul(wet, fade, smoothstep(0.06, 0.36, speed)));
+  });
+  return result;
+}
+
 export function waterOptics(point, field, env) {
   const river = areaWeight(point, RADBUZA);
   const lake = areaWeight(point, OSTENDE);

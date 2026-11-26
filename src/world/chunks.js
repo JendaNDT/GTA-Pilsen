@@ -1883,9 +1883,11 @@ export class ChunkManager {
       const classes = QUALITY.terrainDetail && terrainClassMask(w.l, this.landIndex.polys[ci], LAND_GROUP, x0, z0, CHUNK);
       const mask = classes ? terrainMaskTexture(classes) : null;
       if (mask) ch.disposables.push(mask);
-      const water = QUALITY.waterDetail && waterTile(this, ci, x0, z0, CHUNK, pilot);
-      if (water) ch.disposables.push(water);
-      ch.terrainMat = makeTerrainMaterial(ch.tex, portals, pavingChunk(x0, z0), QUALITY.heritageDetail, mask, water, pilot);
+      const field = (QUALITY.waterDetail || w.improvedWater)
+        ? waterTile(this, ci, x0, z0, CHUNK, pilot, QUALITY.waterDetail) : null;
+      const water = field && { field, detail: QUALITY.waterDetail, pilot, riverFlow: w.improvedWater };
+      if (field) ch.disposables.push(field);
+      ch.terrainMat = makeTerrainMaterial(ch.tex, portals, pavingChunk(x0, z0), QUALITY.heritageDetail, mask, water);
       const m = new THREE.Mesh(geo, ch.terrainMat);
       m.receiveShadow = true; m.renderOrder = 5;
       if (QUALITY.name === 'low') trimSurfaceToCamera(m);

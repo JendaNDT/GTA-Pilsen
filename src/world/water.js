@@ -120,7 +120,7 @@ export function waterField(land, polygons, lines, weirs, x, z, size = 256, pixel
   return output;
 }
 
-export function waterTile(manager, ci, x, z, size, pilot) {
+export function waterTile(manager, ci, x, z, size, pilot, detail) {
   const { world: w, landIndex: index } = manager;
   if (!index.polys[ci]?.some((id) => w.l.cls[id] === LC.WATER)) return null;
   const polygons = new Set(),
@@ -131,8 +131,9 @@ export function waterTile(manager, ci, x, z, size, pilot) {
     for (let c = Math.max(0, cx - 1); c <= Math.min(w.cols - 1, cx + 1); c++) {
       const neighbor = r * w.cols + c;
       for (const id of index.polys[neighbor] ?? []) if (w.l.cls[id] === LC.WATER) polygons.add(id);
-      for (const id of index.lines[neighbor] ?? []) lines.add(id);
+      for (const id of index.lines[neighbor] ?? []) if (w.l.lCls[id] <= 2) lines.add(id);
     }
+  if (!detail && !lines.size) return null;
   const field = waterField(
     w.l,
     [...polygons].sort((a, b) => a - b),

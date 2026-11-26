@@ -11,7 +11,7 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 ## Co ve hře je
 
-- U Wilsonova mostu proud Radbuzy unáší plavce i plovoucí auta. Na Boleváku u Ostende se dá nejdřív brodit a potom plavat. Na střední a vyšší kvalitě se při vstupu do vody objeví tříšť a kruhy. [Snímky a návod k vyzkoušení](docs/E51.md)
+- U Wilsonova mostu proud Radbuzy unáší plavce i plovoucí auta. Na Boleváku u Ostende se dá nejdřív brodit a potom plavat. Na střední a vyšší kvalitě se při vstupu do vody objeví tříšť a kruhy. [Snímky a návod k vyzkoušení](docs/E51.md) · [Viditelný proud v řekách](docs/E51/proud.md)
 
 - Na mostě Generála Pattona jsou oba jízdní pásy volné. Lampy z Jízdecké a Lochotínské se vejdou pod most. [Pohled z mostu a z Jízdecké před opravou a po ní](docs/E50.md)
 

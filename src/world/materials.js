@@ -13,7 +13,7 @@ import { SURFACE } from './material-table.js';
 import { hash21, valueNoise } from './material-noise.js';
 import { detailFadeRange } from './image-quality.js';
 import { TUNNEL_HEIGHT, TUNNEL_PORTAL_CUT } from './tunnels.js';
-import { waterOptics } from './water-optics.js';
+import { riverStreaks, waterOptics } from './water-optics.js';
 
 export const env = {
   windows: uniform(new THREE.Vector4()).setGroup(renderGroup),
@@ -162,8 +162,8 @@ function addPaving(landColor, profile, local, worldPosition, noise, detail) {
 // Texturu i souřadnice portálů síť bere z právě vykreslované dlaždice.
 const terrainNodes = new Map();
 const terrainSurface = struct({ color: 'vec3', glint: 'float', roughness: 'float' });
-function getTerrainNodes(paving, detail, portalCount, terrainDetail, waterDetail, pilot) {
-  const key = `${paving}/${detail}/${portalCount}/${terrainDetail}/${waterDetail}/${pilot}`;
+function getTerrainNodes(paving, detail, portalCount, terrainDetail, waterDetail, pilot, riverFlow) {
+  const key = `${paving}/${detail}/${portalCount}/${terrainDetail}/${waterDetail}/${pilot}/${riverFlow}`;
   const cached = terrainNodes.get(key);
   if (cached) return cached;
 
@@ -173,7 +173,8 @@ function getTerrainNodes(paving, detail, portalCount, terrainDetail, waterDetail
   const portalBounds = materialReference('portalBounds', 'vec3');
   const profile = PAVING[paving];
   const close = terrainDetail ? terrainDetailNodes(env.cam) : null;
-  const field = waterDetail ? materialReference('waterField', 'texture') : null;
+  const waterField = waterDetail || riverFlow ? materialReference('waterField', 'texture') : null;
+  const field = waterDetail ? waterField : null;
   const optics = pilot && field ? waterOptics(positionWorld.xz, field, env) : null;
   const wave = waterDetail ? Fn(() => {
     const flow = field.rg.mul(255).sub(128).div(127).toVar();
@@ -241,6 +242,11 @@ function getTerrainNodes(paving, detail, portalCount, terrainDetail, waterDetail
         }
         color.assign(mix(landColor, water, waterMask));
       }
+      if (riverFlow) {
+        const streak = riverStreaks(point, waterField, env);
+        const weight = streak.mul(waterMask, mix(0.30, 0.12, env.night));
+        color.assign(mix(color, vec3(0.58, 0.71, 0.74), weight));
+      }
     });
     return terrainSurface(color, sunGlint, roughness);
   })().toVar();
@@ -303,12 +309,13 @@ export function makeMillraceMaterial(detail) {
 }
 
 /** Materiál terénu jedné dlaždice (textura země s vodou v průhlednosti). */
-export function makeTerrainMaterial(tex, portals = [], paving = 0, detail = false, mask = null, water = null, pilot = false) {
+export function makeTerrainMaterial(tex, portals = [], paving = 0, detail = false, mask = null, water = null) {
+  const waterDetail = Boolean(water?.detail), riverFlow = Boolean(water?.riverFlow);
   const mat = makeSurfaceMaterial(SURFACE.grass, {
-    map: tex, ...getTerrainNodes(paving, detail, portals.length, Boolean(mask), Boolean(water), Boolean(pilot && water)),
+    map: tex, ...getTerrainNodes(paving, detail, portals.length, Boolean(mask), waterDetail, Boolean(waterDetail && water.pilot), riverFlow),
   });
   if (mask) mat.terrainClasses = mask;
-  if (water) mat.waterField = water;
+  if (water) mat.waterField = water.field;
   if (portals.length) {
     mat.portalBounds = portals.map(p => new THREE.Vector3(p.start ?? -TUNNEL_PORTAL_CUT.approach,
       p.end ?? TUNNEL_PORTAL_CUT.depth, p.clearance ?? -(TUNNEL_HEIGHT + 0.5)));
