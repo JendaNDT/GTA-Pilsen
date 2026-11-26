@@ -1,6 +1,6 @@
 # E54 · Minigolf ve Škodalandu
 
-Půjčovna a všechny tři jamky jsou hratelné. Druhá využívá odraz od mantinelu, třetí má dvě cesty kolem ostrůvku. Hráč mezi jamkami chodí pěšky a osobní rekord se ukládá po dohrání série. Prošlo sestavení, 383 testů JavaScriptu, 48 cílených zkoušek v Chromiu a opakování osmi běhů minigolfu po úpravě ovládání klávesou Enter. Probíhá srovnávací měření hotového areálu. [Zadání](E54.md) · [Protokol a snímky](../E54.md)
+Půjčovna a všechny tři jamky jsou hratelné. Druhá využívá odraz od mantinelu, třetí má dvě cesty kolem ostrůvku. Hráč mezi jamkami chodí pěšky a osobní rekord se ukládá po dohrání série. Prošlo sestavení, 383 testů JavaScriptu, 48 cílených zkoušek v Chromiu a opakování osmi běhů minigolfu po úpravě ovládání klávesou Enter. E54 je dokončená nad herní revizí `56f0cf8`. Časové rozpočty vyšly při hře třetí jamky, jízdě i letu na nízkou předvolbu. [Zadání](E54.md) · [Protokol a snímky](../E54.md)
 
 # Převzetí E52 a E53 do mainu
 
