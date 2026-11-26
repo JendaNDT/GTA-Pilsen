@@ -16,7 +16,7 @@ const partners = [
 ];
 
 export class PhysicsWorld {
-  constructor(Jolt) {
+  constructor(Jolt, maxBodies) {
     this.Jolt = Jolt;
     this.clock = new FixedStep();
     this.step = (dt) => this.engine.Step(dt, 1);
@@ -36,6 +36,11 @@ export class PhysicsWorld {
     Jolt.destroy(moving);
     const settings = new Jolt.JoltSettings();
     settings.mMaxWorkerThreads = 0;
+    if (maxBodies !== undefined) {
+      settings.mMaxBodies = maxBodies;
+      settings.mMaxBodyPairs = maxBodies * maxBodies;
+      settings.mMaxContactConstraints = maxBodies * 8;
+    }
     settings.mObjectLayerPairFilter = pairs;
     settings.mBroadPhaseLayerInterface = broad;
     settings.mObjectVsBroadPhaseLayerFilter = new Jolt.ObjectVsBroadPhaseLayerFilterTable(broad, 2, pairs, count);

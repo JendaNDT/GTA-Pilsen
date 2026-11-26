@@ -1,3 +1,7 @@
+# E57 · Pilot bowlingu U Papírny
+
+Ověřeno volné místo před Papírnickou 3. Fyzika jedné dráhy v Jolt umí strike, spare i hod do žlábku. Pravidla počítají celý zápis deseti kol včetně bonusových hodů. Prošlo 395 testů JavaScriptu a produkční sestavení. Navazuje herna a ovládání. [Zadání](E57.md)
+
 # E56 · Cyklistická navigace
 
 Hotová trasa mezi Západočeským muzeem a DEPO 2015 je průjezdná v obou směrech. Prošlo produkční sestavení, 391 testů JavaScriptu, 34 úspěšných testů Pythonu a jeden přeskočený případ a 78 cílených prohlížečových případů včetně opakované dotykové zkoušky v obou vykreslovačích. Časové rozpočty splnila jízda na kole s aktivní trasou, jízda autem i let. E56 je dokončená nad herní revizí `5f8e32a`. [Zadání](E56.md) · [Protokol a snímky](../E56.md)
