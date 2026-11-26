@@ -151,7 +151,7 @@ export function drawAreaMap(canvas, game, view, selected) {
     const p = v.visible ? v.meshes[0].position : v;
     if (!insideMap(screenBounds, p.x, p.z)) continue;
     dot(p.x, p.z, 4.5, '#edb449');
-    label(p.x, p.z, '1 · Průchozí Tatra', 12, '#ffe9b5', -10);
+    label(p.x, p.z, v.articulatedCabin ? '1 · Článková tramvaj' : '1 · Průchozí Tatra', 12, '#ffe9b5', -10);
   }
   for (const m of jobs.landmarks) {
     if (!insideMap(screenBounds,m.x,m.z)) continue;

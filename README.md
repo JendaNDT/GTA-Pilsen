@@ -22,6 +22,7 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 - **Minigolf ve Škodalandu.** U půjčovny za příjezdovou cestou stiskni F. Nastav směr a sílu, zahraj tři různé jamky a mezi nimi dojdi ke značce. Na každou jamku máš sedm úderů. Nejlepší součet za celou partii se uloží. [Postup a snímky](docs/E54.md)
 
 - **Průchozí tramvaj linky 1.** V hlavní nabídce nebo v pauze klikni na **Nastoupit do průchozí tramvaje**. Tlačítko nastaví čas odjezdu a postaví tě přímo do uličky. Do prvního vozu spoje 685462 směrem na Bolevec můžeš nastoupit, projít se za jízdy, sednout si k oknu a v zastávce vystoupit jinými dveřmi. [Kde nastoupit a jak vůz ovládat](docs/E59.md)
+- **Článková tramvaj linky 1.** Tlačítko **Nastoupit do článkové tramvaje** tě postaví do předního článku spoje 685463. Uličkou můžeš projít až do zadního článku a v zastávce vystoupit jeho dveřmi. [Jízda článkovou tramvají](docs/E60.md)
 
 - **Bowling U Papírny.** Na Papírnické 3 otevři jednu dráhu klávesou F nebo dotykovým tlačítkem. Nastav směr a sílu, dohraj deset kol a ulož si osobní rekord. [Ovládání a zkoušky](docs/E57.md)
 
@@ -387,7 +388,7 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 
 ## Zdroje a licence dat
 
-- Průchozí interiér Tatry včetně sedadel, madel, světel a oken je vlastní model projektu Plzeň naplno. Navazuje na stávající karoserii a herní jízdní řád PMDP.
+- Interiéry Tatry i tříčlánkové tramvaje včetně sedadel, osvětlení, oken a průchozích měchů jsou vlastní tvorba projektu Plzeň naplno. Využívají stávající karoserie a herní jízdní řád PMDP.
 
 - Souřadnice stanovišť Pilsen Bike pocházejí z veřejného zdroje PMDP / Freebike ve formátu GBFS 3.0. Zdroj neuvádí vlastní licenci a specifikace pro tento případ uvádí CC0. Model elektrokola a označník vytvořil projekt Plzeň naplno. [Data stanovišť](https://pmdpbike.admin.freebike.com/api/gbfs/v30/station_information) · [Licencování ve specifikaci GBFS](https://github.com/MobilityData/gbfs/blob/v3.0/gbfs.md#system_informationjson)
 

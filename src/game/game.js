@@ -1,4 +1,4 @@
-import { PILOT_TRIP, TramCabin } from './tram-cabin.js';
+import { ARTICULATED_CABIN, PILOT_TRIP, TramCabin } from './tram-cabin.js';
 import { arrestDestination } from './police-stations.js';
 import { wheelTrail } from '../fx/wheel-trails.js';
 import { NightLights } from '../world/night-lights.js';
@@ -632,13 +632,13 @@ export class Game {
     this.audio.door(h);
   }
 
-  startTramRide() {
-    if (this.cabin) return;
+  startTramRide(trip = PILOT_TRIP) {
+    if (this.cabin && this.ride.event.trip.id === trip) return;
     if (this.jobs.job || this.shifts.active || this.activities.active || this.mode === 'bike') {
       return 'Pro jízdu tramvají nejdřív ukonči rozjetou aktivitu nebo vrať kolo.';
     }
     const table = this.transit.timetable, date = '2026-11-09', day = parseDay(date);
-    const event = table.events(day).find(e => e.day === day && e.trip.id === PILOT_TRIP);
+    const event = table.events(day).find(e => e.day === day && e.trip.id === trip);
     const index = event?.trip.stops.findIndex(s => table.stops[s.stop][3] === '54717/1');
     if (index == null || index < 0) return 'V jízdním řádu chybí průchozí spoj na náměstí Republiky.';
 
@@ -658,7 +658,8 @@ export class Game {
     if (v.pilot && !this.shifts.active) {
       const p = this.player, door = v.cabinDoorAt(p.x, p.z);
       if (door === null) return;
-      this.cabin = new TramCabin(door, { x: p.x, y: p.y, z: p.z });
+      this.cabin = new TramCabin(door.door, { x: p.x, y: p.y, z: p.z },
+        v.articulatedCabin ? ARTICULATED_CABIN : undefined, door.index);
       this.cabin.stop = v.stopIndex;
       this.camera.near = 0.06;
       this.camera.updateProjectionMatrix();
@@ -702,7 +703,7 @@ export class Game {
       return;
     }
     const o = this.cabin && force ? this.cabin.platform
-      : this.transit.exitPoint(v, {}, this.cabin?.door ?? undefined);
+      : this.transit.exitPoint(v, {}, this.cabin?.door ?? undefined, this.cabin?.section);
     if (this.cabin && !force && !this._platformClear(o)) {
       this.hud.toast('U těchto dveří je překážka. Zkus jiné dveře.');
       return;
@@ -956,12 +957,25 @@ export class Game {
   }
 
   _cabinCamera() {
-    const c = this.cabin, mesh = this.ride.meshes[0], cam = this.camera;
+    const c = this.cabin, mesh = this.ride.meshes[c.section], cam = this.camera;
     c.yaw = wrapAngle(c.yaw - input.lookDX * 0.0052);
     c.pitch = clamp(c.pitch + input.lookDY * 0.004, -1.25, 1.25);
     const pos = c.seat ?? c;
-    cam.position.set(pos.x, c.seat ? 1.93 : 2.44, pos.z).applyQuaternion(mesh.quaternion).add(mesh.position);
+    const eye = (c.seat ? 1.93 : 2.44) - (this.ride.articulatedCabin ? 0.34 : 0);
+    cam.position.set(pos.x, eye, pos.z).applyQuaternion(mesh.quaternion).add(mesh.position);
     cam.quaternion.copy(mesh.quaternion);
+    // V měchu se pohled plynule přikloní k ose sousedního článku z obou stran spoje.
+    const section = c.layout[c.section];
+    const neighbour = pos.z > 0 ? c.section - 1 : c.section + 1;
+    const distance = section.length / 2 - Math.abs(pos.z);
+    if (c.layout[neighbour] && distance < 0.75) {
+      const other = this.ride.meshes[neighbour];
+      const z = pos.z - Math.sign(pos.z) * (section.length + c.layout[neighbour].length) / 2;
+      _v.set(pos.x, eye, z).applyQuaternion(other.quaternion).add(other.position);
+      const mix = (0.75 - distance) / 1.5;
+      cam.position.lerp(_v, mix);
+      cam.quaternion.slerp(other.quaternion, mix);
+    }
     cam.rotateY(Math.PI + c.yaw);
     cam.rotateX(-c.pitch);
     const direction = cam.getWorldDirection(_v);

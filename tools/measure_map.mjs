@@ -11,6 +11,7 @@ const centerFlight = args.includes('--center-flight');
 const release = args.includes('--release');
 const rush = args.includes('--rush');
 const tramCabin = args.includes('--tram-cabin');
+const tramTrip = args.find(arg => arg.startsWith('--tram-trip='))?.slice('--tram-trip='.length) ?? PILOT_TRIP;
 const work = tramCabin || rush || args.includes('--work');
 const pilot = !tramCabin && !rush && (release || centerFlight || args.includes('--pilot'));
 if (tramCabin && (rush || release)) throw new Error('Jízdu tramvají měř samostatně.');
@@ -37,6 +38,7 @@ const scenarios = tramCabin ? [{ name: 'tram', mode: 'tram', site: 'Náměstí R
   { name: 'carEast', mode: 'car', site: 'Hrádek' },
   { name: 'heliCenter', mode: 'heli', site: 'Plzeň' },
 ] : [{ name: 'car', mode: 'car' }, { name: 'heli', mode: 'heli', site: centerFlight ? 'Plzeň' : undefined }];
+if (tramCabin) report.trip = tramTrip;
 if (release || work) report.quality = url.searchParams.get('quality') ?? 'high';
 if (work) {
   report.work = { date: url.searchParams.get('date'), hour: +url.searchParams.get('hour'),
@@ -82,7 +84,11 @@ try {
           const table = game.transit.timetable;
           const [, x, z] = table.stops.find(stop => stop[3] === '54717/1');
           game.player.place(x, z);
-          window.__setClock('2026-11-09', 10.1);
+          const date = '2026-11-09', day = Date.parse(date) / 86_400_000;
+          const trip = table.events(day).find(e => e.trip.id === pilotTrip && e.day === day)?.trip;
+          const stop = trip?.stops.findIndex(s => table.stops[s.stop][3] === '54717/1');
+          if (stop == null || stop < 0) throw new Error('Měřený spoj nemá nástupiště na náměstí Republiky.');
+          window.__setClock(date, trip.times[2 * stop + 1] / 3600);
           const v = game.transit.vehicles.find(v => v.event.trip.id === pilotTrip);
           for (let i = 0; i < 60 && !v?.canBoard; i++) game.update(1 / 60);
           if (!v?.canBoard) throw new Error('Pilotní vůz nepřijel k nástupišti.');
@@ -230,7 +236,7 @@ try {
           ...(physicsTimes.length > 0 && { physicsSteps: physicsTimes.length,
             physicsP95Ms: physicsTimes[Math.ceil(physicsTimes.length * 0.95) - 1] }),
         };
-      }, { mode, pilot, site, work, pilotTrip: PILOT_TRIP });
+      }, { mode, pilot, site, work, pilotTrip: tramTrip });
       if (work) report[name].budgets = frameBudgets(report[name].measurement, report.work.durationMs / 1000);
       if (site) report[name].site = site;
     }
@@ -238,8 +244,9 @@ try {
   }
   const json = JSON.stringify(report, null, 2) + '\n';
   if (work) {
+    const tramOutput = tramTrip === PILOT_TRIP ? 'data-raw/e59/jizda.json' : 'data-raw/e60/jizda.json';
     const output = args.find((arg) => arg.startsWith('--output='))?.slice('--output='.length)
-      ?? (tramCabin ? 'data-raw/e59/jizda.json' : rush ? 'data-raw/e20/vykon-spicka.json' : 'data-raw/e13/measure-work.json');
+      ?? (tramCabin ? tramOutput : rush ? 'data-raw/e20/vykon-spicka.json' : 'data-raw/e13/measure-work.json');
     await mkdir(dirname(output), { recursive: true });
     await writeFile(output, json);
   }

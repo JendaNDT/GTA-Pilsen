@@ -1,3 +1,9 @@
+# E60 · Článková tramvaj linky 1
+
+Místní větev `main` převzala všech pět revizí E59 po `e074d04`. Na tomto základě má spoj 685463 tři průchozí články, přímý nástup z nabídky a vlastní vyhledání na mapě. Ověřený je přechod za jízdy v zatáčce, pohled ze sedadla, výstup prostředními dveřmi i průchod oběma měchy dotykovou páčkou. Prošlo sestavení, 402 testů JavaScriptu a 34 testů Pythonu s jedním přeskočeným případem. Měření jízdy na nízkou předvolbu splnilo čtyři časové rozpočty.
+
+Otevřená je opakovaná dopravní prodleva na křižovatce Dominikánské a Solní. Před tramvají tam při odbočování uvázlo auto u stěny domu. Následujícími kroky E60 jsou průchozí autobus a trolejbus. [Zadání](E60.md) · [Ovládání, snímky, výkon a výsledky zkoušek](../E60.md)
+
 # E59 · První průchozí vůz linky 1
 
 Na revizi `ec4c99a` dojel spoj ve všech 19 měřených jízdách k Hlavní poště za 48 až 73 sekund. Další tři jízdy prošly až k výstupu Pod Záhorskem. Příčina dřívější prodlevy zůstává otevřená. Při opakování má automatická zkouška uložit polohu vozu a důvody čekání. Prošlo produkční sestavení, všech 400 testů JavaScriptu a také celá jízda s výchozí hodnotou na WebGL 2 i WebGPU. [Opakování čekání před Hlavní poštou](../E59.md#opakování-čekání-před-hlavní-poštou)

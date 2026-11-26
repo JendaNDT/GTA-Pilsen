@@ -1,6 +1,6 @@
 // Ručně modelované karoserie podle plzeňských vozů. Souřadnice jsou v metrech, +z je vpřed.
 import * as THREE from 'three/webgpu';
-import { CABIN_DOORS, CABIN_SEATS } from '../game/tram-cabin.js';
+import { ARTICULATED_CABIN, CABIN_DOORS, CABIN_SEATS } from '../game/tram-cabin.js';
 import { Parts } from './models.js';
 import { transitMaterial as shellMat } from './transit-material.js';
 import { makeSurfaceMaterial } from '../world/materials.js';
@@ -19,9 +19,9 @@ const DOOR_INTERIOR = color(0x45494a);
 const HEAD = color(0xffedcb), TAIL = color(0xf12827), MARKER = color(0xf4a232);
 
 export const TRAM_SECTIONS = [
-  { length: 9.4, doors: [2.36, -3.25], wheels: [0.47], front: true },
-  { length: 10.34, doors: [0], wheels: [2.79, -2.79] },
-  { length: 9.4, doors: [3.25, -2.36], wheels: [-0.47], rear: true },
+  { ...ARTICULATED_CABIN[0], wheels: [0.47], front: true },
+  { ...ARTICULATED_CABIN[1], wheels: [2.79, -2.79] },
+  { ...ARTICULATED_CABIN[2], wheels: [-0.47], rear: true },
 ];
 export const BUS_SECTION = {
   length: 12, doors: [4.69, -0.63, -4.23], wheels: [3.3, -2.6], front: true, rear: true,
@@ -79,7 +79,7 @@ function panel(parts, x, lo, hi, y0, y1, paint, side) {
   face(parts, [[x, y0, lo], [x, y0, hi], [x, y1, hi], [x, y1, lo]], paint, [side, 0, 0]);
 }
 
-function sideBody(parts, style, section, lo, hi, tram) {
+function sideBody(parts, style, section, lo, hi, tram, panes) {
   const { halfWidth: w, bottom, stripe, sill, top, paint, trim, glass, doorWidth, doorBottom, doorTop } = style;
   for (const side of [-1, 1]) {
     const x = side * w, surface = x + side * 0.003;
@@ -91,7 +91,10 @@ function sideBody(parts, style, section, lo, hi, tram) {
       const door = side === -1 && gaps.some((g) => g.door && Math.abs(g.z - center) < g.r);
       const arch = gaps.some((g) => !g.door && Math.abs(g.z - center) < g.r);
       const y0 = arch ? 0.98 : bottom;
-      panel(parts, x, a, b, Math.max(y0, door ? doorTop : 0), top, DARK, side);
+      if (panes && !door) {
+        parts.box(0.06, sill - y0, b - a, x, (sill + y0) / 2, center, trim);
+        parts.box(0.06, 0.28, b - a, x, top - 0.14, center, trim);
+      } else panel(parts, x, a, b, Math.max(y0, door ? doorTop : 0), top, DARK, side);
       if (!door) {
         panel(parts, surface, a, b, y0, stripe, paint, side);
         panel(parts, surface, a, b, Math.max(y0, stripe), sill, trim, side);
@@ -108,6 +111,11 @@ function sideBody(parts, style, section, lo, hi, tram) {
       const dz = (a - from) / n;
       for (let k = 0; k < n && dz > 0.22; k++) {
         const z0 = from + dz * k + 0.042, z1 = z0 + dz - 0.084;
+        if (panes) {
+          parts.box(0.06, top - sill, 0.084, x, (top + sill) / 2, z0 - 0.042, DARK);
+          panel(panes, x, z0, z1, sill, top - 0.26, WHITE, side);
+          continue;
+        }
         panel(parts, surface, z0, z1, sill + 0.052, top - 0.27, glass, side);
         panel(parts, surface + side * 0.002, z0 + 0.04, z1 - 0.04, top - 0.39, top - 0.31, REFLECTION, side);
       }
@@ -135,9 +143,9 @@ function sideBody(parts, style, section, lo, hi, tram) {
       if (side < 0) {
         // Za skutečným otvorem v boku je podlaha, ostění a madlo.
         const a = z - doorWidth / 2, b = z + doorWidth / 2;
-        panel(parts, -0.30, a - 0.12, b + 0.12, doorBottom, doorTop, DOOR_INTERIOR, side);
+        if (!panes) panel(parts, -0.30, a - 0.12, b + 0.12, doorBottom, doorTop, DOOR_INTERIOR, side);
         parts.box(w - 0.25, 0.045, doorWidth, -(w + 0.25) / 2, doorBottom - 0.024, z, METAL);
-        for (const edge of [a, b]) parts.box(w - 0.25, doorTop - doorBottom, 0.035, -(w + 0.25) / 2, (doorTop + doorBottom) / 2, edge, DARK);
+        if (!panes) for (const edge of [a, b]) parts.box(w - 0.25, doorTop - doorBottom, 0.035, -(w + 0.25) / 2, (doorTop + doorBottom) / 2, edge, DARK);
         parts.box(0.042, 1.58, 0.042, -0.88, 1.17, z + doorWidth * 0.39, YELLOW);
       } else if (tram) {
         for (const dz of [-1, 1]) doorLeaf(parts, style, 1, z + dz * doorWidth / 4);
@@ -391,25 +399,45 @@ function pantograph(parts, base, z, paint) {
   parts.box(1.54, 0.04, 0.21, 0, base + 1.54, z - 0.21, DARK, 0.94, 0.9);
 }
 
-function makeSection(section, style) {
-  if (!geometry.has(section)) {
+const interiorGeometry = new Map();
+function makeSection(section, style, interior = false) {
+  const cache = interior ? interiorGeometry : geometry;
+  if (!cache.has(section)) {
+    const panes = interior ? new Parts() : null;
     const body = new Parts(SURFACE.transitPaint, transitSurfaces), lamps = new Parts();
     const half = section.length / 2;
     const lo = -half + (section.rear ? halfCab(style, -1) : 0.26);
     const hi = half - (section.front ? halfCab(style, 1) : 0.26);
-    sideBody(body, style, section, lo, hi, style === TRAM);
+    sideBody(body, style, section, lo, hi, style === TRAM, panes);
+    if (interior) {
+      body.box(2.42, 0.11, hi - lo, 0, 0.42, (lo + hi) / 2, floorPaint);
+      for (const { x, z } of section.seats) {
+        body.box(0.16, 0.39, 0.19, x, 0.67, z, METAL);
+        body.box(0.53, 0.12, 0.5, x, 0.91, z, seatPaint);
+        body.box(0.53, 0.48, 0.09, x, 1.19, z - 0.22, seatPaint);
+      }
+      for (const z of section.doors) {
+        lamps.box(0.18, 0.04, 1.05, 0, style.top - 0.025, z, WHITE);
+        body.box(0.04, 1.95, 0.04, 0.64, 1.45, z, YELLOW);
+      }
+      if (section.front || section.rear) {
+        const z = section.front ? section.max + 0.24 : section.min - 0.24;
+        body.box(2.42, 2.4, 0.07, 0, 1.64, z, DOOR_INTERIOR);
+      }
+    }
     for (const [side, hasCab, z] of [[1, section.front, hi], [-1, section.rear, lo]]) {
       if (hasCab) cab(body, lamps, style, half, side);
-      else body.box(2.41, 2.95, 0.08, 0, 1.75, z - side * 0.04, RUBBER);
+      else if (!interior) body.box(2.41, 2.95, 0.08, 0, 1.75, z - side * 0.04, RUBBER);
     }
     equipment(body, style, section);
-    geometry.set(section, [shade(body.geometry()), lamps.p.length ? lamps.geometry() : null]);
+    cache.set(section, [shade(body.geometry()), lamps.p.length ? lamps.geometry() : null, panes?.geometry()]);
   }
-  const [body, lamps] = geometry.get(section);
+  const [body, lamps, panes] = cache.get(section);
   const group = new THREE.Group();
   const shell = new THREE.Mesh(body, shellMat);
   shell.castShadow = true;
   group.add(shell);
+  if (panes) group.add(new THREE.Mesh(panes, windowMat));
   if (lamps) group.add(new THREE.Mesh(lamps, lampMat));
   if (section.front) {
     group.userData.sign = style === TRAM
@@ -436,7 +464,7 @@ function mountDoors(group, geometry, centers, width, leaves) {
   mesh.boundingSphere.radius += width / 2;
 }
 
-export const makeTramSection = (section) => makeSection(section, TRAM);
+export const makeTramSection = (section, interior = false) => makeSection(section, TRAM, interior);
 export const makeTrolleybus = () => makeSection(TROLLEY_SECTION, TROLLEY);
 export const makeSorBus = () => makeSection(BUS_SECTION, BUS);
 
@@ -670,8 +698,21 @@ export function makeTatraCoupler() {
   return new THREE.Mesh(couplerGeometry, couplerMaterial);
 }
 
-let bellows;
-export function makeTramJoint() {
+let openBellows, bellows;
+export function makeTramJoint(interior = false) {
+  if (interior) {
+    if (!openBellows) {
+      const p = new Parts(SURFACE.rubber);
+      for (const x of [-1.04, 1.04]) {
+        p.box(0.12, 2.52, 1, x, -0.05, 0, RUBBER);
+        for (let i = -3; i <= 3; i++) p.box(0.16, 2.52, 0.045, x, -0.05, i * 0.13, DARK);
+      }
+      p.box(2.16, 0.12, 1, 0, -1.335, 0, METAL);
+      p.box(2.16, 0.15, 1, 0, 1.12, 0, RUBBER);
+      openBellows = p.geometry();
+    }
+    return new THREE.Mesh(openBellows, shellMat);
+  }
   if (!bellows) {
     const p = new Parts(SURFACE.rubber);
     p.box(2.19, 2.71, 1, 0, 0, 0, RUBBER, 0.94);

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { boardingDoor, CABIN_DOORS, TramCabin } from '../src/game/tram-cabin.js';
+import { ARTICULATED_CABIN, boardingDoor, CABIN_DOORS, TramCabin } from '../src/game/tram-cabin.js';
 
 test('nástup připouští jen pravou stranu a otvor konkrétních dveří', () => {
   for (const z of CABIN_DOORS) {
@@ -35,4 +35,26 @@ test('u sedadla lze sedět i vstát na původním místě v uličce', () => {
   assert.equal(cabin.action, 'Vstát');
   assert.equal(cabin.x, 0.1);
   assert.equal(cabin.z, 2.6);
+});
+
+test('ulička spojuje tři články oběma směry a drží cestujícího uvnitř měchu', () => {
+  const cabin = new TramCabin(2.36, {}, ARTICULATED_CABIN);
+  cabin.x = 0;
+  function walk(steps, forward) {
+    for (let i = 0; i < steps; i++) cabin.walk(1 / 60, 0, forward);
+  }
+  walk(270, 1);
+  assert.equal(cabin.section, 1);
+  assert.ok(cabin.z > 4 && cabin.z < 4.5);
+  walk(650, 1);
+  assert.equal(cabin.section, 2);
+  assert.ok(cabin.z >= -3.05 && cabin.z < -3);
+  walk(1100, -1);
+  assert.equal(cabin.section, 0);
+  assert.ok(cabin.z > 3 && cabin.z <= 3.05);
+  cabin.z = -3.8;
+  cabin.x = 0.94;
+  walk(120, 1);
+  assert.equal(cabin.section, 0);
+  assert.ok(cabin.z > -4);
 });
