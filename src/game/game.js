@@ -1,4 +1,4 @@
-import { TramCabin } from './tram-cabin.js';
+import { PILOT_TRIP, TramCabin } from './tram-cabin.js';
 import { arrestDestination } from './police-stations.js';
 import { wheelTrail } from '../fx/wheel-trails.js';
 import { NightLights } from '../world/night-lights.js';
@@ -632,6 +632,28 @@ export class Game {
     this.audio.door(h);
   }
 
+  startTramRide() {
+    if (this.cabin) return;
+    if (this.jobs.job || this.shifts.active || this.activities.active || this.mode === 'bike') {
+      return 'Pro jízdu tramvají nejdřív ukonči rozjetou aktivitu nebo vrať kolo.';
+    }
+    const table = this.transit.timetable, date = '2026-11-09', day = parseDay(date);
+    const event = table.events(day).find(e => e.day === day && e.trip.id === PILOT_TRIP);
+    const index = event?.trip.stops.findIndex(s => table.stops[s.stop][3] === '54717/1');
+    if (index == null || index < 0) return 'V jízdním řádu chybí průchozí spoj na náměstí Republiky.';
+
+    const [, x, z] = table.stops[event.trip.stops[index].stop];
+    if (this.ride) this._alight(true);
+    this._toFoot(x, z);
+    this.setClock(date, event.trip.times[2 * index + 1] / HOUR_SECONDS);
+    const vehicle = this.transit.placeAtStop(event, index);
+    const door = this.transit.exitPoint(vehicle, {});
+    this.player.place(door.x, door.z, vehicle.meshes[0].position.y);
+    this._board(vehicle);
+    this.cabin.x = 0;
+    this.promptTimer = 0;
+  }
+
   _board(v) {
     if (v.pilot && !this.shifts.active) {
       const p = this.player, door = v.cabinDoorAt(p.x, p.z);
@@ -724,7 +746,10 @@ export class Game {
     const h = this._nearestHeli();
     if (h) return { label: 'Nasednout do vrtulníku', run: () => this._enterHeli(h) };
     const v = this.transit.boardable(p.x, p.z, p.y);
-    if (v) return { label: `Nastoupit · ${v.pilot ? 'průchozí vůz · ' : ''}${TRANSIT_NAME[v.route.type]} ${v.route.ref} → ${v.destination}`, run: () => this._board(v) };
+    if (v) {
+      const view = v.pilot ? 'průchozí vůz · ' : v.route.type === 'tram' && v.route.ref === '1' ? 'vnější pohled · ' : '';
+      return { label: `Nastoupit · ${view}${TRANSIT_NAME[v.route.type]} ${v.route.ref} → ${v.destination}`, run: () => this._board(v) };
+    }
     const car = this.vehicles.nearestEnterable(p.x, p.z, p.y);
     return car ? {
       label: `${car.mode === 'parked' || car.mode === 'loose' ? 'Nastoupit' : 'Sebrat auto'} · ${car.type.name}`,
@@ -1087,12 +1112,15 @@ export class Game {
     if (this.clock.followsPrague) this.clock.setPrague();
     else this.clock.tick(elapsed);
     const clockAdvance = this.clock.now - previousTime;
+    // Při prvním pohledu z vozu může příprava obrazu trvat několik sekund.
+    // Hodiny za tu dobu běží dál, cestující ale pořád patří ke stejnému spoji.
+    const expectedAdvance = this.cabin ? elapsed : dt;
     const jump = input.pressed.has('time');
     if (jump && this.shifts.active) this.hud.toast('Během směny platí její herní rozpis.');
     if (jump && !this.shifts.active) {
       this.clock.setTime(this.clock.now + 3 * HOUR_SECONDS);
       this.syncClock(true);
-    } else if (!this.shifts.active && (clockAdvance < 0 || clockAdvance > dt + 2)) {
+    } else if (!this.shifts.active && (clockAdvance < 0 || clockAdvance > expectedAdvance + 2)) {
       this.syncClock(true);
     } else {
       this.envTimer -= dt;

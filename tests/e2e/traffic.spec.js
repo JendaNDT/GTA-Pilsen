@@ -603,7 +603,7 @@ test('E21 – řidič u dlouho stojící MHD počká na zelenou a použije voln�
   const result = await page.evaluate(() => {
     const { vehicles, world, transit, player, clock } = __game, t = world.traffic;
     const tramEvent = transit.timetable.events(clock.day).find(event => event.trip.route.type === 'tram');
-    const tram = transit.takeShift(tramEvent, 0);
+    const tram = transit.placeAtStop(tramEvent, 0);
     const footprintTime = (seconds, doorsOpen, speed) => {
       tram.doorsOpen = doorsOpen;
       tram.v = speed;

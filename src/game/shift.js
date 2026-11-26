@@ -71,7 +71,7 @@ export class Shifts {
     const at = g._clearSpot(start.x, start.z, 0.5);
     g.player.place(at.x, at.z);
     g.syncClock(true);
-    run.vehicle = g.transit.takeShift(offer.event, start.i);
+    run.vehicle = g.transit.placeAtStop(offer.event, start.i);
     g._board(run.vehicle);
     g.placeTimer = g.promptTimer = 0;
     g.save();

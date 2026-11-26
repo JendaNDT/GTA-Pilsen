@@ -293,13 +293,13 @@ async function boot() {
     perf?.reset();
     game.audio.start(); game.audio.resume();
     if (firstPlay) {
-      if (initialCamera) {
+      if (initialCamera && !game.cabin) {
         game.camera.position.copy(initialCamera.position);
         game.camera.quaternion.copy(initialCamera.rotation);
         game.postfx?.resetHistory();
       }
       firstPlay = false;
-      if (!game.hasSave && !game.shifts.active) {
+      if (!game.hasSave && !game.shifts.active && !game.cabin) {
         game.hud.toast('Vítej v Plzni! Stojíš na náměstí Republiky.', 'big', 5000);
         setTimeout(() => game.hud.toast(IS_TOUCH ? 'Tlačítkem F nastoupíš do auta, ✉ ti dá zakázku.' : 'Klávesou F nastoupíš do auta, J ti dá zakázku, M otevře mapu.', '', 7000), 1500);
       } else if (game.activities.interrupted) {
@@ -347,6 +347,14 @@ async function boot() {
     });
   }
   $('btn-play').addEventListener('click', play);
+  $('btn-tram').addEventListener('click', () => {
+    const error = game.startTramRide();
+    if (error) { $('save-status').textContent = error; return; }
+    play();
+    game._updateCamera(0);
+    game.hud.toast(IS_TOUCH ? 'Páčkou projdi uličkou. U sedadla klepni na akci.'
+      : 'Jsi v prvním voze jedničky. Klávesou W projdi uličkou, u sedadla stiskni F.');
+  });
   // Celá obrazovka: po kliknutí na Hrát (volba v nastavení) a tlačítkem ⛶ ve hře.
   const fullscreenButton = $('btn-fullscreen'), fullscreenChoice = $('fullscreen-play');
   const supported = fullscreenSupported();

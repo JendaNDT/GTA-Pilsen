@@ -1,5 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 import { expect, test } from '@playwright/test';
+import { gameUrl } from './game-url.js';
 import { action, approach, boot } from './transit-steps.js';
 import { waitForGame } from './ready.js';
 
@@ -103,6 +104,8 @@ test('E59 – přerušení jízdy vrací cestujícího na poslední nástupišt�
     await action(page);
     const platform = await page.evaluate(() => {
       const g = __game, v = g.ride;
+      g.update(0.05, 3);
+      if (g.ride !== v) throw new Error('Pomalý snímek ukončil jízdu.');
       for (let i = 0; i < 2000 && v.s < v.stops[g.cabin.stop][0] + 50; i++) window.__advanceTransit();
       if (v.v <= 0 || !g.save()) throw new Error('Ověření vyžaduje uložení za jízdy.');
       return g.cabin.platform;
@@ -188,4 +191,30 @@ test('E59 – hledání spoje a výstup v přestupním uzlu Náměstí Republiky
   await action(page);
   await expect(page.locator('#stop-transfer')).toContainText('Přestup');
   expect(await page.evaluate(() => __game.mode)).toBe('foot');
+});
+
+test('E59 – z hlavní nabídky přímo do uličky bez nastavování data a hledání spoje', async ({ page }, info) => {
+  await page.goto(gameUrl('/?quality=low'));
+  await page.getByRole('button', { name: 'Nastoupit do průchozí tramvaje' }).click();
+  await expect(page.locator('#vehname')).toContainText('tramvaj 1 → Bolevec');
+  await page.keyboard.down('w');
+  try {
+    await expect(page.locator('#prompt')).toContainText('Sednout si');
+  } finally {
+    await page.keyboard.up('w');
+  }
+  await page.keyboard.press('f');
+  await expect(page.locator('#prompt')).toContainText('Vstát');
+  await info.attach('Sedadlo po nástupu z nabídky', { body: await page.screenshot(), contentType: 'image/png' });
+});
+
+test('E59 – z vnějšího pohledu lze v pauze přejít do správného vozu', async ({ page }) => {
+  await boot(page, 'quality=low');
+  expect((await approach(page, '686547', 'U Práce')).boardable).toBe(true);
+  await action(page);
+  expect(await page.evaluate(() => __game.mode === 'transit' && !__game.cabin)).toBe(true);
+  await page.locator('#btn-menu').click();
+  await page.getByRole('button', { name: 'Nastoupit do průchozí tramvaje' }).click();
+  expect(await page.evaluate(() => [__game.ride.event.trip.id, __game.cabin.x])).toEqual(['685462', 0]);
+  await expect(page.locator('#vehname')).toContainText('tramvaj 1 → Bolevec');
 });

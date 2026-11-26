@@ -1,5 +1,7 @@
 # E59 · První průchozí vůz linky 1
 
+Po vyzkoušení autorem přibyl přímý nástup do uličky z hlavní nabídky i pauzy. Ověřena je také cesta od označníku a přechod z vnějšího pohledu jiné tramvaje. Delší snímek při vykreslení interiéru už hráče nevysadí. Po této opravě prošlo sestavení, 400 testů JavaScriptu a deset cílených prohlížečových zkoušek včetně jízdy přes dvě zastávky. [Postup po opravě](../E59.md#přímý-nástup-z-nabídky)
+
 Dokončeno na herní revizi `f493782` z větve `main` na `1fc8112`. Cestující nastoupil předními dveřmi Tatry na náměstí Republiky, za jízdy došel k sedadlu, projel Hlavní poštou a vystoupil prostředními dveřmi Pod Záhorskem. Ověřeny jsou také dotykové ovládání, výstup v přestupním uzlu, konečná a návrat na nástupiště po přerušení.
 
 Prošlo sestavení, 400 testů JavaScriptu, 34 testů Pythonu s jedním přeskočeným případem a 34 cílených zkoušek v Chromiu. V tramvaji na nízkou předvolbu vyšly všechny čtyři časové rozpočty. Otevřenou otázkou je příčina jedné prodlevy v náhodném provozu před Hlavní poštou. [Zadání](E59.md) · [Protokol, snímky a ovládání](../E59.md)

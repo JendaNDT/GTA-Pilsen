@@ -55,7 +55,7 @@ test('E17 – pohyb dveří tramvaje se propíše do obrazu pro TRAA', { tag: ['
     const { __game: game } = window;
     const event = game.transit.timetable.events(game.clock.day).find(({ trip }) => trip.id === '686547');
     const index = event.trip.stops.findIndex(({ target }) => target[1] === 'Náměstí Republiky');
-    const group = game.transit.takeShift(event, index).meshes[0];
+    const group = game.transit.placeAtStop(event, index).meshes[0];
     const { mesh, centers } = group.userData.doors;
     const point = group.localToWorld(group.position.clone().set(-1.26, 1.5, centers[0]));
     const camera = group.localToWorld(group.position.clone().set(-4, 1.5, centers[0]));

@@ -209,7 +209,7 @@ export class TransitManager {
     }
   }
 
-  takeShift(event, index) {
+  placeAtStop(event, index) {
     let v = this.active.get(event.key);
     if (!v) {
       v = new TransitVehicle(event, { s: event.trip.stops[index].target[0], index, wait: STOP_DWELL });
