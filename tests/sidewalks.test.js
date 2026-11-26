@@ -7,7 +7,7 @@ globalThis.location = { search: '' };
 const { RC, RF } = await import('../src/config.js');
 const {
   CURB_HEIGHT, CURB_WIDTH, SIDEWALK_CLASSES, SIDEWALK_RAISED, SIDEWALK_SURF, sidewalkFacing, sidewalkHeight, sidewalkProfile, sidewalkQuads,
-  sidewalkSections, sidewalkWidth, wallDistance,
+  sidewalkSections, sidewalkTramRange, sidewalkWidth, wallDistance,
 } = await import('../src/world/sidewalks.js');
 const { SURF } = await import('../src/world/world.js');
 
@@ -110,4 +110,35 @@ test('řezy chodníku: obě strany, konec u domu a mezera v ústí jiné silnice
   assert.ok(Math.abs(at(right, 20).profile.curb - (10.05 + CURB_HEIGHT)) < 1e-9);
   assert.ok(at(right, 20).cz > 2.99);
   assert.ok(CURB_WIDTH < at(right, 20).width);
+});
+
+test('obrubník ustoupí za tramvajové lože a při kolmém křížení ponechá průchod', () => {
+  const track = (ax, az, bx, bz, y = null) => ({
+    rail: { pts: [ax, az, bx, bz], flags: 0, y },
+    minX: Math.min(ax, bx), minZ: Math.min(az, bz), maxX: Math.max(ax, bx), maxZ: Math.max(az, bz),
+  });
+  const parallel = track(30, 4.4, -10, 4.4);
+  const beside = sidewalkTramRange([parallel], 0, 3, 0, 1, 2.5);
+  assert.ok(Math.abs(beside.start - 2.75) < 1e-9);
+  assert.equal(beside.width, 2.5);
+  const outside = sidewalkTramRange([parallel, track(-10, 8.2, 30, 8.2)], 0, 3, 0, 1, 2.5);
+  assert.ok(Math.abs(outside.width - 1.1) < 1e-9);
+  assert.deepEqual(sidewalkTramRange([parallel], 0, -3, 0, -1, 2.5), { start: 0, width: 2.5 });
+
+  const crossing = track(0, 0, 0, 50);
+  assert.equal(sidewalkTramRange([crossing], 0, 3, 0, 1, 2.5).width, 0);
+  assert.deepEqual(sidewalkTramRange([crossing], 2, 3, 0, 1, 2.5), { start: 0, width: 2.5 });
+  assert.deepEqual(sidewalkTramRange([track(-10, 4.4, 30, 4.4, [10, 10])], 0, 3, 0, 1, 2.5), { start: 0, width: 2.5 });
+
+  const world = {
+    rOff: [0, 2], rpx: [0, 20], rpz: [0, 0], r: { w: [6] },
+    tramTracks: [parallel], sidewalks: [2.5],
+    roadSurfaceY: () => 10.05, heightAt: () => 10,
+    forWalls: (_x0, _z0, _x1, _z1, visit) => visit(0, 7.5, 20, 7.5),
+    sidewalkExcluded: () => false, insideOtherCarriageway: () => false,
+    insideSidewalkOf: () => false, isWater: () => false,
+  };
+  const [left, right] = sidewalkSections(world, 0, 0, 1);
+  assert.ok(left.every(s => s.valid && s.cz === -3 && s.width === 2.5));
+  assert.ok(right.every(s => s.valid && Math.abs(s.cz - 5.75) < 1e-9 && Math.abs(s.width - 1.75) < 1e-9));
 });

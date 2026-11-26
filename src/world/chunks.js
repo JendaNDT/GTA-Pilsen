@@ -37,7 +37,7 @@ import { SURFACE } from './material-table.js';
 import { Parts, getDetailMaterial } from '../entities/models.js';
 import { SURF } from './world.js';
 import { gradeBlend, gradeCross } from './road-grade.js';
-import { cornerSidewalkSections, sidewalkQuads, sidewalkSections, sidewalkWidth } from './sidewalks.js';
+import { cornerSidewalkSections, sidewalkQuads, sidewalkSections, sidewalkWidth, TRAM_BED_HALF_WIDTH } from './sidewalks.js';
 import { terrainCuts, TUNNEL_HEIGHT } from './tunnels.js';
 import { buildTrafficMeshes } from './traffic-meshes.js';
 import { detailRequestLimit, Heritage, pavingChunk } from './heritage.js';
@@ -942,7 +942,7 @@ function* buildRoads(world, ci, manager) {
   const tramBed = (ri) => {
     const D = railPath(ri);
     const covered = ORIGINAL_IMAGE ? null : Uint8Array.from({ length: D.n }, (_, k) => world.insideOtherCarriageway(-1, D.x[k], D.z[k]) ? 1 : 0);
-    ribbon(world, asphalt, D, 1.25, COL.tramBed, 0, 0.004, false, false, false, null, covered);
+    ribbon(world, asphalt, D, TRAM_BED_HALF_WIDTH, COL.tramBed, 0, 0.004, false, false, false, null, covered);
   };
   if (rails && !ORIGINAL_IMAGE) for (const ri of rails) {
     if (world.rails[ri].cls === 0) tramBed(ri);

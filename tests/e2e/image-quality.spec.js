@@ -116,3 +116,49 @@ test('nízká předvolba kreslí na počítači v plném rozlišení', async ({ 
   await page.waitForFunction(() => window.__ready);
   expect(await page.evaluate(() => window.__game.renderer.getPixelRatio())).toBe(0.75);
 });
+
+// V každém místě ležel bod na tramvajovém pásu dřív v ploše zvýšeného chodníku.
+const tramSidewalkSites = [
+  { name: 'Slovanská', tracks: [[754.05, 1107.71], [746.04, 1109.25]], walks: [[747.71, 1090.54], [735.59, 1097.56]] },
+  { name: 'Lidická', tracks: [[-166.75, -2364.31]], walks: [[-168.87, -2364.44]] },
+  { name: 'Skvrňanská', tracks: [[-1384.345, 140]], walks: [[-1382.33, 141.54]] },
+];
+
+for (const { name, tracks, walks } of tramSidewalkSites) {
+  test(`${name} – tramvajový pás zůstane volný a vedle něj je chodník`, async ({ page }) => {
+    await page.goto(gameUrl('/?debug&adapt=0&quality=high&traffic=0&view=450'));
+    await page.waitForFunction(() => window.__ready);
+    await buildAround(page, tracks[0]);
+    const coverage = await page.evaluate(({ tracks, walks }) => {
+      const { chunks, world } = window.__game;
+      const covers = (mesh, x, z) => {
+        if (!mesh?.visible) return false;
+        const { index, attributes: { position } } = mesh.geometry;
+        for (let t = 0; t < (index?.count ?? position.count); t += 3) {
+          const a = index?.getX(t) ?? t, b = index?.getX(t + 1) ?? t + 1, c = index?.getX(t + 2) ?? t + 2;
+          const ax = position.getX(a), az = position.getZ(a);
+          const bx = position.getX(b), bz = position.getZ(b);
+          const cx = position.getX(c), cz = position.getZ(c);
+          const det = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
+          if (Math.abs(det) < 1e-9) continue;
+          const u = ((bz - cz) * (x - cx) + (cx - bx) * (z - cz)) / det;
+          const v = ((cz - az) * (x - cx) + (ax - cx) * (z - cz)) / det;
+          if (u >= 0 && v >= 0 && u + v <= 1) return true;
+        }
+        return false;
+      };
+      const tiles = [...chunks.chunks.values()];
+      const sidewalkAt = ([x, z]) => tiles.some(ch => covers(ch.sidewalks, x, z));
+      return {
+        paved: tracks.map(([x, z]) => tiles.some(ch => covers(ch.asphalt, x, z))),
+        blocked: tracks.map(sidewalkAt),
+        raised: tracks.map(([x, z]) => Number.isFinite(world.sidewalkY(x, z))),
+        walks: walks.map(sidewalkAt),
+      };
+    }, { tracks, walks });
+    expect(coverage.paved).toEqual(tracks.map(() => true));
+    expect(coverage.blocked).toEqual(tracks.map(() => false));
+    expect(coverage.raised).toEqual(tracks.map(() => false));
+    expect(coverage.walks).toEqual(walks.map(() => true));
+  });
+}

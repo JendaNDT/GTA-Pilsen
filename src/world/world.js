@@ -24,7 +24,7 @@ import { surveyedApproaches, approachHeight } from './underpasses.js';
 import { prepareRondel } from './rondel.js';
 import { buildRoadGrades, corridorWeight, gradeBlend, gradeCross, gradeHeight, gradeShore, gradeSurface, shoreLift, CORRIDOR_FALLOFF, CORRIDOR_MARGIN,
   SHORE_BACK, SHORE_FADE, SHORE_FILL, SHORE_PLATEAU, SHORE_REACH, SHORE_WATER } from './road-grade.js';
-import { sidewalkHeight, sidewalkPriority, sidewalkProfile } from './sidewalks.js';
+import { MAX_TRAM_SIDEWALK_SHIFT, MIN_SIDEWALK, sidewalkHeight, sidewalkPriority, sidewalkProfile, sidewalkTramRange, wallDistance } from './sidewalks.js';
 import { armCut, cornerOverlap, cornerPolygon, findCorners, insidePolygon, shrinkPolygon } from './corners.js';
 
 function overlapsPark(bounds,x0,z0,x1,z1) {
@@ -1569,7 +1569,9 @@ export class World {
     const widths = this.sidewalks;
     if (!widths || this.sidewalkExcluded(x, z)) return NaN;
     const cx = Math.floor((x - this.minX) / COLL_CELL), cz = Math.floor((z - this.minZ) / COLL_CELL);
-    let best = Infinity, road = -1, seg = 0, along = 0, qx = 0, qz = 0;
+    let best = Infinity, road = -1, seg = 0, along = 0;
+    let curbX = 0, curbZ = 0, acrossX = 0, acrossZ = 0, outer = 0, shifted = false;
+    const walls = (x0, z0, x1, z1, visit) => this.forWalls(x0, z0, x1, z1, visit);
     for (let row = Math.max(0, cz - 1); row <= Math.min(this.grows - 1, cz + 1); row++) {
       for (let col = Math.max(0, cx - 1); col <= Math.min(this.gcols - 1, cx + 1); col++) {
         const cell = row * this.gcols + col;
@@ -1580,16 +1582,25 @@ export class World {
           if (!l2) continue;
           const t = Math.max(0, Math.min(1, ((x - ax) * ex + (z - az) * ez) / l2));
           const px = ax + ex * t, pz = az + ez * t, d = Math.hypot(px - x, pz - z), hw = this.r.w[r] / 2;
-          if (d < hw || d > hw + widths[r] || d - hw >= best) continue;
-          best = d - hw; road = r; seg = k; along = t; qx = px; qz = pz;
+          const width = widths[r];
+          if (d < hw || d > hw + width + MAX_TRAM_SIDEWALK_SHIFT) continue;
+          const ox = (x - px) / d, oz = (z - pz) / d;
+          const x0 = px + ox * hw, z0 = pz + oz * hw;
+          const tram = sidewalkTramRange(this.tramTracks, x0, z0, ox, oz, width);
+          const offset = d - hw - tram.start;
+          if (offset < 0 || offset > tram.width || offset >= best) continue;
+          const clear = tram.start ? wallDistance(x0, z0, ox, oz, tram.start + tram.width, walls) - tram.start : tram.width;
+          if (clear < MIN_SIDEWALK || offset > clear) continue;
+          best = offset; road = r; seg = k; along = t;
+          curbX = x0 + ox * tram.start; curbZ = z0 + oz * tram.start;
+          acrossX = ox; acrossZ = oz; outer = clear; shifted = tram.start > 0;
         }
       }
     }
     if (road < 0 || this.insideOtherCarriageway(road, x, z, 0)) return NaN;
-    const d = best + this.r.w[road] / 2, ox = (x - qx) / d, oz = (z - qz) / d, hw = this.r.w[road] / 2, width = widths[road];
-    const surface = this.roadSurfaceY(road, seg, along, qx + ox * hw, qz + oz * hw);
-    const terrain = this.heightAt(qx + ox * (hw + width), qz + oz * (hw + width)) + SURF;
-    return sidewalkHeight(sidewalkProfile(surface, terrain, width), width, best);
+    const surface = shifted ? this.heightAt(curbX, curbZ) + SURF : this.roadSurfaceY(road, seg, along, curbX, curbZ);
+    const terrain = this.heightAt(curbX + acrossX * outer, curbZ + acrossZ * outer) + SURF;
+    return sidewalkHeight(sidewalkProfile(surface, terrain, outer), outer, best);
   }
 
   /** Výška pro chodce: terén, mostovka nebo chodník, co je výš. */

@@ -11,6 +11,7 @@ export const SIDEWALK_RAISED = 2 | 4 | 128;   // most, tunel, společná deska
 
 /** Výška asfaltu nad terénem; shodná se SURF ve world.js (hlídá test). */
 export const SIDEWALK_SURF = 0.05;
+export const TRAM_BED_HALF_WIDTH = 1.25;
 
 export const CURB_HEIGHT = 0.10;        // obrubník nad asfaltem (m)
 export const CURB_WIDTH = 0.15;         // šířka žulového obrubníku (m)
@@ -19,6 +20,9 @@ export const CURB_SLOPE = 0.06;         // líc je zkosený, auto přes obrubní
 export const SIDEWALK_STEP = 8;         // nejdelší rozteč příčných řezů podél silnice (m)
 export const MIN_SIDEWALK = 0.6;        // užší zbytek chodníku u domu se nekreslí (m)
 export const SIDEWALK_MIN_RUN = 3;      // kratší souvislý kus chodníku (zbytek v ostrůvku) se nekreslí (m)
+const TRAM_CLEARANCE = TRAM_BED_HALF_WIDTH + 0.1;
+export const MAX_TRAM_SIDEWALK_SHIFT = 4;
+const TRAM_SIDEWALK_STEP = 2;
 const MAX_RISE = 0.08, MAX_FALL = 0.06; // největší příčný sklon chodníku nahoru a dolů
 
 /**
@@ -97,6 +101,56 @@ export function wallDistance(x, z, ox, oz, max, walls) {
   return best;
 }
 
+function tramTrackNear(track, x0, z0, x1, z1) {
+  const { rail, minX, minZ, maxX, maxZ } = track;
+  return !rail.y && !(rail.flags & SIDEWALK_RAISED) &&
+    maxX + TRAM_CLEARANCE >= x0 && minX - TRAM_CLEARANCE <= x1 &&
+    maxZ + TRAM_CLEARANCE >= z0 && minZ - TRAM_CLEARANCE <= z1;
+}
+
+/** Rozsah řezu chodníku od původního obrubníku. Při překryvu začíná až za tramvajovým pásem. */
+export function sidewalkTramRange(tracks, x, z, ox, oz, width) {
+  let start = 0, nextTrack = Infinity;
+  const reach = width + MAX_TRAM_SIDEWALK_SHIFT;
+  const x1 = x + ox * reach, z1 = z + oz * reach;
+  const minX = Math.min(x, x1), maxX = Math.max(x, x1), minZ = Math.min(z, z1), maxZ = Math.max(z, z1);
+  for (const track of tracks ?? []) {
+    if (!tramTrackNear(track, minX, minZ, maxX, maxZ)) continue;
+    const p = track.rail.pts;
+    for (let k = 2; k < p.length; k += 2) {
+      // V souřadnicích řezu je chodník na vodorovné ose a pás je úsečka rozšířená o lože.
+      const ax = (p[k - 2] - x) * ox + (p[k - 1] - z) * oz;
+      const az = (p[k - 1] - z) * ox - (p[k - 2] - x) * oz;
+      const bx = (p[k] - x) * ox + (p[k + 1] - z) * oz;
+      const bz = (p[k + 1] - z) * ox - (p[k] - x) * oz;
+      if (Math.min(az, bz) > TRAM_CLEARANCE || Math.max(az, bz) < -TRAM_CLEARANCE) continue;
+      let lo = Infinity, hi = -Infinity;
+      for (const [px, pz] of [[ax, az], [bx, bz]]) {
+        if (Math.abs(pz) > TRAM_CLEARANCE) continue;
+        const r = Math.sqrt(TRAM_CLEARANCE ** 2 - pz ** 2);
+        lo = Math.min(lo, px - r);
+        hi = Math.max(hi, px + r);
+      }
+      const dz = bz - az, dx = bx - ax;
+      if (Math.abs(dz) > 1e-8) {
+        const scale = TRAM_CLEARANCE / Math.hypot(dx, dz);
+        for (const side of [-1, 1]) {
+          const t = -(az + side * dx * scale) / dz;
+          if (t < 0 || t > 1) continue;
+          const edge = ax + dx * t - side * dz * scale;
+          lo = Math.min(lo, edge);
+          hi = Math.max(hi, edge);
+        }
+      }
+      if (hi > 0 && lo < width) start = Math.max(start, hi);
+      else if (lo >= width) nextTrack = Math.min(nextTrack, lo);
+    }
+  }
+  // Při šikmém křížení nebo souběhu více kolejí může na obrubník zbýt příliš málo místa.
+  if (start > MAX_TRAM_SIDEWALK_SHIFT) return { start: 0, width: 0 };
+  return { start, width: Math.max(0, Math.min(width, nextTrack - start)) };
+}
+
 /**
  * Spojí příčné řezy jedné strany chodníku do ploch. Řez: { valid, cx, cz (obrubník), ox, oz
  * (směr ven), width, road, profile, terrain }. quad(a, b, c, d, part) dostane rohy v pořadí
@@ -150,18 +204,29 @@ export function sidewalkSections(world, road, s, e, widths = world.sidewalks) {
   const width = widths?.[road] ?? 0;
   if (!width) return null;
   const a = world.rOff[road], b = world.rOff[road + 1] - 1;
-  const path = stationPath(world.rpx, world.rpz, s, e, a, b, SIDEWALK_STEP, world.sidewalkCuts?.get(road));
   const hw = world.r.w[road] / 2;
+  const extent = hw / 0.55 + width + MAX_TRAM_SIDEWALK_SHIFT;
+  let x0 = world.rpx[s], x1 = x0, z0 = world.rpz[s], z1 = z0;
+  for (let k = s + 1; k <= e; k++) {
+    x0 = Math.min(x0, world.rpx[k]); x1 = Math.max(x1, world.rpx[k]);
+    z0 = Math.min(z0, world.rpz[k]); z1 = Math.max(z1, world.rpz[k]);
+  }
+  const tracks = world.tramTracks?.filter(track => tramTrackNear(track, x0 - extent, z0 - extent, x1 + extent, z1 + extent));
+  const step = tracks?.length ? TRAM_SIDEWALK_STEP : SIDEWALK_STEP;
+  const path = stationPath(world.rpx, world.rpz, s, e, a, b, step, world.sidewalkCuts?.get(road));
   const walls = (x0, z0, x1, z1, visit) => world.forWalls(x0, z0, x1, z1, visit);
   const sides = [[], []];
   for (let i = 0; i < path.n; i++) {
     const n = pathNormal(path, i), nx = n.x, nz = n.z, scale = n.scale;
     for (let q = 0; q < 2; q++) {
       const side = q ? 1 : -1, ox = nx * side, oz = nz * side;
-      const cx = path.x[i] + ox * hw * scale, cz = path.z[i] + oz * hw * scale;
-      const w = wallDistance(cx, cz, ox, oz, width, walls);
+      const x = path.x[i] + ox * hw * scale, z = path.z[i] + oz * hw * scale;
+      const tram = tracks?.length ? sidewalkTramRange(tracks, x, z, ox, oz, width) : { start: 0, width };
+      const cx = x + tram.start * ox, cz = z + tram.start * oz;
+      const w = Math.max(0, wallDistance(x, z, ox, oz, tram.start + tram.width, walls) - tram.start);
       const ex = cx + ox * w, ez = cz + oz * w, mx = cx + ox * w * 0.5, mz = cz + oz * w * 0.5;
-      const surface = world.roadSurfaceY(road, path.k[i], path.t[i], cx, cz);
+      const surface = tram.start
+        ? world.heightAt(cx, cz) + SIDEWALK_SURF : world.roadSurfaceY(road, path.k[i], path.t[i], cx, cz);
       const terrain = world.heightAt(ex, ez) + SIDEWALK_SURF;
       const valid = w >= MIN_SIDEWALK && surface === surface &&
         !world.sidewalkExcluded(cx, cz) && !world.sidewalkExcluded(ex, ez) &&
@@ -200,11 +265,14 @@ export function cornerSidewalkSections(world, corner) {
   const width = Math.min(0.9 * corner.radius, Math.max(world.sidewalks?.[corner.a.road] ?? 0, world.sidewalks?.[corner.b.road] ?? 0));
   if (!(width >= MIN_SIDEWALK)) return null;
   const [cx0, cz0] = corner.center;
-  return corner.arc.map(([cx, cz]) => {
-    const l = Math.hypot(cx0 - cx, cz0 - cz) || 1, ox = (cx0 - cx) / l, oz = (cz0 - cz) / l;
-    const w = wallDistance(cx, cz, ox, oz, width, (x0, z0, x1, z1, visit) => world.forWalls(x0, z0, x1, z1, visit));
+  const walls = (x0, z0, x1, z1, visit) => world.forWalls(x0, z0, x1, z1, visit);
+  return corner.arc.map(([x, z]) => {
+    const l = Math.hypot(cx0 - x, cz0 - z) || 1, ox = (cx0 - x) / l, oz = (cz0 - z) / l;
+    const tram = sidewalkTramRange(world.tramTracks, x, z, ox, oz, width);
+    const cx = x + tram.start * ox, cz = z + tram.start * oz;
+    const w = Math.max(0, wallDistance(x, z, ox, oz, Math.min(width, tram.start + tram.width), walls) - tram.start);
     const ex = cx + ox * w, ez = cz + oz * w, mx = cx + ox * w * 0.5, mz = cz + oz * w * 0.5;
-    const surface = world.cornerY(corner, cx, cz);
+    const surface = tram.start ? world.heightAt(cx, cz) + SIDEWALK_SURF : world.cornerY(corner, cx, cz);
     const terrain = world.heightAt(ex, ez) + SIDEWALK_SURF;
     const valid = w >= MIN_SIDEWALK && surface === surface && !world.sidewalkExcluded(mx, mz) &&
       !world.insideOtherCarriageway(corner.a.road, mx, mz, 0, corner.b.road) && !world.isWater(mx, mz);
