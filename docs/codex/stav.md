@@ -1,10 +1,8 @@
 # E51 · Voda u Wilsonova mostu a u Ostende
 
-Rozpracováno nad revizí `5eeaae8`. [Zadání](E51.md)
+Dokončeno nad revizí `5eeaae8`. Radbuza unáší plavce a plovoucí auta, u Ostende hráč prochází mělčinou. Výpočet výšky hladiny sdílí grafika a fyzika. Při vstupu do vody kreslí střední a vyšší předvolba kruhy a tříšť.
 
-- Proud a brodění · hotovo. Prošlo 364 zkoušek JavaScriptu, produkční sestavení a 10 cílených zkoušek v Chromiu přes WebGL 2 a WebGPU.
-- Hladina, odrazy a reakce na vstup · hotovo. Prošlo 365 zkoušek JavaScriptu, sestavení a deset cílených zkoušek v Chromiu. Průplav proti proudu si ponechal stejnou trasu a výškové meze. Nová zkouška kontroluje i výšku suchého břehu u Ostende.
-- Snímky, měření a závěrečná zkouška · probíhá širší kontrola návazností a měření výkonu.
+Prošlo produkční sestavení, 365 testů JavaScriptu a 50 z 52 cílených zkoušek v Chromiu. Zbývající dvě zkoušky měří jas světlometů a stejný výsledek se opakoval i na E50. Obě jízdy a oba lety na nízkou kvalitu splnily v nové verzi rozpočty. Ve vysoké předvolbě u mostu dosáhl čas GPU 12,50 ms při cíli 12 ms. [Zadání](E51.md) · [Snímky, výsledky a postup vyzkoušení](../E51.md)
 
 # E50 · Lampy pod mostem Generála Pattona
 
