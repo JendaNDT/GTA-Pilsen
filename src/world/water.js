@@ -1,9 +1,10 @@
 import { DataTexture, LinearFilter } from 'three/webgpu';
 import { LC } from '../config.js';
 import { fillLandPolygon } from './terrain-classes.js';
+import { RADBUZA, waterCurrent, waterPilotAt, waterPilotWeight } from './water-profile.js';
 
 // Metry od břehu se počítají i v okolních dlaždicích, aby na jejich hraně nevznikla mělčina.
-export function waterField(land, polygons, lines, weirs, x, z, size = 256, pixels = 64) {
+export function waterField(land, polygons, lines, weirs, x, z, size = 256, pixels = 64, pilot = false) {
   const ids = polygons.filter((id) => land.cls[id] === LC.WATER);
   if (!ids.length) return null;
   const step = size / pixels,
@@ -85,6 +86,23 @@ export function waterField(land, polygons, lines, weirs, x, z, size = 256, pixel
         }
     }
   }
+  if (pilot) {
+    const current = {};
+    for (let r = 0; r < pixels; r++) for (let c = 0; c < pixels; c++) {
+      const source = (r + pad) * n + c + pad;
+      if (!body[source]) continue;
+      const px = x + (c + 0.5) * step, pz = z + (r + 0.5) * step;
+      const area = waterPilotAt(px, pz);
+      if (!area) continue;
+      waterCurrent(area, px, pz, depth[source], current);
+      const k = (r * pixels + c) * 4;
+      const keep = 1 - waterPilotWeight(area, px, pz);
+      output[k] = 128 + Math.round((output[k] - 128) * keep + 127 * current.vx);
+      output[k + 1] = 128 + Math.round((output[k + 1] - 128) * keep + 127 * current.vz);
+      // Jemnější pobřežní pás pro barvu mělčiny, beze změny kanálu pěny na jezech.
+      if (area !== RADBUZA) output[k + 2] = Math.round(255 * Math.min(1, Math.max(0, depth[source] - step / 2) / 12));
+    }
+  }
   for (const [wx, wz] of weirs) {
     if (wx < x - 12 || wx > x + size + 12 || wz < z - 12 || wz > z + size + 12) continue;
     for (let r = 0; r < pixels; r++)
@@ -102,7 +120,7 @@ export function waterField(land, polygons, lines, weirs, x, z, size = 256, pixel
   return output;
 }
 
-export function waterTile(manager, ci, x, z, size) {
+export function waterTile(manager, ci, x, z, size, pilot) {
   const { world: w, landIndex: index } = manager;
   if (!index.polys[ci]?.some((id) => w.l.cls[id] === LC.WATER)) return null;
   const polygons = new Set(),
@@ -122,7 +140,7 @@ export function waterTile(manager, ci, x, z, size) {
     manager.weirs,
     x,
     z,
-    size
+    size, 64, pilot
   );
   const tex = new DataTexture(field, 64, 64);
   tex.minFilter = tex.magFilter = LinearFilter;

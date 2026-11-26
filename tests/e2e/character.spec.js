@@ -183,18 +183,20 @@ test('E19 – hráč projde pod lávkou U Prazdroje a překoná šířku Wilsono
     const a = w.rOff[19], b = w.rOff[20] - 1;
     const dx = w.rpx[b] - w.rpx[a], dz = w.rpz[b] - w.rpz[a], length = Math.hypot(dx, dz);
     // Mimo středový pilíř, mezi oběma vnějšími líci mostu.
-    const river = { x: w.rpx[a] + dx / 3, z: w.rpz[a] + dz / 3, dx: -dz / length, dz: dx / length };
-    return [street, river].map(({ x, z, dx, dz }) => {
+    const river = { x: w.rpx[a] + dx / 3, z: w.rpz[a] + dz / 3, dx: -dz / length, dz: dx / length, level: 300.95 - w.baseElevation };
+    return [street, river].map(({ x, z, dx, dz, level = null }) => {
       for (let i = 0; i < 25; i++) colliders.update(x, z);
-      player.place(x - 12 * dx, z - 12 * dz);
+      player.place(x - 12 * dx, z - 12 * dz, level);
       let along = -12, terrainError = 0, swam = false;
       const deckHeight = w.deckAt(x, z, Infinity);
       let headroom = Infinity;
-      for (let i = 0; i < 960 && along < 12; i++) {
+      // Na vodě se plave proti proudu 0,55 m/s. Suchý průchod má nadále 16 sekund.
+      const steps = level === null ? 960 : 1440;
+      for (let i = 0; i < steps && along < 12; i++) {
         player.update(1 / 60, dx, dz, false, false);
         along = (player.x - x) * dx + (player.z - z) * dz;
         swam ||= player.swimming;
-        terrainError = Math.max(terrainError, Math.abs(player.y - w.heightAt(player.x, player.z)));
+        terrainError = Math.max(terrainError, Math.abs(player.y - (level ?? w.heightAt(player.x, player.z))));
         if (Math.abs(along) < 1) headroom = Math.min(headroom, deckHeight - player.y);
       }
       return { along, terrainError, swam, headroom };

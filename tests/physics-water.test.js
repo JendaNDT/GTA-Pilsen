@@ -5,7 +5,7 @@ import { PhysicsWorld } from '../src/physics/world.js';
 import { PlayerVehicle } from '../src/physics/vehicle.js';
 import { riverBed, Water } from '../src/physics/water.js';
 import { terrainTriangles } from '../src/physics/terrain.js';
-import { sampleWater, waterWalking } from '../src/world/water-profile.js';
+import { sampleWater, waterLevelAt, waterWalking } from '../src/world/water-profile.js';
 
 test('dno na kraji řeky navazuje na suchou vozovku v původní výšce', () => {
   const world = { water: [{ i: 0, x0: 2, z0: -4, x1: 18, z1: 12 }],
@@ -101,4 +101,16 @@ test('Jolt unáší plovoucí auto po řece a stojatá voda jej nechá na míst�
     assert.ok(river.car.z < 494.6, `Poloha po proudu ${river.car.z}`);
     assert.ok(Math.abs(pond.car.z + 3200) < 0.05);
   } finally { water.dispose(); river.dispose(); pond.dispose(); physics.dispose(); }
+});
+
+test('výška hladiny souhlasí pro plavce i geometrii a na hraně úseku přejde do terénu', () => {
+  const world = { improvedWater: true, baseElevation: 313.2, heightAt: () => -10,
+    nearestShore: () => null };
+  const center = waterLevelAt(world, 201, 495, -10);
+  assert.ok(Math.abs(center - (300.95 - 313.2)) < 1e-9);
+  assert.equal(center, sampleWater(world, 201, 495, {}).level);
+  assert.equal(waterLevelAt(world, 201, 534, -10), -10);
+  assert.equal(waterLevelAt({ ...world, nearestShore: () => [0, 0, 0] }, 201, 495, -10), -10);
+  assert.equal(waterLevelAt({ ...world, improvedWater: false }, 201, 495, -10), -10);
+  assert.ok(Math.abs(waterLevelAt(world, 1350, -3200, -10) - (311.4 - 313.2)) < 1e-9);
 });

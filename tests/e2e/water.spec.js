@@ -152,7 +152,7 @@ test('E51 – Radbuza plavce unáší a u Ostende se nejprve brodí', async ({ p
   await page.waitForFunction(() => window.__ready);
   const result = await page.evaluate(() => {
     window.__freeze(true);
-    const { player, colliders, world } = window.__game;
+    const { player, colliders, world, chunks } = window.__game;
     const place = (x, z, y) => {
       for (let i = 0; i < 25; i++) colliders.update(x, z);
       player.place(x, z, y);
@@ -181,7 +181,19 @@ test('E51 – Radbuza plavce unáší a u Ostende se nejprve brodí', async ({ p
     const lakeDrift = player.z - lakeZ;
     for (let i = 0; i < 1800 && world.isWater(player.x, player.z); i++) step(1, -1);
     step(20, -1);
-    return { drift, dry, waded, swam, lakeDrift, wadingSpeed,
+    const x = 1350, z = -3237;
+    for (let i = 0; i < 7; i++) chunks.update(x, z, 120, 60, player.y);
+    const tile = chunks.chunks.get(world.chunkIndex(x, z));
+    const ground = tile.group.children.find(mesh => mesh.material === tile.terrainMat);
+    const positions = ground.geometry.getAttribute('position');
+    let dryVertices = 0, dryError = 0;
+    for (let i = 0; i < positions.count; i++) {
+      const px = positions.getX(i), pz = positions.getZ(i);
+      if (Math.abs(px - x) > 15 || Math.abs(pz - z) > 12 || world.inWaterArea(px, pz) || world.onRoad(px, pz)) continue;
+      dryVertices++;
+      dryError = Math.max(dryError, Math.abs(positions.getY(i) - world.heightAt(px, pz)));
+    }
+    return { drift, dry, waded, swam, lakeDrift, wadingSpeed, dryVertices, dryError,
       bank: !player.swimming && !world.isWater(player.x, player.z) && player.grounded, z: player.z };
   });
   expect(result.drift[2], JSON.stringify(result)).toBe(true);
@@ -190,5 +202,59 @@ test('E51 – Radbuza plavce unáší a u Ostende se nejprve brodí', async ({ p
   expect(result.dry && result.waded && result.swam, JSON.stringify(result)).toBe(true);
   expect(result.wadingSpeed).toBeLessThan(2.2);
   expect(Math.abs(result.lakeDrift)).toBeLessThan(0.1);
+  expect(result.dryVertices).toBeGreaterThan(4);
+  expect(result.dryError).toBeLessThan(0.1);
   expect(result.bank, JSON.stringify(result)).toBe(true);
+});
+
+test('E51 – po pádu u Wilsonova mostu vznikne tříšť a plavec dosáhne kreslené hladiny', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  await page.goto(gameUrl('/?debug&quality=high&adapt=0&view=550&hour=10'));
+  await page.waitForFunction(() => window.__ready);
+  await page.getByRole('button', { name: 'Hrát', exact: true }).click();
+  const result = await page.evaluate(() => {
+    window.__freeze(true);
+    window.__setInput(0, 0);
+    const g = window.__game, { player, world } = g;
+    const x = 201, z = 494, bottomOfFall = -12.25;
+    for (let i = 0; i < 25; i++) g.colliders.update(x, z);
+    player.place(x, z, bottomOfFall + 3);
+    const particleCursor = g.particles.cursor;
+    for (let i = 0; i < 145; i++) g.update(1 / 60);
+    window.__view(184, -4, 507, 201, -12.25, 485);
+    const tile = g.chunks.chunks.get(world.chunkIndex(x, z));
+    const ground = tile.group.children.find(mesh => mesh.material === tile.terrainMat);
+    const vertices = ground.geometry.getAttribute('position');
+    const center = [];
+    for (let i = 0; i < vertices.count; i++) {
+      if (Math.abs(vertices.getX(i) - x) < 5 && Math.abs(vertices.getZ(i) - z) < 5)
+        center.push(vertices.getY(i));
+    }
+    return { swimming: player.swimming, level: player.water.level, height: player.y, center,
+      ripples: g.waterRipple, particles: g.particles.cursor - particleCursor };
+  });
+  expect(result.swimming).toBe(true);
+  expect(result.ripples).toBe(1);
+  expect(result.particles).toBeGreaterThan(0);
+  expect(result.center.length).toBeGreaterThan(0);
+  for (const height of result.center) expect(height).toBeCloseTo(result.level, 2);
+  expect(result.height).toBeCloseTo(result.level, 1);
+  expect(errors).toEqual([]);
+});
+
+test('E51 – přepínač původní vody vrátí Radbuze původní výšku a vypne drift', async ({ page }) => {
+  await page.goto(gameUrl('/?debug&voda=puvodni&quality=low&adapt=0&hour=10'));
+  await page.waitForFunction(() => window.__ready);
+  const result = await page.evaluate(() => {
+    const { player, colliders, world } = window.__game;
+    const x = 201, z = 494, level = world.heightAt(x, z);
+    for (let i = 0; i < 25; i++) colliders.update(x, z);
+    player.place(x, z, level);
+    for (let i = 0; i < 300; i++) player.update(1 / 60, 0, 0, 0, false);
+    return { drift: Math.hypot(player.x - x, player.z - z), swimming: player.swimming, level, sampled: player.water.level };
+  });
+  expect(result.swimming).toBe(true);
+  expect(result.drift).toBeLessThan(0.07);
+  expect(result.sampled).toBeCloseTo(result.level, 2);
 });

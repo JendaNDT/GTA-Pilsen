@@ -1,12 +1,6 @@
-import { sampleWater, waterDepthFromShore } from '../world/water-profile.js';
+import { BANK_RANGE, sampleWater, waterDepthFromShore } from '../world/water-profile.js';
 
 // V terénním modelu je vidět hladina. Pro kolize odhadujeme dno podle vzdálenosti od břehu.
-const BANK_WIDTH = 8;
-const BANK_SLOPE = 0.12;
-const CHANNEL_SLOPE = 0.025;
-const MAX_DEPTH = 2.4;
-const BANK_RANGE = BANK_WIDTH + (MAX_DEPTH - BANK_WIDTH * BANK_SLOPE) / CHANNEL_SLOPE;
-
 export function riverBed(world, x0, z0, size) {
   const land = world.l, profiles = [];
   const x1 = x0 + size, z1 = z0 + size;

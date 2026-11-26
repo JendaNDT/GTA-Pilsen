@@ -2,6 +2,7 @@ import { terrainCuts, TUNNEL_HEIGHT, TUNNEL_PORTAL_CUT } from '../world/tunnels.
 
 import { localGradeIndices } from '../world/terrain-indices.js';
 import { riverBed } from './water.js';
+import { waterLevelAt } from '../world/water-profile.js';
 import { densePath, pathNormal } from '../world/road-profile.js';
 import { gradeBlend, gradeCross, stripLift } from '../world/road-grade.js';
 import { cornerSidewalkSections, sidewalkFacing, sidewalkQuads, sidewalkSections, SIDEWALK_RAISED } from '../world/sidewalks.js';
@@ -73,14 +74,15 @@ export function terrainTriangles(world, ci, x0, z0, size, emit) {
       z0: Math.min(az, bz) - p.width, z1: Math.max(az, bz) + p.width };
   });
   // terén pod pásem vozovky a do CLAMP_PAD za jejím okrajem leží pod pásem (viz roadClampAt)
-  const dryHeight = (x, z) => {
-    const y = world.heightAt(x, z);
+  const dryHeight = (x, z, wet = false) => {
+    const ground = world.heightAt(x, z);
+    const y = wet ? waterLevelAt(world, x, z, ground) : ground;
     const road = roads < Infinity ? world.roadClampAt(x, z, y) : NaN;
     return road < y ? road : y;
   };
   const vertex = (x, z) => {
     const depth = bed ? bed(x, z) : 0;
-    const p = [x, dryHeight(x, z) - depth, z];
+    const p = [x, dryHeight(x, z, depth > 0) - depth, z];
     p.wet = depth > 0;
     return p;
   };

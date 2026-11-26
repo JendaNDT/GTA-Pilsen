@@ -26,6 +26,8 @@ import { ChunkManager } from '../world/chunks.js';
 import { Environment } from '../world/scene.js';
 import { createPostFX } from '../world/postfx.js';
 import { env } from '../world/materials.js';
+import { waterLevelAt, waterPilotAt } from '../world/water-profile.js';
+import { latestWaterRipple, waterRipples } from '../world/water-optics.js';
 import { VehicleManager, Car, wrapAngle } from '../entities/vehicles.js';
 import { snowDepth, weatherFog, cloudCover } from '../world/weather-surfaces.js';
 import { Precipitation } from '../fx/precipitation.js';
@@ -63,6 +65,9 @@ export class Game {
     this.driver = null;
     this.falls = new Falls(this);
     this.water = new Water(physics);
+    this.waterRipple = 0;
+    latestWaterRipple.value = -10;
+    for (const ripple of waterRipples) ripple.set(0, 0, -10, 0);
     this.trafficBodies = new TrafficBodies(physics, QUALITY);
     this.transitBodies = new TransitBodies(physics);
     this.weather = new Weather(DEBUG ? PARAMS.get('weather') : null);
@@ -111,7 +116,13 @@ export class Game {
       if (this.mode === 'foot' && !this.falls.active.has(this.player)) {
         const fx = Math.sin(this.camYaw), fz = Math.cos(this.camYaw);
         const dx = fx * input.moveY - fz * input.moveX, dz = fz * input.moveY + fx * input.moveX;
-        this.fallDamage += this.player.update(dt, dx, dz, input.runAmount, input.handbrake);
+        const { player } = this;
+        const wasWet = player.waterContact;
+        const speed = Math.hypot(player.vx, player.vy, player.vz);
+        this.fallDamage += player.update(dt, dx, dz, input.runAmount, input.handbrake);
+        if (!wasWet && player.waterContact && speed > 1.25) {
+          this.splashWater(player, player.water.level, Math.min(0.85, speed / 8));
+        }
         // Virtuální kapsle může ustoupit před kapotou ještě před dotykem vnitřního tělesa.
         const contacts = this.player.character.character.GetActiveContacts();
         for (let i = 0; i < contacts.size(); i++) {
@@ -121,10 +132,8 @@ export class Game {
           if (car) this.queuePedHit(this.player, car, contact.mLinearVelocity);
         }
       }
-      if (this.driver && this.water.step(this.driver, this.world, dt)) this.audio.splash(this.driver.car);
-      for (const [car, vehicle] of this.trafficBodies.dynamic) {
-        if (this.water.step(vehicle, this.world, dt)) this.audio.splash(car);
-      }
+      if (this.driver) this.stepWater(this.driver, dt);
+      for (const vehicle of this.trafficBodies.dynamic.values()) this.stepWater(vehicle, dt);
       physics.engine.Step(dt, 1);
       const budget = physics.debris.step(20);
       const roadBudget = this.colliders.roadFurniture.step(this.clock.now, budget);
@@ -251,6 +260,23 @@ export class Game {
   }
 
   get hour() { return this.clock.hour; }
+
+  stepWater(vehicle, dt) {
+    if (!this.water.step(vehicle, this.world, dt)) return;
+    const { car } = vehicle;
+    this.audio.splash(car);
+    const speed = Math.hypot(car.vx, car.vz, vehicle.body.GetLinearVelocity().GetY());
+    if (speed > 0.5) this.splashWater(car, this.water.surface.level, Math.min(1, 0.3 + speed / 14));
+  }
+
+  splashWater(entity, level, strength) {
+    const { x, z } = entity;
+    if (!QUALITY.waterDetail || !this.world.improvedWater || !waterPilotAt(x, z)) return;
+    waterRipples[this.waterRipple % waterRipples.length].set(x, z, this.time, strength);
+    this.waterRipple++;
+    latestWaterRipple.value = this.time;
+    this.particles.emit('spray', x, level + 0.05, z, Math.ceil(13 * strength));
+  }
 
   setClock(date, hour) {
     const day = date === null ? this.clock.day : parseDay(date);
@@ -558,7 +584,7 @@ export class Game {
     this.car = null; this.mode = 'foot'; this.focus = p;
     p.yaw = car.yaw;
     if (car.floodTime && w.isWater(x, z)) {
-      p.place(x, z, w.heightAt(x, z));
+      p.place(x, z, waterLevelAt(w, x, z, w.heightAt(x, z)));
       p.setWalking(true);
       p.mesh.visible = true;
     } else p.leaveVehicle(x, z, car.y);

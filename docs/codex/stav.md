@@ -3,8 +3,8 @@
 Rozpracováno nad revizí `5eeaae8`. [Zadání](E51.md)
 
 - Proud a brodění · hotovo. Prošlo 364 zkoušek JavaScriptu, produkční sestavení a 10 cílených zkoušek v Chromiu přes WebGL 2 a WebGPU.
-- Hladina, odrazy a reakce na vstup · zbývá.
-- Snímky, měření a závěrečná zkouška · zbývá.
+- Hladina, odrazy a reakce na vstup · hotovo. Prošlo 365 zkoušek JavaScriptu, sestavení a deset cílených zkoušek v Chromiu. Průplav proti proudu si ponechal stejnou trasu a výškové meze. Nová zkouška kontroluje i výšku suchého břehu u Ostende.
+- Snímky, měření a závěrečná zkouška · probíhá širší kontrola návazností a měření výkonu.
 
 # E50 · Lampy pod mostem Generála Pattona
 

@@ -23,6 +23,7 @@ import { Grass } from './grass.js';
 import { vegetationBatch } from './vegetation.js';
 import { treeType } from './tree-models.js';
 import { waterTile } from './water.js';
+import { waterLevelAt, waterPilotTile } from './water-profile.js';
 import { terrainClassMask } from './terrain-classes.js';
 import { terrainMaskTexture } from './terrain-detail.js';
 import { trimSurfaceToCamera } from './surface-visibility.js';
@@ -1141,14 +1142,14 @@ function lowerRoadEdges(world, pos, clampY, n1, G) {
 }
 
 /** Síť terénu jedné dlaždice (sdílí uzly se sousedy, takže na sebe navazuje beze spár). */
-function buildTerrain(world, ci, cx0, cz0) {
+function buildTerrain(world, ci, cx0, cz0, pilot) {
   const grade = world.gradeTerrain.has(ci);
   // Pod silnicemi je terén srovnaný do jejich profilu, výšky proto čteme přes heightAt.
   const roads = !!world.roadTerrain && world.hasRoadTerrain(ci);
-  const detail = world.terrainDetail.has(ci) || grade || roads;
   // Kde svah těsně u vozovky stoupá nad silnici, je síť jemnější (4 m), aby do ní nezasahoval.
-  const G = roads && QUALITY.terrainDetail && world.roadSteepTiles.has(ci)
-    ? Math.min(4, terrainGridStep(world, ci)) : terrainGridStep(world, ci);
+  const finer = pilot || (roads && QUALITY.terrainDetail && world.roadSteepTiles.has(ci));
+  const step = terrainGridStep(world, ci), G = finer ? Math.min(4, step) : step;
+  const detail = world.terrainDetail.has(ci) || grade || roads || G !== world.tG;
   const N = CHUNK / G, n1 = N + 1;
   const pos = new Float32Array(n1 * n1 * 3), nor = new Float32Array(n1 * n1 * 3), uv = new Float32Array(n1 * n1 * 2);
   const gi0 = Math.round((cx0 - world.tX0) / G), gj0 = Math.round((cz0 - world.tZ0) / G);
@@ -1162,12 +1163,15 @@ function buildTerrain(world, ci, cx0, cz0) {
     for (let i = 0; i <= N; i++) {
       const gi = gi0 + i, gj = gj0 + j;
       const x = cx0 + i * G, z = cz0 + j * G;
-      let y = detail ? world.heightAt(x, z) : H(gi, gj);
+      const ground = detail ? world.heightAt(x, z) : H(gi, gj);
+      let y = pilot && world.inWaterArea(x, z) ? waterLevelAt(world, x, z, ground) : ground;
+      const level = y !== ground;
       // pod vozovkou leží terén vždy pod pásem silnice, aby jím neprorůstal
       if (roads) { const road = world.roadClampAt(x, z, y); if (road < y) y = road; if (edges) clampY[o / 3] = road; }
       pos[o] = x; pos[o + 1] = y; pos[o + 2] = z;
       let hx, hz;
-      if (detail || world.terrainDetail.size && (i === 0 || i === N || j === 0 || j === N)) {
+      if (level) { hx = 0; hz = 0; }
+      else if (detail || world.terrainDetail.size && (i === 0 || i === N || j === 0 || j === N)) {
         const step = grade ? world.gradeStep : world.tDetailG ?? 4;
         hx = (world.heightAt(x + step, z) - world.heightAt(x - step, z)) / (2 * step);
         hz = (world.heightAt(x, z + step) - world.heightAt(x, z - step)) / (2 * step);
@@ -1870,16 +1874,18 @@ export class ChunkManager {
     const x0 = w.minX + cx * CHUNK, z0 = w.minZ + cz * CHUNK;
     const add = (mesh, geo) => { mesh.matrixAutoUpdate = false; ch.group.add(mesh); if (geo) ch.disposables.push(geo); };
     if (ch.stage === 0) {
-      const geo = buildTerrain(w, ci, x0, z0);
+      const pilot = w.improvedWater && this.landIndex.polys[ci]?.some(id => w.l.cls[id] === LC.WATER) &&
+        waterPilotTile(x0, z0, CHUNK);
+      const geo = buildTerrain(w, ci, x0, z0, pilot);
       ch.texSize = ch.dist < 420 ? this.texNear : this.texFar;
       ch.tex = this._texture(ci, ch, ch.texSize);
       const portals = terrainCuts(w, x0, z0, CHUNK);
       const classes = QUALITY.terrainDetail && terrainClassMask(w.l, this.landIndex.polys[ci], LAND_GROUP, x0, z0, CHUNK);
       const mask = classes ? terrainMaskTexture(classes) : null;
       if (mask) ch.disposables.push(mask);
-      const water = QUALITY.waterDetail && waterTile(this, ci, x0, z0, CHUNK);
+      const water = QUALITY.waterDetail && waterTile(this, ci, x0, z0, CHUNK, pilot);
       if (water) ch.disposables.push(water);
-      ch.terrainMat = makeTerrainMaterial(ch.tex, portals, pavingChunk(x0, z0), QUALITY.heritageDetail, mask, water);
+      ch.terrainMat = makeTerrainMaterial(ch.tex, portals, pavingChunk(x0, z0), QUALITY.heritageDetail, mask, water, pilot);
       const m = new THREE.Mesh(geo, ch.terrainMat);
       m.receiveShadow = true; m.renderOrder = 5;
       if (QUALITY.name === 'low') trimSurfaceToCamera(m);
