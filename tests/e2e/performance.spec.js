@@ -58,16 +58,25 @@ test('E13 – panel měření lze otevřít a zavřít na dotykové obrazovce', 
   }
 });
 
-test('stejná síť terénu má pro každou dlaždici vlastní grafický atribut @webgpu', async ({page}) => {
-  await page.goto(gameUrl('/?debug&quality=low&adapt=0'));
-  await waitForGame(page);
-  const result = await page.evaluate(() => {
-    const {chunks} = __game;
-    const indices = [...chunks.chunks.values()].flatMap(tile =>
-      tile.group.children.filter(mesh => mesh.material === tile.terrainMat && mesh.geometry?.index)
-        .map(mesh => mesh.geometry.index));
-    const pair = indices.flatMap((a,i) => indices.slice(i+1).filter(b => a.array === b.array).map(b=>[a,b]))[0];
-    return {sharedData: !!pair, independent:pair && pair[0] !== pair[1]};
+for (const quality of ['medium', 'low']) {
+  const description = quality === 'medium' ? 'stejný terén sdílí data mezi samostatnými atributy'
+    : 'nízká předvolba ořezává terén každé dlaždice v samostatných datech';
+
+  test(description, async ({ page }) => {
+    await page.goto(gameUrl(`/?debug&quality=${quality}&adapt=0`));
+    await waitForGame(page);
+    const result = await page.evaluate(() => {
+      const { chunks } = window.__game;
+      const meshes = [...chunks.chunks.values()].flatMap(tile =>
+        tile.group.children.filter(mesh => mesh.material === tile.terrainMat && mesh.geometry?.index));
+      const groups = Map.groupBy(meshes, mesh => mesh.geometry.index.count);
+      const regular = [...groups.values()].reduce((best, items) => items.length > best.length ? items : best, []);
+      const attributes = regular.map(mesh => mesh.geometry.index);
+      return { tiles: regular.length, unique: new Set(attributes).size,
+        arrays: new Set(attributes.map(attr => attr.array)).size };
+    });
+    expect(result.tiles).toBeGreaterThan(1);
+    expect(result.unique).toBe(result.tiles);
+    expect(result.arrays).toBe(quality === 'medium' ? 1 : result.tiles);
   });
-  expect(result).toEqual({sharedData:true,independent:true});
-});
+}

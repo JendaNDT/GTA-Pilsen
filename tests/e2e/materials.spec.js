@@ -122,20 +122,42 @@ test('E15 – světlomety auta zůstávají v noci jasné', async ({ page, baseU
     window.__view(x + dx * 4, y + 1.15, z + dz * 4, x + dx * 1.5, y + 0.75, z + dz * 1.5);
     const mesh = car.mesh.userData.batches.detail;
     const { position, aLens } = mesh.geometry.attributes;
-    const canvas = game.renderer.domElement;
-    return [-1, 1].map(side => {
-      const i = aLens.array.findIndex((id, index) => id === 1 && Math.sign(position.getX(index)) === side);
-      if (i < 0) throw new Error('Chybí přední žárovka na straně ' + side);
-      const center = mesh.localToWorld(mesh.position.clone().fromBufferAttribute(position, i)).project(game.camera);
-      return { x: Math.round((1 + center.x) * canvas.width / 2) - 1,
-        y: Math.round((1 - center.y) * canvas.height / 2) - 1, width: 3, height: 3 };
+    const { width, height } = game.renderer.domElement;
+    mesh.updateWorldMatrix(true, false);
+    const project = (i) => {
+      const p = mesh.localToWorld(mesh.position.clone().fromBufferAttribute(position, i)).project(game.camera);
+      return [(1 + p.x) * width / 2, (1 - p.y) * height / 2];
+    };
+    return [-1, 1].map((side) => {
+      // Vrchol čočky leží na jejím lemu. Měříme uvnitř největšího viditelného čela.
+      let best = null, area = 0;
+      for (let i = 0; i < aLens.count; i += 3) {
+        if (aLens.getX(i) !== 1 || Math.sign(position.getX(i)) !== side) continue;
+        const [a, b, c] = [project(i), project(i + 1), project(i + 2)];
+        const facing = (b[1] - a[1]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[1] - a[1]);
+        if (facing <= area) continue;
+        area = facing;
+        best = { x: Math.floor((a[0] + b[0] + c[0]) / 3) - 1,
+          y: Math.floor((a[1] + b[1] + c[1]) / 3) - 1, width: 3, height: 3 };
+      }
+      if (!best) throw new Error('Chybí viditelné čelo přední žárovky na straně ' + side);
+      return best;
     });
   }, reference.date);
-  const [bumper] = await averageRegion(page, { x: 632, y: 482, width: 16, height: 6 });
+  const lit = [];
   for (const bulb of bulbs) {
     const [headlight] = await averageRegion(page, bulb);
+    lit.push(headlight);
     expect(headlight, JSON.stringify(bulb)).toBeGreaterThan(190);
-    expect(headlight - bumper).toBeGreaterThan(160);
+  }
+  await page.evaluate(() => {
+    const { car, postfx } = window.__game;
+    car.mesh.userData.batches.detail.userData.carSignals.x = 0;
+    postfx?.resetHistory();
+  });
+  for (let i = 0; i < bulbs.length; i++) {
+    const [unlit] = await averageRegion(page, bulbs[i]);
+    expect(lit[i] - unlit, JSON.stringify(bulbs[i])).toBeGreaterThan(160);
   }
 });
 
