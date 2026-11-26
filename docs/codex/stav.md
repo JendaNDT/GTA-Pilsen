@@ -1,3 +1,7 @@
+# Převzetí E54 až E57 do mainu
+
+Na revizi `1bd5bf2` navazuje minigolf ve Škodalandu, síť 152 stanovišť Pilsen Bike, navigace pro elektrokola a jedna bowlingová dráha U Papírny. Společné sestavení vychází z herní revize `7f6eccc`. Prošlo produkční sestavení, 396 testů JavaScriptu, 34 testů Pythonu s jedním přeskočeným případem a 56 cílených zkoušek v Chromiu na WebGL 2 i WebGPU. Zkoušky zahrnuly všechna stanoviště, souvislou jízdu s navigací v obou směrech, dohrání minigolfu i bowlingu, dotykové ovládání, starší uložené hry a všechny čtyři grafické předvolby. [Minigolf](../E54.md) · [Sdílená elektrokola](../E55.md) · [Cyklistická navigace](../E56.md) · [Bowling](../E57.md)
+
 # E57 · Pilot bowlingu U Papírny
 
 Jedna dráha na Papírnické 3 je přístupná z mapy a hratelná v deseti kolech. Prošlo 396 testů JavaScriptu, produkční sestavení a 62 cílených prohlížečových zkoušek. Ověřeno bylo také dotykové ovládání, uložení rekordu a pěší přístup od Mikulášského náměstí. Časové rozpočty vyšly v herně, při jízdě i při letu. E57 je dokončená nad herní revizí `78e31d0`. [Zadání](E57.md) · [Ovládání a ověření](../E57.md)
