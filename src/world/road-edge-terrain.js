@@ -44,3 +44,20 @@ export function limitRoadEdges(n1, y, edge, asphalt) {
   }
   return lowered;
 }
+
+/** Výšková rezerva vykreslené sítě proti rozdílné triangulaci asfaltu a terénu. */
+export function roadVisualClearance(terrain, road) {
+  if (!Number.isFinite(road)) return 0;
+  // Rezerva pokryje 13 cm naměřeného přesahu. Vysoký sousední terén dál drží stávající profil.
+  const cushion = 0.16, maxDrop = 0.35;
+  return Math.min(maxDrop, Math.max(0, terrain - road + cushion));
+}
+
+/** Společnou výšku odečte hrubá i jemná síť ve stejných bodech. Mimo opravu vrací NaN. */
+export function sharedRoadEdgeHeight(value, step, at) {
+  const first = Math.floor(value / step) * step, fraction = (value - first) / step;
+  const a = at(first);
+  if (!fraction) return a.drop ? a.height : NaN;
+  const b = at(first + step);
+  return a.drop || b.drop ? a.height + (b.height - a.height) * fraction : NaN;
+}

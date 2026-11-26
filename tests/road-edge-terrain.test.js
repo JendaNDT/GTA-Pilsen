@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { EDGE_MARGIN, edgeBound, limitRoadEdges } from '../src/world/road-edge-terrain.js';
+import { EDGE_MARGIN, edgeBound, limitRoadEdges, roadVisualClearance, sharedRoadEdgeHeight } from '../src/world/road-edge-terrain.js';
 
 // Umělá dlaždice: rovná silnice podél osy z (střed x = 1, polovina šířky 3 m, asfalt 5 cm nad
 // terénem pod ní), vedle ní na obou stranách svah stoupající o 50 % od okraje vozovky.
@@ -68,4 +68,25 @@ test('rovný terén u silnice se nemění', () => {
   const { y, edge, asphalt } = tile();
   y.fill(0);
   assert.equal(limitRoadEdges(n1, y, edge, asphalt), 0);
+});
+
+test('výšková rezerva sníží vykreslený terén u asfaltu jen v omezeném rozsahu', () => {
+  assert.equal(roadVisualClearance(10, 10), 0.16);
+  assert.equal(roadVisualClearance(12, 10), 0.35);
+  assert.equal(roadVisualClearance(9.8, 10), 0);
+  assert.equal(roadVisualClearance(10, NaN), 0);
+});
+
+test('jemná a hrubá síť používají na společné hraně stejnou výšku', () => {
+  const heights = new Map([
+    [-16, { height: 10, drop: 0.10 }], [-8, { height: 11, drop: 0.30 }],
+    [0, { height: 11.5, drop: 0 }], [8, { height: 11.6, drop: 0 }],
+  ]);
+  const sample = p => heights.get(p);
+  assert.equal(sharedRoadEdgeHeight(-16, 8, sample), 10);
+  assert.equal(sharedRoadEdgeHeight(-12, 8, sample), 10.5);
+  assert.equal(sharedRoadEdgeHeight(-8, 8, sample), 11);
+  assert.equal(sharedRoadEdgeHeight(-4, 8, sample), 11.25);
+  assert.ok(Number.isNaN(sharedRoadEdgeHeight(0, 8, sample)));
+  assert.ok(Number.isNaN(sharedRoadEdgeHeight(4, 8, sample)));
 });

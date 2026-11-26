@@ -162,3 +162,59 @@ for (const { name, tracks, walks } of tramSidewalkSites) {
     expect(coverage.walks).toEqual(walks.map(() => true));
   });
 }
+
+// Body na skutečném okraji asfaltu, kde ve výchozím obraze vystupoval terén.
+const roadEdgeSites = [
+  ['Karlovarská', -258.382, -1020.939],
+  ['Kaplířova', -946.410, 2299.325],
+  ['Zahradní', 543.155, 1186.901],
+];
+
+for (const [street, x, z] of roadEdgeSites) {
+  test(`${street} – terén zůstává pod asfaltem i u okraje vozovky`, async ({ page }) => {
+    await page.goto(gameUrl('/?debug&adapt=0&quality=high&view=550&date=2026-11-13&hour=11'));
+    await page.waitForFunction(() => window.__ready);
+    await buildAround(page, [x, z]);
+    const result = await page.evaluate(({ x, z, checkSeam }) => {
+      const { chunks, world } = window.__game;
+      const height = (mesh, x, z, road = false) => {
+        const geo = mesh?.geometry;
+        let surface = road ? Infinity : -Infinity;
+        if (!geo?.index) return surface;
+        const { index, attributes: { position, roadLayout } } = geo;
+        for (let i = 0; i < index.count; i += 3) {
+          const a = index.getX(i), b = index.getX(i + 1), c = index.getX(i + 2);
+          if (road && !roadLayout?.getY(a)) continue;
+          const ax = position.getX(a), az = position.getZ(a), bx = position.getX(b);
+          const bz = position.getZ(b), cx = position.getX(c), cz = position.getZ(c);
+          const det = (bz - cz) * (ax - cx) + (cx - bx) * (az - cz);
+          if (Math.abs(det) < 1e-9) continue;
+          const u = ((bz - cz) * (x - cx) + (cx - bx) * (z - cz)) / det;
+          const v = ((cz - az) * (x - cx) + (ax - cx) * (z - cz)) / det;
+          if (Math.min(u, v, 1 - u - v) < -1e-6) continue;
+          const y = u * position.getY(a) + v * position.getY(b) + (1 - u - v) * position.getY(c);
+          surface = road ? Math.min(surface, y) : Math.max(surface, y);
+        }
+        return surface;
+      };
+      const tile = chunks.chunks.get(world.chunkIndex(x, z));
+      const terrainOf = (tile) => tile?.group.children.find(mesh => mesh.material === tile.terrainMat);
+      // U napojení se mohou překrývat dva pásy v téže výškové úrovni. Volný musí zůstat i nižší.
+      const asphalt = Math.min(...[...chunks.chunks.values()].map(ch => height(ch.asphalt, x, z, true)));
+      const terrain = height(terrainOf(tile), x, z);
+      let seam = null;
+      if (checkSeam) {
+        // Karlovarská protíná společnou hranici dlaždic. Srovnáme i body mezi jejich uzly.
+        const edge = terrainOf(tile).geometry.attributes.position.getZ(0);
+        const next = chunks.chunks.get(world.chunkIndex(x, edge - 0.5));
+        const pairs = [tile, next].map(t => [-8, -4, 0].map(shift => height(terrainOf(t), x + shift, edge)));
+        seam = Math.max(...pairs[0].map((y, i) => Math.abs(y - pairs[1][i])));
+      }
+      return { asphalt, terrain, seam };
+    }, { x, z, checkSeam: street === 'Karlovarská' });
+    expect(Number.isFinite(result.asphalt)).toBe(true);
+    expect(Number.isFinite(result.terrain)).toBe(true);
+    expect(result.terrain - result.asphalt, JSON.stringify(result)).toBeLessThanOrEqual(-0.01);
+    if (street === 'Karlovarská') expect(result.seam, JSON.stringify(result)).toBeLessThan(0.025);
+  });
+}

@@ -45,7 +45,7 @@ import { FORGE, forgeXZ } from './mill.js';
 import { Districts } from './districts.js';
 import { Orthophoto, orthophotoTile } from './orthophoto.js';
 import { decalOrder, groundAnisotropy, ORIGINAL_IMAGE } from './image-quality.js';
-import { limitRoadEdges } from './road-edge-terrain.js';
+import { limitRoadEdges, roadVisualClearance, sharedRoadEdgeHeight } from './road-edge-terrain.js';
 
 const _c = new THREE.Color();
 function lin(hex) { _c.setHex(hex); return [_c.r, _c.g, _c.b]; }
@@ -1137,8 +1137,62 @@ function lowerRoadEdges(world, pos, clampY, n1, G) {
     edge[k] = world.roadEdgeDistance(pos[k * 3], pos[k * 3 + 2], 1.5 * G);
     if (edge[k] < 0 && clampY[k] === clampY[k]) asphalt[k] = clampY[k] + SURF;
   }
-  if (!limitRoadEdges(n1, y, edge, asphalt)) return;
+  limitRoadEdges(n1, y, edge, asphalt);
+  for (let j = 1; j < n1 - 1; j++) for (let i = 1; i < n1 - 1; i++) {
+    const k = j * n1 + i;
+    if (!wanted[k]) continue;
+    const x = pos[k * 3], z = pos[k * 3 + 2];
+    const road = Number.isFinite(clampY[k]) ? clampY[k] : world.carriagewayProfileAt(x, z, NaN, G);
+    const original = pos[k * 3 + 1], drop = roadVisualClearance(original, road);
+    if (original - drop < y[k] && !world.keepsTerrain(x, z) && !world.inWaterArea(x, z)) y[k] = original - drop;
+  }
   for (let k = 0; k < count; k++) pos[k * 3 + 1] = y[k];
+}
+
+/** Na hranici potřebují stejný posun i sousedé bez vlastního profilu vozovky. */
+function lowerSharedRoadEdges(world, ci, pos, n1) {
+  const tileX = ci % world.cols, tileZ = Math.floor(ci / world.cols);
+  let nearRoad = false;
+  for (let row = Math.max(0, tileZ - 1); row <= Math.min(world.rows - 1, tileZ + 1) && !nearRoad; row++) {
+    for (let col = Math.max(0, tileX - 1); col <= Math.min(world.cols - 1, tileX + 1) && !nearRoad; col++) {
+      const pieces = world.rPieces[row * world.cols + col];
+      nearRoad = pieces?.some((road, i) => i % 3 === 0 && world.roadGrade.start[road] >= 0);
+    }
+  }
+  if (!nearRoad) return;
+  const bank = world.bankTerrainTile;
+  const bankX = bank >= 0 ? world.minX + (bank % world.cols + 0.5) * CHUNK : Infinity;
+  const bankZ = bank >= 0 ? world.minZ + (Math.floor(bank / world.cols) + 0.5) * CHUNK : Infinity;
+  const shared = world.tG, memo = new Map();
+  const sample = (x, z) => {
+    const key = (x - world.minX) * (world.maxZ - world.minZ + 1) + z - world.minZ;
+    const cached = memo.get(key);
+    if (cached) return cached;
+    // Měřený břeh se tady nesnižuje, včetně jeho společných hran.
+    const touchesBank = Math.abs(x - bankX) <= CHUNK / 2 && Math.abs(z - bankZ) <= CHUNK / 2;
+    const ground = world.heightAt(x, z), clamp = world.roadClampAt(x, z, ground);
+    const road = Number.isFinite(clamp) ? clamp : world.carriagewayProfileAt(x, z, NaN, shared);
+    const base = Number.isFinite(clamp) ? Math.min(ground, clamp) : ground;
+    let drop = roadVisualClearance(base, road);
+    if (drop && (touchesBank || world.keepsTerrain(x, z) || world.inWaterArea(x, z))) drop = 0;
+    const point = { height: base - drop, drop };
+    memo.set(key, point);
+    return point;
+  };
+  const lower = (index, horizontal) => {
+    const k = 3 * index, x = pos[k], z = pos[k + 2];
+    const height = horizontal ? sharedRoadEdgeHeight(x, shared, p => sample(p, z))
+      : sharedRoadEdgeHeight(z, shared, p => sample(x, p));
+    if (Number.isFinite(height)) pos[k + 1] = height;
+  };
+  for (let i = 0; i < n1; i++) {
+    lower(i, true);
+    lower((n1 - 1) * n1 + i, true);
+  }
+  for (let j = 1; j < n1 - 1; j++) {
+    lower(j * n1, false);
+    lower(j * n1 + n1 - 1, false);
+  }
 }
 
 /** Síť terénu jedné dlaždice (sdílí uzly se sousedy, takže na sebe navazuje beze spár). */
@@ -1186,6 +1240,7 @@ function buildTerrain(world, ci, cx0, cz0, pilot) {
     }
   }
   if (edges) lowerRoadEdges(world, pos, clampY, n1, G);
+  if (world.roadGrade && world.roadTerrain && !ORIGINAL_IMAGE) lowerSharedRoadEdges(world, ci, pos, n1);
   if (!terrainIndices.has(N)) {
     const idx = [];
     for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
