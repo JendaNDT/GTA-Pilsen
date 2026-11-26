@@ -1,6 +1,6 @@
 import { readSave } from './save-data.js';
 import { RC } from '../config.js';
-import { JOB_NAMES } from './missions.js';
+import { jobTitle } from './missions.js';
 
 const el = id => document.getElementById(id);
 const sections = ['jobs', 'garage', 'shifts', 'help', 'about', 'settings', 'save'];
@@ -21,7 +21,7 @@ export function menuObjective({ jobs, shifts }) {
   const target = jobs.target();
   if (!job) return target?.name ? 'Cíl na mapě · ' + target.name : '';
   const name = job.phase === 'pickup' ? job.name : target?.label || target?.name || job.label;
-  return [JOB_NAMES[job.type], name].filter(Boolean).join(' · ');
+  return [jobTitle(job), name].filter(Boolean).join(' · ');
 }
 
 export function initMenu(game, updateWork, showClock) {
@@ -52,7 +52,7 @@ export function initMenu(game, updateWork, showClock) {
     el('menu-sheet').hidden = !section;
     refresh();
     if (section) {
-      if (['jobs', 'garage', 'shifts'].includes(section)) updateWork();
+      if (['jobs', 'garage', 'shifts'].includes(section)) updateWork(section);
       if (section === 'settings') showClock();
       el('menu-sheet').scrollTop = 0;
       el('menu-back').focus({ preventScroll: true });

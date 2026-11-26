@@ -3,7 +3,8 @@ import { WalkingGuide } from './walking-guide.js';
 import { DRIVABLE_MAX } from '../config.js';
 import { makeBeacon, makePedMesh } from '../entities/models.js';
 import { LANDMARK_INFO } from './landmarks.js';
-import { curbStop, DEMO_ADDRESS, DEMO_DRIVE, DEMO_DROP, DEMO_FOOT, DEMO_NAME, DEMO_STOPS, taxiJourney } from './work-sites.js';
+import { curbStop, DEMO_ADDRESS, DEMO_DRIVE, DEMO_DROP, DEMO_FOOT, DEMO_NAME, DEMO_STOPS } from './work-sites.js';
+import { atTaxiStop, scoreTaxiMotion, TAXI_RIDES, taxiBonus, taxiOffers, taxiRoadPosition, taxiRoute } from './taxi.js';
 
 const _road = {};
 const FOOD_KIND = ['restaurace', 'rychlé občerstvení', 'kavárna', 'hospoda'];
@@ -16,10 +17,23 @@ const clock = (seconds) => {
 };
 const five = (amount) => Math.round(amount / 5) * 5;
 
+export function jobTitle(job) {
+  return job.type === 'taxi' ? `Taxi · ${TAXI_RIDES[job.id].name}` : JOB_NAMES[job.type];
+}
+
+function taxiResult(job) {
+  const amount = taxiBonus(job);
+  const detail = job.id === 'train'
+    ? ` + ${amount} Kč časový bonus (${job.time < 0 ? 'po termínu' : 'včas'})`
+    : job.id === 'quiet' ? ` + ${amount} Kč za plynulost (prudké brzdění ${job.hardBrakes}×, nárazy ${job.impacts}×)` : '';
+  return { type: 'taxi', state: 'paid', amount: job.reward + amount, variant: TAXI_RIDES[job.id].name,
+    note: `${job.reward} Kč jízdné${detail}` };
+}
+
 export function resultText(result) {
-  const { type, state, amount, note } = result;
+  const { type, state, amount, note, variant } = result;
   const mode = type === 'car' ? ' autem' : type === 'transit' ? ' MHD' : '';
-  return `${JOB_NAMES[type]}${mode} · ${RESULT[state]}${amount ? ` · +${amount} Kč` : ''}${note ? ` · ${note}` : ''}`;
+  return `${JOB_NAMES[type]}${mode}${variant ? ` · ${variant}` : ''} · ${RESULT[state]}${amount ? ` · +${amount} Kč` : ''}${note ? ` · ${note}` : ''}`;
 }
 
 export class Jobs {
@@ -76,23 +90,34 @@ export class Jobs {
     }
   }
 
-  start(type) {
+  taxiUnavailable() {
+    const g = this.game;
+    if (g.shifts.active) return 'Nejdřív dokonči nebo zruš směnu MHD.';
+    if (g.mode !== 'car' || !(g.car?.health > 0) || g.car.typeId === 'police') {
+      return 'Nejdřív nastup do pojízdného osobního auta.';
+    }
+    return null;
+  }
+
+  offersForTaxi() {
+    return this.taxiUnavailable() ? [] : taxiOffers(this.world, this.game.car);
+  }
+
+  start(type, offer) {
     const g = this.game;
     if (g.shifts.active) return 'Nejdřív dokonči nebo zruš směnu MHD.';
     if (this.job) return 'Nejdřív dokonči nebo zruš probíhající zakázku.';
-    const canDrive = g.mode === 'car' && g.car.health > 0 && g.car.typeId !== 'police';
-    if (type === 'taxi' && !canDrive) return 'Nejdřív nastup do pojízdného osobního auta.';
     let task;
     if (type === 'food') task = this._food();
     if (type === 'taxi') {
-      const journey = taxiJourney(this.world, g.focus);
-      if (!journey) return 'V okolí teď není dostupná jízda. Zkus to v jiné ulici.';
-      task = { ...journey, car: g.car, limit: Math.ceil(journey.len / 7 + 75),
-        reward: five(125 + journey.len * 0.15), comfort: 90, speed: 0 };
+      const unavailable = this.taxiUnavailable();
+      if (unavailable) return unavailable;
+      if (!offer || !Object.hasOwn(TAXI_RIDES, offer.id)) return 'V okolí teď není dostupná jízda. Zkus to v jiné ulici.';
+      task = { ...offer, car: g.car, comfort: TAXI_RIDES[offer.id].bonus, speed: 0, braking: 0, hardBrakes: 0, impacts: 0 };
     }
     if (type === 'car' || type === 'transit') task = this._demo(type);
     if (!task) return type === 'food' ? 'V okolí není dostupný rozvoz.' : 'Trasu teď nelze najít.';
-    this.job = { ...task, type, phase: 'pickup', time: type === 'taxi' ? 180 : null };
+    this.job = { ...task, type, phase: 'pickup', time: type === 'taxi' ? task.pickupTime : null };
     this.routeTimer = 0;
     if (!g.save()) {
       this.job = null;
@@ -106,7 +131,7 @@ export class Jobs {
       g.scene.add(this.passenger);
     }
     g.audio.coin();
-    g.hud.toast(`${JOB_NAMES[type]} · ${task.name}`, 'big');
+    g.hud.toast(`${jobTitle(this.job)} · ${task.name}`, 'big');
     return null;
   }
 
@@ -174,7 +199,9 @@ export class Jobs {
 
   end(state, note, save = true) {
     if (!this.job) return;
-    this.last = { type: this.job.type, state, amount: 0, note };
+    const { type, id } = this.job;
+    this.last = { type, state, amount: 0, note };
+    if (type === 'taxi') this.last.variant = TAXI_RIDES[id].name;
     this._clear();
     if (save) {
       this.game.save();
@@ -191,7 +218,8 @@ export class Jobs {
 
   onCrash(impact) {
     const j = this.job;
-    if (j?.type === 'taxi' && j.phase === 'drop' && !j.pending && impact > 3) {
+    if (j?.type === 'taxi' && j.id === 'quiet' && j.phase === 'drop' && !j.pending && impact > 3) {
+      j.impacts++;
       j.comfort = Math.max(0, j.comfort - Math.min(45, 8 + impact * 2));
     }
   }
@@ -228,11 +256,12 @@ export class Jobs {
 
   _complete() {
     const j = this.job;
-    const tip = five(Math.max(0, j.time) / j.limit * (j.type === 'car' || j.type === 'transit' ? 100 : 80));
-    const smooth = five(j.comfort ?? 0);
-    j.pending = { type: j.type, state: 'paid', amount: j.reward + tip + smooth,
-      note: j.type === 'taxi' ? `${j.reward} Kč jízdné + ${tip} Kč za čas + ${smooth} Kč za plynulost`
-        : tip ? `${j.reward} Kč odměna + ${tip} Kč spropitné` : '' };
+    if (j.type === 'taxi') j.pending = taxiResult(j);
+    else {
+      const tip = five(Math.max(0, j.time) / j.limit * (j.type === 'car' || j.type === 'transit' ? 100 : 80));
+      j.pending = { type: j.type, state: 'paid', amount: j.reward + tip,
+        note: tip ? `${j.reward} Kč odměna + ${tip} Kč spropitné` : '' };
+    }
     this.pay();
   }
 
@@ -303,8 +332,9 @@ export class Jobs {
 
   _updateJob(dt, speed) {
     const g = this.game, p = g.focus, j = this.job;
+    const title = jobTitle(j);
     if (j.pending) {
-      g.hud.mission(`<b>${JOB_NAMES[j.type]}</b><br>Cíl splněn. V nabídce Zakázky můžeš zkusit výplatu uložit znovu.`);
+      g.hud.mission(`<b>${title}</b><br>Cíl splněn. V nabídce Zakázky můžeš zkusit výplatu uložit znovu.`);
       return;
     }
     if (j.type === 'taxi' && (g.car !== j.car || j.car.health <= 0)) {
@@ -313,14 +343,14 @@ export class Jobs {
     }
     if (j.time !== null) {
       j.time -= dt;
-      if (j.time <= 0) { this.end('expired', 'Bez odměny'); return; }
+      if (j.time <= 0 && (j.type !== 'taxi' || j.phase === 'pickup')) { this.end('expired', 'Bez odměny'); return; }
     }
     const t = this.target(), d = Math.hypot(t.x - p.x, t.z - p.z);
-    const ground = j.type === 'food' && Number.isFinite(t.y) ? t.y : this.world.groundY(t.x, t.z);
+    const ground = (j.type === 'food' || j.type === 'taxi') && Number.isFinite(t.y) ? t.y : this.world.groundY(t.x, t.z);
     const at = (radius) => d < radius && Math.abs(p.y - ground) < 4.5;
     const foot = g.mode === 'foot', driver = g.mode === 'car' && g.car.health > 0;
     const foodAt = () => (foot || driver) && at(11) && speed < 7;
-    const taxiAt = () => at(6.5) && speed < 1.6;
+    const taxiAt = () => atTaxiStop(p, t, speed);
     const walk = () => foot && at(8) && speed < 5.5;
     let instruction;
     const advance = (phase) => {
@@ -331,10 +361,10 @@ export class Jobs {
     this.beacon.position.set(t.x, ground, t.z);
     switch (j.phase) {
       case 'pickup':
-        instruction = j.type === 'taxi' ? `Zastav u zákazníka · <b>${plain(j.name)}</b>`
+        instruction = j.type === 'taxi' ? `Zastav u zákazníka u pravého kraje · <b>${plain(j.name)}</b>`
           : `Vyzvedni jídlo · <b>${plain(j.name)}</b>${j.kind ? ` (${j.kind})` : ''}`;
         if (j.type === 'taxi' ? taxiAt() : j.type === 'food' ? foodAt() : (foot || driver) && at(10) && speed < 4) {
-          j.time = j.limit;
+          j.time = j.type === 'taxi' && j.id !== 'train' ? null : j.limit;
           advance(j.type === 'car' ? 'drive' : j.type === 'transit' ? 'board' : 'drop');
           if (this.passenger) this.passenger.visible = false;
           g.audio.door(p);
@@ -342,13 +372,12 @@ export class Jobs {
         }
         break;
       case 'drop':
-        instruction = j.type === 'taxi' ? `Zastav u cíle · <b>${plain(j.label)}</b> · bonus za plynulost ${five(j.comfort)} Kč`
-          : `Doruč na adresu <b>${plain(j.label)}</b>`;
         if (j.type === 'taxi') {
-          if (dt > 0 && j.speed > 9 && j.speed - speed > 11 * dt) j.comfort = Math.max(0, j.comfort - 5 * dt);
-          if (p.skid > 0.45) j.comfort = Math.max(0, j.comfort - 7 * dt);
-          j.speed = speed;
-        }
+          if (j.id === 'quiet') scoreTaxiMotion(j, dt, speed);
+          const bonus = j.id === 'quiet' ? ` · za plynulost ${taxiBonus(j)} Kč`
+            : j.id === 'train' ? ` · za čas ${taxiBonus(j)} Kč` : '';
+          instruction = `Zastav u cíle u pravého kraje · <b>${plain(j.label)}</b>${bonus}`;
+        } else instruction = `Doruč na adresu <b>${plain(j.label)}</b>`;
         if (j.type === 'taxi' ? taxiAt() : foodAt()) this._complete();
         break;
       case 'drive': {
@@ -375,8 +404,8 @@ export class Jobs {
         break;
     }
     if (this.job === j && !j.pending) {
-      const time = j.time === null ? '' : ` · <span class="timer">${clock(j.time)}</span>`;
-      g.hud.mission(`<b>${JOB_NAMES[j.type]}</b><br>${instruction}<br>${Math.round(d)} m${time} · odměna od ${j.reward} Kč`);
+      const time = j.time === null ? '' : j.time <= 0 ? ' · po termínu' : ` · <span class="timer">${clock(j.time)}</span>`;
+      g.hud.mission(`<b>${title}</b><br>${instruction}<br>${Math.round(d)} m${time} · odměna od ${j.reward} Kč`);
     }
   }
 
@@ -418,8 +447,9 @@ export class Jobs {
       const dz = useWalkApproach ? walk[1] : arrival.z;
       const atApproach = walk && (Math.hypot(p.x - dx, p.z - dz) < 25
         || (g.mode === 'foot' && Math.hypot(p.x - tgt.x, p.z - tgt.z) < 84));
-      let start = w.nearestNode(p.x, p.z, 250, p.y), incoming = -1, sameEdge = false;
-      if (g.mode === 'car') {
+      const taxiStart = this.job?.type === 'taxi' && g.mode === 'car' ? taxiRoadPosition(w, p) : null;
+      let start = taxiStart?.node ?? w.nearestNode(p.x, p.z, 250, p.y), incoming = -1, sameEdge = false;
+      if (g.mode === 'car' && !taxiStart) {
         const position = w.nearestRoad(p.x, p.z, 10, DRIVABLE_MAX, 0, _road, p.y, true);
         if (position) {
           const forward = position.dx * Math.sin(p.yaw) + position.dz * Math.cos(p.yaw) >= 0;
@@ -432,7 +462,11 @@ export class Jobs {
       const destination = arrival.edge === undefined ? w.nearestNode(dx, dz, 250, arrival.y) : w.eFrom[arrival.edge];
       const ride = this.job?.phase === 'ride' && this.job.vehicle === g.ride ? g.ride : null;
       let path = null;
-      if (!drivingToPin || this.arrivalRoad) {
+      if (taxiStart) {
+        const approach = taxiRoute(w, taxiStart, arrival);
+        path = approach?.path ?? null;
+        sameEdge = approach?.sameEdge ?? false;
+      } else if (!drivingToPin || this.arrivalRoad) {
         path = atApproach || sameEdge || ride ? [] : w.findPath(start, destination, 18000, incoming);
       }
       if (ride) {
@@ -445,6 +479,13 @@ export class Jobs {
         this.route = [...pts, dx, dz];
       } else if (path) {
         const pts = [];
+        if (taxiStart?.edge >= 0) {
+          const end = sameEdge ? arrival.along : w.eLen[taxiStart.edge];
+          for (let s = taxiStart.along; s < end; s += 8) {
+            const pos = w.edgePoint(taxiStart.edge, s, 0, {});
+            pts.push(pos.x, pos.z);
+          }
+        }
         for (const e of path) {
           const A = w.eA[e], B = w.eB[e], step = A < B ? 1 : -1;
           for (let k = A; ; k += step) { pts.push(w.rpx[k], w.rpz[k]); if (k === B) break; }

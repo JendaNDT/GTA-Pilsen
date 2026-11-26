@@ -26,7 +26,7 @@ test('časový bonus slábne po termínu, běžná jízda má pevné jízdné', 
 });
 
 test('dlouhé prudké brzdění stojí jeden odpočet a další odpočet až nový manévr', () => {
-  const job = { id: 'quiet', speed: 19, comfort: 90, braking: 0 };
+  const job = { id: 'quiet', speed: 19, comfort: 90, braking: 0, hardBrakes: 0 };
   for (const speed of [18, 17, 16, 15, 14, 13]) scoreTaxiMotion(job, 0.1, speed);
   assert.equal(taxiBonus(job), 75);
   scoreTaxiMotion(job, 0.1, 13);
@@ -35,6 +35,7 @@ test('dlouhé prudké brzdění stojí jeden odpočet a další odpočet až nov
   scoreTaxiMotion(job, 0.1, 10);
   scoreTaxiMotion(job, 0.1, 9.6);
   assert.equal(taxiBonus(job), 60);
+  assert.equal(job.hardBrakes, 2);
 });
 
 test('odhad času používá směrové limity a při zastávce na stejné hraně jen zbývající úsek', () => {

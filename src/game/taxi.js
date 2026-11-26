@@ -168,7 +168,10 @@ export function scoreTaxiMotion(job, dt, speed) {
   const braking = dt > 0 && job.speed > 5 && job.speed - speed > 5.5 * dt;
   if (braking) {
     const duration = job.braking + dt;
-    if (job.braking < 0.18 && duration >= 0.18) job.comfort = Math.max(0, job.comfort - 15);
+    if (job.braking < 0.18 && duration >= 0.18) {
+      job.comfort = Math.max(0, job.comfort - 15);
+      job.hardBrakes++;
+    }
     job.braking = duration;
   } else {
     job.braking = 0;

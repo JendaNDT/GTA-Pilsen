@@ -139,9 +139,13 @@
         <section id="panel-jobs" class="panel hidden" aria-labelledby="jobs-heading">
           <h3 id="jobs-heading">Zakázky</h3>
           <p id="job-result" aria-live="polite"></p>
-          <div class="work-actions" id="job-offers">
-            <button data-job="taxi">Vzít taxi jízdu</button>
-            <button data-job="food">Vzít rozvoz jídla</button>
+          <div id="job-offers">
+            <div class="work-actions">
+              <button data-job="food">Vzít rozvoz jídla</button>
+            </div>
+            <h3>Taxi</h3>
+            <p id="taxi-feedback" class="work-feedback" role="status"></p>
+            <div id="taxi-cards"></div>
           </div>
           <div id="job-demo">
             <h3>Rozvoz k Boleváku</h3>

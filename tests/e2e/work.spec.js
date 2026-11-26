@@ -28,8 +28,8 @@ test('E10 – taxi, příjem ze zakázek a vlastní auto po obnovení hry', asyn
   page.on('pageerror', (error) => errors.push(error.message));
   await boot(page);
   await panel(page, 'Zakázky');
-  await page.getByRole('button', { name: 'Vzít taxi jízdu' }).click();
-  await expect(page.locator('#job-feedback')).toContainText('nastup');
+  await expect(page.locator('#taxi-feedback')).toContainText('nastup');
+  await expect(page.locator('#taxi-cards button')).toHaveCount(0);
   await panel(page, 'Garáž');
   await expect(page.getByRole('button', { name: /Koupit malé auto/ })).toBeDisabled();
   await page.getByRole('button', { name: 'Najít garáž na mapě' }).click();
@@ -53,7 +53,7 @@ test('E10 – taxi, příjem ze zakázek a vlastní auto po obnovení hry', asyn
       else g.player.place(x, z);
     }, start);
     await panel(page, 'Zakázky');
-    await page.getByRole('button', { name: i < 2 ? 'Vzít taxi jízdu' : 'Vzít rozvoz jídla' }).click();
+    await page.getByRole('button', { name: i < 2 ? 'Přijmout · Klidná jízda' : 'Vzít rozvoz jídla' }).click();
     await freeze(page);
     const outcome = await page.evaluate((i) => {
       const g = window.__game, j = g.jobs.job, car = g.car, oldMoney = g.money;

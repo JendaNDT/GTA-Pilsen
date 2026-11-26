@@ -1,5 +1,6 @@
 import { CAR_PRICE, GARAGE, UPGRADES } from './garage.js';
-import { JOB_NAMES, resultText } from './missions.js';
+import { jobTitle, resultText } from './missions.js';
+import { TAXI_RIDES } from './taxi.js';
 import { shiftName, shiftTime } from './shift-plans.js';
 import { SHIFT_STATUS } from './shift.js';
 
@@ -8,13 +9,55 @@ export function initWorkUI(game, play, refreshMenu) {
   const { jobs, garage, shifts } = game;
   const garageButtons = document.querySelectorAll('[data-garage]');
 
-  function updateJobs() {
+  const taxiCards = $('taxi-cards');
+  const taxiFeedback = $('taxi-feedback');
+
+  function showTaxiOffers() {
+    const reason = jobs.taxiUnavailable();
+    const offers = reason ? [] : jobs.offersForTaxi();
+    taxiFeedback.textContent = reason ?? (offers.length ? '' : 'V okolí teď žádný cestující nečeká. Zkus to v jiné ulici.');
+    const cards = [];
+    for (const id of Object.keys(TAXI_RIDES)) {
+      const offer = offers.find((item) => item.id === id);
+      if (!offer) continue;
+      const ride = TAXI_RIDES[id];
+      const card = document.createElement('article');
+      card.className = 'taxi-card';
+      const title = document.createElement('h4');
+      title.textContent = ride.name;
+      const route = document.createElement('p');
+      route.textContent = `Nástup · ${offer.name} → Cíl · ${offer.label}`;
+      const request = document.createElement('p');
+      request.textContent = ride.request;
+      const pay = document.createElement('p');
+      pay.textContent = ride.bonus ? `Odhad výplaty ${offer.reward}–${offer.reward + ride.bonus} Kč` : `Výplata ${offer.reward} Kč`;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = 'Přijmout';
+      button.setAttribute('aria-label', `Přijmout · ${ride.name}`);
+      button.addEventListener('click', () => {
+        const error = jobs.start('taxi', offer);
+        $('job-feedback').textContent = error ?? '';
+        updateJobs(true);
+        if (!error) play();
+      });
+      const actions = document.createElement('footer');
+      actions.append(pay, button);
+      card.append(title, route, request, actions);
+      cards.push(card);
+    }
+    taxiCards.replaceChildren(...cards);
+  }
+
+  function updateJobs(showOffers = false) {
     const j = jobs.job;
-    $('job-result').textContent = j ? `Probíhá · ${JOB_NAMES[j.type]}`
-      : jobs.last ? resultText(jobs.last) : 'Taxi jede s řidičem v osobním autě. Po příjezdu k zákazníkovi zastav.';
+    $('job-result').textContent = j ? `Probíhá · ${jobTitle(j)}`
+      : jobs.last ? resultText(jobs.last) : '';
+    $('job-result').hidden = !j && !jobs.last;
     $('job-offers').hidden = $('job-demo').hidden = !!j;
     $('job-cancel').hidden = !j;
     $('job-retry').hidden = !j?.pending;
+    if (showOffers && !j) showTaxiOffers();
   }
 
   function updateGarage() {
@@ -94,19 +137,19 @@ export function initWorkUI(game, play, refreshMenu) {
     button.addEventListener('click', () => {
       const error = jobs.start(button.dataset.job);
       $('job-feedback').textContent = error ?? '';
-      updateJobs();
+      updateJobs(true);
       if (!error) play();
     });
   }
   $('job-cancel').addEventListener('click', () => {
     jobs.end('cancelled', 'Zrušeno hráčem');
     $('job-feedback').textContent = '';
-    updateJobs();
+    updateJobs(true);
     refreshMenu();
   });
   $('job-retry').addEventListener('click', () => {
     $('job-feedback').textContent = jobs.pay() ?? '';
-    updateJobs();
+    updateJobs(true);
     refreshMenu();
   });
   for (const button of document.querySelectorAll('[data-work-resume]')) button.addEventListener('click', play);
@@ -125,10 +168,10 @@ export function initWorkUI(game, play, refreshMenu) {
     });
   }
 
-  return () => {
+  return (section) => {
     $('job-feedback').textContent = '';
     $('shift-feedback').textContent = '';
-    updateJobs();
+    updateJobs(section === 'jobs');
     updateGarage();
     updateShifts();
   };

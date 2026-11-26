@@ -52,34 +52,3 @@ export function curbStop(world, x, z, radius = 58, { minWidth = 4, serviceEdge, 
   }
   return best;
 }
-
-export function taxiJourney(world, focus) {
-  const { addresses, roadNames } = world.meta;
-  const label = (a) => `${roadNames[a[2]]} ${a[3]}`;
-  const near = [], far = [];
-  for (const a of addresses) {
-    if (!roadNames[a[2]] || !a[3]) continue;
-    const d = Math.hypot(a[0] - focus.x, a[1] - focus.z);
-    if (d > 120 && d < 850) near.push(a);
-    if (d > 950 && d < 2700) far.push(a);
-  }
-  const sample = (list) => list.splice(Math.floor(Math.random() * list.length), 1)[0];
-  for (let i = 0; near.length && i < 16; i++) {
-    const origin = sample(near);
-    const pick = curbStop(world, origin[0], origin[1]);
-    if (!pick || world.findPath(world.nearestNode(focus.x, focus.z, 250), world.eFrom[pick.edge], 6000) === null) continue;
-    for (let k = 0; far.length && k < 18; k++) {
-      const address = sample(far);
-      const drop = curbStop(world, address[0], address[1]);
-      if (!drop || distance(pick, drop) < 800) continue;
-      const path = world.findPath(world.eTo[pick.edge], world.eFrom[drop.edge], 9000, pick.edge);
-      if (!path) continue;
-      let context = 0, from = pick.edge;
-      for (const edge of path) { context = world.turnContext(from, edge, context); from = edge; }
-      if (world.turnContext(from, drop.edge, context) < 0) continue;
-      const len = path.reduce((sum, e) => sum + world.eLen[e], world.eLen[pick.edge] - pick.along + drop.along);
-      if (len <= 4400) return { pick, drop, len, name: label(origin), label: label(address) };
-    }
-  }
-  return null;
-}

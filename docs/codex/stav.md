@@ -12,9 +12,9 @@ Na Slovanské, Lidické a Skvrňanské se obrubníky odsunuly za tramvajové pá
 
 # E53 · Taxi podle potřeb cestujícího
 
-- Krok 1 hotový. Na výchozích datech ověřeny tři směrové trasy, včetně přibližně 28 m volného pěšího přístupu od obrubníku ke spodnímu vstupu nádraží. Trasy z výchozí oblasti mají 2 321 m, 845 m a 2 169 m.
-- Zbývá připojit karty, zastavování, odměny a provést ověření ve hře. E53 navazuje přímo na E51 a používá existující nabídku Zakázky.
-- Prošlo 370 testů JavaScriptu a produkční sestavení. Pravidla skóre a směrové trasy mají nové zkoušky. [Zadání](E53.md)
+- Krok 1 hotový. Ověřeny tři směrové trasy včetně příjezdu a krátkého pěšího přístupu ke spodnímu vstupu nádraží.
+- Krok 2 hotový. Nabídka Zakázky má tři karty s odměnou před přijetím. Nástup i výstup vyžadují správný směr a pravý kraj. Výplata s počítadlem zůstává v jediném zápisu.
+- Krok 3 probíhá. Prošlo 370 testů JavaScriptu, produkční sestavení a finální scénáře E53 na WebGL 2. V obou scénách měření nízké předvolby vyšly rozpočty. Starší test taxi, garáže a obnovení hry na o něco dřívějším sestavení prošel při běhu s jedním procesem. V souběžném běhu na výsledném sestavení vyčerpal čas při otevírání panelu. Ověřuje se s plnou sadou. [Zadání](E53.md) · [Protokol a snímky](../E53.md)
 
 # E51 · Voda u Wilsonova mostu a u Ostende
 

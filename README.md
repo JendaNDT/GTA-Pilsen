@@ -15,6 +15,8 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 - Na Slovanské a dalších tramvajových ulicích se obrubník přizpůsobí poloze kolejí. Světlé klíny v kolejišti na Slovanské zmizely. [Srovnání a ověření](docs/chodniky-u-koleji.md)
 
+- **Taxi podle potřeb cestujících.** V osobním autě otevři Zakázky a vyber běžnou jízdu, spěch na vlak nebo klidnou jízdu. Před přijetím vidíš nástup, cíl a výplatu. Zastav u pravého obrubníku ve směru jízdy. Za včasný příjezd na nádraží nebo plynulou jízdu můžeš získat bonus. [Trasy a ověření](docs/E53.md)
+
 - Na vodních plochách v celé mapě se dá brodit a v hlubší vodě plavat. V řekách s mapovanou osou toku proud unáší plavce i plovoucí auta. Na střední a vyšší kvalitě se při pádu do vody objeví tříšť a kruhy. [Fyzika na celé mapě](docs/E51/voda-na-cele-mape.md) · [Srovnání hladiny u Wilsonova mostu a Ostende](docs/E51.md) · [Viditelný proud](docs/E51/proud.md)
 
 - Na mostě Generála Pattona jsou oba jízdní pásy volné. Lampy z Jízdecké a Lochotínské se vejdou pod most. [Pohled z mostu a z Jízdecké před opravou a po ní](docs/E50.md)
