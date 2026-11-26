@@ -1,3 +1,7 @@
+# Oprava okrajů silnic a grafických testů
+
+Na Karlovarské, v Kaplířově a v Zahradní zůstal v kontrolovaných bodech terén pod asfaltem. Součástí je návaznost výšky na hranici dlaždic. Herní revize je `b036d5b`. Kontroly světlometů a dat terénu jsou zpřesněné v revizi `b3850b8`. Prošlo produkční sestavení, 377 jednotkových a 95 cílených prohlížečových zkoušek. Jízda i let v měření na nízkou předvolbu splnily rozpočty. [Snímky a ověření](../okraje-silnic.md)
+
 # Oprava chodníků u tramvajových kolejí
 
 Na Slovanské, Lidické a Skvrňanské se obrubníky odsunuly za tramvajové pásy. Ověřeno na revizi `e012088`. Prošlo všech 375 jednotkových zkoušek, produkční sestavení a 56 cílených běhů v Chromiu na WebGL 2 a WebGPU. Měření na pevné kameře ukázalo na nízkou předvolbu stejný počet vykreslovacích volání a trojúhelníků. [Srovnávací snímky a výsledky](../chodniky-u-koleji.md)
