@@ -1,6 +1,8 @@
 # E59 · První průchozí vůz linky 1
 
-Výchozí revize `1fc8112`, půdorys a pohyb `3a325d7`. První vůz spoje 685462 je průchozí. Nástup na náměstí Republiky, sezení přes Hlavní poštu a výstup prostředními dveřmi Pod Záhorskem prošly na WebGL 2 i WebGPU. Prošlo 400 testů JavaScriptu, produkční sestavení a 34 testů Pythonu s jedním přeskočeným případem. Dokončuje se porovnání výkonu a závěrečná kontrola návazných směn. [Zadání](E59.md) · [Protokol a snímky](../E59.md)
+Dokončeno na herní revizi `f493782` z větve `main` na `1fc8112`. Cestující nastoupil předními dveřmi Tatry na náměstí Republiky, za jízdy došel k sedadlu, projel Hlavní poštou a vystoupil prostředními dveřmi Pod Záhorskem. Ověřeny jsou také dotykové ovládání, výstup v přestupním uzlu, konečná a návrat na nástupiště po přerušení.
+
+Prošlo sestavení, 400 testů JavaScriptu, 34 testů Pythonu s jedním přeskočeným případem a 34 cílených zkoušek v Chromiu. V tramvaji na nízkou předvolbu vyšly všechny čtyři časové rozpočty. Otevřenou otázkou je příčina jedné prodlevy v náhodném provozu před Hlavní poštou. [Zadání](E59.md) · [Protokol, snímky a ovládání](../E59.md)
 
 # Převzetí E54 až E57 do mainu
 
