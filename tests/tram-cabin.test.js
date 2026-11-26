@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ARTICULATED_CABIN, boardingDoor, CABIN_DOORS, TramCabin } from '../src/game/tram-cabin.js';
+import { ARTICULATED_CABIN, BUS_CABIN, boardingDoor, CABIN_DOORS, TramCabin } from '../src/game/tram-cabin.js';
 
 test('nástup připouští jen pravou stranu a otvor konkrétních dveří', () => {
   for (const z of CABIN_DOORS) {
@@ -57,4 +57,21 @@ test('ulička spojuje tři články oběma směry a drží cestujícího uvnitř
   walk(120, 1);
   assert.equal(cabin.section, 0);
   assert.ok(cabin.z > -4);
+});
+
+test('cestující v autobusu projde ke všem třem dveřím a nemůže vkročit do podběhu kola', () => {
+  const [section] = BUS_CABIN;
+  const cabin = new TramCabin(4.69, {}, BUS_CABIN);
+  for (const z of section.doors) {
+    assert.equal(boardingDoor(2.6, z, section.doors), z);
+    assert.equal(boardingDoor(-2.6, z, section.doors), null);
+    cabin.x = 0;
+    for (let i = 0; i < 400 && cabin.z > z + 0.03; i++) cabin.walk(1 / 60, 0, 1);
+    for (let i = 0; i < 25; i++) cabin.walk(1 / 60, -1, 0);
+    assert.equal(cabin.door, z);
+  }
+  cabin.z = section.wheelWells[0] + 0.59;
+  cabin.x = 0;
+  for (let i = 0; i < 45; i++) cabin.walk(1 / 60, 1, 0);
+  assert.ok(cabin.x > 0.6 && cabin.x <= 0.68);
 });

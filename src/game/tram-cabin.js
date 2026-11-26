@@ -5,6 +5,7 @@ export const CABIN_SEATS = [-4.9, -3.85, -2.8, -1.75, 1.55, 2.6, 3.65, 4.7]
   .flatMap(z => [-0.81, 0.81].map(x => ({ x, z })));
 
 export const ARTICULATED_TRIP = '685463';
+export const BUS_TRIP = '688856';
 
 const tatraLayout = [{ doors: CABIN_DOORS, seats: CABIN_SEATS, min: -6.53, max: 6.48 }];
 export const ARTICULATED_CABIN = [
@@ -12,6 +13,23 @@ export const ARTICULATED_CABIN = [
   { length: 10.34, doors: [0], rows: [-3.6, -2.5, -1.4, 1.4, 2.5, 3.6], min: -5.17, max: 5.17 },
   { length: 9.4, doors: [3.25, -2.36], rows: [-1.25, -0.2, 0.85, 1.9], min: -3.05, max: 4.7 },
 ].map(section => ({ ...section, seats: section.rows.flatMap(z => [-0.81, 0.81].map(x => ({ x, z }))) }));
+
+export const BUS_CABIN = [{
+  length: 12, doors: [4.69, -0.63, -4.23], wheelWells: [3.3, -2.6], min: -5.1, max: 5.04,
+  seats: [-3.07, -1.95, 0.63, 1.76, 2.94].flatMap(z => [-0.81, 0.81].map(x => ({ x, z }))),
+}];
+
+export const CABIN_SERVICES = [
+  { trip: PILOT_TRIP, type: 'tram', ref: '1', layout: tatraLayout, stop: '54717/1',
+    name: 'Průchozí tramvaj · linka 1', marker: '1 · Průchozí Tatra', aliases: ['Tatra'],
+    access: 'První vůz spoje 685462 směr Bolevec. V pondělí 9. 11. 2026 odjezd v 10:06 ze stanoviště 1.' },
+  { trip: ARTICULATED_TRIP, type: 'tram', ref: '1', layout: ARTICULATED_CABIN, stop: '54717/1',
+    name: 'Článková tramvaj · linka 1', marker: '1 · Článková tramvaj', aliases: [],
+    access: 'Tři průchozí články spoje 685463 směr Bolevec. V pondělí 9. 11. 2026 odjezd v 10:13 ze stanoviště 1.' },
+  { trip: BUS_TRIP, type: 'bus', ref: '33', layout: BUS_CABIN, stop: '54717/4',
+    name: 'Průchozí autobus · linka 33', marker: '33 · Průchozí autobus', aliases: ['SOR'],
+    access: 'Spoj 688856 směr Hlavní nádraží. V pondělí 9. 11. 2026 odjezd v 8:20 ze stanoviště 4.' },
+];
 
 export function boardingDoor(across, along, doors = CABIN_DOORS) {
   if (across < 1.22 || across > 3.9) return null;
@@ -21,6 +39,7 @@ export function boardingDoor(across, along, doors = CABIN_DOORS) {
 function canStand(section, x, z) {
   const atJoint = Math.abs(z) > (section.length ?? Infinity) / 2 - 0.75;
   return Math.abs(x) <= (atJoint ? 0.68 : 1.04) && z >= section.min && z <= section.max &&
+    !(Math.abs(x) > 0.68 && section.wheelWells?.some(axle => Math.abs(z - axle) < 0.70)) &&
     !section.seats.some(seat => Math.abs(x - seat.x) < 0.43 && Math.abs(z - seat.z) < 0.47);
 }
 

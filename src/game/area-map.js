@@ -1,4 +1,4 @@
-import { ARTICULATED_TRIP, PILOT_TRIP } from './tram-cabin.js';
+import { CABIN_SERVICES } from './tram-cabin.js';
 import { ACTIVITY_SITES } from './activity-sites.js';
 import { POLICE_STATIONS } from './police-stations.js';
 import { initMapSearch } from './map-search.js';
@@ -23,13 +23,11 @@ export class AreaMap {
       .sort((a,b)=>priority[a[3]] - priority[b[3]]);
     this.sites = (world.sady?.solids ?? []).filter(site => !site.wall)
       .map(({ x, z, name, walk }) => ({ x, z, name, walk, exact: true }));
-    const pilotStop = game.transit.timetable.stops.find(stop => stop[3] === '54717/1');
-    if (pilotStop) this.sites.push({ name: 'Průchozí tramvaj · linka 1', x: pilotStop[1], z: pilotStop[2],
-      aliases: ['Tatra', PILOT_TRIP], exact: true,
-      access: `První vůz spoje ${PILOT_TRIP} směr Bolevec. V pondělí 9. 11. 2026 odjezd v 10:06 ze stanoviště 1.` });
-    if (pilotStop) this.sites.push({ name: 'Článková tramvaj · linka 1', x: pilotStop[1], z: pilotStop[2],
-      aliases: [ARTICULATED_TRIP], exact: true,
-      access: `Tři průchozí články spoje ${ARTICULATED_TRIP} směr Bolevec. V pondělí 9. 11. 2026 odjezd v 10:13 ze stanoviště 1.` });
+    for (const service of CABIN_SERVICES) {
+      const stop = game.transit.timetable.stops.find(stop => stop[3] === service.stop);
+      if (stop) this.sites.push({ name: service.name, x: stop[1], z: stop[2], exact: true,
+        aliases: [...service.aliases, service.trip], access: service.access });
+    }
     this.sites.push(...game.bikes.mapSites());
     this.sites.push(...POLICE_STATIONS.map(station => ({ ...station, exact: true, police: true })));
     this.sites.push(...ACTIVITY_SITES.map(site => ({ ...site, exact: true, activity: true })));

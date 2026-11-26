@@ -1,4 +1,4 @@
-import { ARTICULATED_CABIN, PILOT_TRIP, TramCabin } from './tram-cabin.js';
+import { CABIN_SERVICES, PILOT_TRIP, TramCabin } from './tram-cabin.js';
 import { arrestDestination } from './police-stations.js';
 import { wheelTrail } from '../fx/wheel-trails.js';
 import { NightLights } from '../world/night-lights.js';
@@ -632,14 +632,16 @@ export class Game {
     this.audio.door(h);
   }
 
-  startTramRide(trip = PILOT_TRIP) {
+  startCabinRide(trip = PILOT_TRIP) {
     if (this.cabin && this.ride.event.trip.id === trip) return;
     if (this.jobs.job || this.shifts.active || this.activities.active || this.mode === 'bike') {
-      return 'Pro jízdu tramvají nejdřív ukonči rozjetou aktivitu nebo vrať kolo.';
+      return 'Pro nástup nejdřív ukonči rozjetou aktivitu nebo vrať kolo.';
     }
     const table = this.transit.timetable, date = '2026-11-09', day = parseDay(date);
-    const event = table.events(day).find(e => e.day === day && e.trip.id === trip);
-    const index = event?.trip.stops.findIndex(s => table.stops[s.stop][3] === '54717/1');
+    const service = CABIN_SERVICES.find(item => item.trip === trip);
+    const event = service && table.events(day).find(e => e.day === day && e.trip.id === trip &&
+      e.trip.route.type === service.type && e.trip.route.ref === service.ref);
+    const index = event?.trip.stops.findIndex(s => table.stops[s.stop][3] === service.stop);
     if (index == null || index < 0) return 'V jízdním řádu chybí průchozí spoj na náměstí Republiky.';
 
     const [, x, z] = table.stops[event.trip.stops[index].stop];
@@ -655,11 +657,11 @@ export class Game {
   }
 
   _board(v) {
-    if (v.pilot && !this.shifts.active) {
+    if (v.cabinService && !this.shifts.active) {
       const p = this.player, door = v.cabinDoorAt(p.x, p.z);
       if (door === null) return;
       this.cabin = new TramCabin(door.door, { x: p.x, y: p.y, z: p.z },
-        v.articulatedCabin ? ARTICULATED_CABIN : undefined, door.index);
+        v.cabinService.layout, door.index);
       this.cabin.stop = v.stopIndex;
       this.camera.near = 0.06;
       this.camera.updateProjectionMatrix();
@@ -748,7 +750,8 @@ export class Game {
     if (h) return { label: 'Nasednout do vrtulníku', run: () => this._enterHeli(h) };
     const v = this.transit.boardable(p.x, p.z, p.y);
     if (v) {
-      const view = v.pilot ? 'průchozí vůz · ' : v.route.type === 'tram' && v.route.ref === '1' ? 'vnější pohled · ' : '';
+      const pilotLine = CABIN_SERVICES.some(service => v.route.type === service.type && v.route.ref === service.ref);
+      const view = v.cabinService ? 'průchozí vůz · ' : pilotLine ? 'vnější pohled · ' : '';
       return { label: `Nastoupit · ${view}${TRANSIT_NAME[v.route.type]} ${v.route.ref} → ${v.destination}`, run: () => this._board(v) };
     }
     const car = this.vehicles.nearestEnterable(p.x, p.z, p.y);
@@ -961,7 +964,7 @@ export class Game {
     c.yaw = wrapAngle(c.yaw - input.lookDX * 0.0052);
     c.pitch = clamp(c.pitch + input.lookDY * 0.004, -1.25, 1.25);
     const pos = c.seat ?? c;
-    const eye = (c.seat ? 1.93 : 2.44) - (this.ride.articulatedCabin ? 0.34 : 0);
+    const eye = (c.seat ? 1.93 : 2.44) - (this.ride.isTatra ? 0 : 0.34);
     cam.position.set(pos.x, eye, pos.z).applyQuaternion(mesh.quaternion).add(mesh.position);
     cam.quaternion.copy(mesh.quaternion);
     // V měchu se pohled plynule přikloní k ose sousedního článku z obou stran spoje.

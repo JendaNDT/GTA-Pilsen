@@ -1,4 +1,4 @@
-import { ARTICULATED_TRIP, boardingDoor, PILOT_TRIP } from '../game/tram-cabin.js';
+import { boardingDoor, CABIN_SERVICES } from '../game/tram-cabin.js';
 import { Vector3 } from 'three/webgpu';
 import { STOP_DWELL, Timetable } from '../game/timetable.js';
 import { installTransitStops } from '../world/transit-stops.js';
@@ -101,8 +101,8 @@ class TransitVehicle {
     this.isTram = this.route.type === 'tram';
     // Herní střídání na spojích linek 1 a 2, stálé pro konkrétní spoj.
     this.isTatra = this.isTram && ['1', '2'].includes(this.route.ref) && Number(trip.id) % 2 === 0;
-    this.articulatedCabin = this.isTram && this.route.ref === '1' && trip.id === ARTICULATED_TRIP;
-    this.pilot = this.articulatedCabin || this.isTatra && this.route.ref === '1' && trip.id === PILOT_TRIP;
+    this.cabinService = CABIN_SERVICES.find(service => service.trip === trip.id &&
+      service.type === this.route.type && service.ref === this.route.ref);
     this.sections = this.isTatra ? TATRA_SECTIONS : SECTIONS[this.route.type];
     this.footprints = this.sections.map(() => ({}));
     this.len = this.sections.reduce((sum, { length }) => sum + length, 0);
@@ -137,8 +137,8 @@ class TransitVehicle {
   }
 
   cabinDoorAt(x, z) {
-    if (!this.pilot || !this.visible || !this.canBoard || this.doorFraction < 0.85) return null;
-    for (let index = 0; index < (this.articulatedCabin ? this.meshes.length : 1); index++) {
+    if (!this.cabinService || !this.visible || !this.canBoard || this.doorFraction < 0.85) return null;
+    for (let index = 0; index < this.cabinService.layout.length; index++) {
       const mesh = this.meshes[index], dx = x - mesh.position.x, dz = z - mesh.position.z;
       const sin = Math.sin(mesh.rotation.y), cos = Math.cos(mesh.rotation.y);
       const door = boardingDoor(dz * sin - dx * cos, dx * sin + dz * cos, this.sections[index].doors);
@@ -240,12 +240,12 @@ export class TransitManager {
     if (on) {
       if (!v.meshes) {
         if (v.isTatra) {
-          v.meshes = v.sections.map((_, i) => makeTatraCar(v.pilot && i === 0));
+          v.meshes = v.sections.map((_, i) => makeTatraCar(!!v.cabinService && i === 0));
           v.joints = [makeTatraCoupler()];
         } else {
-          v.meshes = v.isTram ? v.sections.map(section => makeTramSection(section, v.articulatedCabin))
-            : [v.route.type === 'bus' ? makeSorBus() : makeTrolleybus()];
-          v.joints = v.meshes.slice(1).map(() => makeTramJoint(v.articulatedCabin));
+          v.meshes = v.isTram ? v.sections.map(section => makeTramSection(section, !!v.cabinService))
+            : [v.route.type === 'bus' ? makeSorBus(!!v.cabinService) : makeTrolleybus()];
+          v.joints = v.meshes.slice(1).map(() => makeTramJoint(!!v.cabinService));
         }
         if (!v.isTram) v.indicator = addDepartureIndicator(v.meshes[0], v.len);
         v.display = addTransitDisplay(v.meshes[0], v.sections[0].length, v.route.ref, v.destination);
@@ -555,9 +555,9 @@ export class TransitManager {
     for (const v of this.vehicles) {
       if (!v.visible || !v.canBoard || Math.abs(v.y - y) > 2.5) continue;
       const cabinDoor = v.cabinDoorAt(x, z);
-      if (v.pilot && cabinDoor === null) continue;
+      if (v.cabinService && cabinDoor === null) continue;
       for (const [index, mesh] of v.meshes.entries()) {
-        if (v.pilot && index !== cabinDoor.index) continue;
+        if (v.cabinService && index !== cabinDoor.index) continue;
         const dx = x - mesh.position.x, dz = z - mesh.position.z;
         const fx = Math.sin(mesh.rotation.y), fz = Math.cos(mesh.rotation.y);
         const across = dz * fx - dx * fz, along = dx * fx + dz * fz;
@@ -583,7 +583,7 @@ export class TransitManager {
     else if (v.isTram) offset = (v.sections[0].length + v.sections[1].length) / 2;
     const x = mesh?.position.x ?? v.x + fx * offset;
     const z = mesh?.position.z ?? v.z + fz * offset;
-    if (v.articulatedCabin && mesh) out.y = mesh.position.y;
+    if (v.cabinService && mesh) out.y = mesh.position.y;
     out.x = x + fx * longitudinal - fz * 2.6;
     out.z = z + fz * longitudinal + fx * 2.6;
     return out;

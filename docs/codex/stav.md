@@ -1,3 +1,11 @@
+# E60 · Průchozí autobus linky 33
+
+Druhý krok navazuje na revizi `5c5a4a4`. Spoj 688856 odjíždí v pondělí v 8:20 ze stanoviště 4 na náměstí Republiky směrem na hlavní nádraží. Přímý nástup je v nabídce, pěší nástup nabídnou otevřené dveře. Zkouška přestupu navázala na tramvaj 4 od zastávky U Práce. Z náměstí prošla jízda přes Goethovu k výstupu zadními dveřmi v Pařížské.
+
+Prošlo 404 testů JavaScriptu, 34 testů Pythonu s jedním přeskočeným případem, produkční sestavení a všech 12 cílených prohlížečových zkoušek na WebGL 2 a WebGPU. Dotyková zkouška ověřila hledání na mapě a prostřední dveře autobusu. Řidičská směna linky 30 skončila výplatou.
+
+Při jednom průjezdu s náhodným provozem autobus po odjezdu z Goethovy ujel pouze 17 m za 283 sekund. Důvod tohoto čekání zůstává otevřený. Dalším krokem podle zadání je průchozí trolejbus. [Postup a snímky z autobusu](../E60.md#autobus-linky-33)
+
 # E60 · Článková tramvaj linky 1
 
 Místní větev `main` převzala všech pět revizí E59 po `e074d04`. Na tomto základě má spoj 685463 tři průchozí články, přímý nástup z nabídky a vlastní vyhledání na mapě. Ověřený je přechod za jízdy v zatáčce, pohled ze sedadla, výstup prostředními dveřmi i průchod oběma měchy dotykovou páčkou. Prošlo sestavení, 402 testů JavaScriptu a 34 testů Pythonu s jedním přeskočeným případem. Měření jízdy na nízkou předvolbu splnilo čtyři časové rozpočty.

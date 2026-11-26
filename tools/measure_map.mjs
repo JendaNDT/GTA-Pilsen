@@ -1,5 +1,5 @@
 // Měří běžnou smyčku hry v Chromiu. Jízda a let mají pevné výchozí body.
-import { PILOT_TRIP } from '../src/game/tram-cabin.js';
+import { CABIN_SERVICES, PILOT_TRIP } from '../src/game/tram-cabin.js';
 import { frameBudgets } from '../src/game/frame-budget.js';
 import { chromium } from '@playwright/test';
 import { webgpuFlags } from '../tests/e2e/browser-flags.js';
@@ -10,18 +10,22 @@ const args = process.argv.slice(2);
 const centerFlight = args.includes('--center-flight');
 const release = args.includes('--release');
 const rush = args.includes('--rush');
-const tramCabin = args.includes('--tram-cabin');
-const tramTrip = args.find(arg => arg.startsWith('--tram-trip='))?.slice('--tram-trip='.length) ?? PILOT_TRIP;
-const work = tramCabin || rush || args.includes('--work');
-const pilot = !tramCabin && !rush && (release || centerFlight || args.includes('--pilot'));
-if (tramCabin && (rush || release)) throw new Error('Jízdu tramvají měř samostatně.');
+const cabinArg = args.find(arg => arg.startsWith('--cabin-trip='));
+const cabin = !!cabinArg || args.includes('--tram-cabin');
+const cabinTrip = cabinArg?.slice('--cabin-trip='.length) ??
+  args.find(arg => arg.startsWith('--tram-trip='))?.slice('--tram-trip='.length) ?? PILOT_TRIP;
+const service = CABIN_SERVICES.find(item => item.trip === cabinTrip);
+if (cabin && !service) throw new Error('Neznámý průchozí spoj ' + cabinTrip);
+const work = cabin || rush || args.includes('--work');
+const pilot = !cabin && !rush && (release || centerFlight || args.includes('--pilot'));
+if (cabin && (rush || release)) throw new Error('Jízdu v MHD měř samostatně.');
 if (rush && release) throw new Error('Špičku a vydání měř samostatně.');
 const url = new URL(args.find((arg) => !arg.startsWith('--')) || 'http://127.0.0.1:4173/');
 url.searchParams.set('debug', '');
 if (work) {
   url.searchParams.set('adapt', args.includes('--adaptive') ? '1' : '0');
   if (rush) url.searchParams.set('quality', 'high');
-  if (!url.searchParams.has('date')) url.searchParams.set('date', rush || tramCabin ? '2026-11-09' : '2026-11-17');
+  if (!url.searchParams.has('date')) url.searchParams.set('date', rush || cabin ? '2026-11-09' : '2026-11-17');
   if (!url.searchParams.has('hour')) url.searchParams.set('hour', rush ? '7.5' : '10');
 }
 const workFlags = args.includes('--paced') ? [] : ['--disable-gpu-vsync', '--disable-frame-rate-limit'];
@@ -32,13 +36,13 @@ const browser = await chromium.launch({
   ...(work && { channel: 'chromium', args: workFlags }),
 });
 const report = { browser: browser.version(), viewport: '1920 × 1080', pilot, centerFlight, coldStartMs: [] };
-const scenarios = tramCabin ? [{ name: 'tram', mode: 'tram', site: 'Náměstí Republiky' }] : rush ? [{ name: 'rush', mode: 'traffic', site: 'Klatovská třída' }] : release ? [
+const scenarios = cabin ? [{ name: service.type, mode: 'cabin', site: 'Náměstí Republiky' }] : rush ? [{ name: 'rush', mode: 'traffic', site: 'Klatovská třída' }] : release ? [
   { name: 'car', mode: 'car', site: 'Plzeň' },
   { name: 'heli', mode: 'heli', site: 'Dobřív' },
   { name: 'carEast', mode: 'car', site: 'Hrádek' },
   { name: 'heliCenter', mode: 'heli', site: 'Plzeň' },
 ] : [{ name: 'car', mode: 'car' }, { name: 'heli', mode: 'heli', site: centerFlight ? 'Plzeň' : undefined }];
-if (tramCabin) report.trip = tramTrip;
+if (cabin) report.trip = cabinTrip;
 if (release || work) report.quality = url.searchParams.get('quality') ?? 'high';
 if (work) {
   report.work = { date: url.searchParams.get('date'), hour: +url.searchParams.get('hour'),
@@ -77,16 +81,16 @@ try {
     report.gpu = startup.adapter || gpu.auxAttributes?.glRenderer || null;
     if (mode) {
       await page.getByRole('button', { name: 'Hrát', exact: true }).click();
-      report[name] = await page.evaluate(async ({ mode, pilot, site, work, pilotTrip }) => {
+      report[name] = await page.evaluate(async ({ mode, pilot, site, work, pilotTrip, platform }) => {
         const game = window.__game, world = game.world;
-        if (mode === 'tram') {
+        if (mode === 'cabin') {
           window.__freeze(true);
           const table = game.transit.timetable;
-          const [, x, z] = table.stops.find(stop => stop[3] === '54717/1');
+          const [, x, z] = table.stops.find(stop => stop[3] === platform);
           game.player.place(x, z);
           const date = '2026-11-09', day = Date.parse(date) / 86_400_000;
           const trip = table.events(day).find(e => e.trip.id === pilotTrip && e.day === day)?.trip;
-          const stop = trip?.stops.findIndex(s => table.stops[s.stop][3] === '54717/1');
+          const stop = trip?.stops.findIndex(s => table.stops[s.stop][3] === platform);
           if (stop == null || stop < 0) throw new Error('Měřený spoj nemá nástupiště na náměstí Republiky.');
           window.__setClock(date, trip.times[2 * stop + 1] / 3600);
           const v = game.transit.vehicles.find(v => v.event.trip.id === pilotTrip);
@@ -164,7 +168,7 @@ try {
         const start = [focus.x, focus.z];
         // Na stejné trase musí pilot i s převodovkou Jolt projet do další dlaždice.
         const pedal = game.driver ? 0.38 : 0.27;
-        window.__setInput(0, mode === 'traffic' || mode === 'tram' ? 0 : mode === 'car' ? (pilot ? pedal : 0.55) : 1);
+        window.__setInput(0, mode === 'traffic' || mode === 'cabin' ? 0 : mode === 'car' ? (pilot ? pedal : 0.55) : 1);
         const physicsTimes = [];
         const obstacleSearch = { calls:0, candidates:0, ms:0 };
         const vehicles = game.vehicles, originalLimit = vehicles._obstacleLimit;
@@ -236,7 +240,7 @@ try {
           ...(physicsTimes.length > 0 && { physicsSteps: physicsTimes.length,
             physicsP95Ms: physicsTimes[Math.ceil(physicsTimes.length * 0.95) - 1] }),
         };
-      }, { mode, pilot, site, work, pilotTrip: tramTrip });
+      }, { mode, pilot, site, work, pilotTrip: cabinTrip, platform: service?.stop });
       if (work) report[name].budgets = frameBudgets(report[name].measurement, report.work.durationMs / 1000);
       if (site) report[name].site = site;
     }
@@ -244,9 +248,10 @@ try {
   }
   const json = JSON.stringify(report, null, 2) + '\n';
   if (work) {
-    const tramOutput = tramTrip === PILOT_TRIP ? 'data-raw/e59/jizda.json' : 'data-raw/e60/jizda.json';
+    const cabinOutput = cabinTrip === PILOT_TRIP ? 'data-raw/e59/jizda.json'
+      : service?.type === 'bus' ? 'data-raw/e60/bus/jizda.json' : 'data-raw/e60/jizda.json';
     const output = args.find((arg) => arg.startsWith('--output='))?.slice('--output='.length)
-      ?? (tramCabin ? tramOutput : rush ? 'data-raw/e20/vykon-spicka.json' : 'data-raw/e13/measure-work.json');
+      ?? (cabin ? cabinOutput : rush ? 'data-raw/e20/vykon-spicka.json' : 'data-raw/e13/measure-work.json');
     await mkdir(dirname(output), { recursive: true });
     await writeFile(output, json);
   }

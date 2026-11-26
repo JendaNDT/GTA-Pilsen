@@ -54,7 +54,7 @@ test('E08 – přestup z tramvaje na autobus po skutečné jízdě a výstupu', 
     while (g.clock.now < expectedArrival) {
       window.__advanceTransit();
       bus = g.transit.vehicles.find((v) => v.route.type === 'bus' && v.visible && v.canBoard
-        && v.event.trip.stops[v.stopIndex].stop === station);
+        && v.event.trip.stops[v.stopIndex].stop === station && v.doorFraction >= 0.85);
       if (bus) break;
     }
     if (!bus) return { distance, walked, found: false };
@@ -64,17 +64,19 @@ test('E08 – přestup z tramvaje na autobus po skutečné jízdě a výstupu', 
     g.promptTimer = 0;
     window.__step(1 / 60);
     const display = bus.display?.map.image;
-    return { found: true, ref: bus.route.ref, distance, walked, exact: waypoint.x === x && waypoint.z === z,
+    return { found: true, id: bus.event.trip.id, ref: bus.route.ref, distance, walked, exact: waypoint.x === x && waypoint.z === z,
       boarding: liveBoard.rows.some((row) => row.ref === bus.route.ref && row.boarding), display: display?.width,
       boardable: g.transit.boardable(door.x, door.z, bus.y) === bus };
   });
   await info.attach('návaznost na stanovišti 4', { body: JSON.stringify(transfer), contentType: 'application/json' });
   expect(transfer.found).toBe(true);
+  expect(transfer.id).toBe('688856');
   expect(transfer.distance).toBeLessThan(90);
   expect(transfer.exact && transfer.walked && transfer.boarding && transfer.boardable, JSON.stringify(transfer)).toBe(true);
   expect(transfer.display).toBe(512);
   await action(page);
   await expect(page.locator('#vehname')).toContainText(`autobus ${transfer.ref}`);
+  expect(await page.evaluate(() => [__game.ride.event.trip.id, __game.cabin?.door])).toEqual(['688856', 4.69]);
   expect(errors).toEqual([]);
 });
 
