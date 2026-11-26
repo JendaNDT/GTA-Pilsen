@@ -53,17 +53,20 @@
     <div id="place"><b id="street"></b><span id="district"></span></div>
     <div id="mission" class="hidden"></div>
     <section id="minigolf-panel" aria-labelledby="golf-title" hidden>
-      <header><h2 id="golf-title">Minigolf · jamka 1</h2><span id="golf-count"></span></header>
+      <header><h2 id="golf-title">Minigolf</h2><span id="golf-count"></span></header>
+      <div id="golf-score"><span id="golf-round"></span><span id="golf-record"></span></div>
       <div class="golf-controls">
         <label for="golf-aim">Směr <span id="golf-aim-value"></span></label>
         <input id="golf-aim" name="aim" type="range" min="-175" max="175" step="1" value="0">
         <label for="golf-power">Síla <span id="golf-power-value"></span></label>
         <input id="golf-power" name="power" type="range" min="0" max="100" step="1" value="70">
       </div>
-      <p id="golf-status" role="status"></p>
+      <p id="golf-status" role="status" tabindex="-1"></p>
       <div class="golf-actions">
         <button type="button" id="golf-hit">Odpálit <kbd>F</kbd></button>
-        <button type="button" id="golf-restart" hidden>Zkusit znovu</button>
+        <button type="button" id="golf-next" hidden>Přejít k další jamce <kbd>F</kbd></button>
+        <button type="button" id="golf-restart" hidden>Nová partie</button>
+        <button type="button" id="golf-retry" hidden>Znovu uložit výsledek</button>
         <button type="button" id="golf-leave">Odejít</button>
       </div>
     </section>

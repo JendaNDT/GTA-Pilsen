@@ -1,7 +1,6 @@
 import { GolfScore, MINIGOLF_RADIUS, RAIL_HEIGHT, RAIL_WIDTH, golfBallResult } from '../game/minigolf-rules.js';
 import { layers } from './world.js';
 
-
 export class GolfBall {
   constructor(physics, hole, surface) {
     this.physics = physics;
@@ -24,6 +23,10 @@ export class GolfBall {
     for (const side of [-1, 1]) {
       this.lane.push(this.box(side * (hole.halfWidth + RAIL_WIDTH / 2), RAIL_HEIGHT / 2, center,
         RAIL_WIDTH / 2, RAIL_HEIGHT / 2, halfLength));
+    }
+    for (const obstacle of hole.obstacles) {
+      this.lane.push(this.box(obstacle.x, obstacle.height / 2, obstacle.z,
+        obstacle.width / 2, obstacle.height / 2, obstacle.length / 2));
     }
     this.ball = this.create(new Jolt.SphereShape(MINIGOLF_RADIUS), 0, MINIGOLF_RADIUS, 0, true);
     this.park(0, 0);
@@ -107,7 +110,7 @@ export class GolfBall {
     if (result) {
       this.score.settle(result);
       if (result === 'out') this.park(this.lastX, this.lastZ);
-      else this.park(0, this.hole.cup);
+      else this.park(this.hole.cupX, this.hole.cupZ);
       return;
     }
     const grounded = Math.abs(this.y - MINIGOLF_RADIUS) < 0.045 && Math.abs(vy) < 0.12;

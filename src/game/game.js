@@ -114,7 +114,7 @@ export class Game {
         h.physical.drive(dt, input.moveY, input.moveX, input.lift, this.heliAssist);
       }
       this.driver?.drive(dt, input.moveY, input.moveX, input.handbrake, this.steering === 'arcade', this.tireSurface);
-      if (this.mode === 'foot' && !this.activities.playingGolf && !this.falls.active.has(this.player)) {
+      if (this.mode === 'foot' && !this.activities.golf.ball && !this.falls.active.has(this.player)) {
         const fx = Math.sin(this.camYaw), fz = Math.cos(this.camYaw);
         const dx = fx * input.moveY - fz * input.moveX, dz = fz * input.moveY + fx * input.moveX;
         const { player } = this;
@@ -462,8 +462,8 @@ export class Game {
 
   /** Peníze, statistiky a související stav patří do jednoho uloženého záznamu. */
   commitAccount({ money = this.money, stats = this.stats, garage = this.garage.snapshot(),
-    job = this.jobs.snapshot(), shift = this.shifts.snapshot() }) {
-    if (!this._writeSave({ money, stats, garage, job, shift })) return false;
+    job = this.jobs.snapshot(), shift = this.shifts.snapshot(), activity = this.activities.snapshot() }) {
+    if (!this._writeSave({ money, stats, garage, job, shift, activity })) return false;
     this.money = money;
     this.stats = stats;
     this.garage.owned = garage;
@@ -654,7 +654,7 @@ export class Game {
   }
 
   doAction() {
-    if (this.activities.playingGolf) return this.activities.golf.strike();
+    if (this.activities.golf.ball) return this.activities.golf.action();
     if (this.falls.active.has(this.player) || this.player.stun > 0) return;
     if (this.shifts.active) return this.shifts.doors();
     if (this.mode === 'car') return this._exitCar();
@@ -665,9 +665,10 @@ export class Game {
 
   _footAction() {
     const p = this.player;
-    if (this.falls.active.has(p) || p.stun > 0 || this.shifts.active || this.activities.playingGolf) return null;
+    if (this.falls.active.has(p) || p.stun > 0 || this.shifts.active || this.activities.golf.ball) return null;
     const activity = this.activities.choice();
     if (activity) return { label: activity.label, run: () => this.activities.act(activity) };
+    if (this.activities.playingGolf) return null;
     const h = this._nearestHeli();
     if (h) return { label: 'Nasednout do vrtulníku', run: () => this._enterHeli(h) };
     const v = this.transit.boardable(p.x, p.z, p.y);
@@ -868,7 +869,7 @@ export class Game {
 
   // ------------------------------------------------------------- kamera ----
   _updateCamera(dt) {
-    if (this.activities.playingGolf) return this.activities.golf.camera(dt, this.camera, this.camInfo);
+    if (this.activities.golf.ball) return this.activities.golf.camera(dt, this.camera, this.camInfo);
     const w = this.world;
     // Mezi kroky fyziky kamera sleduje stejnou polohu a natočení jako vykreslená karoserie.
     const carMesh = this.mode === 'car' && this.driver ? this.car.mesh : null;
@@ -1012,8 +1013,8 @@ export class Game {
       this.driver = null;
     }
     this.colliders.update(this.focus.x, this.focus.z);
-    this.player.setWalking(this.mode === 'foot' && !this.activities.playingGolf && !this.falls.active.has(this.player));
-    if (this.activities.playingGolf) this.activities.golf.input(dt, input.moveX, input.moveY);
+    this.player.setWalking(this.mode === 'foot' && !this.activities.golf.ball && !this.falls.active.has(this.player));
+    if (this.activities.golf.ball) this.activities.golf.input(dt, input.moveX, input.moveY);
     if (this.mode === 'car' && !this.driver) this.driver = this.trafficBodies.takeCar(this.car) ?? new PlayerVehicle(this.physics, this.car);
     if (this.car?.physicsTeleport && this.driver) {
       this.driver.teleport();

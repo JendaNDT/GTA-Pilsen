@@ -17,7 +17,7 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 - **Městské aktivity.** Na mapě vyhledej Škodaland nebo minigolf a nech se dovést k pěšímu vstupu ve V Lukách. Klávesou F nebo dotykovým tlačítkem můžeš projít zkušební pěší trasu, ukončit ji a zkusit znovu. [Příchod, ověření a snímky](docs/E52.md)
 
-- **Minigolf ve Škodalandu.** U pěšiny za příjezdovou cestou najdeš první jamku. Vedle zelené dráhy s oranžovou vlajkou stiskni F, nastav směr a sílu a zkus zahrát do jamky na nejvýš sedm úderů. [Postup a snímky](docs/E54.md)
+- **Minigolf ve Škodalandu.** U půjčovny za příjezdovou cestou stiskni F. Nastav směr a sílu, zahraj tři různé jamky a mezi nimi dojdi ke značce. Na každou jamku máš sedm úderů. Nejlepší součet za celou partii se uloží. [Postup a snímky](docs/E54.md)
 
 - **Taxi podle potřeb cestujících.** V osobním autě otevři Zakázky a vyber běžnou jízdu, spěch na vlak nebo klidnou jízdu. Před přijetím vidíš nástup, cíl a výplatu. Zastav u pravého obrubníku ve směru jízdy. Za včasný příjezd na nádraží nebo plynulou jízdu můžeš získat bonus. [Trasy a ověření](docs/E53.md)
 
@@ -381,7 +381,7 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 
 ## Zdroje a licence dat
 
-- Pěší přístup a umístění zkušební trasy ve Škodalandu vycházejí z OpenStreetMap (ODbL) a terénu ČÚZK (CC BY 4.0). Značení, trasa a modely dráhy minigolfu, vlajky a míčku jsou vlastní tvorba projektu Plzeň naplno. [Poloha a adresa areálu podle města](https://sport.plzen.eu/Sportoviste/d/skodaland-ceske-udoli)
+- Pěší přístup a umístění zkušební trasy ve Škodalandu vycházejí z OpenStreetMap (ODbL) a terénu ČÚZK (CC BY 4.0). Značení, trasa a modely drah minigolfu, překážek, půjčovny, vlajek a míčku jsou vlastní tvorba projektu Plzeň naplno. [Poloha a adresa areálu podle města](https://sport.plzen.eu/Sportoviste/d/skodaland-ceske-udoli)
 
 - Venkovní místa návratu u služeben jsou vlastní herní úpravou adresních bodů © ČÚZK, RÚIAN ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)), a stávající mapy OpenStreetMap. Názvy a působení byly porovnány s veřejnými adresáři policie a měst. [Přehled podkladů](docs/E46.md)
 

@@ -363,6 +363,7 @@ body.touch #prompt { bottom: 46%; }
 #minigolf-panel h2 { margin: 0; font-size: 17px; }
 #golf-count, .golf-controls span { font-variant-numeric: tabular-nums; }
 #golf-count { color: #f4ce78; font-size: 13px; white-space: nowrap; }
+#golf-score { display: flex; justify-content: space-between; gap: 6px; margin-top: 4px; font-size: 12px; color: #d5e1ce; }
 .golf-controls { margin-top: 9px; font-size: 13px; }
 .golf-controls input { display: block; width: 100%; margin: 0 0 4px; height: 27px; accent-color: #eaca77; }
 #golf-status { margin: 5px 0 8px; min-height: 1.2em; font-size: 13px; }
@@ -376,17 +377,18 @@ body.touch #prompt { bottom: 46%; }
   color: inherit;
   cursor: pointer;
 }
-#golf-hit[aria-disabled="false"], #golf-restart { border-color: #eaca77; background: #eaca77; color: #202a24; font-weight: 750; }
+#golf-hit[aria-disabled="false"], #golf-next, #golf-restart, #golf-retry { border-color: #eaca77; background: #eaca77; color: #202a24; font-weight: 750; }
 #golf-hit[aria-disabled="true"] { opacity: 0.55; cursor: default; }
-#golf-hit kbd { margin-left: 4px; font-size: 11px; }
-#hud:has(#minigolf-panel:not([hidden])) #touch { display: none; }
-body.touch #golf-hit kbd { display: none; }
+.golf-actions kbd { margin-left: 4px; font-size: 11px; }
+#hud:has(#minigolf-panel:not([hidden], [data-walking])) #touch { display: none; }
+body.touch .golf-actions kbd { display: none; }
 @media (max-width: 640px) {
   body.touch #minigolf-panel {
     left: 50%;
     bottom: max(10px, env(safe-area-inset-bottom));
     transform: translateX(-50%);
   }
+  body.touch #minigolf-panel[data-walking] { bottom: max(225px, calc(env(safe-area-inset-bottom) + 205px)); }
   body.touch .golf-actions button { min-height: 44px; }
 }
 @media (max-height: 480px) and (orientation: landscape) {
@@ -395,5 +397,14 @@ body.touch #golf-hit kbd { display: none; }
     bottom: max(8px, env(safe-area-inset-bottom));
     transform: none;
     width: min(310px, 43vw);
+  }
+}
+
+@media (max-height: 480px) and (orientation: landscape) {
+  body.touch #minigolf-panel[data-walking] {
+    left: 50%;
+    bottom: max(12px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    width: min(290px, 40vw);
   }
 }

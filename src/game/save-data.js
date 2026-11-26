@@ -1,3 +1,5 @@
+import { validGolfRecord } from './minigolf-rules.js';
+
 export const SAVE_KEY = 'plzen-naplno-v1';
 
 function activity(value) {
@@ -15,6 +17,7 @@ export function parseSave(raw) {
   const counters = s.stats && typeof s.stats === 'object' && !Array.isArray(s.stats) ? s.stats : {};
   const stats = Object.fromEntries(Object.entries(counters).filter(([, value]) =>
     Number.isSafeInteger(value) && value >= 0));
+  if (!validGolfRecord(stats.minigolfBest)) delete stats.minigolfBest;
   const pursuit = s.pursuit;
   return {
     ...s,

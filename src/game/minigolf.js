@@ -1,11 +1,12 @@
 import * as THREE from 'three/webgpu';
 import { GolfBall } from '../physics/golf-ball.js';
-import { FIRST_HOLE, CUP_RADIUS, MINIGOLF_RADIUS, RAIL_HEIGHT, RAIL_WIDTH, STROKE_LIMIT, golfWorldPoint } from './minigolf-rules.js';
+import { ACTIVITY_SITES } from './activity-sites.js';
+import { GOLF_HOLES, GolfRound, CUP_RADIUS, MINIGOLF_RADIUS, RAIL_HEIGHT, RAIL_WIDTH, STROKE_LIMIT, golfWorldPoint } from './minigolf-rules.js';
 
-function buildLane(scene, world, hole) {
+function buildLane(course, world, hole) {
   let low = Infinity, high = -Infinity;
   for (const x of [-hole.halfWidth, 0, hole.halfWidth]) {
-    for (const z of [hole.start, 0, hole.cup / 2, hole.cup, hole.end]) {
+    for (const z of [hole.start, 0, hole.cupZ / 2, hole.cupZ, hole.end]) {
       const point = golfWorldPoint(hole, x, z);
       const ground = world.groundY(point.x, point.z);
       low = Math.min(low, ground);
@@ -43,11 +44,18 @@ function buildLane(scene, world, hole) {
     rail.receiveShadow = true;
     box(0.23, 0.004, 0.024, 0xe4e4c5, side * 0.26, 0.002, 0);
   }
-  disk(new THREE.CircleGeometry(CUP_RADIUS, 28), 0x10241a, 0, 0.003, hole.cup, true);
-  disk(new THREE.RingGeometry(CUP_RADIUS, CUP_RADIUS + 0.025, 28), 0xe9e6cc, 0, 0.004, hole.cup);
-  add(new THREE.CylinderGeometry(0.016, 0.016, 1.03, 8), 0xfaf3db, 0, 0.515, hole.cup);
+  for (const obstacle of hole.obstacles) {
+    const { width, length, height, x, z } = obstacle;
+    const block = box(width, height, length, 0xb28b5e, x, height / 2, z);
+    block.castShadow = true;
+    block.receiveShadow = true;
+    box(width * 0.9, 0.005, length * 0.86, 0xd1b98c, x, height + 0.002, z);
+  }
+  disk(new THREE.CircleGeometry(CUP_RADIUS, 28), 0x10241a, hole.cupX, 0.003, hole.cupZ, true);
+  disk(new THREE.RingGeometry(CUP_RADIUS, CUP_RADIUS + 0.025, 28), 0xe9e6cc, hole.cupX, 0.004, hole.cupZ);
+  add(new THREE.CylinderGeometry(0.016, 0.016, 1.03, 8), 0xfaf3db, hole.cupX, 0.515, hole.cupZ);
   const cloth = new THREE.Shape().moveTo(0, 0.74).lineTo(0.44, 0.88).lineTo(0, 1.03).closePath();
-  const flag = add(new THREE.ShapeGeometry(cloth), 0xf8a648, 0, 0, hole.cup);
+  const flag = add(new THREE.ShapeGeometry(cloth), 0xf8a648, hole.cupX, 0, hole.cupZ);
   flag.material.side = THREE.DoubleSide;
 
   const ball = add(new THREE.SphereGeometry(MINIGOLF_RADIUS, 16, 10), 0xfff6e1, 0, MINIGOLF_RADIUS, 0);
@@ -58,32 +66,76 @@ function buildLane(scene, world, hole) {
   const tip = add(new THREE.ConeGeometry(0.077, 0.16, 4), 0xffe18c, 0, 0, 1.06, arrow, true);
   tip.rotation.x = Math.PI / 2;
   ball.visible = arrow.visible = false;
-  scene.add(group);
+  course.add(group);
   return { group, ball, arrow, surface };
+}
+
+function buildRental(world, course) {
+  const { golf } = ACTIVITY_SITES[0];
+  const sign = new THREE.Group();
+  const x = golf.x + 1.05, z = golf.z + 0.15;
+  sign.position.set(x, world.groundY(x, z), z);
+  sign.rotation.y = Math.PI * 0.73;
+  const base = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.1, 0.5),
+    new THREE.MeshStandardMaterial({ color: 0x886d51 }));
+  base.position.y = 0.05;
+  const pole = new THREE.Mesh(new THREE.BoxGeometry(0.075, 1.18, 0.075),
+    new THREE.MeshStandardMaterial({ color: 0x886d51 }));
+  pole.position.y = 0.64;
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 96;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#22392c';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#f0d58a';
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 25px system-ui';
+  ctx.fillText('MINIGOLF', 128, 42);
+  ctx.font = '18px system-ui';
+  ctx.fillText('PŮJČOVNA HOLÍ', 128, 70);
+  const map = new THREE.CanvasTexture(canvas);
+  map.colorSpace = THREE.SRGBColorSpace;
+  const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.356),
+    new THREE.MeshBasicMaterial({ map, side: THREE.DoubleSide }));
+  plate.position.set(0, 1.17, 0.045);
+  sign.add(base, pole, plate);
+  course.add(sign);
+}
+
+function text(element, value) {
+  if (element.textContent !== value) element.textContent = value;
 }
 
 export class Minigolf {
   constructor(game) {
     this.game = game;
-    this.hole = FIRST_HOLE;
     this.panel = document.getElementById('minigolf-panel');
+    this.title = this.panel.querySelector('#golf-title');
     this.aim = this.panel.querySelector('#golf-aim');
     this.power = this.panel.querySelector('#golf-power');
     this.aimValue = this.panel.querySelector('#golf-aim-value');
     this.powerValue = this.panel.querySelector('#golf-power-value');
     this.count = this.panel.querySelector('#golf-count');
+    this.controlsBox = this.panel.querySelector('.golf-controls');
+    this.summary = this.panel.querySelector('#golf-round');
+    this.record = this.panel.querySelector('#golf-record');
     this.status = this.panel.querySelector('#golf-status');
     this.hit = this.panel.querySelector('#golf-hit');
+    this.next = this.panel.querySelector('#golf-next');
     this.restart = this.panel.querySelector('#golf-restart');
+    this.retry = this.panel.querySelector('#golf-retry');
+    this.leave = this.panel.querySelector('#golf-leave');
     this.hit.addEventListener('click', () => this.strike());
-    this.restart.addEventListener('click', () => {
-      if (!this.canUse || this.restart.hidden) return;
-      this.ball.restart();
-      this.resetAim();
+    this.next.addEventListener('click', () => this.walkToNext());
+    this.restart.addEventListener('click', () => this.restartRound());
+    this.retry.addEventListener('click', () => {
+      if (!this.canUse || this.retry.hidden) return;
+      this.saveResult();
       this.refresh();
-      this.hit.focus();
+      if (this.saved) this.restart.focus({ preventScroll: true });
     });
-    this.panel.querySelector('#golf-leave').addEventListener('click', () => {
+    this.leave.addEventListener('click', () => {
       if (this.canUse) game.activities.end('cancelled');
     });
     for (const field of [this.aim, this.power]) {
@@ -92,40 +144,117 @@ export class Minigolf {
         this.refresh();
       });
     }
+    this.ball = null;
+    this.round = null;
     this.shown = {};
-    this.resetAim();
   }
 
-  get canUse() { return this.ball && !this.game.paused && !this.game.mapOpen; }
+  get canUse() { return this.round && !this.game.paused && !this.game.mapOpen; }
 
-  resetAim() {
-    this.controls = { aim: 0, power: 70 };
-    this.followReady = false;
+  get hole() { return GOLF_HOLES[this.index]; }
+
+  get lane() { return this.lanes[this.index]; }
+
+  get nextEntry() {
+    return this.round && !this.ball && !this.round.complete ? this.entries[this.round.scores.length] : null;
   }
 
   nearby(focus) {
-    const near = Math.hypot(focus.x - this.hole.x, focus.z - this.hole.z) < 95;
-    if (near && !this.lane) this.lane = buildLane(this.game.scene, this.game.world, this.hole);
-    if (this.lane) this.lane.group.visible = near;
+    const first = GOLF_HOLES[0];
+    const near = Math.hypot(focus.x - first.x, focus.z - first.z) < 95;
+    if (near && !this.course) {
+      const { scene, world } = this.game;
+      this.course = new THREE.Group();
+      this.entries = GOLF_HOLES.map(({ entry = ACTIVITY_SITES[0].golf }) =>
+        ({ ...entry, y: world.groundY(entry.x, entry.z) }));
+      this.lanes = GOLF_HOLES.map(hole => buildLane(this.course, world, hole));
+      buildRental(world, this.course);
+      scene.add(this.course);
+    }
+    if (this.course) this.course.visible = near;
   }
 
   start() {
+    this.round = new GolfRound();
+    this.saved = this.newRecord = false;
     this.nearby(this.game.player);
-    this.ball = new GolfBall(this.game.physics, this.hole, this.lane.surface);
-    this.resetAim();
     this.panel.hidden = false;
-    this.refresh();
+    this.enterHole();
   }
 
-  end() {
+  enterHole() {
+    if (this.ball || this.round.complete) return;
+    const { player } = this.game;
+    player.place(player.x, player.z, player.y);
+    this.game.hud.prompt('');
+    this.index = this.round.scores.length;
+    this.ball = new GolfBall(this.game.physics, this.hole, this.lane.surface);
+    this.controls = { aim: 0, power: 70 };
+    this.followReady = false;
+    this.refresh();
+    if (document.activeElement === this.status) this.hit.focus({ preventScroll: true });
+  }
+
+  releaseBall() {
+    if (!this.ball) return;
     this.ball.dispose();
     this.ball = null;
     this.lane.ball.visible = this.lane.arrow.visible = false;
+  }
+
+  end() {
+    this.releaseBall();
+    this.round = null;
     this.panel.hidden = true;
   }
 
+  walkToNext() {
+    if (!this.canUse || this.next.hidden) return;
+    this.showWalk();
+  }
+
+  showWalk() {
+    this.releaseBall();
+    const { game, nextEntry } = this;
+    const { player } = game;
+    game.camYaw = Math.atan2(nextEntry.x - player.x, nextEntry.z - player.z);
+    game.lookIdle = 0;
+    game.promptTimer = 0;
+    this.refresh();
+    this.status.focus({ preventScroll: true });
+  }
+
+  restartRound() {
+    if (!this.canUse || !this.saved) return;
+    const previous = this.round;
+    this.round = new GolfRound();
+    this.saved = false;
+    if (!this.game.save()) {
+      this.round = previous;
+      this.saved = true;
+      this.game.hud.toast(this.game.saveError, 'bad');
+      return;
+    }
+    this.newRecord = false;
+    this.showWalk();
+  }
+
+  saveResult() {
+    if (!this.round.complete || this.saved) return;
+    const { stats } = this.game;
+    const candidate = this.round.recordCandidate(stats.minigolfBest);
+    const updatedStats = candidate === null ? stats : { ...stats, minigolfBest: candidate };
+    this.saved = this.game.commitAccount({ stats: updatedStats, activity: null });
+    this.newRecord = this.saved && candidate !== null;
+  }
+
+  action() {
+    if (this.next.hidden) this.strike();
+    else this.walkToNext();
+  }
+
   strike() {
-    if (!this.canUse) return;
+    if (!this.canUse || !this.ball) return;
     const angle = THREE.MathUtils.degToRad(Math.round(this.controls.aim));
     if (this.ball.strike(angle, Math.round(this.controls.power) / 100)) this.refresh();
   }
@@ -137,47 +266,64 @@ export class Minigolf {
   }
 
   refresh() {
-    const { ball, lane } = this;
-    if (!ball) return;
-    const { phase, strokes, lastResult } = ball.score;
-    const aiming = phase === 'aim', done = phase === 'holed' || phase === 'limit';
-    const aim = Math.round(this.controls.aim), power = Math.round(this.controls.power);
+    const { ball, round } = this;
+    const score = ball?.score;
+    if (score && round.finishHole(this.index, score) && round.complete) this.saveResult();
+    const walking = !ball, aiming = score?.phase === 'aim', rolling = score?.phase === 'rolling';
+    const done = !walking && !aiming && !rolling;
+    const active = document.activeElement;
+    const holeNo = (walking ? round.scores.length : this.index) + 1;
     const shown = this.shown;
-    if (shown.phase !== phase) {
-      const refocus = done && this.hit === document.activeElement;
-      this.aim.disabled = this.power.disabled = !aiming;
+    const screen = walking ? 'walking' : round.complete ? (this.saved ? 'saved' : 'unsaved') : score.phase;
+    if (shown.screen !== screen) {
+      this.panel.toggleAttribute('data-walking', walking);
+      this.controlsBox.hidden = this.hit.hidden = walking || done;
       this.hit.setAttribute('aria-disabled', String(!aiming));
-      this.hit.hidden = done;
-      this.restart.hidden = !done;
-      if (refocus) this.restart.focus();
+      this.next.hidden = !done || round.complete;
+      this.restart.hidden = !round.complete || !this.saved;
+      this.retry.hidden = !round.complete || this.saved;
+      this.aim.disabled = this.power.disabled = !aiming;
+      if (done && active === this.hit) {
+        const button = round.complete ? (this.saved ? this.restart : this.retry) : this.next;
+        button.focus({ preventScroll: true });
+      }
+      shown.screen = screen;
     }
+    text(this.title, `Minigolf · jamka ${holeNo}/${GOLF_HOLES.length}`);
+    text(this.count, walking ? '' : `${score.strokes} / ${STROKE_LIMIT} úderů`);
+    const total = round.total + (aiming || rolling ? score.strokes : 0);
+    const holes = round.scores.length ? ` · jamky ${round.scores.join(' + ')}` : '';
+    text(this.summary, `Celkem ${total}${holes}`);
+    const best = this.game.stats.minigolfBest;
+    text(this.record, best === undefined ? '' : `Osobní rekord ${best}`);
+    let message;
+    if (walking) message = holeNo === 1 ? 'Vrať se k půjčovně a stiskni F.' : `Dojdi ke značce u jamky ${holeNo} a stiskni F.`;
+    else if (round.complete) {
+      message = this.saved ? this.newRecord ? 'Partie dokončena. Nový osobní rekord.' : 'Partie dokončena.' :
+        'Partie dokončena. Výsledek se nepodařilo uložit.';
+    } else if (rolling) message = 'Míček se kutálí…';
+    else if (score.phase === 'holed') message = 'Míček je v jamce.';
+    else if (score.phase === 'limit') message = score.lastResult === 'out' ?
+      'Mimo dráhu. Dosažen limit sedmi úderů.' : 'Dosažen limit sedmi úderů.';
+    else message = score.lastResult === 'out' ? 'Mimo dráhu · trestný úder. Míček se vrátil.' : this.hole.hint;
+    text(this.status, message);
+
+    if (!ball) return;
+    const aim = Math.round(this.controls.aim), power = Math.round(this.controls.power);
     if (shown.aim !== aim) {
       this.aim.value = aim;
-      this.aimValue.textContent = aim === 0 ? 'Rovně' : `${Math.abs(aim)}° ${aim > 0 ? 'vpravo' : 'vlevo'}`;
+      text(this.aimValue, aim === 0 ? 'Rovně' : `${Math.abs(aim)}° ${aim > 0 ? 'vpravo' : 'vlevo'}`);
       this.aim.setAttribute('aria-valuetext', this.aimValue.textContent);
+      shown.aim = aim;
     }
     if (shown.power !== power) {
       this.power.value = power;
-      this.powerValue.textContent = `${power} %`;
+      text(this.powerValue, `${power} %`);
+      shown.power = power;
     }
-    if (shown.strokes !== strokes) this.count.textContent = `${strokes} / ${STROKE_LIMIT} úderů`;
-    if (shown.phase !== phase || shown.lastResult !== lastResult) {
-      const messages = {
-        holed: 'Míček je v jamce.',
-        limit: lastResult === 'out' ? 'Mimo dráhu. Dosažen limit sedmi úderů.' : 'Dosažen limit sedmi úderů.',
-        rolling: 'Míček se kutálí…',
-        aim: lastResult === 'out' ? 'Mimo dráhu · trestný úder. Míček se vrátil.' :
-          'Zamiř, nastav sílu a zahraj.',
-      };
-      this.status.textContent = messages[phase];
-    }
-    shown.phase = phase;
-    shown.aim = aim;
-    shown.power = power;
-    shown.strokes = strokes;
-    shown.lastResult = lastResult;
+    const { lane } = this;
     lane.ball.position.set(ball.x, ball.y, ball.z);
-    lane.ball.visible = phase !== 'holed';
+    lane.ball.visible = score.phase !== 'holed';
     lane.arrow.visible = aiming;
     lane.arrow.position.set(ball.x, 0.019, ball.z);
     lane.arrow.rotation.y = -THREE.MathUtils.degToRad(aim);

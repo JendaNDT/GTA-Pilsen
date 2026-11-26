@@ -2,7 +2,7 @@ import { makeBeacon } from '../entities/models.js';
 import { ACTIVITY_COLOR, ACTIVITY_SITES, atActivityPoint } from './activity-sites.js';
 import { Minigolf } from './minigolf.js';
 
-const GOLF_SAVE_ID = 'skodaland-minigolf-prvni-jamka';
+const GOLF_SAVE_ID = 'skodaland-minigolf-kolo';
 
 export class Activities {
   constructor(game) {
@@ -23,17 +23,26 @@ export class Activities {
 
   get path() { return this.playingGolf ? undefined : this.active?.site.trial.path; }
 
-  snapshot() { return this.playingGolf ? GOLF_SAVE_ID : this.active?.site.id ?? null; }
+  snapshot() {
+    if (this.playingGolf) return this.golf.saved ? null : GOLF_SAVE_ID;
+    return this.active?.site.id ?? null;
+  }
 
   load(id) {
-    this.interruptedGolf = id === GOLF_SAVE_ID;
+    this.interruptedGolf = id === GOLF_SAVE_ID || id === 'skodaland-minigolf-prvni-jamka';
     this.interrupted = ACTIVITY_SITES.find(site => site.id === id || (this.interruptedGolf && site.golf)) ?? null;
     return this.interrupted?.returnPoint;
   }
 
   choice() {
     const { player, mode, jobs, shifts, world } = this.game;
-    if (mode !== 'foot' || this.playingGolf) return null;
+    if (mode !== 'foot') return null;
+    if (this.playingGolf) {
+      const entry = this.golf.nextEntry;
+      if (!entry || !atActivityPoint(player, entry, 1.55) || world.onCarriageway(player.x, player.z, player.y)) return null;
+      const next = this.golf.round.scores.length + 1;
+      return { nextHole: true, label: `Hrát jamku ${next}` };
+    }
     if (this.active) {
       const reached = atActivityPoint(player, this.active.site.trial.target);
       return reached ? { result: 'completed', label: 'Dokončit zkušební trasu' }
@@ -47,6 +56,7 @@ export class Activities {
   }
 
   act(choice) {
+    if (choice.nextHole) return this.golf.enterHole();
     if (choice.result) {
       this.end(choice.result);
       return;
@@ -57,9 +67,6 @@ export class Activities {
       this.active = null;
       g.hud.toast(g.saveError, 'bad');
     } else if (this.playingGolf) {
-      const { x, y, z } = g.player;
-      g.player.place(x, z, y);
-      g.hud.prompt('');
       this.golf.start();
     }
   }
@@ -84,13 +91,11 @@ export class Activities {
   update(dt) {
     const { active, game } = this, { focus, jobs, shifts } = game;
     this.golf.nearby(focus);
-    if (this.playingGolf) {
-      if (this.beacon) this.beacon.visible = false;
-      this.golf.refresh();
-      return;
-    }
-    const point = active?.site.trial.target ?? (jobs.job || shifts.active ? null : ACTIVITY_SITES.find(site =>
-      Math.abs(site.y - focus.y) < 8 && Math.hypot(site.x - focus.x, site.z - focus.z) < 45));
+    const golf = this.playingGolf;
+    if (golf) this.golf.refresh();
+    const point = golf ? this.golf.nextEntry : active?.site.trial.target ??
+      (jobs.job || shifts.active ? null : ACTIVITY_SITES.find(site =>
+        Math.abs(site.y - focus.y) < 8 && Math.hypot(site.x - focus.x, site.z - focus.z) < 45));
     if (point) {
       if (!this.beacon) {
         this.beacon = makeBeacon(ACTIVITY_COLOR);
@@ -106,7 +111,7 @@ export class Activities {
       }
     }
     if (this.beacon) this.beacon.visible = Boolean(point);
-    if (active) {
+    if (active && !golf) {
       active.elapsed += dt;
       game.hud.mission(`<b>${active.site.title}</b><br>Dojdi k fialové značce a potvrď cíl.`);
     }
