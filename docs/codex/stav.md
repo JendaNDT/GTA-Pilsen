@@ -1,3 +1,7 @@
+# Převzetí grafických oprav do mainu
+
+Opravy chodníků u kolejí, překryvu asfaltu a grafických zkoušek jsou ověřené nad stavem hlavní větve po E51 (`f16ae3c`). Prošlo produkční sestavení, všech 369 testů JavaScriptu a 52 cílených zkoušek v Chromiu na WebGL 2 a WebGPU, včetně všech čtyř grafických předvoleb. [Chodníky u kolejí](../chodniky-u-koleji.md) · [Okraje silnic](../okraje-silnic.md)
+
 # Oprava okrajů silnic a grafických testů
 
 Na Karlovarské, v Kaplířově a v Zahradní zůstal v kontrolovaných bodech terén pod asfaltem. Součástí je návaznost výšky na hranici dlaždic. Herní revize je `b036d5b`. Kontroly světlometů a dat terénu jsou zpřesněné v revizi `b3850b8`. Prošlo produkční sestavení, 377 jednotkových a 95 cílených prohlížečových zkoušek. Jízda i let v měření na nízkou předvolbu splnily rozpočty. [Snímky a ověření](../okraje-silnic.md)
