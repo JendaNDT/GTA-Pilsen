@@ -1,6 +1,6 @@
 # E57 · Pilot bowlingu U Papírny
 
-Jedna dráha na Papírnické 3 je přístupná z mapy a hratelná v deseti kolech. Prošlo 396 testů JavaScriptu, produkční sestavení a 62 cílených prohlížečových zkoušek. Ověřeno bylo také dotykové ovládání, uložení rekordu a pěší přístup od Mikulášského náměstí. Dobíhá záznam výkonu a snímků. [Zadání](E57.md) · [Ovládání a ověření](../E57.md)
+Jedna dráha na Papírnické 3 je přístupná z mapy a hratelná v deseti kolech. Prošlo 396 testů JavaScriptu, produkční sestavení a 62 cílených prohlížečových zkoušek. Ověřeno bylo také dotykové ovládání, uložení rekordu a pěší přístup od Mikulášského náměstí. Časové rozpočty vyšly v herně, při jízdě i při letu. E57 je dokončená nad herní revizí `78e31d0`. [Zadání](E57.md) · [Ovládání a ověření](../E57.md)
 
 # E56 · Cyklistická navigace
 
