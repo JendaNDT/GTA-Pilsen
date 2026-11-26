@@ -12,11 +12,9 @@ Na Slovanské, Lidické a Skvrňanské se obrubníky odsunuly za tramvajové pá
 
 # E52 · Místa a průběh městských aktivit
 
-- Příprava místa. Vybrán pěší bod v odstupu od budovy Škodalandu, přístup z obou stanovišť U Přehrady a samostatný bod návratu. V jízdním řádu je vybrán spoj linky 1 do Bolevce. Přesné reference patří do protokolu.
-- Značka, vyhledávání a karta místa fungují. Prošlo 373 testů JavaScriptu, sestavení a osm případů mapy v obou vykreslovačích.
-- Zkušební trasa má společnou výzvu pro klávesnici a dotyk, zrušení, dokončení a návrat po načtení. Vstup je na chodníku. Prošlo 374 testů JavaScriptu, sestavení a všech šest cílených běhů E52 ve dne i v noci. Při dokončení se značka cíle přesune zpět ke vstupu pro další pokus.
-- Probíhá úplná prohlížečová sada a srovnání měření. [Protokol a snímky](../E52.md)
-- [Zadání](E52.md)
+Dokončeno nad herní revizí `8784c60`. První aktivita ve Škodalandu má značku na mapě, pěší navigaci, společnou akci pro klávesnici a dotyk a zkušební trasu s dokončením, zrušením a návratem po načtení. Vstup je na chodníku. Ověřen je příchod z obou stanovišť U Přehrady a referenční spoj Tatry pro pozdější etapu MHD.
+
+Prošlo 374 testů JavaScriptu, produkční sestavení a šest cílených běhů E52. Z 542 prohlížečových běhů prošlo 536 včetně všech případů E52 a pozorování ranního provozu. Šest zbývajících selhání bylo doloženo už při ověřování E53 proti E51. Samostatné měření jízdy a letu splnilo rozpočty na nízkou kvalitu. [Zadání](E52.md) · [Protokol, snímky a postup vyzkoušení](../E52.md)
 
 # E53 · Taxi podle potřeb cestujícího
 
