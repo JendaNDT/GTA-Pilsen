@@ -1,0 +1,38 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { boardingDoor, CABIN_DOORS, TramCabin } from '../src/game/tram-cabin.js';
+
+test('nástup připouští jen pravou stranu a otvor konkrétních dveří', () => {
+  for (const z of CABIN_DOORS) {
+    assert.equal(boardingDoor(2.6, z), z);
+    assert.equal(boardingDoor(-2.6, z), null);
+    assert.equal(boardingDoor(2.6, z + 1), null);
+  }
+});
+
+test('cestující zůstává na podlaze a ulička vede od zadních dveří až ke kabině', () => {
+  const cabin = new TramCabin(CABIN_DOORS[2], {});
+  const walk = (x, y, steps) => {
+    for (let i = 0; i < steps; i++) cabin.walk(1 / 60, x, y);
+  };
+  walk(0, 1, 180);
+  assert.ok(cabin.z < -5.35);
+  walk(-1, 0, 28);
+  walk(0, 1, 600);
+  assert.ok(cabin.z > 6.43 && cabin.z <= 6.48);
+  walk(1, 0, 100);
+  assert.ok(cabin.x >= -1.04 && cabin.x < -1);
+  assert.equal(cabin.action, 'Vystoupit');
+});
+
+test('u sedadla lze sedět i vstát na původním místě v uličce', () => {
+  const cabin = new TramCabin(2.6, {});
+  cabin.x = 0.1;
+  assert.equal(cabin.action, 'Sednout si');
+  cabin.seat = cabin.nearbySeat();
+  assert.deepEqual(cabin.seat, { x: 0.81, z: 2.6 });
+  cabin.walk(1 / 60, 1, 1);
+  assert.equal(cabin.action, 'Vstát');
+  assert.equal(cabin.x, 0.1);
+  assert.equal(cabin.z, 2.6);
+});

@@ -1,3 +1,7 @@
+# E59 · První průchozí vůz linky 1
+
+Výchozí revize `1fc8112`. Připravený je půdorys a zkoušky místního pohybu. Následuje zapojení do hry a souvislá jízda. [Zadání](E59.md)
+
 # Převzetí E54 až E57 do mainu
 
 Na revizi `1bd5bf2` navazuje minigolf ve Škodalandu, síť 152 stanovišť Pilsen Bike, navigace pro elektrokola a jedna bowlingová dráha U Papírny. Společné sestavení vychází z herní revize `7f6eccc`. Prošlo produkční sestavení, 396 testů JavaScriptu, 34 testů Pythonu s jedním přeskočeným případem a 56 cílených zkoušek v Chromiu na WebGL 2 i WebGPU. Zkoušky zahrnuly všechna stanoviště, souvislou jízdu s navigací v obou směrech, dohrání minigolfu i bowlingu, dotykové ovládání, starší uložené hry a všechny čtyři grafické předvolby. [Minigolf](../E54.md) · [Sdílená elektrokola](../E55.md) · [Cyklistická navigace](../E56.md) · [Bowling](../E57.md)
