@@ -13,7 +13,7 @@ test('E08 – přestup z tramvaje na autobus po skutečné jízdě a výstupu', 
   const ride = await page.evaluate(() => {
     const g = window.__game, v = g.ride, start = v.s;
     let moving = false;
-    for (let tick = 0; tick < 3000 && (v.s <= start + 10 || !v.canAlight); tick++) {
+    for (let tick = 0; tick < 3000 && (v.s <= start + 10 || !v.canAlight || v.doorFraction < 0.85); tick++) {
       window.__advanceTransit();
       if (v.v > 2) moving = true;
     }
@@ -104,7 +104,7 @@ test('E08 – trolejbus 49, výstup v zastávce a použití jízdního řádu', 
   expect(await page.evaluate(() => window.__game.mode)).toBe('transit');
   const stop = await page.evaluate(() => {
     const g = window.__game, v = g.ride;
-    for (let tick = 0; tick < 2200 && !v.canAlight; tick++) window.__advanceTransit();
+    for (let tick = 0; tick < 2200 && (!v.canAlight || v.doorFraction < 0.85); tick++) window.__advanceTransit();
     g.promptTimer = 0;
     window.__step(0);
     return v.stopTarget?.[1];

@@ -48,7 +48,7 @@ export async function approach(page, id, station, date = '2026-11-09') {
     if (!window.__normalTransitTraffic) g.vehicles.spawnTimer = 100_000;
     const vehicle = g.transit.active.get(event.key);
     for (let tick = 0; tick < 440 && !vehicle.visible; tick++) window.__advanceTransit();
-    if (vehicle.cabinService) for (let i = 0; i < 7 && vehicle.doorFraction < 0.85; i++) window.__advanceTransit();
+    for (let i = 0; i < 7 && vehicle.doorFraction < 0.85; i++) window.__advanceTransit();
     const door = g.transit.exitPoint(vehicle, {});
     g.player.place(door.x, door.z, vehicle.y);
     g.promptTimer = 0;

@@ -33,7 +33,7 @@ const HELP_HTML = IS_TOUCH ? `
     <tr><td>Páčka vlevo</td><td>chůze, zatáčení autem</td></tr>
     <tr><td>▲ / ▼</td><td>plyn / brzda a zpátečka (ve vrtulníku nahoru / dolů)</td></tr>
     <tr><td>⎵</td><td>ruční brzda, pěšky skok</td></tr>
-    <tr><td>F</td><td>nastoupit / vystoupit nebo obsloužit dveře ve směně MHD</td></tr>
+    <tr><td>F</td><td>nastoupit / vystoupit, u sedadla si sednout nebo vstát, ve směně obsloužit dveře</td></tr>
     <tr><td>✉</td><td>vzít rychlý rozvoz jídla nebo zrušit aktivní zakázku</td></tr>
     <tr><td>☰</td><td>zakázky, garáž a směny MHD</td></tr>
     <tr><td>🗺</td><td>mapa okolí (přibliž dvěma prsty, vyber místo a klepni na Navigovat sem)</td></tr>
@@ -45,7 +45,7 @@ const HELP_HTML = IS_TOUCH ? `
     <tr><td>W A S D / šipky</td><td>chůze, řízení auta</td></tr>
     <tr><td>Shift</td><td>běh (ve vrtulníku klesání)</td></tr>
     <tr><td>Mezerník</td><td>ruční brzda, pěšky skok, ve vrtulníku stoupání</td></tr>
-    <tr><td>F nebo E</td><td>nastoupit / vystoupit nebo obsloužit dveře ve směně MHD</td></tr>
+    <tr><td>F nebo E</td><td>nastoupit / vystoupit, u sedadla si sednout nebo vstát, ve směně obsloužit dveře</td></tr>
     <tr><td>W · S · Mezerník</td><td>ve směně MHD plyn · brzda · nouzová brzda</td></tr>
     <tr><td>J</td><td>vzít rychlý rozvoz jídla nebo zrušit aktivní zakázku</td></tr>
     <tr><td>M</td><td>mapa okolí (přibliž kolečkem, vyber místo a potvrď Navigovat sem)</td></tr>
@@ -104,7 +104,7 @@ const ABOUT_HTML = (meta, rendering) => `
   <a href="https://opendata.plzen.eu/public/opendata/detail/160" target="_blank" rel="noopener">měření dopravních smyček města Plzně</a>
   a z <a href="https://polivisuapi.plzen.eu/api/" target="_blank" rel="noopener">hodinových profilů PoliVisu</a>.
   Pro ostatní ulice a pro chodce hra používá odhad.</p>
-  <p>Interiéry Tatry, tříčlánkové tramvaje, autobusu SOR a trolejbusu linky 49 včetně sedadel, osvětlení, oken a průchozích měchů jsou vlastní tvorba projektu Plzeň naplno.</p>
+  <p>Interiéry Tatry, tříčlánkové tramvaje, autobusu SOR a trolejbusu včetně sedadel, osvětlení, oken a průchozích měchů jsou vlastní tvorba projektu Plzeň naplno.</p>
   <p>Rozety, portály, zvonice a střechy kostela sv. Jana Nepomuckého vytvořil projekt Plzeň naplno podle městského zaměření a dvou fotografií dodaných autorem hry.</p>
   <p>Modely dvanácti plzeňských dominant od Jubilejní brány po rozhlednu Chlum, včetně kreseb průčelí a střech, vytvořil projekt Plzeň naplno podle fotografických předloh. Jejich tvary vycházejí z otevřeného městského zaměření Plzně a půdorysů OpenStreetMap (ODbL).</p>
   <p>Morový sloup na náměstí Republiky má půdorys z OpenStreetMap (ODbL). Sochy, kámen, zlacení i ohrazení vytvořil projekt Plzeň naplno podle fotografie od autora hry a popisu Národního památkového ústavu.</p>

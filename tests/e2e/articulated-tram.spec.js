@@ -19,7 +19,7 @@ test('E60 – přejít kloub jedničky v zatáčce a vystoupit dveřmi prostřed
     __freeze(true);
     const g = __game, v = g.ride;
     const rear = g.transit.exitPoint(v, {}, v.sections[2].doors[0], 2);
-    return { id: v.event.trip.id, section: g.cabin.section, rearDoor: v.cabinDoorAt(rear.x, rear.z) };
+    return { id: v.event.trip.id, section: g.cabin.section, rearDoor: v.cabinDoorAt(rear.x, rear.z, rear.y) };
   });
   expect(trip).toEqual({ id: '685463', section: 0, rearDoor: { index: 2, door: 3.25 } });
 

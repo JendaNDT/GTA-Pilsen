@@ -657,11 +657,12 @@ export class Game {
   }
 
   _board(v) {
-    if (v.cabinService && !this.shifts.active) {
-      const p = this.player, door = v.cabinDoorAt(p.x, p.z);
+    if (!this.shifts.active) {
+      const p = this.player, door = v.cabinDoorAt(p.x, p.z, p.y);
       if (door === null) return;
       this.cabin = new TramCabin(door.door, { x: p.x, y: p.y, z: p.z },
-        v.cabinService.layout, door.index);
+        v.sections, door.index);
+      this.transit.setPassengerView(v, true);
       this.cabin.stop = v.stopIndex;
       this.camera.near = 0.06;
       this.camera.updateProjectionMatrix();
@@ -676,6 +677,7 @@ export class Game {
 
   _leaveCabin() {
     if (!this.cabin) return;
+    this.transit.setPassengerView(this.ride, false);
     this.cabin = null;
     this.camera.near = 0.4;
     this.camera.updateProjectionMatrix();
@@ -750,9 +752,7 @@ export class Game {
     if (h) return { label: 'Nasednout do vrtulníku', run: () => this._enterHeli(h) };
     const v = this.transit.boardable(p.x, p.z, p.y);
     if (v) {
-      const pilotLine = CABIN_SERVICES.some(service => v.route.type === service.type && v.route.ref === service.ref);
-      const view = v.cabinService ? 'průchozí vůz · ' : pilotLine ? 'vnější pohled · ' : '';
-      return { label: `Nastoupit · ${view}${TRANSIT_NAME[v.route.type]} ${v.route.ref} → ${v.destination}`, run: () => this._board(v) };
+      return { label: `Nastoupit · průchozí vůz · ${TRANSIT_NAME[v.route.type]} ${v.route.ref} → ${v.destination}`, run: () => this._board(v) };
     }
     const car = this.vehicles.nearestEnterable(p.x, p.z, p.y);
     return car ? {
@@ -971,7 +971,7 @@ export class Game {
     const section = c.layout[c.section];
     const neighbour = pos.z > 0 ? c.section - 1 : c.section + 1;
     const distance = section.length / 2 - Math.abs(pos.z);
-    if (c.layout[neighbour] && distance < 0.75) {
+    if (!this.ride.isTatra && c.layout[neighbour] && distance < 0.75) {
       const other = this.ride.meshes[neighbour];
       const z = pos.z - Math.sign(pos.z) * (section.length + c.layout[neighbour].length) / 2;
       _v.set(pos.x, eye, z).applyQuaternion(other.quaternion).add(other.position);
@@ -1295,6 +1295,7 @@ export class Game {
         html = closed ? 'Dveře jsou zavřené' : actionLabel ? `<kbd>${key}</kbd>${actionLabel}` : 'Přejdi k sedadlu nebo ke dveřím';
         const stop = this.ride.stops[this.ride.stopIndex];
         if (stop) html += ` · ${plain(stop[1])}`;
+        if (this.ride.event.trip.exit && this.ride.stopIndex === this.ride.stops.length - 1) html += ' · poslední zastávka na mapě';
       } else if (this.mode === 'transit') {
         const ride = this.ride, st = ride.stops[ride.stopIndex];
         const boundary = ride.event.trip.exit && ride.stopIndex === ride.stops.length - 1;

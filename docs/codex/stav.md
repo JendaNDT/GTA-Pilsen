@@ -1,3 +1,9 @@
+# E62 · Průchozí MHD na všech linkách
+
+Na větvi `etapa/E62` nad revizí `510420a` se při pěším nástupu použije interiér podle modelu vozidla. Rozšíření pokrývá všech 51 linek herního jízdního řádu. U Tatry jsou přístupné oba samostatné vozy. Čtyři ukázky zůstávají v nabídce **Svézt se MHD**.
+
+Ověřeny byly jízdy běžnými spoji linek 2, 4, 30 a 16 přes dvě zastávky, přestup, rozvoz a řidičské směny. Prošlo sestavení, 406 testů JavaScriptu a 39 cílených prohlížečových zkoušek. Všechny čtyři předvolby splnily rozpočet vykreslování a jízda na nízkou předvolbu dosáhla 60 snímků za sekundu. [Trasy, snímky a měření](../E62.md)
+
 # E61 · Společná nabídka jízd MHD
 
 Na větvi `etapa/E61` nad revizí `fa38686` otevírá volba **Svézt se MHD** z úvodu i z pauzy výběr čtyř vozů. U každého je linka, typ vozu a směr. Ověřen je nástup do všech čtyř interiérů, návrat z nabídky i zachování rozjetého rozvozu. Prošlo sestavení, 405 testů JavaScriptu a 12 cílených prohlížečových zkoušek. Měření v trolejbusu splnilo všechny čtyři časové rozpočty. [Ovládání, snímky a měření](../E61.md)

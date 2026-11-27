@@ -1,6 +1,6 @@
 // Ručně modelované karoserie podle plzeňských vozů. Souřadnice jsou v metrech, +z je vpřed.
 import * as THREE from 'three/webgpu';
-import { ARTICULATED_CABIN, BUS_CABIN, TROLLEY_CABIN, CABIN_DOORS, CABIN_SEATS } from '../game/tram-cabin.js';
+import { ARTICULATED_CABIN, BUS_CABIN, TROLLEY_CABIN, TATRA_CABIN, CABIN_DOORS, CABIN_SEATS } from '../game/tram-cabin.js';
 import { Parts } from './models.js';
 import { transitMaterial as shellMat } from './transit-material.js';
 import { makeSurfaceMaterial } from '../world/materials.js';
@@ -32,7 +32,7 @@ export const TROLLEY_SECTION = {
 const TATRA_LENGTH = 15.1;
 const TATRA_DOORS = CABIN_DOORS;
 const TATRA_STEPS = [0.78, 0.36, 0.78];
-const TATRA_CAR = { length: 16.2, doors: TATRA_DOORS, axle: 3.2 };
+const TATRA_CAR = { ...TATRA_CABIN[0], length: 16.2, axle: 3.2 };
 export const TATRA_SECTIONS = [TATRA_CAR, TATRA_CAR];
 const TATRA_WIDTH = 2.48;
 const TATRA_DOOR_WIDTH = 1.2;

@@ -190,7 +190,7 @@ test('E59 – hledání spoje a výstup v přestupním uzlu Náměstí Republiky
     const trailer = v.meshes[1].localToWorld(v.meshes[1].position.clone().set(-2.6, 0, 6.02));
     return [opposite, trailer].map(q => g.transit.boardable(q.x, q.z, q.y) === v);
   });
-  expect(gates).toEqual([false, false]);
+  expect(gates).toEqual([false, true]);
   await action(page);
   const stop = await page.evaluate(() => {
     const v = __game.ride;
@@ -222,11 +222,11 @@ test('E59 – z hlavní nabídky přímo do uličky bez nastavování data a hle
   await info.attach('Sedadlo po nástupu z nabídky', { body: await page.screenshot(), contentType: 'image/png' });
 });
 
-test('E59 – z vnějšího pohledu lze v pauze přejít do správného vozu', async ({ page }) => {
+test('E59 – z běžného spoje lze v pauze přejít do ukázkové Tatry', async ({ page }) => {
   await boot(page, 'quality=low');
   expect((await approach(page, '686547', 'U Práce')).boardable).toBe(true);
   await action(page);
-  expect(await page.evaluate(() => __game.mode === 'transit' && !__game.cabin)).toBe(true);
+  expect(await page.evaluate(() => [__game.ride.event.trip.id, !!__game.cabin])).toEqual(['686547', true]);
   await page.locator('#btn-menu').click();
   await page.getByRole('button', { name: 'Svézt se MHD' }).click();
   await page.getByRole('button', { name: '1 Tramvaj Tatra Směr Bolevec' }).click();

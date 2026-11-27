@@ -8,7 +8,7 @@ export const ARTICULATED_TRIP = '685463';
 export const BUS_TRIP = '688856';
 export const TROLLEY_TRIP = '692185';
 
-const tatraLayout = [{ doors: CABIN_DOORS, seats: CABIN_SEATS, min: -6.53, max: 6.48 }];
+export const TATRA_CABIN = [{ doors: CABIN_DOORS, seats: CABIN_SEATS, min: -6.53, max: 6.48, front: true, rear: true }];
 export const ARTICULATED_CABIN = [
   { length: 9.4, doors: [2.36, -3.25], rows: [-1.9, -0.85, 0.2, 1.25], min: -4.7, max: 3.05 },
   { length: 10.34, doors: [0], rows: [-3.6, -2.5, -1.4, 1.4, 2.5, 3.6], min: -5.17, max: 5.17 },
@@ -26,16 +26,16 @@ export const TROLLEY_CABIN = [{
 }];
 
 export const CABIN_SERVICES = [
-  { trip: PILOT_TRIP, model: 'Tramvaj Tatra', destination: 'Bolevec', type: 'tram', ref: '1', layout: tatraLayout, stop: '54717/1',
+  { trip: PILOT_TRIP, model: 'Tramvaj Tatra', destination: 'Bolevec', type: 'tram', ref: '1', stop: '54717/1',
     name: 'Průchozí tramvaj · linka 1', marker: '1 · Průchozí Tatra', aliases: ['Tatra'],
     access: 'První vůz spoje 685462 směr Bolevec. V pondělí 9. 11. 2026 odjezd v 10:06 ze stanoviště 1.' },
-  { trip: ARTICULATED_TRIP, model: 'Článková tramvaj', destination: 'Bolevec', type: 'tram', ref: '1', layout: ARTICULATED_CABIN, stop: '54717/1',
+  { trip: ARTICULATED_TRIP, model: 'Článková tramvaj', destination: 'Bolevec', type: 'tram', ref: '1', stop: '54717/1',
     name: 'Článková tramvaj · linka 1', marker: '1 · Článková tramvaj', aliases: [],
     access: 'Tři průchozí články spoje 685463 směr Bolevec. V pondělí 9. 11. 2026 odjezd v 10:13 ze stanoviště 1.' },
-  { trip: BUS_TRIP, model: 'Autobus SOR', destination: 'Hlavní nádraží', type: 'bus', ref: '33', layout: BUS_CABIN, stop: '54717/4',
+  { trip: BUS_TRIP, model: 'Autobus SOR', destination: 'Hlavní nádraží', type: 'bus', ref: '33', stop: '54717/4',
     name: 'Průchozí autobus · linka 33', marker: '33 · Průchozí autobus', aliases: ['SOR'],
     access: 'Spoj 688856 směr Hlavní nádraží. V pondělí 9. 11. 2026 odjezd v 8:20 ze stanoviště 4.' },
-  { trip: TROLLEY_TRIP, model: 'Trolejbus', destination: 'Karlov', type: 'trolleybus', ref: '49', layout: TROLLEY_CABIN, stop: '53408/1',
+  { trip: TROLLEY_TRIP, model: 'Trolejbus', destination: 'Karlov', type: 'trolleybus', ref: '49', stop: '53408/1',
     name: 'Průchozí trolejbus · linka 49', marker: '49 · Průchozí trolejbus', aliases: [],
     access: 'Spoj 692185 směr Karlov. V pondělí 9. 11. 2026 odjezd v 8:26 ze stanoviště 1 u hlavního nádraží.' },
 ];
@@ -53,7 +53,7 @@ function canStand(section, x, z) {
 }
 
 export class TramCabin {
-  constructor(door, platform, layout = tatraLayout, section = 0) {
+  constructor(door, platform, layout = TATRA_CABIN, section = 0) {
     this.layout = layout;
     this.section = section;
     this.x = -0.82;
@@ -73,10 +73,10 @@ export class TramCabin {
     const current = this.layout[this.section];
     if (canStand(current, x, this.z)) this.x = x;
     let index = this.section;
-    if (z < current.min && index + 1 < this.layout.length) {
+    if (!current.rear && z < current.min && index + 1 < this.layout.length) {
       index++;
       z += (current.length + this.layout[index].length) / 2;
-    } else if (z > current.max && index > 0) {
+    } else if (!current.front && z > current.max && index > 0) {
       index--;
       z -= (current.length + this.layout[index].length) / 2;
     }

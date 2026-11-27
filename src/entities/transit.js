@@ -101,7 +101,7 @@ class TransitVehicle {
     this.isTram = this.route.type === 'tram';
     // Herní střídání na spojích linek 1 a 2, stálé pro konkrétní spoj.
     this.isTatra = this.isTram && ['1', '2'].includes(this.route.ref) && Number(trip.id) % 2 === 0;
-    this.cabinService = CABIN_SERVICES.find(service => service.trip === trip.id &&
+    this.demoService = CABIN_SERVICES.find(service => service.trip === trip.id &&
       service.type === this.route.type && service.ref === this.route.ref);
     this.sections = this.isTatra ? TATRA_SECTIONS : SECTIONS[this.route.type];
     this.footprints = this.sections.map(() => ({}));
@@ -136,10 +136,11 @@ class TransitVehicle {
     this.stopTarget = this.doorsOpen ? this.stops[index] : null;
   }
 
-  cabinDoorAt(x, z) {
-    if (!this.cabinService || !this.visible || !this.canBoard || this.doorFraction < 0.85) return null;
-    for (let index = 0; index < this.cabinService.layout.length; index++) {
+  cabinDoorAt(x, z, y) {
+    if (!this.visible || !this.canBoard || this.doorFraction < 0.85) return null;
+    for (let index = 0; index < this.sections.length; index++) {
       const mesh = this.meshes[index], dx = x - mesh.position.x, dz = z - mesh.position.z;
+      if (Math.abs(mesh.position.y - y) > 2.5) continue;
       const sin = Math.sin(mesh.rotation.y), cos = Math.cos(mesh.rotation.y);
       const door = boardingDoor(dz * sin - dx * cos, dx * sin + dz * cos, this.sections[index].doors);
       if (door === null) continue;
@@ -241,14 +242,9 @@ export class TransitManager {
     v.visible = on;
     if (on) {
       if (!v.meshes) {
-        if (v.isTatra) {
-          v.meshes = v.sections.map((_, i) => makeTatraCar(!!v.cabinService && i === 0));
-          v.joints = [makeTatraCoupler()];
-        } else {
-          v.meshes = v.isTram ? v.sections.map(section => makeTramSection(section, !!v.cabinService))
-            : [v.route.type === 'bus' ? makeSorBus(!!v.cabinService) : makeTrolleybus(!!v.cabinService)];
-          v.joints = v.meshes.slice(1).map(() => makeTramJoint(!!v.cabinService));
-        }
+        v.meshes = v.sections.map(section => this._body(v, section, false));
+        for (const mesh of v.meshes) mesh.userData.bodyParts = [...mesh.children];
+        v.joints = v.isTatra ? [makeTatraCoupler()] : v.meshes.slice(1).map(() => makeTramJoint());
         if (!v.isTram) v.indicator = addDepartureIndicator(v.meshes[0], v.len);
         v.display = addTransitDisplay(v.meshes[0], v.sections[0].length, v.route.ref, v.destination);
       }
@@ -261,11 +257,34 @@ export class TransitManager {
     }
   }
 
+  _body(v, section, interior) {
+    if (v.isTatra) return makeTatraCar(interior);
+    if (v.isTram) return makeTramSection(section, interior);
+    return v.route.type === 'bus' ? makeSorBus(interior) : makeTrolleybus(interior);
+  }
+
+  setPassengerView(v, interior) {
+    // Vyměníme jen karoserii. Poloha vozu, cedule i směrovky patří jejímu rodiči.
+    for (const [i, mesh] of v.meshes.entries()) {
+      const body = this._body(v, v.sections[i], interior);
+      setModelDoors(body, v.doorFraction);
+      mesh.remove(...mesh.userData.bodyParts);
+      mesh.userData.doors.mesh.dispose();
+      mesh.userData.bodyParts = [...body.children];
+      mesh.add(...mesh.userData.bodyParts);
+      mesh.userData.doors = body.userData.doors;
+    }
+    if (v.isTram && !v.isTatra) {
+      const geometry = makeTramJoint(interior).geometry;
+      for (const joint of v.joints) joint.geometry = geometry;
+    }
+  }
+
   _dispose(v) {
     this._show(v, false);
     v.display?.map.dispose();
     v.display?.dispose();
-    for (const mesh of v.meshes ?? []) mesh.userData.doors?.mesh.dispose();
+    for (const mesh of v.meshes ?? []) mesh.userData.doors.mesh.dispose();
   }
 
   _spawnSpace(v, nearby, cars) {
@@ -473,7 +492,8 @@ export class TransitManager {
     if (cabin && v.canAlight && cabin.stop !== v.stopIndex) {
       // Pokud jsou u tohoto článku dveře zablokované, může bezpečné nástupiště
       // ležet u jiného průchozího článku stejného vozu.
-      for (let i = 0; i < cabin.layout.length; i++) {
+      const count = v.isTatra ? 1 : cabin.layout.length;
+      for (let i = 0; i < count; i++) {
         const index = (cabin.section + i) % cabin.layout.length;
         const point = {};
         const clear = v.sections[index].doors.some(door =>
@@ -554,23 +574,13 @@ export class TransitManager {
 
   boardable(x, z, y) {
     let best = null, distance = Infinity;
+    const point = {};
     for (const v of this.vehicles) {
-      if (!v.visible || !v.canBoard || Math.abs(v.y - y) > 2.5) continue;
-      const cabinDoor = v.cabinDoorAt(x, z);
-      if (v.cabinService && cabinDoor === null) continue;
-      for (const [index, mesh] of v.meshes.entries()) {
-        if (v.cabinService && index !== cabinDoor.index) continue;
-        const dx = x - mesh.position.x, dz = z - mesh.position.z;
-        const fx = Math.sin(mesh.rotation.y), fz = Math.cos(mesh.rotation.y);
-        const across = dz * fx - dx * fz, along = dx * fx + dz * fz;
-        if (across < 0.8) continue;
-        const doors = v.sections[index].doors;
-        for (let i = 0; i < (v.route.type === 'trolleybus' ? 1 : doors.length); i++) {
-          const door = doors[i];
-          const d = (across - 2.6) ** 2 + (along - door) ** 2;
-          if (d < 5.5 ** 2 && d < distance) { distance = d; best = v; }
-        }
-      }
+      const at = v.cabinDoorAt(x, z, y);
+      if (!at) continue;
+      this.exitPoint(v, point, at.door, at.index);
+      const d = (point.x - x) ** 2 + (point.z - z) ** 2;
+      if (d < distance) { distance = d; best = v; }
     }
     return best;
   }
@@ -585,7 +595,7 @@ export class TransitManager {
     else if (v.isTram) offset = (v.sections[0].length + v.sections[1].length) / 2;
     const x = mesh?.position.x ?? v.x + fx * offset;
     const z = mesh?.position.z ?? v.z + fz * offset;
-    if (v.cabinService && mesh) out.y = mesh.position.y;
+    out.y = mesh?.position.y ?? v.y;
     out.x = x + fx * longitudinal - fz * 2.6;
     out.z = z + fz * longitudinal + fx * 2.6;
     return out;

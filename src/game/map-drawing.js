@@ -147,11 +147,11 @@ export function drawAreaMap(canvas, game, view, selected) {
     g.lineWidth=1.5; g.strokeStyle='#15242c'; g.stroke();
   }
   for (const v of game.transit.vehicles) {
-    if (!v.cabinService) continue;
+    if (!v.demoService) continue;
     const p = v.visible ? v.meshes[0].position : v;
     if (!insideMap(screenBounds, p.x, p.z)) continue;
     dot(p.x, p.z, 4.5, '#edb449');
-    label(p.x, p.z, v.cabinService.marker, 12, '#ffe9b5', -10);
+    label(p.x, p.z, v.demoService.marker, 12, '#ffe9b5', -10);
   }
   for (const m of jobs.landmarks) {
     if (!insideMap(screenBounds,m.x,m.z)) continue;

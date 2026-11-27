@@ -140,6 +140,7 @@ test('tramvaj lze použít a uložený postup přežije opětovné načtení', a
     g.player.place(p.x, p.z);
     window.__setClock(null, trip.times[stop * 2] / 3600);
     const v = g.transit.vehicles.find((v) => v.event.key === event.key);
+    for (let i = 0; i < 30 && v.doorFraction < 0.85; i++) __step(1 / 60);
     g.transit.exitPoint(v, p);
     g.player.place(p.x, p.z, v.y);
     // U nástupiště ověřujeme nastoupení do spoje, nikoli do zaparkovaného auta.

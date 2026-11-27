@@ -313,7 +313,7 @@ test('E10 – jízda tramvají 1, přestup na autobus 30 a doručení od rybník
       }
       let chosen;
       const found = until(() => {
-        chosen = [...transit.active.values()].find((v) => v.canBoard && v.visible && v.route.ref === leg.line
+        chosen = [...transit.active.values()].find((v) => v.canBoard && v.visible && v.doorFraction >= 0.85 && v.route.ref === leg.line
           && v.event.trip.stops[v.stopIndex].stop === leg.from.i
           && v.event.trip.stops.slice(v.stopIndex + 1).some((s) => s.stop === leg.to.i));
         return chosen;
@@ -328,7 +328,7 @@ test('E10 – jízda tramvají 1, přestup na autobus 30 a doručení od rybník
       const { trip, start: dispatch } = chosen.event;
       const target = trip.stops.findIndex(({ stop }, i) => i > chosen.stopIndex && stop === leg.to.i);
       const scheduledArrival = dispatch - trip.start + trip.times[target * 2];
-      const arrived = until(() => chosen.canAlight && trip.stops[chosen.stopIndex]?.stop === leg.to.i,
+      const arrived = until(() => chosen.canAlight && chosen.doorFraction >= 0.85 && trip.stops[chosen.stopIndex]?.stop === leg.to.i,
         Math.max(0, scheduledArrival - g.clock.now) + 120);
       if (!arrived) return { failure: 'nedojelo do cíle', line: leg.line, travelled: chosen.s - start, rideChecks };
       g.doAction();
