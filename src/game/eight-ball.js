@@ -53,13 +53,19 @@ export class EightBall {
     this.breakShot = false;
   }
 
+  get targetBall() {
+    const group = this.groups[this.player];
+    if (!group || this.winner) return null;
+    return this.remaining[group] ? group : 'černá';
+  }
+
   get status() {
     if (this.winner) {
       if (this.computer) return (this.winner === 1 ? 'Vyhráváš! ' : 'Vyhrává počítač. ') + this.message;
       return `Vyhrává hráč ${this.winner}. ${this.message}`;
     }
-    const group = this.groups[this.player];
-    const target = !group ? 'Otevřený stůl' : this.remaining[group] ? `${group} · zbývá ${this.remaining[group]}` : 'na řadě je černá';
+    const ball = this.targetBall;
+    const target = !ball ? 'Otevřený stůl' : ball === 'černá' ? 'na řadě je černá' : `${ball} · zbývá ${this.remaining[ball]}`;
     const label = this.computer ? (this.player === 1 ? 'Tvůj tah' : 'Na tahu je počítač') : `Hráč ${this.player}`;
     return `${label} · ${target}.${this.message ? ' ' + this.message : ''}`;
   }

@@ -98,3 +98,19 @@ test('hráč po rozstřelu postupně potopí sedm plných a černou samostatným
     assert.equal(table.launch(0, 1), false);
   } finally { table.dispose(); }
 });
+
+test('symbol odpovídá hráči na tahu, po sedmi koulích přejde na černou a po výhře zmizí', () => {
+  const game = new EightBall();
+  assert.equal(game.targetBall, null);
+  shot(game, 1, [1]);
+  assert.equal(game.targetBall, null);
+  shot(game, 9, [9]);
+  assert.equal(game.targetBall, 'půlené');
+  shot(game, 10);
+  assert.equal(game.targetBall, 'plné');
+  shot(game, 2, [2, 3, 4, 5, 6, 7]);
+  assert.equal(game.targetBall, 'černá');
+  assert.match(game.status, /na řadě je černá/);
+  shot(game, 8, [8]);
+  assert.equal(game.targetBall, null);
+});

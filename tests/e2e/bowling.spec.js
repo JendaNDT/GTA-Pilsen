@@ -288,6 +288,7 @@ test('E64 – dva hráči na telefonu, bílá v ruce, černá a odveta', async (
     await expect(hit).toBeDisabled();
     await page.getByRole('button', { name: 'Odveta' }).tap();
     await expect(status).toContainText('Hráč 2 · Otevřený stůl. Rozstřel.');
+    await expect(status).not.toHaveAttribute('data-ball', /.+/);
     await page.getByRole('button', { name: 'Zpět k bowlingu' }).tap();
     await page.getByRole('button', { name: 'Ke kulečníku' }).tap();
     await page.getByRole('button', { name: 'Trénink' }).tap();
@@ -319,6 +320,7 @@ test('E65 – celá osmička proti počítači na telefonu a soupeřův rozstře
     await page.screenshot({ path: info.outputPath('souper.jpg') });
     await page.keyboard.press('f');
     expect(await page.evaluate(() => __game.activities.bowling.pool.table.rolling)).toBe(false);
+    let sawGroup = false;
     // Soupeř i koule běží jen v běžných krocích hry, člověk zahraje z připraveného směru.
     for (let turn = 0; turn < 60; turn++) {
       const state = await page.evaluate(() => {
@@ -330,9 +332,17 @@ test('E65 – celá osmička proti počítači na telefonu a soupeřův rozstře
       if (state.done) break;
       await expect(status).toContainText('Tvůj tah');
       if (state.hand) await hit.tap();
+      const group = /plné|půlené/.exec(await status.innerText());
+      if (group && !sawGroup) {
+        await expect(status).toHaveAttribute('data-ball', group[0]);
+        await page.screenshot({ path: info.outputPath('tvuj-tah.jpg') });
+        sawGroup = true;
+      }
       await hit.tap();
     }
+    expect(sawGroup).toBe(true);
     await expect(status).toContainText(/Vyhráváš|Vyhrává počítač/);
+    await expect(status).not.toHaveAttribute('data-ball', /.+/);
     await page.getByRole('button', { name: 'Odveta' }).tap();
     await page.evaluate(() => __step(1 / 60, 65));
     await expect(status).toContainText('Strk počítače');
@@ -382,5 +392,52 @@ test('E66 – výběr režimu vedle sebe a návrat k rozehranému bowlingu', asy
     await page.getByRole('button', { name: 'Zpět k bowlingu' }).tap();
     await expect(visit).toBeFocused();
     expect(await page.evaluate(() => __game.activities.bowling.round.frames.flat().length)).toBe(1);
+  } finally { await context.close(); }
+});
+
+test('E67 – půlená a plná koule u tahu na úzkém telefonu', async ({ browser }, info) => {
+  const context = await browser.newContext({ viewport: { width: 320, height: 640 }, hasTouch: true, isMobile: true });
+  try {
+    const page = await context.newPage();
+    await arrive(page, true);
+    await enter(page, true);
+    await page.getByRole('button', { name: 'Ke kulečníku' }).tap();
+    await page.getByRole('button', { name: 'Pro dva', exact: true }).tap();
+    const hit = page.locator('#pool-hit'), status = page.locator('#pool-status');
+    await expect(status).not.toHaveAttribute('data-ball', /.+/);
+    await hit.tap();
+    await page.evaluate(() => __step(1 / 60, 400));
+    // Po rozstřelu připravíme přímý strk devítkou do prostřední kapsy.
+    await page.evaluate(() => {
+      const { table } = __game.activities.bowling.pool;
+      table.balls.forEach((b, n) => table.place(b, ...table.starts[n]));
+      table.place(table.balls[0], -.28, 0);
+      table.place(table.balls[9], .16, 0);
+      for (const [id, value] of [['pool-angle', 0], ['pool-power', 65]]) {
+        const input = document.getElementById(id);
+        input.value = value;
+        input.dispatchEvent(new Event('input'));
+      }
+    });
+    await hit.tap();
+    await page.evaluate(() => __step(1 / 60, 350));
+    await expect(status).toContainText('Hráč 2 · půlené');
+    await page.screenshot({ path: info.outputPath('pulene.jpg') });
+    await expect(status).toHaveAttribute('data-ball', 'půlené');
+    expect(await status.evaluate(el => getComputedStyle(el, '::before').backgroundImage)).toContain('linear-gradient');
+    await page.evaluate(() => {
+      const { table } = __game.activities.bowling.pool;
+      table.place(table.balls[0], .4, 0);
+    });
+    await hit.tap();
+    await expect(status).not.toHaveAttribute('data-ball', /.+/);
+    await page.evaluate(() => __step(1 / 60, 350));
+    await expect(status).toContainText('Hráč 1 · plné');
+    await expect(status).toHaveAttribute('data-ball', 'plné');
+    expect(await status.evaluate(el => getComputedStyle(el, '::before').backgroundImage)).toBe('none');
+    await page.getByRole('button', { name: 'Zpět k bowlingu' }).tap();
+    await page.getByRole('button', { name: 'Ke kulečníku' }).tap();
+    await page.getByRole('button', { name: 'Trénink' }).tap();
+    await expect(status).not.toHaveAttribute('data-ball', /.+/);
   } finally { await context.close(); }
 });

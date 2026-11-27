@@ -135,7 +135,11 @@ export class PoolPractice {
     this.width = 0;
     field('reset').disabled = rolling;
     const moving = this.computer ? (this.computerTurn ? 'Strk počítače.' : 'Tvůj strk.') : `Hraje hráč ${match?.player}.`;
-    field('status').textContent = match ? (rolling ? moving + ' Koule jsou v pohybu.' : match.status) : rolling ? 'Koule jsou v pohybu.' : complete ? 'Všechny tři koule jsou v kapsách.' :
+    const status = field('status');
+    const target = !rolling && match?.targetBall;
+    if (target) status.dataset.ball = target;
+    else delete status.dataset.ball;
+    status.textContent = match ? (rolling ? moving + ' Koule jsou v pohybu.' : match.status) : rolling ? 'Koule jsou v pohybu.' : complete ? 'Všechny tři koule jsou v kapsách.' :
       (scratch ? 'Bílá je zpět na stole. ' : '') + 'V kapsách ' + potted + ' ze 3';
   }
 

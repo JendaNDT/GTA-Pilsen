@@ -521,6 +521,22 @@ body.touch .bowl-actions kbd { display: none; }
 }
 #pool-status, #pool-console .bowl-actions { grid-column: 1 / -1; margin: 0; }
 #pool-status { font-size: 13px; }
+#pool-status[data-ball]::before {
+  content: "";
+  display: inline-block;
+  box-sizing: border-box;
+  width: 1.25em;
+  height: 1.25em;
+  margin-inline-end: .45em;
+  vertical-align: -.24em;
+  border: 1px solid #fff3d7;
+  border-radius: 50%;
+  background: #e8a82d;
+}
+#pool-status[data-ball="půlené"]::before {
+  background: linear-gradient(90deg, #fff3d7 25%, #bd831d 25% 75%, #fff3d7 75%);
+}
+#pool-status[data-ball="černá"]::before { background: #171817; }
 #pool-console label { font-size: 13px; }
 #pool-console output { float: right; color: #ead1a7; }
 #pool-console input { display: block; width: 100%; height: 26px; margin: 0; accent-color: #f0c787; }

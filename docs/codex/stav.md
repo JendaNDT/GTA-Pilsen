@@ -1,3 +1,7 @@
+# E67 · Symbol skupiny u tahu
+
+Na větvi `etapa/E67` z revize `470163c` ukazuje symbol v osmičce plné, půlené nebo závěrečnou černou podle právě hrajícího hráče. Prošlo sestavení, 418 testů JavaScriptu a šest cílených prohlížečových zkoušek ve WebGL 2 a WebGPU. Na šířce 320 bodů byl ověřen pruhovaný symbol i následný přechod na plnou. Na nízkou předvolbu ve Full HD dosáhla hra 59,1 FPS. [Zadání](E67.md) · [Snímky, zkoušky a výkon](../E67.md)
+
 # E66 · Společný výběr kulečníku
 
 Na větvi `etapa/E66` z revize `3573aed` je hotový výběr všech tří režimů přes **Ke kulečníku**. Sestavení, 417 testů JavaScriptu a všech 14 cílených zkoušek herny prošlo. V mobilním zobrazení o šířce 320 bodů jsou tři tlačítka vedle sebe. Ověřen je návrat k rozehrané i dohrané dráze. Měření osmičky na nízkou předvolbu ve Full HD dosáhlo 60 FPS. [Zadání](E66.md) · [Ovládání, snímky a měření](../E66.md)
