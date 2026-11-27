@@ -1,5 +1,5 @@
-import { PerspectiveCamera, Vector3 } from 'three/webgpu';
-import { BALL_RADIUS, BALL_STARTS, PoolTable } from '../physics/pool-table.js';
+import { PerspectiveCamera, Plane, Raycaster, Vector2, Vector3 } from 'three/webgpu';
+import { BALL_RADIUS, BALL_STARTS, HALF_LENGTH, HALF_WIDTH, POCKET_RADIUS, PoolTable } from '../physics/pool-table.js';
 
 const field = name => document.getElementById('pool-' + name);
 const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
@@ -14,6 +14,19 @@ export class PoolPractice {
     this.target = new Vector3();
     this.startPosition = new Vector3();
     this.startRotation = this.camera.quaternion.clone();
+    this.raycaster = new Raycaster();
+    this.pointer = new Vector2();
+    this.aimPlane = new Plane(new Vector3(0, 1, 0));
+    const surface = field('aim-surface');
+    surface.onpointerdown = event => {
+      if (event.isPrimary && event.button === 0 && this.aimAt(event)) {
+        surface.setPointerCapture(event.pointerId);
+        field('hit').focus({ preventScroll: true });
+      }
+    };
+    surface.onpointermove = event => {
+      if (surface.hasPointerCapture(event.pointerId)) this.aimAt(event);
+    };
     this.angle.oninput = () => { this.degrees = this.angle.valueAsNumber; this.showAim(); };
     this.power.oninput = () => { this.strength = this.power.valueAsNumber; this.showAim(); };
     field('hit').onclick = () => this.action();
@@ -54,6 +67,25 @@ export class PoolPractice {
       mesh.position.set(BALL_STARTS[i][0], BALL_RADIUS, BALL_STARTS[i][1]);
     });
     document.getElementById('bowl-pool').focus({ preventScroll: true });
+  }
+
+  aimAt(event) {
+    if (!this.table || !this.bowling.canUse || this.table.rolling || this.table.complete) return false;
+    const rect = event.currentTarget.getBoundingClientRect();
+    this.pointer.set((event.clientX - rect.left) / rect.width * 2 - 1,
+      1 - (event.clientY - rect.top) / rect.height * 2);
+    const origin = this.bowling.room.pool.group.position;
+    this.aimPlane.constant = -(origin.y + BALL_RADIUS);
+    this.raycaster.setFromCamera(this.pointer, this.camera);
+    if (!this.raycaster.ray.intersectPlane(this.aimPlane, this.target)) return false;
+    const x = this.target.x - origin.x, z = this.target.z - origin.z;
+    if (Math.abs(x) > HALF_WIDTH + POCKET_RADIUS || Math.abs(z) > HALF_LENGTH + POCKET_RADIUS) return false;
+    const white = this.table.balls[0].GetPosition();
+    const dx = x - white.GetX(), dz = z - white.GetZ();
+    if (Math.hypot(dx, dz) < BALL_RADIUS) return false;
+    this.degrees = Math.atan2(dz, dx) * 180 / Math.PI;
+    this.showAim();
+    return true;
   }
 
   showAim() {
@@ -105,6 +137,25 @@ export class PoolPractice {
     cue.visible = !table.rolling && !table.complete;
     cue.position.copy(balls[0].position);
     cue.rotation.y = -this.degrees * Math.PI / 180;
+    if (cue.visible) {
+      const angle = -cue.rotation.y, dx = Math.cos(angle), dz = Math.sin(angle);
+      const { x, z } = cue.position;
+      // Konec čáry je místo, kam se dostane střed bílé před prvním dotykem.
+      let distance = Math.min(
+        Math.abs(dx) < 1e-8 ? Infinity : ((HALF_WIDTH - BALL_RADIUS) * Math.sign(dx) - x) / dx,
+        Math.abs(dz) < 1e-8 ? Infinity : ((HALF_LENGTH - BALL_RADIUS) * Math.sign(dz) - z) / dz);
+      for (let i = 1; i < balls.length; i++) {
+        if (!balls[i].visible) continue;
+        const bx = balls[i].position.x - x, bz = balls[i].position.z - z;
+        const along = bx * dx + bz * dz, across = bx * dz - bz * dx;
+        if (along > 0 && Math.abs(across) < 2 * BALL_RADIUS) {
+          distance = Math.min(distance, along - Math.sqrt((2 * BALL_RADIUS) ** 2 - across ** 2));
+        }
+      }
+      const length = Math.max(0, distance - BALL_RADIUS);
+      room.pool.guide.scale.x = length;
+      room.pool.guide.position.x = BALL_RADIUS + length / 2;
+    }
     const { clientWidth: width, clientHeight: height } = renderer.domElement;
     // Zaber celý stůl v prostoru mezi názvem herny a ovládáním.
     if (this.width !== width || this.height !== height) {

@@ -2,6 +2,10 @@
 
 Na větvi `etapa/E63` z revize `eb5d900` je hotový první hratelný krok. Z bowlingové dráhy lze přejít k jednomu kulečníkovému stolu, mířit, nastavit sílu, potopit tři barevné koule a vrátit se k rozehranému bowlingu. Na klávesnici i dotyku prošel celý přechod v obou vykreslovačích. Prošlo sestavení, 408 testů JavaScriptu, 34 testů Pythonu (jeden další přeskočen) a osm zkoušek v Chromiu. Trénink ve Full HD na nízkou předvolbu dosáhl 60 FPS. Dalším navrženým krokem jsou pravidla osmičky. [Zadání](E63.md) · [Ovládání, snímky a měření](../E63.md)
 
+## Míření přímo na stole
+
+Po revizi `28f5840` lze směr vybrat kliknutím, dotykem nebo tažením. Světlá čára vede od bílé k prvnímu kontaktu. Síla i okamžik strku zůstávají v rukou hráče. Prošlo sestavení, všech 408 testů JavaScriptu a čtyři zkoušky kulečníku v Chromiu. Na počítači i emulovaném telefonu zkouška ověřila změnu cíle, potopení žluté a návrat ke dráze ve WebGL 2 i WebGPU.
+
 # E62 · Výstup vedle auta v Pařížské
 
 Na výchozí revizi `858cde2` dovolila hra vystoupit zadními dveřmi linky 33 i do místa obsazeného sedanem. V řízené zkoušce stál střed auta 55 cm od cílového bodu. Hra postavu nejprve umístila ke dveřím, po prvním kroku se střetem byla 95 cm od cíle. Ve třech jízdách původního místního sestavení s volným prostorem u dveří byl rozdíl pod 1 mm. Přesnou polohu auta z dřívějšího veřejného měření 67 cm neznáme.

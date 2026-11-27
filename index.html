@@ -103,10 +103,11 @@
         </div>
       </div>
       <div id="pool-panel" hidden>
-        <header><h2>Kulečník U Papírny</h2><span>Volný trénink</span></header>
+        <div id="pool-aim-surface" aria-hidden="true"></div>
+        <header><h2>Kulečník U Papírny</h2><span>Klepni na stůl tam, kam má jet bílá koule.</span></header>
         <div id="pool-console">
           <p id="pool-status" role="status"></p>
-          <label>Směr <output id="pool-angle-value">0°</output><input id="pool-angle" type="range" min="-180" max="180" step="1" value="0"></label>
+          <label>Doladění směru <output id="pool-angle-value">0°</output><input id="pool-angle" type="range" min="-180" max="180" step="1" value="0"></label>
           <label>Síla <output id="pool-power-value">65 %</output><input id="pool-power" type="range" min="10" max="100" value="65"></label>
           <div class="bowl-actions"><button id="pool-hit">Strčit <kbd>F</kbd></button><button id="pool-reset">Rozestavit koule</button><button id="pool-back">Zpět k bowlingu</button></div>
         </div>

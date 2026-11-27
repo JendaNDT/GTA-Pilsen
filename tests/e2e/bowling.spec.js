@@ -165,6 +165,33 @@ for (const mobile of [false, true]) test('E63 – strk do kapsy a návrat ke dr�
       }));
     });
     expect(visible).toBe(true);
+    const spot = await page.evaluate(() => {
+      const { pool, room } = __game.activities.bowling;
+      return [2, 1].map(i => {
+        const v = room.pool.balls[i].position.clone();
+        room.pool.group.localToWorld(v).project(pool.camera);
+        return { x: (1 + v.x) * innerWidth / 2, y: (1 - v.y) * innerHeight / 2 };
+      });
+    });
+    if (mobile) {
+      await page.touchscreen.tap(spot[0].x, spot[0].y);
+    } else {
+      await page.mouse.move(spot[1].x, spot[1].y);
+      await page.mouse.down();
+      await page.mouse.move(spot[0].x, spot[0].y, { steps: 5 });
+      await page.mouse.up();
+    }
+    const aim = page.locator('#pool-angle-value');
+    expect(parseFloat(await aim.textContent())).toBeCloseTo(80, -1);
+    await step(1);
+    await expect(page.locator('#pool-status')).toHaveText('V kapsách 0 ze 3');
+    await expect(page.locator('#pool-hit')).toBeEnabled();
+    if (mobile) await page.touchscreen.tap(spot[1].x, spot[1].y);
+    else await page.mouse.click(spot[1].x, spot[1].y);
+    expect(Math.abs(parseFloat(await aim.textContent()))).toBeLessThan(2);
+    await step(1);
+    const guide = await page.evaluate(() => __game.activities.bowling.room.pool.guide.scale.x);
+    expect(guide).toBeCloseTo(.44 - 3 * .029, 2);
     await page.screenshot({ path: info.outputPath('stul.jpg') });
     if (mobile) {
       const track = await page.locator('#pool-power').boundingBox();

@@ -21,7 +21,7 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 - **Minigolf ve Škodalandu.** U půjčovny za příjezdovou cestou stiskni F. Nastav směr a sílu, zahraj tři různé jamky a mezi nimi dojdi ke značce. Na každou jamku máš sedm úderů. Nejlepší součet za celou partii se uloží. [Postup a snímky](docs/E54.md)
 
-- **Kulečník U Papírny.** Vejdi do bowlingu na Papírnické 3 a vyber **Ke kulečníku**. U stolu můžeš trénovat strky do šesti kapes a kdykoli se vrátit k rozehrané dráze. [Ovládání a zkoušky](docs/E63.md)
+- **Kulečník U Papírny.** Vejdi do bowlingu na Papírnické 3 a vyber **Ke kulečníku**. Kliknutím nebo dotykem na stole zamiř bílou kouli, nastav sílu a zvol **Strčit**. K rozehrané dráze se můžeš kdykoli vrátit. [Ovládání a zkoušky](docs/E63.md)
 
 - **Pěšky do MHD po celé herní oblasti.** U otevřených dveří stiskni F. Všechny pravidelné tramvaje, autobusy i trolejbusy mají interiér podle herního modelu. V Tatře můžeš nastoupit do obou samostatných vozů, v článkové tramvaji mezi články projdeš za jízdy. Do trolejbusu nastupuj předními dveřmi. Pokud místo u výstupu zabírá auto, počkej, až odjede, nebo přejdi k jiným dveřím. [Ovládání a ověřené trasy](docs/E62.md)
 - **Průchozí tramvaj linky 1.** V hlavní nabídce nebo v pauze klikni na **Svézt se MHD → Tramvaj Tatra**. Tlačítko nastaví čas odjezdu a postaví tě přímo do uličky. Do prvního vozu spoje 685462 směrem na Bolevec můžeš nastoupit, projít se za jízdy, sednout si k oknu a v zastávce vystoupit jinými dveřmi. [Výběr spoje](docs/E61.md) · [Kde nastoupit a jak vůz ovládat](docs/E59.md)

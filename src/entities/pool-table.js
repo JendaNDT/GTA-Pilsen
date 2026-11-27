@@ -98,7 +98,9 @@ export function createPoolModel() {
   grip.rotation.z = -Math.PI / 2;
   const tip = part(new THREE.CylinderGeometry(.005, .005, .008, 10), material(0x83bac0), -.069, 0, 0, cue);
   tip.rotation.z = -Math.PI / 2;
-  for (const d of [.10, .17, .24]) part(new THREE.BoxGeometry(.031, .002, .005), ivory, d, -.026, 0, cue);
+  const guide = part(new THREE.BoxGeometry(1, .001, .006),
+    new THREE.MeshBasicMaterial({ color: 0xf3efcf, transparent: true, opacity: .76 }),
+    0, -.025, 0, cue);
   cue.visible = false;
-  return { group, balls, cue };
+  return { group, balls, cue, guide };
 }

@@ -510,6 +510,7 @@ body.touch .bowl-actions kbd { display: none; }
   border-radius: 10px;
   padding: 9px 14px;
 }
+#pool-aim-surface { position: absolute; inset: 0; pointer-events: auto; touch-action: none; cursor: crosshair; }
 #pool-panel header { left: 12px; top: max(10px, env(safe-area-inset-top)); }
 #pool-panel h2 { margin: 0; font: 600 19px Georgia, serif; }
 #pool-panel header span { font-size: 12px; color: #e4c998; }
