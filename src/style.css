@@ -564,3 +564,5 @@ body.touch .bowl-actions kbd { display: none; }
   cursor: pointer;
 }
 #hud:has(#bowl-modes:not([hidden])) #toast { visibility: hidden; }
+
+.pizza-select select { min-width: 0; max-width: 72%; }

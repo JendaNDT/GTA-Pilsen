@@ -1,3 +1,4 @@
+import { PIZZERIAS, pizzaOrder } from './pizza-offers.js';
 import { CAR_PRICE, GARAGE, UPGRADES } from './garage.js';
 import { jobTitle, resultText } from './missions.js';
 import { TAXI_RIDES } from './taxi.js';
@@ -11,6 +12,24 @@ export function initWorkUI(game, play, refreshMenu) {
 
   const taxiCards = $('taxi-cards');
   const taxiFeedback = $('taxi-feedback');
+
+  const shopSelect = $('pizza-shop'), addressSelect = $('pizza-address');
+  const shop = () => PIZZERIAS[Number(shopSelect.value)];
+  const selectedPizza = () => pizzaOrder(shop(), shop().orders[Number(addressSelect.value)]);
+  function showPizzaPrice() {
+    const { metres, reward, bonus, limit } = selectedPizza();
+    const length = metres < 1000 ? metres + ' m' : (metres / 1000).toLocaleString('cs-CZ', { maximumFractionDigits: 1 }) + ' km';
+    const time = Math.floor(limit / 60) + ':' + String(limit % 60).padStart(2, '0');
+    $('pizza-pay').textContent = `${length} na kole · ${reward} Kč + ${bonus} Kč za předání do ${time} od vyzvednutí`;
+  }
+  function showAddresses() {
+    addressSelect.replaceChildren(...shop().orders.map((order, i) => new Option(order.label, i)));
+    showPizzaPrice();
+  }
+  shopSelect.replaceChildren(...PIZZERIAS.map((item, i) => new Option(item.name, i)));
+  shopSelect.addEventListener('change', showAddresses);
+  addressSelect.addEventListener('change', showPizzaPrice);
+  showAddresses();
 
   function showTaxiOffers() {
     const reason = jobs.taxiUnavailable();
@@ -135,7 +154,7 @@ export function initWorkUI(game, play, refreshMenu) {
 
   for (const button of document.querySelectorAll('[data-job]')) {
     button.addEventListener('click', () => {
-      const error = jobs.start(button.dataset.job);
+      const error = jobs.start(button.dataset.job, button.dataset.job === 'pizza' ? selectedPizza() : undefined);
       $('job-feedback').textContent = error ?? '';
       updateJobs(true);
       if (!error) play();

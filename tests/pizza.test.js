@@ -23,3 +23,39 @@ test('výdej a předání leží u správných objektů v distribuované mapě',
   assert.ok(map.food.some(p => p[3] === "Rud's Pizza" && near(p, PIZZA.pick, 5)));
   assert.ok(map.addresses.some(p => map.roadNames[p[2]] === 'Prokopova' && p[3] === '25' && near(p, PIZZA.drop, 11)));
 });
+
+test('nabídky pokrývají různé části mapy a používají skutečné adresy u přístupového bodu', async () => {
+  const { PIZZERIAS, pizzaOrder } = await import('../src/game/pizza-offers.js');
+  const { readFile } = await import('node:fs/promises');
+  const meta = JSON.parse(await readFile(new URL('../public/data/meta.json', import.meta.url)));
+  const addresses = new Map();
+  for (const [x,z,street,number] of meta.addresses) {
+    const label = meta.roadNames[street] + ' ' + number;
+    if (!addresses.has(label)) addresses.set(label, []);
+    addresses.get(label).push([x,z]);
+  }
+  const doors = new Map();
+  for (const shop of PIZZERIAS) {
+    assert.ok(shop.orders.length >= 3, shop.name);
+    for (const order of shop.orders) {
+      const address = order.label.split(' · ')[0];
+      assert.ok(addresses.get(address)?.some(([x,z]) => Math.hypot(order.drop.x-x, order.drop.z-z) <= 20.1), order.label);
+      const task = pizzaOrder(shop, order);
+      assert.equal(task.pick, shop.pick);
+      assert.equal(task.drop.label, order.label);
+      assert.ok(task.metres >= 120);
+      assert.ok(Math.hypot(task.drop.x-task.park.x, task.drop.z-task.park.z) >= 3);
+      doors.set(task.drop.x + '/' + task.drop.z, task.drop);
+    }
+  }
+  const all = [...doors.values()];
+  assert.ok(all.length > 100 && PIZZERIAS.length > 10);
+  for (const near of [p => p.x < -7500, p => p.x > 23000, p => p.z < -9500, p => p.z > 8000]) {
+    assert.ok(all.some(near));
+  }
+  const pilot = PIZZERIAS[0];
+  const short = pizzaOrder(pilot, pilot.orders[0]);
+  assert.deepEqual([short.label, short.reward, short.bonus, short.limit], ['Prokopova 25', 100, 40, 120]);
+  const far = pizzaOrder(pilot, pilot.orders.at(-1));
+  assert.ok(far.metres > 10000 && far.limit > short.limit && far.reward > short.reward && far.bonus > short.bonus);
+});

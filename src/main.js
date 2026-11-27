@@ -92,7 +92,7 @@ const ABOUT_HTML = (meta, rendering) => `
   Zkušební trasa, její značení a dráhy minigolfu, překážky, půjčovna, míček a vlajky jsou vlastní tvorba projektu.</p>
   <p>Polohu bowlingu U Papírny uvádí <a href="https://sport.plzen.cz/Sportoviste/d/bowling-u-papirny" target="_blank" rel="noopener">Sportovní Plzeň</a>.
   Herní interiér, bowlingovou dráhu, kuželky, kulečníkový stůl, tágo i číslované plné a půlené koule vytvořil projekt Plzeň naplno.</p>
-  <p>Polohy stanovišť Pilsen Bike vycházejí z veřejného zdroje PMDP / Freebike ve formátu GBFS 3.0 (licence ${BIKE_LICENSE}). Modely elektrokola, označníku a krabice na pizzu jsou vlastní tvorba projektu.</p>
+  <p>Polohy stanovišť Pilsen Bike vycházejí z veřejného zdroje PMDP / Freebike ve formátu GBFS 3.0 (licence ${BIKE_LICENSE}). Podniky, adresní body a spojení cyklistických tras pro rozvoz vycházejí z herní mapy OpenStreetMap (ODbL). Modely elektrokola, označníku a krabice na pizzu jsou vlastní tvorba projektu.</p>
   <p>Barevné tabulky pro den, soumrak a noc vznikly přímo pro tuto hru.</p>
   <p>Letecké snímky krajiny © ČÚZK. Podkladem je <a href="https://atom.cuzk.gov.cz/ORTOFOTO/ORTOFOTO.xml"
   target="_blank" rel="noopener">Ortofoto ČR</a> s licencí

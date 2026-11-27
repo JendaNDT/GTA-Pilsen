@@ -31,7 +31,7 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 - **Bowling U Papírny.** Na Papírnické 3 otevři jednu dráhu klávesou F nebo dotykovým tlačítkem. Nastav směr a sílu, dohraj deset kol a ulož si osobní rekord. [Ovládání a zkoušky](docs/E57.md)
 
-- **Rozvoz pizzy na kole.** V nabídce Zakázky vyber **Rozvézt pizzu na kole**. U Rud’s Pizza převezmi krabici a dojeď do Prokopovy 25. U domu sesedni a předej pizzu pěšky. Za rozvoz dostaneš 100 Kč, při předání do dvou minut dalších 40 Kč. [První trasa a ověření](docs/E68.md)
+- **Rozvoz pizzy na kole.** V nabídce **Zakázky** vyber výdejní podnik a cílovou adresu. Před přijetím vidíš délku cyklistické trasy, odměnu a čas na bonus. Jet můžeš po Plzni i do okolních obcí. Pizzu převezmi u výdeje a u domu ji předej pěšky. [Trasy, výplata a zkoušky](docs/E69.md)
 
 - **Taxi podle potřeb cestujících.** V osobním autě otevři Zakázky a vyber běžnou jízdu, spěch na vlak nebo klidnou jízdu. Před přijetím vidíš nástup, cíl a výplatu. Zastav u pravého obrubníku ve směru jízdy. Za včasný příjezd na nádraží nebo plynulou jízdu můžeš získat bonus. [Trasy a ověření](docs/E53.md)
 
@@ -394,6 +394,8 @@ U přiložené historické datové sady není původní datum doloženo. Proto m
 zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 
 ## Zdroje a licence dat
+
+- Výdejní podniky, adresy a cyklistická síť rozvozu vycházejí z herního výřezu OpenStreetMap (ODbL). Přístupová místa jsou vypočtená v herním terénu. [Podklady a sestavení nabídky](docs/E69.md)
 
 - Interiéry Tatry, tříčlánkové tramvaje, autobusu SOR a trolejbusu včetně sedadel, osvětlení, oken a průchozích měchů jsou vlastní tvorba projektu Plzeň naplno. Využívají stávající karoserie a herní jízdní řád PMDP.
 

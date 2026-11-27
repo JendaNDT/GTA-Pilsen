@@ -1,6 +1,6 @@
 # E69 · Rozvoz pizzy v celé herní oblasti
 
-Větev `etapa/E69` navazuje na `38f2ed6`. První krok rozšířil cyklistickou síť na 129 445 uzlů a 136 054 úseků. Prošlo sestavení, 421 zkoušek JavaScriptu, 34 Pythonu (jedna přeskočena) a čtyři zkoušky původní cyklistické navigace ve WebGPU. Následuje výběr pizzerií a cílových adres. [Zadání](E69.md)
+Na větvi `etapa/E69` z revize `38f2ed6` je hotových 41 výdejních míst, 546 adres a 562 nabízených spojení. V nabídce Zakázky lze zvolit podnik a cíl. Pět rozvozů bylo projetých včetně pěšího předání. Prošlo sestavení, 422 testů JavaScriptu, 34 testů Pythonu (jeden další přeskočen) a 16 cílených zkoušek v prohlížeči. Zbývá uživatelská zkouška na skutečném telefonu. [Zadání](E69.md) · [Podklady, snímky a výsledky](../E69.md)
 
 # E68 · První rozvoz pizzy na kole
 

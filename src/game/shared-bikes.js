@@ -1,5 +1,5 @@
-import { PIZZA } from './pizza.js';
 import { Group } from 'three/webgpu';
+import { canJoin } from '../world/walking-map.js';
 import { BIKE_STATIONS, BIKE_STATION_ALIASES, loadBikeStock } from './bike-stations.js';
 import { BIKE_RADIUS, bikeTurn, pedalSpeed } from '../physics/bike-motion.js';
 import { makeBikeMesh, makeBikeStationPost, poseBikeRider } from '../entities/bike-model.js';
@@ -51,7 +51,7 @@ export class SharedBikes {
 
   prepareCourier() {
     if (this.rental) return;
-    const { x, z, yaw } = PIZZA.bike;
+    const { x, z, yaw } = this.game.jobs.job.bike;
     this.rental = { courier: true, x, z, yaw, y: this.game.world.groundY(x, z) };
     this.visual ??= makeBikeMesh();
     if (!this.visual.parent) this.game.scene.add(this.visual);
@@ -116,14 +116,28 @@ export class SharedBikes {
     this.renderRider();
   }
 
-  leavePoint() {
+  leavePoint(sidewalk = false) {
     const { world, player } = this.game;
     const { x, y, z, yaw } = player;
-    for (const side of [-1, 1, -1.5, 1.5, 0]) {
-      const sx = x + Math.cos(yaw) * side * .72, sz = z - Math.sin(yaw) * side * .72;
+    const safe = (sx, sz) => {
       const sy = world.groundY(sx, sz, y + .55);
-      if (Math.abs(y - sy) <= .55 && !world.isWater(sx, sz) &&
-        !world.collideCircle(sx, sz, .38, sy + .04, sy + 1.8)) return { x: sx, z: sz, y: sy };
+      if (Math.abs(y - sy) > .55 || world.isWater(sx, sz) || world.collideCircle(sx, sz, .38, sy + .04, sy + 1.8)) return null;
+      const point = { x: sx, z: sz, y: sy };
+      if (sidewalk && (world.onCarriageway(sx, sz, sy) || !canJoin(world, player, point))) return null;
+      return point;
+    };
+    for (const side of [-1, 1, -1.5, 1.5, 0]) {
+      const beside = safe(x + Math.cos(yaw) * side * .72, z - Math.sin(yaw) * side * .72);
+      if (beside) return beside;
+    }
+    // U šikmého obrubníku může být chodník před kolem místo přímo po jeho boku.
+    if (sidewalk) {
+      const park = this.game.jobs.job.park;
+      const distance = Math.hypot(park.x - x, park.z - z);
+      if (distance > .01) {
+        const step = Math.min(1, 1.25 / distance);
+        return safe(x + (park.x - x) * step, z + (park.z - z) * step);
+      }
     }
     return null;
   }
@@ -147,9 +161,10 @@ export class SharedBikes {
       game.hud.toast('Před sesednutím zastav.');
       return;
     }
-    const point = this.leavePoint();
+    const sidewalk = game.jobs.atPizzaParking(game.player);
+    const point = this.leavePoint(sidewalk);
     if (!point) {
-      game.hud.toast('Sesedni na volném místě.');
+      game.hud.toast(sidewalk ? 'Popojeď blíž ke značce, ať můžeš sesednout na chodník.' : 'Sesedni na volném místě.');
       return;
     }
     if (this.rental?.courier) {
