@@ -51,3 +51,12 @@ test('odhad času používá směrové limity a při zastávce na stejné hraně
   assert.deepEqual(taxiRoute(world, start, { edge: 2, along: 20 }),
     { path: [1], sameEdge: false, len: 80, seconds: 10 });
 });
+
+test('regionální stanoviště pokrývají města a okraje mapy a mají odlišná nástupní místa', async () => {
+  const { TAXI_STANDS, regionalOffer } = await import('../src/game/regional-taxi.js');
+  const names = TAXI_STANDS.map(s => s.area);
+  for (const area of ['Plzeň','Rokycany','Starý Plzenec','Dobřív','Nynice','Líně','Lhota pod Radčem']) assert.ok(names.includes(area),area);
+  assert.equal(new Set(TAXI_STANDS.map(s => s.edge + '/' + s.along)).size, TAXI_STANDS.length);
+  assert.equal(regionalOffer({}, { stand: TAXI_STANDS[0] }, TAXI_STANDS[0]),null);
+  assert.equal(regionalOffer({},null,TAXI_STANDS[0]),null);
+});

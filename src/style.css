@@ -609,3 +609,7 @@ body.touch .bowl-actions kbd { display: none; }
 #target-result button { color: #173937; border-color: #526b63; }
 .target-card:has(#target-result:not([hidden])) dl { display: none; }
 #target-result { margin-bottom: 12px; }
+
+#regional-taxi { margin: 12px 0; }
+#regional-taxi summary { cursor: pointer; padding: 10px 0; font-weight: 700; }
+#regional-taxi-summary { margin: 8px 0; }

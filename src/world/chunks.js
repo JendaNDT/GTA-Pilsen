@@ -43,6 +43,7 @@ import { buildTrafficMeshes } from './traffic-meshes.js';
 import { detailRequestLimit, Heritage, pavingChunk } from './heritage.js';
 import { FORGE, forgeXZ } from './mill.js';
 import { Districts } from './districts.js';
+import { roadVerge, surfaceContext } from './road-verge.js';
 import { Orthophoto, orthophotoTile } from './orthophoto.js';
 import { decalOrder, groundAnisotropy, ORIGINAL_IMAGE } from './image-quality.js';
 import { limitRoadEdges, roadVisualClearance, sharedRoadEdgeHeight } from './road-edge-terrain.js';
@@ -1287,11 +1288,6 @@ function buildDensity(world) {
 }
 
 /** Seznam ploch a vodních toků zasahujících do každé dlaždice. */
-function surfaceContext(world, districts, x, z) {
-  if (districts.at(x, z)) return 2;
-  return Number((world.bChunks[world.chunkIndex(x, z)]?.length ?? 0) >= 44);
-}
-
 function buildLandIndex(world, districts) {
   const L = world.l;
   const polys = new Array(world.cols * world.rows), lines = new Array(world.cols * world.rows), fields = new Map();
@@ -1840,12 +1836,7 @@ export class ChunkManager {
     this.density = buildDensity(world);
     this.landIndex = buildLandIndex(world, this.districts);
     this.grass = QUALITY.grassRadius ? new Grass(this, QUALITY.grassRadius) : null;
-    this.roadVerge = new Uint8Array(world.rCount);
-    for (let i = 0; i < world.rCount; i++) {
-      if (world.r.cls[i] < RC.PRIMARY || world.r.cls[i] > RC.LIVING) continue;
-      const mid = (world.rOff[i] + world.rOff[i + 1]) >> 1;
-      this.roadVerge[i] = surfaceContext(world, this.districts, world.rpx[mid], world.rpz[mid]);
-    }
+    this.roadVerge = roadVerge(world, this.districts);
     // Chodníky s obrubníkem: od střední předvolby, vypne je ?chodniky=0. Platí pro celou hru
     // (vykreslení, fyziku i chodce), změna předvolby se projeví po novém načtení.
     world.walkingWidths = Float32Array.from(this.roadVerge, (context, i) => sidewalkWidth(world.r.cls[i], world.r.flags[i], context));

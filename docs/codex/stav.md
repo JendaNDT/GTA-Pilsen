@@ -1,3 +1,7 @@
+# E70 · Taxi po Plzni a okolí
+
+Z revize `2892135` na větvi `etapa/E70` funguje výběr cíle mezi 160 stanovišti. Ověřená jízda z Prokopovy 21 na Masarykovo náměstí 74 ve Starém Plzenci měří podle navigace 10,21 km a vyplatí 1 655 Kč. Dotyková zkouška ověřila výběr z Rokycan a návrat k uložené výplatě. Prošlo sestavení, 428 testů JavaScriptu, 34 testů Pythonu s jedním přeskočeným a osm cílených prohlížečových zkoušek. Srovnávací jízda dosáhla 59,1 FPS. Doporučený další krok je na telefonu vyjet ze Starého Plzence a ověřit nabídku pro zpáteční cestu. [Zadání](E70.md) · [Průběh, ověření a snímky](../E70.md)
+
 # E58 · Série deseti terčů
 
 Na větvi `etapa/E58` navazuje na revizi `864274a` bodovaná série. Každý z deseti terčů má limit pěti sekund a jeden pokus. Po posledním terči lze hrát znovu nebo se vrátit do volného tréninku. Dokončená série může zlepšit osobní rekord v uložené hře. Prošlo sestavení, 427 testů JavaScriptu a deset různých cílených zkoušek v prohlížeči. Série běžela při 60 FPS. Dalším krokem je zkusit časový limit na fyzickém telefonu. [Zadání](E58.md) · [Pravidla a ověření](../E58-serie.md)

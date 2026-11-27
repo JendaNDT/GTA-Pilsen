@@ -16,17 +16,18 @@ const REFERENCE = {
 const distance = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
 const five = (amount) => Math.round(amount / 5) * 5;
 
-function taxiStop(world, place) {
+export function taxiStop(world, place, acceptsWaiting) {
   const station = place === STATION;
   const access = station && world.nearestRoad(place.x, place.z, 6, DRIVABLE_MAX, 0, {},
     world.groundY(place.x, place.z), true, { tx: 0, tz: -1 });
   const stop = curbStop(world, place.x, place.z, station ? 6 : 58, {
     serviceEdge: access ? world.edgeOfPt[access.seg] : undefined,
     minWidth: station ? 3.5 : 4,
-    accept({ x, z, tx, tz, waiting }) {
+    accept(stop) {
+      const { x, z, tx, tz, waiting } = stop;
       const ground = world.groundY(x, z);
       const door = { x: (x + waiting.x) / 2, z: (z + waiting.z) / 2 };
-      return Math.abs(ground - world.groundY(waiting.x, waiting.z)) < 0.55
+      return (!acceptsWaiting || acceptsWaiting(stop)) && Math.abs(ground - world.groundY(waiting.x, waiting.z)) < 0.55
         && !world.blocked(door.x, door.z, 0.4)
         && !world.blocksTramTrack(x, z, ground, Math.atan2(tx, tz), 5, 2);
     },
@@ -53,10 +54,10 @@ export function taxiRoadPosition(world, car) {
   return { node: world.eTo[edge], edge, along: forward ? along : world.eLen[edge] - along };
 }
 
-export function taxiRoute(world, from, to) {
+export function taxiRoute(world, from, to, maxExpand = 9000) {
   const sameEdge = from.edge === to.edge && from.along <= to.along;
   const path = sameEdge ? [] : world.findPath(from.node ?? world.eTo[from.edge], world.eFrom[to.edge],
-    9000, from.edge, 0, to.edge);
+    maxExpand, from.edge, 0, to.edge);
   if (!path) return null;
   let len = 0, seconds = 0;
   const add = (edge, length) => {
@@ -71,6 +72,12 @@ export function taxiRoute(world, from, to) {
     add(to.edge, to.along);
   }
   return { path, sameEdge, len, seconds };
+}
+
+export function taxiFare(id, pick, drop, firstLeg, trip) {
+  return { id, pick, drop, name: pick.label, label: drop.label, len: trip.len,
+    pickupTime: Math.max(180, Math.ceil(firstLeg.seconds * 1.5 + 70)),
+    limit: Math.ceil(trip.seconds * 1.5 + 70), reward: five(125 + trip.len * 0.15) };
 }
 
 export function taxiOffers(world, car) {
@@ -95,9 +102,7 @@ export function taxiOffers(world, car) {
     const { pick, route: firstLeg } = access;
     const trip = taxiRoute(world, pick, drop);
     if (!trip || trip.len < 400 || trip.len > 4400) return null;
-    return { id, pick, drop, name: pick.label, label: drop.label, len: trip.len,
-      pickupTime: Math.max(180, Math.ceil(firstLeg.seconds * 1.5 + 70)),
-      limit: Math.ceil(trip.seconds * 1.5 + 70), reward: five(125 + trip.len * 0.15) };
+    return taxiFare(id, pick, drop, firstLeg, trip);
   };
   const place = ([name, x, z]) => ({ name, x, z });
   const offers = new Map();

@@ -1,3 +1,4 @@
+import { TAXI_STANDS, regionalPickup, regionalOffer } from './regional-taxi.js';
 import { PIZZERIAS, pizzaOrder } from './pizza-offers.js';
 import { CAR_PRICE, GARAGE, UPGRADES } from './garage.js';
 import { jobTitle, resultText } from './missions.js';
@@ -31,10 +32,48 @@ export function initWorkUI(game, play, refreshMenu) {
   addressSelect.addEventListener('change', showPizzaPrice);
   showAddresses();
 
+  const region = $('regional-taxi'), destination = $('taxi-destination');
+  const acceptRegional = $('regional-taxi-start');
+  let regionalOrigin, regionalTrip;
+  function showRegionalPrice() {
+    regionalTrip = regionalOffer(game.world, regionalOrigin, TAXI_STANDS[Number(destination.value)]);
+    acceptRegional.disabled = !regionalTrip;
+    const summary = $('regional-taxi-summary');
+    if (!regionalOrigin) summary.textContent = 'V dosahu není místo pro nástup. Přijeď blíž k obydlené části mapy.';
+    else if (!regionalTrip) summary.textContent = 'Do tohoto cíle se od nástupu nedá dojet. Zvol jiný cíl.';
+    else {
+      const km = (regionalTrip.len / 1000).toLocaleString('cs-CZ', { maximumFractionDigits: 1 });
+      summary.textContent = `Nástup · ${regionalTrip.name} → ${regionalTrip.label} · ${km} km · ${regionalTrip.reward} Kč`;
+    }
+  }
+  function showRegion() {
+    if (!region.open || region.hidden) return;
+    regionalOrigin = regionalPickup(game.world, game.car);
+    const previous = destination.value;
+    destination.replaceChildren(...TAXI_STANDS.flatMap((s,i) => s === regionalOrigin?.stand ? [] :
+      [new Option(s.area === s.label ? s.area : s.area + ' · ' + s.label, i)]));
+    const preferred = TAXI_STANDS.findIndex(s => s.area === 'Starý Plzenec');
+    const options = [...destination.options];
+    destination.value = options.find(o => o.value === previous)?.value ??
+      options.find(o => o.value === String(preferred))?.value ?? options[0]?.value ?? '';
+    showRegionalPrice();
+  }
+  region.addEventListener('toggle', showRegion);
+  destination.addEventListener('change', showRegionalPrice);
+  acceptRegional.addEventListener('click', () => {
+    if (!regionalTrip) return;
+    const error = jobs.start('taxi', regionalTrip);
+    $('job-feedback').textContent = error ?? '';
+    updateJobs(true);
+    if (!error) play();
+  });
+
   function showTaxiOffers() {
     const reason = jobs.taxiUnavailable();
+    region.hidden = Boolean(reason);
+    showRegion();
     const offers = reason ? [] : jobs.offersForTaxi();
-    taxiFeedback.textContent = reason ?? (offers.length ? '' : 'V okolí teď žádný cestující nečeká. Zkus to v jiné ulici.');
+    taxiFeedback.textContent = reason ?? (offers.length ? '' : 'Na místní jízdu v okolí teď žádný cestující nečeká.');
     const cards = [];
     for (const id of Object.keys(TAXI_RIDES)) {
       const offer = offers.find((item) => item.id === id);

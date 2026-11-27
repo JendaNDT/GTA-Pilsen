@@ -22,8 +22,12 @@ const clock = (seconds) => {
 };
 const five = (amount) => Math.round(amount / 5) * 5;
 
+function taxiName(job) {
+  return job.regional ? 'Jízda po regionu' : TAXI_RIDES[job.id].name;
+}
+
 export function jobTitle(job) {
-  return job.type === 'taxi' ? `Taxi · ${TAXI_RIDES[job.id].name}` : JOB_NAMES[job.type];
+  return job.type === 'taxi' ? `Taxi · ${taxiName(job)}` : JOB_NAMES[job.type];
 }
 
 function taxiResult(job) {
@@ -31,7 +35,7 @@ function taxiResult(job) {
   const detail = job.id === 'train'
     ? ` + ${amount} Kč časový bonus (${job.time < 0 ? 'po termínu' : 'včas'})`
     : job.id === 'quiet' ? ` + ${amount} Kč za plynulost (prudké brzdění ${job.hardBrakes}×, nárazy ${job.impacts}×)` : '';
-  return { type: 'taxi', state: 'paid', amount: job.reward + amount, variant: TAXI_RIDES[job.id].name,
+  return { type: 'taxi', state: 'paid', amount: job.reward + amount, variant: taxiName(job),
     note: `${job.reward} Kč jízdné${detail}` };
 }
 
@@ -260,9 +264,9 @@ export class Jobs {
 
   end(state, note, save = true) {
     if (!this.job) return;
-    const { type, id } = this.job;
+    const { type } = this.job;
     this.last = { type, state, amount: 0, note };
-    if (type === 'taxi') this.last.variant = TAXI_RIDES[id].name;
+    if (type === 'taxi') this.last.variant = taxiName(this.job);
     this._clear();
     if (save) {
       this.game.save();
@@ -335,6 +339,16 @@ export class Jobs {
     if (!g.commitAccount({ money: g.money + result.amount, stats, job: { active: null, last: result } })) {
       g.hud.toast(g.saveError, 'bad', 5800);
       return g.saveError;
+    }
+    if (this.job.regional && this.passenger) {
+      const { waiting, tx, tz } = this.job.drop;
+      this.removeArrivedPassenger();
+      this.arrivedPassenger = this.passenger;
+      this.passenger = null;
+      this.arrivedPassenger.position.set(waiting.x, g.world.walkY(waiting.x, waiting.z), waiting.z);
+      this.arrivedPassenger.rotation.y = Math.atan2(tx,tz);
+      this.arrivedPassenger.visible = true;
+      this.arrivalTime = 7;
     }
     this.last = result;
     this.done++;
@@ -505,7 +519,18 @@ export class Jobs {
     }
   }
 
+  removeArrivedPassenger() {
+    if (!this.arrivedPassenger) return;
+    this.arrivedPassenger.skeleton.dispose();
+    this.arrivedPassenger.removeFromParent();
+    this.arrivedPassenger = null;
+  }
+
   update(dt) {
+    if (this.arrivedPassenger) {
+      this.arrivalTime -= dt;
+      if (this.arrivalTime <= 0) this.removeArrivedPassenger();
+    }
     const g = this.game, p = g.focus, hud = g.hud;
     const activity = g.activities?.active;
     const speed = Math.hypot(p.vx || 0, p.vz || 0);
@@ -568,7 +593,7 @@ export class Jobs {
       const ride = this.job?.phase === 'ride' && this.job.vehicle === g.ride ? g.ride : null;
       let path = null;
       if (taxiStart) {
-        const approach = taxiRoute(w, taxiStart, arrival);
+        const approach = taxiRoute(w, taxiStart, arrival, this.job.regional ? w.edgeCount : undefined);
         path = approach?.path ?? null;
         sameEdge = approach?.sameEdge ?? false;
       } else if (!drivingToPin || this.arrivalRoad) {
