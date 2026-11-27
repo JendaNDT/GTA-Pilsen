@@ -1,6 +1,17 @@
+import { normalizeSearchText } from './search-text.js';
 import shops from './pizza-routes.json' with { type: 'json' };
 
 export const PIZZERIAS = shops;
+
+const shopNames = shops.map(shop => shop.name);
+const addresses = [...new Set(shops.flatMap(shop => shop.orders.map(order => order.label)))]
+  .sort((a, b) => a.localeCompare(b, 'cs', { numeric: true }));
+const searchKeys = new Map([...shopNames, ...addresses].map(label => [label, normalizeSearchText(label)]));
+
+export function findPizzaChoices(query, byAddress) {
+  const words = normalizeSearchText(query).split(' ');
+  return (byAddress ? addresses : shopNames).filter(label => words.every(word => searchKeys.get(label).includes(word)));
+}
 
 export function pizzaOrder(shop, order) {
   const { label, park, drop, metres } = order;

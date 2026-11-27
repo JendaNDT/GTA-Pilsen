@@ -1,3 +1,7 @@
+# E72 · Hledání rozvozu pizzy
+
+Na větvi `etapa/E72` z revize `2112104` funguje výběr rozvozu podle pizzerie i adresy z celé herní oblasti. Hotová je nabídka pro obě pořadí výběru, cena konkrétní dvojice i ověření rozvozu do Sedlce až k výplatě. Prošlo sestavení, 430 testů JavaScriptu a po opravě výběru prvku v testu všech 16 dotčených scénářů rozvozu a taxi ve WebGL 2 a WebGPU. Na fyzickém telefonu zbývá vyzkoušet schování klávesnice a výběr výdeje pro sdílenou adresu. [Zadání](E72.md) · [Protokol, snímky a měření](../E72.md)
+
 # E71 · Hledání cíle taxi
 
 Na větvi `etapa/E71` z revize `6cf459d` je hotové dotykové hledání podle obce, ulice a čísla domu v nabídce regionálního taxi. Prošlo sestavení, 429 testů JavaScriptu a čtyři cílené prohlížečové zkoušky včetně přijetí vyfiltrované jízdy. Dalším krokem je ověření se softwarovou klávesnicí na skutečném telefonu. [Zadání](E71.md) · [Ovládání, snímek a výsledky](../E71.md)

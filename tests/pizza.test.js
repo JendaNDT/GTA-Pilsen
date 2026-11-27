@@ -59,3 +59,13 @@ test('nabídky pokrývají různé části mapy a používají skutečné adresy
   const far = pizzaOrder(pilot, pilot.orders.at(-1));
   assert.ok(far.metres > 10000 && far.limit > short.limit && far.reward > short.reward && far.bonus > short.bonus);
 });
+
+test('hledání rozvozu pokrývá celý katalog, sjednotí sdílené adresy a ignoruje diakritiku i pořadí slov', async () => {
+  const { findPizzaChoices, PIZZERIAS } = await import('../src/game/pizza-offers.js');
+  assert.deepEqual(findPizzaChoices('', false), PIZZERIAS.map(shop => shop.name));
+  assert.deepEqual(new Set(findPizzaChoices('', true)), new Set(PIZZERIAS.flatMap(shop => shop.orders.map(order => order.label))));
+  assert.deepEqual(findPizzaChoices('  664 BENese stahlavy ', true), ['Dr. Beneše 664 · Šťáhlavy']);
+  assert.deepEqual(findPizzaChoices('22 dalmatinkou', true), ['Nad Dalmatinkou 22 · Lobzy']);
+  assert.deepEqual(findPizzaChoices('plzenec pizzerie', false), ['Plzenecká pizzerie · Masarykovo náměstí · Starý Plzenec']);
+  assert.deepEqual(findPizzaChoices('zzz', false), []);
+});

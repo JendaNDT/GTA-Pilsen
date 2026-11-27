@@ -33,7 +33,7 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 - **Bowling U Papírny.** Na Papírnické 3 otevři jednu dráhu klávesou F nebo dotykovým tlačítkem. Nastav směr a sílu, dohraj deset kol a ulož si osobní rekord. [Ovládání a zkoušky](docs/E57.md)
 
-- **Rozvoz pizzy na kole.** V nabídce **Zakázky** vyber výdejní podnik a cílovou adresu. Před přijetím vidíš délku cyklistické trasy, odměnu a čas na bonus. Jet můžeš po Plzni i do okolních obcí. Pizzu převezmi u výdeje a u domu ji předej pěšky. [Trasy, výplata a zkoušky](docs/E69.md)
+- **Rozvoz pizzy na kole.** V nabídce **Zakázky** můžeš hledat podle pizzerie i podle doručovací adresy, také bez diakritiky. Při hledání podle adresy uvidíš, které podniky tam rozvážejí. Před přijetím vidíš délku cyklistické trasy, odměnu a čas na bonus. Jet můžeš po Plzni i do okolních obcí. Pizzu převezmi u výdeje a u domu ji předej pěšky. [Trasy a výplata](docs/E69.md) · [Hledání na telefonu](docs/E72.md)
 
 - **Taxi po Plzni a okolí.** V osobním autě otevři **Zakázky → Taxi po Plzni a okolí**. Vyhledej cíl podle obce nebo ulice i bez diakritiky, vyzvedni cestujícího na uvedeném místě a podle minimapy ho dovez k pravému kraji u cíle. Z Prokopovy 21 na Masarykovo náměstí ve Starém Plzenci je to 10,2 km. [Nabídka a ověření](docs/E70.md) · [Hledání cíle](docs/E71.md)
 

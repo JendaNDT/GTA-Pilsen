@@ -47,6 +47,10 @@ for (const { town, shopName, address, length, base, total } of deliveries) {
       await page.goto(gameUrl('/?debug&quality=low&hour=10&view=350'));
       await waitForGame(page);
       await page.locator('#btn-jobs').tap();
+      if (town === 'Starý Plzenec → Sedlec') {
+        await page.getByRole('radio', { name: 'Podle adresy' }).check();
+        await page.getByRole('searchbox', { name: 'Hledat adresu' }).fill('145 sedlec smetanova');
+      }
       if (shopName) {
         const shop = page.locator('#pizza-shop option').filter({ hasText: shopName });
         await page.getByRole('combobox', { name: 'Výdej', exact: true }).selectOption({ label: await shop.textContent() });
@@ -150,4 +154,56 @@ test('E68 – převzít zakázku přímo u výdeje, vyprostit kolo a odmítnout 
     return [handover, g.jobs.last.amount, g.bikes.rental, g.bikes.stock];
   });
   expect(result).toEqual([null, 0, null, start.stock]);
+});
+
+test('E72 – na telefonu hledat pizzerii i společnou adresu, změnit výdej a obnovit nabídku', async ({ browser }, info) => {
+  const context = await browser.newContext({ isMobile: true, hasTouch: true, viewport: { width: 740, height: 390 } });
+  try {
+    const page = await context.newPage();
+    await page.goto(gameUrl('/?debug&quality=low&view=350&hour=10'));
+    await waitForGame(page);
+    await page.locator('#btn-jobs').tap();
+    const shop = page.getByRole('combobox', { name: 'Výdej', exact: true });
+    const address = page.getByRole('combobox', { name: 'Doručení', exact: true });
+    const pay = page.locator('#pizza-pay');
+    const accept = page.getByRole('button', { name: 'Rozvézt pizzu na kole' });
+    await page.getByRole('searchbox', { name: 'Hledat pizzerii' }).fill('plzenecka');
+    await expect(shop.locator('option')).toHaveCount(1);
+    await address.selectOption({ label: 'Smetanova 145 · Sedlec' });
+    await expect(pay).toContainText('950 m na kole · 135 Kč');
+    await page.getByRole('radio', { name: 'Podle adresy' }).check();
+    await expect(address).toHaveValue('Smetanova 145 · Sedlec');
+    const search = page.getByRole('searchbox', { name: 'Hledat adresu' });
+    await search.fill('stahlavy');
+    await address.selectOption({ label: 'Dr. Beneše 664 · Šťáhlavy' });
+    await expect(shop.locator('option')).toHaveCount(1);
+    await expect(shop).toHaveValue('Rud’s Pizza · Prokopova');
+    await search.fill('664 benese');
+    await expect(address).toHaveValue('Dr. Beneše 664 · Šťáhlavy');
+    await expect(pay).toContainText('15 km');
+    await search.press('Enter');
+    await expect(search).not.toBeFocused();
+    await expect(accept).toBeVisible();
+    await search.fill('zzz');
+    await expect(accept).toBeDisabled();
+    await expect(shop).toBeDisabled();
+    await expect(address).toBeDisabled();
+    await expect(pay).toContainText('Žádná adresa');
+    await search.fill('');
+    await expect(address.locator('option')).toHaveCount(546);
+    await search.fill('dalmatinkou 22');
+    await expect(shop.locator('option')).toHaveCount(2);
+    await shop.selectOption({ label: 'Aqua Restaurace · náměstí Generála Píky nb · Slovany' });
+    await expect(pay).toContainText('215 Kč');
+    await shop.selectOption({ label: 'Pizzáno · Masarykova · Doubravka' });
+    await expect(pay).toContainText('210 Kč');
+    await search.press('Enter');
+    await accept.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: info.outputPath('nabidka.jpg'), type: 'jpeg' });
+    await accept.tap();
+    expect(await page.evaluate(() => {
+      const j = __game.jobs.job;
+      return [j.name, j.label, j.reward];
+    })).toEqual(['Pizzáno · Masarykova · Doubravka', 'Nad Dalmatinkou 22 · Lobzy', 210]);
+  } finally { await context.close(); }
 });
