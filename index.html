@@ -27,6 +27,20 @@
 <body>
   <canvas id="game"></canvas>
 
+  <dialog id="targets" aria-labelledby="target-heading">
+    <div class="target-card">
+      <header><div><p>Lobzy · Sportovní terče</p><h2 id="target-heading">Volný trénink</h2></div>
+        <dl><div><dt>Zásahy</dt><dd id="target-hits">0</dd></div>
+          <div><dt>Pokusy</dt><dd id="target-attempts">0</dd></div></dl>
+      </header>
+      <div id="target-field" tabindex="0" aria-label="Hrací plocha s pohyblivým terčem" aria-describedby="target-help">
+        <span id="target-disc" aria-hidden="true"></span><span id="target-cursor" aria-hidden="true"></span>
+        <strong id="target-feedback" role="status"></strong>
+      </div>
+      <p id="target-help"><span class="target-mouse-help">Klikni na terč, nebo miř šipkami a potvrď mezerníkem.</span><span class="target-touch-help">Dotykem na ploše nastav kroužek a klepni na Zasáhnout.</span></p>
+      <footer><button id="target-exit" type="button">Zpět do města</button><button id="target-confirm" type="button">Zasáhnout</button></footer>
+    </div>
+  </dialog>
   <div id="photo-controls" aria-label="Fotorežim" hidden>
     <label>Zaostření <input id="photo-focus" type="range" min="2" max="150" value="32" aria-label="Vzdálenost zaostření v metrech"></label>
     <button id="photo-forward">Vpřed</button><button id="photo-back">Vzad</button>

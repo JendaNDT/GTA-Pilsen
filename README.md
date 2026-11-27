@@ -21,6 +21,8 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 - **Minigolf ve Škodalandu.** U půjčovny za příjezdovou cestou stiskni F. Nastav směr a sílu, zahraj tři různé jamky a mezi nimi dojdi ke značce. Na každou jamku máš sedm úderů. Nejlepší součet za celou partii se uloží. [Postup a snímky](docs/E54.md)
 
+- **Sportovní terče v Lobzích.** Na mapě vyhledej „terče“ a dojdi ke značce u ulice Ke Střelnici. Ve volném tréninku klikej na pohyblivý oranžový kotouč. Na telefonu nejdřív nastav kroužek prstem a potom klepni na **Zasáhnout**. [Vstup, ovládání a snímky](docs/E58.md)
+
 - **Kulečník U Papírny.** Vejdi do bowlingu na Papírnické 3 a zvol **Ke kulečníku**. Na výběr máš **Trénink**, osmičku **Proti počítači** nebo osmičku **Pro dva** na jednom telefonu. Kliknutím nebo dotykem na stole zamiř bílou kouli, nastav sílu a zvol **Strčit**. Při míření v osmičce ukazuje koule vedle údaje o tahu tvou skupinu. K rozehrané dráze se můžeš kdykoli vrátit. [Výběr režimu](docs/E66.md) · [Trénink](docs/E63.md) · [Pravidla osmičky](docs/E64.md) · [Hra proti počítači](docs/E65.md)
 
 - **Pěšky do MHD po celé herní oblasti.** U otevřených dveří stiskni F. Všechny pravidelné tramvaje, autobusy i trolejbusy mají interiér podle herního modelu. V Tatře můžeš nastoupit do obou samostatných vozů, v článkové tramvaji mezi články projdeš za jízdy. Do trolejbusu nastupuj předními dveřmi. Pokud místo u výstupu zabírá auto, počkej, až odjede, nebo přejdi k jiným dveřím. [Ovládání a ověřené trasy](docs/E62.md)
@@ -401,6 +403,7 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 
 - Souřadnice stanovišť Pilsen Bike pocházejí z veřejného zdroje PMDP / Freebike ve formátu GBFS 3.0. Zdroj neuvádí vlastní licenci a specifikace pro tento případ uvádí CC0. Model elektrokola, označník a krabici na pizzu vytvořil projekt Plzeň naplno. [Data stanovišť](https://pmdpbike.admin.freebike.com/api/gbfs/v30/station_information) · [Licencování ve specifikaci GBFS](https://github.com/MobilityData/gbfs/blob/v3.0/gbfs.md#system_informationjson)
 
+- Herní stanoviště v Lobzích leží na pěší cestě podle stávající mapy OpenStreetMap (ODbL). Hrací plocha, kotouč a kroužek jsou vlastní grafika projektu Plzeň naplno.
 - Interiér bowlingu, dráha, kuželky, kulečníkový stůl, tágo i číslované plné a půlené koule jsou vlastní tvorba projektu. Přístup vychází z adresy v městském sportovním katalogu, herní mapy OpenStreetMap (ODbL) a terénu ČÚZK (CC BY 4.0). [Bowling U Papírny v katalogu města](https://sport.plzen.cz/Sportoviste/d/bowling-u-papirny)
 - Pěší přístup a umístění zkušební trasy ve Škodalandu vycházejí z OpenStreetMap (ODbL) a terénu ČÚZK (CC BY 4.0). Značení, trasa a modely drah minigolfu, překážek, půjčovny, vlajek a míčku jsou vlastní tvorba projektu Plzeň naplno. [Poloha a adresa areálu podle města](https://sport.plzen.eu/Sportoviste/d/skodaland-ceske-udoli)
 

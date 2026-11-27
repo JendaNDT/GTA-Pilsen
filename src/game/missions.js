@@ -636,7 +636,7 @@ export class Jobs {
     const t = this.job && this.target();
     if (t) out.push({ x: t.x, z: t.z, color: '#f2b632', size: 6.5 });
     const activity = this.game.activities?.active;
-    if (activity) out.push({ ...activity.site.trial.target, color: ACTIVITY_COLOR, size: 6 });
+    if (activity) out.push({ ...(activity.site.trial?.target ?? activity.site), color: ACTIVITY_COLOR, size: 6 });
     else if (this.waypoint) out.push({ x: this.waypoint.x, z: this.waypoint.z, color: '#b07cff', size: 6 });
     return out;
   }

@@ -25,6 +25,15 @@ export const ACTIVITY_SITES = [
     startLabel: 'Zahrát bowling',
     returnPoint: { x: 638, z: 1217, yaw: -1.22 },
   },
+  {
+    id: 'lobzy-sportovni-terce', targets: true,
+    x: 2874, z: 1142, y: -2.83,
+    name: 'Sportovní terče v Lobzích', title: 'Sportovní terče v Lobzích',
+    aliases: ['Lobzy', 'terče', 'sportovní terče', 'Ke Střelnici'],
+    access: 'Pěšky po cestě u ulice Ke Střelnici. U fialové značky můžeš spustit volný trénink.',
+    startLabel: 'Spustit trénink',
+    returnPoint: { x: 2874, z: 1142, yaw: .96 },
+  },
 ];
 
 export function atActivityPoint(player, point, radius = 3.5) {

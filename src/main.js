@@ -90,6 +90,7 @@ const ABOUT_HTML = (meta, rendering) => `
   <p>Vstup ve Škodalandu vychází z herní mapy OpenStreetMap (ODbL) a terénu ČÚZK (CC BY 4.0).
   Název a adresu ověřuje <a href="https://sport.plzen.eu/Sportoviste/d/skodaland-ceske-udoli" target="_blank" rel="noopener">Sportovní Plzeň</a>.
   Zkušební trasa, její značení a dráhy minigolfu, překážky, půjčovna, míček a vlajky jsou vlastní tvorba projektu.</p>
+  <p>Pěší cesta k hernímu stanovišti terčů v Lobzích vychází z mapy OpenStreetMap (ODbL). Hrací plochu, kotouč a kroužek vytvořil projekt Plzeň naplno.</p>
   <p>Polohu bowlingu U Papírny uvádí <a href="https://sport.plzen.cz/Sportoviste/d/bowling-u-papirny" target="_blank" rel="noopener">Sportovní Plzeň</a>.
   Herní interiér, bowlingovou dráhu, kuželky, kulečníkový stůl, tágo i číslované plné a půlené koule vytvořil projekt Plzeň naplno.</p>
   <p>Polohy stanovišť Pilsen Bike vycházejí z veřejného zdroje PMDP / Freebike ve formátu GBFS 3.0 (licence ${BIKE_LICENSE}). Podniky, adresní body a spojení cyklistických tras pro rozvoz vycházejí z herní mapy OpenStreetMap (ODbL). Modely elektrokola, označníku a krabice na pizzu jsou vlastní tvorba projektu.</p>
@@ -211,7 +212,7 @@ async function boot() {
   if (!canSave) $('save-status').textContent = 'Prohlížeč nyní neumožňuje ukládání postupu.';
   const perf = DEBUG || PARAMS.get('adapt') !== '0' ? createFrameProfiler(game, { sampleEvery: DEBUG ? 1 : 16 }) : null;
   const syncMouseLock = initInput(canvas, () =>
-    input.enabled && game.freeLook && (game.mode === 'foot' || game.cabin) && !game.activities.golf.ball && !game.activities.playingBowling && !game.mapOpen && !game.paused);
+    input.enabled && game.freeLook && (game.mode === 'foot' || game.cabin) && !game.activities.golf.ball && !game.activities.playingBowling && !game.activities.playingTargets && !game.mapOpen && !game.paused);
   if (PARAMS.has('hour') || PARAMS.has('date')) {
     game.setClock(PARAMS.get('date'), PARAMS.has('hour') ? +PARAMS.get('hour') : game.hour);
   }
@@ -277,11 +278,12 @@ async function boot() {
   let mapFromPause = false;
   const openMenu = () => {
     if (game.mapOpen) game.toggleMap(false);
+    if (game.activities.playingTargets) game.activities.targets.hide();
     running = false; input.enabled = false; game.paused = true;
     syncMouseLock();
     perfPanel?.close();
     menu.classList.remove('hidden'); game.hud.show(false);
-    $('btn-photo').disabled = game.activities.playingBowling;
+    $('btn-photo').disabled = game.activities.playingBowling || game.activities.playingTargets;
     game.audio.suspend(); game.save();
     input.pressed.clear();
     navigation.show(true);
@@ -293,6 +295,7 @@ async function boot() {
     running = true; input.enabled = true; game.paused = false; last = performance.now();
     perf?.reset();
     game.audio.start(); game.audio.resume();
+    if (game.activities.playingTargets) game.activities.targets.show();
     if (firstPlay) {
       if (initialCamera && !game.cabin) {
         game.camera.position.copy(initialCamera.position);
@@ -306,6 +309,7 @@ async function boot() {
       } else if (game.activities.interrupted) {
         game.hud.toast(game.activities.interruptedGolf ? 'Minigolf byl při načtení přerušen.'
           : game.activities.interrupted.bowling ? 'Bowling byl při načtení přerušen.'
+          : game.activities.interrupted.targets ? 'Trénink v Lobzích byl při načtení přerušen.'
           : 'Zkušební trasa byla při načtení přerušena.', '', 5800);
       } else if (game.bikes.interrupted) {
         game.hud.toast('Půjčené elektrokolo se vrátilo na výchozí stanoviště.', '', 5800);
@@ -328,7 +332,7 @@ async function boot() {
     }
   });
   const openPhoto = () => {
-    if (game.graphicsBusy || game.mapOpen || game.activities.playingBowling) return;
+    if (game.graphicsBusy || game.mapOpen || game.activities.playingBowling || game.activities.playingTargets) return;
     photoFromPlay = running;
     running = false; input.enabled = false; game.paused = true;
     syncMouseLock();

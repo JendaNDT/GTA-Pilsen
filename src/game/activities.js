@@ -1,6 +1,7 @@
 import { makeBeacon } from '../entities/models.js';
 import { ACTIVITY_COLOR, ACTIVITY_SITES, atActivityPoint } from './activity-sites.js';
 import { Minigolf } from './minigolf.js';
+import { TargetPractice } from './target-practice.js';
 import { Bowling } from './bowling.js';
 
 const GOLF_SAVE_ID = 'skodaland-minigolf-kolo';
@@ -19,9 +20,12 @@ export class Activities {
 
   get playingBowling() { return this.active?.kind === 'bowling'; }
 
+  get playingTargets() { return this.active?.kind === 'targets'; }
+
   get title() { return this.playingGolf ? 'Škodaland · minigolf' : this.active?.site.title; }
 
   get blockingMessage() {
+    if (this.playingTargets) return 'Nejdřív ukonči trénink v Lobzích.';
     if (this.playingBowling) return 'Nejdřív odejdi z bowlingu.';
     return this.playingGolf ? 'Nejdřív odejdi z minigolfu.' : 'Nejdřív ukonči zkušební trasu.';
   }
@@ -42,7 +46,7 @@ export class Activities {
 
   choice() {
     const { player, mode, jobs, shifts, world } = this.game;
-    if (mode !== 'foot' || this.playingBowling) return null;
+    if (mode !== 'foot' || this.playingBowling || this.playingTargets) return null;
     if (this.playingGolf) {
       const entry = this.golf.nextEntry;
       if (!entry || !atActivityPoint(player, entry, 1.55) || world.onCarriageway(player.x, player.z, player.y)) return null;
@@ -59,7 +63,7 @@ export class Activities {
     const site = golf ?? ACTIVITY_SITES.find(site => atActivityPoint(player, site));
     if (!site || world.onCarriageway(player.x, player.z, player.y)) return null;
     if (golf) return { site, kind: 'minigolf', label: 'Zahrát minigolf' };
-    return { site, kind: site.bowling ? 'bowling' : undefined, label: site.startLabel };
+    return { site, kind: site.bowling ? 'bowling' : site.targets ? 'targets' : undefined, label: site.startLabel };
   }
 
   act(choice) {
@@ -73,6 +77,9 @@ export class Activities {
     if (!g.save()) {
       this.active = null;
       g.hud.toast(g.saveError, 'bad');
+    } else if (this.playingTargets) {
+      this.targets ??= new TargetPractice(() => this.end('cancelled'));
+      this.targets.start();
     } else if (this.playingGolf) {
       this.golf.start();
     } else if (this.playingBowling) {
@@ -84,13 +91,15 @@ export class Activities {
     if (!this.active) return;
     const { elapsed } = this.active, g = this.game;
     const minigolf = this.playingGolf, bowling = this.playingBowling;
+    const targets = this.playingTargets;
+    if (targets) this.targets.end();
     if (minigolf) this.golf.end();
     if (bowling) this.bowling.end();
     this.active = null;
     if (this.beacon) this.beacon.visible = false;
     g.hud.mission(null);
     if (!save) return;
-    if (!minigolf && !bowling) {
+    if (!minigolf && !bowling && !targets) {
       const message = result === 'completed' ? `Zkušební trasa dokončena za ${Math.max(1, Math.ceil(elapsed))} s.`
         : 'Zkušební trasa ukončena.';
       g.hud.toast(message, 'big');
@@ -99,7 +108,7 @@ export class Activities {
   }
 
   update(dt) {
-    if (this.playingBowling) return;
+    if (this.playingBowling || this.playingTargets) return;
     const { active, game } = this, { focus, jobs, shifts } = game;
     this.golf.nearby(focus);
     const golf = this.playingGolf;

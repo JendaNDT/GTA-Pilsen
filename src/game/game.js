@@ -729,6 +729,7 @@ export class Game {
   }
 
   doAction() {
+    if (this.activities.playingTargets) return;
     if (this.activities.playingBowling) return this.activities.bowling.action();
     if (this.activities.golf.ball) return this.activities.golf.action();
     if (this.falls.active.has(this.player) || this.player.stun > 0) return;
@@ -1095,6 +1096,11 @@ export class Game {
     if (this.paused) return;
     const logicStart = DEBUG ? performance.now() : 0;
     pollInput(this.shifts.active ? 'shift' : this.cabin ? 'foot' : this.mode);
+    if (this.activities.playingTargets) {
+      this.activities.targets.update(dt);
+      endFrame();
+      return;
+    }
     if (this.activities.playingBowling) {
       if (!this.mapOpen) {
         if (input.pressed.has('action')) this.doAction();
@@ -1119,7 +1125,7 @@ export class Game {
     this.crashCool -= dt; this.wantedCool -= dt;
     const p = this.player;
     if (input.pressed.has('action')) this.doAction();
-    if (this.activities.playingBowling) { endFrame(); return; }
+    if (this.activities.playingBowling || this.activities.playingTargets) { endFrame(); return; }
     if (input.pressed.has('job')) this.jobs.toggle();
     if (input.pressed.has('camera')) this.camMode = (this.camMode + 1) % 2;
     if (input.pressed.has('reset')) this.unstuck();
@@ -1344,6 +1350,7 @@ export class Game {
   }
 
   render() {
+    if (this.activities.playingTargets) return;
     this.renderer.info.reset();
     if (this.activities.playingBowling) return this.activities.bowling.render(this.renderer, this.camera.aspect);
     const cam = this.camera.position;
@@ -1358,7 +1365,7 @@ export class Game {
   }
 
   adapt(elapsed, measure) {
-    if (PARAMS.get('adapt') === '0' || this.graphicsBusy || this.mapOpen || this.activities.playingBowling) return;
+    if (PARAMS.get('adapt') === '0' || this.graphicsBusy || this.mapOpen || this.activities.playingBowling || this.activities.playingTargets) return;
     this.graphicsTime += elapsed;
     this.resolutionTime += elapsed;
     const choosing = this.graphicsTime >= 10 && !this.graphicsOverride && this.graphics.choice === 'auto' && !this.graphics.automatic;

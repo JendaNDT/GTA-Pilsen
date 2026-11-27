@@ -1,3 +1,7 @@
+# E58 · Volný trénink terčů v Lobzích
+
+Na větvi `etapa/E58` z revize `b2c8a60` je hratelný první krok. Z mapy lze dojít po pěšině ke vstupu, vyzkoušet jeden pohyblivý terč a vrátit se do města. Trénink počítá zásahy a pokusy. V obou vykreslovačích prošel průchod s myší i s emulovaným dotykem. Sestavení a 424 testů JavaScriptu prošlo. Zbývá zkouška na fyzickém telefonu. Doporučené pokračování je série deseti terčů s osobním rekordem. [Zadání](E58.md) · [Ovládání, snímky a výkon](../E58.md)
+
 # E69 · Rozvoz pizzy v celé herní oblasti
 
 Na větvi `etapa/E69` z revize `38f2ed6` je hotových 41 výdejních míst, 546 adres a 562 nabízených spojení. V nabídce Zakázky lze zvolit podnik a cíl. Pět rozvozů bylo projetých včetně pěšího předání. Prošlo sestavení, 422 testů JavaScriptu, 34 testů Pythonu (jeden další přeskočen) a 16 cílených zkoušek v prohlížeči. Zbývá uživatelská zkouška na skutečném telefonu. [Zadání](E69.md) · [Podklady, snímky a výsledky](../E69.md)
