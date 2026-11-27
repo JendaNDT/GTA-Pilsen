@@ -8,8 +8,8 @@
   <meta name="theme-color" content="#101820" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23101820'/%3E%3Cpath d='M30 8l4 0 3 22h8l2 26H17l2-26h8z' fill='%23f2b632'/%3E%3C/svg%3E" />
   <style>#file-launch{box-sizing:border-box;color:#f5f1e6;background:#101820;border:1px solid #52606c;border-radius:1rem;width:min(34rem,100% - 2rem);margin:10vh auto;padding:1.5rem;font:1rem/1.5 system-ui,sans-serif}#file-launch h1{margin-top:0}#file-launch a{color:#f2b632}</style>
-  <script type="module" crossorigin src="./assets/index-JhvYlvp_.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-DEZulpvQ.css">
+  <script type="module" crossorigin src="./assets/index-DWOSaMgw.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-mpgG-2UD.css">
 </head>
 <body>
   <canvas id="game"></canvas>
@@ -227,9 +227,19 @@
           <p id="job-result" aria-live="polite"></p>
           <div id="job-offers">
             <h3>Rozvoz pizzy</h3>
-            <label class="setting pizza-select">Výdej <select id="pizza-shop"></select></label>
-            <label class="setting pizza-select">Doručení <select id="pizza-address"></select></label>
-            <p id="pizza-pay"></p>
+            <fieldset class="pizza-search-mode">
+              <legend>Hledat rozvoz</legend>
+              <label><input type="radio" name="pizza-mode" value="shop" checked> Podle pizzerie</label>
+              <label><input type="radio" name="pizza-mode" value="address"> Podle adresy</label>
+            </fieldset>
+            <label class="work-search"><span id="pizza-search-label">Hledat pizzerii</span>
+              <input id="pizza-search" type="search" enterkeyhint="done" autocomplete="off" aria-controls="pizza-shop pizza-address">
+            </label>
+            <div id="pizza-choices">
+              <label class="setting pizza-select">Výdej <select id="pizza-shop"></select></label>
+              <label class="setting pizza-select">Doručení <select id="pizza-address"></select></label>
+            </div>
+            <p id="pizza-pay" role="status"></p>
             <div class="work-actions">
               <button data-job="pizza">Rozvézt pizzu na kole</button>
               <button data-job="food">Vzít rozvoz jídla</button>
@@ -239,7 +249,7 @@
             <div id="taxi-cards"></div>
             <details id="regional-taxi">
               <summary>Taxi po Plzni a okolí</summary>
-              <label class="taxi-search">Hledat cíl <input id="taxi-search" type="search" enterkeyhint="done" placeholder="Obec nebo ulice" autocomplete="off" aria-controls="taxi-destination"></label>
+              <label class="work-search">Hledat cíl <input id="taxi-search" type="search" enterkeyhint="done" placeholder="Obec nebo ulice" autocomplete="off" aria-controls="taxi-destination"></label>
               <label class="setting pizza-select">Cíl jízdy <select id="taxi-destination"></select></label>
               <p id="regional-taxi-summary" role="status"></p>
               <button type="button" id="regional-taxi-start" disabled>Přijmout jízdu do cíle</button>

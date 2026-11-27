@@ -1,6 +1,6 @@
 {
   "__vite-browser-external": {
-    "file": "assets/__vite-browser-external-CJ8iT12h.js",
+    "file": "assets/__vite-browser-external-9Ms4s4By.js",
     "name": "__vite-browser-external",
     "src": "__vite-browser-external",
     "isDynamicEntry": true,
@@ -9,7 +9,7 @@
     ]
   },
   "index.html": {
-    "file": "assets/index-JhvYlvp_.js",
+    "file": "assets/index-DWOSaMgw.js",
     "name": "index",
     "src": "index.html",
     "isEntry": true,
@@ -17,7 +17,7 @@
       "node_modules/jolt-physics/dist/jolt-physics.wasm-compat.js"
     ],
     "css": [
-      "assets/index-DEZulpvQ.css"
+      "assets/index-mpgG-2UD.css"
     ],
     "assets": [
       "assets/modern-theatre-0mzrbqn0.svg",
@@ -37,7 +37,7 @@
     ]
   },
   "node_modules/jolt-physics/dist/jolt-physics.wasm-compat.js": {
-    "file": "assets/jolt-physics.wasm-compat-BpYWoGQz.js",
+    "file": "assets/jolt-physics.wasm-compat-BRQL_Sz_.js",
     "name": "jolt-physics.wasm-compat",
     "src": "node_modules/jolt-physics/dist/jolt-physics.wasm-compat.js",
     "isDynamicEntry": true,
