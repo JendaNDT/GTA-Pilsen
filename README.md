@@ -2,6 +2,7 @@
 
 Tato větev obsahuje jen sestavené hry pro GitHub Pages:
 
+- [**Zkouška kulečníku**](https://jendandt.github.io/GTA-Pilsen/zkouska-kulecniku/) – E63 z revize `c5255b2`. Na mapě vyhledej „kulečník“, vejdi do bowlingu U Papírny a zvol **Ke kulečníku**.
 - **kořen** – webová verze z enginu Godot (adresář `godot/`, revize d868511 větve `godot/prestavba`),
 - **`zkouska-vzhledu/`** – webová hra (three.js), revize `eb5d900` z větve `etapa/E62` s průchozími vozy na všech 51 linkách a kontrolou volného místa u dveří před výstupem.
   V hlavní nabídce zvol **Svézt se MHD** a vyber spoj. Zahrnuje také dřívější úpravy vzhledu

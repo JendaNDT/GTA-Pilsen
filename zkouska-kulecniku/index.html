@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <title>Plzeň naplno – skutečná Plzeň jako otevřený svět</title>
+  <meta name="description" content="Projeď se po skutečné Plzni: ulice, domy, tramvaje i katedrála podle otevřených dat. Zdarma v prohlížeči, na počítači i na mobilu." />
+  <meta name="theme-color" content="#101820" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23101820'/%3E%3Cpath d='M30 8l4 0 3 22h8l2 26H17l2-26h8z' fill='%23f2b632'/%3E%3C/svg%3E" />
+  <style>#file-launch{box-sizing:border-box;color:#f5f1e6;background:#101820;border:1px solid #52606c;border-radius:1rem;width:min(34rem,100% - 2rem);margin:10vh auto;padding:1.5rem;font:1rem/1.5 system-ui,sans-serif}#file-launch h1{margin-top:0}#file-launch a{color:#f2b632}</style>
+  <script type="module" crossorigin src="./assets/index-DCEggweb.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-B5Xnb1jt.css">
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div id="photo-controls" aria-label="Fotorežim" hidden>
+    <label>Zaostření <input id="photo-focus" type="range" min="2" max="150" value="32" aria-label="Vzdálenost zaostření v metrech"></label>
+    <button id="photo-forward">Vpřed</button><button id="photo-back">Vzad</button>
+    <button id="photo-save">Uložit PNG</button><button id="photo-exit">Zpět</button>
+  </div>
+  <div id="hud" class="hidden">
+    <div id="topleft">
+      <div id="money">0 Kč</div>
+      <div id="wanted" title="Hledanost"></div>
+      <div id="health"><i></i></div>
+    </div>
+    <div id="mapwrap">
+      <canvas id="minimap" width="220" height="220"></canvas>
+      <div id="clock" aria-label="Herní čas">
+        <time id="clock-time" datetime="09:00">09:00</time>
+        <span id="clock-day">pondělí</span>
+      </div>
+      <section id="stop-board" class="hidden" aria-label="Nejbližší zastávka">
+        <h2 id="stop-name"></h2>
+        <ul id="stop-departures"></ul>
+        <p id="stop-transfer" hidden></p>
+      </section>
+    </div>
+    <div id="place"><b id="street"></b><span id="district"></span></div>
+    <div id="mission" class="hidden"></div>
+    <section id="minigolf-panel" aria-labelledby="golf-title" hidden>
+      <header><h2 id="golf-title">Minigolf</h2><span id="golf-count"></span></header>
+      <div id="golf-score"><span id="golf-round"></span><span id="golf-record"></span></div>
+      <div class="golf-controls">
+        <label for="golf-aim">Směr <span id="golf-aim-value"></span></label>
+        <input id="golf-aim" name="aim" type="range" min="-175" max="175" step="1" value="0">
+        <label for="golf-power">Síla <span id="golf-power-value"></span></label>
+        <input id="golf-power" name="power" type="range" min="0" max="100" step="1" value="70">
+      </div>
+      <p id="golf-status" role="status" tabindex="-1"></p>
+      <div class="golf-actions">
+        <button type="button" id="golf-hit">Odpálit <kbd>F</kbd></button>
+        <button type="button" id="golf-next" hidden>Přejít k další jamce <kbd>F</kbd></button>
+        <button type="button" id="golf-restart" hidden>Nová partie</button>
+        <button type="button" id="golf-retry" hidden>Znovu uložit výsledek</button>
+        <button type="button" id="golf-leave">Odejít</button>
+      </div>
+    </section>
+    <section id="bowling-panel" aria-labelledby="bowl-title" hidden>
+      <div class="bowl-scorecard">
+        <header><h2 id="bowl-title">Bowling U Papírny</h2><div><strong id="bowl-total">0 bodů</strong><small id="bowl-record"></small></div></header>
+        <ol id="bowl-frames" aria-label="Skóre deseti kol">
+          <li><small>1</small><b>·</b><span></span></li>
+          <li><small>2</small><b>·</b><span></span></li>
+          <li><small>3</small><b>·</b><span></span></li>
+          <li><small>4</small><b>·</b><span></span></li>
+          <li><small>5</small><b>·</b><span></span></li>
+          <li><small>6</small><b>·</b><span></span></li>
+          <li><small>7</small><b>·</b><span></span></li>
+          <li><small>8</small><b>·</b><span></span></li>
+          <li><small>9</small><b>·</b><span></span></li>
+          <li><small>10</small><b>·</b><span></span></li>
+        </ol>
+      </div>
+      <div class="bowl-console">
+        <p id="bowl-status" role="status"></p>
+        <div id="bowl-controls">
+          <label for="bowl-aim">Směr <span id="bowl-aim-value"></span></label>
+          <input id="bowl-aim" type="range" min="-35" max="35" value="0">
+          <label for="bowl-power">Síla <span id="bowl-power-value"></span></label>
+          <input id="bowl-power" type="range" min="25" max="100" value="75">
+        </div>
+        <div class="bowl-actions">
+          <button type="button" id="bowl-hit">Hodit <kbd>F</kbd></button>
+          <button type="button" id="bowl-restart" hidden>Nová partie</button>
+          <button type="button" id="bowl-retry" hidden>Znovu uložit výsledek</button>
+          <button type="button" id="bowl-pool">Ke kulečníku</button>
+          <button type="button" id="bowl-leave">Odejít</button>
+        </div>
+      </div>
+      <div id="pool-panel" hidden>
+        <div id="pool-aim-surface" aria-hidden="true"></div>
+        <header><h2>Kulečník U Papírny</h2><span>Klepni na stůl tam, kam má jet bílá koule.</span></header>
+        <div id="pool-console">
+          <p id="pool-status" role="status"></p>
+          <label>Doladění směru <output id="pool-angle-value">0°</output><input id="pool-angle" type="range" min="-180" max="180" step="1" value="0"></label>
+          <label>Síla <output id="pool-power-value">65 %</output><input id="pool-power" type="range" min="10" max="100" value="65"></label>
+          <div class="bowl-actions"><button id="pool-hit">Strčit <kbd>F</kbd></button><button id="pool-reset">Rozestavit koule</button><button id="pool-back">Zpět k bowlingu</button></div>
+        </div>
+      </div>
+    </section>
+    <div id="toast"></div>
+    <div id="prompt" class="hidden"></div>
+    <div id="speedo" class="hidden"><small id="speedlimit" class="hidden" aria-label="Rychlostní limit"></small><b id="kmh">0</b><span>km/h</span><em id="vehname"></em></div>
+    <div id="touch" class="hidden">
+      <div id="stick"><i></i></div>
+      <button id="tb-act" class="tb" aria-label="Akce (F)">F</button>
+      <button id="tb-gas" class="tb">▲</button>
+      <button id="tb-brake" class="tb">▼</button>
+      <button id="tb-hand" class="tb">⎵</button>
+      <button id="tb-job" class="tb" aria-label="Přijmout nebo zrušit rozvoz">✉</button>
+      <button id="tb-map" class="tb" aria-label="Otevřít mapu">🗺</button>
+    </div>
+    <button id="btn-menu" title="Menu" aria-label="Otevřít pauzu">☰</button>
+    <button id="btn-fullscreen" class="hidden" title="Celá obrazovka" aria-label="Celá obrazovka" aria-pressed="false">⛶</button>
+  </div>
+
+  <div id="bigmap" class="hidden" role="dialog" aria-labelledby="map-heading">
+    <div id="bigmap-controls">
+      <div class="map-title"><h2 id="map-heading">Mapa oblasti</h2><span id="map-mode"></span></div>
+      <form id="bigmap-search" role="search">
+        <input id="bigmap-query" type="search" aria-label="Vyhledat v mapě"
+          placeholder="Najít místo, zastávku nebo aktivitu" autocomplete="off" enterkeyhint="go">
+        <ul id="bigmap-results" aria-label="Výsledky hledání" aria-live="polite"></ul>
+      </form>
+      <div id="bigmap-date"><time></time></div>
+      <button id="bigmap-close">Zavřít mapu</button>
+    </div>
+    <div id="map-sheet">
+      <canvas id="bigmap-canvas" tabindex="0" aria-label="Mapa herního území. Šipkami posuneš pohled, Enter vybere místo uprostřed."></canvas>
+      <div class="map-compass" aria-label="Sever nahoře">▴ S</div>
+      <div class="map-tools">
+        <div class="map-zoom"><button id="map-zoom-in" aria-label="Přiblížit">+</button><button id="map-zoom-out" aria-label="Oddálit">−</button></div>
+        <button id="map-cancel" hidden>Zrušit cíl</button><button id="map-home">Moje poloha</button><button id="map-overview">Celá oblast</button>
+      </div>
+      <div id="map-scale"></div>
+      <div id="map-selection" hidden>
+        <div aria-live="polite"><strong id="map-name"></strong><small id="map-distance"></small><small id="map-access" hidden></small></div>
+        <button id="map-go">Navigovat sem</button>
+      </div>
+    </div>
+    <div id="bigmap-legend"><span id="map-route-status" aria-live="polite"></span><span><i class="map-key-player">▲</i> Tvoje poloha</span>
+      <span><i class="map-key-route">━</i> Trasa</span><span><i class="map-key-walk">···</i> Pěšky</span><span id="map-key-cycling" hidden><i>━</i> Na kole</span>
+      <span><i class="map-key-activity">●</i> Aktivita</span><span><i class="map-key-bike">●</i> Sdílená kola</span><span><i class="map-key-closure">╱</i> Uzavírka</span><span><i class="map-key-limit">▧</i> Mimo oblast</span></div>
+  </div>
+
+  <div id="menu" data-screen="start">
+    <div id="menu-card">
+      <div id="menu-home">
+        <h1 id="menu-title">Plzeň <span>naplno</span></h1>
+        <p id="menu-location" hidden></p>
+        <p id="menu-objective" hidden></p>
+        <div id="loading">
+          <div id="bar"><i></i></div>
+          <div id="loadtext">Načítám město…</div>
+          <button id="btn-transfer" hidden>Převzít hru z pozastavené karty</button>
+        </div>
+        <div id="menu-buttons" class="hidden">
+          <button id="btn-play" class="primary">Hrát</button>
+          <button id="btn-rides" aria-controls="panel-rides" aria-expanded="false">Svézt se MHD</button>
+          <button id="btn-map" hidden>Mapa</button>
+          <div class="menu-activities">
+            <button id="btn-jobs" aria-controls="panel-jobs" aria-expanded="false">Zakázky</button>
+            <button id="btn-garage" aria-controls="panel-garage" aria-expanded="false">Garáž</button>
+            <button id="btn-shifts" aria-controls="panel-shifts" aria-expanded="false">Směny MHD</button>
+          </div>
+          <div class="menu-tools">
+            <button id="btn-settings" aria-controls="panel-settings" aria-expanded="false">Nastavení</button>
+            <button id="btn-help" aria-controls="panel-help" aria-expanded="false">Ovládání</button>
+            <button id="btn-photo">Fotorežim</button>
+            <button id="btn-save" aria-controls="panel-save" aria-expanded="false">Uložená hra</button>
+            <button id="btn-about" aria-controls="panel-about" aria-expanded="false">O hře</button>
+          </div>
+        </div>
+        <div id="save-status" role="status"></div>
+        <div id="rotate-tip">Tip: otoč telefon na šířku, hraje se to líp.</div>
+      </div>
+      <div id="menu-sheet" hidden>
+        <button id="menu-back" type="button"><span aria-hidden="true">←</span> Zpět</button>
+        <section id="panel-rides" class="panel hidden" aria-labelledby="rides-heading">
+          <h3 id="rides-heading">Svézt se MHD</h3>
+          <div id="ride-options"></div>
+          <p id="ride-feedback" class="work-feedback" role="status"></p>
+        </section>
+        <section id="panel-save" class="panel hidden">
+          <h3>Uložená hra</h3>
+          <p id="save-location"></p>
+          <button id="btn-reset">Začít od začátku</button>
+        </section>
+        <div id="panel-help" class="panel hidden"></div>
+        <div id="panel-about" class="panel hidden"></div>
+        <section id="panel-jobs" class="panel hidden" aria-labelledby="jobs-heading">
+          <h3 id="jobs-heading">Zakázky</h3>
+          <p id="job-result" aria-live="polite"></p>
+          <div id="job-offers">
+            <div class="work-actions">
+              <button data-job="food">Vzít rozvoz jídla</button>
+            </div>
+            <h3>Taxi</h3>
+            <p id="taxi-feedback" class="work-feedback" role="status"></p>
+            <div id="taxi-cards"></div>
+          </div>
+          <div id="job-demo">
+            <h3>Rozvoz k Boleváku</h3>
+            <p>Z Dřevěné přes Lochotín a Bolevec k rybníku. Pěšky předej jídlo na adrese U Velkého rybníka 2315/3.</p>
+            <div class="work-actions">
+              <button data-job="car">Rozvézt autem</button>
+              <button data-job="transit">Rozvézt MHD</button>
+            </div>
+          </div>
+          <div class="work-actions">
+            <button id="job-cancel" hidden>Zrušit zakázku</button>
+            <button id="job-retry" hidden>Znovu uložit odměnu</button>
+          </div>
+          <p id="job-feedback" class="work-feedback" role="status"></p>
+          <button class="work-resume" data-work-resume>Zpět do hry</button>
+        </section>
+        <section id="panel-garage" class="panel hidden" aria-labelledby="garage-heading">
+          <h3 id="garage-heading">Garáž u hlavního nádraží</h3>
+          <p id="garage-balance"></p>
+          <p id="garage-car"></p>
+          <div id="garage-actions" class="work-actions">
+            <button data-garage="navigate">Najít garáž na mapě</button>
+            <button data-garage="buy"></button>
+            <button data-garage="retrieve">Vyjet s autem</button>
+            <button data-garage="store">Uložit auto do garáže</button>
+            <button data-garage="repair"></button>
+            <button data-garage="brakes"></button>
+            <button data-garage="tires"></button>
+          </div>
+          <p id="garage-feedback" class="work-feedback" role="status"></p>
+          <button class="work-resume" data-work-resume>Zpět do hry</button>
+        </section>
+        <section id="panel-shifts" class="panel hidden" aria-labelledby="shift-heading">
+          <h3 id="shift-heading">Směny MHD</h3>
+          <div id="shift-summary" aria-live="polite" hidden>
+            <p id="shift-result"></p>
+            <p id="shift-score"></p>
+            <p id="shift-traffic"></p>
+          </div>
+          <div id="shift-select">
+            <label for="shift-offer">Nejbližší nástupy podle jízdního řádu</label>
+            <select id="shift-offer"></select>
+            <p id="shift-direction"></p>
+            <p>Hra tě přesune do vozu před odjezdem. Řídíš rozjezd, brzdy a dveře, vozidlo sleduje trasu spoje.</p>
+          </div>
+          <div class="work-actions">
+            <button id="shift-start">Nastoupit do směny</button>
+            <button id="shift-cancel" hidden>Zrušit směnu</button>
+            <button id="shift-retry" hidden>Znovu uložit výsledek</button>
+          </div>
+          <p id="shift-feedback" class="work-feedback" role="status"></p>
+          <button class="work-resume" data-work-resume>Zpět do hry</button>
+        </section>
+        <div id="panel-settings" class="panel hidden">
+          <h3>Nastavení</h3>
+          <label class="setting"><input id="free-look" type="checkbox" /> Volné rozhlížení myší při chůzi (klikni do hry, Esc uvolní kurzor)</label>
+          <label class="setting">Řízení
+            <select id="steering">
+              <option value="arcade">Arkádové</option>
+              <option value="realistic">Realistické</option>
+            </select>
+          </label>
+          <label class="setting"><input id="heli-assist" type="checkbox" checked /> Vyrovnání vrtulníku a držení výšky</label>
+          <label class="setting">Kvalita grafiky
+            <select id="graphics-quality">
+              <option value="auto">Automaticky</option>
+              <option value="ultra">Ultra</option>
+              <option value="high">Vysoká</option>
+              <option value="medium">Střední</option>
+              <option value="low">Nízká</option>
+            </select>
+          </label>
+          <p id="graphics-status" role="status"></p>
+          <label class="setting" id="fullscreen-setting"><input id="fullscreen-play" type="checkbox" checked /> Hrát přes celou obrazovku</label>
+          <label class="setting"><input id="sun-flare" type="checkbox"> Odlesk slunce v objektivu</label>
+          <label class="setting"><input id="motion-blur" type="checkbox"> Pohybové rozmazání (s časovým vyhlazováním)</label>
+          <label class="setting">Počasí <select id="weather-mode"><option value="variable">Proměnlivé</option><option value="clear">Vždy jasno</option></select></label>
+          <label class="setting"><input id="show-clock" type="checkbox" checked /> Zobrazovat herní hodiny</label>
+          <form id="clock-settings">
+            <label for="game-time">Herní čas</label>
+            <input id="game-time" type="time" required />
+            <button type="submit">Nastavit čas</button>
+            <button id="use-prague-time" type="button">Použít aktuální čas v Plzni</button>
+            <p id="clock-status" role="status"></p>
+          </form>
+          <label class="setting"><input id="particles-enabled" type="checkbox" checked /> Jiskry, střepy, prach a kouř</label>
+          <label class="setting"><input id="falls-enabled" type="checkbox" checked /> Fyzikální pády postav</label>
+          <label class="setting"><input id="sound-enabled" type="checkbox" checked /> Zvuk hry</label>
+          <label class="setting"><input id="orthophoto-enabled" type="checkbox" checked /> Letecké snímky krajiny</label>
+        </div>
+      </div>
+    </div>
+    <div id="credits">Mapová data © přispěvatelé OpenStreetMap (ODbL) · Výškopis © ČÚZK</div>
+  </div>
+  <main id="file-launch" hidden>
+    <h1>Plzeň naplno</h1>
+    <p>Hra se spouští přes místní server. Na Macu otevři ve Finderu soubor <strong>Spustit hru.command</strong>
+      v hlavní složce projektu.</p>
+    <p><a href="http://localhost:5173/">Otevřít běžící hru</a></p>
+  </main>
+  <script>
+    if (location.protocol === 'file:') {
+      const launch = document.getElementById('file-launch');
+      document.body.replaceChildren(launch);
+      launch.hidden = false;
+    }
+  </script>
+</body>
+</html>

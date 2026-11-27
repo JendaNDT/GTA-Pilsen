@@ -1,0 +1,1 @@
+import{t as e}from"./jolt-physics.wasm-compat-C9lwmn-Y.js";var t=e(((e,t)=>{t.exports={}}));export default t();
