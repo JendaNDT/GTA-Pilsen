@@ -68,9 +68,14 @@ export function createPoolModel() {
   const sphere = new THREE.SphereGeometry(BALL_RADIUS, 18, 12);
   const shadow = new THREE.MeshBasicMaterial({ color: 0x0c4a38, transparent: true, opacity: .42, depthWrite: false });
   const shadowDisc = new THREE.CircleGeometry(BALL_RADIUS * 1.04, 20);
-  const colors = [0xfff7e7, 0xe8a82d, 0x2558a2, 0xb63131];
-  const balls = BALL_STARTS.map(([x, z], i) => {
-    const ball = part(sphere, material(colors[i], .22), x, BALL_RADIUS, z);
+  const colors = [0xfff7e7, 0xe8a82d, 0x2558a2, 0xb63131, 0x7940ac, 0xe06b23, 0x257250, 0x7d2634, 0x15181a];
+  const stripe = new THREE.SphereGeometry(BALL_RADIUS * 1.006, 18, 8, 0, Math.PI * 2, Math.PI / 3, Math.PI / 3);
+  stripe.rotateZ(Math.PI / 2);
+  const balls = Array.from({ length: 16 }, (_, i) => {
+    const [x, z] = BALL_STARTS[i] ?? [0, 0];
+    const ball = part(sphere, material(colors[i > 8 ? 0 : i], .22), x, BALL_RADIUS, z);
+    ball.visible = i < BALL_STARTS.length;
+    if (i > 8) part(stripe, material(colors[i - 8], .22), 0, 0, 0, ball);
     const contact = part(shadowDisc, shadow, .003, -BALL_RADIUS + .002, .002, ball);
     contact.rotation.x = -Math.PI / 2;
     if (i) {

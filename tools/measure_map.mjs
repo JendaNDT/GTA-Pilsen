@@ -16,7 +16,8 @@ const cabinTrip = cabinArg?.slice('--cabin-trip='.length) ??
   args.find(arg => arg.startsWith('--tram-trip='))?.slice('--tram-trip='.length) ?? PILOT_TRIP;
 const service = CABIN_SERVICES.find(item => item.trip === cabinTrip);
 if (cabin && !service) throw new Error('Neznámý průchozí spoj ' + cabinTrip);
-const pool = args.includes('--pool-practice');
+const eightBall = args.includes('--eight-ball');
+const pool = eightBall || args.includes('--pool-practice');
 const work = pool || cabin || rush || args.includes('--work');
 const pilot = !cabin && !rush && (release || centerFlight || args.includes('--pilot'));
 if (cabin && (rush || release)) throw new Error('Jízdu v MHD měř samostatně.');
@@ -82,13 +83,13 @@ try {
     report.gpu = startup.adapter || gpu.auxAttributes?.glRenderer || null;
     if (mode) {
       await page.getByRole('button', { name: 'Hrát', exact: true }).click();
-      report[name] = await page.evaluate(async ({ mode, pilot, site, work, pilotTrip }) => {
+      report[name] = await page.evaluate(async ({ mode, pilot, site, work, pilotTrip, eightBall }) => {
         const game = window.__game, world = game.world;
         if (mode === 'pool') {
           window.__freeze(true);
           game.player.place(638, 1217);
           game.doAction();
-          game.activities.bowling.pool.enter();
+          game.activities.bowling.pool.enter(eightBall);
           if (!game.activities.bowling.pool.table) throw new Error('Tréninkový stůl se neotevřel.');
         } else if (mode === 'cabin') {
           window.__freeze(true);
@@ -243,7 +244,7 @@ try {
           ...(physicsTimes.length > 0 && { physicsSteps: physicsTimes.length,
             physicsP95Ms: physicsTimes[Math.ceil(physicsTimes.length * 0.95) - 1] }),
         };
-      }, { mode, pilot, site, work, pilotTrip: cabinTrip });
+      }, { mode, pilot, site, work, eightBall, pilotTrip: cabinTrip });
       if (work) report[name].budgets = frameBudgets(report[name].measurement, report.work.durationMs / 1000);
       if (site) report[name].site = site;
     }
@@ -255,7 +256,7 @@ try {
       : service?.type === 'trolleybus' ? 'data-raw/e60/trolejbus/jizda.json'
       : service?.type === 'bus' ? 'data-raw/e60/bus/jizda.json' : 'data-raw/e60/jizda.json';
     const output = args.find((arg) => arg.startsWith('--output='))?.slice('--output='.length)
-      ?? (pool ? 'data-raw/e63/vykon.json' : cabin ? cabinOutput : rush ? 'data-raw/e20/vykon-spicka.json' : 'data-raw/e13/measure-work.json');
+      ?? (eightBall ? 'data-raw/e64/vykon.json' : pool ? 'data-raw/e63/vykon.json' : cabin ? cabinOutput : rush ? 'data-raw/e20/vykon-spicka.json' : 'data-raw/e13/measure-work.json');
     await mkdir(dirname(output), { recursive: true });
     await writeFile(output, json);
   }

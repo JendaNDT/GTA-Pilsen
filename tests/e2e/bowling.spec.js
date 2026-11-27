@@ -222,3 +222,62 @@ for (const mobile of [false, true]) test('E63 – strk do kapsy a návrat ke dr�
     await expect(page.locator('#bowling-panel')).toBeHidden();
   } finally { await context.close(); }
 });
+
+test('E64 – dva hráči na telefonu, bílá v ruce, černá a odveta', async ({ browser }, info) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 780 }, hasTouch: true, isMobile: true });
+  try {
+    const page = await context.newPage();
+    await arrive(page, true);
+    await enter(page, true);
+    await page.getByRole('button', { name: 'Osmička pro dva' }).tap();
+    const step = n => page.evaluate(n => __step(1 / 60, n), n);
+    const status = page.locator('#pool-status');
+    const hit = page.locator('#pool-hit');
+    await step(50);
+    await expect(status).toContainText('Hráč 1 · Otevřený stůl. Rozstřel.');
+    expect(await page.evaluate(() => __game.activities.bowling.room.pool.balls.filter(b => b.visible).length)).toBe(16);
+    await page.screenshot({ path: info.outputPath('osmicka-telefon.jpg') });
+    await hit.tap();
+    await step(400);
+    await expect(status).toContainText('Hráč 2');
+    // Připrav bílou před prostřední kapsu, faul i výsledek pak rozhodne fyzika.
+    async function tapTable(x, z) {
+      const point = await page.evaluate(([x, z]) => {
+        const { room, pool } = __game.activities.bowling;
+        const v = room.pool.group.position.clone();
+        v.x += x; v.z += z; v.y += .029; v.project(pool.camera);
+        return [(v.x + 1) * innerWidth / 2, (1 - v.y) * innerHeight / 2];
+      }, [x, z]);
+      await page.touchscreen.tap(...point);
+    }
+    await page.evaluate(() => {
+      const { table } = __game.activities.bowling.pool;
+      table.place(table.balls[0], .4, 0);
+    });
+    await tapTable(.55, 0);
+    await hit.tap();
+    await step(400);
+    await expect(status).toContainText('Hráč 1');
+    await expect(status).toContainText('Bílá spadla do kapsy.');
+    await tapTable(-.3, 0);
+    await page.getByRole('button', { name: 'Položit bílou' }).tap();
+    await expect(hit).toContainText('Strčit');
+    expect(await page.evaluate(() => __game.activities.bowling.pool.table.balls[0].GetPosition().GetX())).toBeCloseTo(-.3, 2);
+    await page.evaluate(() => {
+      const { table } = __game.activities.bowling.pool;
+      table.place(table.balls[8], .15, 0);
+    });
+    await tapTable(.15, 0);
+    await hit.tap();
+    await step(420);
+    await expect(status).toContainText('Vyhrává hráč 2');
+    await expect(hit).toBeDisabled();
+    await page.getByRole('button', { name: 'Odveta' }).tap();
+    await expect(status).toContainText('Hráč 2 · Otevřený stůl. Rozstřel.');
+    await page.getByRole('button', { name: 'Zpět k bowlingu' }).tap();
+    await page.getByRole('button', { name: 'Ke kulečníku' }).tap();
+    await step(50);
+    await expect(status).toHaveText('V kapsách 0 ze 3');
+    expect(await page.evaluate(() => __game.activities.bowling.room.pool.balls.filter(b => b.visible).length)).toBe(4);
+  } finally { await context.close(); }
+});

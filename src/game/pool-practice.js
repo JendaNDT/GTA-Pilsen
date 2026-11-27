@@ -33,23 +33,26 @@ export class PoolPractice {
     field('back').onclick = () => { if (bowling.canUse) this.leave(); };
     field('reset').onclick = () => {
       if (!this.table || !bowling.canUse || this.table.rolling) return;
-      this.table.reset();
+      const match = this.table.match;
+      this.table.reset(match ? 3 - match.starter : 1);
+      if (match) { this.degrees = 90; this.strength = 100; this.showAim(); }
       this.refresh();
       field('hit').focus();
     };
   }
 
-  enter() {
+  enter(match = false) {
     const bowl = this.bowling;
     if (!bowl.canUse || this.table || !['done', 'aim'].includes(bowl.phase)) return;
-    this.table = new PoolTable(bowl.game.physics.Jolt);
+    this.table = new PoolTable(bowl.game.physics.Jolt, match);
     this.startPosition.copy(bowl.room.camera.position);
     this.startRotation.copy(bowl.room.camera.quaternion);
     this.approach = 0;
     this.width = 0;
     this.panel.hidden = false;
-    this.degrees = 0;
-    this.strength = 65;
+    this.degrees = match ? 90 : 0;
+    this.strength = match ? 100 : 65;
+    this.panel.querySelector('h2').textContent = match ? 'Osmička pro dva' : 'Kulečník U Papírny';
     this.showAim();
     this.refresh();
     field('hit').focus({ preventScroll: true });
@@ -57,16 +60,17 @@ export class PoolPractice {
 
   leave() {
     if (!this.table) return;
+    const back = this.table.match ? 'bowl-eight' : 'bowl-pool';
     this.table.dispose();
     this.table = null;
     this.panel.hidden = true;
     const { pool } = this.bowling.room;
     pool.cue.visible = false;
     pool.balls.forEach((mesh, i) => {
-      mesh.visible = true;
-      mesh.position.set(BALL_STARTS[i][0], BALL_RADIUS, BALL_STARTS[i][1]);
+      mesh.visible = i < BALL_STARTS.length;
+      if (mesh.visible) mesh.position.set(BALL_STARTS[i][0], BALL_RADIUS, BALL_STARTS[i][1]);
     });
-    document.getElementById('bowl-pool').focus({ preventScroll: true });
+    document.getElementById(back).focus({ preventScroll: true });
   }
 
   aimAt(event) {
@@ -80,6 +84,7 @@ export class PoolPractice {
     if (!this.raycaster.ray.intersectPlane(this.aimPlane, this.target)) return false;
     const x = this.target.x - origin.x, z = this.target.z - origin.z;
     if (Math.abs(x) > HALF_WIDTH + POCKET_RADIUS || Math.abs(z) > HALF_LENGTH + POCKET_RADIUS) return false;
+    if (this.table.match?.inHand) return this.table.placeWhite(x, z);
     const white = this.table.balls[0].GetPosition();
     const dx = x - white.GetX(), dz = z - white.GetZ();
     if (Math.hypot(dx, dz) < BALL_RADIUS) return false;
@@ -97,22 +102,43 @@ export class PoolPractice {
   }
 
   action() {
-    if (this.table && this.bowling.canUse && this.table.launch(this.degrees, this.strength / 100)) this.refresh();
+    if (!this.table || !this.bowling.canUse) return;
+    if (this.table.match?.inHand) {
+      this.table.match.inHand = false;
+      this.table.match.message = 'Zamiř a zahraj.';
+    } else if (!this.table.launch(this.degrees, this.strength / 100)) return;
+    this.refresh();
   }
 
   refresh() {
     const { rolling, complete, potted, scratch } = this.table;
     const ready = !rolling && !complete;
-    this.angle.disabled = this.power.disabled = field('hit').disabled = !ready;
+    const match = this.table.match;
+    field('hit').disabled = !ready;
+    this.angle.disabled = this.power.disabled = !ready || !!match?.inHand;
+    field('hit').querySelector('span').textContent = match?.inHand ? 'Položit bílou' : 'Strčit';
+    field('reset').hidden = !!match && !complete;
+    field('reset').textContent = match ? 'Odveta' : 'Rozestavit koule';
+    field('hint').textContent = match?.inHand ? 'Klepni na volné místo a potvrď polohu bílé.' :
+      match?.breakShot ? 'Rozstřel míří na vrchol trojúhelníku. Klepni na Strčit.' :
+      match && !match.groups[match.player] ? 'První čistě potopená koule po rozstřelu určí skupinu.' :
+      match ? 'Po svých sedmi koulích pošli černou do libovolné kapsy.' :
+      'Klepni na stůl tam, kam má jet bílá koule.';
+    this.width = 0;
     field('reset').disabled = rolling;
-    field('status').textContent = rolling ? 'Koule jsou v pohybu.' : complete ? 'Všechny tři koule jsou v kapsách.' :
+    field('status').textContent = match ? (rolling ? `Hraje hráč ${match.player}. Koule jsou v pohybu.` : match.status) : rolling ? 'Koule jsou v pohybu.' : complete ? 'Všechny tři koule jsou v kapsách.' :
       (scratch ? 'Bílá je zpět na stole. ' : '') + 'V kapsách ' + potted + ' ze 3';
   }
 
   update(dt, input) {
     this.approach = Math.min(1, this.approach + dt / .65);
     if (this.table.rolling) return;
-    if (!this.table.complete && (input.moveX || input.moveY)) {
+    if (this.table.match?.inHand && (input.moveX || input.moveY)) {
+      const white = this.table.balls[0].GetPosition();
+      const dx = input.moveX * .45 * dt, dy = input.moveY * .45 * dt;
+      const landscape = this.camera.aspect >= 1;
+      this.table.placeWhite(white.GetX() + (landscape ? dy : dx), white.GetZ() + (landscape ? dx : -dy));
+    } else if (!this.table.complete && (input.moveX || input.moveY)) {
       this.degrees = ((this.degrees + input.moveX * 70 * dt + 540) % 360) - 180;
       this.strength = clamp(this.strength + input.moveY * 45 * dt, 10, 100);
       this.showAim();
@@ -134,7 +160,7 @@ export class PoolPractice {
         mesh.position.set(p.GetX(), BALL_RADIUS, p.GetZ());
       }
     }
-    cue.visible = !table.rolling && !table.complete;
+    cue.visible = !table.rolling && !table.complete && !table.match?.inHand;
     cue.position.copy(balls[0].position);
     cue.rotation.y = -this.degrees * Math.PI / 180;
     if (cue.visible) {

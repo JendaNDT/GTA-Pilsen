@@ -24,6 +24,7 @@ export class Bowling {
     }));
     this.pool = new PoolPractice(this);
     get('pool').onclick = () => this.pool.enter();
+    get('eight').onclick = () => this.pool.enter(true);
     this.hit.onclick = () => this.action();
     this.restart.onclick = () => this.newGame();
     this.retry.onclick = () => {
@@ -173,7 +174,7 @@ export class Bowling {
     text(get('total'), `${total} ${total === 1 ? 'bod' : total >= 2 && total <= 4 ? 'body' : 'bodů'}`);
     const best = this.game.stats.bowlingBest;
     text(get('record'), best === undefined ? '' : `Rekord ${best}`);
-    get('pool').disabled = !ready && !done;
+    get('eight').disabled = get('pool').disabled = !ready && !done;
     this.hit.hidden = get('controls').hidden = done;
     this.hit.setAttribute('aria-disabled', String(!ready));
     this.aimField.disabled = this.powerField.disabled = !ready;

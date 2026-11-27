@@ -527,3 +527,11 @@ body.touch .bowl-actions kbd { display: none; }
 #pool-console .bowl-actions button { flex: 1; min-height: 38px; line-height: 1.15; }
 #pool-hit { background: #efc582; color: #18261e; }
 #pool-console button:disabled { opacity: .6; }
+
+.bowl-console .bowl-actions {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+}
+.bowl-console .bowl-actions button { padding-inline: 4px; overflow-wrap: anywhere; }
+#pool-panel header { max-width: calc(100% - 52px); }

@@ -1,3 +1,7 @@
+# E64 · Osmička pro dva
+
+Na větvi `etapa/E64` z revize `c5255b2` je hotová místní partie na jednom telefonu. Oba hráči se střídají u jednoho stolu, po faulu je bílá v ruce a po výsledku lze hrát odvetu. Sestavení a 413 testů JavaScriptu prošlo. Z 35 testů Pythonu prošlo 34 a jeden byl přeskočen. V obou vykreslovačích prošlo všech deset cílených zkoušek společné herny. Výkon v osmičce dosáhl 60 FPS ve Full HD na nízkou předvolbu. Zbývá volitelné ověření dvěma lidmi na skutečném telefonu. [Zadání](E64.md) · [Pravidla, snímek a měření](../E64.md)
+
 # E63 · Tréninkový kulečník U Papírny
 
 Na větvi `etapa/E63` z revize `eb5d900` je hotový první hratelný krok. Z bowlingové dráhy lze přejít k jednomu kulečníkovému stolu, mířit, nastavit sílu, potopit tři barevné koule a vrátit se k rozehranému bowlingu. Na klávesnici i dotyku prošel celý přechod v obou vykreslovačích. Prošlo sestavení, 408 testů JavaScriptu, 34 testů Pythonu (jeden další přeskočen) a osm zkoušek v Chromiu. Trénink ve Full HD na nízkou předvolbu dosáhl 60 FPS. Dalším navrženým krokem jsou pravidla osmičky. [Zadání](E63.md) · [Ovládání, snímky a měření](../E63.md)
