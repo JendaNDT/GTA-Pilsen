@@ -1,5 +1,6 @@
 import { createBowlingRoom } from '../entities/bowling-room.js';
 import { AIM_LIMIT, BowlingLane, PIN_LINE } from '../physics/bowling-lane.js';
+import { PoolPractice } from './pool-practice.js';
 import { BowlingRound } from './bowling-rules.js';
 
 const limit = (number, min, max) => Math.max(min, Math.min(number, max));
@@ -21,6 +22,8 @@ export class Bowling {
     this.frames = Array.from(get('frames').children, cell => ({
       cell, marks: cell.querySelector('b'), score: cell.querySelector('span'),
     }));
+    this.pool = new PoolPractice(this);
+    get('pool').onclick = () => this.pool.enter();
     this.hit.onclick = () => this.action();
     this.restart.onclick = () => this.newGame();
     this.retry.onclick = () => {
@@ -64,6 +67,7 @@ export class Bowling {
   }
 
   end() {
+    this.pool.leave();
     this.lane?.dispose();
     this.lane = this.round = null;
     this.panel.hidden = true;
@@ -83,6 +87,7 @@ export class Bowling {
   }
 
   action() {
+    if (this.pool.table) return this.pool.action();
     if (!this.canUse || this.phase !== 'aim') return;
     if (this.lane.launch(Math.round(this.aim), Math.round(this.power) / 100)) {
       this.phase = 'rolling';
@@ -91,6 +96,7 @@ export class Bowling {
   }
 
   update(dt, input) {
+    if (this.pool.table) return this.pool.update(dt, input);
     if (this.phase === 'aim') {
       if (input.moveX || input.moveY) {
         this.aim = limit(this.aim + input.moveX * 26 * dt, -AIM_LIMIT, AIM_LIMIT);
@@ -167,6 +173,7 @@ export class Bowling {
     text(get('total'), `${total} ${total === 1 ? 'bod' : total >= 2 && total <= 4 ? 'body' : 'bodů'}`);
     const best = this.game.stats.bowlingBest;
     text(get('record'), best === undefined ? '' : `Rekord ${best}`);
+    get('pool').disabled = !ready && !done;
     this.hit.hidden = get('controls').hidden = done;
     this.hit.setAttribute('aria-disabled', String(!ready));
     this.aimField.disabled = this.powerField.disabled = !ready;
@@ -179,6 +186,7 @@ export class Bowling {
   }
 
   render(renderer, aspect) {
+    if (this.pool.table) return this.pool.render(renderer, aspect);
     const { lane, room } = this, { camera } = room;
     const copyPose = (mesh, body) => {
       const p = body.GetPosition(), q = body.GetRotation();

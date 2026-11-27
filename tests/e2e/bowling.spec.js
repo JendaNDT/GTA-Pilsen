@@ -139,3 +139,59 @@ test('E57 – dotykový hod na nízkou předvolbu a návrat po přerušené part
     expect(await page.evaluate(() => __game.stats.bowlingBest)).toBeUndefined();
   } finally { await context.close(); }
 });
+
+for (const mobile of [false, true]) test('E63 – strk do kapsy a návrat ke dráze ' + (mobile ? 'dotykem' : 'na klávesnici'), async ({ browser }, info) => {
+  const context = await browser.newContext({ viewport: mobile ? { width: 390, height: 780 } :
+    { width: 1100, height: 700 }, hasTouch: mobile, isMobile: mobile });
+  try {
+    const page = await context.newPage();
+    await arrive(page, mobile);
+    await enter(page, mobile);
+    const step = n => page.evaluate(n => __step(1 / 60, n), n);
+    const visit = page.getByRole('button', { name: 'Ke kulečníku' });
+    if (mobile) await visit.tap(); else { await visit.focus(); await page.keyboard.press('Enter'); }
+    await step(50);
+    await expect(page.getByRole('heading', { name: 'Kulečník U Papírny' })).toBeVisible();
+    const visible = await page.evaluate(() => {
+      const { pool, room } = __game.activities.bowling;
+      const lower = document.getElementById('pool-console').getBoundingClientRect().top;
+      const upper = document.querySelector('#pool-panel header').getBoundingClientRect().bottom;
+      return [-.68, .68].every(x => [-1.27, 1.27].every(z => {
+        const v = room.pool.group.position.clone();
+        v.x += x; v.z += z;
+        v.project(pool.camera);
+        const y = (1 - v.y) * innerHeight / 2;
+        return Math.abs(v.x) < 1 && y > upper && y < lower;
+      }));
+    });
+    expect(visible).toBe(true);
+    await page.screenshot({ path: info.outputPath('stul.jpg') });
+    if (mobile) {
+      const track = await page.locator('#pool-power').boundingBox();
+      await page.touchscreen.tap(track.x + track.width * .72, track.y + track.height / 2);
+      await expect(page.locator('#pool-power-value')).not.toHaveText('65 %');
+      await page.locator('#pool-hit').tap();
+    } else {
+      await page.keyboard.down('ArrowRight'); await step(12); await page.keyboard.up('ArrowRight');
+      await expect(page.locator('#pool-angle-value')).not.toHaveText('0°');
+      await page.keyboard.down('ArrowLeft'); await step(12); await page.keyboard.up('ArrowLeft');
+      await page.keyboard.press('f');
+    }
+    await step(1);
+    await expect(page.locator('#pool-hit')).toBeDisabled();
+    await step(360);
+    await expect(page.locator('#pool-status')).toHaveText('V kapsách 1 ze 3');
+    await page.locator('#pool-reset').click();
+    await expect(page.locator('#pool-status')).toHaveText('V kapsách 0 ze 3');
+    await page.locator('#pool-back').click();
+    await expect(page.locator('#bowl-total')).toHaveText('0 bodů');
+    await page.locator('#bowl-hit').click();
+    await step(450);
+    expect(await page.evaluate(() => __game.activities.bowling.round.frames.flat().length)).toBe(1);
+    await visit.click();
+    await page.locator('#pool-back').click();
+    expect(await page.evaluate(() => __game.activities.bowling.round.frames.flat().length)).toBe(1);
+    await page.locator('#bowl-leave').click();
+    await expect(page.locator('#bowling-panel')).toBeHidden();
+  } finally { await context.close(); }
+});

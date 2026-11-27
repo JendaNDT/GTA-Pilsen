@@ -1,6 +1,8 @@
 import * as THREE from 'three/webgpu';
 import { BALL_RADIUS, LANE_END, LANE_HALF, PIN_PROFILE } from '../physics/bowling-lane.js';
 
+import { createPoolModel } from './pool-table.js';
+
 function bowlingWood() {
   const canvas = document.createElement('canvas');
   canvas.width = 256; canvas.height = 1024;
@@ -138,5 +140,7 @@ export function createBowlingRoom() {
     guide.add(piece);
   }
   scene.add(guide);
-  return { scene, ball, pins, guide, camera: new THREE.PerspectiveCamera(48, 1, .08, 45) };
+  const pool = createPoolModel();
+  scene.add(pool.group);
+  return { scene, ball, pins, guide, pool, camera: new THREE.PerspectiveCamera(48, 1, .08, 45) };
 }

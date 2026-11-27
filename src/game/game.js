@@ -1100,7 +1100,7 @@ export class Game {
         if (this.activities.playingBowling) {
           const bowling = this.activities.bowling;
           const physicsStart = DEBUG ? performance.now() : 0;
-          bowling.lane.world.update(elapsed);
+          (bowling.pool.table ?? bowling.lane).world.update(elapsed);
           if (DEBUG) this.physicsMs = performance.now() - physicsStart;
           bowling.update(dt, input);
           if (DEBUG) this.logicMs = performance.now() - logicStart - this.physicsMs;

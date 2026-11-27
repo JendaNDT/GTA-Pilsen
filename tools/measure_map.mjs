@@ -16,7 +16,8 @@ const cabinTrip = cabinArg?.slice('--cabin-trip='.length) ??
   args.find(arg => arg.startsWith('--tram-trip='))?.slice('--tram-trip='.length) ?? PILOT_TRIP;
 const service = CABIN_SERVICES.find(item => item.trip === cabinTrip);
 if (cabin && !service) throw new Error('Neznámý průchozí spoj ' + cabinTrip);
-const work = cabin || rush || args.includes('--work');
+const pool = args.includes('--pool-practice');
+const work = pool || cabin || rush || args.includes('--work');
 const pilot = !cabin && !rush && (release || centerFlight || args.includes('--pilot'));
 if (cabin && (rush || release)) throw new Error('Jízdu v MHD měř samostatně.');
 if (rush && release) throw new Error('Špičku a vydání měř samostatně.');
@@ -36,7 +37,7 @@ const browser = await chromium.launch({
   ...(work && { channel: 'chromium', args: workFlags }),
 });
 const report = { browser: browser.version(), viewport: '1920 × 1080', pilot, centerFlight, coldStartMs: [] };
-const scenarios = cabin ? [{ name: service.type, mode: 'cabin' }] : rush ? [{ name: 'rush', mode: 'traffic', site: 'Klatovská třída' }] : release ? [
+const scenarios = pool ? [{ name: 'pool', mode: 'pool', site: 'U Papírny' }] : cabin ? [{ name: service.type, mode: 'cabin' }] : rush ? [{ name: 'rush', mode: 'traffic', site: 'Klatovská třída' }] : release ? [
   { name: 'car', mode: 'car', site: 'Plzeň' },
   { name: 'heli', mode: 'heli', site: 'Dobřív' },
   { name: 'carEast', mode: 'car', site: 'Hrádek' },
@@ -83,7 +84,13 @@ try {
       await page.getByRole('button', { name: 'Hrát', exact: true }).click();
       report[name] = await page.evaluate(async ({ mode, pilot, site, work, pilotTrip }) => {
         const game = window.__game, world = game.world;
-        if (mode === 'cabin') {
+        if (mode === 'pool') {
+          window.__freeze(true);
+          game.player.place(638, 1217);
+          game.doAction();
+          game.activities.bowling.pool.enter();
+          if (!game.activities.bowling.pool.table) throw new Error('Tréninkový stůl se neotevřel.');
+        } else if (mode === 'cabin') {
           window.__freeze(true);
           const error = game.startCabinRide(pilotTrip);
           if (error || !game.cabin) throw new Error(error || 'Při měření chybí cestující v interiéru.');
@@ -156,7 +163,7 @@ try {
         const start = [focus.x, focus.z];
         // Na stejné trase musí pilot i s převodovkou Jolt projet do další dlaždice.
         const pedal = game.driver ? 0.38 : 0.27;
-        window.__setInput(0, mode === 'traffic' || mode === 'cabin' ? 0 : mode === 'car' ? (pilot ? pedal : 0.55) : 1);
+        window.__setInput(0, mode === 'traffic' || mode === 'cabin' || mode === 'pool' ? 0 : mode === 'car' ? (pilot ? pedal : 0.55) : 1);
         const physicsTimes = [];
         const obstacleSearch = { calls:0, candidates:0, ms:0 };
         const vehicles = game.vehicles, originalLimit = vehicles._obstacleLimit;
@@ -170,7 +177,7 @@ try {
           return result;
         };
         let peakCars = 0, peakDriven = 0;
-        const physics = game.physics;
+        const physics = mode === 'pool' ? game.activities.bowling.pool.table.world : game.physics;
         const originalStep = physics?.step;
         if (work && physics) physics.step = (dt) => {
           const start = performance.now();
@@ -186,6 +193,13 @@ try {
         while (previous < until) {
           const now = await new Promise(requestAnimationFrame);
           frames.push(now - previous);
+          if (mode === 'pool') {
+            const practice = game.activities.bowling.pool;
+            if (!practice.table.rolling) {
+              practice.table.reset();
+              practice.action();
+            }
+          }
           chunks.add(world.chunkIndex(focus.x, focus.z));
           maxPending = Math.max(maxPending, game.chunks.pending);
           if (mode === 'traffic') {
@@ -241,7 +255,7 @@ try {
       : service?.type === 'trolleybus' ? 'data-raw/e60/trolejbus/jizda.json'
       : service?.type === 'bus' ? 'data-raw/e60/bus/jizda.json' : 'data-raw/e60/jizda.json';
     const output = args.find((arg) => arg.startsWith('--output='))?.slice('--output='.length)
-      ?? (cabin ? cabinOutput : rush ? 'data-raw/e20/vykon-spicka.json' : 'data-raw/e13/measure-work.json');
+      ?? (pool ? 'data-raw/e63/vykon.json' : cabin ? cabinOutput : rush ? 'data-raw/e20/vykon-spicka.json' : 'data-raw/e13/measure-work.json');
     await mkdir(dirname(output), { recursive: true });
     await writeFile(output, json);
   }

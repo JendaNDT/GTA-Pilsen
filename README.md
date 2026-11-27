@@ -21,6 +21,8 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 - **Minigolf ve Škodalandu.** U půjčovny za příjezdovou cestou stiskni F. Nastav směr a sílu, zahraj tři různé jamky a mezi nimi dojdi ke značce. Na každou jamku máš sedm úderů. Nejlepší součet za celou partii se uloží. [Postup a snímky](docs/E54.md)
 
+- **Kulečník U Papírny.** Vejdi do bowlingu na Papírnické 3 a vyber **Ke kulečníku**. U stolu můžeš trénovat strky do šesti kapes a kdykoli se vrátit k rozehrané dráze. [Ovládání a zkoušky](docs/E63.md)
+
 - **Pěšky do MHD po celé herní oblasti.** U otevřených dveří stiskni F. Všechny pravidelné tramvaje, autobusy i trolejbusy mají interiér podle herního modelu. V Tatře můžeš nastoupit do obou samostatných vozů, v článkové tramvaji mezi články projdeš za jízdy. Do trolejbusu nastupuj předními dveřmi. Pokud místo u výstupu zabírá auto, počkej, až odjede, nebo přejdi k jiným dveřím. [Ovládání a ověřené trasy](docs/E62.md)
 - **Průchozí tramvaj linky 1.** V hlavní nabídce nebo v pauze klikni na **Svézt se MHD → Tramvaj Tatra**. Tlačítko nastaví čas odjezdu a postaví tě přímo do uličky. Do prvního vozu spoje 685462 směrem na Bolevec můžeš nastoupit, projít se za jízdy, sednout si k oknu a v zastávce vystoupit jinými dveřmi. [Výběr spoje](docs/E61.md) · [Kde nastoupit a jak vůz ovládat](docs/E59.md)
 - **Článková tramvaj linky 1.** Tlačítko **Svézt se MHD → Článková tramvaj** tě postaví do předního článku spoje 685463. Uličkou můžeš projít až do zadního článku a v zastávce vystoupit jeho dveřmi. [Jízda článkovou tramvají](docs/E60.md)
@@ -395,7 +397,7 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 
 - Souřadnice stanovišť Pilsen Bike pocházejí z veřejného zdroje PMDP / Freebike ve formátu GBFS 3.0. Zdroj neuvádí vlastní licenci a specifikace pro tento případ uvádí CC0. Model elektrokola a označník vytvořil projekt Plzeň naplno. [Data stanovišť](https://pmdpbike.admin.freebike.com/api/gbfs/v30/station_information) · [Licencování ve specifikaci GBFS](https://github.com/MobilityData/gbfs/blob/v3.0/gbfs.md#system_informationjson)
 
-- Interiér bowlingu, dráha, koule a kuželky jsou vlastní tvorba projektu. Přístup vychází z adresy v městském sportovním katalogu, herní mapy OpenStreetMap (ODbL) a terénu ČÚZK (CC BY 4.0). [Bowling U Papírny v katalogu města](https://sport.plzen.cz/Sportoviste/d/bowling-u-papirny)
+- Interiér bowlingu, dráha, kuželky, kulečníkový stůl, tágo a koule jsou vlastní tvorba projektu. Přístup vychází z adresy v městském sportovním katalogu, herní mapy OpenStreetMap (ODbL) a terénu ČÚZK (CC BY 4.0). [Bowling U Papírny v katalogu města](https://sport.plzen.cz/Sportoviste/d/bowling-u-papirny)
 - Pěší přístup a umístění zkušební trasy ve Škodalandu vycházejí z OpenStreetMap (ODbL) a terénu ČÚZK (CC BY 4.0). Značení, trasa a modely drah minigolfu, překážek, půjčovny, vlajek a míčku jsou vlastní tvorba projektu Plzeň naplno. [Poloha a adresa areálu podle města](https://sport.plzen.eu/Sportoviste/d/skodaland-ceske-udoli)
 
 - Venkovní místa návratu u služeben jsou vlastní herní úpravou adresních bodů © ČÚZK, RÚIAN ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)), a stávající mapy OpenStreetMap. Názvy a působení byly porovnány s veřejnými adresáři policie a měst. [Přehled podkladů](docs/E46.md)
