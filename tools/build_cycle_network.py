@@ -63,11 +63,14 @@ def passable_node(tags):
             and tags.get("barrier") not in BLOCKING and tags.get("kerb") != "raised")
 
 
-def build(extract, stations):
+def build(extract, stations, whole_map=False):
     bx, ex, bz, ez = world_bounds(extract["bbox"])
-    coverage = [to_xz(p["lat"], p["lon"]) for p in stations]
-    x0, x1 = max(bx + ROAD_EDGE_MARGIN, min(p[0] for p in coverage) - 1500), min(ex - ROAD_EDGE_MARGIN, max(p[0] for p in coverage) + 1500)
-    z0, z1 = max(bz + ROAD_EDGE_MARGIN, min(p[1] for p in coverage) - 1500), min(ez - ROAD_EDGE_MARGIN, max(p[1] for p in coverage) + 1500)
+    x0, x1 = bx + ROAD_EDGE_MARGIN, ex - ROAD_EDGE_MARGIN
+    z0, z1 = bz + ROAD_EDGE_MARGIN, ez - ROAD_EDGE_MARGIN
+    if not whole_map:
+        coverage = [to_xz(p["lat"], p["lon"]) for p in stations]
+        x0, x1 = max(x0, min(p[0] for p in coverage) - 1500), min(x1, max(p[0] for p in coverage) + 1500)
+        z0, z1 = max(z0, min(p[1] for p in coverage) - 1500), min(z1, max(p[1] for p in coverage) + 1500)
     nodes, ways = {}, {}
     x, z, start, end, segment_way, allow, level, kind = [], [], [], [], [], [], [], []
 
@@ -134,11 +137,12 @@ def main():
     parser.add_argument("extract", type=Path, help="Místní výřez vytvořený skriptem extract_osm.py")
     parser.add_argument("stations", type=Path)
     parser.add_argument("output", type=Path)
+    parser.add_argument("--whole-map", action="store_true", help="Zahrnout celou hratelnou oblast včetně okolních obcí")
     args = parser.parse_args()
     with args.extract.open("rb") as source:
         extract = pickle.load(source)
     stations = json.loads(args.stations.read_text(encoding="utf-8"))["stations"]
-    header, arrays = build(extract, stations)
+    header, arrays = build(extract, stations, args.whole_map)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     write_pack(args.output, header, arrays)
     print(f"  {len(arrays['x'])} uzlů, {len(arrays['a'])} úseků, {len(header['restrictions'])} omezení odbočení")

@@ -3,7 +3,7 @@ import { CycleNetwork } from '../world/cycle-network.js';
 import { canJoin } from '../world/walking-map.js';
 import { BIKE_STATIONS } from './bike-stations.js';
 
-const OUTSIDE = 'Cyklistická navigace pokrývá Plzeň a nejbližší okolí.';
+const OUTSIDE = 'Cíl leží za hranicí cyklistické navigace herní mapy.';
 const NO_ROUTE = 'Průjezdnou trasu pro kolo se nepodařilo najít.';
 // U muzea vede výjezd kolem vybavení před veřejným vstupem do Kopeckého sadů.
 const MUSEUM_ID = '43';

@@ -54,6 +54,10 @@ test('distribuovaná cyklistická síť používá stejnou revizi OSM jako hern�
   const p = parsePack(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
   const meta = JSON.parse(readFileSync(new URL('../public/data/meta.json', import.meta.url), 'utf8'));
   assert.equal(p.header.osmTimestamp, meta.osmTimestamp);
+  const { minX, minZ, maxX, maxZ } = meta.bounds;
+  for (const [i, bound] of [minX, minZ, maxX, maxZ].entries()) {
+    assert.ok(Math.abs(p.header.bounds[i] - bound) < 50);
+  }
   assert.ok(p.a.length > 50_000);
   assert.equal(p.a.length, p.b.length);
   assert.equal(p.a.length, p.way.length);

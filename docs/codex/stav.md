@@ -1,3 +1,7 @@
+# E69 · Rozvoz pizzy v celé herní oblasti
+
+Větev `etapa/E69` navazuje na `38f2ed6`. První krok rozšířil cyklistickou síť na 129 445 uzlů a 136 054 úseků. Prošlo sestavení, 421 zkoušek JavaScriptu, 34 Pythonu (jedna přeskočena) a čtyři zkoušky původní cyklistické navigace ve WebGPU. Následuje výběr pizzerií a cílových adres. [Zadání](E69.md)
+
 # E68 · První rozvoz pizzy na kole
 
 Na větvi `etapa/E68` z revize `b1b8c8c` je hratelná první zakázka z Rud’s Pizza do Prokopovy 25. Hráč vyzvedne krabici, jede podle vlastní volby, sesedne na chodníku a pěšky potvrdí předání. Prošlo produkční sestavení, 421 testů JavaScriptu, 34 zkoušek Pythonu (jedna další přeskočena), čtyři prohlížečové zkoušky rozvozu a čtyři zkoušky sdílených kol. Při jízdě na nízkou předvolbu ve Full HD bylo naměřeno 59,1 FPS. Příští krok je doplnit zbývajících pět adres. [Zadání](E68.md) · [Zkoušky, snímky a výkon](../E68.md)
