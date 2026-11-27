@@ -1,3 +1,4 @@
+import { SERIES_LENGTH } from './target-practice.js';
 import { validGolfRecord } from './minigolf-rules.js';
 import { validBowlingRecord } from './bowling-rules.js';
 
@@ -20,6 +21,7 @@ export function parseSave(raw) {
     Number.isSafeInteger(value) && value >= 0));
   if (!validGolfRecord(stats.minigolfBest)) delete stats.minigolfBest;
   if (!validBowlingRecord(stats.bowlingBest)) delete stats.bowlingBest;
+  if (stats.targetSeriesBest > SERIES_LENGTH) delete stats.targetSeriesBest;
   const pursuit = s.pursuit;
   return {
     ...s,

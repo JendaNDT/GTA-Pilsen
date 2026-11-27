@@ -94,3 +94,104 @@ for (const touch of [false, true]) {
     } finally { await context.close(); }
   });
 }
+
+for (const touch of [false, true]) {
+  test('E58 – dohrát sérii, opakovat ji a načíst rekord · ' + (touch ? 'dotyk' : 'myš'), async ({ browser }, info) => {
+    const context = await browser.newContext(touch
+      ? { isMobile: true, hasTouch: true, viewport: { width: 320, height: 568 } } : {});
+    try {
+      const page = await context.newPage();
+      await page.goto(gameUrl('/?debug&quality=low&view=350&hour=12'));
+      await waitForGame(page);
+      await page.getByRole('button', { name: 'Hrát', exact: true }).click();
+      await page.evaluate(() => {
+        __freeze(true);
+        __game.player.place(2874, 1142);
+        for (let i = 0; i < 25; i++) __game.colliders.update(2874, 1142);
+        __step(1/60, 15);
+        __game.doAction();
+      });
+      const press = name => {
+        const button = page.getByRole('button', { name, exact: true });
+        return touch ? button.tap() : button.click();
+      };
+      const advance = frames => page.evaluate(n => __step(.02, n), frames);
+      const best = () => page.evaluate(() => JSON.parse(localStorage.getItem('plzen-naplno-v1')).stats.targetSeriesBest);
+      const field = page.locator('#target-field');
+      const playTarget = async hit => {
+        const box = await (hit ? page.locator('#target-disc') : field).boundingBox();
+        const x = box.x + (hit ? box.width / 2 : 4);
+        const y = box.y + (hit ? box.height / 2 : 4);
+        if (touch) {
+          await page.touchscreen.tap(x, y);
+          await press('Zasáhnout');
+        } else await page.mouse.click(x, y);
+      };
+      await press('Série deseti terčů');
+      await page.screenshot({ path: info.outputPath('serie.jpg') });
+      await playTarget(true);
+      await press('Zpět do města');
+      expect(await best()).toBeUndefined();
+      await page.evaluate(() => __game.doAction());
+      await press('Série deseti terčů');
+      // První terč vyprší, druhý hráč mine, dalších osm zasáhne.
+      await advance(251);
+      await expect(page.locator('#target-feedback')).toHaveText('Čas vypršel');
+      for (let number = 2; number <= 10; number++) {
+        await advance(33);
+        await expect(page.locator('#target-attempts')).toHaveText(String(number));
+        await playTarget(number > 2);
+      }
+      await expect(page.locator('#target-score')).toHaveText('8 / 10');
+      await expect(page.locator('#target-record')).toHaveText('Osobní rekord: 8 / 10');
+      await page.screenshot({ path: info.outputPath('vysledek.jpg') });
+      expect(await best()).toBe(8);
+      await press('Hrát znovu');
+      await advance(2900);
+      await expect(page.locator('#target-score')).toHaveText('0 / 10');
+      expect(await best()).toBe(8);
+      await press('Volný trénink');
+      await expect(page.getByRole('heading', { name: 'Volný trénink' })).toBeVisible();
+      await page.reload();
+      await waitForGame(page);
+      expect(await page.evaluate(() => __game.stats.targetSeriesBest)).toBe(8);
+      expect(await page.evaluate(() => Math.hypot(__game.player.x-2874, __game.player.z-1142))).toBeLessThan(3);
+    } finally { await context.close(); }
+  });
+}
+
+test('E58 – zopakovat zápis nového rekordu po selhání úložiště', async ({ page }) => {
+  await page.goto(gameUrl('/?debug&quality=low&view=350&hour=12'));
+  await waitForGame(page);
+  await page.getByRole('button', { name: 'Hrát', exact: true }).click();
+  await page.evaluate(() => {
+    __freeze(true);
+    __game.player.place(2874, 1142);
+    for (let i = 0; i < 25; i++) __game.colliders.update(2874, 1142);
+    __step(1/60, 15);
+    __game.doAction();
+  });
+  await page.getByRole('button', { name: 'Série deseti terčů' }).click();
+  await page.evaluate(() => __step(1/60, 3600));
+  await expect(page.locator('#target-record')).toHaveText('Osobní rekord: 0 / 10');
+  await page.getByRole('button', { name: 'Hrát znovu' }).click();
+  const box = await page.locator('#target-disc').boundingBox();
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await page.evaluate(() => {
+    const write = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (key === 'plzen-naplno-v1' && JSON.parse(value).stats?.targetSeriesBest === 1) {
+        Storage.prototype.setItem = write;
+        throw new Error('Zkušební chyba zápisu');
+      }
+      return write.call(this, key, value);
+    };
+    __step(1/60, 3600);
+  });
+  await expect(page.locator('#target-save-message')).toContainText('Uložení selhalo');
+  await expect(page.locator('#target-score')).toHaveText('1 / 10');
+  await expect(page.locator('#target-record')).toHaveText('Osobní rekord: 0 / 10');
+  await page.getByRole('button', { name: 'Zkusit uložit znovu' }).click();
+  await expect(page.locator('#target-record')).toHaveText('Osobní rekord: 1 / 10');
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('plzen-naplno-v1')).stats.targetSeriesBest)).toBe(1);
+});

@@ -21,7 +21,7 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 - **Minigolf ve Škodalandu.** U půjčovny za příjezdovou cestou stiskni F. Nastav směr a sílu, zahraj tři různé jamky a mezi nimi dojdi ke značce. Na každou jamku máš sedm úderů. Nejlepší součet za celou partii se uloží. [Postup a snímky](docs/E54.md)
 
-- **Sportovní terče v Lobzích.** Na mapě vyhledej „terče“ a dojdi ke značce u ulice Ke Střelnici. Ve volném tréninku klikej na pohyblivý oranžový kotouč. Na telefonu nejdřív nastav kroužek prstem a potom klepni na **Zasáhnout**. [Vstup, ovládání a snímky](docs/E58.md)
+- **Sportovní terče v Lobzích.** Na mapě vyhledej „terče“ a dojdi ke značce u ulice Ke Střelnici. Ve volném tréninku klikej na pohyblivý oranžový kotouč. Na telefonu nejdřív nastav kroužek prstem a potom klepni na **Zasáhnout**. V **Sérii deseti terčů** máš na každý kotouč pět sekund a jeden pokus. Po dokončení se uloží tvůj nejlepší výsledek. [Volný trénink](docs/E58.md) · [Bodovaná série](docs/E58-serie.md)
 
 - **Kulečník U Papírny.** Vejdi do bowlingu na Papírnické 3 a zvol **Ke kulečníku**. Na výběr máš **Trénink**, osmičku **Proti počítači** nebo osmičku **Pro dva** na jednom telefonu. Kliknutím nebo dotykem na stole zamiř bílou kouli, nastav sílu a zvol **Strčit**. Při míření v osmičce ukazuje koule vedle údaje o tahu tvou skupinu. K rozehrané dráze se můžeš kdykoli vrátit. [Výběr režimu](docs/E66.md) · [Trénink](docs/E63.md) · [Pravidla osmičky](docs/E64.md) · [Hra proti počítači](docs/E65.md)
 

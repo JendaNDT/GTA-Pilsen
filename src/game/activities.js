@@ -78,7 +78,7 @@ export class Activities {
       this.active = null;
       g.hud.toast(g.saveError, 'bad');
     } else if (this.playingTargets) {
-      this.targets ??= new TargetPractice(() => this.end('cancelled'));
+      this.targets ??= new TargetPractice(g, () => this.end('cancelled'));
       this.targets.start();
     } else if (this.playingGolf) {
       this.golf.start();

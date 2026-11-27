@@ -598,3 +598,14 @@ body.touch .bowl-actions kbd { display: none; }
 .target-touch-help { display: none; }
 @media (any-pointer: coarse) { .target-mouse-help { display: none; } .target-touch-help { display: inline; } }
 @media (max-height: 430px) { .target-card { padding: 10px 16px; } #target-field { margin-top: 6px; height: 39dvh; } #target-help { margin: 4px 0; } }
+
+.target-series-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; font-size: .9rem; }
+#target-series, #target-retry { color: #ffd389; border-color: #b59d6d; }
+#target-timer, #target-score { font-variant-numeric: tabular-nums; }
+#target-series-rules { font-size: .85rem; margin: 8px 0 12px; color: #d6e7d1; }
+#target-result:not([hidden]) { display: grid; justify-items: center; gap: 6px; padding: 24px 12px; margin-top: 12px;
+  color: #163635; background: #c2d7b3; border-radius: 8px; }
+#target-score { font-size: clamp(38px, 7vw, 64px); line-height: 1.1; }
+#target-result button { color: #173937; border-color: #526b63; }
+.target-card:has(#target-result:not([hidden])) dl { display: none; }
+#target-result { margin-bottom: 12px; }

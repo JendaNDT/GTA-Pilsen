@@ -309,7 +309,7 @@ async function boot() {
       } else if (game.activities.interrupted) {
         game.hud.toast(game.activities.interruptedGolf ? 'Minigolf byl při načtení přerušen.'
           : game.activities.interrupted.bowling ? 'Bowling byl při načtení přerušen.'
-          : game.activities.interrupted.targets ? 'Trénink v Lobzích byl při načtení přerušen.'
+          : game.activities.interrupted.targets ? 'Po načtení jsi zpět u terčů v Lobzích.'
           : 'Zkušební trasa byla při načtení přerušena.', '', 5800);
       } else if (game.bikes.interrupted) {
         game.hud.toast('Půjčené elektrokolo se vrátilo na výchozí stanoviště.', '', 5800);

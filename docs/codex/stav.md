@@ -1,3 +1,7 @@
+# E58 · Série deseti terčů
+
+Na větvi `etapa/E58` navazuje na revizi `864274a` bodovaná série. Každý z deseti terčů má limit pěti sekund a jeden pokus. Po posledním terči lze hrát znovu nebo se vrátit do volného tréninku. Dokončená série může zlepšit osobní rekord v uložené hře. Prošlo sestavení, 427 testů JavaScriptu a deset různých cílených zkoušek v prohlížeči. Série běžela při 60 FPS. Dalším krokem je zkusit časový limit na fyzickém telefonu. [Zadání](E58.md) · [Pravidla a ověření](../E58-serie.md)
+
 # E58 · Volný trénink terčů v Lobzích
 
 Na větvi `etapa/E58` z revize `b2c8a60` je hratelný první krok. Z mapy lze dojít po pěšině ke vstupu, vyzkoušet jeden pohyblivý terč a vrátit se do města. Trénink počítá zásahy a pokusy. V obou vykreslovačích prošel průchod s myší i s emulovaným dotykem. Sestavení a 424 testů JavaScriptu prošlo. Zbývá zkouška na fyzickém telefonu. Doporučené pokračování je série deseti terčů s osobním rekordem. [Zadání](E58.md) · [Ovládání, snímky a výkon](../E58.md)
