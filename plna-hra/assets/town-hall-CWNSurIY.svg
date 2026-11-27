@@ -1,0 +1,689 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1680" height="1700" viewBox="0 0 840 850">
+<defs>
+  <linearGradient id="lime" x2=".8" y2="1"><stop stop-color="#aa9b80"/><stop offset=".41" stop-color="#a29275"/><stop offset="1" stop-color="#8f816c"/></linearGradient>
+  <linearGradient id="ash" x2=".07" y2="1"><stop stop-color="#75665d"/><stop offset=".21" stop-color="#6b5d55"/><stop offset="1" stop-color="#63554f"/></linearGradient>
+  <linearGradient id="glass" x2=".45" y2="1"><stop stop-color="#626767"/><stop offset=".47" stop-color="#303b41"/><stop offset="1" stop-color="#202829"/></linearGradient>
+  <pattern id="rustika" width="82" height="23" patternUnits="userSpaceOnUse"><rect width="82" height="23" fill="url(#ash)"/><path d="M0 .8h82M0 12.3h82M21 1v10M62 13v10" fill="none" stroke="#473c37" stroke-width="1.5"/><path d="M0 2h82M0 13.6h82M22 2v8M63 14v8" fill="none" stroke="#8c7b6e" stroke-width=".8"/></pattern>
+  <pattern id="cihla" width="17" height="8" patternUnits="userSpaceOnUse"><rect width="17" height="8" fill="#945b48"/><path d="M0 0h9v3.8H0z" fill="#a06851"/><path d="M4 4h8v4H4z" fill="#895546"/><path d="M0 4h17M0 0h17M9 0v4m-5 0v4" stroke="#715044" stroke-width=".48" fill="none"/></pattern>
+  <pattern id="rytiny" width="11" height="13" patternUnits="userSpaceOnUse"><path d="M0 11l5-4m-1 6l5-4m0-6l2-2M1 3l3-2" fill="none" stroke="#625b50" opacity=".48" stroke-width=".65"/></pattern>
+  <pattern id="vlysek" width="13" height="8" patternUnits="userSpaceOnUse"><rect width="13" height="8" fill="#ab9c80"/><path d="M0 6Q3-1 6 4T13 2M2 3q4-4 7 0M5 6l2-3" fill="none" stroke="#675f50" stroke-width="1.2"/></pattern>
+  <pattern id="rozeta" width="42" height="36" patternUnits="userSpaceOnUse"><path d="M0 18Q10 1 21 16Q32 27 39 15Q41 8 34 7Q28 7 30 12Q35 16 36 10M0 18Q9 30 16 25Q20 21 16 18M21 16Q14 4 18 2Q25 1 24 12" fill="none" stroke="#695f51" stroke-width="1.4"/><path d="M1 18q9-14 18-3m5 5q11 9 16-4" stroke="#d4c6a9" fill="none" stroke-width="1"/></pattern>
+  <pattern id="kovani" width="7" height="6" patternUnits="userSpaceOnUse"><path d="M0 0v6M0 0h7" stroke="#9a9585" stroke-width="1.1" fill="none"/></pattern>
+  <g id="postava">
+    <path d="M-10 43q4-12 5-21l-3-12-5 7-5 4-3-3 7-9 6-16 4-2 6 1 8 7 6 9-3 2-9-8 1 10 6 13 3 18-10 3-5-2-8 1z" fill="#c9baa0" stroke="#695e4e" stroke-width="1.5"/>
+    <path d="M-9-4q-5-8 2-13 7-3 9 5l-2 9-3 1-2 5z" fill="#ccbda1" stroke="#665c4e" stroke-width="1.3"/><path d="M-9-10q-3-9 6-10 6 0 6 8l-4-2-3 3-4 3z" fill="#756a57"/>
+    <path d="M-4 2q7 5 10 2m-12 1q2 11 11 14M-7 12q4 6 11 9m-4-8l3 11 7 16M-3 18l-2 21m4-15l2 15m3-11l3 10M5 1l5 4m-5-16h2m-10 0h2m0 4l3 1" stroke="#756a56" stroke-width="1.1" fill="none"/>
+    <path d="M-10 46h22l3 3h-29z" fill="#867961" stroke="#d0c1a2"/>
+  </g>
+  <g id="stit"><path d="M-13-12Q0-8 13-12l-1 14q-2 9-12 14Q-12 10-12 2z" fill="#c7b99e" stroke="#61594e" stroke-width="1.6"/><path d="M-10-7q10 2 20 0v7Q8 9 0 12Q-8 7-10 1z" fill="#887d68"/><path d="M-6-1l5-3 2 3 5-2-2 6-5 3-4-2z" fill="#c9bda3"/><path d="M-16-9q-9-1-6 6l6 2m31-8q10 0 7 6l-6 2" fill="none" stroke="#736753" stroke-width="2"/></g>
+  <pattern id="tasky" width="6" height="6" patternUnits="userSpaceOnUse">
+    <rect width="6" height="6" fill="#9a4e36"/><path d="M0 0v1.5q1.5 2.1 3 0V0m0 0v1.5q1.5 2.1 3 0V0M-1.5 3v1.5q1.5 2.1 3 0V3m0 0v1.5q1.5 2.1 3 0V3m0 0v1.5q1.5 2.1 3 0V3" fill="#a95a40" stroke="#7e4637" stroke-width=".45"/>
+  </pattern>
+  <pattern id="drobneCihly" patternUnits="userSpaceOnUse" width="17" height="8" patternTransform="scale(.22 .33)" xlink:href="#cihla"/>
+  <pattern id="listovi" width="45" height="56" patternUnits="userSpaceOnUse">
+    <path d="M23 56q-9-10-1-24t-2-22q-5-8 1-10m2 43q3-12 15-17-1 8-8 11l-7 6m-3-20Q7 24 4 13q11 0 16 10m4-9q2-9 10-11 1 6-10 11M20 48Q6 45 7 36q7 1 13 12" fill="none" stroke="#746954" stroke-width="1"/>
+    <path d="M23 53q-7-9 0-22m-5-7L5 14m20 24l11-11" fill="none" stroke="#d2c4a5" stroke-width="1.1"/>
+  </pattern>
+  <g id="nika">
+    <path d="M-19 49v-53q1-21 19-25 18 3 19 25v53M-16 48v-49q0-20 16-24 16 4 16 22v51" fill="none" stroke="#776b56" stroke-width="1.1"/>
+    <path d="M-18-3l8-11m-5 3l9-10m-2 8l6-9m6 9l-2-9m6 10l-4-9m9 13l-6-10m9 14l-7-9" fill="none" stroke="#978a6e" stroke-width=".95"/>
+    <path d="M-21 49h42l-4 3h-34z" fill="#a08e70" stroke="#776a54"/>
+  </g>
+</defs>
+<rect x="0" y="0" width="840" height="850" fill="url(#rustika)" />
+<rect x="27" y="50" width="626" height="153" fill="url(#cihla)" />
+<rect x="30" y="181" width="620" height="398" fill="url(#lime)" />
+<rect x="30" y="181" width="620" height="398" fill="url(#rytiny)" />
+<rect x="30" y="209" width="620" height="365" fill="url(#listovi)" opacity=".83"/>
+<rect x="22" y="212" width="636" height="8" fill="url(#vlysek)" />
+<rect x="22" y="302" width="636" height="6" fill="url(#vlysek)" />
+<rect x="22" y="309" width="636" height="25" fill="url(#rozeta)" />
+<rect x="22" y="398" width="636" height="8" fill="url(#vlysek)" />
+<rect x="22" y="564" width="636" height="10" fill="url(#vlysek)" />
+<use xlink:href="#nika" transform="translate(163 253) scale(0.65 0.71)"/>
+<use xlink:href="#postava" transform="translate(163 253) scale(0.65 0.71)"/>
+<use xlink:href="#nika" transform="translate(163 464) scale(0.65 1.55)"/>
+<use xlink:href="#postava" transform="translate(163 464) scale(0.65 1.55)"/>
+<use xlink:href="#nika" transform="translate(266 253) scale(-0.65 0.71)"/>
+<use xlink:href="#postava" transform="translate(266 253) scale(-0.65 0.71)"/>
+<use xlink:href="#nika" transform="translate(266 464) scale(-0.65 1.55)"/>
+<use xlink:href="#postava" transform="translate(266 464) scale(-0.65 1.55)"/>
+<use xlink:href="#nika" transform="translate(390 253) scale(0.65 0.71)"/>
+<use xlink:href="#postava" transform="translate(390 253) scale(0.65 0.71)"/>
+<use xlink:href="#nika" transform="translate(390 464) scale(0.65 1.55)"/>
+<use xlink:href="#postava" transform="translate(390 464) scale(0.65 1.55)"/>
+<use xlink:href="#nika" transform="translate(502 253) scale(-0.65 0.71)"/>
+<use xlink:href="#postava" transform="translate(502 253) scale(-0.65 0.71)"/>
+<use xlink:href="#nika" transform="translate(502 464) scale(-0.65 1.55)"/>
+<use xlink:href="#postava" transform="translate(502 464) scale(-0.65 1.55)"/>
+<use xlink:href="#stit" transform="translate(63 323) scale(0.63 0.63)"/>
+<use xlink:href="#stit" transform="translate(164 323) scale(0.63 0.63)"/>
+<use xlink:href="#stit" transform="translate(270 323) scale(0.63 0.63)"/>
+<use xlink:href="#stit" transform="translate(400 323) scale(0.63 0.63)"/>
+<use xlink:href="#stit" transform="translate(504 323) scale(0.63 0.63)"/>
+<use xlink:href="#stit" transform="translate(616 323) scale(0.63 0.63)"/>
+<rect x="48" y="355" width="30" height="31" fill="#c3b496" />
+<rect x="54.0" y="361" width="18" height="0.85" fill="#867c69" />
+<rect x="51.0" y="365" width="24" height="0.85" fill="#867c69" />
+<rect x="53.0" y="369" width="20" height="0.85" fill="#867c69" />
+<rect x="52.0" y="373" width="22" height="0.85" fill="#867c69" />
+<rect x="55.0" y="377" width="16" height="0.85" fill="#867c69" />
+<rect x="149" y="355" width="30" height="31" fill="#c3b496" />
+<rect x="155.0" y="361" width="18" height="0.85" fill="#867c69" />
+<rect x="152.0" y="365" width="24" height="0.85" fill="#867c69" />
+<rect x="154.0" y="369" width="20" height="0.85" fill="#867c69" />
+<rect x="153.0" y="373" width="22" height="0.85" fill="#867c69" />
+<rect x="156.0" y="377" width="16" height="0.85" fill="#867c69" />
+<rect x="256" y="355" width="30" height="31" fill="#c3b496" />
+<rect x="262.0" y="361" width="18" height="0.85" fill="#867c69" />
+<rect x="259.0" y="365" width="24" height="0.85" fill="#867c69" />
+<rect x="261.0" y="369" width="20" height="0.85" fill="#867c69" />
+<rect x="260.0" y="373" width="22" height="0.85" fill="#867c69" />
+<rect x="263.0" y="377" width="16" height="0.85" fill="#867c69" />
+<rect x="385" y="355" width="30" height="31" fill="#c3b496" />
+<rect x="391.0" y="361" width="18" height="0.85" fill="#867c69" />
+<rect x="388.0" y="365" width="24" height="0.85" fill="#867c69" />
+<rect x="390.0" y="369" width="20" height="0.85" fill="#867c69" />
+<rect x="389.0" y="373" width="22" height="0.85" fill="#867c69" />
+<rect x="392.0" y="377" width="16" height="0.85" fill="#867c69" />
+<rect x="489" y="355" width="30" height="31" fill="#c3b496" />
+<rect x="495.0" y="361" width="18" height="0.85" fill="#867c69" />
+<rect x="492.0" y="365" width="24" height="0.85" fill="#867c69" />
+<rect x="494.0" y="369" width="20" height="0.85" fill="#867c69" />
+<rect x="493.0" y="373" width="22" height="0.85" fill="#867c69" />
+<rect x="496.0" y="377" width="16" height="0.85" fill="#867c69" />
+<rect x="601" y="355" width="30" height="31" fill="#c3b496" />
+<rect x="607.0" y="361" width="18" height="0.85" fill="#867c69" />
+<rect x="604.0" y="365" width="24" height="0.85" fill="#867c69" />
+<rect x="606.0" y="369" width="20" height="0.85" fill="#867c69" />
+<rect x="605.0" y="373" width="22" height="0.85" fill="#867c69" />
+<rect x="608.0" y="377" width="16" height="0.85" fill="#867c69" />
+<rect x="30" y="180" width="15" height="398" fill="url(#rustika)" />
+<rect x="635" y="180" width="15" height="398" fill="url(#rustika)" />
+<rect x="46" y="71" width="3" height="92" fill="#785040" />
+<rect x="48" y="70" width="5" height="4" fill="#65463c" />
+<rect x="151" y="71" width="3" height="92" fill="#785040" />
+<rect x="153" y="70" width="5" height="4" fill="#65463c" />
+<rect x="258" y="71" width="3" height="92" fill="#785040" />
+<rect x="260" y="70" width="5" height="4" fill="#65463c" />
+<rect x="386" y="71" width="3" height="92" fill="#785040" />
+<rect x="388" y="70" width="5" height="4" fill="#65463c" />
+<rect x="493" y="71" width="3" height="92" fill="#785040" />
+<rect x="495" y="70" width="5" height="4" fill="#65463c" />
+<rect x="610" y="71" width="3" height="92" fill="#785040" />
+<rect x="612" y="70" width="5" height="4" fill="#65463c" />
+<rect x="121" y="117" width="26" height="37" fill="#a58167" />
+<rect x="124" y="121" width="20" height="33" fill="#383630" />
+<rect x="125" y="126" width="18" height="1.1" fill="#706757" />
+<rect x="125" y="130" width="18" height="1.1" fill="#706757" />
+<rect x="125" y="134" width="18" height="1.1" fill="#706757" />
+<rect x="125" y="138" width="18" height="1.1" fill="#706757" />
+<rect x="125" y="142" width="18" height="1.1" fill="#706757" />
+<rect x="125" y="146" width="18" height="1.1" fill="#706757" />
+<rect x="125" y="150" width="18" height="1.1" fill="#706757" />
+<rect x="530" y="117" width="26" height="37" fill="#a58167" />
+<rect x="533" y="121" width="20" height="33" fill="#383630" />
+<rect x="534" y="126" width="18" height="1.1" fill="#706757" />
+<rect x="534" y="130" width="18" height="1.1" fill="#706757" />
+<rect x="534" y="134" width="18" height="1.1" fill="#706757" />
+<rect x="534" y="138" width="18" height="1.1" fill="#706757" />
+<rect x="534" y="142" width="18" height="1.1" fill="#706757" />
+<rect x="534" y="146" width="18" height="1.1" fill="#706757" />
+<rect x="534" y="150" width="18" height="1.1" fill="#706757" />
+<rect x="22" y="51" width="636" height="5" fill="#57453c" />
+<rect x="22" y="58" width="636" height="4" fill="#765b48" />
+<rect x="22" y="162" width="636" height="5" fill="#614c41" />
+<rect x="22" y="167" width="636" height="4" fill="#453b36" />
+<rect x="22" y="171" width="636" height="5" fill="#927960" />
+<rect x="22" y="177" width="636" height="9" fill="url(#vlysek)" />
+<rect x="22" y="187" width="636" height="4" fill="#685b4d" />
+<rect x="22" y="191" width="636" height="3" fill="#c7baa0" />
+<rect x="22" y="573" width="636" height="5" fill="#534c43" />
+<rect x="22" y="578" width="636" height="4" fill="#847669" />
+<rect x="22" y="582" width="636" height="3" fill="#504640" />
+<g transform="translate(111 231)">
+<rect x="-31.5" y="-4" width="63" height="67" fill="#796b58" />
+<rect x="-29.5" y="-2" width="59" height="63" fill="#b4a388" />
+<rect x="-26.5" y="0" width="53" height="59" fill="#453d34" />
+<rect x="-23.0" y="3.5" width="46" height="52" fill="url(#glass)" />
+<rect x="-14.45" y="2" width="2.4" height="55" fill="#574b3e" />
+<rect x="-1.2" y="2" width="2.4" height="55" fill="#82715d" />
+<rect x="12.05" y="2" width="2.4" height="55" fill="#574b3e" />
+<rect x="-23.5" y="18.88" width="47" height="1.8" fill="#756656" />
+<rect x="-23.5" y="37.76" width="47" height="1.8" fill="#756656" />
+<rect x="-32.5" y="59" width="65" height="3" fill="#a38e74" />
+<rect x="-31.5" y="62" width="63" height="2" fill="#655a4c" />
+<path d="M-34.5 -8h69l-3 5h-63z" fill="#594b3e" stroke="none" stroke-width="1"/>
+</g>
+<g transform="translate(111 354)">
+<rect x="-23.5" y="-4" width="47" height="47" fill="#796b58" />
+<rect x="-21.5" y="-2" width="43" height="43" fill="#b4a388" />
+<rect x="-18.5" y="0" width="37" height="39" fill="#453d34" />
+<rect x="-15.0" y="3.5" width="30" height="32" fill="url(#glass)" />
+<rect x="-14.5" y="6" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="10" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="14" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="18" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="22" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="26" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="30" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="34" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="6" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="10" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="14" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="18" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="22" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="26" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="30" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="34" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-1.2" y="2" width="2.4" height="35" fill="#82715d" />
+<rect x="-15.5" y="12.48" width="31" height="1.8" fill="#756656" />
+<rect x="-15.5" y="24.96" width="31" height="1.8" fill="#756656" />
+<rect x="-24.5" y="39" width="49" height="3" fill="#a38e74" />
+<rect x="-23.5" y="42" width="47" height="2" fill="#655a4c" />
+<path d="M-26.5 -8h53l-3 5h-47z" fill="#594b3e" stroke="none" stroke-width="1"/>
+</g>
+<g transform="translate(111 464)">
+<rect x="-26.5" y="-4" width="53" height="109" fill="#796b58" />
+<rect x="-24.5" y="-2" width="49" height="105" fill="#b4a388" />
+<rect x="-21.5" y="0" width="43" height="101" fill="#453d34" />
+<rect x="-18.0" y="3.5" width="36" height="94" fill="url(#glass)" />
+<rect x="-1.2" y="2" width="2.4" height="97" fill="#82715d" />
+<rect x="-18.5" y="32.32" width="37" height="1.8" fill="#756656" />
+<rect x="-18.5" y="64.64" width="37" height="1.8" fill="#756656" />
+<rect x="-27.5" y="101" width="55" height="3" fill="#a38e74" />
+<rect x="-26.5" y="104" width="53" height="2" fill="#655a4c" />
+<path d="M-29.5 -8h59l-3 5h-53z" fill="#594b3e" stroke="none" stroke-width="1"/>
+<path d="M-34.5 -10L0 -27l34.5 17z" fill="#766b5b" stroke="#c6b89d" stroke-width="1.5"/>
+<path d="M-27.5 -12L0 -23l27.5 11z" fill="url(#rozeta)" stroke="none" stroke-width="1"/>
+</g>
+<g transform="translate(213 231)">
+<rect x="-31.5" y="-4" width="63" height="67" fill="#796b58" />
+<rect x="-29.5" y="-2" width="59" height="63" fill="#b4a388" />
+<rect x="-26.5" y="0" width="53" height="59" fill="#453d34" />
+<rect x="-23.0" y="3.5" width="46" height="52" fill="url(#glass)" />
+<rect x="-14.45" y="2" width="2.4" height="55" fill="#574b3e" />
+<rect x="-1.2" y="2" width="2.4" height="55" fill="#82715d" />
+<rect x="12.05" y="2" width="2.4" height="55" fill="#574b3e" />
+<rect x="-23.5" y="18.88" width="47" height="1.8" fill="#756656" />
+<rect x="-23.5" y="37.76" width="47" height="1.8" fill="#756656" />
+<rect x="-32.5" y="59" width="65" height="3" fill="#a38e74" />
+<rect x="-31.5" y="62" width="63" height="2" fill="#655a4c" />
+<path d="M-34.5 -8h69l-3 5h-63z" fill="#594b3e" stroke="none" stroke-width="1"/>
+</g>
+<g transform="translate(213 354)">
+<rect x="-23.5" y="-4" width="47" height="47" fill="#796b58" />
+<rect x="-21.5" y="-2" width="43" height="43" fill="#b4a388" />
+<rect x="-18.5" y="0" width="37" height="39" fill="#453d34" />
+<rect x="-15.0" y="3.5" width="30" height="32" fill="url(#glass)" />
+<rect x="-14.5" y="6" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="10" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="14" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="18" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="22" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="26" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="30" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="34" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="6" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="10" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="14" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="18" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="22" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="26" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="30" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="34" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-1.2" y="2" width="2.4" height="35" fill="#82715d" />
+<rect x="-15.5" y="12.48" width="31" height="1.8" fill="#756656" />
+<rect x="-15.5" y="24.96" width="31" height="1.8" fill="#756656" />
+<rect x="-24.5" y="39" width="49" height="3" fill="#a38e74" />
+<rect x="-23.5" y="42" width="47" height="2" fill="#655a4c" />
+<path d="M-26.5 -8h53l-3 5h-47z" fill="#594b3e" stroke="none" stroke-width="1"/>
+</g>
+<g transform="translate(213 464)">
+<rect x="-26.5" y="-4" width="53" height="109" fill="#796b58" />
+<rect x="-24.5" y="-2" width="49" height="105" fill="#b4a388" />
+<rect x="-21.5" y="0" width="43" height="101" fill="#453d34" />
+<rect x="-18.0" y="3.5" width="36" height="94" fill="url(#glass)" />
+<rect x="-1.2" y="2" width="2.4" height="97" fill="#82715d" />
+<rect x="-18.5" y="32.32" width="37" height="1.8" fill="#756656" />
+<rect x="-18.5" y="64.64" width="37" height="1.8" fill="#756656" />
+<rect x="-27.5" y="101" width="55" height="3" fill="#a38e74" />
+<rect x="-26.5" y="104" width="53" height="2" fill="#655a4c" />
+<path d="M-29.5 -8h59l-3 5h-53z" fill="#594b3e" stroke="none" stroke-width="1"/>
+<path d="M-34.5 -10L0 -27l34.5 17z" fill="#766b5b" stroke="#c6b89d" stroke-width="1.5"/>
+<path d="M-27.5 -12L0 -23l27.5 11z" fill="url(#rozeta)" stroke="none" stroke-width="1"/>
+</g>
+<g transform="translate(340 231)">
+<rect x="-31.5" y="-4" width="63" height="67" fill="#796b58" />
+<rect x="-29.5" y="-2" width="59" height="63" fill="#b4a388" />
+<rect x="-26.5" y="0" width="53" height="59" fill="#453d34" />
+<rect x="-23.0" y="3.5" width="46" height="52" fill="url(#glass)" />
+<rect x="-14.45" y="2" width="2.4" height="55" fill="#574b3e" />
+<rect x="-1.2" y="2" width="2.4" height="55" fill="#82715d" />
+<rect x="12.05" y="2" width="2.4" height="55" fill="#574b3e" />
+<rect x="-23.5" y="18.88" width="47" height="1.8" fill="#756656" />
+<rect x="-23.5" y="37.76" width="47" height="1.8" fill="#756656" />
+<rect x="-32.5" y="59" width="65" height="3" fill="#a38e74" />
+<rect x="-31.5" y="62" width="63" height="2" fill="#655a4c" />
+<path d="M-34.5 -8h69l-3 5h-63z" fill="#594b3e" stroke="none" stroke-width="1"/>
+</g>
+<g transform="translate(340 354)">
+<rect x="-23.5" y="-4" width="47" height="47" fill="#796b58" />
+<rect x="-21.5" y="-2" width="43" height="43" fill="#b4a388" />
+<rect x="-18.5" y="0" width="37" height="39" fill="#453d34" />
+<rect x="-15.0" y="3.5" width="30" height="32" fill="url(#glass)" />
+<rect x="-14.5" y="6" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="10" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="14" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="18" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="22" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="26" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="30" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="34" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="6" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="10" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="14" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="18" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="22" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="26" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="30" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="34" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-1.2" y="2" width="2.4" height="35" fill="#82715d" />
+<rect x="-15.5" y="12.48" width="31" height="1.8" fill="#756656" />
+<rect x="-15.5" y="24.96" width="31" height="1.8" fill="#756656" />
+<rect x="-24.5" y="39" width="49" height="3" fill="#a38e74" />
+<rect x="-23.5" y="42" width="47" height="2" fill="#655a4c" />
+<path d="M-26.5 -8h53l-3 5h-47z" fill="#594b3e" stroke="none" stroke-width="1"/>
+</g>
+<g transform="translate(340 464)">
+<rect x="-26.5" y="-4" width="53" height="109" fill="#796b58" />
+<rect x="-24.5" y="-2" width="49" height="105" fill="#b4a388" />
+<rect x="-21.5" y="0" width="43" height="101" fill="#453d34" />
+<rect x="-18.0" y="3.5" width="36" height="94" fill="url(#glass)" />
+<rect x="-1.2" y="2" width="2.4" height="97" fill="#82715d" />
+<rect x="-18.5" y="32.32" width="37" height="1.8" fill="#756656" />
+<rect x="-18.5" y="64.64" width="37" height="1.8" fill="#756656" />
+<rect x="-27.5" y="101" width="55" height="3" fill="#a38e74" />
+<rect x="-26.5" y="104" width="53" height="2" fill="#655a4c" />
+<path d="M-29.5 -8h59l-3 5h-53z" fill="#594b3e" stroke="none" stroke-width="1"/>
+<path d="M-34.5 -10L0 -27l34.5 17z" fill="#766b5b" stroke="#c6b89d" stroke-width="1.5"/>
+<path d="M-27.5 -12L0 -23l27.5 11z" fill="url(#rozeta)" stroke="none" stroke-width="1"/>
+</g>
+<g transform="translate(451 231)">
+<rect x="-31.5" y="-4" width="63" height="67" fill="#796b58" />
+<rect x="-29.5" y="-2" width="59" height="63" fill="#b4a388" />
+<rect x="-26.5" y="0" width="53" height="59" fill="#453d34" />
+<rect x="-23.0" y="3.5" width="46" height="52" fill="url(#glass)" />
+<rect x="-14.45" y="2" width="2.4" height="55" fill="#574b3e" />
+<rect x="-1.2" y="2" width="2.4" height="55" fill="#82715d" />
+<rect x="12.05" y="2" width="2.4" height="55" fill="#574b3e" />
+<rect x="-23.5" y="18.88" width="47" height="1.8" fill="#756656" />
+<rect x="-23.5" y="37.76" width="47" height="1.8" fill="#756656" />
+<rect x="-32.5" y="59" width="65" height="3" fill="#a38e74" />
+<rect x="-31.5" y="62" width="63" height="2" fill="#655a4c" />
+<path d="M-34.5 -8h69l-3 5h-63z" fill="#594b3e" stroke="none" stroke-width="1"/>
+</g>
+<g transform="translate(451 354)">
+<rect x="-23.5" y="-4" width="47" height="47" fill="#796b58" />
+<rect x="-21.5" y="-2" width="43" height="43" fill="#b4a388" />
+<rect x="-18.5" y="0" width="37" height="39" fill="#453d34" />
+<rect x="-15.0" y="3.5" width="30" height="32" fill="url(#glass)" />
+<rect x="-14.5" y="6" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="10" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="14" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="18" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="22" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="26" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="30" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="34" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="6" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="10" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="14" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="18" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="22" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="26" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="30" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="34" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-1.2" y="2" width="2.4" height="35" fill="#82715d" />
+<rect x="-15.5" y="12.48" width="31" height="1.8" fill="#756656" />
+<rect x="-15.5" y="24.96" width="31" height="1.8" fill="#756656" />
+<rect x="-24.5" y="39" width="49" height="3" fill="#a38e74" />
+<rect x="-23.5" y="42" width="47" height="2" fill="#655a4c" />
+<path d="M-26.5 -8h53l-3 5h-47z" fill="#594b3e" stroke="none" stroke-width="1"/>
+</g>
+<g transform="translate(451 464)">
+<rect x="-26.5" y="-4" width="53" height="109" fill="#796b58" />
+<rect x="-24.5" y="-2" width="49" height="105" fill="#b4a388" />
+<rect x="-21.5" y="0" width="43" height="101" fill="#453d34" />
+<rect x="-18.0" y="3.5" width="36" height="94" fill="url(#glass)" />
+<rect x="-1.2" y="2" width="2.4" height="97" fill="#82715d" />
+<rect x="-18.5" y="32.32" width="37" height="1.8" fill="#756656" />
+<rect x="-18.5" y="64.64" width="37" height="1.8" fill="#756656" />
+<rect x="-27.5" y="101" width="55" height="3" fill="#a38e74" />
+<rect x="-26.5" y="104" width="53" height="2" fill="#655a4c" />
+<path d="M-29.5 -8h59l-3 5h-53z" fill="#594b3e" stroke="none" stroke-width="1"/>
+<path d="M-34.5 -10L0 -27l34.5 17z" fill="#766b5b" stroke="#c6b89d" stroke-width="1.5"/>
+<path d="M-27.5 -12L0 -23l27.5 11z" fill="url(#rozeta)" stroke="none" stroke-width="1"/>
+</g>
+<g transform="translate(565 231)">
+<rect x="-31.5" y="-4" width="63" height="67" fill="#796b58" />
+<rect x="-29.5" y="-2" width="59" height="63" fill="#b4a388" />
+<rect x="-26.5" y="0" width="53" height="59" fill="#453d34" />
+<rect x="-23.0" y="3.5" width="46" height="52" fill="url(#glass)" />
+<rect x="-14.45" y="2" width="2.4" height="55" fill="#574b3e" />
+<rect x="-1.2" y="2" width="2.4" height="55" fill="#82715d" />
+<rect x="12.05" y="2" width="2.4" height="55" fill="#574b3e" />
+<rect x="-23.5" y="18.88" width="47" height="1.8" fill="#756656" />
+<rect x="-23.5" y="37.76" width="47" height="1.8" fill="#756656" />
+<rect x="-32.5" y="59" width="65" height="3" fill="#a38e74" />
+<rect x="-31.5" y="62" width="63" height="2" fill="#655a4c" />
+<path d="M-34.5 -8h69l-3 5h-63z" fill="#594b3e" stroke="none" stroke-width="1"/>
+</g>
+<g transform="translate(565 354)">
+<rect x="-23.5" y="-4" width="47" height="47" fill="#796b58" />
+<rect x="-21.5" y="-2" width="43" height="43" fill="#b4a388" />
+<rect x="-18.5" y="0" width="37" height="39" fill="#453d34" />
+<rect x="-15.0" y="3.5" width="30" height="32" fill="url(#glass)" />
+<rect x="-14.5" y="6" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="10" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="14" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="18" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="22" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="26" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="30" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-14.5" y="34" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="6" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="10" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="14" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="18" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="22" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="26" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="30" width="12.5" height="1.5" fill="#48504c" />
+<rect x="2" y="34" width="12.5" height="1.5" fill="#48504c" />
+<rect x="-1.2" y="2" width="2.4" height="35" fill="#82715d" />
+<rect x="-15.5" y="12.48" width="31" height="1.8" fill="#756656" />
+<rect x="-15.5" y="24.96" width="31" height="1.8" fill="#756656" />
+<rect x="-24.5" y="39" width="49" height="3" fill="#a38e74" />
+<rect x="-23.5" y="42" width="47" height="2" fill="#655a4c" />
+<path d="M-26.5 -8h53l-3 5h-47z" fill="#594b3e" stroke="none" stroke-width="1"/>
+</g>
+<g transform="translate(565 464)">
+<rect x="-26.5" y="-4" width="53" height="109" fill="#796b58" />
+<rect x="-24.5" y="-2" width="49" height="105" fill="#b4a388" />
+<rect x="-21.5" y="0" width="43" height="101" fill="#453d34" />
+<rect x="-18.0" y="3.5" width="36" height="94" fill="url(#glass)" />
+<rect x="-1.2" y="2" width="2.4" height="97" fill="#82715d" />
+<rect x="-18.5" y="32.32" width="37" height="1.8" fill="#756656" />
+<rect x="-18.5" y="64.64" width="37" height="1.8" fill="#756656" />
+<rect x="-27.5" y="101" width="55" height="3" fill="#a38e74" />
+<rect x="-26.5" y="104" width="53" height="2" fill="#655a4c" />
+<path d="M-29.5 -8h59l-3 5h-53z" fill="#594b3e" stroke="none" stroke-width="1"/>
+<path d="M-34.5 -10L0 -27l34.5 17z" fill="#766b5b" stroke="#c6b89d" stroke-width="1.5"/>
+<path d="M-27.5 -12L0 -23l27.5 11z" fill="url(#rozeta)" stroke="none" stroke-width="1"/>
+</g>
+<g transform="translate(110 662)">
+<rect x="-21.0" y="-4" width="42" height="58" fill="#796b58" />
+<rect x="-19.0" y="-2" width="38" height="54" fill="#b4a388" />
+<rect x="-16.0" y="0" width="32" height="50" fill="#453d34" />
+<rect x="-12.5" y="3.5" width="25" height="43" fill="url(#glass)" />
+<rect x="-12.0" y="6" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="10" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="14" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="18" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="22" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="26" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="30" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="34" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="38" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="42" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="6" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="10" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="14" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="18" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="22" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="26" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="30" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="34" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="38" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="42" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-1.2" y="2" width="2.4" height="46" fill="#82715d" />
+<rect x="-13.0" y="16.0" width="26" height="1.8" fill="#756656" />
+<rect x="-13.0" y="32.0" width="26" height="1.8" fill="#756656" />
+<rect x="-22.0" y="50" width="44" height="3" fill="#a38e74" />
+<rect x="-21.0" y="53" width="42" height="2" fill="#655a4c" />
+<path d="M-24.0 -8h48l-3 5h-42z" fill="#594b3e" stroke="none" stroke-width="1"/>
+</g>
+<rect x="96" y="665" width="28" height="45" fill="url(#kovani)" />
+<rect x="98" y="744" width="24" height="13" fill="#403a34" />
+<g transform="translate(213 662)">
+<rect x="-21.0" y="-4" width="42" height="58" fill="#796b58" />
+<rect x="-19.0" y="-2" width="38" height="54" fill="#b4a388" />
+<rect x="-16.0" y="0" width="32" height="50" fill="#453d34" />
+<rect x="-12.5" y="3.5" width="25" height="43" fill="url(#glass)" />
+<rect x="-12.0" y="6" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="10" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="14" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="18" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="22" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="26" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="30" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="34" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="38" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="42" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="6" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="10" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="14" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="18" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="22" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="26" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="30" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="34" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="38" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="42" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-1.2" y="2" width="2.4" height="46" fill="#82715d" />
+<rect x="-13.0" y="16.0" width="26" height="1.8" fill="#756656" />
+<rect x="-13.0" y="32.0" width="26" height="1.8" fill="#756656" />
+<rect x="-22.0" y="50" width="44" height="3" fill="#a38e74" />
+<rect x="-21.0" y="53" width="42" height="2" fill="#655a4c" />
+<path d="M-24.0 -8h48l-3 5h-42z" fill="#594b3e" stroke="none" stroke-width="1"/>
+</g>
+<rect x="199" y="665" width="28" height="45" fill="url(#kovani)" />
+<rect x="201" y="744" width="24" height="13" fill="#403a34" />
+<g transform="translate(451 662)">
+<rect x="-21.0" y="-4" width="42" height="58" fill="#796b58" />
+<rect x="-19.0" y="-2" width="38" height="54" fill="#b4a388" />
+<rect x="-16.0" y="0" width="32" height="50" fill="#453d34" />
+<rect x="-12.5" y="3.5" width="25" height="43" fill="url(#glass)" />
+<rect x="-12.0" y="6" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="10" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="14" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="18" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="22" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="26" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="30" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="34" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="38" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="42" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="6" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="10" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="14" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="18" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="22" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="26" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="30" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="34" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="38" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="42" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-1.2" y="2" width="2.4" height="46" fill="#82715d" />
+<rect x="-13.0" y="16.0" width="26" height="1.8" fill="#756656" />
+<rect x="-13.0" y="32.0" width="26" height="1.8" fill="#756656" />
+<rect x="-22.0" y="50" width="44" height="3" fill="#a38e74" />
+<rect x="-21.0" y="53" width="42" height="2" fill="#655a4c" />
+<path d="M-24.0 -8h48l-3 5h-42z" fill="#594b3e" stroke="none" stroke-width="1"/>
+</g>
+<rect x="437" y="665" width="28" height="45" fill="url(#kovani)" />
+<rect x="439" y="744" width="24" height="13" fill="#403a34" />
+<g transform="translate(565 662)">
+<rect x="-21.0" y="-4" width="42" height="58" fill="#796b58" />
+<rect x="-19.0" y="-2" width="38" height="54" fill="#b4a388" />
+<rect x="-16.0" y="0" width="32" height="50" fill="#453d34" />
+<rect x="-12.5" y="3.5" width="25" height="43" fill="url(#glass)" />
+<rect x="-12.0" y="6" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="10" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="14" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="18" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="22" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="26" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="30" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="34" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="38" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-12.0" y="42" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="6" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="10" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="14" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="18" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="22" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="26" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="30" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="34" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="38" width="10.0" height="1.5" fill="#48504c" />
+<rect x="2" y="42" width="10.0" height="1.5" fill="#48504c" />
+<rect x="-1.2" y="2" width="2.4" height="46" fill="#82715d" />
+<rect x="-13.0" y="16.0" width="26" height="1.8" fill="#756656" />
+<rect x="-13.0" y="32.0" width="26" height="1.8" fill="#756656" />
+<rect x="-22.0" y="50" width="44" height="3" fill="#a38e74" />
+<rect x="-21.0" y="53" width="42" height="2" fill="#655a4c" />
+<path d="M-24.0 -8h48l-3 5h-42z" fill="#594b3e" stroke="none" stroke-width="1"/>
+</g>
+<rect x="551" y="665" width="28" height="45" fill="url(#kovani)" />
+<rect x="553" y="744" width="24" height="13" fill="#403a34" />
+<path d="M300 778V694a40 40 0 0 1 80 0v84z" fill="#574c41" stroke="#4c423b" stroke-width="2"/>
+<polygon points="380.0,694.0 394.0,694.0 392.43,681.08 378.84,684.43" fill="#817164" stroke="#52483e" stroke-width="1"/>
+<polygon points="378.84,684.43 392.43,681.08 387.81,668.9 375.42,675.41" fill="#76685c" stroke="#52483e" stroke-width="1"/>
+<polygon points="375.42,675.41 387.81,668.9 380.42,658.19 369.94,667.48" fill="#8a7c6c" stroke="#52483e" stroke-width="1"/>
+<polygon points="369.94,667.48 380.42,658.19 370.68,649.56 362.72,661.08" fill="#817164" stroke="#52483e" stroke-width="1"/>
+<polygon points="362.72,661.08 370.68,649.56 359.15,643.51 354.18,656.6" fill="#76685c" stroke="#52483e" stroke-width="1"/>
+<polygon points="354.18,656.6 359.15,643.51 346.51,640.39 344.82,654.29" fill="#8a7c6c" stroke="#52483e" stroke-width="1"/>
+<polygon points="344.82,654.29 346.51,640.39 333.49,640.39 335.18,654.29" fill="#817164" stroke="#52483e" stroke-width="1"/>
+<polygon points="335.18,654.29 333.49,640.39 320.85,643.51 325.82,656.6" fill="#76685c" stroke="#52483e" stroke-width="1"/>
+<polygon points="325.82,656.6 320.85,643.51 309.32,649.56 317.28,661.08" fill="#8a7c6c" stroke="#52483e" stroke-width="1"/>
+<polygon points="317.28,661.08 309.32,649.56 299.58,658.19 310.06,667.48" fill="#817164" stroke="#52483e" stroke-width="1"/>
+<polygon points="310.06,667.48 299.58,658.19 292.19,668.9 304.58,675.41" fill="#76685c" stroke="#52483e" stroke-width="1"/>
+<polygon points="304.58,675.41 292.19,668.9 287.57,681.08 301.16,684.43" fill="#8a7c6c" stroke="#52483e" stroke-width="1"/>
+<polygon points="301.16,684.43 287.57,681.08 286.0,694.0 300.0,694.0" fill="#817164" stroke="#52483e" stroke-width="1"/>
+<path d="M302 776V694a38 38 0 0 1 76 0v82z" fill="#262b2a" stroke="none" stroke-width="1"/>
+<path d="M340 695L374.24 683.88" fill="none" stroke="#756c58" stroke-width="1.3"/>
+<path d="M340 695L369.12 673.84" fill="none" stroke="#756c58" stroke-width="1.3"/>
+<path d="M340 695L361.16 665.88" fill="none" stroke="#756c58" stroke-width="1.3"/>
+<path d="M340 695L351.12 660.76" fill="none" stroke="#756c58" stroke-width="1.3"/>
+<path d="M340 695L340.00 659.00" fill="none" stroke="#756c58" stroke-width="1.3"/>
+<path d="M340 695L328.88 660.76" fill="none" stroke="#756c58" stroke-width="1.3"/>
+<path d="M340 695L318.84 665.88" fill="none" stroke="#756c58" stroke-width="1.3"/>
+<path d="M340 695L310.88 673.84" fill="none" stroke="#756c58" stroke-width="1.3"/>
+<path d="M340 695L305.76 683.88" fill="none" stroke="#756c58" stroke-width="1.3"/>
+<rect x="305" y="700" width="34" height="76" fill="#554133" />
+<rect x="308" y="704" width="28" height="38" fill="#303a3a" />
+<rect x="311" y="707" width="22" height="32" fill="url(#kovani)" />
+<rect x="309" y="748" width="26" height="21" fill="#64503c" />
+<rect x="341" y="700" width="34" height="76" fill="#554133" />
+<rect x="344" y="704" width="28" height="38" fill="#303a3a" />
+<rect x="347" y="707" width="22" height="32" fill="url(#kovani)" />
+<rect x="345" y="748" width="26" height="21" fill="#64503c" />
+<circle cx="335" cy="746" r="2" fill="#b49a5f" stroke="none" stroke-width="1"/>
+<rect x="300" y="693" width="80" height="5" fill="#98846b" />
+<rect x="300" y="75" width="80" height="80" fill="#b4a379" />
+<rect x="302" y="77" width="76" height="76" fill="#3a4e46" />
+<circle cx="307" cy="82" r="3" fill="#c4ad76" stroke="none" stroke-width="1"/>
+<path d="M307 77l3 5-3 5-3-5z" fill="#d7bd7d" stroke="none" stroke-width="1"/>
+<circle cx="307" cy="148" r="3" fill="#c4ad76" stroke="none" stroke-width="1"/>
+<path d="M307 143l3 5-3 5-3-5z" fill="#d7bd7d" stroke="none" stroke-width="1"/>
+<circle cx="373" cy="82" r="3" fill="#c4ad76" stroke="none" stroke-width="1"/>
+<path d="M373 77l3 5-3 5-3-5z" fill="#d7bd7d" stroke="none" stroke-width="1"/>
+<circle cx="373" cy="148" r="3" fill="#c4ad76" stroke="none" stroke-width="1"/>
+<path d="M373 143l3 5-3 5-3-5z" fill="#d7bd7d" stroke="none" stroke-width="1"/>
+<circle cx="340" cy="115" r="37" fill="#33453e" stroke="#cab580" stroke-width="1.3"/>
+<circle cx="340" cy="115" r="27.1" fill="#31443f" stroke="#baa779" stroke-width="0.9"/>
+<path d="M340.00 81.00l0.00 -3.00" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M343.66 80.19l0.21 -1.99" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M347.28 80.76l0.42 -1.96" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M350.82 81.71l0.62 -1.90" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M354.24 83.03l0.81 -1.83" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M357.00 85.56l1.50 -2.60" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M360.57 86.68l1.18 -1.62" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M363.42 88.99l1.34 -1.49" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M366.01 91.58l1.49 -1.34" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M368.32 94.43l1.62 -1.18" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M369.44 98.00l2.60 -1.50" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M371.97 100.76l1.83 -0.81" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M373.29 104.18l1.90 -0.62" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M374.24 107.72l1.96 -0.42" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M374.81 111.34l1.99 -0.21" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M374.00 115.00l3.00 -0.00" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M374.81 118.66l1.99 0.21" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M374.24 122.28l1.96 0.42" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M373.29 125.82l1.90 0.62" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M371.97 129.24l1.83 0.81" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M369.44 132.00l2.60 1.50" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M368.32 135.57l1.62 1.18" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M366.01 138.42l1.49 1.34" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M363.42 141.01l1.34 1.49" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M360.57 143.32l1.18 1.62" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M357.00 144.44l1.50 2.60" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M354.24 146.97l0.81 1.83" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M350.82 148.29l0.62 1.90" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M347.28 149.24l0.42 1.96" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M343.66 149.81l0.21 1.99" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M340.00 149.00l0.00 3.00" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M336.34 149.81l-0.21 1.99" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M332.72 149.24l-0.42 1.96" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M329.18 148.29l-0.62 1.90" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M325.76 146.97l-0.81 1.83" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M323.00 144.44l-1.50 2.60" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M319.43 143.32l-1.18 1.62" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M316.58 141.01l-1.34 1.49" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M313.99 138.42l-1.49 1.34" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M311.68 135.57l-1.62 1.18" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M310.56 132.00l-2.60 1.50" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M308.03 129.24l-1.83 0.81" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M306.71 125.82l-1.90 0.62" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M305.76 122.28l-1.96 0.42" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M305.19 118.66l-1.99 0.21" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M306.00 115.00l-3.00 0.00" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M305.19 111.34l-1.99 -0.21" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M305.76 107.72l-1.96 -0.42" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M306.71 104.18l-1.90 -0.62" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M308.03 100.76l-1.83 -0.81" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M310.56 98.00l-2.60 -1.50" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M311.68 94.43l-1.62 -1.18" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M313.99 91.58l-1.49 -1.34" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M316.58 88.99l-1.34 -1.49" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M319.43 86.68l-1.18 -1.62" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M323.00 85.56l-1.50 -2.60" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M325.76 83.03l-0.81 -1.83" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M329.18 81.71l-0.62 -1.90" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M332.72 80.76l-0.42 -1.96" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<path d="M336.34 80.19l-0.21 -1.99" fill="none" stroke="#d2be86" stroke-width="0.82"/>
+<text transform="translate(340.00 84.00) rotate(0)" y="2.8" text-anchor="middle" fill="#e0cb92" font-family="serif" font-size="7.2">XII</text>
+<text transform="translate(355.50 88.15) rotate(30)" y="2.8" text-anchor="middle" fill="#e0cb92" font-family="serif" font-size="7.2">I</text>
+<text transform="translate(366.85 99.50) rotate(60)" y="2.8" text-anchor="middle" fill="#e0cb92" font-family="serif" font-size="7.2">II</text>
+<text transform="translate(371.00 115.00) rotate(90)" y="2.8" text-anchor="middle" fill="#e0cb92" font-family="serif" font-size="7.2">III</text>
+<text transform="translate(366.85 130.50) rotate(120)" y="2.8" text-anchor="middle" fill="#e0cb92" font-family="serif" font-size="7.2">IV</text>
+<text transform="translate(355.50 141.85) rotate(150)" y="2.8" text-anchor="middle" fill="#e0cb92" font-family="serif" font-size="7.2">V</text>
+<text transform="translate(340.00 146.00) rotate(180)" y="2.8" text-anchor="middle" fill="#e0cb92" font-family="serif" font-size="7.2">VI</text>
+<text transform="translate(324.50 141.85) rotate(210)" y="2.8" text-anchor="middle" fill="#e0cb92" font-family="serif" font-size="7.2">VII</text>
+<text transform="translate(313.15 130.50) rotate(240)" y="2.8" text-anchor="middle" fill="#e0cb92" font-family="serif" font-size="7.2">VIII</text>
+<text transform="translate(309.00 115.00) rotate(270)" y="2.8" text-anchor="middle" fill="#e0cb92" font-family="serif" font-size="7.2">IX</text>
+<text transform="translate(313.15 99.50) rotate(300)" y="2.8" text-anchor="middle" fill="#e0cb92" font-family="serif" font-size="7.2">X</text>
+<text transform="translate(324.50 88.15) rotate(330)" y="2.8" text-anchor="middle" fill="#e0cb92" font-family="serif" font-size="7.2">XI</text>
+<rect x="685" y="0" width="155" height="830" fill="url(#drobneCihly)" />
+<rect x="686" y="826" width="16" height="24" fill="#684c40" />
+<rect x="702" y="826" width="16" height="24" fill="#9a6d52" />
+<rect x="718" y="826" width="16" height="24" fill="#614b3d" />
+<rect x="734" y="826" width="16" height="24" fill="#a09277" />
+<rect x="750" y="826" width="16" height="24" fill="#597c70" />
+<rect x="766" y="826" width="16" height="24" fill="#8caf92" />
+<rect x="782" y="826" width="16" height="24" fill="#c5a763" />
+<rect x="798" y="826" width="16" height="24" fill="#312d29" />
+<rect x="814" y="826" width="16" height="24" fill="#d3bc7c" />
+  <rect x="682" y="480" width="158" height="340" fill="url(#tasky)"/>
+</svg>

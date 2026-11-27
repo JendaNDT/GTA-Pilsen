@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1024" height="512" viewBox="0 0 1024 512">
+<title>Lochotínský pavilonek – štuk, dělené světlíky, dřevěné žaluzie a falcovaná krytina</title>
+<defs>
+  <linearGradient id="stucco"><stop stop-color="#d5ad68"/><stop offset=".17" stop-color="#d8b570"/><stop offset=".8" stop-color="#ebc87d"/><stop offset="1" stop-color="#dcb773"/></linearGradient>
+  <linearGradient id="fan" x2=".6" y2="1"><stop stop-color="#a8aaa2"/><stop offset=".52" stop-color="#d2d3c8"/><stop offset="1" stop-color="#bcb9ae"/></linearGradient>
+  <pattern id="blades" width="24" height="8" patternUnits="userSpaceOnUse"><rect width="24" height="8" fill="#504e45"/><path d="M0 1h24v3H0z" fill="#dad8ca"/><path d="M0 4h24v1H0z" fill="#a7a69c"/></pattern>
+  <pattern id="painted" width="19" height="10" patternUnits="userSpaceOnUse"><rect width="19" height="10" fill="#e4e1d3"/><path d="M0 9h19" stroke="#c6c3b7"/></pattern>
+  <pattern id="metal" width="16" height="73" patternUnits="userSpaceOnUse">
+    <rect width="16" height="73" fill="#657d69"/><path d="M1 0h1v73H1z" fill="#596f62"/><path d="M2 0h1v73H2z" fill="#a0ac92"/><path d="M2 72h14" stroke="#667b69" stroke-width=".5"/>
+  </pattern>
+  <g id="bay">
+    <path d="M0 0h128v400H0z" fill="url(#stucco)"/>
+    <path d="M0 0h128v14H0z" fill="#d4b276"/><path d="M0 14h128v4H0z" fill="#b69760"/>
+    <path d="M2 21h6v342H2z" fill="#ecd298"/><path d="M8 21h2v342H8z" fill="#cda769"/>
+    <path d="M0 362h128v38H0z" fill="#b2a18a"/><path d="M0 361h128" stroke="#c4af91" stroke-width="4"/>
+  </g>
+  <g id="fanlight">
+    <path d="M-36 1a36 38 0 0 1 72 0z" fill="#ad946c" stroke="#f0dca8" stroke-width="3"/>
+    <path d="M-32 -1a32 34 0 0 1 64 0z" fill="url(#fan)" stroke="#ece8d8" stroke-width="3"/>
+    <path d="M0 0v-33m0 33-23-23M0 0l23-23m-50 13h54" fill="none" stroke="#e8e4d5" stroke-width="2"/>
+  </g>
+  <g id="shutters">
+    <rect x="-33" width="66" height="211" fill="#f1ecda" stroke="#ab9e86" stroke-width="2"/>
+    <path d="M-28 5h25v96h-25zm31 0h25v96H3zm-31 102h25v97h-25zm31 0h25v97H3z" fill="url(#blades)"/>
+    <path d="M-37 212h74v5h-74z" fill="#9c8f76"/><path d="M-37 211h74" stroke="#ece4ce" stroke-width="3"/>
+  </g>
+  <g id="closed">
+    <rect x="-34" width="68" height="211" fill="#eae6d7" stroke="#b2a892" stroke-width="2"/>
+    <path d="M-29 6h25v196h-25zm33 0h25v196H4z" fill="url(#painted)" stroke="#cecaba" stroke-width="2"/>
+    <path d="M-2 0v209" stroke="#c4c1b6" stroke-width="2"/>
+  </g>
+</defs>
+<!-- Čtyři okenní pole jsou vyhrazena sálu, jeho dveřím, křídlům a hladké omítce. -->
+<use xlink:href="#bay"/><use xlink:href="#bay" x="128"/><use xlink:href="#bay" x="256"/><use xlink:href="#bay" x="384"/>
+<use xlink:href="#fanlight" x="64" y="103"/><use xlink:href="#shutters" transform="translate(64 106) scale(1 1.07)"/>
+<use xlink:href="#fanlight" x="192" y="103"/><use xlink:href="#closed" transform="translate(192 106) scale(1 1.22)"/>
+<use xlink:href="#fanlight" transform="translate(320 105) scale(.88 .87)"/><use xlink:href="#closed" transform="translate(320 148) scale(.94 .92)"/>
+<rect x="516" y="0" width="508" height="400" fill="url(#metal)"/>
+<rect y="404" width="1024" height="108" fill="#d7c7ac"/>
+<path d="M8 435h64" stroke="#cda96d" stroke-width="20"/><path d="M88 435h64" stroke="#ece1bd" stroke-width="20"/>
+<path d="M168 435h64" stroke="#536b5a" stroke-width="20"/><path d="M248 435h64" stroke="#7f8070" stroke-width="20"/>
+<path d="M328 435h64" stroke="#d0bd9e" stroke-width="20"/><path d="M408 435h64" stroke="#b6aa92" stroke-width="20"/>
+<!-- Vápenná omítka opěrné zídky přechází u země do odkrytého kamene. -->
+<defs><pattern id="sokl" width="97" height="74" patternUnits="userSpaceOnUse" x="512" y="411">
+  <rect width="97" height="74" fill="#c6bba7"/><path d="M0 24l8 5 7-2 10 6 4 10 8 2 5 7 8-5 8 3 6-7 10 4 7-3 9 2 7-8v36H0z" fill="#ab987e"/>
+  <path d="M4 36l12 1 5 6-9 5-9-3zm21 16 12-3 8 7-6 5-13-1zm37-2 15-1 8 5-6 7-19-3z" fill="#aa8a69"/>
+  <path d="M4 47l9 3 9-6m6 17 11 2 6-6m14 2 17 4 11-7" fill="none" stroke="#baa88c" stroke-width="1.5"/>
+</pattern></defs>
+<rect x="510" y="405" width="506" height="106" fill="url(#sokl)"/>
+</svg>

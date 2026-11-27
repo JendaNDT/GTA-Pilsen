@@ -2,6 +2,7 @@
 
 Tato větev obsahuje jen sestavené hry pro GitHub Pages:
 
+- [**Plná hra pro telefon a počítač**](https://jendandt.github.io/GTA-Pilsen/plna-hra/) – webová verze z revize `6cf459d` včetně regionálního taxi, rozvozu pizzy, MHD a sportovních aktivit. Na telefonu otoč obrazovku na šířku a klepni na **Hrát**.
 - [**Zkouška kulečníku**](https://jendandt.github.io/GTA-Pilsen/zkouska-kulecniku/) – E63 z revize `c5255b2`. Na mapě vyhledej „kulečník“, vejdi do bowlingu U Papírny a zvol **Ke kulečníku**.
 - **kořen** – webová verze z enginu Godot (adresář `godot/`, revize d868511 větve `godot/prestavba`),
 - **`zkouska-vzhledu/`** – webová hra (three.js), revize `eb5d900` z větve `etapa/E62` s průchozími vozy na všech 51 linkách a kontrolou volného místa u dveří před výstupem.

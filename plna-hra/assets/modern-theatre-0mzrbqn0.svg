@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2816" height="1024" viewBox="0 0 176 64">
+<defs>
+  <linearGradient id="red" x2=".85" y2="1" gradientUnits="objectBoundingBox"><stop stop-color="#bd5c40"/><stop offset=".58" stop-color="#bb563a"/><stop offset="1" stop-color="#b55239"/></linearGradient>
+  <linearGradient id="glass" x2=".23" y2="1"><stop stop-color="#405764"/><stop offset=".45" stop-color="#71858d"/><stop offset=".51" stop-color="#556e72"/><stop offset=".75" stop-color="#415054"/><stop offset="1" stop-color="#253336"/></linearGradient>
+  <linearGradient id="lobby" x2=".36" y2="1"><stop stop-color="#293131"/><stop offset=".42" stop-color="#42555b"/><stop offset=".63" stop-color="#6e8285"/><stop offset=".66" stop-color="#435956"/><stop offset="1" stop-color="#26352f"/></linearGradient>
+  <pattern id="panels" width="5.5" height="3.2" patternUnits="userSpaceOnUse"><path fill="url(#red)" d="M0 0h5.5v3.2H0z"/><path fill="none" stroke="#7c392c" stroke-width=".045" d="M0 3.2V0h5.5"/><g fill="#893b2d"><circle cx=".25" cy=".3" r=".045"/><circle cx="5.23" cy=".3" r=".045"/><circle cx=".25" cy="2.92" r=".045"/><circle cx="5.23" cy="2.92" r=".045"/></g></pattern>
+  <pattern id="office" width="8" height="3.3" patternUnits="userSpaceOnUse"><path fill="#393d40" d="M0 0h8v3.3H0z"/><path fill="none" stroke="#232526" stroke-width=".05" d="M0 3.3V0h8M2.7 0v3.3M5.5 0v3.3"/><path fill="#191f22" d="M.4 .23h1.13v2.8H.4zM3.3 .23h.83v2.8H3.3zM6.03 .23h1.14v2.8H6.03z"/><path fill="url(#glass)" d="M.49 .35h.94v2.57H.49zM3.39 .35h.65v2.57h-.65zM6.12 .35h.95v2.57h-.95z"/></pattern>
+  <pattern id="concrete" width="3" height="2.5" patternUnits="userSpaceOnUse"><path fill="#d0cbb9" d="M0 0h3v2.5H0z"/><path d="M0 2.5V0h3" fill="none" stroke="#b4afa0" stroke-width=".027"/><g fill="#a8a390"><circle cx=".22" cy=".21" r=".035"/><circle cx="2.78" cy="2.28" r=".035"/></g></pattern>
+  <pattern id="metal" width="2.5" height=".25" patternUnits="userSpaceOnUse"><path fill="#697074" d="M0 0h2.5v.25H0z"/><path d="M0 0h2.5" stroke="#4c5357" stroke-width=".055"/></pattern>
+  <pattern id="roof" width="3.5" height="3.5" patternUnits="userSpaceOnUse"><rect width="3.5" height="3.5" fill="#c1bfb5"/><path d="M0 3.5V0h3.5" stroke="#a6a59e" stroke-width=".05" fill="none"/></pattern>
+  <pattern id="mullion" width="1.65" height="3.5" patternUnits="userSpaceOnUse"><path fill="none" stroke="#252b2c" stroke-width=".09" d="M0 3.5V0h1.65"/></pattern>
+</defs>
+<path fill="url(#panels)" d="M0 0h124v32H0z"/>
+<path fill="url(#metal)" d="M30 .2h32v14.4H30zM62 0h18v5H62zM83 0h40v12H83z"/>
+<path fill="url(#glass)" d="M10 29.5l5.4-7.2 4.8 7.2z"/><path fill="url(#mullion)" d="M10 29.5l5.4-7.2 4.8 7.2z"/>
+<path fill="url(#office)" d="M0 33h112v30H0z"/>
+<path fill="url(#panels)" d="M32 33h19v30H32zM82 33h18v30H82z"/>
+<path fill="url(#roof)" d="M125 0h25v32h-25z"/>
+<path fill="url(#lobby)" d="M125 33h23v18h-23z"/><path fill="url(#mullion)" d="M125 33h23v18h-23z"/>
+<g fill="none" stroke="#939d95" stroke-width=".07"><path d="M130 49v-2.5h2.4V49m-1.2-2.5V49m2.1 0v-2.5h2.4V49m-1.2-2.5V49m2.2 0v-2.5h2.4V49m-1.2-2.5V49m2 0v-2.5h2.4V49m-1.2-2.5V49"/></g>
+<path fill="url(#concrete)" d="M150 32h26v20h-26z"/>
+<path fill="url(#glass)" d="M125 53h24v5h-24z"/><path fill="url(#mullion)" d="M125 53h24v5h-24z"/>
+<path fill="#aaa390" d="M151 1h6v5h-6z"/><path fill="#363d40" d="M159 1h6v5h-6z"/><path fill="#c2bfae" d="M167 1h6v5h-6z"/>
+<path fill="url(#panels)" d="M150 5h26v27h-26z"/>
+<path fill="url(#metal)" d="M153 5.9h19.7v7.8H153z"/>
+<g fill="#555b5e">
+  <path d="M156 6h.06v7.6H156zM160 6h.06v7.6H160zM164 6h.06v7.6H164zM168 6h.06v7.6H168z"/>
+  <path d="M150 53h8v6h-8z"/>
+</g>
+<g fill="#899092" stroke="#44494c" stroke-width=".08">
+  <rect x="151.93" y="54.98" width="2.02" height="2.04"/>
+  <rect x="154.04" y="54.98" width="2.02" height="2.04"/>
+  <circle cx="152.95" cy="56" r=".81"/><circle cx="155.05" cy="56" r=".81"/>
+</g>
+<g fill="none" stroke="#535a5d" stroke-width=".12">
+  <circle cx="152.95" cy="56" r=".57"/><circle cx="155.05" cy="56" r=".57"/>
+  <path d="M152.16 56h1.58m-.79-.79v1.58m1.31-.79h1.58m-.79-.79v1.58"/>
+</g>
+</svg>
