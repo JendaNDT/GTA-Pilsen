@@ -175,3 +175,37 @@ test.describe('dotykový přestup v Pařížské', () => {
     expect(await page.evaluate(() => [__game.ride?.event.trip.id, __game.cabin?.door])).toEqual([TROLLEY_TRIP, 3.9]);
   });
 });
+
+test('E62 – zadní dveře autobusu 33 v Pařížské zůstanou použitelné po uvolnění nástupiště', async ({ page }) => {
+  await boot(page, 'quality=low');
+  await approach(page, BUS_TRIP, 'Pařížská');
+  const target = await page.evaluate(trip => {
+    const g = __game, v = g.transit.vehicles.find(v => v.event.trip.id === trip);
+    const door = v.sections[0].doors.at(-1);
+    const p = g.transit.exitPoint(v, {}, door);
+    g.player.place(p.x, p.z, p.y);
+    __step(1 / 60);
+    return p;
+  }, BUS_TRIP);
+  await action(page);
+  expect(await page.evaluate(() => __game.cabin?.door)).toBe(-4.23);
+  const parked = await page.evaluateHandle(p => {
+    const g = __game, Car = g.player.lastCar.constructor;
+    const car = g.vehicles.add(new Car('sedan', 0x666666));
+    const yaw = g.ride.yaw;
+    car.place(p.x + 0.55 * Math.cos(yaw), p.z - 0.55 * Math.sin(yaw), yaw, p.y);
+    __step(1 / 60, 2);
+    return car;
+  }, target);
+  await action(page);
+  expect(await page.evaluate(() => __game.mode)).toBe('transit');
+  await expect(page.locator('#toast')).toContainText('Zkus jiné dveře');
+  await parked.evaluate(car => {
+    __game.vehicles.remove(car);
+    __step(1 / 60, 2);
+  });
+  await action(page);
+  const landed = await page.evaluate(() => ({ mode: __game.mode, x: __game.player.x, z: __game.player.z }));
+  expect(landed.mode).toBe('foot');
+  expect(Math.hypot(landed.x - target.x, landed.z - target.z)).toBeLessThan(0.5);
+});

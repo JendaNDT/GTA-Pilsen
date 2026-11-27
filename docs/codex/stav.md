@@ -1,3 +1,11 @@
+# E62 · Výstup vedle auta v Pařížské
+
+Na výchozí revizi `858cde2` dovolila hra vystoupit zadními dveřmi linky 33 i do místa obsazeného sedanem. V řízené zkoušce stál střed auta 55 cm od cílového bodu. Hra postavu nejprve umístila ke dveřím, po prvním kroku se střetem byla 95 cm od cíle. Ve třech jízdách původního místního sestavení s volným prostorem u dveří byl rozdíl pod 1 mm. Přesnou polohu auta z dřívějšího veřejného měření 67 cm neznáme.
+
+Před výstupem hra kontroluje, jestli se cestující vedle karoserie vejde. Zohledňuje šířku a délku auta, jeho natočení i výšku. Pokud auto překáží, hráč zůstane ve voze a hra nabídne jiné dveře. Uvolněné dveře lze použít ještě při stejném zastavení.
+
+Prošlo produkční sestavení a všech 407 testů JavaScriptu. Ze dvou opakování ve WebGL 2 a dvou ve WebGPU prošla zkouška obsazených a následně volných dveří čtyřikrát. Ze čtyř celých jízd tři dojely z náměstí Republiky přes Goethovu do Pařížské a splnily původní mez 50 cm. Při čtvrté jízdě na sebe autobus a kombi na Americké čekaly po 81 m od Goethovy. Výstup při této jízdě nešlo změřit.
+
 # E62 · Průchozí MHD na všech linkách
 
 Na větvi `etapa/E62` nad revizí `510420a` se při pěším nástupu použije interiér podle modelu vozidla. Rozšíření pokrývá všech 51 linek herního jízdního řádu. U Tatry jsou přístupné oba samostatné vozy. Čtyři ukázky zůstávají v nabídce **Svézt se MHD**.

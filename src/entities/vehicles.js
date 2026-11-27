@@ -46,6 +46,16 @@ export class Car {
     this.isCar = true;
   }
 
+  blocksPassenger(point, radius) {
+    // Vůz na vozovce pod mostem nezasahuje do prostoru cestujícího nahoře.
+    if (point.y > this.y + this.type.h || point.y + 1.8 < this.y) return false;
+    const dx = point.x - this.x, dz = point.z - this.z;
+    const sin = Math.sin(this.yaw), cos = Math.cos(this.yaw);
+    const side = Math.max(0, Math.abs(dx * cos - dz * sin) - this.type.wid / 2);
+    const end = Math.max(0, Math.abs(dx * sin + dz * cos) - this.type.len / 2);
+    return side * side + end * end < radius * radius;
+  }
+
   /** Postaví auto na místo; bez výšky na zem (hint = výška, ze které se hledá povrch, např. pro most). */
   place(x, z, yaw, hint = null) {
     this.dirtX = x; this.dirtZ = z;

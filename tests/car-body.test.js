@@ -191,3 +191,13 @@ test('vozový park má na nízké kvalitě stejné obrysy, oddělenou optiku a k
     }
   }
 });
+
+test('místo pro cestujícího vedle natočeného auta a na jiném patře', () => {
+  const car = new Car('sedan', 0x508080);
+  Object.assign(car, { x: 10, y: 4, z: 20, yaw: Math.PI / 2 });
+  const point = { x: car.x + car.type.len / 2, y: car.y, z: car.z + car.type.wid / 2 };
+  assert.equal(car.blocksPassenger(point, 0.35), true);
+  assert.equal(car.blocksPassenger({ ...point, x: point.x + 0.26, z: point.z + 0.26 }, 0.35), false);
+  assert.equal(car.blocksPassenger({ ...point, y: 0 }, 0.35), false);
+  assert.equal(car.blocksPassenger({ ...point, y: 8 }, 0.35), false);
+});

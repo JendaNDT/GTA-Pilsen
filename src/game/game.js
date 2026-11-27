@@ -956,7 +956,8 @@ export class Game {
   _platformClear(point) {
     const w = this.world;
     return w.inBounds(point.x, point.z, 0) && w.buildingAt(point.x, point.z) < 0 &&
-      !w.blocked(point.x, point.z, 0.65) && !w.isWater(point.x, point.z);
+      !w.blocked(point.x, point.z, 0.65) && !w.isWater(point.x, point.z) &&
+      !this.vehicles.cars.some(car => car.blocksPassenger(point, this.player.radius));
   }
 
   _cabinCamera() {
