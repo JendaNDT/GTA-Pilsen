@@ -1,3 +1,7 @@
+# E65 · Osmička proti počítači
+
+Na větvi `etapa/E65` z revize `a446bf4` je hotová hra pro jednoho. Soupeř si vybírá přípustné koule, nastavuje směr a sílu, přesouvá bílou po faulu a střídá rozstřely při odvetě. Sestavení a 417 testů JavaScriptu prošlo, v Pythonu prošlo 34 zkoušek a jedna byla přeskočena. Všech dvanáct cílených zkoušek herny prošlo, jednu zkoušku načítání bowlingu bylo třeba opakovat. V obou vykreslovačích proběhla celá partie na emulovaném telefonu. Měření na nízkou předvolbu ve Full HD dosáhlo 60 FPS. [Zadání](E65.md) · [Ovládání, zkoušky a výkon](../E65.md)
+
 # E64 · Osmička pro dva
 
 Na větvi `etapa/E64` z revize `c5255b2` je hotová místní partie na jednom telefonu. Oba hráči se střídají u jednoho stolu, po faulu je bílá v ruce a po výsledku lze hrát odvetu. Sestavení a 413 testů JavaScriptu prošlo. Z 35 testů Pythonu prošlo 34 a jeden byl přeskočen. V obou vykreslovačích prošlo všech deset cílených zkoušek společné herny. Výkon v osmičce dosáhl 60 FPS ve Full HD na nízkou předvolbu. Zbývá volitelné ověření dvěma lidmi na skutečném telefonu. [Zadání](E64.md) · [Pravidla, snímek a měření](../E64.md)

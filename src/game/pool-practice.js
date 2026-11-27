@@ -1,5 +1,6 @@
 import { PerspectiveCamera, Plane, Raycaster, Vector2, Vector3 } from 'three/webgpu';
 import { BALL_RADIUS, BALL_STARTS, HALF_LENGTH, HALF_WIDTH, POCKET_RADIUS, PoolTable } from '../physics/pool-table.js';
+import { planTableShot } from './pool-opponent.js';
 
 const field = name => document.getElementById('pool-' + name);
 const clamp = (n, lo, hi) => Math.min(hi, Math.max(lo, n));
@@ -30,6 +31,11 @@ export class PoolPractice {
     this.angle.oninput = () => { this.degrees = this.angle.valueAsNumber; this.showAim(); };
     this.power.oninput = () => { this.strength = this.power.valueAsNumber; this.showAim(); };
     field('hit').onclick = () => this.action();
+    field('computer').onclick = () => {
+      if (!this.table || this.table.match || this.table.rolling || !bowling.canUse) return;
+      this.leave();
+      this.enter('computer');
+    };
     field('back').onclick = () => { if (bowling.canUse) this.leave(); };
     field('reset').onclick = () => {
       if (!this.table || !bowling.canUse || this.table.rolling) return;
@@ -41,9 +47,16 @@ export class PoolPractice {
     };
   }
 
+  get computer() { return !!this.table?.match?.computer; }
+
+  get computerTurn() {
+    return this.computer && this.table?.match.player === 2 && !this.table.complete;
+  }
+
   enter(match = false) {
     const bowl = this.bowling;
     if (!bowl.canUse || this.table || !['done', 'aim'].includes(bowl.phase)) return;
+    this.computerDelay = 0;
     this.table = new PoolTable(bowl.game.physics.Jolt, match);
     this.startPosition.copy(bowl.room.camera.position);
     this.startRotation.copy(bowl.room.camera.quaternion);
@@ -52,7 +65,7 @@ export class PoolPractice {
     this.panel.hidden = false;
     this.degrees = match ? 90 : 0;
     this.strength = match ? 100 : 65;
-    this.panel.querySelector('h2').textContent = match ? 'Osmička pro dva' : 'Kulečník U Papírny';
+    this.panel.querySelector('h2').textContent = this.computer ? 'Osmička proti počítači' : match ? 'Osmička pro dva' : 'Kulečník U Papírny';
     this.showAim();
     this.refresh();
     field('hit').focus({ preventScroll: true });
@@ -60,9 +73,10 @@ export class PoolPractice {
 
   leave() {
     if (!this.table) return;
-    const back = this.table.match ? 'bowl-eight' : 'bowl-pool';
+    const back = this.table.match && !this.computer ? 'bowl-eight' : 'bowl-pool';
     this.table.dispose();
     this.table = null;
+    this.computerDelay = 0;
     this.panel.hidden = true;
     const { pool } = this.bowling.room;
     pool.cue.visible = false;
@@ -74,7 +88,7 @@ export class PoolPractice {
   }
 
   aimAt(event) {
-    if (!this.table || !this.bowling.canUse || this.table.rolling || this.table.complete) return false;
+    if (!this.table || !this.bowling.canUse || this.computerTurn || this.table.rolling || this.table.complete) return false;
     const rect = event.currentTarget.getBoundingClientRect();
     this.pointer.set((event.clientX - rect.left) / rect.width * 2 - 1,
       1 - (event.clientY - rect.top) / rect.height * 2);
@@ -102,7 +116,7 @@ export class PoolPractice {
   }
 
   action() {
-    if (!this.table || !this.bowling.canUse) return;
+    if (!this.table || !this.bowling.canUse || this.computerTurn) return;
     if (this.table.match?.inHand) {
       this.table.match.inHand = false;
       this.table.match.message = 'Zamiř a zahraj.';
@@ -112,27 +126,38 @@ export class PoolPractice {
 
   refresh() {
     const { rolling, complete, potted, scratch } = this.table;
-    const ready = !rolling && !complete;
+    const ready = !rolling && !complete && !this.computerTurn;
     const match = this.table.match;
+    field('computer').hidden = !!match;
+    field('computer').disabled = rolling;
     field('hit').disabled = !ready;
     this.angle.disabled = this.power.disabled = !ready || !!match?.inHand;
     field('hit').querySelector('span').textContent = match?.inHand ? 'Položit bílou' : 'Strčit';
     field('reset').hidden = !!match && !complete;
     field('reset').textContent = match ? 'Odveta' : 'Rozestavit koule';
-    field('hint').textContent = match?.inHand ? 'Klepni na volné místo a potvrď polohu bílé.' :
+    field('hint').textContent = this.computerTurn ? (rolling ? 'Počkej, až se koule zastaví.' : 'Soupeř míří.') : match?.inHand ? 'Klepni na volné místo a potvrď polohu bílé.' :
       match?.breakShot ? 'Rozstřel míří na vrchol trojúhelníku. Klepni na Strčit.' :
       match && !match.groups[match.player] ? 'První čistě potopená koule po rozstřelu určí skupinu.' :
       match ? 'Po svých sedmi koulích pošli černou do libovolné kapsy.' :
       'Klepni na stůl tam, kam má jet bílá koule.';
     this.width = 0;
     field('reset').disabled = rolling;
-    field('status').textContent = match ? (rolling ? `Hraje hráč ${match.player}. Koule jsou v pohybu.` : match.status) : rolling ? 'Koule jsou v pohybu.' : complete ? 'Všechny tři koule jsou v kapsách.' :
+    const moving = this.computer ? (this.computerTurn ? 'Strk počítače.' : 'Tvůj strk.') : `Hraje hráč ${match?.player}.`;
+    field('status').textContent = match ? (rolling ? moving + ' Koule jsou v pohybu.' : match.status) : rolling ? 'Koule jsou v pohybu.' : complete ? 'Všechny tři koule jsou v kapsách.' :
       (scratch ? 'Bílá je zpět na stole. ' : '') + 'V kapsách ' + potted + ' ze 3';
   }
 
   update(dt, input) {
     this.approach = Math.min(1, this.approach + dt / .65);
     if (this.table.rolling) return;
+    if (field('reset').disabled) {
+      this.refresh();
+      if (!this.computerTurn) (this.table.complete ? field('reset') : field('hit')).focus({ preventScroll: true });
+    }
+    if (this.computerTurn) {
+      if (this.bowling.canUse) this.playComputer(dt);
+      return;
+    }
     if (this.table.match?.inHand && (input.moveX || input.moveY)) {
       const white = this.table.balls[0].GetPosition();
       const dx = input.moveX * .45 * dt, dy = input.moveY * .45 * dt;
@@ -143,9 +168,24 @@ export class PoolPractice {
       this.strength = clamp(this.strength + input.moveY * 45 * dt, 10, 100);
       this.showAim();
     }
-    if (field('reset').disabled) {
+  }
+
+  playComputer(dt) {
+    if (!this.computerDelay) {
+      const shot = planTableShot(this.table);
+      if (shot.placement) this.table.placeWhite(shot.placement.x, shot.placement.z);
+      this.table.match.inHand = false;
+      this.degrees = shot.degrees;
+      this.strength = shot.power * 100;
+      this.showAim();
       this.refresh();
-      (this.table.complete ? field('reset') : field('hit')).focus({ preventScroll: true });
+      this.computerDelay = .95;
+      return;
+    }
+    this.computerDelay = Math.max(0, this.computerDelay - dt);
+    if (!this.computerDelay) {
+      this.table.launch(this.degrees, this.strength / 100);
+      this.refresh();
     }
   }
 

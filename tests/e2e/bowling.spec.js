@@ -281,3 +281,49 @@ test('E64 – dva hráči na telefonu, bílá v ruce, černá a odveta', async (
     expect(await page.evaluate(() => __game.activities.bowling.room.pool.balls.filter(b => b.visible).length)).toBe(4);
   } finally { await context.close(); }
 });
+
+test('E65 – celá osmička proti počítači na telefonu a soupeřův rozstřel v odvetě', async ({ browser }, info) => {
+  test.setTimeout(150000);
+  const context = await browser.newContext({ viewport: { width: 390, height: 780 }, hasTouch: true, isMobile: true });
+  try {
+    const page = await context.newPage();
+    await arrive(page, true);
+    await enter(page, true);
+    await page.getByRole('button', { name: 'Ke kulečníku' }).tap();
+    await page.getByRole('button', { name: 'Osmička proti počítači' }).tap();
+    const hit = page.locator('#pool-hit'), status = page.locator('#pool-status');
+    await expect(status).toContainText('Tvůj tah');
+    await hit.tap();
+    await page.evaluate(() => {
+      const game = __game, pool = game.activities.bowling.pool;
+      for (let i = 0; !pool.computerDelay && i < 600; i++) game.update(1 / 60);
+      game.render();
+    });
+    await expect(status).toContainText('Na tahu je počítač');
+    await expect(hit).toBeDisabled();
+    await page.screenshot({ path: info.outputPath('souper.jpg') });
+    await page.keyboard.press('f');
+    expect(await page.evaluate(() => __game.activities.bowling.pool.table.rolling)).toBe(false);
+    // Soupeř i koule běží jen v běžných krocích hry, člověk zahraje z připraveného směru.
+    for (let turn = 0; turn < 60; turn++) {
+      const state = await page.evaluate(() => {
+        const game = __game, pool = game.activities.bowling.pool;
+        for (let i = 0; (pool.table.rolling || pool.computerTurn) && i < 5000; i++) game.update(1 / 60);
+        __step(1 / 60);
+        return { done: pool.table.complete, hand: pool.table.match.inHand };
+      });
+      if (state.done) break;
+      await expect(status).toContainText('Tvůj tah');
+      if (state.hand) await hit.tap();
+      await hit.tap();
+    }
+    await expect(status).toContainText(/Vyhráváš|Vyhrává počítač/);
+    await page.getByRole('button', { name: 'Odveta' }).tap();
+    await page.evaluate(() => __step(1 / 60, 65));
+    await expect(status).toContainText('Strk počítače');
+    await page.getByRole('button', { name: 'Zpět k bowlingu' }).tap();
+    await page.getByRole('button', { name: 'Osmička pro dva' }).tap();
+    await page.evaluate(() => __step(1 / 60, 120));
+    await expect(status).toContainText('Hráč 1 · Otevřený stůl. Rozstřel.');
+  } finally { await context.close(); }
+});

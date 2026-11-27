@@ -52,7 +52,7 @@ export class PoolTable {
       };
     }
     this.world.step = dt => this.step(dt);
-    this.reset();
+    this.reset(1, match === 'computer');
   }
 
   body(shape, x, z, movable) {
@@ -83,8 +83,8 @@ export class PoolTable {
     bodies.DeactivateBody(id);
   }
 
-  reset(starter = 1) {
-    if (this.starts === MATCH_STARTS) this.match = new EightBall(starter);
+  reset(starter = 1, computer = this.match?.computer ?? false) {
+    if (this.starts === MATCH_STARTS) this.match = new EightBall(starter, computer);
     this.potted = 0;
     this.rolling = this.scratch = false;
     this.balls.forEach((ball, i) => this.place(ball, ...this.starts[i]));

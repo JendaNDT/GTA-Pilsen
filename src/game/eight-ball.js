@@ -6,7 +6,8 @@ export function ballGroup(number) {
 }
 
 export class EightBall {
-  constructor(starter = 1) {
+  constructor(starter = 1, computer = false) {
+    this.computer = computer;
     this.player = this.starter = starter;
     this.groups = [null, null, null];
     this.remaining = { plné: 7, půlené: 7 };
@@ -46,14 +47,20 @@ export class EightBall {
     const scored = pocketed.some(n => !this.groups[player] || ballGroup(n) === this.groups[player]);
     if (foul || !scored) this.player = other;
     this.inHand = !!foul;
-    this.message = foul || (scored ? 'Pokračuješ.' : 'Předejte si telefon.');
+    this.message = foul;
+    if (!foul && scored && (!this.computer || player === 1)) this.message = 'Pokračuješ.';
+    if (!foul && !scored && !this.computer) this.message = 'Předejte si telefon.';
     this.breakShot = false;
   }
 
   get status() {
-    if (this.winner) return `Vyhrává hráč ${this.winner}. ${this.message}`;
+    if (this.winner) {
+      if (this.computer) return (this.winner === 1 ? 'Vyhráváš! ' : 'Vyhrává počítač. ') + this.message;
+      return `Vyhrává hráč ${this.winner}. ${this.message}`;
+    }
     const group = this.groups[this.player];
     const target = !group ? 'Otevřený stůl' : this.remaining[group] ? `${group} · zbývá ${this.remaining[group]}` : 'na řadě je černá';
-    return `Hráč ${this.player} · ${target}. ${this.message}`;
+    const label = this.computer ? (this.player === 1 ? 'Tvůj tah' : 'Na tahu je počítač') : `Hráč ${this.player}`;
+    return `${label} · ${target}.${this.message ? ' ' + this.message : ''}`;
   }
 }

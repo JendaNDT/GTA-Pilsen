@@ -535,3 +535,17 @@ body.touch .bowl-actions kbd { display: none; }
 }
 .bowl-console .bowl-actions button { padding-inline: 4px; overflow-wrap: anywhere; }
 #pool-panel header { max-width: calc(100% - 52px); }
+
+#pool-computer {
+  display: block;
+  margin-top: 6px;
+  padding: 6px 12px;
+  min-height: 40px;
+  border: 1px solid #839990;
+  border-radius: 7px;
+  background: #294238;
+  color: inherit;
+  pointer-events: auto;
+  cursor: pointer;
+}
+#pool-computer[hidden] { display: none; }
