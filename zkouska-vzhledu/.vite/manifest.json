@@ -1,6 +1,6 @@
 {
   "__vite-browser-external": {
-    "file": "assets/__vite-browser-external-CfTZx2LU.js",
+    "file": "assets/__vite-browser-external-CU-IELg7.js",
     "name": "__vite-browser-external",
     "src": "__vite-browser-external",
     "isDynamicEntry": true,
@@ -9,7 +9,7 @@
     ]
   },
   "index.html": {
-    "file": "assets/index-D9sHl17e.js",
+    "file": "assets/index-C2CwerVa.js",
     "name": "index",
     "src": "index.html",
     "isEntry": true,
@@ -17,11 +17,27 @@
       "node_modules/jolt-physics/dist/jolt-physics.wasm-compat.js"
     ],
     "css": [
-      "assets/index-Cn2XNSvn.css"
+      "assets/index-DQV-Y_Eo.css"
+    ],
+    "assets": [
+      "assets/modern-theatre-0mzrbqn0.svg",
+      "assets/bory-B9EkWaZT.svg",
+      "assets/pavilion-DPgwSN4I.svg",
+      "assets/povrchy-CUCZPW0Y.svg",
+      "assets/station-front-D1ooTije.svg",
+      "assets/theatre-front-BBVxbzFZ.svg",
+      "assets/cathedral-_sspCZvy.svg",
+      "assets/museum-BqN9kUB_.svg",
+      "assets/-128--128-By1f2hQc.svg",
+      "assets/128--128-0OQsZaBm.svg",
+      "assets/-128-128-l0OSC_sW.svg",
+      "assets/128-128-CF1HrQ9-.svg",
+      "assets/town-hall-CWNSurIY.svg",
+      "assets/synagogue-front-DNvtos0h.svg"
     ]
   },
   "node_modules/jolt-physics/dist/jolt-physics.wasm-compat.js": {
-    "file": "assets/jolt-physics.wasm-compat-BglkK8JY.js",
+    "file": "assets/jolt-physics.wasm-compat-CGax0WCk.js",
     "name": "jolt-physics.wasm-compat",
     "src": "node_modules/jolt-physics/dist/jolt-physics.wasm-compat.js",
     "isDynamicEntry": true,
@@ -31,5 +47,65 @@
     "dynamicImports": [
       "__vite-browser-external"
     ]
+  },
+  "src/world/bory.svg": {
+    "file": "assets/bory-B9EkWaZT.svg",
+    "src": "src/world/bory.svg"
+  },
+  "src/world/cathedral.svg": {
+    "file": "assets/cathedral-_sspCZvy.svg",
+    "src": "src/world/cathedral.svg"
+  },
+  "src/world/dominanty/povrchy.svg": {
+    "file": "assets/povrchy-CUCZPW0Y.svg",
+    "src": "src/world/dominanty/povrchy.svg"
+  },
+  "src/world/modern-theatre.svg": {
+    "file": "assets/modern-theatre-0mzrbqn0.svg",
+    "src": "src/world/modern-theatre.svg"
+  },
+  "src/world/museum.svg": {
+    "file": "assets/museum-BqN9kUB_.svg",
+    "src": "src/world/museum.svg"
+  },
+  "src/world/north-square.svg": {
+    "file": "assets/north-square-BUguOVSD.svg",
+    "src": "src/world/north-square.svg"
+  },
+  "src/world/pavilion.svg": {
+    "file": "assets/pavilion-DPgwSN4I.svg",
+    "src": "src/world/pavilion.svg"
+  },
+  "src/world/square-fronts/-128--128.svg": {
+    "file": "assets/-128--128-By1f2hQc.svg",
+    "src": "src/world/square-fronts/-128--128.svg"
+  },
+  "src/world/square-fronts/-128-128.svg": {
+    "file": "assets/-128-128-l0OSC_sW.svg",
+    "src": "src/world/square-fronts/-128-128.svg"
+  },
+  "src/world/square-fronts/128--128.svg": {
+    "file": "assets/128--128-0OQsZaBm.svg",
+    "src": "src/world/square-fronts/128--128.svg"
+  },
+  "src/world/square-fronts/128-128.svg": {
+    "file": "assets/128-128-CF1HrQ9-.svg",
+    "src": "src/world/square-fronts/128-128.svg"
+  },
+  "src/world/station-front.svg": {
+    "file": "assets/station-front-D1ooTije.svg",
+    "src": "src/world/station-front.svg"
+  },
+  "src/world/synagogue-front.svg": {
+    "file": "assets/synagogue-front-DNvtos0h.svg",
+    "src": "src/world/synagogue-front.svg"
+  },
+  "src/world/theatre-front.svg": {
+    "file": "assets/theatre-front-BBVxbzFZ.svg",
+    "src": "src/world/theatre-front.svg"
+  },
+  "src/world/town-hall.svg": {
+    "file": "assets/town-hall-CWNSurIY.svg",
+    "src": "src/world/town-hall.svg"
   }
 }

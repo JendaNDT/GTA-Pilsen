@@ -3,7 +3,8 @@
 Tato větev obsahuje jen sestavené hry pro GitHub Pages:
 
 - **kořen** – webová verze z enginu Godot (adresář `godot/`, revize d868511 větve `godot/prestavba`),
-- **`zkouska-vzhledu/`** – webová hra (three.js), revize 450ad17 z větve `claude/bold-ptolemy-36flyi`
+- **`zkouska-vzhledu/`** – webová hra (three.js), revize `858cde2` z větve `main` s průchozími vozy na všech 51 linkách.
+  V hlavní nabídce zvol **Svézt se MHD** a vyber spoj. Zahrnuje také dřívější úpravy vzhledu
   (vydání 0.2.0 a nová postava hráče a chodců: oblé tělo se svažujícími se rameny, obličejem,
   účesy a dlaněmi, jemné zastínění, přirozenější chůze, běh, stání, skok, dopad a plavání). Obsahuje nové světlo, fasády, stromy, podrobnější auta, vyhlazené tramvaje, hladký profil silnic,
   chodníky s obrubníkem, zaoblené rohy křižovatek, příčný sklon silnic s klopenými zatáčkami,

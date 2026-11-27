@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="2048" height="1024" viewBox="0 0 1200 600">
+<title>Bory – vlastní kresba omítky, ostění, oken, říms a střech</title>
+<defs>
+  <linearGradient id="ochre" x2="0" y2="1"><stop stop-color="#b48046"/><stop offset=".11" stop-color="#e6b665"/><stop offset=".6" stop-color="#e6b46a"/><stop offset="1" stop-color="#c7985c"/></linearGradient>
+  <linearGradient id="glass" x2=".4" y2="1"><stop stop-color="#323a3f"/><stop offset=".5" stop-color="#57626a"/><stop offset="1" stop-color="#454544"/></linearGradient>
+  <pattern id="shingles" width="8" height="5" patternUnits="userSpaceOnUse"><path d="M0 4h8M2 0v4" fill="none" stroke="#192c2e" stroke-opacity=".28" stroke-width=".85"/><path d="M3 0v3" stroke="#a9b9aa" stroke-opacity=".32" stroke-width=".7"/></pattern>
+  <g id="win"><path d="M-17 3h34v47h-34z" fill="#b2865b"/><path d="M-14 4h28v40h-28z" fill="#77644e"/><rect x="-11" y="7" width="22" height="35" fill="url(#glass)"/><path d="M-11 19h22M0 7v35M-11 31h22" stroke="#cebca1" stroke-width="1.7"/><path d="M-17 1h34v3h-34zM-17 45h34v3h-34z" fill="#967351"/><path d="M-18 0h36m-36 45h36" stroke="#f1d39b" stroke-width="1.8"/></g>
+  <g id="arch"><path d="M-14 35V12a14 14 0 0 1 28 0v23z" fill="#a27a50"/><path d="M-10 33V12a10 10 0 0 1 20 0v21Z" fill="url(#glass)"/><path d="M0 4v29m-10-19h20" stroke="#b59f7d" stroke-width="1.6"/><path d="M-15 35h30" stroke="#dec18e" stroke-width="2"/></g>
+  <pattern id="dentils" width="13" height="9" patternUnits="userSpaceOnUse"><path d="M1 0h7v7H1z" fill="#a17954"/><path d="M1 1h7v3H1z" fill="#efc580"/></pattern>
+  <pattern id="hall" width="60" height="170" patternUnits="userSpaceOnUse"><rect width="60" height="170" fill="url(#ochre)"/><path d="M0 5h60M0 71h60M0 135h60" stroke="#87694f" stroke-width="4"/><path d="M0 3h60M0 69h60M0 133h60" stroke="#f2d199" stroke-width="3"/><use xlink:href="#win" x="30" y="14"/><use xlink:href="#arch" x="30" y="85"/><rect x="17" y="147" width="26" height="12" fill="#746452"/></pattern>
+</defs>
+<!-- Nízká střední budova. -->
+<rect width="600" height="150" fill="url(#ochre)"/>
+<path d="M0 3h600v7H0zm0 24h600v2H0zm0 110h600v13H0z" fill="#93714e"/>
+<rect y="11" width="600" height="8" fill="url(#dentils)"/>
+<g><use xlink:href="#win" x="41" y="58"/><use xlink:href="#win" x="91" y="58"/><use xlink:href="#win" x="143" y="58"/><use xlink:href="#win" x="196" y="58"/><use xlink:href="#win" x="404" y="58"/><use xlink:href="#win" x="459" y="58"/><use xlink:href="#win" x="515" y="58"/><use xlink:href="#win" x="565" y="58"/></g>
+<rect x="227" width="146" height="150" fill="#dfae72"/><path d="M238 149V40h124v109" fill="#8d7155"/><rect x="245" y="45" width="110" height="105" fill="#51413c"/><path d="M300 46v103" stroke="#463934" stroke-width="2"/><path d="M228 17h144M228 21h144" stroke="#ba9467" stroke-width="3"/>
+<!-- Panel s nápisem a slepé členění bočních křídel. -->
+<rect x="620" width="240" height="100" fill="url(#ochre)"/><path d="M623 4h234v8H623zM622 94h236v6H622z" fill="#916f4c"/><path d="M635 29h210v42H635zm-4-9h218" fill="none" stroke="#b48959" stroke-width="3"/><text x="744" y="58" text-anchor="middle" font-family="serif" font-size="24" letter-spacing="10" fill="#5a4d3e">BORY</text>
+<rect x="875" width="325" height="150" fill="url(#ochre)"/><path d="M875 8h325m-325 128h325" stroke="#977451" stroke-width="6"/><g stroke="#b68d5c" fill="none" stroke-width="3"><path d="M890 130V40q0-17 20-17h39q20 0 20 17v90m19 0V40q0-17 20-17h39q20 0 20 17v90m19 0V40q0-17 20-17h39q20 0 20 17v90"/></g>
+<!-- Fasáda vyššího domu, střední patro a lucerna. -->
+<rect y="170" width="1200" height="170" fill="url(#hall)"/>
+<rect y="345" width="605" height="86" fill="url(#ochre)"/><rect y="350" width="605" height="8" fill="url(#dentils)"/><path d="M0 346h605m-605 78h605" stroke="#916c4a" stroke-width="5"/>
+<g transform="translate(0 368)"><use xlink:href="#arch" x="59"/><use xlink:href="#arch" x="121"/><use xlink:href="#arch" x="251"/><use xlink:href="#arch" x="300"/><use xlink:href="#arch" x="349"/><use xlink:href="#arch" x="479"/><use xlink:href="#arch" x="541"/></g>
+<rect x="630" y="350" width="138" height="80" fill="#e6d0ab"/><path d="M630 356h138m-138 64h138" stroke="#b49d78" stroke-width="5"/><circle cx="699" cy="392" r="13" fill="#c0a077"/><circle cx="699" cy="392" r="9" fill="#5e5c55"/><path d="M691 392h16m-8-8v16" stroke="#cfbc9c" stroke-width="1.5"/>
+<rect x="782" y="350" width="78" height="80" fill="#51524d"/><path d="M797 422v-40a24 24 0 0 1 48 0v40z" fill="#252b2e"/><path d="M784 356h74m-74 67h74" stroke="#8e8c76" stroke-width="4"/>
+<rect y="445" width="430" height="155" fill="#536e62"/><rect x="430" y="445" width="350" height="155" fill="#4e5353"/><rect y="445" width="780" height="155" fill="url(#shingles)"/>
+<rect x="780" y="445" width="290" height="155" fill="#495659"/><path d="M794 445v155m42-155v155m44-155v155m44-155v155m44-155v155m44-155v155" stroke="#84908a" stroke-width="3"/>
+<rect x="1080" y="450" width="120" height="49" fill="#e4bf77"/><rect x="1080" y="501" width="120" height="49" fill="#ab8057"/><rect x="1080" y="552" width="120" height="48" fill="#504c44"/>
+<!-- Okenní osa paprskových křídel, od štukové římsy k soklu. -->
+<svg x="870" y="345" width="75" height="93" viewBox="0 0 55 150" preserveAspectRatio="none">
+ <rect width="55" height="150" fill="#daaa62"/><path d="M0 4h55M0 48h55M0 94h55M0 143h55" stroke="#ab8152" stroke-width="3"/>
+ <path d="M0 2h55M0 46h55M0 92h55" stroke="#edd099" stroke-width="2"/>
+ <g transform="translate(12 8) scale(.54 .69)"><use xlink:href="#win" x="28"/></g>
+ <g transform="translate(12 53) scale(.54 .69)"><use xlink:href="#win" x="28"/></g>
+ <g transform="translate(12 99) scale(.54 .69)"><use xlink:href="#win" x="28"/></g>
+</svg>
+<svg x="956" y="345" width="240" height="93" viewBox="0 0 180 100" preserveAspectRatio="none">
+ <rect width="180" height="100" fill="#dca85f"/><path d="M10 95V37Q90 -20 170 37v58" fill="#a47850"/>
+ <path d="M45 99V62a45 45 0 0 1 90 0v37" fill="#684c3e"/><path d="M52 99V65a38 38 0 0 1 76 0v34" fill="#493e39"/>
+ <path d="M90 30v69M52 64h76" stroke="#735844" stroke-width="3"/><path d="M20 95V34m140 61V34" stroke="#f0c887" stroke-width="5"/>
+</svg>
+<rect x="621" y="112" width="237" height="45" fill="#7e8c88"/><rect x="627" y="116" width="225" height="35" fill="#b6c6bf"/><path d="M680 116v35m58-35v35m58-35v35" stroke="#78867e" stroke-width="4"/>
+</svg>
