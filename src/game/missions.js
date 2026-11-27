@@ -1,6 +1,8 @@
+import { makePizzaBox } from '../entities/bike-model.js';
 import { ACTIVITY_COLOR } from './activity-sites.js';
 // Zakázky (rozvoz jídla), objevování památek, navigace k cíli.
 import { WalkingGuide } from './walking-guide.js';
+import { PIZZA, atPizzaDoor, pizzaResult } from './pizza.js';
 import { BikeGuide } from './bike-guide.js';
 import { DRIVABLE_MAX } from '../config.js';
 import { makeBeacon, makePedMesh } from '../entities/models.js';
@@ -10,7 +12,7 @@ import { atTaxiStop, scoreTaxiMotion, TAXI_RIDES, taxiBonus, taxiOffers, taxiRoa
 
 const _road = {};
 const FOOD_KIND = ['restaurace', 'rychlé občerstvení', 'kavárna', 'hospoda'];
-export const JOB_NAMES = { food: 'Rozvoz jídla', taxi: 'Taxi', car: DEMO_NAME, transit: DEMO_NAME };
+export const JOB_NAMES = { pizza: 'Rozvoz pizzy na kole', food: 'Rozvoz jídla', taxi: 'Taxi', car: DEMO_NAME, transit: DEMO_NAME };
 const RESULT = { paid: 'Dokončeno', cancelled: 'Zrušeno', interrupted: 'Přerušeno', expired: 'Vypršel čas' };
 const plain = (value) => String(value).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
 const clock = (seconds) => {
@@ -113,6 +115,7 @@ export class Jobs {
     if (g.shifts.active) return 'Nejdřív dokonči nebo zruš směnu MHD.';
     if (this.job) return 'Nejdřív dokonči nebo zruš probíhající zakázku.';
     let task;
+    if (type === 'pizza') task = { ...PIZZA, ridden: 0 };
     if (type === 'food') task = this._food();
     if (type === 'taxi') {
       const unavailable = this.taxiUnavailable();
@@ -189,7 +192,55 @@ export class Jobs {
     return legs.every((leg) => leg.from && leg.to) ? { ...task, legs, index: 0 } : null;
   }
 
+  pizzaChoice() {
+    const g = this.game, j = this.job;
+    if (g.mode !== 'foot' || g.activities.active || g.shifts.active || j?.pending) return null;
+    if ((!j || j.type === 'pizza' && j.phase === 'pickup') && atPizzaDoor(g.player, PIZZA.pick, this.world)) {
+      return { label: 'Vyzvednout pizzu', run: () => {
+        if (!this.job) {
+          const error = this.start('pizza');
+          if (error) return g.hud.toast(error, 'bad');
+        }
+        this.job.phase = 'cycle';
+        this.job.time = this.job.limit;
+        g.bikes.prepareCourier();
+        this.routeTimer = 0;
+        g.hud.toast(`Pizza je zabalená. Nasedni na kolo · cíl ${this.job.label}.`);
+      } };
+    }
+    if (j?.type === 'pizza' && j.phase === 'door' && atPizzaDoor(g.player, j.drop, this.world)) {
+      return { label: 'Předat pizzu', run: () => this._complete() };
+    }
+    return null;
+  }
+
+  onBikeDismount(point) {
+    const j = this.job;
+    if (j?.type !== 'pizza' || j.phase !== 'cycle' || j.ridden < 30) return;
+    const nearHouse = Math.hypot(point.x - j.park.x, point.z - j.park.z) < 16;
+    if (nearHouse && Math.abs(point.y - this.world.groundY(j.park.x, j.park.z)) < 1.5 &&
+        !this.world.onCarriageway(point.x, point.z, point.y)) {
+      j.phase = 'door';
+      this.routeTimer = 0;
+    }
+  }
+
+  _carryPizza() {
+    const g = this.game;
+    const riding = g.mode === 'bike';
+    const parent = riding ? g.bikes.visual : g.player.mesh;
+    this.box ??= makePizzaBox();
+    if (this.box.parent !== parent) {
+      parent.add(this.box);
+      this.box.position.set(riding ? 0 : .22, riding ? .738 : .96, riding ? -.56 : .27);
+    }
+  }
+
   _clear() {
+    if (this.job?.type === 'pizza') {
+      this.game.bikes.finishCourier();
+      this.box?.removeFromParent();
+    }
     if (this.passenger) {
       this.passenger.skeleton.dispose();
       this.game.scene.remove(this.passenger);
@@ -261,7 +312,8 @@ export class Jobs {
 
   _complete() {
     const j = this.job;
-    if (j.type === 'taxi') j.pending = taxiResult(j);
+    if (j.type === 'pizza') j.pending = pizzaResult(j);
+    else if (j.type === 'taxi') j.pending = taxiResult(j);
     else {
       const tip = five(Math.max(0, j.time) / j.limit * (j.type === 'car' || j.type === 'transit' ? 100 : 80));
       j.pending = { type: j.type, state: 'paid', amount: j.reward + tip,
@@ -324,6 +376,7 @@ export class Jobs {
   get displayedWalk() {
     if (this.game.activities?.active) return this.game.activities.path;
     if (this.game.mode === 'bike') return null;
+    if (this.job?.type === 'pizza' && this.game.mode === 'foot') return this.walking.path;
     if (!this.waypoint || this.job) return this.walkRoute;
     return this.game.mode === 'foot' ? this.walking.path : this.walkRoute ?? this.walking.path;
   }
@@ -339,6 +392,9 @@ export class Jobs {
   target() {
     const j = this.job;
     if (!j) return this.waypoint;
+    if (j.phase === 'cycle') {
+      return this.game.mode === 'bike' ? j.park : this.game.bikes.rental ?? j.bike;
+    }
     if (j.phase === 'pickup') return j.pick;
     if (j.phase === 'drive') return j.steps[j.index];
     if (j.phase === 'board') return j.legs[j.index].from;
@@ -360,7 +416,11 @@ export class Jobs {
     }
     if (j.time !== null) {
       j.time -= dt;
-      if (j.time <= 0 && (j.type !== 'taxi' || j.phase === 'pickup')) { this.end('expired', 'Bez odměny'); return; }
+      if (j.type !== 'pizza' && j.time <= 0 && (j.type !== 'taxi' || j.phase === 'pickup')) { this.end('expired', 'Bez odměny'); return; }
+    }
+    if (j.type === 'pizza' && j.phase !== 'pickup') {
+      this._carryPizza();
+      if (j.phase === 'cycle' && !g.bikes.rental) g.bikes.prepareCourier();
     }
     const t = this.target(), d = Math.hypot(t.x - p.x, t.z - p.z);
     const ground = (j.type === 'food' || j.type === 'taxi') && Number.isFinite(t.y) ? t.y : this.world.groundY(t.x, t.z);
@@ -378,6 +438,10 @@ export class Jobs {
     this.beacon.position.set(t.x, ground, t.z);
     switch (j.phase) {
       case 'pickup':
+        if (j.type === 'pizza') {
+          instruction = `Přijď pěšky k výdeji · <b>${j.name}</b><br>Bonus za předání do 2 minut od převzetí`;
+          break;
+        }
         instruction = j.type === 'taxi' ? `Zastav u zákazníka u pravého kraje · <b>${plain(j.name)}</b>`
           : `Vyzvedni jídlo · <b>${plain(j.name)}</b>${j.kind ? ` (${j.kind})` : ''}`;
         if (j.type === 'taxi' ? taxiAt() : j.type === 'food' ? foodAt() : (foot || driver) && at(10) && speed < 4) {
@@ -396,6 +460,13 @@ export class Jobs {
           instruction = `Zastav u cíle u pravého kraje · <b>${plain(j.label)}</b>${bonus}`;
         } else instruction = `Doruč na adresu <b>${plain(j.label)}</b>`;
         if (j.type === 'taxi' ? taxiAt() : foodAt()) this._complete();
+        break;
+      case 'cycle':
+        instruction = g.mode === 'bike' ? `Dojeď k domu · <b>${j.label}</b>` : 'Nasedni na kolo u značky';
+        if (g.mode === 'bike' && at(8)) instruction = 'Zastav u značky a sesedni na chodník';
+        break;
+      case 'door':
+        instruction = g.mode === 'bike' ? 'Zastav a sesedni u domu' : `Předej pizzu pěšky u vchodu · <b>${j.label}</b>`;
         break;
       case 'drive': {
         const park = j.index === j.steps.length - 1;
@@ -421,8 +492,11 @@ export class Jobs {
         break;
     }
     if (this.job === j && !j.pending) {
+      const pay = j.type === 'pizza'
+        ? `${j.reward} Kč + ${j.time !== null && j.time < 0 ? 0 : j.bonus} Kč za čas`
+        : `odměna od ${j.reward} Kč`;
       const time = j.time === null ? '' : j.time <= 0 ? ' · po termínu' : ` · <span class="timer">${clock(j.time)}</span>`;
-      g.hud.mission(`<b>${title}</b><br>${instruction}<br>${Math.round(d)} m${time} · odměna od ${j.reward} Kč`);
+      g.hud.mission(`<b>${title}</b><br>${instruction}<br>${Math.round(d)} m${time} · ${pay}`);
     }
   }
 
@@ -435,10 +509,13 @@ export class Jobs {
       this.beacon.visible = false;
       hud.mission(null);
     }
-    this.walking.update(this.job || activity ? null : this.waypoint, g.mode, p, this.arrivalRoad);
+    const pizza = this.job?.type === 'pizza';
+    const footTarget = pizza && g.mode === 'foot' ? this.target() : null;
+    this.walking.update(footTarget ?? (this.job || activity ? null : this.waypoint), g.mode, p, this.arrivalRoad);
     const ridingToTarget = g.mode === 'bike' && !this.job && !activity && !g.shifts.active;
-    this.cycling.update(ridingToTarget ? this.waypoint : null, p);
-    if (this.waypoint && !activity) {
+    const pizzaTarget = pizza && g.mode === 'bike' && this.job.phase === 'cycle' ? this.job.park : null;
+    this.cycling.update(pizzaTarget ?? (ridingToTarget ? this.waypoint : null), p);
+    if (this.waypoint && !activity && !pizza) {
       this.wpBeacon.visible = !this.job;
       this.wpBeacon.position.set(this.waypoint.x, this.waypoint.y ?? this.world.groundY(this.waypoint.x, this.waypoint.z), this.waypoint.z);
       const walk = this.waypoint.walk;
@@ -457,7 +534,7 @@ export class Jobs {
 
     // navigační trasa
     this.routeTimer -= dt;
-    const tgt = activity || g.mode === 'bike' ? null : this.target();
+    const tgt = activity || footTarget || g.mode === 'bike' ? null : this.target();
     if (!tgt) this.route = null;
     else if (this.routeTimer <= 0) {
       this.routeTimer = 2.2;

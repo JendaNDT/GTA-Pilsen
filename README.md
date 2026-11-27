@@ -31,6 +31,8 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 - **Bowling U Papírny.** Na Papírnické 3 otevři jednu dráhu klávesou F nebo dotykovým tlačítkem. Nastav směr a sílu, dohraj deset kol a ulož si osobní rekord. [Ovládání a zkoušky](docs/E57.md)
 
+- **Rozvoz pizzy na kole.** V nabídce Zakázky vyber **Rozvézt pizzu na kole**. U Rud’s Pizza převezmi krabici a dojeď do Prokopovy 25. U domu sesedni a předej pizzu pěšky. Za rozvoz dostaneš 100 Kč, při předání do dvou minut dalších 40 Kč. [První trasa a ověření](docs/E68.md)
+
 - **Taxi podle potřeb cestujících.** V osobním autě otevři Zakázky a vyber běžnou jízdu, spěch na vlak nebo klidnou jízdu. Před přijetím vidíš nástup, cíl a výplatu. Zastav u pravého obrubníku ve směru jízdy. Za včasný příjezd na nádraží nebo plynulou jízdu můžeš získat bonus. [Trasy a ověření](docs/E53.md)
 
 - Na vodních plochách v celé mapě se dá brodit a v hlubší vodě plavat. V řekách s mapovanou osou toku proud unáší plavce i plovoucí auta. Na střední a vyšší kvalitě se při pádu do vody objeví tříšť a kruhy. [Fyzika na celé mapě](docs/E51/voda-na-cele-mape.md) · [Srovnání hladiny u Wilsonova mostu a Ostende](docs/E51.md) · [Viditelný proud](docs/E51/proud.md)
@@ -395,7 +397,7 @@ zobrazuje. Nové sestavení dat již musí obsahovat ověřené datum.
 
 - Interiéry Tatry, tříčlánkové tramvaje, autobusu SOR a trolejbusu včetně sedadel, osvětlení, oken a průchozích měchů jsou vlastní tvorba projektu Plzeň naplno. Využívají stávající karoserie a herní jízdní řád PMDP.
 
-- Souřadnice stanovišť Pilsen Bike pocházejí z veřejného zdroje PMDP / Freebike ve formátu GBFS 3.0. Zdroj neuvádí vlastní licenci a specifikace pro tento případ uvádí CC0. Model elektrokola a označník vytvořil projekt Plzeň naplno. [Data stanovišť](https://pmdpbike.admin.freebike.com/api/gbfs/v30/station_information) · [Licencování ve specifikaci GBFS](https://github.com/MobilityData/gbfs/blob/v3.0/gbfs.md#system_informationjson)
+- Souřadnice stanovišť Pilsen Bike pocházejí z veřejného zdroje PMDP / Freebike ve formátu GBFS 3.0. Zdroj neuvádí vlastní licenci a specifikace pro tento případ uvádí CC0. Model elektrokola, označník a krabici na pizzu vytvořil projekt Plzeň naplno. [Data stanovišť](https://pmdpbike.admin.freebike.com/api/gbfs/v30/station_information) · [Licencování ve specifikaci GBFS](https://github.com/MobilityData/gbfs/blob/v3.0/gbfs.md#system_informationjson)
 
 - Interiér bowlingu, dráha, kuželky, kulečníkový stůl, tágo i číslované plné a půlené koule jsou vlastní tvorba projektu. Přístup vychází z adresy v městském sportovním katalogu, herní mapy OpenStreetMap (ODbL) a terénu ČÚZK (CC BY 4.0). [Bowling U Papírny v katalogu města](https://sport.plzen.cz/Sportoviste/d/bowling-u-papirny)
 - Pěší přístup a umístění zkušební trasy ve Škodalandu vycházejí z OpenStreetMap (ODbL) a terénu ČÚZK (CC BY 4.0). Značení, trasa a modely drah minigolfu, překážek, půjčovny, vlajek a míčku jsou vlastní tvorba projektu Plzeň naplno. [Poloha a adresa areálu podle města](https://sport.plzen.eu/Sportoviste/d/skodaland-ceske-udoli)

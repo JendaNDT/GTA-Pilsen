@@ -746,6 +746,8 @@ export class Game {
     const activity = this.activities.choice();
     if (activity) return { label: activity.label, run: () => this.activities.act(activity) };
     if (this.activities.playingGolf) return null;
+    const pizza = this.jobs.pizzaChoice();
+    if (pizza) return pizza;
     const bike = this.bikes.footChoice();
     if (bike) return bike;
     const h = this._nearestHeli();
@@ -1253,7 +1255,7 @@ export class Game {
     hud.wanted(this.wanted);
     hud.health(this.player.health);
     if (this.mode === 'car') hud.speed(this.car.speed * 3.6, `${this.car === this.garage.active ? 'Vlastní · ' : ''}${this.car.type.name}${this.car.health < 40 ? ' · poškozené' : ''}`);
-    else if (this.mode === 'bike') hud.speed(this.bikes.speed * 3.6, 'Sdílené elektrokolo');
+    else if (this.mode === 'bike') hud.speed(this.bikes.speed * 3.6, this.bikes.rental?.courier ? 'Kurýrní kolo' : 'Sdílené elektrokolo');
     else if (this.mode === 'heli') hud.speed(this.heli.speed * 3.6, `Vrtulník · výška ${Math.round(this.heli.y)} m`);
     else if (this.mode === 'transit') hud.speed(this.ride.v * 3.6, `${TRANSIT_NAME[this.ride.route.type]} ${this.ride.route.ref} → ${this.ride.destination}`);
     else hud.speed(null);

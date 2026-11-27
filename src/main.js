@@ -92,7 +92,7 @@ const ABOUT_HTML = (meta, rendering) => `
   Zkušební trasa, její značení a dráhy minigolfu, překážky, půjčovna, míček a vlajky jsou vlastní tvorba projektu.</p>
   <p>Polohu bowlingu U Papírny uvádí <a href="https://sport.plzen.cz/Sportoviste/d/bowling-u-papirny" target="_blank" rel="noopener">Sportovní Plzeň</a>.
   Herní interiér, bowlingovou dráhu, kuželky, kulečníkový stůl, tágo i číslované plné a půlené koule vytvořil projekt Plzeň naplno.</p>
-  <p>Polohy stanovišť Pilsen Bike vycházejí z veřejného zdroje PMDP / Freebike ve formátu GBFS 3.0 (licence ${BIKE_LICENSE}). Model elektrokola a označníku jsou vlastní tvorba projektu.</p>
+  <p>Polohy stanovišť Pilsen Bike vycházejí z veřejného zdroje PMDP / Freebike ve formátu GBFS 3.0 (licence ${BIKE_LICENSE}). Modely elektrokola, označníku a krabice na pizzu jsou vlastní tvorba projektu.</p>
   <p>Barevné tabulky pro den, soumrak a noc vznikly přímo pro tuto hru.</p>
   <p>Letecké snímky krajiny © ČÚZK. Podkladem je <a href="https://atom.cuzk.gov.cz/ORTOFOTO/ORTOFOTO.xml"
   target="_blank" rel="noopener">Ortofoto ČR</a> s licencí
@@ -300,7 +300,7 @@ async function boot() {
         game.postfx?.resetHistory();
       }
       firstPlay = false;
-      if (!game.hasSave && !game.shifts.active && !game.cabin) {
+      if (!game.hasSave && !game.jobs.job && !game.shifts.active && !game.cabin) {
         game.hud.toast('Vítej v Plzni! Stojíš na náměstí Republiky.', 'big', 5000);
         setTimeout(() => game.hud.toast(IS_TOUCH ? 'Tlačítkem F nastoupíš do auta, ✉ ti dá zakázku.' : 'Klávesou F nastoupíš do auta, J ti dá zakázku, M otevře mapu.', '', 7000), 1500);
       } else if (game.activities.interrupted) {

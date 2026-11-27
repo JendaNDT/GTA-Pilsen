@@ -1,3 +1,4 @@
+import { PIZZA } from './pizza.js';
 import { Group } from 'three/webgpu';
 import { BIKE_STATIONS, BIKE_STATION_ALIASES, loadBikeStock } from './bike-stations.js';
 import { BIKE_RADIUS, bikeTurn, pedalSpeed } from '../physics/bike-motion.js';
@@ -48,12 +49,27 @@ export class SharedBikes {
     return nearest && !this.game.world.onCarriageway(player.x, player.z, player.y) ? nearest : null;
   }
 
+  prepareCourier() {
+    if (this.rental) return;
+    const { x, z, yaw } = PIZZA.bike;
+    this.rental = { courier: true, x, z, yaw, y: this.game.world.groundY(x, z) };
+    this.visual ??= makeBikeMesh();
+    if (!this.visual.parent) this.game.scene.add(this.visual);
+  }
+
+  finishCourier() {
+    if (this.rental?.courier && this.game.mode !== 'bike') {
+      this.rental = null;
+      this.visual.visible = false;
+    }
+  }
+
   footChoice() {
     const { game, rental } = this, { player } = game;
-    if (game.jobs.job || player.swimming) return null;
+    if ((game.jobs.job && game.jobs.job.type !== 'pizza') || player.swimming) return null;
     if (rental) {
       if (Math.abs(player.y - rental.y) < 1.4 && Math.hypot(player.x - rental.x, player.z - rental.z) < 1.85) {
-        return { label: 'Nasednout na vypůjčené elektrokolo', run: () => this.mount(rental) };
+        return { label: rental.courier ? 'Nasednout na kurýrní kolo' : 'Nasednout na vypůjčené elektrokolo', run: () => this.mount(rental) };
       }
       return null;
     }
@@ -65,6 +81,7 @@ export class SharedBikes {
   rideLabel() {
     if (this.speed > STOP_SPEED) return 'Zpomal pro sesednutí';
     if (!this.game.player.grounded) return 'Počkej na dosednutí';
+    if (this.rental?.courier) return 'Sesednout z kurýrního kola';
     const station = this.nearbyStation(this.game.player);
     return station && this.stock[station.id] < station.capacity ? 'Vrátit elektrokolo' : 'Sesednout z elektrokola';
   }
@@ -119,6 +136,7 @@ export class SharedBikes {
     for (const bone of this.rider.values()) bone.rotation.set(0, 0, 0);
     player.mesh.rotation.z = 0;
     player.leaveVehicle(point.x, point.z, point.y);
+    game.jobs.onBikeDismount(point);
     game.promptTimer = 0;
     if (!rental) this.visual.visible = false;
   }
@@ -132,6 +150,11 @@ export class SharedBikes {
     const point = this.leavePoint();
     if (!point) {
       game.hud.toast('Sesedni na volném místě.');
+      return;
+    }
+    if (this.rental?.courier) {
+      this.leave(point);
+      if (game.jobs.job?.type !== 'pizza') this.finishCourier();
       return;
     }
     const station = this.nearbyStation(game.player);
@@ -160,7 +183,7 @@ export class SharedBikes {
 
   interrupt() {
     if (this.rental) {
-      this.stock[this.rental.origin]++;
+      if (!this.rental.courier) this.stock[this.rental.origin]++;
       this.rental = null;
       this.visual.visible = false;
       for (const bone of this.rider.values()) bone.rotation.set(0, 0, 0);
@@ -171,6 +194,15 @@ export class SharedBikes {
   recover() {
     // Při zablokování v terénu jde výpůjčku ukončit i bez volného místa vedle kola.
     const point = this.leavePoint() ?? this.lastDry;
+    if (this.rental?.courier) {
+      this.leave(point);
+      this.finishCourier();
+      if (this.game.jobs.job?.type === 'pizza') {
+        this.prepareCourier();
+        this.game.hud.toast('Náhradní kolo čeká u pizzerie.');
+      }
+      return;
+    }
     const rental = this.rental;
     this.rental = null;
     this.stock[rental.origin]++;
@@ -213,6 +245,8 @@ export class SharedBikes {
     p.vz = fz * this.speed;
     const fall = p.character.move(dt, p, false, .16);
     const travelled = Math.hypot(p.x - startX, p.z - startZ);
+    const job = game.jobs.job;
+    if (job?.type === 'pizza' && job.phase === 'cycle') job.ridden += travelled;
     if (grounded && travelled < this.speed * dt * .55) this.speed = travelled / dt;
     if (p.grounded && !w.isWater(p.x, p.z)) {
       this.lastDry.x = p.x; this.lastDry.y = p.y; this.lastDry.z = p.z;

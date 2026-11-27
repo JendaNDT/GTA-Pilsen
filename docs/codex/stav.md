@@ -1,3 +1,7 @@
+# E68 · První rozvoz pizzy na kole
+
+Na větvi `etapa/E68` z revize `b1b8c8c` je hratelná první zakázka z Rud’s Pizza do Prokopovy 25. Hráč vyzvedne krabici, jede podle vlastní volby, sesedne na chodníku a pěšky potvrdí předání. Prošlo produkční sestavení, 421 testů JavaScriptu, 34 zkoušek Pythonu (jedna další přeskočena), čtyři prohlížečové zkoušky rozvozu a čtyři zkoušky sdílených kol. Při jízdě na nízkou předvolbu ve Full HD bylo naměřeno 59,1 FPS. Příští krok je doplnit zbývajících pět adres. [Zadání](E68.md) · [Zkoušky, snímky a výkon](../E68.md)
+
 # E67 · Symbol skupiny u tahu
 
 Na větvi `etapa/E67` z revize `470163c` ukazuje symbol v osmičce plné, půlené nebo závěrečnou černou podle právě hrajícího hráče. Prošlo sestavení, 418 testů JavaScriptu a šest cílených prohlížečových zkoušek ve WebGL 2 a WebGPU. Na šířce 320 bodů byl ověřen pruhovaný symbol i následný přechod na plnou. Na nízkou předvolbu ve Full HD dosáhla hra 59,1 FPS. [Zadání](E67.md) · [Snímky, zkoušky a výkon](../E67.md)

@@ -88,7 +88,7 @@ export class AreaMap {
   render() {
     el('map-cancel').hidden = !this.game.jobs.waypoint;
     const { jobs, mode } = this.game;
-    el('map-route-status').textContent = jobs.waypoint ?
+    el('map-route-status').textContent = jobs.waypoint || jobs.job?.type === 'pizza' ?
       (mode === 'bike' ? jobs.cycling.status : jobs.roadStatus || jobs.walking.status || '') : '';
     el('map-key-cycling').hidden = mode !== 'bike';
     drawAreaMap(this.canvas, this.game, this.view, this.selected);

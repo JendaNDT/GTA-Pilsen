@@ -110,3 +110,12 @@ export function poseBikeRider(rider, crank) {
       1.17 - shoulderY, .39 - shoulderZ, .275, .29, -1, chestTilt);
   }
 }
+
+export function makePizzaBox() {
+  const box = new Parts();
+  box.box(.36, .045, .36, 0, 0, 0, color(0xc89d64));
+  box.box(.365, .014, .365, 0, .025, 0, color(0xf2dca8));
+  box.box(.055, .002, .363, .06, .033, 0, color(0xb64430));
+  parts ??= geometry();
+  return new THREE.Mesh(box.geometry(), parts.material);
+}

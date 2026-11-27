@@ -19,7 +19,8 @@ if (cabin && !service) throw new Error('Neznámý průchozí spoj ' + cabinTrip)
 const opponent = args.includes('--pool-opponent');
 const eightBall = opponent || args.includes('--eight-ball');
 const pool = eightBall || args.includes('--pool-practice');
-const work = pool || cabin || rush || args.includes('--work');
+const pizza = args.includes('--pizza');
+const work = pizza || pool || cabin || rush || args.includes('--work');
 const pilot = !cabin && !rush && (release || centerFlight || args.includes('--pilot'));
 if (cabin && (rush || release)) throw new Error('Jízdu v MHD měř samostatně.');
 if (rush && release) throw new Error('Špičku a vydání měř samostatně.');
@@ -39,7 +40,7 @@ const browser = await chromium.launch({
   ...(work && { channel: 'chromium', args: workFlags }),
 });
 const report = { browser: browser.version(), viewport: '1920 × 1080', pilot, centerFlight, coldStartMs: [] };
-const scenarios = pool ? [{ name: 'pool', mode: 'pool', site: 'U Papírny' }] : cabin ? [{ name: service.type, mode: 'cabin' }] : rush ? [{ name: 'rush', mode: 'traffic', site: 'Klatovská třída' }] : release ? [
+const scenarios = pizza ? [{ name: 'pizza', mode: 'pizza', site: 'Prokopova' }] : pool ? [{ name: 'pool', mode: 'pool', site: 'U Papírny' }] : cabin ? [{ name: service.type, mode: 'cabin' }] : rush ? [{ name: 'rush', mode: 'traffic', site: 'Klatovská třída' }] : release ? [
   { name: 'car', mode: 'car', site: 'Plzeň' },
   { name: 'heli', mode: 'heli', site: 'Dobřív' },
   { name: 'carEast', mode: 'car', site: 'Hrádek' },
@@ -86,7 +87,20 @@ try {
       await page.getByRole('button', { name: 'Hrát', exact: true }).click();
       report[name] = await page.evaluate(async ({ mode, pilot, site, work, pilotTrip, eightBall, opponent }) => {
         const game = window.__game, world = game.world;
-        if (mode === 'pool') {
+        if (mode === 'pizza') {
+          window.__freeze(true);
+          const error = game.jobs.start('pizza');
+          if (error) throw new Error(error);
+          const { pick, bike } = game.jobs.job;
+          game.player.place(pick.x, pick.z);
+          game.doAction();
+          game.player.place(bike.x, bike.z);
+          game.doAction();
+          if (game.mode !== 'bike') throw new Error('Kurýr nenasedl na kolo.');
+          // Měřený rovný úsek začíná za kruhovým objezdem na Prokopově.
+          game.player.place(98.4, 514);
+          game.player.yaw = game.camYaw = Math.atan2(8.2, 35);
+        } else if (mode === 'pool') {
           window.__freeze(true);
           game.player.place(638, 1217);
           game.doAction();
@@ -260,7 +274,7 @@ try {
       : service?.type === 'trolleybus' ? 'data-raw/e60/trolejbus/jizda.json'
       : service?.type === 'bus' ? 'data-raw/e60/bus/jizda.json' : 'data-raw/e60/jizda.json';
     const output = args.find((arg) => arg.startsWith('--output='))?.slice('--output='.length)
-      ?? (opponent ? 'data-raw/e65/vykon.json' : eightBall ? 'data-raw/e64/vykon.json' : pool ? 'data-raw/e63/vykon.json' : cabin ? cabinOutput : rush ? 'data-raw/e20/vykon-spicka.json' : 'data-raw/e13/measure-work.json');
+      ?? (pizza ? 'data-raw/e68/vykon.json' : opponent ? 'data-raw/e65/vykon.json' : eightBall ? 'data-raw/e64/vykon.json' : pool ? 'data-raw/e63/vykon.json' : cabin ? cabinOutput : rush ? 'data-raw/e20/vykon-spicka.json' : 'data-raw/e13/measure-work.json');
     await mkdir(dirname(output), { recursive: true });
     await writeFile(output, json);
   }
@@ -269,6 +283,7 @@ try {
       Object.values(report[name].budgets).some(budget => budget.status !== 'splněno'))) process.exitCode = 1;
   if (rush && (report.rush.physicsP95Ms > 4 || !report.rush.physicsSteps ||
       report.rush.peakCars !== 40 || !report.rush.peakDriven)) process.exitCode = 1;
+  if (pizza && report.pizza.metres < 30) process.exitCode = 1;
   if (release && (report.carEast.metres < 25 || report.heliCenter.chunks < 2 || !report.heliCenter.cityTiles)) process.exitCode = 1;
   if (pilot && ([report.car, report.heli].some(({ chunks }) => chunks < 2) || !report.car.cityTiles
       || centerFlight && !report.heli.cityTiles)) process.exitCode = 1;
