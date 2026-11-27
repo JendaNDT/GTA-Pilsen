@@ -1,5 +1,7 @@
 # Plzeň naplno
 
+[**Hrát v prohlížeči**](https://jendandt.github.io/GTA-Pilsen/plna-hra/)
+
 Skutečná Plzeň jako otevřený svět v prohlížeči. Chodíš, jezdíš autem, tramvají, trolejbusem i autobusem,
 létáš vrtulníkem, rozvážíš jídlo, vozíš zákazníky a ujíždíš policii – to vše v ulicích postavených ze skutečných
 otevřených dat. Běží na počítači i na mobilu, bez instalace.
