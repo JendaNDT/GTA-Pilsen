@@ -613,3 +613,7 @@ body.touch .bowl-actions kbd { display: none; }
 #regional-taxi { margin: 12px 0; }
 #regional-taxi summary { cursor: pointer; padding: 10px 0; font-weight: 700; }
 #regional-taxi-summary { margin: 8px 0; }
+
+.taxi-search { display: flex; align-items: center; gap: 8px; min-height: 44px; }
+#taxi-search { box-sizing: border-box; flex: 1; min-width: 0; min-height: 44px; background: #1b242c; color: var(--paper);
+  font: inherit; font-size: 16px; padding: 5px 8px; border: 1px solid #69747f; border-radius: 6px; }

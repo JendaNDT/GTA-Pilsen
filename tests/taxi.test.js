@@ -60,3 +60,15 @@ test('regionální stanoviště pokrývají města a okraje mapy a mají odlišn
   assert.equal(regionalOffer({}, { stand: TAXI_STANDS[0] }, TAXI_STANDS[0]),null);
   assert.equal(regionalOffer({},null,TAXI_STANDS[0]),null);
 });
+
+test('cíl taxi lze hledat podle obce, ulice i čísla bez ohledu na diakritiku a pořadí slov', async () => {
+  const { TAXI_STANDS, taxiDestinations } = await import('../src/game/regional-taxi.js');
+  const center = TAXI_STANDS.find(s => s.label === 'Prokopova 21');
+  const plzenec = TAXI_STANDS.find(s => s.area === 'Starý Plzenec');
+  assert.deepEqual(taxiDestinations('plzenec', center), [plzenec]);
+  assert.deepEqual(taxiDestinations(' 74  NAMESTI plzenec ', center), [plzenec]);
+  assert.deepEqual(taxiDestinations('prokopova', plzenec), [center]);
+  assert.deepEqual(taxiDestinations('Prokopova', center), []);
+  assert.deepEqual(taxiDestinations('neexistujiciulice', center), []);
+  assert.deepEqual(taxiDestinations('  ', center), TAXI_STANDS.filter(s => s !== center));
+});

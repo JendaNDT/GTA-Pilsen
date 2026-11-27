@@ -139,3 +139,48 @@ test('E70 – dotykový výběr cíle z Rokycan, výstup na chodník a uložené
     expect(await page.evaluate(() => [__game.money,__game.jobs.last.amount,__game.stats.taxiRides])).toEqual([outcome.money,outcome.reward,1]);
   } finally { await context.close(); }
 });
+
+test('E71 – vyhledání cíle taxi na telefonu a přijetí zobrazené ceny', async ({ browser }, info) => {
+  const context = await browser.newContext({ ...devices['Pixel 7 landscape'], viewport: { width: 740, height: 390 } });
+  try {
+    const page = await context.newPage();
+    await openRegionalTaxi(page, 'Rokycany', 'low');
+    const search = page.getByRole('searchbox', { name: 'Hledat cíl' });
+    const destination = page.getByLabel('Cíl jízdy');
+    const options = destination.locator('option');
+    const start = page.getByRole('button', { name: 'Přijmout jízdu do cíle' });
+    const summary = page.locator('#regional-taxi-summary');
+    const available = await options.count();
+    await search.fill('nova hut');
+    await expect(options).toHaveCount(2);
+    await destination.selectOption({ label: 'Nová Huť · Jasmínová 85' });
+    await expect(summary).toContainText('→ Nová Huť · Jasmínová 85');
+    await search.fill('jasmin');
+    await expect(options).toHaveCount(1);
+    await search.fill('zzzzzz');
+    await expect(start).toBeDisabled();
+    await expect(options).toHaveCount(0);
+    await expect(summary).toContainText('Žádný cíl');
+    await search.fill('');
+    await expect(options).toHaveCount(available);
+    await search.fill('plzenec');
+    await expect(destination.locator('option:checked')).toHaveText('Starý Plzenec · Masarykovo náměstí 74');
+    await search.fill('prokopova');
+    await expect(options).toHaveCount(1);
+    await expect(summary).toContainText('→ Plzeň · Prokopova 21');
+    await search.press('Enter');
+    await expect(search).not.toBeFocused();
+    await expect(start).toBeEnabled();
+    const fare = await summary.innerText();
+    await start.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: info.outputPath('hledani.jpg') });
+    await start.tap();
+    const job = await page.evaluate(() => {
+      const { job } = __game.jobs;
+      return { destination: job.label, fare: job.reward, origin: job.name };
+    });
+    expect(job.destination).toBe('Plzeň · Prokopova 21');
+    expect(fare).toContain(job.fare + ' Kč');
+    expect(fare).toContain(job.origin);
+  } finally { await context.close(); }
+});

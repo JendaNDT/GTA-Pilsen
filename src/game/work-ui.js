@@ -1,4 +1,4 @@
-import { TAXI_STANDS, regionalPickup, regionalOffer } from './regional-taxi.js';
+import { TAXI_STANDS, taxiDestinations, regionalPickup, regionalOffer } from './regional-taxi.js';
 import { PIZZERIAS, pizzaOrder } from './pizza-offers.js';
 import { CAR_PRICE, GARAGE, UPGRADES } from './garage.js';
 import { jobTitle, resultText } from './missions.js';
@@ -33,31 +33,50 @@ export function initWorkUI(game, play, refreshMenu) {
   showAddresses();
 
   const region = $('regional-taxi'), destination = $('taxi-destination');
+  const search = $('taxi-search');
   const acceptRegional = $('regional-taxi-start');
-  let regionalOrigin, regionalTrip;
+  let regionalOrigin, regionalTrip, pricedStand;
   function showRegionalPrice() {
-    regionalTrip = regionalOffer(game.world, regionalOrigin, TAXI_STANDS[Number(destination.value)]);
+    const stand = destination.selectedIndex < 0 ? null : TAXI_STANDS[Number(destination.value)];
+    if (stand !== pricedStand) {
+      pricedStand = stand;
+      regionalTrip = regionalOffer(game.world, regionalOrigin, stand);
+    }
     acceptRegional.disabled = !regionalTrip;
     const summary = $('regional-taxi-summary');
     if (!regionalOrigin) summary.textContent = 'V dosahu není místo pro nástup. Přijeď blíž k obydlené části mapy.';
+    else if (!stand) summary.textContent = 'Žádný cíl neodpovídá hledání. Zkus jinou obec nebo ulici.';
     else if (!regionalTrip) summary.textContent = 'Do tohoto cíle se od nástupu nedá dojet. Zvol jiný cíl.';
     else {
       const km = (regionalTrip.len / 1000).toLocaleString('cs-CZ', { maximumFractionDigits: 1 });
       summary.textContent = `Nástup · ${regionalTrip.name} → ${regionalTrip.label} · ${km} km · ${regionalTrip.reward} Kč`;
     }
   }
+  function filterDestinations() {
+    const matches = taxiDestinations(search.value, regionalOrigin?.stand);
+    const previous = destination.selectedIndex < 0 ? null : TAXI_STANDS[Number(destination.value)];
+    const selected = matches.includes(previous) ? previous :
+      matches.find(stand => stand.area === 'Starý Plzenec') ?? matches[0];
+    destination.replaceChildren(...matches.map(stand => {
+      const label = stand.area === stand.label ? stand.area : stand.area + ' · ' + stand.label;
+      return new Option(label, TAXI_STANDS.indexOf(stand), false, stand === selected);
+    }));
+    destination.disabled = matches.length === 0;
+    showRegionalPrice();
+  }
   function showRegion() {
     if (!region.open || region.hidden) return;
     regionalOrigin = regionalPickup(game.world, game.car);
-    const previous = destination.value;
-    destination.replaceChildren(...TAXI_STANDS.flatMap((s,i) => s === regionalOrigin?.stand ? [] :
-      [new Option(s.area === s.label ? s.area : s.area + ' · ' + s.label, i)]));
-    const preferred = TAXI_STANDS.findIndex(s => s.area === 'Starý Plzenec');
-    const options = [...destination.options];
-    destination.value = options.find(o => o.value === previous)?.value ??
-      options.find(o => o.value === String(preferred))?.value ?? options[0]?.value ?? '';
-    showRegionalPrice();
+    pricedStand = undefined;
+    filterDestinations();
   }
+  search.addEventListener('input', filterDestinations);
+  search.addEventListener('keydown', event => {
+    if (event.key === 'Enter' && !event.isComposing) {
+      event.preventDefault();
+      search.blur();
+    }
+  });
   region.addEventListener('toggle', showRegion);
   destination.addEventListener('change', showRegionalPrice);
   acceptRegional.addEventListener('click', () => {

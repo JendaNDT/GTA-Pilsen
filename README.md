@@ -35,7 +35,7 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 - **Rozvoz pizzy na kole.** V nabídce **Zakázky** vyber výdejní podnik a cílovou adresu. Před přijetím vidíš délku cyklistické trasy, odměnu a čas na bonus. Jet můžeš po Plzni i do okolních obcí. Pizzu převezmi u výdeje a u domu ji předej pěšky. [Trasy, výplata a zkoušky](docs/E69.md)
 
-- **Taxi po Plzni a okolí.** V osobním autě otevři **Zakázky → Taxi po Plzni a okolí**. Vyber cíl, vyzvedni cestujícího na uvedeném místě a podle minimapy ho dovez k pravému kraji u cíle. Z Prokopovy 21 na Masarykovo náměstí ve Starém Plzenci je to 10,2 km. [Nabídka, ověření a snímky](docs/E70.md)
+- **Taxi po Plzni a okolí.** V osobním autě otevři **Zakázky → Taxi po Plzni a okolí**. Vyhledej cíl podle obce nebo ulice i bez diakritiky, vyzvedni cestujícího na uvedeném místě a podle minimapy ho dovez k pravému kraji u cíle. Z Prokopovy 21 na Masarykovo náměstí ve Starém Plzenci je to 10,2 km. [Nabídka a ověření](docs/E70.md) · [Hledání cíle](docs/E71.md)
 
 - **Taxi podle potřeb cestujících.** V osobním autě otevři Zakázky a vyber běžnou jízdu, spěch na vlak nebo klidnou jízdu. Před přijetím vidíš nástup, cíl a výplatu. Zastav u pravého obrubníku ve směru jízdy. Za včasný příjezd na nádraží nebo plynulou jízdu můžeš získat bonus. [Trasy a ověření](docs/E53.md)
 

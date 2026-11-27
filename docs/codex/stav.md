@@ -1,3 +1,7 @@
+# E71 · Hledání cíle taxi
+
+Na větvi `etapa/E71` z revize `6cf459d` je hotové dotykové hledání podle obce, ulice a čísla domu v nabídce regionálního taxi. Prošlo sestavení, 429 testů JavaScriptu a čtyři cílené prohlížečové zkoušky včetně přijetí vyfiltrované jízdy. Dalším krokem je ověření se softwarovou klávesnicí na skutečném telefonu. [Zadání](E71.md) · [Ovládání, snímek a výsledky](../E71.md)
+
 # E70 · Taxi po Plzni a okolí
 
 Z revize `2892135` na větvi `etapa/E70` funguje výběr cíle mezi 160 stanovišti. Ověřená jízda z Prokopovy 21 na Masarykovo náměstí 74 ve Starém Plzenci měří podle navigace 10,21 km a vyplatí 1 655 Kč. Dotyková zkouška ověřila výběr z Rokycan a návrat k uložené výplatě. Prošlo sestavení, 428 testů JavaScriptu, 34 testů Pythonu s jedním přeskočeným a osm cílených prohlížečových zkoušek. Srovnávací jízda dosáhla 59,1 FPS. Doporučený další krok je na telefonu vyjet ze Starého Plzence a ověřit nabídku pro zpáteční cestu. [Zadání](E70.md) · [Průběh, ověření a snímky](../E70.md)

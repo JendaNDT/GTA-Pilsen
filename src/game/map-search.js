@@ -1,7 +1,5 @@
+import { normalizeSearchText as normalize } from './search-text.js';
 import { BIKE_STATION_ALIASES } from './bike-stations.js';
-
-const normalize = (text) => text.toLowerCase().normalize('NFD')
-  .replace(/\p{M}/gu, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
 
 const bikeKeys = new Set(BIKE_STATION_ALIASES.map(normalize));
 
