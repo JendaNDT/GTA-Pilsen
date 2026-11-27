@@ -1,3 +1,7 @@
+# E66 · Společný výběr kulečníku
+
+Na větvi `etapa/E66` z revize `3573aed` je hotový výběr všech tří režimů přes **Ke kulečníku**. Sestavení, 417 testů JavaScriptu a všech 14 cílených zkoušek herny prošlo. V mobilním zobrazení o šířce 320 bodů jsou tři tlačítka vedle sebe. Ověřen je návrat k rozehrané i dohrané dráze. Měření osmičky na nízkou předvolbu ve Full HD dosáhlo 60 FPS. [Zadání](E66.md) · [Ovládání, snímky a měření](../E66.md)
+
 # E65 · Osmička proti počítači
 
 Na větvi `etapa/E65` z revize `a446bf4` je hotová hra pro jednoho. Soupeř si vybírá přípustné koule, nastavuje směr a sílu, přesouvá bílou po faulu a střídá rozstřely při odvetě. Sestavení a 417 testů JavaScriptu prošlo, v Pythonu prošlo 34 zkoušek a jedna byla přeskočena. Všech dvanáct cílených zkoušek herny prošlo, jednu zkoušku načítání bowlingu bylo třeba opakovat. V obou vykreslovačích proběhla celá partie na emulovaném telefonu. Měření na nízkou předvolbu ve Full HD dosáhlo 60 FPS. [Zadání](E65.md) · [Ovládání, zkoušky a výkon](../E65.md)

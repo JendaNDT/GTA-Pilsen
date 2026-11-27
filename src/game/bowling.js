@@ -23,8 +23,32 @@ export class Bowling {
       cell, marks: cell.querySelector('b'), score: cell.querySelector('span'),
     }));
     this.pool = new PoolPractice(this);
-    get('pool').onclick = () => this.pool.enter();
-    get('eight').onclick = () => this.pool.enter(true);
+    this.modes = get('modes');
+    get('pool').onclick = () => {
+      if (this.canUse && !get('pool').disabled) {
+        this.showModes(true);
+        get('training').focus({ preventScroll: true });
+      }
+    };
+    for (const [id, mode] of [['training', false], ['computer', 'computer'], ['eight', true]]) {
+      get(id).onclick = () => {
+        if (!this.canUse || this.modes.hidden) return;
+        this.showModes(false);
+        this.pool.enter(mode);
+      };
+    }
+    get('cancel').onclick = () => {
+      if (!this.canUse) return;
+      this.showModes(false);
+      get('pool').focus({ preventScroll: true });
+    };
+    this.modes.onkeydown = event => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        get('cancel').click();
+      }
+    };
     this.hit.onclick = () => this.action();
     this.restart.onclick = () => this.newGame();
     this.retry.onclick = () => {
@@ -45,6 +69,12 @@ export class Bowling {
   }
 
   get canUse() { return this.round && !this.game.paused && !this.game.mapOpen; }
+
+  showModes(open) {
+    this.modes.hidden = !open;
+    get('lane-controls').hidden = open;
+    get('pool').setAttribute('aria-expanded', String(open));
+  }
 
   start() {
     this.room ??= createBowlingRoom();
@@ -68,6 +98,7 @@ export class Bowling {
   }
 
   end() {
+    this.showModes(false);
     this.pool.leave();
     this.lane?.dispose();
     this.lane = this.round = null;
@@ -89,7 +120,7 @@ export class Bowling {
 
   action() {
     if (this.pool.table) return this.pool.action();
-    if (!this.canUse || this.phase !== 'aim') return;
+    if (!this.canUse || !this.modes.hidden || this.phase !== 'aim') return;
     if (this.lane.launch(Math.round(this.aim), Math.round(this.power) / 100)) {
       this.phase = 'rolling';
       this.refresh();
@@ -98,6 +129,7 @@ export class Bowling {
 
   update(dt, input) {
     if (this.pool.table) return this.pool.update(dt, input);
+    if (!this.modes.hidden) return;
     if (this.phase === 'aim') {
       if (input.moveX || input.moveY) {
         this.aim = limit(this.aim + input.moveX * 26 * dt, -AIM_LIMIT, AIM_LIMIT);
@@ -174,7 +206,7 @@ export class Bowling {
     text(get('total'), `${total} ${total === 1 ? 'bod' : total >= 2 && total <= 4 ? 'body' : 'bodů'}`);
     const best = this.game.stats.bowlingBest;
     text(get('record'), best === undefined ? '' : `Rekord ${best}`);
-    get('eight').disabled = get('pool').disabled = !ready && !done;
+    get('pool').disabled = !ready && !done;
     this.hit.hidden = get('controls').hidden = done;
     this.hit.setAttribute('aria-disabled', String(!ready));
     this.aimField.disabled = this.powerField.disabled = !ready;

@@ -87,25 +87,35 @@
         </ol>
       </div>
       <div class="bowl-console">
-        <p id="bowl-status" role="status"></p>
-        <div id="bowl-controls">
-          <label for="bowl-aim">Směr <span id="bowl-aim-value"></span></label>
-          <input id="bowl-aim" type="range" min="-35" max="35" value="0">
-          <label for="bowl-power">Síla <span id="bowl-power-value"></span></label>
-          <input id="bowl-power" type="range" min="25" max="100" value="75">
+        <div id="bowl-lane-controls">
+          <p id="bowl-status" role="status"></p>
+          <div id="bowl-controls">
+            <label for="bowl-aim">Směr <span id="bowl-aim-value"></span></label>
+            <input id="bowl-aim" type="range" min="-35" max="35" value="0">
+            <label for="bowl-power">Síla <span id="bowl-power-value"></span></label>
+            <input id="bowl-power" type="range" min="25" max="100" value="75">
+          </div>
+          <div class="bowl-actions">
+            <button type="button" id="bowl-hit">Hodit <kbd>F</kbd></button>
+            <button type="button" id="bowl-restart" hidden>Nová partie</button>
+            <button type="button" id="bowl-retry" hidden>Znovu uložit výsledek</button>
+            <button type="button" id="bowl-pool" aria-controls="bowl-modes" aria-expanded="false">Ke kulečníku</button>
+            <button type="button" id="bowl-leave">Odejít</button>
+          </div>
         </div>
-        <div class="bowl-actions">
-          <button type="button" id="bowl-hit">Hodit <kbd>F</kbd></button>
-          <button type="button" id="bowl-restart" hidden>Nová partie</button>
-          <button type="button" id="bowl-retry" hidden>Znovu uložit výsledek</button>
-          <button type="button" id="bowl-pool">Ke kulečníku</button>
-          <button type="button" id="bowl-eight">Osmička pro dva</button>
-          <button type="button" id="bowl-leave">Odejít</button>
-        </div>
+        <section id="bowl-modes" aria-labelledby="bowl-modes-title" hidden>
+          <h2 id="bowl-modes-title">Kulečník U Papírny</h2>
+          <div class="bowl-actions">
+            <button type="button" id="bowl-training">Trénink</button>
+            <button type="button" id="bowl-computer">Proti počítači</button>
+            <button type="button" id="bowl-eight">Pro dva</button>
+          </div>
+          <button type="button" id="bowl-cancel">Zpět k bowlingu</button>
+        </section>
       </div>
       <div id="pool-panel" hidden>
         <div id="pool-aim-surface" aria-hidden="true"></div>
-        <header><h2>Kulečník U Papírny</h2><span id="pool-hint">Klepni na stůl tam, kam má jet bílá koule.</span><button id="pool-computer" type="button">Osmička proti počítači</button></header>
+        <header><h2>Kulečník U Papírny</h2><span id="pool-hint">Klepni na stůl tam, kam má jet bílá koule.</span></header>
         <div id="pool-console">
           <p id="pool-status" role="status"></p>
           <label>Doladění směru <output id="pool-angle-value">0°</output><input id="pool-angle" type="range" min="-180" max="180" step="1" value="0"></label>

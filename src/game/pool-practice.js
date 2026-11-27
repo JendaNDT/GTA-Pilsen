@@ -31,11 +31,6 @@ export class PoolPractice {
     this.angle.oninput = () => { this.degrees = this.angle.valueAsNumber; this.showAim(); };
     this.power.oninput = () => { this.strength = this.power.valueAsNumber; this.showAim(); };
     field('hit').onclick = () => this.action();
-    field('computer').onclick = () => {
-      if (!this.table || this.table.match || this.table.rolling || !bowling.canUse) return;
-      this.leave();
-      this.enter('computer');
-    };
     field('back').onclick = () => { if (bowling.canUse) this.leave(); };
     field('reset').onclick = () => {
       if (!this.table || !bowling.canUse || this.table.rolling) return;
@@ -73,7 +68,6 @@ export class PoolPractice {
 
   leave() {
     if (!this.table) return;
-    const back = this.table.match && !this.computer ? 'bowl-eight' : 'bowl-pool';
     this.table.dispose();
     this.table = null;
     this.computerDelay = 0;
@@ -84,7 +78,7 @@ export class PoolPractice {
       mesh.visible = i < BALL_STARTS.length;
       if (mesh.visible) mesh.position.set(BALL_STARTS[i][0], BALL_RADIUS, BALL_STARTS[i][1]);
     });
-    document.getElementById(back).focus({ preventScroll: true });
+    document.getElementById('bowl-pool').focus({ preventScroll: true });
   }
 
   aimAt(event) {
@@ -128,8 +122,6 @@ export class PoolPractice {
     const { rolling, complete, potted, scratch } = this.table;
     const ready = !rolling && !complete && !this.computerTurn;
     const match = this.table.match;
-    field('computer').hidden = !!match;
-    field('computer').disabled = rolling;
     field('hit').disabled = !ready;
     this.angle.disabled = this.power.disabled = !ready || !!match?.inHand;
     field('hit').querySelector('span').textContent = match?.inHand ? 'Položit bílou' : 'Strčit';

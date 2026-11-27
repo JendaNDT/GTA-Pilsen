@@ -98,6 +98,10 @@ test('E57 – vstup z mapy, celá partie, uložení skóre a návrat před budov
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('plzen-naplno-v1'))))
     .toMatchObject({ activity: null, stats: { bowlingBest: 10 } });
   await expect(page.locator('#bowl-record')).toHaveText('Rekord 10');
+  await page.getByRole('button', { name: 'Ke kulečníku' }).click();
+  await page.getByRole('button', { name: 'Pro dva', exact: true }).click();
+  await page.getByRole('button', { name: 'Zpět k bowlingu' }).click();
+  await expect(page.locator('#bowl-total')).toHaveText('10 bodů');
   await page.getByRole('button', { name: 'Nová partie' }).click();
   await expect(page.locator('#bowl-total')).toHaveText('0 bodů');
   await page.getByRole('button', { name: 'Odejít', exact: true }).click();
@@ -149,7 +153,15 @@ for (const mobile of [false, true]) test('E63 – strk do kapsy a návrat ke dr�
     await enter(page, mobile);
     const step = n => page.evaluate(n => __step(1 / 60, n), n);
     const visit = page.getByRole('button', { name: 'Ke kulečníku' });
-    if (mobile) await visit.tap(); else { await visit.focus(); await page.keyboard.press('Enter'); }
+    if (mobile) {
+      await visit.tap();
+      await page.getByRole('button', { name: 'Trénink' }).tap();
+    } else {
+      await visit.focus();
+      await page.keyboard.press('Enter');
+      await expect(page.getByRole('button', { name: 'Trénink' })).toBeFocused();
+      await page.keyboard.press('Enter');
+    }
     await step(50);
     await expect(page.getByRole('heading', { name: 'Kulečník U Papírny' })).toBeVisible();
     const visible = await page.evaluate(() => {
@@ -216,6 +228,7 @@ for (const mobile of [false, true]) test('E63 – strk do kapsy a návrat ke dr�
     await step(450);
     expect(await page.evaluate(() => __game.activities.bowling.round.frames.flat().length)).toBe(1);
     await visit.click();
+    await page.getByRole('button', { name: 'Trénink' }).click();
     await page.locator('#pool-back').click();
     expect(await page.evaluate(() => __game.activities.bowling.round.frames.flat().length)).toBe(1);
     await page.locator('#bowl-leave').click();
@@ -229,7 +242,8 @@ test('E64 – dva hráči na telefonu, bílá v ruce, černá a odveta', async (
     const page = await context.newPage();
     await arrive(page, true);
     await enter(page, true);
-    await page.getByRole('button', { name: 'Osmička pro dva' }).tap();
+    await page.getByRole('button', { name: 'Ke kulečníku' }).tap();
+    await page.getByRole('button', { name: 'Pro dva', exact: true }).tap();
     const step = n => page.evaluate(n => __step(1 / 60, n), n);
     const status = page.locator('#pool-status');
     const hit = page.locator('#pool-hit');
@@ -276,6 +290,7 @@ test('E64 – dva hráči na telefonu, bílá v ruce, černá a odveta', async (
     await expect(status).toContainText('Hráč 2 · Otevřený stůl. Rozstřel.');
     await page.getByRole('button', { name: 'Zpět k bowlingu' }).tap();
     await page.getByRole('button', { name: 'Ke kulečníku' }).tap();
+    await page.getByRole('button', { name: 'Trénink' }).tap();
     await step(50);
     await expect(status).toHaveText('V kapsách 0 ze 3');
     expect(await page.evaluate(() => __game.activities.bowling.room.pool.balls.filter(b => b.visible).length)).toBe(4);
@@ -290,7 +305,7 @@ test('E65 – celá osmička proti počítači na telefonu a soupeřův rozstře
     await arrive(page, true);
     await enter(page, true);
     await page.getByRole('button', { name: 'Ke kulečníku' }).tap();
-    await page.getByRole('button', { name: 'Osmička proti počítači' }).tap();
+    await page.getByRole('button', { name: 'Proti počítači' }).tap();
     const hit = page.locator('#pool-hit'), status = page.locator('#pool-status');
     await expect(status).toContainText('Tvůj tah');
     await hit.tap();
@@ -322,8 +337,50 @@ test('E65 – celá osmička proti počítači na telefonu a soupeřův rozstře
     await page.evaluate(() => __step(1 / 60, 65));
     await expect(status).toContainText('Strk počítače');
     await page.getByRole('button', { name: 'Zpět k bowlingu' }).tap();
-    await page.getByRole('button', { name: 'Osmička pro dva' }).tap();
+    await page.getByRole('button', { name: 'Ke kulečníku' }).tap();
+    await page.getByRole('button', { name: 'Pro dva', exact: true }).tap();
     await page.evaluate(() => __step(1 / 60, 120));
     await expect(status).toContainText('Hráč 1 · Otevřený stůl. Rozstřel.');
+  } finally { await context.close(); }
+});
+
+test('E66 – výběr režimu vedle sebe a návrat k rozehranému bowlingu', async ({ browser }, info) => {
+  const context = await browser.newContext({ viewport: { width: 320, height: 640 }, hasTouch: true, isMobile: true });
+  try {
+    const page = await context.newPage();
+    await arrive(page, true);
+    await enter(page, true);
+    await page.locator('#bowl-hit').tap();
+    await page.evaluate(() => __step(1 / 60, 450));
+    const visit = page.getByRole('button', { name: 'Ke kulečníku' });
+    const modes = page.getByRole('region', { name: 'Kulečník U Papírny' });
+    await visit.tap();
+    await expect(modes).toBeVisible();
+    const choices = modes.locator('.bowl-actions button');
+    await expect(choices).toHaveText(['Trénink', 'Proti počítači', 'Pro dva']);
+    expect(await choices.evaluateAll(buttons => {
+      const rects = buttons.map(b => b.getBoundingClientRect());
+      return rects.every((r, i) => r.height >= 44 && r.width >= 44 && r.left >= 0 && r.right <= innerWidth &&
+        r.top === rects[0].top && (!i || rects[i - 1].right <= r.left));
+    })).toBe(true);
+    await page.screenshot({ path: info.outputPath('nabidka.jpg') });
+    await page.keyboard.press('f');
+    await page.evaluate(() => __step(1 / 60, 5));
+    expect(await page.evaluate(() => {
+      const b = __game.activities.bowling;
+      return [b.phase, b.round.frames.flat().length, !!b.pool.table];
+    })).toEqual(['aim', 1, false]);
+    await modes.getByRole('button', { name: 'Zpět k bowlingu' }).tap();
+    await expect(visit).toBeFocused();
+    await visit.tap();
+    await page.keyboard.press('Escape');
+    await expect(modes).toBeHidden();
+    await expect(visit).toBeFocused();
+    await visit.tap();
+    await modes.getByRole('button', { name: 'Pro dva' }).tap();
+    await expect(page.getByRole('heading', { name: 'Osmička pro dva' })).toBeVisible();
+    await page.getByRole('button', { name: 'Zpět k bowlingu' }).tap();
+    await expect(visit).toBeFocused();
+    expect(await page.evaluate(() => __game.activities.bowling.round.frames.flat().length)).toBe(1);
   } finally { await context.close(); }
 });
