@@ -1,6 +1,6 @@
 {
   "__vite-browser-external": {
-    "file": "assets/__vite-browser-external-CU-IELg7.js",
+    "file": "assets/__vite-browser-external-BH6mGRlj.js",
     "name": "__vite-browser-external",
     "src": "__vite-browser-external",
     "isDynamicEntry": true,
@@ -9,7 +9,7 @@
     ]
   },
   "index.html": {
-    "file": "assets/index-C2CwerVa.js",
+    "file": "assets/index-Cp6c0X6T.js",
     "name": "index",
     "src": "index.html",
     "isEntry": true,
@@ -37,7 +37,7 @@
     ]
   },
   "node_modules/jolt-physics/dist/jolt-physics.wasm-compat.js": {
-    "file": "assets/jolt-physics.wasm-compat-CGax0WCk.js",
+    "file": "assets/jolt-physics.wasm-compat-DrlMggxU.js",
     "name": "jolt-physics.wasm-compat",
     "src": "node_modules/jolt-physics/dist/jolt-physics.wasm-compat.js",
     "isDynamicEntry": true,
