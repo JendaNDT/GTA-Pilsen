@@ -4,8 +4,9 @@ Výchozí revize je `dc4411a`. Rychlé kontroly na GitHubu prošly po nahrání 
 za 1 min 33 s. Místně prošlo 447 testů JavaScriptu, produkční sestavení a 34 testů Pythonu.
 Jedna zkouška Pythonu přeskočila chybějící úplný archiv staveb. Všech pět základních scénářů
 ve WebGL 2 prošlo místně dvakrát. GitHub zachytil úmyslné selhání a ověřil start ve WebGPU
-na Linuxu. Ruční spuštění úplné sady a nastavení ochrany větve zbývají po převzetí do
-`main`. [Zadání](E84.md) · [Protokol](../E84.md) · [Kontroly pull requestu #18](https://github.com/JendaNDT/GTA-Pilsen/pull/18/checks)
+na Linuxu. E84 je v `main` od revize `2ca3334`, ochrana větve vyžaduje obě kontroly i od správců.
+První ruční běh úplné sady probíhá na GitHubu. [Zadání](E84.md) · [Protokol](../E84.md) ·
+[Úplná sada](https://github.com/JendaNDT/GTA-Pilsen/actions/runs/46160553490)
 
 # E83 · Hustší provoz na hlavních tazích
 

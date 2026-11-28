@@ -335,9 +335,8 @@ značky otevři **Details** a rozbal krok, který selhal. Snímky a report prohl
 nebo 4.37 letního času v Plzni. Pro ruční spuštění otevři **Actions → Úplné testy → Run workflow**,
 vyber větev a potvrď. Výsledky WebGL 2 a WebGPU jsou rozdělené do čtyř částí pro každý režim.
 
-**Ochranu hlavní větve zapni po převzetí E84.** V repozitáři otevři **Settings → Branches** a
-přidej pravidlo pro `main`. Zapni **Require a pull request before merging** a **Require status
-checks to pass before merging**. Vyber kontroly `rychle` a `prohlizec` a pravidlo ulož.
+**Ochrana hlavní větve** platí i pro správce. GitHub vyžaduje pull request a zelené kontroly
+`rychle` a `prohlizec`. Pravidlo pro `main` najdeš v repozitáři v **Settings → Branches**.
 [Postup na GitHubu](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/managing-a-branch-protection-rule)
 
 ## Odkud jsou data a jak je obnovit
