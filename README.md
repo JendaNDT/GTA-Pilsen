@@ -13,6 +13,8 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 ## Co ve hře je
 
+- **Hustší provoz na hlavních tazích.** Klatovskou, Domažlickou a další hlavní silnice ve špičce doplňují další auta. Jejich počet závisí na denní době, blízkosti tahu a nastavené kvalitě. [Porovnání dvou ulic](docs/E83.md)
+
 - **Řidiči v koloně.** Když se auto vpředu rozjede, další řidič reaguje na zvětšující se mezeru. Pokud dvě auta stojí v jeho výjezdovém pruhu a za křižovatkou už není místo, může po deseti sekundách čekání zvolit volné povolené odbočení. [Zkouška v Božkovské a rozjezd deseti aut](docs/E82.md)
 
 - **Chodci na přechodech.** Když padne zelená a auto nebo poslední článek tramvaje ještě zasahuje do zebry, chodec počká u kraje. Počká také před rozjetým autem, kterému do zebry zbývá méně než jeho brzdná dráha. Na mokré a zasněžené vozovce počítá s delší brzdnou dráhou. U tramvaje sleduje dráhu článků po kolejích i v oblouku. U odbočujících autobusů a trolejbusů zohlední i vybočení zádě. Když autobus nebo trolejbus vyjíždí ze zastávkového zálivu, chodec sleduje, zda jeho návrat do pruhu zasáhne zebru. Platí to i na přechodu bez semaforu. Řidič linkového vozu před šikmou zebrou nechá místo i pro bližší roh nárazníku. [Linka 32 s autem za sebou](docs/E81.md) · [Výjezd v Radobyčicích](docs/E80.md) · [Odbočení v Tylově](docs/E79.md) · [Příjezd linky 4](docs/E78.md) · [Sucho a sníh](docs/E77.md) · [Vůz na zebře](docs/E75.md) · [Příjezd auta na Klatovské třídě](docs/E76.md)

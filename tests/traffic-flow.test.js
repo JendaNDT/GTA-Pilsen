@@ -19,6 +19,8 @@ test('při volbě směru se řidič vyhne frontě ve svém pruhu, pokud má povo
   });
   assert.equal(manager._queueAhead(2, 2), true);
   assert.equal(manager._queueAhead(2, -2), false);
+  assert.equal(manager._queueAhead(2, 2, 10), true);
+  assert.equal(manager._queueAhead(2, 2, 16), false);
   assert.equal(manager._nextMove(1, 0, 2), 3);
   manager._movesFrom = () => [{ edge: 2, fits: true, wt: 1, cos: 1 }, { edge: 3, fits: false, wt: 1, cos: 1 }];
   assert.equal(manager._nextMove(1, 0, 2), 2);
@@ -41,4 +43,17 @@ test('řidič vidí konec fronty na přímém pokračování ulice a rozlišuje 
   }
   Object.assign(lead, { edge: 1, s: 90 });
   assert.equal(manager._queueAhead(0, 2), false);
+});
+
+test('dodatečný provoz se zařazuje jen na hlavní tah, vedlejší ulice ho při nedostatku místa nepřebírá', () => {
+  const world = { chunkIndex: () => 0, arterialEdges: [[1]], trafficEdges: [[0]],
+    eLen: [80, 80], eRoad: [0, 1], r: { cls: [11, 4] } };
+  const manager = Object.assign(Object.create(VehicleManager.prototype), {
+    world, game: { trafficRhythm: { measuredByChunk: new Map([[0, [0]]]) } },
+  });
+  const edge = arterialOnly => manager._randomEdgeNear(0, 0, 110, 300, true, arterialOnly);
+  assert.equal(edge(true), 1);
+  assert.equal(edge(false), 0);
+  world.arterialEdges[0] = [];
+  assert.equal(edge(true), -1);
 });

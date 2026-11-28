@@ -1957,6 +1957,8 @@ export class World {
       if (ci >= 0) (trafficEdges[ci] || (trafficEdges[ci] = [])).push(e);
     }
     this.trafficEdges = trafficEdges;
+    this.arterialEdges = trafficEdges.map(edges => edges.filter(e =>
+      R.cls[this.eRoad[e]] <= RC.SECONDARY_LINK && this.eLen[e] >= 24));
     this.edgeOfStart = edgeOfSeg;
     // pro každý bod silnice: hrana (v dopředném směru), do které patří
     const edgeOfPt = new Int32Array(px.length).fill(-1);

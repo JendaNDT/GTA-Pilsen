@@ -1,3 +1,7 @@
+# E83 · Hustší provoz na hlavních tazích
+
+Na větvi `etapa/E83` hra přidává auta přímo na hlavní silnice podle blízkosti tahu, denní doby a kvality. Ve dvou ranních bězích přibyly průjezdy na Klatovské z 21 na 48 a na Domažlické z 22 na 34. U Skvrňanské zůstává k řešení vzájemné blokování aut. V jednom běhu u Domažlické čekal vůz přes dvě minuty. Prošlo sestavení, 446 testů JavaScriptu a čtyři cílené zkoušky v prohlížeči včetně dotykové emulace. Kontrolní špička na vysoké kvalitě dosáhla 59,7 FPS s fyzikou do 2,7 ms v 95 % snímků. Grafické časy v obou verzích překročily rozpočet, zbývá ověření na fyzickém telefonu. [Zadání](E83.md) · [Protokol a snímky](../E83.md)
+
 # E82 · Chování řidičů v městském provozu
 
 Na větvi `etapa/E82` řidiči reagují na rozjezd auta vpředu a vyhledávají volné odbočení, když se před nimi drží fronta. V Božkovské řidič před dvojicí stojících aut přehodnotil trasu po 10 sekundách. Desáté auto projelo po rozjezdu o 0,32 s dřív. U nádraží v obou měřeních přibylo průjezdů, na Klatovské se v jednom běhu nejdelší čekání prodloužilo. Prošlo sestavení, 444 testů JavaScriptu a sedm cílených prohlížečových zkoušek včetně dotykové emulace. Ve špičce při vysoké kvalitě klesla frekvence z 59,7 na 45,9–59,2 FPS. Před vydáním zbývá určit příčinu zpomalení, vysvětlit nejdelší frontu na Klatovské a ověřit změnu na fyzickém telefonu. [Zadání](E82.md) · [Srovnání a snímky](../E82.md)

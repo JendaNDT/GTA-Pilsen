@@ -120,14 +120,18 @@ export class TrafficRhythm {
     return hourlyActivity(residential, clock) * this.settlement(x, z) * 0.8 * scale;
   }
 
-  carDensity(x, z, clock) {
+  carDensity(x, z, clock, arterialOnly = false) {
     const w = this.world;
-    const road = w.nearestRoad(x, z, 50, RC.LIVING, 0, this.road, undefined, true);
+    const road = w.nearestRoad(x, z, arterialOnly ? 100 : 50, arterialOnly ? RC.SECONDARY_LINK : RC.LIVING,
+      0, this.road, undefined, true);
+    if (arterialOnly && (!road || w.r.flags[road.road] & RF.TUNNEL)) return 0;
     const edge = road ? w.edgeOfPt[road.seg] : -1;
-    if (edge < 0) return hourlyActivity(residential, clock) * this.settlement(x, z) * this.regionalScale(x, z);
+    if (edge < 0) return arterialOnly ? 0 : hourlyActivity(residential, clock) * this.settlement(x, z) * this.regionalScale(x, z);
     const reverse = w.reverseEdge(edge);
     const density = this.carWeight(edge, clock);
-    return reverse < 0 ? density : Math.max(density, this.carWeight(reverse, clock));
+    const both = reverse < 0 ? density : Math.max(density, this.carWeight(reverse, clock));
+    // Plný přísun na vozovce i chodníku, k okraji sousední čtvrti postupně slábne.
+    return arterialOnly ? both * Math.min(1, (100 - road.dist) / 65) : both;
   }
 
   pedestrianWeight(x, z, clock) {

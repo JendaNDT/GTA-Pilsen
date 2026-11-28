@@ -33,6 +33,7 @@ export class Car {
     this.dirt = this.dirtX = this.dirtZ = 0;
     this.edge = -1; this.s = 0; this.next = -1; this.lane = 0; this.nextLane = 0; this.turnSlow = 99;
     this.exitPlan = [];
+    this.arterialTrip = false;
     this.blocked = 0; this.temper = 0.8 + Math.random() * 0.25;
     this.rest = 0; this.wasAI = false;
     this.route = null; this.wp = 0; this.repath = 0;
@@ -347,7 +348,7 @@ export class VehicleManager {
       slow: cos > 0.92 ? 99 : 3.8 + 7 * Math.max(0, cos) };
   }
 
-  _queueAhead(edge, lane) {
+  _queueAhead(edge, lane, from = 0) {
     const w = this.world;
     let stopped = 0;
     for (const other of this.cars) {
@@ -363,7 +364,7 @@ export class VehicleManager {
         if (end.tx * start.tx + end.tz * start.tz < 0.9) continue;
         distance += w.eLen[edge];
       }
-      if (distance >= 0 && distance <= 110 && ++stopped === 2) return true;
+      if (distance >= from && distance <= from + 110 && ++stopped === 2) return true;
     }
     return false;
   }
@@ -989,15 +990,16 @@ export class VehicleManager {
     return true;
   }
 
-  _randomEdgeNear(px, pz, minD, maxD, ambient) {
+  _randomEdgeNear(px, pz, minD, maxD, ambient, arterialOnly) {
     const w = this.world;
     for (let tries = 0; tries < 12; tries++) {
       const a = Math.random() * Math.PI * 2, d = minD + Math.random() * (maxD - minD);
       const ci = w.chunkIndex(px + Math.cos(a) * d, pz + Math.sin(a) * d);
       if (ci < 0) continue;
       const measured = ambient ? this.game.trafficRhythm.measuredByChunk.get(ci) : null;
-      const list = measured && Math.random() < 0.55 ? measured : w.trafficEdges[ci];
-      if (!list) continue;
+      const list = arterialOnly ? w.arterialEdges[ci]
+        : measured && Math.random() < 0.55 ? measured : w.trafficEdges[ci];
+      if (!list?.length) continue;
       const first = list[Math.floor(Math.random() * list.length)];
       if (!ambient) return first;
       // Krátké spojky v hustém grafu by jinak dostávaly stejnou šanci jako celé ulice.
@@ -1008,9 +1010,9 @@ export class VehicleManager {
     return -1;
   }
 
-  spawnTraffic(px, pz, cam, { typeId = null, minD = 110, maxD = 300, ambient = true } = {}) {
+  spawnTraffic(px, pz, cam, { typeId = null, minD = 110, maxD = 300, ambient = true, arterialOnly = false } = {}) {
     const w = this.world;
-    const e = this._randomEdgeNear(px, pz, minD, maxD, ambient);
+    const e = this._randomEdgeNear(px, pz, minD, maxD, ambient, arterialOnly);
     if (e < 0 || ambient && (w.eLen[e] < 24 || !this._throughRoad(e, 0))) return null;
     // Nový řidič se zařadí mezi křižovatkami, kde má místo zareagovat na provoz.
     const margin = ambient ? 10 : 2;
@@ -1018,6 +1020,7 @@ export class VehicleManager {
     if (ambient && this.cars.some(c => c.edge === e && c.mode === 'ai' && c.blocked > 3 &&
         c.s > s - 12 && c.s < s + 40)) return null;
     const lane = this._laneFor(e);
+    if (arterialOnly && this._queueAhead(e, lane, s)) return null;
     w.edgePoint(e, s, lane, _pt);
     const d = Math.hypot(_pt.x - px, _pt.z - pz);
     if (d < minD * 0.7 || d > maxD * 1.2) return null;
@@ -1041,6 +1044,7 @@ export class VehicleManager {
     }
     const car = this.add(new Car(type, CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)]));
     car.mode = 'ai';
+    car.arterialTrip = arterialOnly;
     car.edge = e; car.s = s; car.lane = lane;
     car.place(_pt.x, _pt.z, Math.atan2(_pt.tx, _pt.tz), y);
     car.speed = 6;
@@ -1208,14 +1212,27 @@ export class VehicleManager {
     // doplňování provozu a zaparkovaných aut
     this.spawnTimer -= dt;
     if (this.spawnTimer <= 0) {
-      let ai = 0, parked = 0, police = 0;
-      for (const c of this.cars) { if (c.mode === 'ai') ai++; else if (c.mode === 'parked') parked++; else if (c.mode === 'police') police++; }
-      const density = this.game.trafficRhythm.carDensity(px, pz, this.game.clock);
-      const target = Math.ceil(QUALITY.traffic * (0.12 + 0.88 * density));
-      this.spawnTimer = ai + 3 < target ? 0.08 : 0.12;
-      if (ai < target) this.spawnTraffic(px, pz, cam, { typeId: Math.random() < 0.035 ? 'police' : null });
-      if (ai > target && cam) {
+      let regular = 0, arterial = 0, parked = 0, police = 0;
+      for (const c of this.cars) {
+        if (c.mode === 'ai') {
+          if (c.arterialTrip) arterial++; else regular++;
+        } else if (c.mode === 'parked') parked++;
+        else if (c.mode === 'police') police++;
+      }
+      const rhythm = this.game.trafficRhythm, clock = this.game.clock;
+      const density = rhythm.carDensity(px, pz, clock);
+      const regularTarget = Math.ceil(QUALITY.traffic * (0.12 + 0.88 * density));
+      const arterialTarget = Math.round(Math.min(24, QUALITY.traffic * 0.7) * rhythm.carDensity(px, pz, clock, true));
+      const needRegular = Math.max(0, regularTarget - regular);
+      const needArterial = Math.max(0, arterialTarget - arterial);
+      this.spawnTimer = needRegular + needArterial > 3 ? 0.08 : 0.12;
+      if (needRegular + needArterial > 0) {
+        const arterialOnly = needArterial > 0 && Math.random() * (needRegular + needArterial) < needArterial;
+        this.spawnTraffic(px, pz, cam, { typeId: Math.random() < 0.035 ? 'police' : null, arterialOnly });
+      }
+      if ((regular > regularTarget || arterial > arterialTarget) && cam) {
         const offscreen = this.cars.find((c) => c.mode === 'ai' && c !== player.lastCar &&
+          (c.arterialTrip ? arterial > arterialTarget : regular > regularTarget) &&
           (c.x - px) ** 2 + (c.z - pz) ** 2 > 190 ** 2 && (c.x - cam.x) * cam.fx + (c.z - cam.z) * cam.fz < 0);
         if (offscreen) this.remove(offscreen);
       }

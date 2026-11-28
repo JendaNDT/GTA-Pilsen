@@ -19,7 +19,7 @@ globalThis.location = { search: '' };
 const { World, SURF } = await import('../src/world/world.js');
 const { TurnRules } = await import('../src/world/turns.js');
 const { RC, RF } = await import('../src/config.js');
-const { hourlyActivity } = await import('../src/game/traffic-rhythm.js');
+const { hourlyActivity, TrafficRhythm } = await import('../src/game/traffic-rhythm.js');
 const { Traffic } = await import('../src/game/traffic.js');
 const { matchCityProfile } = await import('../src/game/traffic-profile-map.js');
 const { GameClock, parseDay } = await import('../src/game/clock.js');
@@ -113,6 +113,31 @@ test('hodinový profil plynule přechází z pracovní doby na víkend i přes p
   assert.ok(Math.abs(beforeMidnight - midnight) < 0.001);
   clock.add(30 * 60);
   assert.equal(hourlyActivity(profile, clock), 0.2);
+});
+
+test('posila hlavního tahu sleduje rušnější směr, slábne se vzdáleností a vynechá tunely', () => {
+  const road = { road: 0, seg: 0, dist: 15 };
+  const world = {
+    r: { flags: [0] }, edgeOfPt: [0], reverseEdge: () => 1,
+    nearestRoad: (_x, _z, radius, roadClass, _min, _out, _y, publicOnly) => {
+      assert.equal(roadClass, RC.SECONDARY_LINK);
+      assert.equal(publicOnly, true);
+      return road.dist < radius ? road : null;
+    },
+  };
+  const rhythm = Object.assign(Object.create(TrafficRhythm.prototype), {
+    world, carWeight: (edge, activity) => (edge === 1 ? 1 : 0.25) * activity,
+  });
+  const demand = activity => rhythm.carDensity(0, 0, activity, true);
+  assert.equal(demand(1), 1);
+  assert.equal(demand(0.15), 0.15);
+  road.dist = 67.5;
+  assert.equal(demand(1), 0.5);
+  road.dist = 110;
+  assert.equal(demand(1), 0);
+  road.dist = 10;
+  world.r.flags[0] = RF.TUNNEL;
+  assert.equal(demand(1), 0);
 });
 
 test('městský profil používá azimut detektoru i při opačně zapsané čáře', () => {
