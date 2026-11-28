@@ -7,6 +7,7 @@ if (!output) throw new Error('Použití: node tools/audit_landscape.mjs VÝSTUP 
 const url = new URL(process.argv[3] || 'http://127.0.0.1:4175/');
 url.searchParams.set('debug', '');
 url.searchParams.set('view', '960');
+if (!url.searchParams.has('seed')) url.searchParams.set('seed', 1729);
 await mkdir(output, { recursive: true });
 
 // Stejné body, kamera a denní doba pro základní a upravenou mapu.
@@ -31,10 +32,6 @@ try {
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('console', (message) => { if (message.type() === 'error') errors.push(message.text()); });
-  await page.addInitScript(() => {
-    let seed = 1729;
-    Math.random = () => (seed = (Math.imul(1664525, seed) + 1013904223) >>> 0) / 2 ** 32;
-  });
   await page.goto(url.href);
   await page.waitForFunction(() => window.__ready, null, { timeout: 60_000 });
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();

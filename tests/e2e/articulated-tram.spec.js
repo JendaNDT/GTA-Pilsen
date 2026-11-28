@@ -5,11 +5,7 @@ import { testTimeout } from './test-timeout.js';
 
 test('E60 – přejít kloub jedničky v zatáčce a vystoupit dveřmi prostředního článku', async ({ page }, info) => {
   test.setTimeout(testTimeout(180_000));
-  await page.addInitScript(() => {
-    let seed = 1729;
-    Math.random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32);
-  });
-  await page.goto(gameUrl('/?debug&quality=low&adapt=0&date=2026-11-09&hour=10.2166667&kolony=1'));
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0&date=2026-11-09&hour=10.2166667&kolony=1&seed=1729'));
   await page.waitForFunction(() => window.__ready);
   // Od stisku tlačítka běží všechny jízdy stejným krokem, včetně prvního snímku.
   await page.getByRole('button', { name: 'Svézt se MHD' }).click();

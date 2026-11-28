@@ -62,10 +62,20 @@ test('ladicí náhrada mění jen simulaci a obnova naváže na původní poslou
   assert.throws(() => randomDebug.override(null), TypeError);
 });
 
+function randomUses(directory, search) {
+  const source = fileURLToPath(new URL(`../${directory}/`, import.meta.url));
+  return readdirSync(source, { recursive: true })
+    .filter(file => /\.m?js$/.test(file))
+    .filter(file => search.test(readFileSync(join(source, file), 'utf8')))
+    .map(file => join(directory, file));
+}
+
 test('herní moduly nepoužívají společný generátor prohlížeče', () => {
-  const source = fileURLToPath(new URL('../src/', import.meta.url));
-  const offenders = readdirSync(source, { recursive: true })
-    .filter(file => file.endsWith('.js'))
-    .filter(file => /\bMath\s*\.\s*random\s*\(/.test(readFileSync(join(source, file), 'utf8')));
+  assert.deepEqual(randomUses('src', /\bMath\s*\.\s*random\s*\(/), []);
+});
+
+test('testy a nástroje nemění společný generátor prohlížeče', () => {
+  const assignment = /\bMath\s*\.\s*random\s*=(?!=)/;
+  const offenders = ['tests', 'tools'].flatMap(directory => randomUses(directory, assignment));
   assert.deepEqual(offenders, []);
 });

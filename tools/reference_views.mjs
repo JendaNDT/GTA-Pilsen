@@ -14,10 +14,7 @@ export async function openReferenceGame(page, address) {
   for (const [key, value] of Object.entries({ debug: '', adapt: '0', quality, date: reference.date, hour: '10' })) {
     url.searchParams.set(key, value);
   }
-  await page.addInitScript(() => {
-    let seed = 1729;
-    Math.random = () => ((seed = (Math.imul(1664525, seed) + 1013904223) >>> 0) / 2 ** 32);
-  });
+  if (!url.searchParams.has('seed')) url.searchParams.set('seed', 1729);
   await page.goto(url.href);
   await page.waitForFunction(() => window.__ready);
 }

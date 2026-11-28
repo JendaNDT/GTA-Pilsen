@@ -26,6 +26,7 @@ if (cabin && (rush || release)) throw new Error('Jízdu v MHD měř samostatně.
 if (rush && release) throw new Error('Špičku a vydání měř samostatně.');
 const url = new URL(args.find((arg) => !arg.startsWith('--')) || 'http://127.0.0.1:4173/');
 url.searchParams.set('debug', '');
+if (!url.searchParams.has('seed')) url.searchParams.set('seed', 1729);
 if (work) {
   url.searchParams.set('adapt', args.includes('--adaptive') ? '1' : '0');
   if (rush) url.searchParams.set('quality', 'high');
@@ -61,9 +62,6 @@ try {
     const context = await browser.newContext({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
     const page = await context.newPage();
     await page.addInitScript(() => {
-      // Stejná posloupnost náhodných hodnot pro rozložení provozu a okolí.
-      let state = 1729;
-      Math.random = () => ((state = (Math.imul(1664525, state) + 1013904223) >>> 0) / (2 ** 32));
       function ready() {
         if (window.__ready) window.readyAt = performance.now();
         else requestAnimationFrame(ready);

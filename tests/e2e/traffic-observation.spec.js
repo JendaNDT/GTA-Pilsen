@@ -9,10 +9,7 @@ for (const site of ['Klatovská', 'hlavní nádraží']) {
     test.setTimeout(Math.max(info.timeout, 240_000));
     const seed = Number(process.env.PLZEN_TRAFFIC_SEED || 20261118);
     await page.addInitScript(installTrafficMonitor);
-    await page.addInitScript(seed => {
-      Math.random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32);
-    }, seed);
-    await page.goto(gameUrl('/?debug&kolony=1&quality=high&adapt=0&date=2026-11-09&hour=7.5'));
+    await page.goto(gameUrl('/?debug&kolony=1&quality=high&adapt=0&date=2026-11-09&hour=7.5', { seed }));
     await waitForGame(page);
     const result = await page.evaluate(async (site) => {
       __play();

@@ -10,10 +10,11 @@ export const TEST_HOUR = '10';
 // spuštění. Proto má každá zkouška jasno. Zkouška, která počasí ověřuje záměrně, ho nastaví
 // v adrese sama (`weather=snow`, `weather=rain` …). Volba `{ weather: null }` ponechá
 // proměnlivé počasí podle herního data, například u referenčních pohledů.
-export function gameUrl(path, { defaultRenderer = false, weather = 'clear' } = {}) {
+export function gameUrl(path, { defaultRenderer = false, weather = 'clear', seed = 1 } = {}) {
   const { name, use } = test.info().project;
   const url = new URL(path, use.baseURL);
   const params = url.searchParams;
+  if (seed !== null && !params.has('seed')) params.set('seed', seed);
   if (weather && !params.has('weather')) params.set('weather', weather);
   if (params.has('hour') && !params.has('date')) params.set('date', TEST_DATE);
   if (params.has('date') && !params.has('hour')) params.set('hour', TEST_HOUR);

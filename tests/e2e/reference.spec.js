@@ -12,7 +12,7 @@ test('E15 – všech osm referenčních pohledů se vykreslí bez chyb', { tag: 
     if (message.type() === 'error') errors.push(message.text());
   });
   // Snímky se porovnávají s nástrojem tools/reference_views.mjs, proto stejné počasí podle pevného data.
-  await openReferenceGame(page, gameUrl(baseURL, { weather: null }));
+  await openReferenceGame(page, gameUrl(baseURL, { weather: null, seed: null }));
   expect(await page.evaluate(() => window.__game.renderer.backend.isWebGPUBackend === true))
     .toBe(info.project.name === 'webgpu');
   const stats = {};
