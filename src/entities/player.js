@@ -274,7 +274,7 @@ export class PedManager {
   _stepCrossing(p, dt, cars) {
     const plan = p.crossing, traffic = this.world.traffic;
     if (p.state === 'crossWait') {
-      if (!traffic.canWalk(plan.crossing, cars, this.game.transit.obstacles, p)) return 0;
+      if (!traffic.canWalk(plan.crossing, cars, this.game.transit.obstacles, p, this.game.weather)) return 0;
       traffic.waitingWalkers.delete(p);
       p.state = 'crossing';
       traffic.users.set(p, plan.crossing);

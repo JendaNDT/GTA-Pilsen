@@ -36,11 +36,11 @@ function intersects(ax, az, bx, bz, crossing) {
   return t >= 0 && t <= 1 && s >= -0.05 && s <= 1.05 ? Math.hypot(dx, dz) * t : Infinity;
 }
 
-function blocksGreenCrossing(car, crossing, person, predictBraking) {
+function blocksGreenCrossing(car, crossing, person, deceleration = 0) {
   if (Math.abs(car.y - person?.y) > 3) return false;
   const vx = car.vx || 0, vz = car.vz || 0;
   // Při rovnoměrném brzdění je průměrná rychlost poloviční.
-  const factor = predictBraking && car.mode !== 'parked' ? Math.hypot(vx, vz) / (2 * STOP_DECELERATION) : 0;
+  const factor = deceleration > 0 && car.mode !== 'parked' ? Math.hypot(vx, vz) / (2 * deceleration) : 0;
   const travelX = vx * factor, travelZ = vz * factor;
   const dx = car.x - crossing.x, dz = car.z - crossing.z;
   const half = car.halfLen ?? 2, width = car.radius ?? 1;
@@ -427,12 +427,13 @@ export class Traffic {
     return Infinity;
   }
 
-  canWalk(crossing, cars = [], transit = [], person) {
+  canWalk(crossing, cars = [], transit = [], person, weather) {
     const controlled = crossing.group && !this.signalsOff(crossing.group);
     if (controlled) {
-      return this.phase(crossing.group) === 'walk'
-        && !cars.some(car => blocksGreenCrossing(car, crossing, person, true))
-        && !transit.some(section => blocksGreenCrossing(section, crossing, person, false));
+      if (this.phase(crossing.group) !== 'walk') return false;
+      const deceleration = STOP_DECELERATION * (weather?.surfaceGrip(crossing.x, crossing.z) ?? 1);
+      return !cars.some(car => blocksGreenCrossing(car, crossing, person, deceleration))
+        && !transit.some(section => blocksGreenCrossing(section, crossing, person));
     }
     const occupied = car => {
       if (car.mode === 'parked' || Math.abs(car.y - person?.y) > 3) return false;

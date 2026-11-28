@@ -220,3 +220,32 @@ test('chodec na zelenou porovná dráhu brzdění auta s okrajem celé zebry', (
   assert.equal(walk({ y: 5 }), true);
   assert.equal(t.canWalk(c, [], [car], { y: 0 }), true);
 });
+
+test('čekající chodec posuzuje přilnavost povrchu i po skončení sněžení', async () => {
+  const { Weather } = await import('../src/world/weather.js');
+  const t = Object.assign(Object.create(Traffic.prototype), { phase: () => 'walk' });
+  const c = { x: 0, z: 0, dx: 1, dz: 0, length: 8, group: {} };
+  const car = { x: 0, y: 0, z: -18.45, vx: 0, vz: 10, yaw: 0, halfLen: 2, radius: 1 };
+  const weather = new Weather();
+  const walk = () => t.canWalk(c, [car], [], { y: 0 }, weather);
+  assert.ok(walk());
+  weather.wet = 1;
+  assert.ok(walk()); // Na mokru stačí asi 13 m, k zebře zbývá 15 m.
+  car.vz = 12;
+  assert.equal(walk(), false);
+  weather.wet = 0;
+  assert.ok(walk());
+  car.vz = 10;
+  weather.snow = 0.25;
+  assert.ok(walk());
+  weather.snow = 1;
+  assert.equal(walk(), false);
+  car.vz = -10;
+  assert.ok(walk());
+  car.vz = 4;
+  assert.ok(walk());
+  car.vz = 10;
+  weather.mode = 'clear';
+  weather.update(0);
+  assert.ok(walk());
+});

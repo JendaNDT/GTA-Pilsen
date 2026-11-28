@@ -734,9 +734,9 @@ test('E75 – na zelenou chodec počká na zadní nárazník a po uvolnění zeb
   expect(result, JSON.stringify(result)).toMatchObject({ green: true, waited: true, entered: true });
 });
 
-test('E76 – chodec na zelenou rozliší rychlé a pomalé auto před zebrou', async ({ page }, info) => {
-  await boot(page, '&date=2026-11-09&hour=10&quality=low&adapt=0');
-  const result = await page.evaluate(async () => {
+async function crossingApproach(page, info, weather, speed, gap) {
+  await boot(page, `&date=2026-11-09&hour=10&quality=low&adapt=0&weather=${weather}`);
+  const result = await page.evaluate(async ({ speed, gap }) => {
     const g = __game, t = g.world.traffic;
     const c = t.crossings.find(crossing => crossing.id === 10975);
     for (t.time = 0; t.time < 200 && t.phase(c.group) !== 'walk'; t.time += 0.25) {}
@@ -762,15 +762,27 @@ test('E76 – chodec na zelenou rozliší rychlé a pomalé auto před zebrou', 
       car.sync();
       g.peds.update(1 / 60, g.player, null, [car]);
     };
-    // Příjezd rychlostí 54 km/h od devatenácti do osmi metrů před přechodem.
-    for (let i = 0; i < 45; i++) approach(8 + (44 - i) * 0.25, 15);
+    for (let i = 0; i < 45; i++) approach(gap + (44 - i) * speed / 60, speed);
     const waited = walker.state === 'crossWait' && !t.users.has(walker);
     document.getElementById('hud').style.display = 'none';
     __view(c.x - 18 * c.dx - 5 * dx, walker.y + 9, c.z - 18 * c.dz - 5 * dz,
       c.x - 4 * dx, walker.y, c.z - 4 * dz);
-    approach(8, 4);
-    return { green: t.phase(c.group) === 'walk', waited, entered: t.users.get(walker) === c };
-  });
+    const crossed = t.users.get(walker) === c;
+    approach(gap, 4);
+    return { green: t.phase(c.group) === 'walk', waited, crossed, entered: t.users.get(walker) === c };
+  }, { speed, gap });
   await page.screenshot({ path: info.outputPath('prijezd.jpg'), quality: 87 });
-  expect(result).toEqual({ green: true, waited: true, entered: true });
+  return result;
+}
+
+test('E76 – chodec na zelenou rozliší rychlé a pomalé auto před zebrou', async ({ page }, info) => {
+  const result = await crossingApproach(page, info, 'clear', 15, 8);
+  expect(result).toEqual({ green: true, waited: true, crossed: false, entered: true });
 });
+
+for (const [weather, surface, waits] of [['clear', 'suchu', false], ['snow', 'sněhu', true]]) {
+  test(`E77 – chodec při příjezdu stejného auta na ${surface}`, async ({ page }, info) => {
+    const result = await crossingApproach(page, info, weather, 10, 15);
+    expect(result).toEqual({ green: true, waited: waits, crossed: !waits, entered: true });
+  });
+}

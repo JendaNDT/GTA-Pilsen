@@ -1,3 +1,7 @@
+# E77 · Brzdná dráha ve sněhu
+
+Na větvi `etapa/E77` chodec používá přilnavost podle stavu vozovky. Na původní revizi vykročil při 36 km/h i na zasněženou zebru. Po změně na suchu při 36 km/h vykročil a na sněhu počkal na zpomalení. Prošlo sestavení, 437 testů JavaScriptu, deset cílených zkoušek v obou grafických režimech a dvě s emulovaným dotykem. Kontrolní jízda na sněhu dosáhla 60 FPS. Zbývá vyzkoušení na fyzickém telefonu. [Zadání](E77.md) · [Ověření a podklady](../E77.md)
+
 # E76 · Brzdná dráha auta před zebrou
 
 Na větvi `etapa/E76` odhaduje chodec před vstupem na zelenou brzdnou dráhu přijíždějícího auta. Na Klatovské třídě se na předchozí revizi podařilo zopakovat předčasný vstup na přechod. Po úpravě chodec při rychlosti 54 km/h počkal a při 14,4 km/h mohl na stejném místě vykročit. Prošlo sestavení, 436 testů JavaScriptu a osm cílených zkoušek v Chromiu. Srovnávací jízdy obou verzí dosáhly 60 FPS. Zbývá zkouška na fyzickém telefonu. [Zadání](E76.md) · [Chování a ověření](../E76.md)
