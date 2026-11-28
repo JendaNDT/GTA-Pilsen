@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { createRandom, parseSeed } from '../src/game/random.js';
 
@@ -43,4 +46,12 @@ test('semínko přijímá celá desetinná čísla včetně nuly a ignoruje nepl
   for (const invalid of [null, '', ' ', '1.5', '1e3', '0xF', 'NaN', '9007199254740992']) {
     assert.equal(parseSeed(invalid), null);
   }
+});
+
+test('herní moduly nepoužívají společný generátor prohlížeče', () => {
+  const source = fileURLToPath(new URL('../src/', import.meta.url));
+  const offenders = readdirSync(source, { recursive: true })
+    .filter(file => file.endsWith('.js'))
+    .filter(file => /\bMath\s*\.\s*random\s*\(/.test(readFileSync(join(source, file), 'utf8')));
+  assert.deepEqual(offenders, []);
 });

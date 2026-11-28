@@ -1,3 +1,4 @@
+import { effectsRandom, simulationRandom } from '../game/random.js';
 import { nearStationPlatform, stationEntrance, stationTicket, stepStationWalk } from './station-walk.js';
 import { followParkTrip, parkCrossing, parkTrip } from './pedestrian-walks.js';
 import { servicePlatform, stepPassenger, waitAtDeparturePlatform } from './platform-passengers.js';
@@ -147,9 +148,9 @@ class Ped {
   constructor(variant) {
     this.id = variant;
     this.mesh = makePedMesh(variant);
-    this.x = 0; this.y = 0; this.z = 0; this.yaw = 0; this.speed = 1.2 + Math.random() * 0.5;
+    this.x = 0; this.y = 0; this.z = 0; this.yaw = 0; this.speed = 1.2 + simulationRandom() * 0.5;
     this.edge = -1; this.s = 0; this.side = 0;
-    this.state = 'walk'; this.timer = 0; this.phase = Math.random() * 6;
+    this.state = 'walk'; this.timer = 0; this.phase = effectsRandom() * 6;
     this.vx = 0; this.vz = 0; this.fx = 0; this.fz = 0;
     this.radius = 0.35; this.halfLen = 0.4;
   }
@@ -170,9 +171,9 @@ export class PedManager {
 
   spawn(px, pz, cam) {
     const w = this.world;
-    const a = Math.random() * Math.PI * 2, d = 35 + Math.random() * 110;
+    const a = simulationRandom() * Math.PI * 2, d = 35 + simulationRandom() * 110;
     const sampleX = px + Math.cos(a) * d, sampleZ = pz + Math.sin(a) * d;
-    const trip = w.sady && Math.abs(sampleX) < 450 && Math.abs(sampleZ) < 350 && Math.random() < 0.55
+    const trip = w.sady && Math.abs(sampleX) < 450 && Math.abs(sampleZ) < 350 && simulationRandom() < 0.55
       ? parkTrip(sampleX, sampleZ) : null;
     if (trip && Math.hypot(px - trip.x, pz - trip.z) > 32 && !w.blocked(trip.x, trip.z, 0.4) &&
         !this.peds.some(p => Math.hypot(p.x - trip.x, p.z - trip.z) < 2)) {
@@ -184,10 +185,10 @@ export class PedManager {
     if (ci < 0) return;
     const list = w.trafficEdges[ci];
     if (!list) return;
-    const e = list[Math.floor(Math.random() * list.length)];
+    const e = list[Math.floor(simulationRandom() * list.length)];
     const cls = w.r.cls[w.eRoad[e]];
     if (cls < RC.PRIMARY || (w.r.flags[w.eRoad[e]] & (RF.BRIDGE | RF.TUNNEL))) return;
-    const s = Math.random() * w.eLen[e];
+    const s = simulationRandom() * w.eLen[e];
     const side = this._sideFor(e);
     w.edgePoint(e, s, side, _pt);
     const dd = Math.hypot(_pt.x - px, _pt.z - pz);
@@ -197,7 +198,7 @@ export class PedManager {
       if (dot > 0.5) return;
     }
     if (w.blocked(_pt.x, _pt.z, 0.5) || w.isWater(_pt.x, _pt.z)) return;
-    if (Math.random() >= this.game.trafficRhythm.pedestrianWeight(_pt.x, _pt.z, this.game.clock)) return;
+    if (simulationRandom() >= this.game.trafficRhythm.pedestrianWeight(_pt.x, _pt.z, this.game.clock)) return;
     const p = this._person(_pt.x, _pt.z);
     p.edge = e; p.s = s; p.side = side;
     p.yaw = Math.atan2(_pt.tx, _pt.tz);
@@ -417,7 +418,7 @@ export class PedManager {
             const cls = w.r.cls[w.eRoad[f]];
             if (f !== rev && cls >= RC.PRIMARY && cls <= RC.LIVING) opts.push(f);
           }
-          const nxt = opts.length ? opts[Math.floor(Math.random() * opts.length)] : rev;
+          const nxt = opts.length ? opts[Math.floor(simulationRandom() * opts.length)] : rev;
           if (nxt < 0) { this.remove(i); continue; }
           p.edge = nxt; p.s = 0; p.side = this._sideFor(nxt);
         }
