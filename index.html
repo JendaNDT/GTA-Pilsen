@@ -361,6 +361,18 @@
     </div>
     <div id="credits">Mapová data © přispěvatelé OpenStreetMap (ODbL) · Výškopis © ČÚZK</div>
   </div>
+  <dialog id="crash" aria-labelledby="crash-title" aria-describedby="crash-message">
+    <h2 id="crash-title">Chyba hry</h2>
+    <p id="crash-message">Hra narazila na chybu a zastavila se. Postup z posledního automatického uložení
+      zůstal zachovaný. Načti hru znovu.</p>
+    <button id="crash-reload" type="button" autofocus>Načíst znovu</button>
+    <details id="crash-details" hidden>
+      <summary>Podrobnosti</summary>
+      <pre id="crash-errors"></pre>
+      <button id="crash-copy" type="button">Zkopírovat</button>
+      <span id="crash-copy-status" role="status"></span>
+    </details>
+  </dialog>
   <main id="file-launch" hidden>
     <h1>Plzeň naplno</h1>
     <p>Hra se spouští přes místní server. Na Macu otevři ve Finderu soubor <strong>Spustit hru.command</strong>

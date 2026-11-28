@@ -15,6 +15,7 @@ import { initMenu } from './game/menu.js';
 import { AreaMap } from './game/area-map.js';
 import { initWorkUI } from './game/work-ui.js';
 import { resultText } from './game/missions.js';
+import { createCrashGuard } from './game/crash-guard.js';
 import { createFrameProfiler } from './game/frame-profiler.js';
 import { createTrafficWaits } from './game/traffic-waits.js';
 import { initPerfPanel } from './game/perf-panel.js';
@@ -142,13 +143,57 @@ const ABOUT_HTML = (meta, rendering) => `
   Hra je nezávislý fanouškovský projekt a není oficiálním produktem města ani dopravního podniku.</p>
   <p>Inspirováno projektem HrejBrno.cz.</p>`;
 
-function fail(e) {
-  console.error(e);
-  loadText.textContent = `Hru se nepodařilo spustit: ${e.message}`;
+const guard = createCrashGuard();
+let releaseSaveLock, leaveGame;
+let departed = false, startupFailed = false;
+
+function fail(error) {
+  if (startupFailed) return;
+  startupFailed = true;
+  releaseSaveLock?.();
+  const entry = guard.record(error);
+  console.error(entry.stack || entry.message);
+  loadText.textContent = `Hru se nepodařilo spustit: ${entry.message}`;
+  $('btn-transfer').hidden = true;
+  $('menu-buttons').classList.add('hidden');
+  $('loading').classList.remove('hidden');
 }
 
-let releaseSaveLock, leaveGame;
-let departed = false;
+function reportGlobalError(error) {
+  if (!window.__ready) {
+    fail(error);
+    return;
+  }
+  const entry = guard.record(error);
+  console.error(entry.stack || entry.message);
+}
+
+addEventListener('error', event => reportGlobalError(event.error ?? event.message));
+addEventListener('unhandledrejection', event => reportGlobalError(event.reason));
+
+const crashDialog = $('crash');
+crashDialog.addEventListener('cancel', event => event.preventDefault());
+$('crash-reload').addEventListener('click', () => location.reload());
+if (DEBUG) {
+  $('crash-copy').addEventListener('click', async () => {
+    const status = $('crash-copy-status');
+    try {
+      await navigator.clipboard.writeText($('crash-errors').textContent);
+      status.textContent = 'Zkopírováno.';
+    } catch {
+      status.textContent = 'Kopírování se nezdařilo. Text můžeš označit a zkopírovat ručně.';
+    }
+  });
+}
+
+function showCrash(errors) {
+  if (DEBUG) {
+    $('crash-errors').textContent = errors.map(error => error.stack || error.message).join('\n\n');
+    $('crash-details').hidden = false;
+  }
+  crashDialog.showModal();
+}
+
 addEventListener('pagehide', () => {
   departed = true;
   leaveGame?.();
@@ -163,6 +208,7 @@ async function boot() {
   let canSave = true, onLockLost;
   try {
     releaseSaveLock = await acquireSaveLock(() => {
+      if (startupFailed) return;
       loadText.textContent = 'Hra je otevřená v jiné kartě. Po jejím zavření zde načtu aktuální postup.';
       transfer.hidden = !channel;
     }, () => {
@@ -172,7 +218,7 @@ async function boot() {
   } catch {
     canSave = false;
   }
-  if (departed) { releaseSaveLock?.(); return; }
+  if (departed || startupFailed) { releaseSaveLock?.(); return; }
   transfer.hidden = true;
   loadText.textContent = 'Načítám město…';
   refreshSavedGraphics();
@@ -186,6 +232,7 @@ async function boot() {
   } catch (e) {
     throw new Error('Vykreslování hry vyžaduje prohlížeč s podporou WebGPU nebo WebGL 2.', { cause: e });
   }
+  if (startupFailed) return;
   const rendering = renderer.backend.isWebGPUBackend ? 'WebGPU' : 'WebGL 2';
   renderer.info.autoReset = false;
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, profilePixelRatio(QUALITY.pixelRatio, IS_MOBILE)));
@@ -199,10 +246,12 @@ async function boot() {
     loadAll(p => { bar.style.width = `${Math.round(p * 75)}%`; }),
     loadJolt(),
   ]);
+  if (startupFailed) return;
   const physics = new PhysicsWorld(jolt);
   bar.style.width = '80%';
   loadText.textContent = 'Stavím město…';
   await new Promise((r) => setTimeout(r, 30));
+  if (startupFailed) return;
   const game = new Game(renderer, data, physics);
   game.saveEnabled = canSave;
   onLockLost = () => {
@@ -221,6 +270,7 @@ async function boot() {
   await game.chunks.prepareStart(game.focus, QUALITY.view, fraction => {
     bar.style.width = `${80 + Math.round(fraction * 15)}%`;
   });
+  if (startupFailed) return;
   game._updateCamera(0.016);
   const initialCamera = !game.hasSave && {
     position: game.camera.position.clone(), rotation: game.camera.quaternion.clone()
@@ -230,6 +280,7 @@ async function boot() {
   await game.env.prepareSkyLight();
   if (game.postfx) await game.postfx.prepare();
   else await renderer.compileAsync(game.scene, game.camera);
+  if (startupFailed) return;
   canvas.style.visibility = 'hidden';
   const facing = game.camera.quaternion.clone();
   const up = new THREE.Vector3(0, 1, 0);
@@ -239,8 +290,10 @@ async function boot() {
     game.env.update(game.camera);
     game.render();
     await new Promise(resolve => setTimeout(resolve, 0));
+    if (startupFailed) return;
   }
   await renderer.backend.device?.queue.onSubmittedWorkDone();
+  if (startupFailed) return;
   game.camera.quaternion.copy(facing);
   if (initialCamera) {
     game.camera.position.set(-32, 7, 108);
@@ -259,6 +312,8 @@ async function boot() {
   if (IS_TOUCH) $('touch').classList.remove('hidden');
 
   let running = false, last = 0, firstPlay = true;
+  let testCrash = DEBUG ? PARAMS.get('chyba') : null;
+  let playStartedAt = 0;
   const perfPanel = DEBUG ? initPerfPanel(perf, rendering, game, () => running && !game.mapOpen) : null;
   const menu = $('menu');
   const timeInput = $('game-time'), clockStatus = $('clock-status');
@@ -277,6 +332,7 @@ async function boot() {
   };
   let mapFromPause = false;
   const openMenu = () => {
+    if (guard.fatal) return;
     if (game.mapOpen) game.toggleMap(false);
     if (game.activities.playingTargets) game.activities.targets.hide();
     running = false; input.enabled = false; game.paused = true;
@@ -289,6 +345,7 @@ async function boot() {
     navigation.show(true);
   };
   const play = () => {
+    if (guard.fatal) return;
     // Prohlížeč dovolí celou obrazovku jen hned po kliknutí, proto dřív než cokoli dalšího.
     if (fullscreenOnPlay(game.fullscreenEnabled)) void enterFullscreen();
     menu.classList.add('hidden'); game.hud.show(true);
@@ -297,6 +354,7 @@ async function boot() {
     game.audio.start(); game.audio.resume();
     if (game.activities.playingTargets) game.activities.targets.show();
     if (firstPlay) {
+      playStartedAt = last;
       if (initialCamera && !game.cabin) {
         game.camera.position.copy(initialCamera.position);
         game.camera.quaternion.copy(initialCamera.rotation);
@@ -332,7 +390,7 @@ async function boot() {
     }
   });
   const openPhoto = () => {
-    if (game.graphicsBusy || game.mapOpen || game.activities.playingBowling || game.activities.playingTargets) return;
+    if (guard.fatal || game.graphicsBusy || game.mapOpen || game.activities.playingBowling || game.activities.playingTargets) return;
     photoFromPlay = running;
     running = false; input.enabled = false; game.paused = true;
     syncMouseLock();
@@ -399,7 +457,7 @@ async function boot() {
     $('bigmap-canvas').focus({ preventScroll: true });
   };
   document.addEventListener('keydown', event => {
-    if (event.defaultPrevented) return;
+    if (event.defaultPrevented || guard.fatal) return;
     if (event.code !== 'Escape' && !(mapFromPause && event.code === 'KeyM')) return;
     if (menu.classList.contains('hidden') && !mapFromPause) return;
     event.preventDefault();
@@ -477,10 +535,14 @@ async function boot() {
     $('btn-map').focus({ preventScroll: true });
   });
   $('minimap').addEventListener('click', () => { if (running) game.toggleMap(true); });
-  addEventListener('resize', () => { game.resize(); if (!running && !game.graphicsBusy) game.render(); });
+  addEventListener('resize', () => {
+    if (guard.fatal) return;
+    game.resize();
+    if (!running && !game.graphicsBusy) game.render();
+  });
   document.addEventListener('visibilitychange', () => { if (document.hidden && running) openMenu(); });
   leaveGame = () => {
-    if (!firstPlay) game.save();
+    if (!firstPlay && !guard.fatal) game.save();
     game.saveEnabled = false;
     channel?.close();
   };
@@ -492,7 +554,7 @@ async function boot() {
     location.reload();
   };
 
-  const loop = (now) => {
+  const frame = (now) => {
     if (photo.active) {
       photo.update(Math.min(.05, Math.max(0,(now - last) / 1000)));
       last = now;
@@ -511,6 +573,13 @@ async function boot() {
     const dt = Math.min(0.05, elapsed);
     last = now;
     if (game.graphicsBusy) return;
+    if (testCrash === 'jednorazova') {
+      testCrash = null;
+      throw new Error('Zkušební jednorázová chyba');
+    }
+    if (testCrash === 'trvala' && now - playStartedAt >= 3000) {
+      throw new Error('Zkušební trvalá chyba');
+    }
     if (input.pressed.has('menu')) {
       input.pressed.delete('menu');
       if (game.mapOpen) game.toggleMap(false); else { openMenu(); return; }
@@ -524,7 +593,32 @@ async function boot() {
     syncMouseLock();
     if (perf) game.adapt(elapsed, perf.summary);
   };
+
+  function stopAfterCrash() {
+    game.saveEnabled = false;
+    running = false;
+    game.paused = true;
+    input.enabled = false;
+    input.pressed.clear();
+    photo.active = false;
+    void renderer.setAnimationLoop(null).catch(console.error);
+    showCrash(guard.errors);
+    syncMouseLock();
+    game.audio.suspend();
+  }
+
+  const loop = (now) => {
+    if (guard.fatal || guard.run(frame, now)) return;
+    const error = guard.errors.at(-1);
+    console.error(error.stack || error.message);
+    if (guard.fatal) stopAfterCrash();
+  };
   await renderer.setAnimationLoop(loop);
+  if (startupFailed) {
+    game.saveEnabled = false;
+    await renderer.setAnimationLoop(null);
+    return;
+  }
 
   if (DEBUG) {
     window.__perf = { summary: perf.summary, reset: perf.reset, renderStats: perf.renderStats };
@@ -547,7 +641,4 @@ async function boot() {
   if (PARAMS.has('autoplay')) play();
 }
 
-boot().catch(error => {
-  releaseSaveLock?.();
-  fail(error);
-});
+boot().catch(fail);

@@ -1,3 +1,13 @@
+# E85 · Pojistka při chybě za běhu
+
+Na větvi `etapa/E85` je hotové zachytávání chyb ve smyčce i ve fotorežimu, úklid stisků,
+zastavení po opakované chybě a dialog s obnovením z posledního uložení. Ladicí režim
+umí vyvolat jednorázovou nebo trvalou chybu. Prošlo 452 zkoušek JavaScriptu, produkční
+sestavení a všech 16 nových prohlížečových zkoušek ve WebGL 2 a WebGPU včetně dotykové
+emulace. Ze starších zkoušek prošlo 25 z 26. Zachycení kurzoru ve WebGL 2 selhalo
+i na výchozí revizi. Typický čas logiky na nízké předvolbě zůstal stejný. Zbývá ověření
+dotyku na fyzickém telefonu. [Zadání](E85.md) · [Protokol a snímky](../E85.md)
+
 # E84 · Automatické kontroly na GitHubu
 
 Výchozí revize je `dc4411a`. Rychlé kontroly na GitHubu prošly po nahrání větve `etapa/E84`

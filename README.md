@@ -242,6 +242,11 @@ Výchozí pohledy, měření práce snímku a rozpočet vykreslování jsou v
 [protokolu E13](docs/E13.md). Panel výkonu v režimu `?debug&adapt=0` otevřeš klávesou
 F9 nebo tlačítkem **Měření**. [Návod pro počítač a telefon](docs/E13/mereni-na-zarizeni.md).
 
+Pro zkoušku zotavení otevři adresu hry s `?debug&chyba=jednorazova` a spusť hraní.
+První snímek vyvolá chybu a hra pokračuje. S `?debug&chyba=trvala` začnou po třech sekundách
+opakované chyby. Hra se zastaví a nabídne **Načíst znovu** z posledního uložení.
+V dialogu můžeš rozbalit **Podrobnosti** a zkopírovat výpis chyb. [Ověření E85](docs/E85.md)
+
 [E14 aktualizuje three.js na 0.187.0](docs/E14.md), zachovává stávající vykreslování
 a doplňuje hlídání vlastních materiálů. [Osm porovnání před a po](docs/E14/snimky.md)
 ukazuje jen drobné rozdíly ve stínech. Rozpočet nově započítává i stínový průchod,
