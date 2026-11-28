@@ -2,6 +2,8 @@
 
 [**Hrát v prohlížeči**](https://jendandt.github.io/GTA-Pilsen/plna-hra/)
 
+[![Stav kontrol na hlavní větvi](https://github.com/JendaNDT/GTA-Pilsen/actions/workflows/kontroly.yml/badge.svg?branch=main&event=push)](https://github.com/JendaNDT/GTA-Pilsen/actions/workflows/kontroly.yml)
+
 Skutečná Plzeň jako otevřený svět v prohlížeči. Chodíš, jezdíš autem, tramvají, trolejbusem i autobusem,
 létáš vrtulníkem, rozvážíš jídlo, vozíš zákazníky a ujíždíš policii – to vše v ulicích postavených ze skutečných
 otevřených dat. Běží na počítači i na mobilu, bez instalace.
@@ -308,8 +310,9 @@ npm run build
 npm run test:e2e -- --trace off
 ```
 
-Testy si samy spustí lokální server nad `dist/`. Projekt `webgl2` spouští úplnou sadu.
-Projekt `webgpu` ověřuje start, rozpočet, noc, Wilsonův most, Valík a referenční pohledy.
+Testy si samy spustí lokální server nad `dist/`. Projekty `webgl2` a `webgpu` zkoušejí hru
+v obou režimech vykreslování. Pro místní spuštění pěti základních zkoušek přidej
+`--project=webgl2 --grep @zaklad`.
 
 Kontroly projektu spouštíme místně před nahráním změn na GitHub. Pro ověření
 kompatibility spusť na Node.js 20.19, 22.12 a 24 příkazy `npm ci`, `npm test`,
@@ -318,6 +321,24 @@ kompatibility spusť na Node.js 20.19, 22.12 a 24 příkazy `npm ci`, `npm test`
 i odkazy v dokumentaci. Prohlížečové testy spusť na Node.js 24 podle postupu výše.
 Snímky při selhání najdeš
 v místní složce `test-results/`.
+
+## Automatické kontroly
+
+V záložce [Actions](https://github.com/JendaNDT/GTA-Pilsen/actions) otevři běh **Kontroly**.
+Po každém nahrání změny GitHub spustí testy JavaScriptu, sestavení hry a testy datových nástrojů.
+U pull requestu do `main` po nich následuje pět zkoušek hry ve WebGL 2. Najdeš je dole v pull
+requestu pod názvy `rychle` a `prohlizec`. Zelená značka znamená, že kontrola prošla. U červené
+značky otevři **Details** a rozbal krok, který selhal. Snímky a report prohlížeče jsou v části
+**Artifacts** ke stažení sedm dní.
+
+**Úplné testy** se po převzetí do `main` spouštějí každou noc ve 2.37 UTC, tedy ve 3.37 zimního
+nebo 4.37 letního času v Plzni. Pro ruční spuštění otevři **Actions → Úplné testy → Run workflow**,
+vyber větev a potvrď. Výsledky WebGL 2 a WebGPU jsou rozdělené do čtyř částí pro každý režim.
+
+**Ochranu hlavní větve zapni po převzetí E84.** V repozitáři otevři **Settings → Branches** a
+přidej pravidlo pro `main`. Zapni **Require a pull request before merging** a **Require status
+checks to pass before merging**. Vyber kontroly `rychle` a `prohlizec` a pravidlo ulož.
+[Postup na GitHubu](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/managing-a-branch-protection-rule)
 
 ## Odkud jsou data a jak je obnovit
 
