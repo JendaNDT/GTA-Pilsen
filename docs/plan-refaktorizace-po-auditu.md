@@ -63,15 +63,17 @@ Doporučené pořadí je podle čísel. Etapu lze začít, až jsou sloučené e
 - Během etap E87–E93 by neměly běžet jiné větve s velkými zásahy do `src/`. Herní novinky je lepší
   dělat mezi etapami.
 
-## Rozhodnutí, která potřebuji od autora
+## Rozhodnutí autora
 
-| Kdy | Otázka | Doporučení |
+Tři rozhodnutí autor potvrdil 28. 11. 2026. Ostatní padnou v příslušné etapě.
+
+| Kdy | Otázka | Rozhodnutí nebo doporučení |
 | --- | --- | --- |
-| před E84 | Je repozitář na GitHubu veřejný, nebo soukromý? | Soukromý repozitář má měsíční limit minut pro automatické kontroly. Podle toho se nastaví četnost úplné sady testů v prohlížeči: veřejný každou noc, soukromý jednou týdně a ručně. |
+| před E84 | Je repozitář na GitHubu veřejný, nebo soukromý? | **Rozhodnuto: veřejný.** Úplná sada testů v prohlížeči poběží každou noc a jde spustit i ručně. |
 | po E84 | Zapnout v nastavení GitHubu ochranu větve `main`? | Ano. Pull request pak nepůjde sloučit, dokud kontroly nesvítí zeleně. Postup bude v README. Nastavení musí udělat autor, agent k němu nemá přístup. |
-| E85 | Má hra po vážné chybě ještě uložit postup? | Ne. Platí poslední automatické uložení, nejvýš 20 s staré. Uložení stavu po chybě by mohlo zapsat poškozená data. |
+| E85 | Má hra po vážné chybě ještě uložit postup? | **Rozhodnuto: ne.** Platí poslední automatické uložení, nejvýš 20 s staré. Uložení stavu po chybě by mohlo zapsat poškozená data. |
 | E87 | Kdy provést jednorázové přeformátování kódu? | Jen ve chvíli, kdy není rozpracovaná žádná jiná větev. |
-| E88 | Odstranit z `main` vygenerovaná data zmrazené verze v Godotu (`godot/data/`, 79 MB z 81 MB)? | Ano. Celá verze zůstane pod značkou `godot-archiv-2026-11-20`. Data se smažou, jen pokud je nástroj ověřeně vyrobí znovu stejná. Skripty a popis v `godot/` zůstanou kvůli odkazům ze starších protokolů. |
+| E88 | Odstranit z `main` vygenerovaná data zmrazené verze v Godotu (`godot/data/`, 79 MB z 81 MB)? | **Rozhodnuto: ano.** Celá verze zůstane pod značkou `godot-archiv-2026-11-20`. Data se smažou, jen pokud je nástroj ověřeně vyrobí znovu stejná. Skripty a popis v `godot/` zůstanou kvůli odkazům ze starších protokolů. |
 | E88 | Smazat staré větve etap na GitHubu? | Ano, po schválení seznamu. Větve `main` a `gh-pages` (nasazená hra) zůstanou. |
 
 ## Jak postupovat
