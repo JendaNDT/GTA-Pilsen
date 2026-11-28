@@ -190,7 +190,9 @@ if (DEBUG) {
 
 function showCrash(errors) {
   if (DEBUG) {
-    $('crash-errors').textContent = errors.map(error => error.stack || error.message).join('\n\n');
+    $('crash-errors').textContent = [
+      `Semínko ${getRandomSeed()}`, ...errors.map(error => error.stack || error.message),
+    ].join('\n\n');
     $('crash-details').hidden = false;
   }
   crashDialog.showModal();

@@ -247,6 +247,11 @@ První snímek vyvolá chybu a hra pokračuje. S `?debug&chyba=trvala` začnou p
 opakované chyby. Hra se zastaví a nabídne **Načíst znovu** z posledního uložení.
 V dialogu můžeš rozbalit **Podrobnosti** a zkopírovat výpis chyb. [Ověření E85](docs/E85.md)
 
+Přidej `?debug&seed=42` a v panelu **Měření** najdeš semínko 42. Když parametr vynecháš,
+hra při startu vybere nové semínko. Číslo přilož k hlášení chyby. V testech se stejným
+semínkem, stejnými povely a pevným krokem se průběh hry přesně zopakuje. Při běžném
+hraní ho ovlivňují rozdílné délky snímků a okamžiky stisku. [Otisk simulace E86](docs/E86.md)
+
 [E14 aktualizuje three.js na 0.187.0](docs/E14.md), zachovává stávající vykreslování
 a doplňuje hlídání vlastních materiálů. [Osm porovnání před a po](docs/E14/snimky.md)
 ukazuje jen drobné rozdíly ve stínech. Rozpočet nově započítává i stínový průchod,
@@ -316,7 +321,7 @@ npm run test:e2e -- --trace off
 ```
 
 Testy si samy spustí lokální server nad `dist/`. Projekty `webgl2` a `webgpu` zkoušejí hru
-v obou režimech vykreslování. Pro místní spuštění pěti základních zkoušek přidej
+v obou režimech vykreslování. Pro místní spuštění šesti základních zkoušek přidej
 `--project=webgl2 --grep @zaklad`.
 
 Kontroly projektu spouštíme místně před nahráním změn na GitHub. Pro ověření
@@ -331,7 +336,7 @@ v místní složce `test-results/`.
 
 V záložce [Actions](https://github.com/JendaNDT/GTA-Pilsen/actions) otevři běh **Kontroly**.
 Po každém nahrání změny GitHub spustí testy JavaScriptu, sestavení hry a testy datových nástrojů.
-U pull requestu do `main` po nich následuje pět zkoušek hry ve WebGL 2. Najdeš je dole v pull
+U pull requestu do `main` po nich následuje šest zkoušek hry ve WebGL 2. Najdeš je dole v pull
 requestu pod názvy `rychle` a `prohlizec`. Zelená značka znamená, že kontrola prošla. U červené
 značky otevři **Details** a rozbal krok, který selhal. Snímky a report prohlížeče jsou v části
 **Artifacts** ke stažení sedm dní.

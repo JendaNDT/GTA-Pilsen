@@ -1,3 +1,5 @@
+import { getRandomSeed } from './random.js';
+
 // Důvod čekání je platný jen krátce po příslušném rozhodnutí řidiče.
 // Slabé odkazy dovolí hře vyřadit vozy, které opustily načtené město.
 export function createTrafficWaits(game) {
@@ -71,11 +73,13 @@ export function createTrafficWaits(game) {
       return result;
     },
     queues(minimum = 60) {
+      const seed = getRandomSeed();
       const waiting = game.vehicles.cars.filter(car => car.mode === 'ai' && car.blocked >= minimum);
       const transit = game.transit.vehicles.filter(v => v.visible && v.stoppedInTraffic >= minimum);
-      return [...waiting, ...transit].map(car => ({
-        seconds: Math.floor(car.blocked ?? car.stoppedInTraffic), chain: observer.chain(car),
+      const queues = [...waiting, ...transit].map(car => ({
+        seed, seconds: Math.floor(car.blocked ?? car.stoppedInTraffic), chain: observer.chain(car),
       })).sort((a, b) => b.seconds - a.seconds);
+      return Object.assign(queues, { seed });
     },
   };
   observer.setEnabled(true);
