@@ -1,0 +1,223 @@
+{
+  "browser": "159.0.8154.6",
+  "viewport": "1920 × 1080",
+  "pilot": false,
+  "centerFlight": false,
+  "coldStartMs": [
+    7359,
+    7508,
+    7393
+  ],
+  "quality": "low",
+  "work": {
+    "date": "2026-11-17",
+    "hour": 10,
+    "adaptive": false,
+    "durationMs": 10000,
+    "chromiumFlags": []
+  },
+  "renderer": "WebGPU",
+  "gpu": "apple / metal-3",
+  "car": {
+    "metres": 102,
+    "start": [
+      100,
+      528
+    ],
+    "end": [
+      123,
+      627
+    ],
+    "chunks": 1,
+    "maxPending": 0,
+    "shadowEnabled": false,
+    "drawingBuffer": [
+      1920,
+      1080
+    ],
+    "cityTiles": 51,
+    "fps": 58.3,
+    "p95FrameMs": 16.8,
+    "maxFrameMs": 99.9,
+    "framesOver50Ms": 3,
+    "measurement": {
+      "logicMs": {
+        "median": 0.20000004768371582,
+        "p95": 0.49999988079071045,
+        "p99": 24.700000047683716
+      },
+      "logicSamples": 584,
+      "physicsMs": {
+        "median": 0.3999999761581421,
+        "p95": 0.5,
+        "p99": 0.8999999761581421
+      },
+      "physicsSamples": 584,
+      "renderSamples": 584,
+      "durationMs": 9966.700000047684,
+      "frames": 584,
+      "updateMs": {
+        "median": 0.7000000476837158,
+        "p95": 1.1999999284744263,
+        "p99": 27.5
+      },
+      "renderMs": {
+        "median": 1.100000023841858,
+        "p95": 1.7000000476837158,
+        "p99": 2.100000023841858
+      },
+      "workMs": {
+        "median": 1.8000000715255737,
+        "p95": 2.899999976158142,
+        "p99": 29.100000023841858
+      },
+      "gpuMs": {
+        "median": 7.077888,
+        "p95": 8.650752,
+        "p99": 10.81344
+      },
+      "gpuSamples": 575,
+      "renderStats": {
+        "calls": 143,
+        "triangles": 210531,
+        "geometries": 347,
+        "textures": 141
+      },
+      "pixelRatio": 1,
+      "shadows": false
+    },
+    "physicsSteps": 603,
+    "physicsP95Ms": 0.5,
+    "budgets": {
+      "physics": {
+        "p95": 0.5,
+        "limit": 4,
+        "samples": 584,
+        "required": 100,
+        "status": "splněno"
+      },
+      "logic": {
+        "p95": 0.49999988079071045,
+        "limit": 2,
+        "samples": 584,
+        "required": 100,
+        "status": "splněno"
+      },
+      "render": {
+        "p95": 1.7000000476837158,
+        "limit": 6,
+        "samples": 584,
+        "required": 100,
+        "status": "splněno"
+      },
+      "gpu": {
+        "p95": 8.650752,
+        "limit": 12,
+        "samples": 575,
+        "required": 30,
+        "status": "splněno"
+      }
+    }
+  },
+  "heli": {
+    "metres": 250,
+    "start": [
+      23421,
+      0
+    ],
+    "end": [
+      23671,
+      0
+    ],
+    "chunks": 2,
+    "maxPending": 7,
+    "shadowEnabled": false,
+    "drawingBuffer": [
+      1920,
+      1080
+    ],
+    "cityTiles": 0,
+    "fps": 60,
+    "p95FrameMs": 16.7,
+    "maxFrameMs": 16.8,
+    "framesOver50Ms": 0,
+    "measurement": {
+      "logicMs": {
+        "median": 0,
+        "p95": 0.19999992847442627,
+        "p99": 1.899999976158142
+      },
+      "logicSamples": 601,
+      "physicsMs": {
+        "median": 0.10000002384185791,
+        "p95": 0.20000004768371582,
+        "p99": 0.2999999523162842
+      },
+      "physicsSamples": 601,
+      "renderSamples": 601,
+      "durationMs": 9999.5,
+      "frames": 601,
+      "updateMs": {
+        "median": 0.20000004768371582,
+        "p95": 0.5,
+        "p99": 2.1999999284744263
+      },
+      "renderMs": {
+        "median": 0.3999999761581421,
+        "p95": 0.6000000238418579,
+        "p99": 0.6999999284744263
+      },
+      "workMs": {
+        "median": 0.6000000238418579,
+        "p95": 1,
+        "p99": 2.799999952316284
+      },
+      "gpuMs": {
+        "median": 2.752512,
+        "p95": 6.22592,
+        "p99": 6.5536
+      },
+      "gpuSamples": 600,
+      "renderStats": {
+        "calls": 55,
+        "triangles": 145496,
+        "geometries": 59,
+        "textures": 60
+      },
+      "pixelRatio": 1,
+      "shadows": false
+    },
+    "physicsSteps": 605,
+    "physicsP95Ms": 0.20000004768371582,
+    "budgets": {
+      "physics": {
+        "p95": 0.20000004768371582,
+        "limit": 4,
+        "samples": 601,
+        "required": 100,
+        "status": "splněno"
+      },
+      "logic": {
+        "p95": 0.19999992847442627,
+        "limit": 2,
+        "samples": 601,
+        "required": 100,
+        "status": "splněno"
+      },
+      "render": {
+        "p95": 0.6000000238418579,
+        "limit": 6,
+        "samples": 601,
+        "required": 100,
+        "status": "splněno"
+      },
+      "gpu": {
+        "p95": 6.22592,
+        "limit": 12,
+        "samples": 600,
+        "required": 30,
+        "status": "splněno"
+      }
+    }
+  }
+}
