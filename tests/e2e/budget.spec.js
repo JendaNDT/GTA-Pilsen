@@ -9,7 +9,8 @@ const budgetFile = new URL('../budgets-e17.json', import.meta.url);
 test.use({ viewport: reference.viewport, deviceScaleFactor: 1 });
 
 for (const quality of ['ultra', 'high', 'medium', 'low']) {
-  test(`E17 – předvolba ${quality} se vejde do rozpočtu vykreslování`, { tag: '@webgpu' }, async ({ page, baseURL }) => {
+  const tag = quality === 'low' ? ['@webgpu', '@zaklad'] : '@webgpu';
+  test(`E17 – předvolba ${quality} se vejde do rozpočtu vykreslování`, { tag }, async ({ page, baseURL }) => {
     const update = process.env.UPDATE_BUDGETS === '1';
     const all = JSON.parse(await readFile(budgetFile, 'utf8'));
     const baseline = all[quality];

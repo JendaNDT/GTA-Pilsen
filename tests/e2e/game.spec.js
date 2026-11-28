@@ -34,7 +34,7 @@ async function advanceFrames(page, count) {
   }, count);
 }
 
-test('chůze, navigace, auto, vrtulník a dokončení rozvozu', async ({ page }) => {
+test('chůze, navigace, auto, vrtulník a dokončení rozvozu', { tag: '@zaklad' }, async ({ page }) => {
   const errors = [], failed = [];
   page.on('pageerror', (error) => errors.push(error.message));
   page.on('requestfailed', (request) => {
@@ -568,7 +568,7 @@ test('E03 – oba tubusy Valíku mají vlastní vozovku, stěny a kameru pod ter
   expect(errors).toEqual([]);
 });
 
-test('mobilní ovládání pohybuje hráčem a otevírá mapu', async ({ browser }) => {
+test('mobilní ovládání pohybuje hráčem a otevírá mapu', { tag: '@zaklad' }, async ({ browser }) => {
   const context = await browser.newContext({ ...devices['iPhone 13'], viewport: { width: 844, height: 390 } });
   const page = await context.newPage(), errors = [];
   page.on('pageerror', (error) => errors.push(error.message));

@@ -7,7 +7,7 @@ async function start(page) {
   await waitForGame(page);
 }
 
-test('úvod, pauza za volantem, pojmenovaný cíl a návrat klávesou Esc', async ({ page }) => {
+test('úvod, pauza za volantem, pojmenovaný cíl a návrat klávesou Esc', { tag: '@zaklad' }, async ({ page }) => {
   await start(page);
   await expect(page.locator('#btn-play')).toHaveText('Hrát');
   await expect(page.locator('#btn-map')).toBeHidden();
@@ -42,7 +42,7 @@ test('úvod, pauza za volantem, pojmenovaný cíl a návrat klávesou Esc', asyn
   expect(await page.evaluate(() => __game.paused)).toBe(false);
 });
 
-test('dotykem z rozvozu na mapu a zpátky, uložená poloha po obnovení', async ({ browser }) => {
+test('dotykem z rozvozu na mapu a zpátky, uložená poloha po obnovení', { tag: '@zaklad' }, async ({ browser }) => {
   const context = await browser.newContext({ viewport:{width:780,height:390}, hasTouch:true, isMobile:true });
   try {
     const page = await context.newPage();
