@@ -347,6 +347,27 @@ export class VehicleManager {
       slow: cos > 0.92 ? 99 : 3.8 + 7 * Math.max(0, cos) };
   }
 
+  _queueAhead(edge, lane) {
+    const w = this.world;
+    let stopped = 0;
+    for (const other of this.cars) {
+      if (other.mode !== 'ai' || !(other.blocked >= 3) || Math.abs(other.lane - lane) > 1.6) continue;
+      let distance = other.s;
+      if (other.edge !== edge) {
+        // Započítat i auta za koncem krátkého úseku, pokud ulice pokračuje přímo.
+        if (w.eFrom[other.edge] !== w.eTo[edge] || w.eTo[other.edge] === w.eFrom[edge]) continue;
+        const road = w.eRoad[edge], nextRoad = w.eRoad[other.edge];
+        if (nextRoad !== road && (!w.r.name[road] || w.r.name[nextRoad] !== w.r.name[road])) continue;
+        const end = this._edgeTangent(edge, true, _pt);
+        const start = this._edgeTangent(other.edge, false, _pt2);
+        if (end.tx * start.tx + end.tz * start.tz < 0.9) continue;
+        distance += w.eLen[edge];
+      }
+      if (distance >= 0 && distance <= 110 && ++stopped === 2) return true;
+    }
+    return false;
+  }
+
   _nextMove(e, context, lane) {
     const cands = this._movesFrom(e, context, lane);
     if (!cands.length) {
@@ -357,7 +378,11 @@ export class VehicleManager {
       return { from: e, to: -1, lane: 0, slow: 99 };
     }
     const compatible = cands.filter(candidate => candidate.fits);
-    const choices = compatible.length ? compatible : cands;
+    let choices = compatible.length ? compatible : cands;
+    if (compatible.length > 1) {
+      const open = choices.filter(c => !this._queueAhead(c.edge, this._laneFor(c.edge, c.cos > 0.85 ? lane : c.turn)));
+      if (open.length) choices = open;
+    }
     let r = Math.random() * choices.reduce((sum, candidate) => sum + candidate.wt, 0), pick;
     for (const candidate of choices) {
       pick = candidate;
@@ -403,14 +428,17 @@ export class VehicleManager {
     if (gap < 0 || gap > 4 || !traffic.controlsJunction(rule)) return;
     const wreck = this.cars.some(other => other.crashed && (other.mode === 'loose' || other.mode === 'parked') &&
         Math.hypot(other.x - car.x, other.z - car.z) < 65 && traffic.exitBlocked(car, rule, [other], []));
-    // Po minutě před plným výjezdem může řidič změnit směr. U semaforu
-    // hledá až na zelenou, linkový vůz při běžném nástupu cestujících neobjíždí.
+    // U semaforu řidič přehodnotí ucpaný výjezd až na zelenou.
     const longWait = 60;
     if (!wreck) {
       if (rule.kind === 'signal' && (!rule.directedHead || traffic.light(rule) !== 'green')) return;
       // Při dlouhém čekání na levé odbočení využijeme ještě tutéž zelenou.
       const missedTurn = car.blocked >= 20 && state.turnWait >= 5;
-      if (car.blocked < longWait && !missedTurn) return;
+      if (car.blocked < longWait && !missedTurn) {
+        const edge = state.movement?.edge ?? car.next;
+        const lane = state.movement?.exitLane ?? car.nextLane;
+        if (car.blocked < 10 || edge < 0 || !this._queueAhead(edge, lane)) return;
+      }
       const queue = this.cars.filter(other => other !== car && other.mode === 'ai');
       const transit = this.obstacles.filter(section => section.stoppedInTraffic >= longWait ||
         section.control && Math.hypot(section.vx, section.vz) > 1);
@@ -558,7 +586,11 @@ export class VehicleManager {
         gap = ahead - car.halfLen - half * parallel - width * crossing;
       }
       const along = (o.vx || 0) * fx + (o.vz || 0) * fz;
-      const allowed = Math.min(Math.max(0, along + (gap - 2.2 - Math.max(0, car.speed)) * 1.1),
+      const following = pointAt && o.mode === 'ai' && Math.cos(car.yaw - o.yaw) > 0.94;
+      const speed = Math.max(0, car.speed);
+      // V rozjíždějící se řadě řidič reaguje už na růst mezery před sebou.
+      const opening = following && gap > 2.2 ? clamp(along - speed, 0, 1.2) * clamp(1 - speed / 6, 0, 1) : 0;
+      const allowed = Math.min(Math.max(0, along + opening + (gap - 2.2 - speed) * 1.1),
         Math.sqrt(Math.max(0, along) ** 2 + 6 * Math.max(0, gap - 2.2)));
       if (pointAt && allowed < 0.4 && o.mode === 'ai' && Math.cos(car.yaw - o.yaw) > 0.85) car.queued = true;
       if (allowed < limit) { limit = allowed; blocker = o; }

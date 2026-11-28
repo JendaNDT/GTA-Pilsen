@@ -1,3 +1,7 @@
+# E82 · Chování řidičů v městském provozu
+
+Na větvi `etapa/E82` řidiči reagují na rozjezd auta vpředu a vyhledávají volné odbočení, když se před nimi drží fronta. V Božkovské řidič před dvojicí stojících aut přehodnotil trasu po 10 sekundách. Desáté auto projelo po rozjezdu o 0,32 s dřív. U nádraží v obou měřeních přibylo průjezdů, na Klatovské se v jednom běhu nejdelší čekání prodloužilo. Prošlo sestavení, 444 testů JavaScriptu a sedm cílených prohlížečových zkoušek včetně dotykové emulace. Ve špičce při vysoké kvalitě klesla frekvence z 59,7 na 45,9–59,2 FPS. Před vydáním zbývá určit příčinu zpomalení, vysvětlit nejdelší frontu na Klatovské a ověřit změnu na fyzickém telefonu. [Zadání](E82.md) · [Srovnání a snímky](../E82.md)
+
 # E81 · Přednost chodce při výjezdu linky 32
 
 Na větvi `etapa/E81` se v běžné simulaci při výjezdu ze zálivu potkaly autobus, osobní auto a chodec. Po opravě zůstal roh autobusu 0,58 m před zebrou. Chodec přešel, oba řidiči pokračovali a nejmenší odstup mezi vozy činil 2,59 m. Prošlo sestavení, 441 testů JavaScriptu a devět cílených prohlížečových zkoušek včetně dotykové emulace. Zbývá ověření na fyzickém telefonu. [Zadání](E81.md) · [Průjezd, snímky a měření](../E81.md)

@@ -429,3 +429,56 @@ test('zatížení motoru pro zvuk odpovídá pohonu při rozjezdu, brzdění a c
     assert.equal(car.engineLoad, 0);
   } finally { close(); }
 });
+
+test('deset řidičů postupně opustí frontu a při zabrzdění čela zachovají odstup', async () => {
+  const { driveRoute } = await import('../src/game/ai-driver.js');
+  for (const brakeAgain of [false, true]) {
+    const { car: first, vehicle: leader, close } = track('hatch');
+    const physics = leader.physics, fleet = [];
+    const manager = { cars: [], obstacles: [], drivingPath: Array.from({ length: 6 }, () => ({})) };
+    try {
+      for (let i = 0; i < 10; i++) {
+        const type = CAR_TYPES[['hatch', 'sedan', 'van'][i % 3]];
+        const car = i === 0 ? first : { ...first, type };
+        const previous = manager.cars.at(-1);
+        car.mode = 'ai'; car.radius = type.wid * 0.56; car.halfLen = type.len / 2;
+        car.z = previous ? previous.z - previous.halfLen - 2.4 - car.halfLen : -car.halfLen - 0.6;
+        const vehicle = i === 0 ? leader : new PlayerVehicle(physics, car);
+        vehicle.teleport();
+        fleet.push({ vehicle, car });
+        manager.cars.push(car);
+      }
+      const dt = 1 / 60, brake = { throttle: 0, brake: 1, steer: 0 };
+      let lastPassed = Infinity, minGap = Infinity;
+      for (let tick = -120; tick < 1800; tick++) {
+        for (const entry of fleet) {
+          const { car, vehicle } = entry;
+          if (tick < 0 || brakeAgain && vehicle === leader && tick >= 340) {
+            vehicle.driveAI(brake, dt, asphalt);
+            continue;
+          }
+          const pointAt = look => ({ x: 0, z: car.z + look, tx: 0, tz: 1 });
+          const limit = VehicleManager.prototype._obstacleLimit.call(manager, car, 13.89, null, pointAt);
+          entry.input = driveRoute(car, pointAt, limit, Infinity, entry.input, dt);
+          vehicle.driveAI(entry.input, dt, asphalt);
+        }
+        physics.engine.Step(dt, 1);
+        for (const [i, { car, vehicle }] of fleet.entries()) {
+          vehicle.read();
+          if (i > 0 && tick >= 0) {
+            const previous = manager.cars[i - 1];
+            minGap = Math.min(minGap, previous.z - previous.halfLen - car.z - car.halfLen);
+          }
+        }
+        const last = manager.cars.at(-1);
+        if (last.z + last.halfLen >= 0) lastPassed = Math.min(lastPassed, (tick + 1) * dt);
+      }
+      assert.ok(minGap > 2, 'Nejmenší odstup mezi nárazníky: ' + minGap);
+      if (!brakeAgain) assert.ok(lastPassed < 15.8, 'Čas posledního průjezdu: ' + lastPassed);
+      else assert.ok(manager.cars.every(car => Math.abs(car.speed) < 0.15));
+    } finally {
+      for (const { vehicle } of fleet.slice(1)) vehicle.dispose();
+      close();
+    }
+  }
+});

@@ -674,28 +674,36 @@ test('Klatovská u Tylovy – jižní příjezd a přechod mají společný cykl
   expect(result.phases).not.toContain('green/green/green/false');
 });
 
-test('Božkovská – při dlouhé frontě v Železniční zvolí řidič volné odbočení', async ({ page }) => {
-  await boot(page);
-  const result = await page.evaluate(() => {
-    const { world, vehicles, player } = __game, car = player.lastCar;
-    vehicles.obstacles.length = 0;
-    for (const other of [...vehicles.cars]) if (car !== other) vehicles.remove(other);
-    const edge = 1168, rule = world.traffic.byEdge.get(edge).find(c => c.kind === 'yield');
-    const s = rule.s - car.halfLen - 0.8, p = world.edgePoint(edge, s, 0, {});
-    car.place(p.x, p.z, Math.atan2(p.tx, p.tz));
-    Object.assign(car, { mode: 'ai', edge, s, lane: 0, blocked: 64 });
-    car.exitPlan = [{ from: edge, to: 29310, lane: vehicles._laneFor(29310), slow: 7 }];
-    vehicles._pickNext(car);
-    const queue = world.edgePoint(29310, 5, car.nextLane, {});
-    vehicles.cars.push({ ...queue, mode: 'ai', y: car.y, yaw: Math.atan2(queue.tx, queue.tz),
-      halfLen: 2.3, radius: 1.07, blocked: 10 });
-    car.trafficStop = { rule, ready: 0 };
-    const full = world.traffic.exitBlocked(car, rule, vehicles.cars, []);
-    vehicles._detourAroundBlockage(car);
-    return { full, next: car.next, free: !world.traffic.exitBlocked(car, rule, vehicles.cars, []) };
+for (const [title, wait, count, expected] of [
+  ['Božkovská – při dlouhé frontě v Železniční zvolí řidič volné odbočení', 64, 1, 29309],
+  ['E82 – před dvojicí stojících aut v Železniční řidič zvolí volné odbočení po deseti sekundách', 10, 2, 29309],
+  ['E82 – kvůli jedinému stojícímu autu řidič po deseti sekundách směr nemění', 10, 1, 29310],
+]) {
+  test(title, async ({ page }) => {
+    await boot(page);
+    const result = await page.evaluate(({ wait, count }) => {
+      const { world, vehicles, player } = __game, car = player.lastCar;
+      vehicles.obstacles.length = 0;
+      for (const other of [...vehicles.cars]) if (car !== other) vehicles.remove(other);
+      const edge = 1168, rule = world.traffic.byEdge.get(edge).find(c => c.kind === 'yield');
+      const s = rule.s - car.halfLen - 0.8, p = world.edgePoint(edge, s, 0, {});
+      car.place(p.x, p.z, Math.atan2(p.tx, p.tz));
+      Object.assign(car, { mode: 'ai', edge, s, lane: 0, blocked: wait });
+      car.exitPlan = [{ from: edge, to: 29310, lane: vehicles._laneFor(29310), slow: 7 }];
+      vehicles._pickNext(car);
+      for (let i = 0; i < count; i++) {
+        const s = 5 + i * 8, p = world.edgePoint(29310, s, car.nextLane, {});
+        vehicles.cars.push({ ...p, mode: 'ai', edge: 29310, s, lane: car.nextLane, y: car.y,
+          yaw: Math.atan2(p.tx, p.tz), halfLen: 2.3, radius: 1.07, blocked: 10 });
+      }
+      car.trafficStop = { rule, ready: 0 };
+      const full = world.traffic.exitBlocked(car, rule, vehicles.cars, []);
+      vehicles._detourAroundBlockage(car);
+      return { full, next: car.next, free: !world.traffic.exitBlocked(car, rule, vehicles.cars, []) };
+    }, { wait, count });
+    expect(result).toEqual({ full: true, next: expected, free: expected !== 29310 });
   });
-  expect(result).toEqual({ full: true, next: 29309, free: true });
-});
+}
 
 test('E75 – na zelenou chodec počká na zadní nárazník a po uvolnění zebry vykročí', async ({ page }, info) => {
   await boot(page, '&date=2026-11-09&hour=10&quality=low&adapt=0');
