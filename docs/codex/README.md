@@ -7,6 +7,10 @@ vylepšení je v [katalogu](../fyzika-a-grafika.md).
 
 Etapy E31–E36 navazují na audit hry. Jejich pořadí, závislosti a odkazy na jednotlivá zadání shrnuje [plán oprav](../plan-oprav-po-auditu.md).
 
+Etapy E84–E95 navazují na [audit kódu z 28. 11. 2026](../audit-2026-11-28.md). Nemění chování hry,
+přestavují kód a zavádějí pojistky. Pořadí, závislosti a rozhodnutí autora shrnuje
+[plán refaktorizace](../plan-refaktorizace-po-auditu.md).
+
 ## Pořadí a volba modelu
 
 Model a úroveň uvažování vychází z popisu OpenAI: Astra je nejschopnější model pro náročnou
@@ -29,8 +33,21 @@ zadání. Když Sol v některé etapě opakovaně selže, přepni ji na Astru.
 | [E24](E24.md) | grafika C: budovy, auta, počasí | Sol, High | Astra, Medium |
 | [E25](E25.md) | tři úseky ulic | Sol, High | Sol, High |
 | [E26](E26.md) | vydání | Sol, High | Astra, High |
+| [E84](E84.md) | automatické kontroly na GitHubu | Sol, Medium | Sol, Medium |
+| [E85](E85.md) | pojistka při chybě za běhu | Sol, High | Astra, Medium |
+| [E86](E86.md) | opakovatelný provoz a otisk simulace | Astra, High | Astra, Medium |
+| [E87](E87.md) | úklid kódu a pravidla stylu | Sol, Medium | Sol, High |
+| [E88](E88.md) | repozitář a podklady pro AI | Sol, Medium | Sol, Medium |
+| [E89](E89.md) | rozdělení řízení hry | Astra, High | Astra, High |
+| [E90](E90.md) | rozdělení startu hry | Sol, High | Astra, Medium |
+| [E91](E91.md) | památky přes společné rozhraní | Astra, High | Astra, High |
+| [E92](E92.md) | stav hráče na jednom místě | Astra, High | Sol, High |
+| [E93](E93.md) | rozdělení světa a dlaždic | Astra, High | Astra, High |
+| [E94](E94.md) | paměť, načítání a závislosti | Sol, High | Astra, Medium |
+| [E95](E95.md) | převzetí a závěrečné měření | Sol, High | Astra, High |
 
-E16 může přijít kdykoli po E13. Ostatní etapy jdou v uvedeném pořadí.
+E16 může přijít kdykoli po E13. Ostatní etapy jdou v uvedeném pořadí. E88 může přijít kdykoli
+po E84, E92 až po E89 a E90. Před E87 a E89–E93 nesmí běžet jiná větev s velkými zásahy do `src/`.
 
 ## Univerzální zpráva (doporučeno)
 
@@ -41,6 +58,7 @@ Tuhle zprávu vkládej do Codexu pořád dokola. Codex si sám zjistí, která e
 Pokračuj v implementaci plánu Plzeň naplno.
 
 1. Přečti si AGENTS.md, docs/plan-presnost-a-vzhled.md a docs/codex/README.md.
+   U etap E84–E95 si přečti i docs/plan-refaktorizace-po-auditu.md.
 
 2. Zjisti, kde jsme:
    - Když jsi na větvi etapa/Exx, pokračuj v této etapě. Hotové kroky zjisti z historie
