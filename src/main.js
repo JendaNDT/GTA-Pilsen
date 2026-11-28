@@ -15,6 +15,7 @@ import { initMenu } from './game/menu.js';
 import { AreaMap } from './game/area-map.js';
 import { initWorkUI } from './game/work-ui.js';
 import { resultText } from './game/missions.js';
+import { createCrashGuard } from './game/crash-guard.js';
 import { createFrameProfiler } from './game/frame-profiler.js';
 import { createTrafficWaits } from './game/traffic-waits.js';
 import { initPerfPanel } from './game/perf-panel.js';
@@ -259,6 +260,7 @@ async function boot() {
   if (IS_TOUCH) $('touch').classList.remove('hidden');
 
   let running = false, last = 0, firstPlay = true;
+  const guard = createCrashGuard();
   const perfPanel = DEBUG ? initPerfPanel(perf, rendering, game, () => running && !game.mapOpen) : null;
   const menu = $('menu');
   const timeInput = $('game-time'), clockStatus = $('clock-status');
@@ -277,6 +279,7 @@ async function boot() {
   };
   let mapFromPause = false;
   const openMenu = () => {
+    if (guard.fatal) return;
     if (game.mapOpen) game.toggleMap(false);
     if (game.activities.playingTargets) game.activities.targets.hide();
     running = false; input.enabled = false; game.paused = true;
@@ -289,6 +292,7 @@ async function boot() {
     navigation.show(true);
   };
   const play = () => {
+    if (guard.fatal) return;
     // Prohlížeč dovolí celou obrazovku jen hned po kliknutí, proto dřív než cokoli dalšího.
     if (fullscreenOnPlay(game.fullscreenEnabled)) void enterFullscreen();
     menu.classList.add('hidden'); game.hud.show(true);
@@ -332,7 +336,7 @@ async function boot() {
     }
   });
   const openPhoto = () => {
-    if (game.graphicsBusy || game.mapOpen || game.activities.playingBowling || game.activities.playingTargets) return;
+    if (guard.fatal || game.graphicsBusy || game.mapOpen || game.activities.playingBowling || game.activities.playingTargets) return;
     photoFromPlay = running;
     running = false; input.enabled = false; game.paused = true;
     syncMouseLock();
@@ -399,7 +403,7 @@ async function boot() {
     $('bigmap-canvas').focus({ preventScroll: true });
   };
   document.addEventListener('keydown', event => {
-    if (event.defaultPrevented) return;
+    if (event.defaultPrevented || guard.fatal) return;
     if (event.code !== 'Escape' && !(mapFromPause && event.code === 'KeyM')) return;
     if (menu.classList.contains('hidden') && !mapFromPause) return;
     event.preventDefault();
@@ -477,10 +481,14 @@ async function boot() {
     $('btn-map').focus({ preventScroll: true });
   });
   $('minimap').addEventListener('click', () => { if (running) game.toggleMap(true); });
-  addEventListener('resize', () => { game.resize(); if (!running && !game.graphicsBusy) game.render(); });
+  addEventListener('resize', () => {
+    if (guard.fatal) return;
+    game.resize();
+    if (!running && !game.graphicsBusy) game.render();
+  });
   document.addEventListener('visibilitychange', () => { if (document.hidden && running) openMenu(); });
   leaveGame = () => {
-    if (!firstPlay) game.save();
+    if (!firstPlay && !guard.fatal) game.save();
     game.saveEnabled = false;
     channel?.close();
   };
@@ -492,7 +500,7 @@ async function boot() {
     location.reload();
   };
 
-  const loop = (now) => {
+  const frame = (now) => {
     if (photo.active) {
       photo.update(Math.min(.05, Math.max(0,(now - last) / 1000)));
       last = now;
@@ -523,6 +531,26 @@ async function boot() {
     }
     syncMouseLock();
     if (perf) game.adapt(elapsed, perf.summary);
+  };
+
+  function stopAfterCrash() {
+    game.saveEnabled = false;
+    running = false;
+    game.paused = true;
+    input.enabled = false;
+    input.pressed.clear();
+    photo.active = false;
+    void renderer.setAnimationLoop(null).catch(console.error);
+    $('crash')?.showModal();
+    syncMouseLock();
+    game.audio.suspend();
+  }
+
+  const loop = (now) => {
+    if (guard.fatal || guard.run(frame, now)) return;
+    const error = guard.errors.at(-1);
+    console.error(error.stack || error.message);
+    if (guard.fatal) stopAfterCrash();
   };
   await renderer.setAnimationLoop(loop);
 
