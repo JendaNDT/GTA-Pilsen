@@ -20,6 +20,11 @@ export function berthOffset(berth, s) {
   return berth.extra * t * t * (3 - 2 * t);
 }
 
+export function nextLaneOffset(side, lane, berth, s, dt) {
+  const target = lane + berthOffset(berth, s);
+  return side + (target - side) * Math.min(1, dt * 4);
+}
+
 // Mezera je za zádí autobusu. Záporná hodnota znamená, že auto už jede vedle.
 export function pulloutGap(bus, lane, car) {
   if (!lane || Math.abs(car.y - bus.y) > 3 || car.mode === 'parked') return Infinity;

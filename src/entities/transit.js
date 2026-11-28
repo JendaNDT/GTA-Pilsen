@@ -2,7 +2,7 @@ import { boardingDoor, CABIN_SERVICES } from '../game/tram-cabin.js';
 import { Vector3 } from 'three/webgpu';
 import { STOP_DWELL, Timetable } from '../game/timetable.js';
 import { installTransitStops } from '../world/transit-stops.js';
-import { berthOffset, canYieldAtPullout, pulloutGap, stopBerth } from '../game/bus-departure.js';
+import { nextLaneOffset, canYieldAtPullout, pulloutGap, stopBerth } from '../game/bus-departure.js';
 import { sectionPose, TRANSIT_STOP_DECELERATION } from '../game/transit-path.js';
 import { pathClearance } from '../game/ai-turn.js';
 import { DAY_SECONDS } from '../game/clock.js';
@@ -128,6 +128,7 @@ class TransitVehicle {
     this.departureLane = null;
     this.berth = null;
     this.berthIndex = -1;
+    this.pulloutBerth = null;
     this.enteredSignal = null;
     this.stoppedInTraffic = 0;
     this.s = s;
@@ -349,8 +350,9 @@ export class TransitManager {
       v.berthIndex = v.stopIndex;
       v.berth = stopBerth(v, this.timetable);
     }
-    const target = v.lane + berthOffset(v.berth, v.s);
-    v.side += (target - v.side) * Math.min(1, dt * 4);
+    v.side = nextLaneOffset(v.side, v.lane, v.berth, v.s, dt);
+    if (v.berth && v.stopIndex > v.berth.index) v.pulloutBerth = v.berth;
+    else if (v.berth || Math.abs(v.side - v.lane) < 0.02) v.pulloutBerth = null;
   }
 
   _drive(v, dt, now, nearby, cars, playerOnFoot, player) {
@@ -361,6 +363,7 @@ export class TransitManager {
       if (v.wait > 0) return;
       if (v.stopIndex === v.stops.length - 1 && this.game.ride === v) this.game._alight(true);
       if (v.berth && v.stopIndex < v.stops.length - 1) {
+        v.pulloutBerth = v.berth;
         v.departureLane = v.berth.lane;
         v.releaseS = v.s + 17;
       }
@@ -463,6 +466,7 @@ export class TransitManager {
       for (const k of collisionPoints) this.heavy.push({ x: x + fx * k, y, z: z + fz * k, r: 1.35, vx, vz });
       Object.assign(footprint, { route: v.route, center, side: v.side, axle, brakingDistance,
         y, vx, vz, halfLen: length / 2, radius: 1.4,
+        pulloutBerth: v.pulloutBerth, lane: v.lane, frontS: v.s, routeEnd: v.event.trip.endS,
         stoppedInTraffic: v.stoppedInTraffic, control: v.enteredSignal, departureLane: v.departureLane });
       this.obstacles.push(footprint);
       if (index === (v.isTram ? 1 : 0)) Object.assign(v, { x, y, z, yaw, vx, vz });

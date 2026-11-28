@@ -301,3 +301,26 @@ test('v zatáčce v Tylově zasáhne zebru jen zadní část trolejbusu při ši
     halfLen: hit.halfLen - third }));
   assert.ok(walk(pose(110, 2.5, 6)));
 });
+
+test('při výjezdu ze zálivu chodec rozliší přechod v pruhu a volný kraj u obruby', async () => {
+  const { Route } = await import('../src/entities/transit.js');
+  const { TRANSIT_STOP_DECELERATION } = await import('../src/game/transit-path.js');
+  const traffic = Object.assign(Object.create(Traffic.prototype), { phase: () => 'walk' });
+  const route = new Route({ type: 'bus', path: [[0, 0], [0, 100]] });
+  const part = { route, frontS: 7, routeEnd: 100, center: 1, side: 4.2, lane: 1.7,
+    x: -4.2, y: 0, z: 1, yaw: 0, halfLen: 6, radius: 1.4, axle: 3.5,
+    vx: 0, vz: 6, brakingDistance: 36 / (2 * TRANSIT_STOP_DECELERATION),
+    pulloutBerth: { s: 0, extra: 3.2 } };
+  const inner = { x: 0, z: 17, dx: 1, dz: 0, length: 3, group: {}, a: [-1.5, 17], b: [1.5, 17] };
+  const outer = { ...inner, x: -6.5, a: [-8, 17], b: [-5, 17] };
+  const walk = (cross, changes = {}) => traffic.canWalk(cross, [], [{ ...part, ...changes }], { y: 0, speed: 1.4 });
+  assert.equal(walk(inner), false);
+  assert.equal(walk(outer), true);
+  assert.equal(walk(inner, { pulloutBerth: null }), true);
+  assert.equal(walk(outer, { pulloutBerth: null }), false);
+  assert.equal(walk(inner, { vz: 0, brakingDistance: 0 }), true);
+  assert.equal(walk(inner, { y: 5 }), true);
+  assert.equal(walk({ ...inner, group: null }), false);
+  assert.equal(walk({ ...outer, group: null }), true);
+  assert.equal(walk({ ...inner, group: null }, { routeEnd: 9 }), true);
+});

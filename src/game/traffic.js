@@ -1,4 +1,5 @@
-import { sectionPose } from './transit-path.js';
+import { sectionPose, TRANSIT_STOP_DECELERATION } from './transit-path.js';
+import { nextLaneOffset } from './bus-departure.js';
 import { breakableId } from '../physics/breakables.js';
 import { COLL_CELL, CROSSING_HALF_WIDTH, RF } from '../config.js';
 
@@ -47,23 +48,42 @@ function blocksGreenCrossing(car, crossing, person, deceleration) {
 
 const transitFront = {}, transitRear = {}, transitPose = {};
 
-function transitBlocksCrossing(section, crossing, person) {
+function transitBlocksCrossing(section, crossing, person, gapTime) {
   if (Math.abs(section.y - person?.y) > 3) return false;
   if (sweepsCrossing(section, crossing, 0, 0)) return true;
-  const distance = section.brakingDistance;
+  const berth = section.pulloutBerth;
+  const speed = berth ? Math.hypot(section.vx, section.vz) : 0;
+  const distance = gapTime === undefined ? section.brakingDistance
+    : Math.min(speed * gapTime, section.routeEnd - section.frontS);
   if (!section.route || !(distance > 0)) return false;
   // Odsazení pruhu se v lomu trasy mění s jeho normálou (až dvojnásobek na každém konci).
-  const reach = distance + 4 * Math.abs(section.side) + section.halfLen + section.radius
+  const maxSide = berth ? Math.max(Math.abs(section.side), Math.abs(section.lane) + berth.extra) : Math.abs(section.side);
+  const reach = distance + 4 * maxSide + section.halfLen + section.radius
     + crossing.length / 2 + CROSSING_HALF_WIDTH;
   if (Math.abs(section.x - crossing.x) > reach || Math.abs(section.z - crossing.z) > reach) return false;
   // V odsazeném pruhu může záď v ostré zatáčce minout konec zebry jen těsně.
   const stepLength = section.route.type === 'tram' ? 1 : 0.25;
-  const steps = Math.ceil(distance / stepLength);
+  let steps = Math.ceil(distance / stepLength);
+  let duration = 0, deceleration = 0;
+  if (berth && speed > 0) {
+    // Na zelenou počítáme s brzděním, při hledání mezery s pokračující jízdou.
+    deceleration = gapTime === undefined ? TRANSIT_STOP_DECELERATION : 0;
+    const endSpeed = Math.sqrt(Math.max(0, speed ** 2 - 2 * deceleration * distance));
+    duration = 2 * distance / (speed + endSpeed);
+    steps = Math.ceil(Math.max(duration * 60, speed * duration / stepLength));
+  }
+  const dt = duration / steps;
+  let side = section.side, advance = 0;
   let x = section.x, z = section.z;
   transitPose.halfLen = section.halfLen;
   transitPose.radius = section.radius;
   for (let i = 1; i <= steps; i++) {
-    sectionPose(section.route, section.center + distance * i / steps, section.side, section.axle,
+    if (berth) {
+      side = nextLaneOffset(side, section.lane, berth, section.frontS + advance, dt);
+      const time = i * dt;
+      advance = time * (speed - 0.5 * deceleration * time);
+    } else advance = distance * i / steps;
+    sectionPose(section.route, section.center + advance, side, section.axle,
       transitFront, transitRear, transitPose);
     if (sweepsCrossing(transitPose, crossing, x - transitPose.x, z - transitPose.z)) return true;
     x = transitPose.x;
@@ -466,6 +486,7 @@ export class Traffic {
       return !cars.some(car => blocksGreenCrossing(car, crossing, person, deceleration))
         && !transit.some(section => transitBlocksCrossing(section, crossing, person));
     }
+    const gapTime = Math.min(6, crossing.length / (person?.speed ?? 1.4));
     const occupied = car => {
       if (car.mode === 'parked' || Math.abs(car.y - person?.y) > 3) return false;
       const dx = car.x - crossing.x, dz = car.z - crossing.z;
@@ -478,12 +499,12 @@ export class Traffic {
       const vx = car.vx || 0, vz = car.vz || 0;
       const speed = Math.hypot(vx, vz);
       if (speed < 0.35) return false;
-      const horizon = Math.min(6, crossing.length / (person?.speed ?? 1.4));
-      const reach = horizon + half / speed;
+      const reach = gapTime + half / speed;
       return Number.isFinite(this.routeCrossingDistance(car, crossing, speed * reach)) ||
         Number.isFinite(intersects(car.x, car.z, car.x + vx * reach, car.z + vz * reach, crossing));
     };
-    return !cars.some(occupied) && !transit.some(occupied);
+    return !cars.some(occupied) && !transit.some(section => section.pulloutBerth
+      ? transitBlocksCrossing(section, crossing, person, gapTime) : occupied(section));
   }
 
   drivingRule(car, control, distance, dt, limit, others, extra = [], stopping, checkExit = false) {

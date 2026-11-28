@@ -13,7 +13,7 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 ## Co ve hře je
 
-- **Chodci na semaforech.** Když padne zelená a auto nebo poslední článek tramvaje ještě zasahuje do zebry, chodec počká u kraje. Počká také před rozjetým autem, kterému do zebry zbývá méně než jeho brzdná dráha. Na mokré a zasněžené vozovce počítá s delší brzdnou dráhou. U tramvaje sleduje dráhu článků po kolejích i v oblouku. U odbočujících autobusů a trolejbusů zohlední i vybočení zádě. [Odbočení v Tylově](docs/E79.md) · [Příjezd linky 4](docs/E78.md) · [Sucho a sníh](docs/E77.md) · [Vůz na zebře](docs/E75.md) · [Příjezd auta na Klatovské třídě](docs/E76.md)
+- **Chodci na přechodech.** Když padne zelená a auto nebo poslední článek tramvaje ještě zasahuje do zebry, chodec počká u kraje. Počká také před rozjetým autem, kterému do zebry zbývá méně než jeho brzdná dráha. Na mokré a zasněžené vozovce počítá s delší brzdnou dráhou. U tramvaje sleduje dráhu článků po kolejích i v oblouku. U odbočujících autobusů a trolejbusů zohlední i vybočení zádě. Když autobus nebo trolejbus vyjíždí ze zastávkového zálivu, chodec sleduje, zda jeho návrat do pruhu zasáhne zebru. Platí to i na přechodu bez semaforu. [Výjezd v Radobyčicích](docs/E80.md) · [Odbočení v Tylově](docs/E79.md) · [Příjezd linky 4](docs/E78.md) · [Sucho a sníh](docs/E77.md) · [Vůz na zebře](docs/E75.md) · [Příjezd auta na Klatovské třídě](docs/E76.md)
 
 - **Od vlaku na trolejbus.** Cestující od spodního nádražního vchodu si podle jízdního řádu vybere odjezdovou 49. V Šumavské počká na volnou vozovku a na stanovišti 1 nastoupí do svého spoje. [Trasa a ověření](docs/E74.md)
 

@@ -172,3 +172,54 @@ test('E30 – ranní Klatovská se na střední kvalitu zaplní auty i chodci', 
   expect(counts.cars).toBeLessThanOrEqual(32);
   expect(counts.peds).toBeGreaterThanOrEqual(14);
 });
+
+test('E80 – chodec v Radobyčicích počká při návratu linky 32 ze zálivu do pruhu', async ({ page }, info) => {
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0&date=2026-11-09&hour=7.5'));
+  await waitForGame(page);
+  await page.getByRole('button', { name: 'Hrát', exact: true }).click();
+  const result = await page.evaluate(async () => {
+    __freeze(true);
+    const g = __game, t = g.transit, traffic = g.world.traffic;
+    const event = t.timetable.events(g.clock.day).find(e => e.day === g.clock.day && e.trip.id === '688585');
+    const i = event.trip.stops.findIndex(st => t.timetable.stops[st.stop][3] === '47081/1');
+    const s = event.trip.stops[i].target[0], anchor = event.trip.route.posAt(s, 0, {});
+    const c = traffic.crossings.find(crossing => crossing.id === 39345);
+    g.player.place(anchor.x, anchor.z);
+    __setClock('2026-11-09', event.trip.times[2 * i] / 3600);
+    const bus = t.active.get(event.key);
+    t.vehicles = [bus];
+    Object.assign(bus, { s, stopIndex: i, wait: 4, v: 0, doorsOpen: true, berthIndex: -1, berth: null });
+    const tick = () => t.update(1 / 60, g.player, [], false, g.clock);
+    for (let n = 0; n < 80; n++) tick();
+    const inBay = bus.side - bus.lane;
+    bus.wait = 0.01;
+    for (let n = 0; n < 600 && bus.s < s + 12.02; n++) tick();
+
+    const walker = g.peds.spawnAt(...c.a, Math.atan2(c.dx, c.dz));
+    Object.assign(walker, { speed: 1.4, state: 'crossApproach', crossing: { crossing: c, from: c.a, to: c.b, s: 0 } });
+    g.peds.timer = Infinity;
+    for (let n = 0; n < 45; n++) g.peds.update(1 / 60, g.player, null, []);
+    const waited = walker.state === 'crossWait' && !traffic.users.has(walker);
+    for (let n = 0; n < 45; n++) {
+      g.chunks.update(c.x, c.z, 340, 60, walker.y);
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    document.getElementById('hud').style.display = 'none';
+    const { tx, tz } = bus.route.posAt(bus.s, bus.side, {});
+    __view(c.x - 9 * c.dx + tx * 8, walker.y + 13, c.z - 9 * c.dz + tz * 8,
+      c.x - tx * 5, walker.y, c.z - tz * 5);
+    // Od tohoto okamžiku postupují řidič i chodec současně.
+    let entered = traffic.users.get(walker) === c;
+    for (let n = 0; n < 1800 && (bus.s < s + 50 || !entered || traffic.users.has(walker)); n++) {
+      tick();
+      g.peds.update(1 / 60, g.player, null, []);
+      if (traffic.users.get(walker) === c) entered = true;
+    }
+    return { inBay, waited, cleared: bus.s >= s + 50, entered,
+      crossed: !traffic.users.has(walker) && Math.hypot(walker.x - c.b[0], walker.z - c.b[1]) < 0.1,
+      settled: !bus.footprints[0].pulloutBerth && Math.abs(bus.side - bus.lane) < 0.05 };
+  });
+  await page.screenshot({ path: info.outputPath('vyjezd.jpg'), quality: 87 });
+  expect(result.inBay).toBeGreaterThan(2);
+  expect(result).toMatchObject({ waited: true, cleared: true, settled: true, entered: true, crossed: true });
+});

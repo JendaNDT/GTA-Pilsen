@@ -1,3 +1,7 @@
+# E80 · Výjezd ze zálivu před přechodem
+
+Na větvi `etapa/E80` chodec při výjezdu autobusu nebo trolejbusu počítá s návratem karoserie od obruby do pruhu. Na přechodu v Radobyčicích se podařilo zopakovat předčasný vstup před linkou 32. Po úpravě chodec počkal, přešel a autobus pokračoval. Prošlo sestavení, 440 testů JavaScriptu a devět cílených zkoušek v prohlížeči včetně dotykové emulace. Kontrolní jízda v obou verzích dosáhla 59,8 FPS. Zbývá vyzkoušení na fyzickém telefonu. [Zadání](E80.md) · [Průběh a výsledky](../E80.md)
+
 # E79 · Odbočující autobusy a trolejbusy
 
 Na větvi `etapa/E79` se při pěší zelené kontroluje i dráha zádě odbočujících vozů silniční MHD. V Tylově ulici se na E78 podařilo zopakovat předčasný vstup před linkou 49. V Tylově chodec počkal při širším průjezdu a při těsném minutí vykročil. U Borského parku se ověřil zásah zádí autobusu 39 při běžném výběru pruhu. Prošlo sestavení, 439 testů JavaScriptu a 14 cílených zkoušek v prohlížeči včetně dvou s emulovaným dotykem. Kontrolní jízda dosáhla 59,8 FPS. Zbývá zkouška na fyzickém telefonu. [Zadání](E79.md) · [Průběh a výsledky](../E79.md)
