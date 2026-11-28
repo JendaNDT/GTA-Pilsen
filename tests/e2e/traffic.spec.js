@@ -733,3 +733,44 @@ test('E75 – na zelenou chodec počká na zadní nárazník a po uvolnění zeb
   await page.screenshot({ path: info.outputPath('zelena.jpg'), quality: 87 });
   expect(result, JSON.stringify(result)).toMatchObject({ green: true, waited: true, entered: true });
 });
+
+test('E76 – chodec na zelenou rozliší rychlé a pomalé auto před zebrou', async ({ page }, info) => {
+  await boot(page, '&date=2026-11-09&hour=10&quality=low&adapt=0');
+  const result = await page.evaluate(async () => {
+    const g = __game, t = g.world.traffic;
+    const c = t.crossings.find(crossing => crossing.id === 10975);
+    for (t.time = 0; t.time < 200 && t.phase(c.group) !== 'walk'; t.time += 0.25) {}
+    const dx = -c.dz, dz = c.dx;
+    g.player.place(c.a[0] - 18 * c.dx, c.a[1] - 18 * c.dz);
+    for (let i = 0; i < 60; i++) {
+      g.chunks.update(c.x, c.z, 340, 60, g.player.y);
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    const car = g.player.lastCar;
+    const walker = g.peds.spawnAt(...c.a, Math.atan2(c.dx, c.dz));
+    walker.state = 'crossWait';
+    walker.crossing = { crossing: c, from: c.a, to: c.b, s: 0 };
+    g.peds.timer = Infinity;
+    g.transit.obstacles.length = 0;
+    car.mode = 'player';
+    const approach = (gap, speed) => {
+      const s = gap + car.halfLen + 1.45;
+      car.place(c.x - dx * s, c.z - dz * s, Math.atan2(dx, dz));
+      car.speed = speed;
+      car.vx = dx * speed;
+      car.vz = dz * speed;
+      car.sync();
+      g.peds.update(1 / 60, g.player, null, [car]);
+    };
+    // Příjezd rychlostí 54 km/h od devatenácti do osmi metrů před přechodem.
+    for (let i = 0; i < 45; i++) approach(8 + (44 - i) * 0.25, 15);
+    const waited = walker.state === 'crossWait' && !t.users.has(walker);
+    document.getElementById('hud').style.display = 'none';
+    __view(c.x - 18 * c.dx - 5 * dx, walker.y + 9, c.z - 18 * c.dz - 5 * dz,
+      c.x - 4 * dx, walker.y, c.z - 4 * dz);
+    approach(8, 4);
+    return { green: t.phase(c.group) === 'walk', waited, entered: t.users.get(walker) === c };
+  });
+  await page.screenshot({ path: info.outputPath('prijezd.jpg'), quality: 87 });
+  expect(result).toEqual({ green: true, waited: true, entered: true });
+});

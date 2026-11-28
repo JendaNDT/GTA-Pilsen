@@ -1,3 +1,7 @@
+# E76 · Brzdná dráha auta před zebrou
+
+Na větvi `etapa/E76` odhaduje chodec před vstupem na zelenou brzdnou dráhu přijíždějícího auta. Na Klatovské třídě se na předchozí revizi podařilo zopakovat předčasný vstup na přechod. Po úpravě chodec při rychlosti 54 km/h počkal a při 14,4 km/h mohl na stejném místě vykročit. Prošlo sestavení, 436 testů JavaScriptu a osm cílených zkoušek v Chromiu. Srovnávací jízdy obou verzí dosáhly 60 FPS. Zbývá zkouška na fyzickém telefonu. [Zadání](E76.md) · [Chování a ověření](../E76.md)
+
 # E75 · Chodci na zelenou čekají na volnou zebru
 
 Na větvi `etapa/E75` chodec při pěší zelené kontroluje celou šířku zebry včetně místa za posledním článkem MHD. Na původní revizi `60063d3` se na Klatovské podařilo zopakovat předčasný vstup do vozovky. Po opravě chodec počkal na uvolnění přechodu v obou grafických režimech. Prošlo sestavení, všech 435 testů JavaScriptu a 10 cílených prohlížečových zkoušek. Kontrolní jízda linkou 49 dosáhla 60 FPS. Zbývá vyzkoušení na fyzickém telefonu. [Zadání](E75.md) · [Přechod a zkoušky](../E75.md)

@@ -202,3 +202,21 @@ test('pěší zelená vyžaduje volnou celou zebru včetně místa za zadním č
   t.signalsOff = () => true;
   assert.ok(!walk([{ ...car, z: -6 }]));
 });
+
+test('chodec na zelenou porovná dráhu brzdění auta s okrajem celé zebry', () => {
+  const t = Object.assign(Object.create(Traffic.prototype), { phase: () => 'walk' });
+  const c = { x: 0, z: 0, dx: 1, dz: 0, length: 8, group: {} };
+  const car = { x: 0, y: 0, z: -12, vx: 0, vz: 15, yaw: 0, halfLen: 2, radius: 1 };
+  const walk = (change = {}) => t.canWalk(c, [{ ...car, ...change }], [], { y: 0 });
+  assert.equal(walk(), false);
+  assert.equal(walk({ vz: 4 }), true);
+  assert.equal(walk({ z: -24 }), true);
+  assert.equal(walk({ vz: -15 }), true);
+  assert.equal(walk({ yaw: Math.PI }), false); // Couvá k přechodu.
+  assert.equal(walk({ x: 4.9 }), false); // Konec zebry zasáhne jen bok karoserie.
+  assert.equal(walk({ x: 5.1 }), true);
+  assert.equal(walk({ x: -14, z: -12, vx: 16, vz: 16, yaw: Math.PI / 4 }), false);
+  assert.equal(walk({ x: -35, z: -12, vx: 16, vz: 16, yaw: Math.PI / 4 }), true);
+  assert.equal(walk({ y: 5 }), true);
+  assert.equal(t.canWalk(c, [], [car], { y: 0 }), true);
+});

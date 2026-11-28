@@ -13,7 +13,7 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 ## Co ve hře je
 
-- **Chodci na semaforech.** Když padne zelená a auto nebo poslední článek tramvaje ještě zasahuje do zebry, chodec počká u kraje. [Příklad z Klatovské třídy](docs/E75.md)
+- **Chodci na semaforech.** Když padne zelená a auto nebo poslední článek tramvaje ještě zasahuje do zebry, chodec počká u kraje. Počká také před rozjetým autem, kterému do zebry zbývá méně než jeho brzdná dráha. [Vůz na zebře](docs/E75.md) · [Příjezd auta na Klatovské třídě](docs/E76.md)
 
 - **Od vlaku na trolejbus.** Cestující od spodního nádražního vchodu si podle jízdního řádu vybere odjezdovou 49. V Šumavské počká na volnou vozovku a na stanovišti 1 nastoupí do svého spoje. [Trasa a ověření](docs/E74.md)
 

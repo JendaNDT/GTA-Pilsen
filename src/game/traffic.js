@@ -2,9 +2,10 @@ import { breakableId } from '../physics/breakables.js';
 import { COLL_CELL, CROSSING_HALF_WIDTH, RF } from '../config.js';
 
 const cell = (x, z) => Math.floor(x / COLL_CELL) * 8192 + Math.floor(z / COLL_CELL);
+const STOP_DECELERATION = 5.5;
 const stopDistance = (distance, dt) => {
   const remaining = Math.max(0, distance);
-  return Math.min(Math.sqrt(11 * remaining), dt > 0 ? remaining / dt : Infinity);
+  return Math.min(Math.sqrt(2 * STOP_DECELERATION * remaining), dt > 0 ? remaining / dt : Infinity);
 };
 const clamp = (x, hi) => Math.max(0, Math.min(hi, x));
 const exitStart = {}, exitEnd = {}, crossingStart = {}, crossingEnd = {};
@@ -33,6 +34,38 @@ function intersects(ax, az, bx, bz, crossing) {
   const t = ((cx - ax) * ez - (cz - az) * ex) / determinant;
   const s = ((cx - ax) * dz - (cz - az) * dx) / determinant;
   return t >= 0 && t <= 1 && s >= -0.05 && s <= 1.05 ? Math.hypot(dx, dz) * t : Infinity;
+}
+
+function blocksGreenCrossing(car, crossing, person, predictBraking) {
+  if (Math.abs(car.y - person?.y) > 3) return false;
+  const vx = car.vx || 0, vz = car.vz || 0;
+  // Při rovnoměrném brzdění je průměrná rychlost poloviční.
+  const factor = predictBraking && car.mode !== 'parked' ? Math.hypot(vx, vz) / (2 * STOP_DECELERATION) : 0;
+  const travelX = vx * factor, travelZ = vz * factor;
+  const dx = car.x - crossing.x, dz = car.z - crossing.z;
+  const half = car.halfLen ?? 2, width = car.radius ?? 1;
+  const halfCrossing = crossing.length / 2;
+  const range = halfCrossing + CROSSING_HALF_WIDTH + half + width;
+  if (Math.abs(dx) > range + Math.abs(travelX) || Math.abs(dz) > range + Math.abs(travelZ)) return false;
+
+  const fx = Math.sin(car.yaw), fz = Math.cos(car.yaw);
+  const cx = crossing.dx, cz = crossing.dz;
+  const along = Math.abs(fx * cx + fz * cz), across = Math.abs(fx * cz - fz * cx);
+  // Na všech čtyřech osách se musí obrysy překrývat ve stejné části brzdné dráhy.
+  let enter = 0, leave = 1;
+  function overlap(axisX, axisZ, extent) {
+    const position = dx * axisX + dz * axisZ;
+    const travel = travelX * axisX + travelZ * axisZ;
+    if (Math.abs(travel) < 1e-9) return Math.abs(position) < extent;
+    const a = (-extent - position) / travel, b = (extent - position) / travel;
+    enter = Math.max(enter, Math.min(a, b));
+    leave = Math.min(leave, Math.max(a, b));
+    return enter < leave;
+  }
+  return overlap(cz, -cx, CROSSING_HALF_WIDTH + half * across + width * along)
+    && overlap(cx, cz, halfCrossing + half * along + width * across)
+    && overlap(fx, fz, half + halfCrossing * along + CROSSING_HALF_WIDTH * across)
+    && overlap(fz, -fx, width + halfCrossing * across + CROSSING_HALF_WIDTH * along);
 }
 
 export class Traffic {
@@ -396,24 +429,20 @@ export class Traffic {
 
   canWalk(crossing, cars = [], transit = [], person) {
     const controlled = crossing.group && !this.signalsOff(crossing.group);
-    if (controlled && this.phase(crossing.group) !== 'walk') return false;
+    if (controlled) {
+      return this.phase(crossing.group) === 'walk'
+        && !cars.some(car => blocksGreenCrossing(car, crossing, person, true))
+        && !transit.some(section => blocksGreenCrossing(section, crossing, person, false));
+    }
     const occupied = car => {
-      if ((!controlled && car.mode === 'parked') || Math.abs(car.y - person?.y) > 3) return false;
+      if (car.mode === 'parked' || Math.abs(car.y - person?.y) > 3) return false;
       const dx = car.x - crossing.x, dz = car.z - crossing.z;
       const fx = Math.sin(car.yaw), fz = Math.cos(car.yaw);
       const half = car.halfLen ?? 2, width = car.radius ?? 1;
       const normal = Math.abs(fx * crossing.dz - fz * crossing.dx);
       const tangent = Math.abs(fx * crossing.dx + fz * crossing.dz);
-      const margin = controlled ? CROSSING_HALF_WIDTH : 0.45;
-      const halfCrossing = crossing.length / 2;
-      const overlaps = Math.abs(dx * crossing.dz - dz * crossing.dx) < half * normal + width * tangent + margin &&
-        Math.abs(dx * crossing.dx + dz * crossing.dz) < halfCrossing + half * tangent + width * normal;
-      if (controlled) {
-        // U šikmo natočeného vozu rozhodnou u kraje zebry také obě osy karoserie.
-        return overlaps && Math.abs(dx * fx + dz * fz) < half + halfCrossing * tangent + margin * normal &&
-          Math.abs(dx * fz - dz * fx) < width + halfCrossing * normal + margin * tangent;
-      }
-      if (overlaps) return true;
+      if (Math.abs(dx * crossing.dz - dz * crossing.dx) < half * normal + width * tangent + 0.45 &&
+          Math.abs(dx * crossing.dx + dz * crossing.dz) < crossing.length / 2 + half * tangent + width * normal) return true;
       const vx = car.vx || 0, vz = car.vz || 0;
       const speed = Math.hypot(vx, vz);
       if (speed < 0.35) return false;
