@@ -324,3 +324,25 @@ test('při výjezdu ze zálivu chodec rozliší přechod v pruhu a volný kraj u
   assert.equal(walk({ ...outer, group: null }), true);
   assert.equal(walk({ ...inner, group: null }, { routeEnd: 9 }), true);
 });
+
+test('řidič autobusu zastaví před šikmou zebrou i při zásahu samotným rohem', () => {
+  const traffic = Object.assign(Object.create(Traffic.prototype), { users: new Map(), waitingWalkers: new Map() });
+  const person = { y: 0 };
+  const section = { x: 0, z: -6, yaw: 0, halfLen: 6, radius: 1.4 };
+  const bus = { v: 2, y: 0, footprints: [section] };
+  const room = () => traffic.transitPedestrianRoom(bus, { x: 0, z: 0 }, { x: 0, z: 20 });
+  const cross = { x: 0, z: 10, dx: Math.SQRT1_2, dz: Math.SQRT1_2, length: 12 };
+  traffic.waitingWalkers.set(person, cross);
+  // Na šikmé zebře je levý roh čela o 1,4 m napřed oproti středu nárazníku.
+  assert.ok(Math.abs(room() - (10 - 1.45 * Math.SQRT2 - 1.4 - 0.6)) < 1e-8);
+  bus.v = 12;
+  assert.equal(room(), Infinity);
+  traffic.users.set(person, cross);
+  assert.ok(Number.isFinite(room()));
+  Object.assign(cross, { x: 2.2, dx: 1, dz: 0, length: 2 });
+  assert.ok(Math.abs(room() - 7.95) < 1e-8);
+  cross.x = 2.6;
+  assert.equal(room(), Infinity);
+  traffic.leaveCrossing(person);
+  assert.equal(room(), Infinity);
+});

@@ -93,11 +93,16 @@ function transitBlocksCrossing(section, crossing, person, gapTime) {
 }
 
 function sweepsCrossing(car, crossing, travelX, travelZ) {
+  return crossingEntry(car, crossing, travelX, travelZ) < Infinity;
+}
+
+// Podíl pohybu do prvního dotyku obou obrysů, případně nekonečno při minutí.
+function crossingEntry(car, crossing, travelX, travelZ) {
   const dx = car.x - crossing.x, dz = car.z - crossing.z;
   const half = car.halfLen ?? 2, width = car.radius ?? 1;
   const halfCrossing = crossing.length / 2;
   const range = halfCrossing + CROSSING_HALF_WIDTH + half + width;
-  if (Math.abs(dx) > range + Math.abs(travelX) || Math.abs(dz) > range + Math.abs(travelZ)) return false;
+  if (Math.abs(dx) > range + Math.abs(travelX) || Math.abs(dz) > range + Math.abs(travelZ)) return Infinity;
 
   const fx = Math.sin(car.yaw), fz = Math.cos(car.yaw);
   const cx = crossing.dx, cz = crossing.dz;
@@ -113,10 +118,11 @@ function sweepsCrossing(car, crossing, travelX, travelZ) {
     leave = Math.min(leave, Math.max(a, b));
     return enter < leave;
   }
-  return overlap(cz, -cx, CROSSING_HALF_WIDTH + half * across + width * along)
+  const intersectsZebra = overlap(cz, -cx, CROSSING_HALF_WIDTH + half * across + width * along)
     && overlap(cx, cz, halfCrossing + half * along + width * across)
     && overlap(fx, fz, half + halfCrossing * along + CROSSING_HALF_WIDTH * across)
     && overlap(fz, -fx, width + halfCrossing * across + CROSSING_HALF_WIDTH * along);
+  return intersectsZebra ? enter : Infinity;
 }
 
 export class Traffic {
@@ -837,18 +843,21 @@ export class Traffic {
 
   pedestrianDistance(x, z, ahead, turn, car, frontOffset = car?.halfLen ?? 0) {
     if (!this.users.size && (!car || !this.waitingWalkers.size)) return Infinity;
-    let best = Infinity;
-    const distanceTo = crossing => {
+    return this.nearestPedestrianCrossing(car, frontOffset + 1.2, crossing => {
       const first = Math.min(car ? this.routeCrossingDistance(car, crossing, 65) : Infinity,
         intersects(x, z, ahead.x, ahead.z, crossing));
       if (!turn || first < Infinity) return first;
       return Math.hypot(x - ahead.x, z - ahead.z) + intersects(ahead.x, ahead.z, turn.x, turn.z, crossing);
-    };
+    });
+  }
+
+  nearestPedestrianCrossing(car, stopOffset, distanceTo) {
+    let best = Infinity;
     for (const crossing of this.users.values()) best = Math.min(best, distanceTo(crossing));
     if (car) for (const [person, crossing] of this.waitingWalkers) {
       if (Math.abs(person.y - car.y) > 3 || crossing.group && !this.signalsOff(crossing.group)) continue;
       const d = distanceTo(crossing);
-      const room = d - frontOffset - 1.2;
+      const room = d - stopOffset;
       if (room >= -0.5 && (car.speed ?? car.v) ** 2 <= 7 * Math.max(0.25, room)) best = Math.min(best, d);
     }
     return best;
@@ -871,6 +880,25 @@ export class Traffic {
     return result;
   }
 
+  transitPedestrianRoom(vehicle, point, ahead) {
+    const section = vehicle.footprints?.[0];
+    if (vehicle.isTram || !Number.isFinite(section?.yaw)) {
+      const distance = this.pedestrianDistance(point.x, point.z, ahead, null, vehicle.isTram ? null : vehicle, 0);
+      return Math.max(0, distance - 1.4);
+    }
+    if (!this.users.size && !this.waitingWalkers.size) return Infinity;
+    // U šikmé zebry dojede roh nárazníku k pruhům dřív než střed čela.
+    const margin = 0.6;
+    const face = { x: section.x + section.halfLen * Math.sin(section.yaw),
+      z: section.z + section.halfLen * Math.cos(section.yaw), yaw: section.yaw, halfLen: 0, radius: section.radius };
+    const dx = ahead.x - point.x, dz = ahead.z - point.z, reach = Math.hypot(dx, dz);
+    const distance = this.nearestPedestrianCrossing(vehicle, margin, crossing => {
+      const entry = crossingEntry(face, crossing, dx, dz);
+      return entry < Infinity ? reach * entry : Infinity;
+    });
+    return Math.max(0, distance - margin);
+  }
+
   transitLimit(vehicle, point, ahead, dt, limit, others) {
     const next = this.transitControl(vehicle, point);
     if (next) {
@@ -884,9 +912,8 @@ export class Traffic {
         }
       }
     } else vehicle.trafficStop = null;
-    const distance = this.pedestrianDistance(point.x, point.z, ahead, null, vehicle.isTram ? null : vehicle, 0);
-    if (distance <= 1.6) this.onCrossingWait?.(vehicle);
-    const room = Math.max(0, distance - 1.4);
+    const room = this.transitPedestrianRoom(vehicle, point, ahead);
+    if (room <= 0.2) this.onCrossingWait?.(vehicle);
     limit = Math.min(limit, Math.sqrt(5 * room), stopDistance(room, dt));
     if (next && limit > 0 && next.distance <= limit * dt) this.enterJunction(vehicle, next.control);
     return limit;

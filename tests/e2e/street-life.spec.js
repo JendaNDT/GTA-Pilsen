@@ -223,3 +223,87 @@ test('E80 – chodec v Radobyčicích počká při návratu linky 32 ze zálivu 
   expect(result.inBay).toBeGreaterThan(2);
   expect(result).toMatchObject({ waited: true, cleared: true, settled: true, entered: true, crossed: true });
 });
+
+test('E81 – linka 32 a auto za ní nechají chodce přejít a pokračují', async ({ page }, info) => {
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0&date=2026-11-09&hour=7.5'));
+  await waitForGame(page);
+  await page.getByRole('button', { name: 'Hrát', exact: true }).click();
+  await page.exposeFunction('vyfotitPrechod', async () => {
+    await page.screenshot({ path: info.outputPath('prechazeni.jpg'), quality: 87 });
+  });
+  const result = await page.evaluate(async () => {
+    __freeze(true);
+    const g = __game, t = g.transit, traffic = g.world.traffic;
+    const event = t.timetable.events(g.clock.day).find(e => e.day === g.clock.day && e.trip.id === '688585');
+    const index = event.trip.stops.findIndex(st => t.timetable.stops[st.stop][3] === '47081/1');
+    const s = event.trip.stops[index].target[0], route = event.trip.route;
+    const crossing = traffic.crossings.find(c => c.id === 39345);
+    const observer = route.posAt(s + 14, -9, {});
+    g.player.place(observer.x, observer.z);
+    __setClock('2026-11-09', event.trip.times[2 * index] / 3600);
+    const bus = t.active.get(event.key), dt = 1 / 60;
+    t.vehicles = [bus];
+    Object.assign(bus, { s, stopIndex: index, wait: 4, v: 0, doorsOpen: true, berthIndex: -1, berth: null });
+    for (let i = 0; i < 80; i++) t.update(dt, g.player, [], true, g.clock);
+    const inBay = bus.side - bus.lane;
+    const car = g.player.lastCar;
+    for (const other of [...g.vehicles.cars]) if (other !== car) g.vehicles.remove(other);
+    while (g.peds.peds.length) g.peds.remove(0);
+    g.vehicles.spawnTimer = g.peds.timer = Infinity;
+    // Po přesunu z výchozí čtvrti vytvoří herní smyčka kola znovu na zdejší vozovce.
+    g.trafficBodies.removeCar(car);
+    const start = route.posAt(s - bus.len - 15, bus.lane, {});
+    car.place(start.x, start.z, Math.atan2(start.tx, start.tz));
+    if (!g.vehicles._resumeAI(car)) throw new Error('Auto za autobusem nenašlo jízdní pruh.');
+    Object.assign(car, { temper: 1, speed: 6, vx: 6 * start.tx, vz: 6 * start.tz });
+    bus.wait = dt;
+
+    // Měření je nezávislé na pravidlech řidičů. Porovnává obrysy obou vozů s bližším okrajem zebry.
+    const nx = crossing.dz, nz = -crossing.dx, halfStripe = 1.45;
+    const center = v => (v.x - crossing.x) * nx + (v.z - crossing.z) * nz;
+    const span = v => v.halfLen * Math.abs(Math.sin(v.yaw) * nx + Math.cos(v.yaw) * nz)
+      + v.radius * Math.abs(Math.cos(v.yaw) * nx - Math.sin(v.yaw) * nz);
+    let walker, waited = false, entered = false, crossed = false, resumed = false, photo = false;
+    let busRoom = Infinity, carRoom = Infinity, gap = Infinity, busSpeed = Infinity, carSpeed = Infinity;
+    for (let frame = 0; frame < 1800; frame++) {
+      if (!walker && bus.s >= s + 12) {
+        walker = g.peds.spawnAt(...crossing.a, Math.atan2(crossing.dx, crossing.dz));
+        Object.assign(walker, { speed: 1.4, state: 'crossApproach',
+          crossing: { crossing, from: crossing.a, to: crossing.b, s: 0 } });
+      }
+      g.update(dt);
+      const front = bus.footprints[0];
+      gap = Math.min(gap, center(front) - span(front) - center(car) - span(car));
+      if (traffic.waitingWalkers.get(walker) === crossing) waited = true;
+      if (traffic.users.get(walker) === crossing) {
+        entered = true;
+        busRoom = Math.min(busRoom, -center(front) - span(front) - halfStripe);
+        carRoom = Math.min(carRoom, -center(car) - span(car) - halfStripe);
+        busSpeed = Math.min(busSpeed, bus.v);
+        carSpeed = Math.min(carSpeed, car.speed);
+        if (!photo && Math.hypot(walker.x - crossing.x, walker.z - crossing.z) < 0.3) {
+          const { x, z } = crossing, { tx, tz } = start;
+          document.getElementById('hud').style.display = 'none';
+          __view(x - crossing.dx * 19 + tx * 12, walker.y + 19, z - crossing.dz * 19 + tz * 12,
+            x - tx * 7, walker.y, z - tz * 7);
+          await window.vyfotitPrechod();
+          photo = true;
+        }
+      }
+      if (entered && !walker.crossing && Math.hypot(walker.x - crossing.b[0], walker.z - crossing.b[1]) < 0.1) crossed = true;
+      if (crossed && center(car) - span(car) > 5 && center(front) - span(front) > 5) {
+        resumed = bus.v > 1 && car.speed > 1 && car.mode === 'ai';
+        break;
+      }
+    }
+    return { inBay, waited, entered, crossed, resumed, photo, busRoom, carRoom, gap, busSpeed, carSpeed };
+  });
+  await info.attach('Průjezd v Radobyčicích', { body: JSON.stringify(result, null, 2), contentType: 'application/json' });
+  expect(result, JSON.stringify(result)).toMatchObject({ waited: true, entered: true, crossed: true, resumed: true, photo: true });
+  expect(result.inBay).toBeGreaterThan(2);
+  expect(result.busSpeed).toBeLessThan(0.1);
+  expect(result.carSpeed).toBeLessThan(1);
+  expect(result.gap).toBeGreaterThan(0);
+  expect(result.carRoom).toBeGreaterThan(0);
+  expect(result.busRoom).toBeGreaterThan(0);
+});

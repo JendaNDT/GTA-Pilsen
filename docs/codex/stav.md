@@ -1,3 +1,7 @@
+# E81 · Přednost chodce při výjezdu linky 32
+
+Na větvi `etapa/E81` se v běžné simulaci při výjezdu ze zálivu potkaly autobus, osobní auto a chodec. Po opravě zůstal roh autobusu 0,58 m před zebrou. Chodec přešel, oba řidiči pokračovali a nejmenší odstup mezi vozy činil 2,59 m. Prošlo sestavení, 441 testů JavaScriptu a devět cílených prohlížečových zkoušek včetně dotykové emulace. Zbývá ověření na fyzickém telefonu. [Zadání](E81.md) · [Průjezd, snímky a měření](../E81.md)
+
 # E80 · Výjezd ze zálivu před přechodem
 
 Na větvi `etapa/E80` chodec při výjezdu autobusu nebo trolejbusu počítá s návratem karoserie od obruby do pruhu. Na přechodu v Radobyčicích se podařilo zopakovat předčasný vstup před linkou 32. Po úpravě chodec počkal, přešel a autobus pokračoval. Prošlo sestavení, 440 testů JavaScriptu a devět cílených zkoušek v prohlížeči včetně dotykové emulace. Kontrolní jízda v obou verzích dosáhla 59,8 FPS. Zbývá vyzkoušení na fyzickém telefonu. [Zadání](E80.md) · [Průběh a výsledky](../E80.md)
