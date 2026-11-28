@@ -143,10 +143,33 @@ const ABOUT_HTML = (meta, rendering) => `
   Hra je nezávislý fanouškovský projekt a není oficiálním produktem města ani dopravního podniku.</p>
   <p>Inspirováno projektem HrejBrno.cz.</p>`;
 
-function fail(e) {
-  console.error(e);
-  loadText.textContent = `Hru se nepodařilo spustit: ${e.message}`;
+const guard = createCrashGuard();
+let releaseSaveLock, leaveGame;
+let departed = false, startupFailed = false;
+
+function fail(error) {
+  if (startupFailed) return;
+  startupFailed = true;
+  releaseSaveLock?.();
+  const entry = guard.record(error);
+  console.error(entry.stack || entry.message);
+  loadText.textContent = `Hru se nepodařilo spustit: ${entry.message}`;
+  $('btn-transfer').hidden = true;
+  $('menu-buttons').classList.add('hidden');
+  $('loading').classList.remove('hidden');
 }
+
+function reportGlobalError(error) {
+  if (!window.__ready) {
+    fail(error);
+    return;
+  }
+  const entry = guard.record(error);
+  console.error(entry.stack || entry.message);
+}
+
+addEventListener('error', event => reportGlobalError(event.error ?? event.message));
+addEventListener('unhandledrejection', event => reportGlobalError(event.reason));
 
 const crashDialog = $('crash');
 crashDialog.addEventListener('cancel', event => event.preventDefault());
@@ -171,8 +194,6 @@ function showCrash(errors) {
   crashDialog.showModal();
 }
 
-let releaseSaveLock, leaveGame;
-let departed = false;
 addEventListener('pagehide', () => {
   departed = true;
   leaveGame?.();
@@ -187,6 +208,7 @@ async function boot() {
   let canSave = true, onLockLost;
   try {
     releaseSaveLock = await acquireSaveLock(() => {
+      if (startupFailed) return;
       loadText.textContent = 'Hra je otevřená v jiné kartě. Po jejím zavření zde načtu aktuální postup.';
       transfer.hidden = !channel;
     }, () => {
@@ -196,7 +218,7 @@ async function boot() {
   } catch {
     canSave = false;
   }
-  if (departed) { releaseSaveLock?.(); return; }
+  if (departed || startupFailed) { releaseSaveLock?.(); return; }
   transfer.hidden = true;
   loadText.textContent = 'Načítám město…';
   refreshSavedGraphics();
@@ -210,6 +232,7 @@ async function boot() {
   } catch (e) {
     throw new Error('Vykreslování hry vyžaduje prohlížeč s podporou WebGPU nebo WebGL 2.', { cause: e });
   }
+  if (startupFailed) return;
   const rendering = renderer.backend.isWebGPUBackend ? 'WebGPU' : 'WebGL 2';
   renderer.info.autoReset = false;
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, profilePixelRatio(QUALITY.pixelRatio, IS_MOBILE)));
@@ -223,10 +246,12 @@ async function boot() {
     loadAll(p => { bar.style.width = `${Math.round(p * 75)}%`; }),
     loadJolt(),
   ]);
+  if (startupFailed) return;
   const physics = new PhysicsWorld(jolt);
   bar.style.width = '80%';
   loadText.textContent = 'Stavím město…';
   await new Promise((r) => setTimeout(r, 30));
+  if (startupFailed) return;
   const game = new Game(renderer, data, physics);
   game.saveEnabled = canSave;
   onLockLost = () => {
@@ -245,6 +270,7 @@ async function boot() {
   await game.chunks.prepareStart(game.focus, QUALITY.view, fraction => {
     bar.style.width = `${80 + Math.round(fraction * 15)}%`;
   });
+  if (startupFailed) return;
   game._updateCamera(0.016);
   const initialCamera = !game.hasSave && {
     position: game.camera.position.clone(), rotation: game.camera.quaternion.clone()
@@ -254,6 +280,7 @@ async function boot() {
   await game.env.prepareSkyLight();
   if (game.postfx) await game.postfx.prepare();
   else await renderer.compileAsync(game.scene, game.camera);
+  if (startupFailed) return;
   canvas.style.visibility = 'hidden';
   const facing = game.camera.quaternion.clone();
   const up = new THREE.Vector3(0, 1, 0);
@@ -263,8 +290,10 @@ async function boot() {
     game.env.update(game.camera);
     game.render();
     await new Promise(resolve => setTimeout(resolve, 0));
+    if (startupFailed) return;
   }
   await renderer.backend.device?.queue.onSubmittedWorkDone();
+  if (startupFailed) return;
   game.camera.quaternion.copy(facing);
   if (initialCamera) {
     game.camera.position.set(-32, 7, 108);
@@ -283,7 +312,6 @@ async function boot() {
   if (IS_TOUCH) $('touch').classList.remove('hidden');
 
   let running = false, last = 0, firstPlay = true;
-  const guard = createCrashGuard();
   const perfPanel = DEBUG ? initPerfPanel(perf, rendering, game, () => running && !game.mapOpen) : null;
   const menu = $('menu');
   const timeInput = $('game-time'), clockStatus = $('clock-status');
@@ -576,6 +604,11 @@ async function boot() {
     if (guard.fatal) stopAfterCrash();
   };
   await renderer.setAnimationLoop(loop);
+  if (startupFailed) {
+    game.saveEnabled = false;
+    await renderer.setAnimationLoop(null);
+    return;
+  }
 
   if (DEBUG) {
     window.__perf = { summary: perf.summary, reset: perf.reset, renderStats: perf.renderStats };
@@ -598,7 +631,4 @@ async function boot() {
   if (PARAMS.has('autoplay')) play();
 }
 
-boot().catch(error => {
-  releaseSaveLock?.();
-  fail(error);
-});
+boot().catch(fail);
