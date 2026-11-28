@@ -249,3 +249,28 @@ test('čekající chodec posuzuje přilnavost povrchu i po skončení sněžení
   weather.update(0);
   assert.ok(walk());
 });
+
+test('pěší zelená zohlední brzdění tramvaje po kolejích i za obloukem', async () => {
+  const { Route } = await import('../src/entities/transit.js');
+  const { sectionPose, TRANSIT_STOP_DECELERATION } = await import('../src/game/transit-path.js');
+  const t = Object.assign(Object.create(Traffic.prototype), { phase: () => 'walk' });
+  const c = { x: 0, z: 0, dx: 1, dz: 0, length: 8, group: {} };
+  const section = (path, center, speed) => {
+    const railRoute = new Route({ path });
+    const part = { railRoute, center, side: 0, axle: 2.6, halfLen: 4.5, radius: 1.4, y: 0,
+      brakingDistance: speed ** 2 / (2 * TRANSIT_STOP_DECELERATION) };
+    sectionPose(railRoute, center, part.side, part.axle, {}, {}, part);
+    return part;
+  };
+  const canWalk = (...parts) => t.canWalk(c, [], parts, { y: 0 });
+  const straight = [[0, -50], [0, 50]];
+  const fast = section(straight, 28, 10);
+  assert.equal(canWalk(fast), false);
+  assert.ok(canWalk(section(straight, 28, 4)));
+  assert.ok(canWalk({ ...fast, y: 5 }));
+  assert.ok(canWalk(section([[7, -50], [7, 50]], 28, 10)));
+  assert.ok(canWalk(section([[0, 50], [0, -50]], 72, 10)));
+  assert.ok(canWalk(section([[0, -50], [0, -18], [8, -10], [30, -10]], 22, 10)));
+  assert.equal(canWalk(section([[-25, -18], [-8, -18], [0, -10], [0, 30]], 8, 10)), false);
+  assert.equal(canWalk(section(straight, 65, 0), section(straight, 50, 0)), false);
+});

@@ -1,3 +1,4 @@
+import { sectionPose } from './transit-path.js';
 import { breakableId } from '../physics/breakables.js';
 import { COLL_CELL, CROSSING_HALF_WIDTH, RF } from '../config.js';
 
@@ -36,12 +37,39 @@ function intersects(ax, az, bx, bz, crossing) {
   return t >= 0 && t <= 1 && s >= -0.05 && s <= 1.05 ? Math.hypot(dx, dz) * t : Infinity;
 }
 
-function blocksGreenCrossing(car, crossing, person, deceleration = 0) {
+function blocksGreenCrossing(car, crossing, person, deceleration) {
   if (Math.abs(car.y - person?.y) > 3) return false;
   const vx = car.vx || 0, vz = car.vz || 0;
   // Při rovnoměrném brzdění je průměrná rychlost poloviční.
-  const factor = deceleration > 0 && car.mode !== 'parked' ? Math.hypot(vx, vz) / (2 * deceleration) : 0;
-  const travelX = vx * factor, travelZ = vz * factor;
+  const factor = car.mode !== 'parked' ? Math.hypot(vx, vz) / (2 * deceleration) : 0;
+  return sweepsCrossing(car, crossing, vx * factor, vz * factor);
+}
+
+const railFront = {}, railRear = {}, railPose = {};
+
+function transitBlocksCrossing(section, crossing, person) {
+  if (Math.abs(section.y - person?.y) > 3) return false;
+  if (sweepsCrossing(section, crossing, 0, 0)) return true;
+  const distance = section.brakingDistance;
+  if (!section.railRoute || !(distance > 0)) return false;
+  const reach = distance + section.halfLen + section.radius + crossing.length / 2 + CROSSING_HALF_WIDTH;
+  if (Math.abs(section.x - crossing.x) > reach || Math.abs(section.z - crossing.z) > reach) return false;
+  // V oblouku se skříň otáčí. Po každém metru ověříme i prostor mezi polohami.
+  const steps = Math.ceil(distance);
+  let x = section.x, z = section.z;
+  railPose.halfLen = section.halfLen;
+  railPose.radius = section.radius;
+  for (let i = 1; i <= steps; i++) {
+    sectionPose(section.railRoute, section.center + distance * i / steps, section.side, section.axle,
+      railFront, railRear, railPose);
+    if (sweepsCrossing(railPose, crossing, x - railPose.x, z - railPose.z)) return true;
+    x = railPose.x;
+    z = railPose.z;
+  }
+  return false;
+}
+
+function sweepsCrossing(car, crossing, travelX, travelZ) {
   const dx = car.x - crossing.x, dz = car.z - crossing.z;
   const half = car.halfLen ?? 2, width = car.radius ?? 1;
   const halfCrossing = crossing.length / 2;
@@ -433,7 +461,7 @@ export class Traffic {
       if (this.phase(crossing.group) !== 'walk') return false;
       const deceleration = STOP_DECELERATION * (weather?.surfaceGrip(crossing.x, crossing.z) ?? 1);
       return !cars.some(car => blocksGreenCrossing(car, crossing, person, deceleration))
-        && !transit.some(section => blocksGreenCrossing(section, crossing, person));
+        && !transit.some(section => transitBlocksCrossing(section, crossing, person));
     }
     const occupied = car => {
       if (car.mode === 'parked' || Math.abs(car.y - person?.y) > 3) return false;

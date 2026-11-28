@@ -786,3 +786,42 @@ for (const [weather, surface, waits] of [['clear', 'suchu', false], ['snow', 'sn
     expect(result).toEqual({ green: true, waited: waits, crossed: !waits, entered: true });
   });
 }
+
+test('E78 – chodec na Klatovské vyčká na rozjetou čtyřku a po zpomalení vykročí', async ({ page }, info) => {
+  await boot(page, '&date=2026-11-09&hour=7.5&quality=low&adapt=0');
+  const result = await page.evaluate(async () => {
+    const g = __game, t = g.world.traffic, transit = g.transit;
+    const c = t.crossings.find(crossing => crossing.id === 10274015043);
+    const tram = transit.vehicles.find(v => v.isTram && v.route.ref === '4' && v.route.from === 'Univerzita');
+    for (t.time = 0; t.time < 200 && t.phase(c.group) !== 'walk'; t.time += 0.25) {}
+    const walker = g.peds.spawnAt(...c.a, Math.atan2(c.dx, c.dz));
+    g.player.place(c.a[0] - 18 * c.dx, c.a[1] - 18 * c.dz);
+    for (let i = 0; i < 60; i++) {
+      g.chunks.update(c.x, c.z, 340, 60, walker.y);
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    walker.state = 'crossWait';
+    walker.crossing = { crossing: c, from: c.a, to: c.b, s: 0 };
+    g.peds.timer = Infinity;
+    tram.y = walker.y;
+    transit._show(tram, true);
+    const step = (s, speed) => {
+      tram.s = s;
+      tram.v = speed;
+      transit.obstacles.length = transit.heavy.length = 0;
+      transit._pose(tram, 1 / 60);
+      g.peds.update(1 / 60, g.player, null, []);
+    };
+    // Trasa linky 4 protíná osu zebry v metru 3546,75.
+    for (let i = 0; i < 60; i++) step(3530.75 - (59 - i) / 6, 10);
+    const waited = walker.state === 'crossWait' && !t.users.has(walker);
+    document.getElementById('hud').style.display = 'none';
+    const { tx, tz } = tram.route.posAt(tram.s, tram.side, {});
+    __view(c.x + c.dx * 9 + tx * 8, walker.y + 15, c.z + c.dz * 9 + tz * 8,
+      c.x - tx * 9, walker.y, c.z - tz * 9);
+    step(tram.s, 4);
+    return { green: t.phase(c.group) === 'walk', waited, entered: t.users.get(walker) === c };
+  });
+  await page.screenshot({ path: info.outputPath('tramvaj.jpg'), quality: 87 });
+  expect(result).toEqual({ green: true, waited: true, entered: true });
+});

@@ -1,3 +1,7 @@
+# E78 · Brzdná dráha tramvaje na přechodu
+
+Na větvi `etapa/E78` chodec na zelenou zohlední polohu všech článků až do odhadovaného zastavení po kolejích. Na předchozí verzi se na Klatovské podařilo zopakovat předčasný vstup před čtyřkou. Po změně chodec při 36 km/h počkal a po zpomalení na 14,4 km/h vykročil. Prošlo sestavení, 438 testů JavaScriptu, deset cílených zkoušek v obou grafických režimech i zkouška s emulovaným dotykem. Jízdy dosáhly 59,7–59,8 FPS. Čas GPU kolísal v rámci rozpočtu, zbývá vyzkoušení na fyzickém telefonu. [Zadání](E78.md) · [Zkouška a podklady](../E78.md)
+
 # E77 · Brzdná dráha ve sněhu
 
 Na větvi `etapa/E77` chodec používá přilnavost podle stavu vozovky. Na původní revizi vykročil při 36 km/h i na zasněženou zebru. Po změně na suchu při 36 km/h vykročil a na sněhu počkal na zpomalení. Prošlo sestavení, 437 testů JavaScriptu, deset cílených zkoušek v obou grafických režimech a dvě s emulovaným dotykem. Kontrolní jízda na sněhu dosáhla 60 FPS. Zbývá vyzkoušení na fyzickém telefonu. [Zadání](E77.md) · [Ověření a podklady](../E77.md)

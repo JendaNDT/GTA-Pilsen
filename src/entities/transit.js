@@ -3,6 +3,7 @@ import { Vector3 } from 'three/webgpu';
 import { STOP_DWELL, Timetable } from '../game/timetable.js';
 import { installTransitStops } from '../world/transit-stops.js';
 import { berthOffset, canYieldAtPullout, pulloutGap, stopBerth } from '../game/bus-departure.js';
+import { sectionPose, TRANSIT_STOP_DECELERATION } from '../game/transit-path.js';
 import { pathClearance } from '../game/ai-turn.js';
 import { DAY_SECONDS } from '../game/clock.js';
 import { DRIVABLE_MAX, RF } from '../config.js';
@@ -390,7 +391,7 @@ export class TransitManager {
     }
 
     let limit = v.isTram ? 11.5 : Math.min(10.5, v.roadLimit);
-    if (stop) limit = Math.min(limit, Math.sqrt(2 * 1.35 * Math.max(0, remaining)) + 0.2);
+    if (stop) limit = Math.min(limit, Math.sqrt(2 * TRANSIT_STOP_DECELERATION * Math.max(0, remaining)) + 0.2);
     const { tx, tz } = frontPoint;
     const dx = player.x - frontPoint.x, dz = player.z - frontPoint.z;
     const inLane = dx * tx + dz * tz;
@@ -438,6 +439,8 @@ export class TransitManager {
 
   _pose(v, dt) {
     v.stoppedInTraffic = !v.doorsOpen && Math.abs(v.v) < 0.02 ? v.stoppedInTraffic + dt : 0;
+    const brakingDistance = v.isTram ? Math.min(v.v ** 2 / (2 * TRANSIT_STOP_DECELERATION),
+      Math.max(0, v.event.trip.endS - v.s)) : 0;
     let referenceY = v.y, end = v.s;
     for (const [index, mesh] of v.meshes.entries()) {
       const section = v.sections[index];
@@ -445,12 +448,12 @@ export class TransitManager {
       const center = end - length / 2;
       end -= length;
       const axle = section.axle ?? (v.isTram ? 2.6 : 3.5);
-      const front = v.route.posAt(center + axle, v.side, frontPoint);
-      const rear = v.route.posAt(center - axle, v.side, trailerPoint);
-      const x = (front.x + rear.x) / 2, z = (front.z + rear.z) / 2;
-      const yaw = Math.atan2(front.x - rear.x, front.z - rear.z);
-      const fy = this.world.groundY(front.x, front.z, referenceY);
-      const ry = this.world.groundY(rear.x, rear.z, referenceY);
+      const footprint = v.footprints[index];
+      sectionPose(v.route, center, v.side, axle, frontPoint, trailerPoint, footprint);
+      const { x, z, yaw } = footprint;
+      if (v.isTram) Object.assign(footprint, { railRoute: v.route, center, side: v.side, axle, brakingDistance });
+      const fy = this.world.groundY(frontPoint.x, frontPoint.z, referenceY);
+      const ry = this.world.groundY(trailerPoint.x, trailerPoint.z, referenceY);
       const y = (fy + ry) / 2;
       referenceY = y;
       mesh.position.set(x, y, z);
@@ -460,8 +463,7 @@ export class TransitManager {
       const collisionSpan = v.isTatra ? length / 2 - 1.35 : axle;
       const collisionPoints = v.isTatra ? [-collisionSpan, -axle, 0, axle, collisionSpan] : [-axle, 0, axle];
       for (const k of collisionPoints) this.heavy.push({ x: x + fx * k, y, z: z + fz * k, r: 1.35, vx, vz });
-      const footprint = v.footprints[index];
-      Object.assign(footprint, { x, y, z, vx, vz, yaw, halfLen: length / 2, radius: 1.4,
+      Object.assign(footprint, { y, vx, vz, halfLen: length / 2, radius: 1.4,
         stoppedInTraffic: v.stoppedInTraffic, control: v.enteredSignal, departureLane: v.departureLane });
       this.obstacles.push(footprint);
       if (index === (v.isTram ? 1 : 0)) Object.assign(v, { x, y, z, yaw, vx, vz });
