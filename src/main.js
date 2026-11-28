@@ -312,6 +312,8 @@ async function boot() {
   if (IS_TOUCH) $('touch').classList.remove('hidden');
 
   let running = false, last = 0, firstPlay = true;
+  let testCrash = DEBUG ? PARAMS.get('chyba') : null;
+  let playStartedAt = 0;
   const perfPanel = DEBUG ? initPerfPanel(perf, rendering, game, () => running && !game.mapOpen) : null;
   const menu = $('menu');
   const timeInput = $('game-time'), clockStatus = $('clock-status');
@@ -352,6 +354,7 @@ async function boot() {
     game.audio.start(); game.audio.resume();
     if (game.activities.playingTargets) game.activities.targets.show();
     if (firstPlay) {
+      playStartedAt = last;
       if (initialCamera && !game.cabin) {
         game.camera.position.copy(initialCamera.position);
         game.camera.quaternion.copy(initialCamera.rotation);
@@ -570,6 +573,13 @@ async function boot() {
     const dt = Math.min(0.05, elapsed);
     last = now;
     if (game.graphicsBusy) return;
+    if (testCrash === 'jednorazova') {
+      testCrash = null;
+      throw new Error('Zkušební jednorázová chyba');
+    }
+    if (testCrash === 'trvala' && now - playStartedAt >= 3000) {
+      throw new Error('Zkušební trvalá chyba');
+    }
     if (input.pressed.has('menu')) {
       input.pressed.delete('menu');
       if (game.mapOpen) game.toggleMap(false); else { openMenu(); return; }
