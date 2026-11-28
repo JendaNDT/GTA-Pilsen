@@ -73,7 +73,7 @@ test('adresa zkoušky má výchozí semínko a respektuje jeho volbu', () => {
   expect(seed('/', { seed: null })).toBeNull();
 });
 
-test('otisk simulace po minutě chůze a jízdy odpovídá vzoru', async ({ page }, info) => {
+test('otisk simulace po minutě chůze a jízdy odpovídá vzoru', { tag: '@zaklad' }, async ({ page }, info) => {
   await page.goto(gameUrl('/?debug&seed=1&date=2026-11-09&hour=7.5&weather=clear&quality=low&adapt=0'));
   await waitForGame(page);
   const webgpu = info.project.name === 'webgpu';
