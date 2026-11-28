@@ -787,12 +787,13 @@ for (const [weather, surface, waits] of [['clear', 'suchu', false], ['snow', 'sn
   });
 }
 
-test('E78 – chodec na Klatovské vyčká na rozjetou čtyřku a po zpomalení vykročí', async ({ page }, info) => {
+async function transitApproach(page, info, scenario, shouldWait = true) {
   await boot(page, '&date=2026-11-09&hour=7.5&quality=low&adapt=0');
-  const result = await page.evaluate(async () => {
+  const result = await page.evaluate(async ({ crossingId, trip, end, fast, slow, side }) => {
     const g = __game, t = g.world.traffic, transit = g.transit;
-    const c = t.crossings.find(crossing => crossing.id === 10274015043);
-    const tram = transit.vehicles.find(v => v.isTram && v.route.ref === '4' && v.route.from === 'Univerzita');
+    const c = t.crossings.find(crossing => crossing.id === crossingId);
+    const vehicle = transit.vehicles.find(v => trip ? v.event.trip.id === trip :
+      v.isTram && v.route.ref === '4' && v.route.from === 'Univerzita');
     for (t.time = 0; t.time < 200 && t.phase(c.group) !== 'walk'; t.time += 0.25) {}
     const walker = g.peds.spawnAt(...c.a, Math.atan2(c.dx, c.dz));
     g.player.place(c.a[0] - 18 * c.dx, c.a[1] - 18 * c.dz);
@@ -803,25 +804,76 @@ test('E78 – chodec na Klatovské vyčká na rozjetou čtyřku a po zpomalení 
     walker.state = 'crossWait';
     walker.crossing = { crossing: c, from: c.a, to: c.b, s: 0 };
     g.peds.timer = Infinity;
-    tram.y = walker.y;
-    transit._show(tram, true);
+    vehicle.y = walker.y;
+    if (side !== undefined) vehicle.side = side;
+    transit._show(vehicle, true);
     const step = (s, speed) => {
-      tram.s = s;
-      tram.v = speed;
+      vehicle.s = s;
+      vehicle.v = speed;
       transit.obstacles.length = transit.heavy.length = 0;
-      transit._pose(tram, 1 / 60);
+      transit._pose(vehicle, 1 / 60);
       g.peds.update(1 / 60, g.player, null, []);
     };
-    // Trasa linky 4 protíná osu zebry v metru 3546,75.
-    for (let i = 0; i < 60; i++) step(3530.75 - (59 - i) / 6, 10);
+    for (let i = 0; i < 60; i++) step(end - (59 - i) * fast / 60, fast);
     const waited = walker.state === 'crossWait' && !t.users.has(walker);
+    const crossed = t.users.get(walker) === c;
     document.getElementById('hud').style.display = 'none';
-    const { tx, tz } = tram.route.posAt(tram.s, tram.side, {});
+    const { tx, tz } = vehicle.route.posAt(vehicle.s, vehicle.side, {});
     __view(c.x + c.dx * 9 + tx * 8, walker.y + 15, c.z + c.dz * 9 + tz * 8,
       c.x - tx * 9, walker.y, c.z - tz * 9);
-    step(tram.s, 4);
-    return { green: t.phase(c.group) === 'walk', waited, entered: t.users.get(walker) === c };
+    step(vehicle.s, slow);
+    return { green: t.phase(c.group) === 'walk', waited, crossed, entered: t.users.get(walker) === c };
+  }, scenario);
+  await page.screenshot({ path: info.outputPath('prijezd-mhd.jpg'), quality: 87 });
+  expect(result).toEqual({ green: true, waited: shouldWait, crossed: !shouldWait, entered: true });
+}
+
+test('E78 – chodec na Klatovské vyčká na rozjetou čtyřku a po zpomalení vykročí', async ({ page }, info) => {
+  await transitApproach(page, info, { crossingId: 10274015043, end: 3530.75, fast: 10, slow: 4 });
+});
+
+test('E79 – na Tylově chodec vyčká na vybočení zádě trolejbusu 49', async ({ page }, info) => {
+  await transitApproach(page, info, { crossingId: 3844, trip: '692213', end: 4473.5, fast: 6, slow: 1, side: 2.5 });
+});
+
+test('E79 – na Borské chodec vyčká na odbočující autobus 32', async ({ page }, info) => {
+  await transitApproach(page, info, { crossingId: 33642, trip: '688666', end: 10376, fast: 6, slow: 1, side: 2.5 });
+});
+
+test('E79 – na Tylově může chodec vykročit, když užší stopa trolejbusu mine zebru', async ({ page }, info) => {
+  await transitApproach(page, info, { crossingId: 3844, trip: '692213', end: 4473.5, fast: 6, slow: 1, side: 1.7 }, false);
+});
+
+test('E79 – na Klatovské běžná stopa autobusu 39 zavede záď nad zebru', async ({ page }) => {
+  await boot(page, '&date=2026-11-09&hour=7.5&quality=low&adapt=0');
+  const result = await page.evaluate(() => {
+    const g = __game, transit = g.transit, t = g.world.traffic;
+    const c = t.crossings.find(crossing => crossing.id === 40319);
+    const bus = transit.vehicles.find(v => v.event.trip.id === '689189');
+    transit.vehicles = [bus];
+    const observer = bus.route.posAt(7392, 0, {});
+    for (t.time = 0; t.time < 200 && t.phase(c.group) !== 'walk'; t.time += 0.25) {}
+    Object.assign(bus, { wait: 0, doorsOpen: false, stopTarget: null });
+    let warned = false, firstHit = false, tailAfterWarning = false, cleared = false;
+    // Polohu posouvá zkouška, jízdní pruh a natočení vozu vybere běžné řízení linky.
+    for (let i = 0; i <= 840; i++) {
+      bus.s = 7308 + i / 10;
+      bus.v = 6;
+      transit.update(1 / 60, observer, [], false);
+      if (i < 600) continue;
+      const part = bus.footprints[0], person = { y: bus.y };
+      const blocked = section => !t.canWalk(c, [], [section], person);
+      const hit = blocked({ ...part, brakingDistance: 0 });
+      if (!firstHit && !hit && blocked(part)) warned = true;
+      if (hit) {
+        firstHit = true;
+        const third = part.halfLen / 3;
+        const front = { ...part, brakingDistance: 0, x: part.x + Math.sin(part.yaw) * third,
+          z: part.z + Math.cos(part.yaw) * third, halfLen: part.halfLen - third };
+        if (warned && !blocked(front)) tailAfterWarning = true;
+      } else if (tailAfterWarning && !blocked(part)) cleared = true;
+    }
+    return { warned, tailAfterWarning, cleared };
   });
-  await page.screenshot({ path: info.outputPath('tramvaj.jpg'), quality: 87 });
-  expect(result).toEqual({ green: true, waited: true, entered: true });
+  expect(result).toEqual({ warned: true, tailAfterWarning: true, cleared: true });
 });

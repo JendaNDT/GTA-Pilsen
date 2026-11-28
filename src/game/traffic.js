@@ -45,26 +45,29 @@ function blocksGreenCrossing(car, crossing, person, deceleration) {
   return sweepsCrossing(car, crossing, vx * factor, vz * factor);
 }
 
-const railFront = {}, railRear = {}, railPose = {};
+const transitFront = {}, transitRear = {}, transitPose = {};
 
 function transitBlocksCrossing(section, crossing, person) {
   if (Math.abs(section.y - person?.y) > 3) return false;
   if (sweepsCrossing(section, crossing, 0, 0)) return true;
   const distance = section.brakingDistance;
-  if (!section.railRoute || !(distance > 0)) return false;
-  const reach = distance + section.halfLen + section.radius + crossing.length / 2 + CROSSING_HALF_WIDTH;
+  if (!section.route || !(distance > 0)) return false;
+  // Odsazení pruhu se v lomu trasy mění s jeho normálou (až dvojnásobek na každém konci).
+  const reach = distance + 4 * Math.abs(section.side) + section.halfLen + section.radius
+    + crossing.length / 2 + CROSSING_HALF_WIDTH;
   if (Math.abs(section.x - crossing.x) > reach || Math.abs(section.z - crossing.z) > reach) return false;
-  // V oblouku se skříň otáčí. Po každém metru ověříme i prostor mezi polohami.
-  const steps = Math.ceil(distance);
+  // V odsazeném pruhu může záď v ostré zatáčce minout konec zebry jen těsně.
+  const stepLength = section.route.type === 'tram' ? 1 : 0.25;
+  const steps = Math.ceil(distance / stepLength);
   let x = section.x, z = section.z;
-  railPose.halfLen = section.halfLen;
-  railPose.radius = section.radius;
+  transitPose.halfLen = section.halfLen;
+  transitPose.radius = section.radius;
   for (let i = 1; i <= steps; i++) {
-    sectionPose(section.railRoute, section.center + distance * i / steps, section.side, section.axle,
-      railFront, railRear, railPose);
-    if (sweepsCrossing(railPose, crossing, x - railPose.x, z - railPose.z)) return true;
-    x = railPose.x;
-    z = railPose.z;
+    sectionPose(section.route, section.center + distance * i / steps, section.side, section.axle,
+      transitFront, transitRear, transitPose);
+    if (sweepsCrossing(transitPose, crossing, x - transitPose.x, z - transitPose.z)) return true;
+    x = transitPose.x;
+    z = transitPose.z;
   }
   return false;
 }

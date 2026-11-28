@@ -439,8 +439,7 @@ export class TransitManager {
 
   _pose(v, dt) {
     v.stoppedInTraffic = !v.doorsOpen && Math.abs(v.v) < 0.02 ? v.stoppedInTraffic + dt : 0;
-    const brakingDistance = v.isTram ? Math.min(v.v ** 2 / (2 * TRANSIT_STOP_DECELERATION),
-      Math.max(0, v.event.trip.endS - v.s)) : 0;
+    const brakingDistance = Math.min(v.v ** 2 / (2 * TRANSIT_STOP_DECELERATION), Math.max(0, v.event.trip.endS - v.s));
     let referenceY = v.y, end = v.s;
     for (const [index, mesh] of v.meshes.entries()) {
       const section = v.sections[index];
@@ -451,7 +450,6 @@ export class TransitManager {
       const footprint = v.footprints[index];
       sectionPose(v.route, center, v.side, axle, frontPoint, trailerPoint, footprint);
       const { x, z, yaw } = footprint;
-      if (v.isTram) Object.assign(footprint, { railRoute: v.route, center, side: v.side, axle, brakingDistance });
       const fy = this.world.groundY(frontPoint.x, frontPoint.z, referenceY);
       const ry = this.world.groundY(trailerPoint.x, trailerPoint.z, referenceY);
       const y = (fy + ry) / 2;
@@ -463,7 +461,8 @@ export class TransitManager {
       const collisionSpan = v.isTatra ? length / 2 - 1.35 : axle;
       const collisionPoints = v.isTatra ? [-collisionSpan, -axle, 0, axle, collisionSpan] : [-axle, 0, axle];
       for (const k of collisionPoints) this.heavy.push({ x: x + fx * k, y, z: z + fz * k, r: 1.35, vx, vz });
-      Object.assign(footprint, { y, vx, vz, halfLen: length / 2, radius: 1.4,
+      Object.assign(footprint, { route: v.route, center, side: v.side, axle, brakingDistance,
+        y, vx, vz, halfLen: length / 2, radius: 1.4,
         stoppedInTraffic: v.stoppedInTraffic, control: v.enteredSignal, departureLane: v.departureLane });
       this.obstacles.push(footprint);
       if (index === (v.isTram ? 1 : 0)) Object.assign(v, { x, y, z, yaw, vx, vz });

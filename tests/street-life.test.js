@@ -256,10 +256,10 @@ test('pěší zelená zohlední brzdění tramvaje po kolejích i za obloukem', 
   const t = Object.assign(Object.create(Traffic.prototype), { phase: () => 'walk' });
   const c = { x: 0, z: 0, dx: 1, dz: 0, length: 8, group: {} };
   const section = (path, center, speed) => {
-    const railRoute = new Route({ path });
-    const part = { railRoute, center, side: 0, axle: 2.6, halfLen: 4.5, radius: 1.4, y: 0,
+    const route = new Route({ type: 'tram', path });
+    const part = { route, center, side: 0, axle: 2.6, halfLen: 4.5, radius: 1.4, y: 0,
       brakingDistance: speed ** 2 / (2 * TRANSIT_STOP_DECELERATION) };
-    sectionPose(railRoute, center, part.side, part.axle, {}, {}, part);
+    sectionPose(route, center, part.side, part.axle, {}, {}, part);
     return part;
   };
   const canWalk = (...parts) => t.canWalk(c, [], parts, { y: 0 });
@@ -273,4 +273,31 @@ test('pěší zelená zohlední brzdění tramvaje po kolejích i za obloukem', 
   assert.ok(canWalk(section([[0, -50], [0, -18], [8, -10], [30, -10]], 22, 10)));
   assert.equal(canWalk(section([[-25, -18], [-8, -18], [0, -10], [0, 30]], 8, 10)), false);
   assert.equal(canWalk(section(straight, 65, 0), section(straight, 50, 0)), false);
+});
+
+test('v zatáčce v Tylově zasáhne zebru jen zadní část trolejbusu při širším odbočení', async () => {
+  const { Route } = await import('../src/entities/transit.js');
+  const { sectionPose, TRANSIT_STOP_DECELERATION } = await import('../src/game/transit-path.js');
+  const t = Object.assign(Object.create(Traffic.prototype), { phase: () => 'walk' });
+  // Výřez trasy 49 v metrech vůči středu přechodu č. 3844.
+  const route = new Route({ path: [[25.51, -93.09], [6.51, 1.81], [15.2, 4.52], [20.4, 6.6], [29.5, 12.5]] });
+  const c = { x: 0, z: 0, dx: -0.19089758, dz: 0.98160996, length: 9.586, group: {} };
+  const pose = (s, side, speed) => {
+    const part = { route, center: s - 5.9, halfLen: 5.9, radius: 1.4, axle: 3.5, side, y: 0,
+      brakingDistance: speed ** 2 / (2 * TRANSIT_STOP_DECELERATION) };
+    sectionPose(route, part.center, side, part.axle, {}, {}, part);
+    return part;
+  };
+  const walk = part => t.canWalk(c, [], [part], { y: 0 });
+  assert.ok(walk(pose(98, 2.5, 0)));
+  assert.equal(walk(pose(98, 2.5, 6)), false);
+  assert.ok(walk(pose(98, 2.5, 1)));
+  assert.ok(walk(pose(98, 1.7, 6)));
+  const hit = pose(103, 2.5, 0);
+  assert.equal(walk(hit), false);
+  // Přední dvě třetiny vozu jsou přitom mimo přechod.
+  const third = hit.halfLen / 3;
+  assert.ok(walk({ ...hit, x: hit.x + Math.sin(hit.yaw) * third, z: hit.z + Math.cos(hit.yaw) * third,
+    halfLen: hit.halfLen - third }));
+  assert.ok(walk(pose(110, 2.5, 6)));
 });

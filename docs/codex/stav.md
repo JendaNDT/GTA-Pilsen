@@ -1,3 +1,7 @@
+# E79 · Odbočující autobusy a trolejbusy
+
+Na větvi `etapa/E79` se při pěší zelené kontroluje i dráha zádě odbočujících vozů silniční MHD. V Tylově ulici se na E78 podařilo zopakovat předčasný vstup před linkou 49. V Tylově chodec počkal při širším průjezdu a při těsném minutí vykročil. U Borského parku se ověřil zásah zádí autobusu 39 při běžném výběru pruhu. Prošlo sestavení, 439 testů JavaScriptu a 14 cílených zkoušek v prohlížeči včetně dvou s emulovaným dotykem. Kontrolní jízda dosáhla 59,8 FPS. Zbývá zkouška na fyzickém telefonu. [Zadání](E79.md) · [Průběh a výsledky](../E79.md)
+
 # E78 · Brzdná dráha tramvaje na přechodu
 
 Na větvi `etapa/E78` chodec na zelenou zohlední polohu všech článků až do odhadovaného zastavení po kolejích. Na předchozí verzi se na Klatovské podařilo zopakovat předčasný vstup před čtyřkou. Po změně chodec při 36 km/h počkal a po zpomalení na 14,4 km/h vykročil. Prošlo sestavení, 438 testů JavaScriptu, deset cílených zkoušek v obou grafických režimech i zkouška s emulovaným dotykem. Jízdy dosáhly 59,7–59,8 FPS. Čas GPU kolísal v rámci rozpočtu, zbývá vyzkoušení na fyzickém telefonu. [Zadání](E78.md) · [Zkouška a podklady](../E78.md)
