@@ -1095,166 +1095,167 @@ export class Game {
   update(dt, elapsed = dt) {
     this.logicMs = this.physicsMs = null;
     if (this.paused) return;
-    const logicStart = DEBUG ? performance.now() : 0;
-    pollInput(this.shifts.active ? 'shift' : this.cabin ? 'foot' : this.mode);
-    if (this.activities.playingTargets) {
-      this.activities.targets.update(dt);
-      endFrame();
-      return;
-    }
-    if (this.activities.playingBowling) {
-      if (!this.mapOpen) {
-        if (input.pressed.has('action')) this.doAction();
-        if (input.pressed.has('reset')) this.activities.end('cancelled');
-        if (this.activities.playingBowling) {
-          const bowling = this.activities.bowling;
-          const physicsStart = DEBUG ? performance.now() : 0;
-          (bowling.pool.table ?? bowling.lane).world.update(elapsed);
-          if (DEBUG) this.physicsMs = performance.now() - physicsStart;
-          bowling.update(dt, input);
-          if (DEBUG) this.logicMs = performance.now() - logicStart - this.physicsMs;
+    try {
+      const logicStart = DEBUG ? performance.now() : 0;
+      pollInput(this.shifts.active ? 'shift' : this.cabin ? 'foot' : this.mode);
+      if (this.activities.playingTargets) {
+        this.activities.targets.update(dt);
+        return;
+      }
+      if (this.activities.playingBowling) {
+        if (!this.mapOpen) {
+          if (input.pressed.has('action')) this.doAction();
+          if (input.pressed.has('reset')) this.activities.end('cancelled');
+          if (this.activities.playingBowling) {
+            const bowling = this.activities.bowling;
+            const physicsStart = DEBUG ? performance.now() : 0;
+            (bowling.pool.table ?? bowling.lane).world.update(elapsed);
+            if (DEBUG) this.physicsMs = performance.now() - physicsStart;
+            bowling.update(dt, input);
+            if (DEBUG) this.logicMs = performance.now() - logicStart - this.physicsMs;
+          }
+        }
+        return;
+      }
+      if (input.pressed.has('map')) this.toggleMap();
+      if (this.mapOpen) return;
+
+      this.time += dt;
+      this.postfx?.exposure?.update(dt);
+      this.crashCool -= dt; this.wantedCool -= dt;
+      const p = this.player;
+      if (input.pressed.has('action')) this.doAction();
+      if (this.activities.playingBowling || this.activities.playingTargets) return;
+      if (input.pressed.has('job')) this.jobs.toggle();
+      if (input.pressed.has('camera')) this.camMode = (this.camMode + 1) % 2;
+      if (input.pressed.has('reset')) this.unstuck();
+      if (input.pressed.has('beams') && this.mode === 'car') this.car.highBeam = !this.car.highBeam;
+      if (input.pressed.has('horn') && this.mode === 'car') this.audio.horn(this.car);
+      if (input.pressed.has('horn') && this.shifts.active) {
+        if (this.ride.isTram) this.audio.bell(this.ride); else this.audio.horn(this.ride);
+      }
+      const previousDay = this.clock.day, previousTime = this.clock.now;
+      if (this.clock.followsPrague) this.clock.setPrague();
+      else this.clock.tick(elapsed);
+      const clockAdvance = this.clock.now - previousTime;
+      // Při prvním pohledu z vozu může příprava obrazu trvat několik sekund.
+      // Hodiny za tu dobu běží dál, cestující ale pořád patří ke stejnému spoji.
+      const expectedAdvance = this.cabin ? elapsed : dt;
+      const jump = input.pressed.has('time');
+      if (jump && this.shifts.active) this.hud.toast('Během směny platí její herní rozpis.');
+      if (jump && !this.shifts.active) {
+        this.clock.setTime(this.clock.now + 3 * HOUR_SECONDS);
+        this.syncClock(true);
+      } else if (!this.shifts.active && (clockAdvance < 0 || clockAdvance > expectedAdvance + 2)) {
+        this.syncClock(true);
+      } else {
+        this.envTimer -= dt;
+        if (this.envTimer <= 0 || this.clock.day !== previousDay) this.syncClock();
+        else this.hud.clock(this.clock, this.clockVisible);
+      }
+      this.world.traffic.tick(dt, this.mode === 'foot' ? this.player : null);
+      env.time.value = this.time;
+
+      if (this.driver && (this.mode !== 'car' || this.car !== this.driver.car)) {
+        if (this.vehicles.cars.includes(this.driver.car)) this.trafficBodies.keepCar(this.driver);
+        else this.driver.dispose();
+        this.driver = null;
+      }
+      this.colliders.update(this.focus.x, this.focus.z);
+      this.player.setWalking((this.mode === 'bike' || (this.mode === 'foot' && !this.activities.golf.ball)) &&
+        !this.falls.active.has(this.player));
+      if (this.activities.golf.ball) this.activities.golf.input(dt, input.moveX, input.moveY);
+      if (this.mode === 'car' && !this.driver) this.driver = this.trafficBodies.takeCar(this.car) ?? new PlayerVehicle(this.physics, this.car);
+      if (this.car?.physicsTeleport && this.driver) {
+        this.driver.teleport();
+        this.car.physicsTeleport = false;
+      }
+      for (const h of this.helis) {
+        const near = h === this.heli || Math.hypot(h.x - this.focus.x, h.z - this.focus.z) <= 150;
+        if (near && this.colliders.tiles.has(this.world.chunkIndex(h.x, h.z))) {
+          if (!h.physical) h.physical = new HelicopterBody(this.physics, h);
+        } else if (h.physical) {
+          h.physical.dispose();
+          h.physical = null;
         }
       }
+      this.trafficBodies.update(this, dt);
+      this.fallDamage = 0;
+      const physicsStart = DEBUG ? performance.now() : 0;
+      this.physics.update(elapsed);
+      const physicsEnd = DEBUG ? performance.now() : 0;
+      for (const [ped, hit] of this.pedHits) this.applyPedHit(ped, hit);
+      this.pedHits.clear();
+      if (this.driver?.impactSpeed > 0) {
+        const other = this.trafficBodies.carForBody(this.driver.impactBody);
+        const impact = this.driver.applyImpact();
+        this.onCrash(this.driver.car, impact, other);
+      }
+
+      if (this.car?.floodTime >= 4) this._exitCar();
+      for (const car of this.water.sunk) {
+        if (p.lastCar === car) {
+          p.lastCar = null;
+          this.hud.toast('Auto se potopilo.', 'bad');
+        }
+        if (car === this.garage.active) car.health = 0;
+        this.vehicles.remove(car);
+        this.save();
+      }
+      this.water.sunk.clear();
+
+      // pohyb podle režimu
+      if (this.mode === 'foot') {
+        if (this.fallDamage > 0) {
+          this.falls.start(p, p.vx, -3, p.vz);
+          this.audio.crash(8, p); this._hurt(this.fallDamage);
+        }
+        if (p.health < 100) p.health = Math.min(100, p.health + dt * 0.8);
+      } else if (this.mode === 'car') {
+        const car = this.car;
+        car.reverseTime = car.speed < -1 ? (car.reverseTime || 0) + dt : 0;
+      }
+
+      // svět
+      const onFoot = this.mode === 'foot';
+      const obs = this.vehicles.obstacles;
+      obs.length = 0;
+      for (const o of this.transit.obstacles) obs.push(o);
+      if (onFoot || this.mode === 'bike') obs.push(p);
+      // stojící vrtulníky jsou pro auta pevná překážka
+      const heavy = this.transit.heavy.slice();
+      for (const h of this.helis) {
+        if (!h.landed) continue;
+        obs.push(h);
+        const hx = Math.sin(h.yaw), hz = Math.cos(h.yaw);
+        heavy.push({ x: h.x + hx * 0.6, z: h.z + hz * 0.6, y: h.y, r: 1.5, vx: h.vx, vz: h.vz }, { x: h.x - hx * 2.6, z: h.z - hz * 2.6, y: h.y, r: 0.8, vx: h.vx, vz: h.vz });
+      }
+      this.vehicles.update(dt, this.focus, this.camInfo, heavy);
+      this.driver?.render(this.physics.clock.alpha);
+      this.peds.update(dt, this.focus, this.camInfo, this.vehicles.cars);
+      this.jobs.update(dt);
+      this.shifts.show();
+      this.activities.update(dt);
+      this.bikes.update();
+      this._updateWanted(dt);
+      if (DEBUG) {
+        this.logicMs = physicsStart - logicStart + (performance.now() - physicsEnd);
+        this.physicsMs = physicsEnd - physicsStart;
+      }
+      this._updateCamera(dt);
+      this.chunks.heritage.updateTime(this.hour, dt);
+      this.particles.update(dt, this.vehicles.cars, this.focus, QUALITY.waterDetail);
+      this.audio.update(dt);
+      this.env.update(this.camera);
+      const fast = Math.hypot(this.focus.vx || 0, this.focus.vz || 0) > 18;
+      this.chunks.update(this.focus.x, this.focus.z, QUALITY.view, fast ? 2 : 1, this.focus.y);
+      this._updateHud(dt);
+
+      this.saveTimer -= dt;
+      if (this.saveTimer <= 0) { this.saveTimer = 20; this.save(); }
+    } finally {
       endFrame();
-      return;
     }
-    if (input.pressed.has('map')) this.toggleMap();
-    if (this.mapOpen) { endFrame(); return; }
-
-    this.time += dt;
-    this.postfx?.exposure?.update(dt);
-    this.crashCool -= dt; this.wantedCool -= dt;
-    const p = this.player;
-    if (input.pressed.has('action')) this.doAction();
-    if (this.activities.playingBowling || this.activities.playingTargets) { endFrame(); return; }
-    if (input.pressed.has('job')) this.jobs.toggle();
-    if (input.pressed.has('camera')) this.camMode = (this.camMode + 1) % 2;
-    if (input.pressed.has('reset')) this.unstuck();
-    if (input.pressed.has('beams') && this.mode === 'car') this.car.highBeam = !this.car.highBeam;
-    if (input.pressed.has('horn') && this.mode === 'car') this.audio.horn(this.car);
-    if (input.pressed.has('horn') && this.shifts.active) {
-      if (this.ride.isTram) this.audio.bell(this.ride); else this.audio.horn(this.ride);
-    }
-    const previousDay = this.clock.day, previousTime = this.clock.now;
-    if (this.clock.followsPrague) this.clock.setPrague();
-    else this.clock.tick(elapsed);
-    const clockAdvance = this.clock.now - previousTime;
-    // Při prvním pohledu z vozu může příprava obrazu trvat několik sekund.
-    // Hodiny za tu dobu běží dál, cestující ale pořád patří ke stejnému spoji.
-    const expectedAdvance = this.cabin ? elapsed : dt;
-    const jump = input.pressed.has('time');
-    if (jump && this.shifts.active) this.hud.toast('Během směny platí její herní rozpis.');
-    if (jump && !this.shifts.active) {
-      this.clock.setTime(this.clock.now + 3 * HOUR_SECONDS);
-      this.syncClock(true);
-    } else if (!this.shifts.active && (clockAdvance < 0 || clockAdvance > expectedAdvance + 2)) {
-      this.syncClock(true);
-    } else {
-      this.envTimer -= dt;
-      if (this.envTimer <= 0 || this.clock.day !== previousDay) this.syncClock();
-      else this.hud.clock(this.clock, this.clockVisible);
-    }
-    this.world.traffic.tick(dt, this.mode === 'foot' ? this.player : null);
-    env.time.value = this.time;
-
-    if (this.driver && (this.mode !== 'car' || this.car !== this.driver.car)) {
-      if (this.vehicles.cars.includes(this.driver.car)) this.trafficBodies.keepCar(this.driver);
-      else this.driver.dispose();
-      this.driver = null;
-    }
-    this.colliders.update(this.focus.x, this.focus.z);
-    this.player.setWalking((this.mode === 'bike' || (this.mode === 'foot' && !this.activities.golf.ball)) &&
-      !this.falls.active.has(this.player));
-    if (this.activities.golf.ball) this.activities.golf.input(dt, input.moveX, input.moveY);
-    if (this.mode === 'car' && !this.driver) this.driver = this.trafficBodies.takeCar(this.car) ?? new PlayerVehicle(this.physics, this.car);
-    if (this.car?.physicsTeleport && this.driver) {
-      this.driver.teleport();
-      this.car.physicsTeleport = false;
-    }
-    for (const h of this.helis) {
-      const near = h === this.heli || Math.hypot(h.x - this.focus.x, h.z - this.focus.z) <= 150;
-      if (near && this.colliders.tiles.has(this.world.chunkIndex(h.x, h.z))) {
-        if (!h.physical) h.physical = new HelicopterBody(this.physics, h);
-      } else if (h.physical) {
-        h.physical.dispose();
-        h.physical = null;
-      }
-    }
-    this.trafficBodies.update(this, dt);
-    this.fallDamage = 0;
-    const physicsStart = DEBUG ? performance.now() : 0;
-    this.physics.update(elapsed);
-    const physicsEnd = DEBUG ? performance.now() : 0;
-    for (const [ped, hit] of this.pedHits) this.applyPedHit(ped, hit);
-    this.pedHits.clear();
-    if (this.driver?.impactSpeed > 0) {
-      const other = this.trafficBodies.carForBody(this.driver.impactBody);
-      const impact = this.driver.applyImpact();
-      this.onCrash(this.driver.car, impact, other);
-    }
-
-    if (this.car?.floodTime >= 4) this._exitCar();
-    for (const car of this.water.sunk) {
-      if (p.lastCar === car) {
-        p.lastCar = null;
-        this.hud.toast('Auto se potopilo.', 'bad');
-      }
-      if (car === this.garage.active) car.health = 0;
-      this.vehicles.remove(car);
-      this.save();
-    }
-    this.water.sunk.clear();
-
-    // pohyb podle režimu
-    if (this.mode === 'foot') {
-      if (this.fallDamage > 0) {
-        this.falls.start(p, p.vx, -3, p.vz);
-        this.audio.crash(8, p); this._hurt(this.fallDamage);
-      }
-      if (p.health < 100) p.health = Math.min(100, p.health + dt * 0.8);
-    } else if (this.mode === 'car') {
-      const car = this.car;
-      car.reverseTime = car.speed < -1 ? (car.reverseTime || 0) + dt : 0;
-    }
-
-    // svět
-    const onFoot = this.mode === 'foot';
-    const obs = this.vehicles.obstacles;
-    obs.length = 0;
-    for (const o of this.transit.obstacles) obs.push(o);
-    if (onFoot || this.mode === 'bike') obs.push(p);
-    // stojící vrtulníky jsou pro auta pevná překážka
-    const heavy = this.transit.heavy.slice();
-    for (const h of this.helis) {
-      if (!h.landed) continue;
-      obs.push(h);
-      const hx = Math.sin(h.yaw), hz = Math.cos(h.yaw);
-      heavy.push({ x: h.x + hx * 0.6, z: h.z + hz * 0.6, y: h.y, r: 1.5, vx: h.vx, vz: h.vz }, { x: h.x - hx * 2.6, z: h.z - hz * 2.6, y: h.y, r: 0.8, vx: h.vx, vz: h.vz });
-    }
-    this.vehicles.update(dt, this.focus, this.camInfo, heavy);
-    this.driver?.render(this.physics.clock.alpha);
-    this.peds.update(dt, this.focus, this.camInfo, this.vehicles.cars);
-    this.jobs.update(dt);
-    this.shifts.show();
-    this.activities.update(dt);
-    this.bikes.update();
-    this._updateWanted(dt);
-    if (DEBUG) {
-      this.logicMs = physicsStart - logicStart + (performance.now() - physicsEnd);
-      this.physicsMs = physicsEnd - physicsStart;
-    }
-    this._updateCamera(dt);
-    this.chunks.heritage.updateTime(this.hour, dt);
-    this.particles.update(dt, this.vehicles.cars, this.focus, QUALITY.waterDetail);
-    this.audio.update(dt);
-    this.env.update(this.camera);
-    const fast = Math.hypot(this.focus.vx || 0, this.focus.vz || 0) > 18;
-    this.chunks.update(this.focus.x, this.focus.z, QUALITY.view, fast ? 2 : 1, this.focus.y);
-    this._updateHud(dt);
-
-    this.saveTimer -= dt;
-    if (this.saveTimer <= 0) { this.saveTimer = 20; this.save(); }
-    endFrame();
   }
 
   _updateHud(dt) {
