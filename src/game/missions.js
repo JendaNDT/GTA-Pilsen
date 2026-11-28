@@ -1,3 +1,4 @@
+import { simulationRandom } from './random.js';
 import { makePizzaBox } from '../entities/bike-model.js';
 import { ACTIVITY_COLOR } from './activity-sites.js';
 // Zakázky (rozvoz jídla), objevování památek, navigace k cíli.
@@ -159,12 +160,12 @@ export class Jobs {
     }
     if (!cands.length) return null;
     cands.sort((a, b) => a[0] - b[0]);
-    const f = cands[Math.floor(Math.random() * Math.min(6, cands.length))][1];
+    const f = cands[Math.floor(simulationRandom() * Math.min(6, cands.length))][1];
     const pick = this._snap(f[0], f[1]);
     // adresa doručení 0,5–2,6 km od podniku
     let addr = null;
     for (let t = 0; t < 60 && !addr; t++) {
-      const a = meta.addresses[Math.floor(Math.random() * meta.addresses.length)];
+      const a = meta.addresses[Math.floor(simulationRandom() * meta.addresses.length)];
       const d = Math.hypot(a[0] - f[0], a[1] - f[1]);
       if (d > 500 && d < 2600 && this.world.inBounds(a[0], a[1], 120)) addr = a;
     }

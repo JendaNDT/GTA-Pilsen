@@ -1,3 +1,14 @@
+# E86 · Opakovatelný provoz a otisk simulace
+
+Výchozí revize `ccbf222` obsahuje převzatou E85. Hra má samostatnou náhodu pro
+simulaci a efekty. Semínko ukazuje panel Měření, podrobnosti chyby i výpis kolon.
+Minutový otisk vyšel stejně pětkrát ve WebGL 2 a pětkrát ve WebGPU. Přibyl mezi
+základní kontroly pull requestu. Prošlo 459 zkoušek JavaScriptu, produkční sestavení
+a 34 zkoušek Pythonu s jednou dříve známou přeskočenou. Průměrná hustota se držela
+v rozpětí jednotlivých běhů. Na Klatovské zůstávají otevřené chyby se semínkem
+20261118, včetně kolony v Americké a vyjetí mimo vozovku v sadech Pětatřicátníků.
+[Zadání](E86.md) · [Protokol, měření a snímky](../E86.md)
+
 # E85 · Pojistka při chybě za běhu
 
 Na větvi `etapa/E85` je hotové zachytávání chyb ve smyčce i ve fotorežimu, úklid stisků,

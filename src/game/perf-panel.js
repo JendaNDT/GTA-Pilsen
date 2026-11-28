@@ -1,3 +1,5 @@
+import { getRandomSeed } from './random.js';
+
 const number = new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 2 });
 
 function formatTimes(label, times) {
@@ -40,6 +42,7 @@ export function initPerfPanel(perf, rendering, game, canOpen) {
     output.value = [
       `${frames} snímků za ${seconds} s · medián / p95 / p99`,
       `Vykreslování ${rendering}`,
+      `Semínko ${getRandomSeed()}`,
       `Krok fyziky ${number.format(game.physics.lastStepMs ?? 0)} ms · tělesa ${game.physics.system.GetNumBodies()}`,
       ...(game.driver ? [`Motor ${Math.round(game.car.rpm ?? 0)} ot/min · stupeň ${game.car.gear ?? 0} · podélný prokluz kol ${game.driver.wheels.map((wheel) => number.format(wheel.HasContact() ? wheel.mLongitudinalSlip : 0)).join(' / ')}`] : []),
       formatTimes('Práce snímku', workMs),

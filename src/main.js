@@ -16,6 +16,7 @@ import { AreaMap } from './game/area-map.js';
 import { initWorkUI } from './game/work-ui.js';
 import { resultText } from './game/missions.js';
 import { createCrashGuard } from './game/crash-guard.js';
+import { getRandomSeed, initializeRandom, randomDebug } from './game/random.js';
 import { createFrameProfiler } from './game/frame-profiler.js';
 import { createTrafficWaits } from './game/traffic-waits.js';
 import { initPerfPanel } from './game/perf-panel.js';
@@ -27,6 +28,7 @@ const $ = (id) => document.getElementById(id);
 const canvas = $('game');
 const loadText = $('loadtext');
 const bar = document.querySelector('#bar i');
+initializeRandom(PARAMS.get('seed'));
 
 const HELP_HTML = IS_TOUCH ? `
   <h3>Ovládání na dotykové obrazovce</h3>
@@ -188,7 +190,9 @@ if (DEBUG) {
 
 function showCrash(errors) {
   if (DEBUG) {
-    $('crash-errors').textContent = errors.map(error => error.stack || error.message).join('\n\n');
+    $('crash-errors').textContent = [
+      `Semínko ${getRandomSeed()}`, ...errors.map(error => error.stack || error.message),
+    ].join('\n\n');
     $('crash-details').hidden = false;
   }
   crashDialog.showModal();
@@ -621,6 +625,8 @@ async function boot() {
   }
 
   if (DEBUG) {
+    Object.defineProperty(window, '__seed', { get: getRandomSeed });
+    window.__random = randomDebug;
     window.__perf = { summary: perf.summary, reset: perf.reset, renderStats: perf.renderStats };
     if (PARAMS.get('kolony') === '1') {
       game.trafficWaits = createTrafficWaits(game);

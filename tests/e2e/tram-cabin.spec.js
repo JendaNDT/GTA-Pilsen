@@ -10,11 +10,7 @@ test('E59 – první vůz Tatry přes Hlavní poštu do zastávky Pod Záhorskem
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   const seed = Number(process.env.E59_SEED ?? 1729);
-  await page.addInitScript(seed => {
-    let state = seed;
-    Math.random = () => ((state = (Math.imul(1664525, state) + 1013904223) >>> 0) / 2 ** 32);
-  }, seed);
-  await boot(page, 'quality=low&adapt=0&date=2026-11-09&hour=10.1&kolony=1', true);
+  await boot(page, `quality=low&adapt=0&date=2026-11-09&hour=10.1&kolony=1&seed=${seed}`, true);
   expect(await approach(page, '685462', 'Náměstí Republiky')).toEqual({ ref: '1', doorOpen: true, boardable: true });
   await action(page);
   expect(await page.evaluate(() => [__game.ride.event.trip.id, __game.cabin.door])).toEqual(['685462', 6.02]);

@@ -4,8 +4,8 @@ import { gameUrl } from './game-url.js';
 
 const SAVE_KEY = 'plzen-naplno-v1';
 
-async function boot(page) {
-  await page.goto(gameUrl('/?debug&view=620&shadows=0'));
+async function boot(page, options) {
+  await page.goto(gameUrl('/?debug&view=620&shadows=0', options));
   await waitForGame(page);
 }
 
@@ -185,11 +185,7 @@ test('E10 – přerušení, pokuta a opakování výplaty po chybě zápisu', as
 
 test('E10 – rozvoz autem vyžaduje průjezd Lochotínem a Bolevcem a pěší předání', async ({ page }) => {
   await page.clock.setFixedTime(new Date('2026-11-09T08:00:00Z'));
-  await page.addInitScript(() => {
-    let seed = 1729;
-    Math.random = () => ((seed = (Math.imul(1664525, seed) + 1013904223) >>> 0) / (2 ** 32));
-  });
-  await boot(page);
+  await boot(page, { seed: 1729 });
   await panel(page, 'Zakázky');
   await page.getByRole('button', { name: 'Rozvézt autem' }).click();
   await freeze(page);

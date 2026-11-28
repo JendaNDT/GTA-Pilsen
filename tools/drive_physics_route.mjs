@@ -10,6 +10,7 @@ const log = process.argv.find(arg => arg.startsWith('--zaznam='))?.slice(9);
 
 const target = new URL(process.argv[2] ?? 'http://127.0.0.1:4173/');
 for (const [key, value] of Object.entries({ debug: '', quality: 'low', adapt: '0', date: '2026-11-17', hour: '10', weather: 'clear' })) target.searchParams.set(key, value);
+if (loops && !target.searchParams.has('seed')) target.searchParams.set('seed', 1729);
 const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
   ...(process.argv.includes('--software-webgpu') && { channel: 'chromium', args: webgpuFlags }) });
 try {
@@ -19,10 +20,6 @@ try {
     const line = JSON.stringify(entry) + '\n';
     if (log) await appendFile(log, line);
     else process.stdout.write(line);
-  });
-  if (loops) await page.addInitScript(() => {
-    let seed = 1729;
-    Math.random = () => ((seed = (Math.imul(1664525, seed) + 1013904223) >>> 0) / 2 ** 32);
   });
   await page.goto(target.href);
   await page.waitForFunction(() => window.__ready);

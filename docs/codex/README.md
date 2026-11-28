@@ -151,6 +151,7 @@ zapiš do protokolu jako známé odchylky.`
 ```text
 Chyba ve hře (větev etapa/E18): Co jsem udělal: … Co se stalo: … Co jsem čekal: …
 Kde na mapě: … Prohlížeč a zařízení: … (přikládám snímek obrazovky).
+Semínko z panelu Měření (pokud je vidět) …
 Najdi příčinu, napiš test, který chybu zachytí, oprav ji a ověř, že test prochází.
 ```
 

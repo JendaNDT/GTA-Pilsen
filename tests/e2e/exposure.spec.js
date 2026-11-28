@@ -6,7 +6,7 @@ test('E17 – expozice reaguje na jas uvnitř a venku u Valíku', { tag: '@webgp
   const errors = [];
   page.on('pageerror', (error) => errors.push(error.message));
   // Referenční pohledy mají pevné datum a počasí podle něj, stejně jako snímky z tools/reference_views.mjs.
-  await openReferenceGame(page, gameUrl(baseURL, { weather: null }));
+  await openReferenceGame(page, gameUrl(baseURL, { weather: null, seed: null }));
   await renderReferenceView(page, reference.views.find(({ id }) => id === 'valik-zapad'));
   const observed = await page.evaluate(async () => {
     const game = window.__game, eye = game.postfx.exposure;

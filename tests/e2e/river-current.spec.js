@@ -7,7 +7,7 @@ test.use({ viewport: { width: 640, height: 420 }, deviceScaleFactor: 1 });
 test('E51 – pěnové stopy na nízkou kvalitu tečou po Radbuze a na Boleváku nemají směr proudu', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
-  await openReferenceGame(page, gameUrl('/?quality=low&exposure=0'));
+  await openReferenceGame(page, gameUrl('/?quality=low&exposure=0', { seed: null }));
   const river = await measure({ name: 'Radbuza shora', focus: [201, 490],
     camera: [201, 12.75, 490.10], target: [201, -12.25, 490], hour: 10 });
   const pond = await measure({ name: 'Bolevák shora', focus: [1395, -3190],

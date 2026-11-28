@@ -1,3 +1,4 @@
+import { effectsRandom, simulationRandom } from '../game/random.js';
 import { blocksDeparturePlatform } from './station-walk.js';
 import { canYieldAtPullout, pulloutGap } from '../game/bus-departure.js';
 import { updateCarWheels } from './car-wheels.js';
@@ -34,7 +35,7 @@ export class Car {
     this.edge = -1; this.s = 0; this.next = -1; this.lane = 0; this.nextLane = 0; this.turnSlow = 99;
     this.exitPlan = [];
     this.arterialTrip = false;
-    this.blocked = 0; this.temper = 0.8 + Math.random() * 0.25;
+    this.blocked = 0; this.temper = 0.8 + simulationRandom() * 0.25;
     this.rest = 0; this.wasAI = false;
     this.route = null; this.wp = 0; this.repath = 0;
     this.turnContext = 0; this.trafficStop = null;
@@ -287,7 +288,7 @@ export class VehicleManager {
     if (w.r.flags[road] & RF.ONEWAY) {
       const lanes = w.r.lanes[road];
       if (lanes < 2) return 0;
-      const direction = side === undefined ? (Math.random() < 0.5 ? -1 : 1) : side < 0 ? -1 : 1;
+      const direction = side === undefined ? (simulationRandom() < 0.5 ? -1 : 1) : side < 0 ? -1 : 1;
       return direction * width / 4;
     }
     return Math.max(1.25, width / 4);
@@ -384,7 +385,7 @@ export class VehicleManager {
       const open = choices.filter(c => !this._queueAhead(c.edge, this._laneFor(c.edge, c.cos > 0.85 ? lane : c.turn)));
       if (open.length) choices = open;
     }
-    let r = Math.random() * choices.reduce((sum, candidate) => sum + candidate.wt, 0), pick;
+    let r = simulationRandom() * choices.reduce((sum, candidate) => sum + candidate.wt, 0), pick;
     for (const candidate of choices) {
       pick = candidate;
       r -= pick.wt;
@@ -913,7 +914,7 @@ export class VehicleManager {
       car.route = null;
     } else {
       if (car.repath <= 0 || !car.route) {
-        car.repath = 1.2 + Math.random() * 0.6;
+        car.repath = 1.2 + simulationRandom() * 0.6;
         const a = w.nearestNode(car.x, car.z, 80), b = w.nearestNode(target.x, target.z, 200);
         const path = w.findPath(a, b, 5000);
         if (path && path.length) {
@@ -977,7 +978,7 @@ export class VehicleManager {
     if (w.collideCircle(car.x, car.z, 1.0, car.y + 0.3, car.y + 1.5)) {
       car.x = w.hit.x; car.z = w.hit.z;
       car.speed *= 0.9;
-      car.yaw += (Math.random() - 0.5) * 0.1;
+      car.yaw += (simulationRandom() - 0.5) * 0.1;
     }
   }
 
@@ -993,17 +994,17 @@ export class VehicleManager {
   _randomEdgeNear(px, pz, minD, maxD, ambient, arterialOnly) {
     const w = this.world;
     for (let tries = 0; tries < 12; tries++) {
-      const a = Math.random() * Math.PI * 2, d = minD + Math.random() * (maxD - minD);
+      const a = simulationRandom() * Math.PI * 2, d = minD + simulationRandom() * (maxD - minD);
       const ci = w.chunkIndex(px + Math.cos(a) * d, pz + Math.sin(a) * d);
       if (ci < 0) continue;
       const measured = ambient ? this.game.trafficRhythm.measuredByChunk.get(ci) : null;
       const list = arterialOnly ? w.arterialEdges[ci]
-        : measured && Math.random() < 0.55 ? measured : w.trafficEdges[ci];
+        : measured && simulationRandom() < 0.55 ? measured : w.trafficEdges[ci];
       if (!list?.length) continue;
-      const first = list[Math.floor(Math.random() * list.length)];
+      const first = list[Math.floor(simulationRandom() * list.length)];
       if (!ambient) return first;
       // Krátké spojky v hustém grafu by jinak dostávaly stejnou šanci jako celé ulice.
-      const second = list[Math.floor(Math.random() * list.length)];
+      const second = list[Math.floor(simulationRandom() * list.length)];
       const score = (edge) => Math.min(w.eLen[edge], 250) / (1 + 0.06 * w.r.cls[w.eRoad[edge]]);
       return score(second) > score(first) ? second : first;
     }
@@ -1016,7 +1017,7 @@ export class VehicleManager {
     if (e < 0 || ambient && (w.eLen[e] < 24 || !this._throughRoad(e, 0))) return null;
     // Nový řidič se zařadí mezi křižovatkami, kde má místo zareagovat na provoz.
     const margin = ambient ? 10 : 2;
-    const s = margin + Math.random() * Math.max(0, w.eLen[e] - 2 * margin);
+    const s = margin + simulationRandom() * Math.max(0, w.eLen[e] - 2 * margin);
     if (ambient && this.cars.some(c => c.edge === e && c.mode === 'ai' && c.blocked > 3 &&
         c.s > s - 12 && c.s < s + 40)) return null;
     const lane = this._laneFor(e);
@@ -1029,9 +1030,9 @@ export class VehicleManager {
       const dot = ((_pt.x - cam.x) * cam.fx + (_pt.z - cam.z) * cam.fz) / (Math.hypot(_pt.x - cam.x, _pt.z - cam.z) || 1);
       if (dot > 0.45) return null;
     }
-    if (ambient && Math.random() >= this.game.trafficRhythm.carWeight(e, this.game.clock)) return null;
+    if (ambient && simulationRandom() >= this.game.trafficRhythm.carWeight(e, this.game.clock)) return null;
     if (!this._freeSpot(_pt.x, _pt.z, 7)) return null;
-    const type = typeId || TRAFFIC_TYPES[Math.floor(Math.random() * TRAFFIC_TYPES.length)];
+    const type = typeId || TRAFFIC_TYPES[Math.floor(simulationRandom() * TRAFFIC_TYPES.length)];
     const y = w.roadSurfaceY(w.eRoad[e], _pt.seg, _pt.t, _pt.x, _pt.z);
     const half = CAR_TYPES[type].len / 2;
     for (const section of this.game.transit?.obstacles ?? []) {
@@ -1042,7 +1043,7 @@ export class VehicleManager {
       if (Math.abs(dx * tx + dz * tz) < section.halfLen + half * parallel + CAR_TYPES[type].wid / 2 * across + 3 &&
           Math.abs(dx * tz - dz * tx) < section.radius + half * across + CAR_TYPES[type].wid / 2 * parallel) return null;
     }
-    const car = this.add(new Car(type, CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)]));
+    const car = this.add(new Car(type, CAR_COLORS[Math.floor(effectsRandom() * CAR_COLORS.length)]));
     car.mode = 'ai';
     car.arterialTrip = arterialOnly;
     car.edge = e; car.s = s; car.lane = lane;
@@ -1055,31 +1056,31 @@ export class VehicleManager {
 
   spawnParked(px, pz, cam) {
     const w = this.world;
-    const a = Math.random() * Math.PI * 2, d = 30 + Math.random() * 200;
+    const a = simulationRandom() * Math.PI * 2, d = 30 + simulationRandom() * 200;
     const ci = w.chunkIndex(px + Math.cos(a) * d, pz + Math.sin(a) * d);
     if (ci < 0) return null;
     const pieces = w.rPieces[ci];
     if (!pieces) return null;
-    const q = Math.floor(Math.random() * (pieces.length / 3)) * 3;
+    const q = Math.floor(simulationRandom() * (pieces.length / 3)) * 3;
     const i = pieces[q], s = pieces[q + 1], e = pieces[q + 2];
     const R = w.r, cls = R.cls[i], flags = R.flags[i];
     const aisle = cls === RC.SERVICE && (flags & RF.AISLE);
-    if (!(aisle || cls === RC.RESIDENTIAL || cls === RC.LIVING || cls === RC.UNCLASSIFIED || (cls === RC.TERTIARY && Math.random() < 0.4))) return null;
+    if (!(aisle || cls === RC.RESIDENTIAL || cls === RC.LIVING || cls === RC.UNCLASSIFIED || (cls === RC.TERTIARY && simulationRandom() < 0.4))) return null;
     if (flags & (RF.BRIDGE | RF.TUNNEL | RF.ROUNDABOUT)) return null;
-    const k = s + Math.floor(Math.random() * (e - s));
+    const k = s + Math.floor(simulationRandom() * (e - s));
     const x1 = w.rpx[k], z1 = w.rpz[k], x2 = w.rpx[k + 1], z2 = w.rpz[k + 1];
     const len = Math.hypot(x2 - x1, z2 - z1);
     if (len < 7) return null;
-    const t = (3 + Math.random() * (len - 6)) / len;
+    const t = (3 + simulationRandom() * (len - 6)) / len;
     const tx = (x2 - x1) / len, tz = (z2 - z1) / len;
-    const side = Math.random() < 0.5 ? 1 : -1;
+    const side = simulationRandom() < 0.5 ? 1 : -1;
     const hw = R.w[i] / 2;
-    const typeId = TRAFFIC_TYPES[Math.floor(Math.random() * (TRAFFIC_TYPES.length - 1))];
+    const typeId = TRAFFIC_TYPES[Math.floor(simulationRandom() * (TRAFFIC_TYPES.length - 1))];
     const type = CAR_TYPES[typeId];
     const off = hw + (aisle ? type.len / 2 : type.wid / 2) + 0.35;
     const x = x1 + (x2 - x1) * t - tz * side * off, z = z1 + (z2 - z1) * t + tx * side * off;
     let yaw = Math.atan2(tx, tz);
-    if (aisle) yaw += side * Math.PI / 2 + (Math.random() < 0.5 ? Math.PI : 0);
+    if (aisle) yaw += side * Math.PI / 2 + (simulationRandom() < 0.5 ? Math.PI : 0);
     else if (side < 0) yaw += Math.PI;
     const dd = Math.hypot(x - px, z - pz);
     if (dd < 28) return null;
@@ -1097,7 +1098,7 @@ export class VehicleManager {
     for (const along of [-type.len / 2, 0, type.len / 2]) for (const side of [-type.wid / 2, type.wid / 2]) {
       if (w.onCarriageway(x + fx * along + fz * side, z + fz * along - fx * side, y)) return null;
     }
-    const car = this.add(new Car(typeId, CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)]));
+    const car = this.add(new Car(typeId, CAR_COLORS[Math.floor(effectsRandom() * CAR_COLORS.length)]));
     car.mode = 'parked';
     car.place(x, z, yaw);
     return car;
@@ -1227,8 +1228,8 @@ export class VehicleManager {
       const needArterial = Math.max(0, arterialTarget - arterial);
       this.spawnTimer = needRegular + needArterial > 3 ? 0.08 : 0.12;
       if (needRegular + needArterial > 0) {
-        const arterialOnly = needArterial > 0 && Math.random() * (needRegular + needArterial) < needArterial;
-        this.spawnTraffic(px, pz, cam, { typeId: Math.random() < 0.035 ? 'police' : null, arterialOnly });
+        const arterialOnly = needArterial > 0 && simulationRandom() * (needRegular + needArterial) < needArterial;
+        this.spawnTraffic(px, pz, cam, { typeId: simulationRandom() < 0.035 ? 'police' : null, arterialOnly });
       }
       if ((regular > regularTarget || arterial > arterialTarget) && cam) {
         const offscreen = this.cars.find((c) => c.mode === 'ai' && c !== player.lastCar &&

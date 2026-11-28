@@ -121,11 +121,7 @@ test('E74 – od nádražních dveří přes Šumavskou až do odjezdové 49', a
 });
 
 test('E74 – při běžném parkování zůstane místo pro odjezdovou 49 a cestující nastoupí', async ({ page }) => {
-  await page.addInitScript(() => {
-    let state = 74;
-    Math.random = () => ((state = (Math.imul(state, 1664525) + 1013904223) >>> 0) / 4294967296);
-  });
-  await page.goto(gameUrl('/?debug&quality=low&adapt=0&hour=8.3'));
+  await page.goto(gameUrl('/?debug&quality=low&adapt=0&hour=8.3&seed=74'));
   await waitForGame(page);
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();
   const result = await page.evaluate(async () => {

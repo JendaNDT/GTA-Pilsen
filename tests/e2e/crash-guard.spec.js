@@ -77,9 +77,10 @@ test('trvalá chyba zastaví snímky a po odchodu i načtení zachová postup', 
     const save = game.save.bind(game);
     window.saveCalls = 0;
     game.save = () => { window.saveCalls++; return save(); };
+    // Čas měř před přípravou kamery a zvuku v obsluze tlačítka Hrát.
     document.querySelector('#btn-play').addEventListener('click', () => {
       window.clickedPlayAt = performance.now();
-    }, { once: true });
+    }, { capture: true, once: true });
     const logError = console.error.bind(console);
     console.error = (...args) => {
       if (String(args[0]).includes('Zkušební trvalá chyba')) window.firstErrorAt ??= performance.now();

@@ -1,3 +1,4 @@
+import { effectsRandom } from '../game/random.js';
 // Všechny efekty používají společné místo v jedné instancované geometrii.
 import { Color, DynamicDrawUsage, InstancedBufferAttribute, InstancedBufferGeometry,
   Mesh, MeshBasicNodeMaterial, OctahedronGeometry } from 'three/webgpu';
@@ -71,11 +72,11 @@ export class Particles {
     if (!limit || !effect) return;
     for (let n = 0; n < Math.min(count, limit); n++) {
       const index = this.cursor++ % limit, i = index * 4;
-      const life = effect.time * (0.75 + Math.random() * 0.5);
+      const life = effect.time * (0.75 + effectsRandom() * 0.5);
       this.origin.set([x, y, z, this.time], i);
-      this.velocity.set([(Math.random() - 0.5) * effect.spread * 2,
-        (0.3 + Math.random()) * effect.spread, (Math.random() - 0.5) * effect.spread * 2, effect.gravity], i);
-      this.shape.set([effect.size * (0.7 + Math.random() * 0.6), life, effect.drift ?? 0, 0], i);
+      this.velocity.set([(effectsRandom() - 0.5) * effect.spread * 2,
+        (0.3 + effectsRandom()) * effect.spread, (effectsRandom() - 0.5) * effect.spread * 2, effect.gravity], i);
+      this.shape.set([effect.size * (0.7 + effectsRandom() * 0.6), life, effect.drift ?? 0, 0], i);
       this.tint.setXYZ(index, color.r, color.g, color.b);
       this.last = Math.max(this.last, this.time + life);
     }

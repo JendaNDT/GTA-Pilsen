@@ -1,3 +1,4 @@
+import { effectsRandom, simulationRandom } from './random.js';
 import { CABIN_SERVICES, PILOT_TRIP, TramCabin } from './tram-cabin.js';
 import { arrestDestination } from './police-stations.js';
 import { wheelTrail } from '../fx/wheel-trails.js';
@@ -574,7 +575,7 @@ export class Game {
       this.peds.spawnAt(car.x + lx * (car.type.wid / 2 + 0.7), car.z + lz * (car.type.wid / 2 + 0.7), car.yaw + Math.PI / 2);
       this.hud.toast(car.typeId === 'police' ? 'Ukrást policejní auto? Odvážné.' : '„Hej! To je moje auto!“');
       if (car.typeId === 'police') this.addWanted(2, 'Krádež policejního vozu');
-      else if (Math.random() < 0.6) this.addWanted(1, 'Krádež auta');
+      else if (simulationRandom() < 0.6) this.addWanted(1, 'Krádež auta');
       car.vx = Math.sin(car.yaw) * car.speed; car.vz = Math.cos(car.yaw) * car.speed;
     }
     car.mode = 'player'; car.wasAI = false; car.noDriver = true;
@@ -1072,8 +1073,8 @@ export class Game {
     }
     cam.position.set(camX, camY, camZ);
     if (this.shake > 0.01) {
-      cam.position.x += (Math.random() - 0.5) * this.shake * 0.5;
-      cam.position.y += (Math.random() - 0.5) * this.shake * 0.5;
+      cam.position.x += (effectsRandom() - 0.5) * this.shake * 0.5;
+      cam.position.y += (effectsRandom() - 0.5) * this.shake * 0.5;
       this.shake *= Math.exp(-6 * dt);
     }
     _v.set(f.x + fx * 1.5, ty + 0.2, f.z + fz * 1.5);
@@ -1088,7 +1089,8 @@ export class Game {
     const fov = 60 + Math.min(14, speed * 0.3);
     if (Math.abs(cam.fov - fov) > 0.1) { cam.fov += (fov - cam.fov) * Math.min(1, dt * 3); cam.updateProjectionMatrix(); }
     this.camInfo = this.camInfo || {};
-    this.camInfo.x = cam.position.x; this.camInfo.z = cam.position.z; this.camInfo.fx = fx; this.camInfo.fz = fz;
+    // Provoz a chodci při výběru místa vycházejí z kamery bez vizuálního otřesu.
+    this.camInfo.x = camX; this.camInfo.z = camZ; this.camInfo.fx = fx; this.camInfo.fz = fz;
   }
 
   // -------------------------------------------------------------- krok ----

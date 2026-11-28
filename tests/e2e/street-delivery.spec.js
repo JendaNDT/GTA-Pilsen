@@ -18,14 +18,13 @@ test('E25 – rozvoz jídla na skutečnou adresu v každém úseku @webgpu', asy
       if (index < 0) throw Error('V mapě chybí adresa ' + street + ' ' + number);
       g.player.place(-750,450);
       // První los vybere nejbližší vhodný podnik, druhý určí cílovou adresu.
-      const random = Math.random;
       let first = true;
-      Math.random = () => {
+      window.__random.override(() => {
         if (first) { first = false; return 0; }
         return (index + .5) / addresses.length;
-      };
+      });
       let error;
-      try { error = g.jobs.start('food'); } finally { Math.random = random; }
+      try { error = g.jobs.start('food'); } finally { window.__random.restore(); }
       if (error) throw Error(error);
       const {pick,drop,label} = g.jobs.job;
       g.player.place(pick.x,pick.z);

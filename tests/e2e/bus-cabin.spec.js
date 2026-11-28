@@ -15,11 +15,7 @@ const rides = [
 
 for (const ride of rides) test('E60 – ' + ride.title, async ({ page }, info) => {
   test.setTimeout(testTimeout(150_000));
-  await page.addInitScript(() => {
-    let seed = 1729;
-    Math.random = () => ((seed = (Math.imul(1664525, seed) + 1013904223) >>> 0) / 2 ** 32);
-  });
-  await page.goto(gameUrl('/?debug&quality=low&kolony=1&adapt=0&date=2026-11-09&hour=' + ride.hour));
+  await page.goto(gameUrl('/?debug&quality=low&kolony=1&adapt=0&date=2026-11-09&hour=' + ride.hour, { seed: 1729 }));
   await page.getByRole('button', { name: 'Svézt se MHD' }).click();
   const start = page.getByRole('button', { name: ride.button });
   await page.waitForFunction(() => window.__ready);
