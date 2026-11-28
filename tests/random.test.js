@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
-import { createRandom, parseSeed } from '../src/game/random.js';
+import { createRandom, effectsRandom, getRandomSeed, parseSeed, randomDebug, simulationRandom } from '../src/game/random.js';
 
 const samples = (random) => Array.from({ length: 5 }, random);
 
@@ -46,6 +46,20 @@ test('semínko přijímá celá desetinná čísla včetně nuly a ignoruje nepl
   for (const invalid of [null, '', ' ', '1.5', '1e3', '0xF', 'NaN', '9007199254740992']) {
     assert.equal(parseSeed(invalid), null);
   }
+});
+
+test('ladicí náhrada mění jen simulaci a obnova naváže na původní posloupnost', () => {
+  const reference = createRandom(42);
+  randomDebug.seed(42);
+  assert.equal(getRandomSeed(), 42);
+  assert.equal(simulationRandom(), reference.simulationRandom());
+  randomDebug.override(() => 0.25);
+  assert.equal(simulationRandom(), 0.25);
+  assert.equal(effectsRandom(), reference.effectsRandom());
+  randomDebug.restore();
+  assert.equal(simulationRandom(), reference.simulationRandom());
+  assert.throws(() => randomDebug.seed(0.5), RangeError);
+  assert.throws(() => randomDebug.override(null), TypeError);
 });
 
 test('herní moduly nepoužívají společný generátor prohlížeče', () => {

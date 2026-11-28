@@ -42,5 +42,20 @@ export function initializeRandom(value) {
 }
 
 export const getRandomSeed = () => random.seed;
-export const simulationRandom = random.simulationRandom;
+export let simulationRandom = random.simulationRandom;
 export const effectsRandom = random.effectsRandom;
+
+export const randomDebug = {
+  seed(value) {
+    if (!Number.isSafeInteger(value)) throw new RangeError('Semínko musí být celé číslo.');
+    random.reseed(value);
+    simulationRandom = random.simulationRandom;
+  },
+  override(fn) {
+    if (typeof fn !== 'function') throw new TypeError('Náhrada generátoru musí být funkce.');
+    simulationRandom = fn;
+  },
+  restore() {
+    simulationRandom = random.simulationRandom;
+  },
+};

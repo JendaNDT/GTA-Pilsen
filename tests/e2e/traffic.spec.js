@@ -202,13 +202,12 @@ test('E07 – kolona na Tylově nechá volný přechod a tramvajové koleje', as
     Object.assign(car, { edge: signal.edge, s: start, lane, speed: 8, next: connector,
       nextLane: world.r.w[world.eRoad[connector]] / 4, turnSlow: 6, temper: 1 });
     const green = phaseTime(`green${signal.axis}`), dt = 1 / 60;
-    const random = Math.random;
     traffic.time = green;
     try {
-      Math.random = () => 0;
+      window.__random.override(() => 0);
       vehicles.stepAI(car, dt);
     } finally {
-      Math.random = random;
+      window.__random.restore();
     }
     const exitMove = car.exitPlan.find((move) => move.to === exit);
     if (!exitMove) throw new Error('Autu chybí plán průjezdu do Tylovy.');
@@ -279,41 +278,36 @@ test('E07 – stejný směr Klatovské má jiný provoz ve špičce a o víkendu
     const camera = { ...focus, fx: point.tx, fz: point.tz };
     const dt = 1 / 30;
     const samples = [];
-    const random = Math.random;
-    try {
-      for (const [day, hour] of [['2026-11-09', 7.5], ['2026-11-09', 12.5], ['2026-11-09', 16.5],
-        ['2026-11-09', 21.5], ['2026-11-14', 7.5]]) {
-        game.setClock(day, hour);
-        const runs = [];
-        const weight = game.trafficRhythm.carWeight(edge, game.clock);
-        for (let seed of [2026, 2049, 57, 1290]) {
-          for (const car of [...vm.cars]) vm.remove(car);
-          vm.obstacles.length = 0;
-          vm.spawnTimer = 0;
-          t.time = 0;
-          t.users.clear();
-          Math.random = () => ((seed = (Math.imul(1664525, seed) + 1013904223) >>> 0) / (2 ** 32));
-          const crossed = new Set(), positions = new Map();
-          let population = 0;
-          for (let tick = 0; tick < 10_800; tick++) {
-            t.tick(dt);
-            vm.update(dt, focus, camera, []);
-            if (tick < 900) continue;
-            for (const car of vm.cars) {
-              if (car.mode !== 'ai') continue;
-              const dx = car.x - point.x, dz = car.z - point.z;
-              const along = dx * point.tx + dz * point.tz;
-              if (positions.get(car) < 0 && along >= 0 && Math.abs(dx * point.tz - dz * point.tx) < 6) crossed.add(car);
-              positions.set(car, along);
-              population++;
-            }
+    for (const [day, hour] of [['2026-11-09', 7.5], ['2026-11-09', 12.5], ['2026-11-09', 16.5],
+      ['2026-11-09', 21.5], ['2026-11-14', 7.5]]) {
+      game.setClock(day, hour);
+      const runs = [];
+      const weight = game.trafficRhythm.carWeight(edge, game.clock);
+      for (const seed of [2026, 2049, 57, 1290]) {
+        for (const car of [...vm.cars]) vm.remove(car);
+        vm.obstacles.length = 0;
+        vm.spawnTimer = 0;
+        t.time = 0;
+        t.users.clear();
+        window.__random.seed(seed);
+        const crossed = new Set(), positions = new Map();
+        let population = 0;
+        for (let tick = 0; tick < 10_800; tick++) {
+          t.tick(dt);
+          vm.update(dt, focus, camera, []);
+          if (tick < 900) continue;
+          for (const car of vm.cars) {
+            if (car.mode !== 'ai') continue;
+            const dx = car.x - point.x, dz = car.z - point.z;
+            const along = dx * point.tx + dz * point.tz;
+            if (positions.get(car) < 0 && along >= 0 && Math.abs(dx * point.tz - dz * point.tx) < 6) crossed.add(car);
+            positions.set(car, along);
+            population++;
           }
-          runs.push({ passed: crossed.size, population: +(population / 9900).toFixed(1) });
         }
-        samples.push({ day, hour, weight, runs });
+        runs.push({ passed: crossed.size, population: +(population / 9900).toFixed(1) });
       }
-    } finally {
-      Math.random = random;
+      samples.push({ day, hour, weight, runs });
     }
     game.setClock('2026-11-09', 4.5);
     const before = game.trafficRhythm.carWeight(edge, game.clock);

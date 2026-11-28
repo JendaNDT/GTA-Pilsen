@@ -88,11 +88,10 @@ test('E30 – procházka od muzea dojde přes místa k přecházení až za láv
     __freeze(true);
     const g = __game;
     const manager = g.peds;
-    const random = Math.random;
     try {
-      Math.random = () => 0;
+      window.__random.override(() => 0);
       manager.spawn(116, 298.4, null);
-    } finally { Math.random = random; }
+    } finally { window.__random.restore(); }
     const p = manager.peds.at(-1);
     if (!p?.trip) return { spawned: false };
     p.speed = 1.5;
@@ -163,18 +162,14 @@ for (const { title, quality, minRegular, maxRegular, minExtra, maxTotal, minPeds
         entry.curve.id === 'klatovska-jih' && entry.distance === 0);
       const point = g.world.edgePoint(edge, 58, 0, {});
       g.player.place(point.x - point.tz * 10, point.z + point.tx * 10);
-      let seed = 42;
-      const random = Math.random;
-      try {
-        Math.random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32);
-        for (let frame = 0; frame < 1800; frame++) {
-          g.camYaw += Math.PI / 900;
-          g.update(1 / 30);
-        }
-        const cars = g.vehicles.cars.filter(car => car.mode === 'ai');
-        const extra = cars.filter(car => car.arterialTrip).length;
-        return { cars: cars.length, regular: cars.length - extra, extra, peds: g.peds.peds.length };
-      } finally { Math.random = random; }
+      window.__random.seed(42);
+      for (let frame = 0; frame < 1800; frame++) {
+        g.camYaw += Math.PI / 900;
+        g.update(1 / 30);
+      }
+      const cars = g.vehicles.cars.filter(car => car.mode === 'ai');
+      const extra = cars.filter(car => car.arterialTrip).length;
+      return { cars: cars.length, regular: cars.length - extra, extra, peds: g.peds.peds.length };
     });
     expect(counts.regular).toBeGreaterThanOrEqual(minRegular);
     expect(counts.regular).toBeLessThanOrEqual(maxRegular);
