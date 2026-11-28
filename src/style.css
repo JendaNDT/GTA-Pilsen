@@ -309,7 +309,7 @@ body.touch #prompt { bottom: 46%; }
 #menu-location, #save-location { color: #d3dad8; font-size: 1rem; line-height: 1.45; }
 #menu-objective { border-left: 3px solid var(--amber); padding-left: 10px; font-size: 15px; line-height: 1.4; }
 #menu-buttons { display: grid; grid-template-columns: 1fr; gap: 9px; }
-#menu button, #photo-controls button {
+#menu button, #photo-controls button, #crash button {
   min-height: 44px; max-width: 100%; padding: 8px 12px; border: 1px solid #748791; border-radius: 6px;
   background: #263741; color: #f5f1e6; font-size: 1rem; line-height: 1.35; overflow-wrap: anywhere;
 }
@@ -331,7 +331,7 @@ body.touch #prompt { bottom: 46%; }
   border-color: var(--amber); color: var(--amber);
 }
 #menu-buttons button.primary:hover { color: var(--ink); background: #ffd274; }
-#menu :is(button, select, input, a):focus-visible, #photo-controls :focus-visible {
+#menu :is(button, select, input, a):focus-visible, #photo-controls :focus-visible, #crash :focus-visible {
   outline: 2px solid #ffcc63; outline-offset: 2px;
 }
 #menu-sheet { width: min(470px, 100%); min-width: 0; max-height: min(76vh, 680px); overflow: auto; touch-action: pan-y; }
@@ -339,6 +339,26 @@ body.touch #prompt { bottom: 46%; }
 #menu .panel { margin-top: 12px; }
 #credits { max-width: 100%; margin-left: 4px; padding: 4px 8px; border-radius: 4px; font-size: .8125rem;
   line-height: 1.35; background: #131f27; color: #d3dad8; }
+
+#crash {
+  width: min(460px, calc(100% - 24px)); max-height: calc(100% - 24px); overflow: auto;
+  background: #131f27; color: var(--paper); border: 1px solid #748791; border-radius: 12px;
+  padding: clamp(14px, 3vw, 22px); line-height: 1.5; touch-action: pan-y;
+}
+#crash::backdrop { background: #101820be; }
+#crash h2 { margin: 0; color: var(--amber); font-size: 1.375rem; }
+#crash p { margin: 6px 0 16px; }
+#crash button { min-width: 44px; }
+#crash #crash-reload { background: var(--amber); border-color: var(--amber); color: var(--ink); font-weight: 700; }
+#crash #crash-reload:hover { background: #ffd274; }
+#crash-details { margin-top: 10px; border-top: 1px solid #495b64; }
+#crash-details summary { min-height: 44px; padding: 10px 0; cursor: pointer; }
+#crash-errors {
+  margin: 0 0 10px; padding: 8px; background: var(--ink); border-radius: 6px;
+  white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; -webkit-user-select: text;
+}
+#crash-copy-status { color: #d3dad8; }
+
 @media (max-width: 740px) {
   #menu-card { display: block; }
   #menu-card:has(#menu-sheet:not([hidden])) { width: min(470px, 100%); }

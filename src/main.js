@@ -148,6 +148,29 @@ function fail(e) {
   loadText.textContent = `Hru se nepodařilo spustit: ${e.message}`;
 }
 
+const crashDialog = $('crash');
+crashDialog.addEventListener('cancel', event => event.preventDefault());
+$('crash-reload').addEventListener('click', () => location.reload());
+if (DEBUG) {
+  $('crash-copy').addEventListener('click', async () => {
+    const status = $('crash-copy-status');
+    try {
+      await navigator.clipboard.writeText($('crash-errors').textContent);
+      status.textContent = 'Zkopírováno.';
+    } catch {
+      status.textContent = 'Kopírování se nezdařilo. Text můžeš označit a zkopírovat ručně.';
+    }
+  });
+}
+
+function showCrash(errors) {
+  if (DEBUG) {
+    $('crash-errors').textContent = errors.map(error => error.stack || error.message).join('\n\n');
+    $('crash-details').hidden = false;
+  }
+  crashDialog.showModal();
+}
+
 let releaseSaveLock, leaveGame;
 let departed = false;
 addEventListener('pagehide', () => {
@@ -541,7 +564,7 @@ async function boot() {
     input.pressed.clear();
     photo.active = false;
     void renderer.setAnimationLoop(null).catch(console.error);
-    $('crash')?.showModal();
+    showCrash(guard.errors);
     syncMouseLock();
     game.audio.suspend();
   }
