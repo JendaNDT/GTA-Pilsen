@@ -1,3 +1,4 @@
+import { walksToStation } from './station-walk.js';
 import { RC } from '../config.js';
 import { stepTo } from './pedestrian-walks.js';
 
@@ -40,7 +41,7 @@ function gatherPassengers(manager, v, focus, capacity, queue) {
   if (world.blocked(place.x, place.z, 0.42) || world.isWater(place.x, place.z)) return;
   const walker = peds.find(p => {
     const dx = p.x - place.x, dz = p.z - place.z;
-    return p.state === 'walk' && !p.trip && p.edge >= 0 && !p.platformCooldown &&
+    return p.state === 'walk' && !p.trip && p.stationWaypoint === undefined && p.edge >= 0 && !p.platformCooldown &&
       Math.hypot(dx, dz) < 10 && Math.abs(p.y - v.y) < 3 && dz * place.tx - dx * place.tz > -1.2;
   });
   let p = walker;
@@ -87,6 +88,8 @@ export function servicePlatform(manager, v, focus, capacity) {
     if (road && !world.blocked(platform.x, platform.z, 0.4)) {
       const p = Object.assign(manager._person(door.x, door.z), road);
       Object.assign(p, { state: 'alight', service: v, goal: platform });
+      const platformCode = manager.game.transit.timetable.stops[v.event.trip.stops[index].stop][3];
+      if (walksToStation(v, platformCode)) p.stationWaypoint = 0;
       v.wait = Math.max(v.wait, 2.5);
       return;
     }

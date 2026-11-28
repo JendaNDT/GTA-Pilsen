@@ -96,3 +96,23 @@ test('k přijíždějícímu spoji zamíří chodec na straně nástupiště a o
   stepPassenger(walker, v.wait);
   assert.equal(walker.state, 'aboard');
 });
+
+test('ke spodnímu vchodu míří jen cestující z příjezdové 49 na dvojce', async () => {
+  const { walksToStation, stepStationWalk } = await import('../src/entities/station-walk.js');
+  const car = { route: { type: 'trolleybus', ref: '49' }, stopIndex: 1, stops: [0, 1] };
+  assert.equal(walksToStation(car, '53408/2'), true);
+  assert.equal(walksToStation(car, '53408/1'), false);
+  assert.equal(walksToStation({ ...car, stopIndex: 0 }, '53408/2'), false);
+  assert.equal(walksToStation({ ...car, route: { type: 'bus', ref: '33' } }, '53408/2'), false);
+  const p = { x: 747.7, z: 338.5, speed: 1.4, stationWaypoint: 0 };
+  let done = false, distance = 0;
+  for (let i = 0; i < 3500 && !done; i++) {
+    const { x, z } = p;
+    done = stepStationWalk(p, 0.1);
+    const step = Math.hypot(p.x - x, p.z - z);
+    assert.ok(step <= 0.141);
+    distance += step;
+  }
+  assert.ok(done && distance > 300);
+  assert.ok(Math.hypot(p.x - 727.01, p.z - 481.92) < 1);
+});

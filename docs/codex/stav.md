@@ -1,3 +1,7 @@
+# E73 · Cestující míří k nádražní budově
+
+Na větvi `etapa/E73` funguje souvislá pěší cesta po výstupu z linky 49 na stanovišti 2. Prošlo sestavení, 431 testů JavaScriptu a 12 cílených zkoušek v Chromiu. Kontrolní jízda linkou 49 dosáhla před změnou i po ní 60 FPS. Úplný běh 660 scénářů byl po třech úspěšných kontrolách přerušen pro nedostatek místa při zápisu na disk. Na skutečném telefonu zbývá projít trasu za cestujícím. [Zadání](E73.md) · [Trasa, snímky a ověření](../E73.md)
+
 # E72 · Hledání rozvozu pizzy
 
 Na větvi `etapa/E72` z revize `2112104` funguje výběr rozvozu podle pizzerie i adresy z celé herní oblasti. Hotová je nabídka pro obě pořadí výběru, cena konkrétní dvojice i ověření rozvozu do Sedlce až k výplatě. Prošlo sestavení, 430 testů JavaScriptu a po opravě výběru prvku v testu všech 16 dotčených scénářů rozvozu a taxi ve WebGL 2 a WebGPU. Na fyzickém telefonu zbývá vyzkoušet schování klávesnice a výběr výdeje pro sdílenou adresu. [Zadání](E72.md) · [Protokol, snímky a měření](../E72.md)

@@ -1,3 +1,4 @@
+import { nearStationPlatform, stepStationWalk } from './station-walk.js';
 import { followParkTrip, parkCrossing, parkTrip } from './pedestrian-walks.js';
 import { servicePlatform, stepPassenger } from './platform-passengers.js';
 import { EDGE_MARGIN } from '../world/travel-bounds.js';
@@ -287,11 +288,12 @@ export class PedManager {
       const target = Math.ceil(QUALITY.peds * (0.1 + 0.9 * density));
       for (const v of this.game.transit.vehicles) servicePlatform(this, v, player, target);
       const waitingForTransit = this.peds.some(p => p.state === 'platform');
-      const streetTarget = target - Number(waitingForTransit);
+      const localLimit = target - Number(nearStationPlatform(player.x, player.z));
+      const streetTarget = Math.min(localLimit, target - Number(waitingForTransit));
       this.timer = this.peds.length + 3 < streetTarget ? 0.13 : 0.2;
       if (this.peds.length < streetTarget) this.spawn(player.x, player.z, cam);
-      if (this.peds.length > target && cam) {
-        const offscreen = this.peds.findIndex((p) => p.state === 'walk' &&
+      if (this.peds.length > localLimit && cam) {
+        const offscreen = this.peds.findIndex((p) => p.state === 'walk' && p.stationWaypoint === undefined &&
           (p.x - player.x) ** 2 + (p.z - player.z) ** 2 > 85 ** 2 &&
           (p.x - cam.x) * cam.fx + (p.z - cam.z) * cam.fz < 0);
         if (offscreen >= 0) this.remove(offscreen);
@@ -356,6 +358,9 @@ export class PedManager {
           if (p.edge < 0) { this.remove(i); continue; }
           p.state = 'walk';
         }
+      } else if (p.stationWaypoint !== undefined) {
+        if (stepStationWalk(p, dt)) { this.remove(i); continue; }
+        moving = p.speed;
       } else if (p.trip) {
         p.crossing = parkCrossing(p.trip);
         if (p.crossing) {
