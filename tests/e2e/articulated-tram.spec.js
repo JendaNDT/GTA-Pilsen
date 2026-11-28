@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test';
 import { gameUrl } from './game-url.js';
 import { action } from './transit-steps.js';
+import { testTimeout } from './test-timeout.js';
 
 test('E60 – přejít kloub jedničky v zatáčce a vystoupit dveřmi prostředního článku', async ({ page }, info) => {
-  test.setTimeout(180_000);
+  test.setTimeout(testTimeout(180_000));
   await page.addInitScript(() => {
     let seed = 1729;
     Math.random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32);

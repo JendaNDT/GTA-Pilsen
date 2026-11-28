@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test';
 import { gameUrl } from './game-url.js';
 import { waitForGame } from './ready.js';
+import { testTimeout } from './test-timeout.js';
 
 test('E55 – ke všem stanovištím jde dojít, odjet na kole a výpůjčku u stejného místa vrátit', async ({ page }) => {
-  test.setTimeout(180_000);
+  test.setTimeout(testTimeout(180_000));
   await page.goto(gameUrl('/?debug&quality=low&hour=10'));
   await waitForGame(page);
   await page.getByRole('button', { name: 'Hrát', exact: true }).click();

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { gameUrl } from './game-url.js';
 import { waitForGame } from './ready.js';
+import { testTimeout } from './test-timeout.js';
 
 async function arrive(page, mobile = false) {
   await page.goto(gameUrl('/?debug&quality=low&weather=clear&hour=10'));
@@ -43,7 +44,7 @@ async function aim(page, direction) {
 }
 
 test('E57 – vstup z mapy, celá partie, uložení skóre a návrat před budovu', async ({ page }) => {
-  test.setTimeout(90000);
+  test.setTimeout(testTimeout(90000));
   await arrive(page);
   await page.keyboard.press('m');
   await page.evaluate(() => __step(1 / 60));
@@ -299,7 +300,7 @@ test('E64 – dva hráči na telefonu, bílá v ruce, černá a odveta', async (
 });
 
 test('E65 – celá osmička proti počítači na telefonu a soupeřův rozstřel v odvetě', async ({ browser }, info) => {
-  test.setTimeout(150000);
+  test.setTimeout(testTimeout(150000));
   const context = await browser.newContext({ viewport: { width: 390, height: 780 }, hasTouch: true, isMobile: true });
   try {
     const page = await context.newPage();

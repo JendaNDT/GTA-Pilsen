@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { gameUrl } from './game-url.js';
 import { waitForGame } from './ready.js';
+import { testTimeout } from './test-timeout.js';
 
 const stops = { 43: 'Západočeské muzeum', 57: 'DEPO 2015' };
 
@@ -48,7 +49,7 @@ async function targetStation(page, id, touch = false) {
 
 for (const [from, to] of [['43', '57'], ['57', '43']]) {
   test(`E56 – průjezd podle navigace z místa ${stops[from]} do cíle ${stops[to]}`, async ({ page }) => {
-    test.setTimeout(120000);
+    test.setTimeout(testTimeout(120000));
     await startAt(page, from);
     await targetStation(page, to);
     const ride = await page.evaluate(() => {

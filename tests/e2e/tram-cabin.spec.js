@@ -3,9 +3,10 @@ import { expect, test } from '@playwright/test';
 import { gameUrl } from './game-url.js';
 import { action, approach, boot } from './transit-steps.js';
 import { waitForGame } from './ready.js';
+import { testTimeout } from './test-timeout.js';
 
 test('E59 – první vůz Tatry přes Hlavní poštu do zastávky Pod Záhorskem', async ({ page }, info) => {
-  test.setTimeout(240_000);
+  test.setTimeout(testTimeout(240_000));
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   const seed = Number(process.env.E59_SEED ?? 1729);
@@ -110,7 +111,7 @@ test('E59 – první vůz Tatry přes Hlavní poštu do zastávky Pod Záhorskem
 });
 
 test('E59 – přerušení jízdy vrací cestujícího na poslední nástupiště', async ({ page }) => {
-  test.setTimeout(180_000);
+  test.setTimeout(testTimeout(180_000));
   await boot(page, 'quality=low');
   for (const interruption of ['čas', 'načtení']) {
     expect((await approach(page, '685462', 'Náměstí Republiky')).boardable).toBe(true);
@@ -134,7 +135,7 @@ test('E59 – přerušení jízdy vrací cestujícího na poslední nástupišt�
 test.describe('dotyk v průchozí tramvaji', () => {
   test.use({ hasTouch: true, viewport: { width: 844, height: 390 } });
   test('E59 – nástup, chůze páčkou, sednutí, vstávání a konečná Bolevec', async ({ page }) => {
-    test.setTimeout(180_000);
+    test.setTimeout(testTimeout(180_000));
     await boot(page, 'quality=low');
     expect((await approach(page, '685462', 'Okounová')).boardable).toBe(true);
     const tap = async () => {
@@ -176,7 +177,7 @@ test.describe('dotyk v průchozí tramvaji', () => {
 });
 
 test('E59 – hledání spoje a výstup v přestupním uzlu Náměstí Republiky', async ({ page }) => {
-  test.setTimeout(150_000);
+  test.setTimeout(testTimeout(150_000));
   await boot(page, 'quality=low');
   await action(page, 'KeyM');
   await page.getByRole('searchbox').fill('685462');
