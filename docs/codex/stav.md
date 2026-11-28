@@ -1,3 +1,12 @@
+# E86 · Opakovatelný provoz a otisk simulace
+
+Výchozí revize `ccbf222` obsahuje převzatou E85. Dva shodně nastavené běhy
+s pevným krokem se rozešly už v prvním pětisekundovém záznamu poloh aut a chodců.
+Obnova společného generátoru před prvním krokem rozdíl odložila. Na výchozí revizi prošlo
+452 zkoušek JavaScriptu a sestavení. Následuje oddělení náhody pro průběh hry a efekty,
+převedení zkoušek, otisk simulace a nové měření. [Zadání](E86.md) ·
+[Výchozí výsledky](../E86.md)
+
 # E85 · Pojistka při chybě za běhu
 
 Na větvi `etapa/E85` je hotové zachytávání chyb ve smyčce i ve fotorežimu, úklid stisků,
