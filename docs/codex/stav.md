@@ -1,3 +1,12 @@
+# E84 · Automatické kontroly na GitHubu
+
+Výchozí revize je `dc4411a`. Rychlé kontroly na GitHubu prošly po nahrání větve `etapa/E84`
+za 1 min 33 s. Místně prošlo 447 testů JavaScriptu, produkční sestavení a 34 testů Pythonu.
+Jedna zkouška Pythonu přeskočila chybějící úplný archiv staveb. Všech pět základních scénářů
+ve WebGL 2 prošlo místně dvakrát. GitHub zachytil úmyslné selhání a ověřil start ve WebGPU
+na Linuxu. Ruční spuštění úplné sady a nastavení ochrany větve zbývají po převzetí do
+`main`. [Zadání](E84.md) · [Protokol](../E84.md) · [Kontroly pull requestu #18](https://github.com/JendaNDT/GTA-Pilsen/pull/18/checks)
+
 # E83 · Hustší provoz na hlavních tazích
 
 Na větvi `etapa/E83` hra přidává auta přímo na hlavní silnice podle blízkosti tahu, denní doby a kvality. Ve dvou ranních bězích přibyly průjezdy na Klatovské z 21 na 48 a na Domažlické z 22 na 34. U Skvrňanské zůstává k řešení vzájemné blokování aut. V jednom běhu u Domažlické čekal vůz přes dvě minuty. Prošlo sestavení, 446 testů JavaScriptu a čtyři cílené zkoušky v prohlížeči včetně dotykové emulace. Kontrolní špička na vysoké kvalitě dosáhla 59,7 FPS s fyzikou do 2,7 ms v 95 % snímků. Grafické časy v obou verzích překročily rozpočet, zbývá ověření na fyzickém telefonu. [Zadání](E83.md) · [Protokol a snímky](../E83.md)

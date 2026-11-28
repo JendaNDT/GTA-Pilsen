@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { gameUrl } from './game-url.js';
 import { waitForGame } from './ready.js';
+import { testTimeout } from './test-timeout.js';
 
 // Klávesové osy řídí postavu i kolo. Polohu mění při cestě pouze fyzika hry.
 function follow(points) {
@@ -40,7 +41,7 @@ const deliveries = [
 ];
 for (const { town, shopName, address, length, base, total } of deliveries) {
   test(`Rozvoz pizzy · ${town} · dotykem vyzvednout, projet trasu a vyplatit jediné předání`, async ({ browser }, info) => {
-    test.setTimeout(120000);
+    test.setTimeout(testTimeout(120000));
     const context = await browser.newContext({ isMobile: true, hasTouch: true, viewport: { width: 740, height: 390 } });
     try {
       const page = await context.newPage();

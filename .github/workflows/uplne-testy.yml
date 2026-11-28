@@ -1,0 +1,48 @@
+name: Úplné testy
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '37 2 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  uplne:
+    name: ${{ matrix.projekt }} · ${{ matrix.cast }}/4
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        projekt: [webgl2, webgpu]
+        cast: [1, 2, 3, 4]
+    env:
+      PLAYWRIGHT_HTML_OPEN: never
+      PLAYWRIGHT_JUNIT_OUTPUT_FILE: vysledky.xml
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - name: Prohlížečové zkoušky ve WebGL 2
+        if: matrix.projekt == 'webgl2'
+        run: npx playwright test --project=webgl2 --shard=${{ matrix.cast }}/4 --trace off --reporter=github,html,junit
+      # Na Linuxu se WebGPU spouští v Chromiu s virtuální obrazovkou.
+      - name: Prohlížečové zkoušky ve WebGPU
+        if: matrix.projekt == 'webgpu'
+        run: xvfb-run -a npx playwright test --project=webgpu --shard=${{ matrix.cast }}/4 --headed --trace off --reporter=github,html,junit
+      - uses: actions/upload-artifact@v7
+        if: ${{ !cancelled() }}
+        with:
+          name: vysledky-${{ matrix.projekt }}-${{ matrix.cast }}
+          path: |
+            vysledky.xml
+            test-results/
+            playwright-report/
+          retention-days: 7

@@ -2,6 +2,7 @@ import { devices, expect, test } from '@playwright/test';
 import stands from '../../src/game/taxi-stops.json' with { type: 'json' };
 import { gameUrl } from './game-url.js';
 import { waitForGame } from './ready.js';
+import { testTimeout } from './test-timeout.js';
 
 async function openRegionalTaxi(page, area, quality) {
   await page.goto(gameUrl(`/?debug&quality=${quality}&view=350&adapt=0&hour=10`));
@@ -21,7 +22,7 @@ async function openRegionalTaxi(page, area, quality) {
 }
 
 test('E70 – souvislá jízda z Prokopovy na Masarykovo náměstí ve Starém Plzenci', async ({ page }, info) => {
-  test.setTimeout(180000);
+  test.setTimeout(testTimeout(180000));
   await openRegionalTaxi(page, 'Plzeň', 'low');
   await expect(page.locator('#regional-taxi-summary')).toContainText('Prokopova 21 → Starý Plzenec · Masarykovo náměstí 74');
   await page.locator('#regional-taxi-start').scrollIntoViewIfNeeded();

@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { gameUrl } from './game-url.js';
 import { action, approach, boot } from './transit-steps.js';
 import { BUS_TRIP, TROLLEY_TRIP } from '../../src/game/tram-cabin.js';
+import { testTimeout } from './test-timeout.js';
 
 const rides = [
   { title: 'jízda autobusem 33 ze stanoviště 4 přes Goethovu a výstup zadními dveřmi', trip: BUS_TRIP,
@@ -13,7 +14,7 @@ const rides = [
 ];
 
 for (const ride of rides) test('E60 – ' + ride.title, async ({ page }, info) => {
-  test.setTimeout(150_000);
+  test.setTimeout(testTimeout(150_000));
   await page.addInitScript(() => {
     let seed = 1729;
     Math.random = () => ((seed = (Math.imul(1664525, seed) + 1013904223) >>> 0) / 2 ** 32);
@@ -115,7 +116,7 @@ test.describe('dotykový autobus', () => {
 test.describe('dotykový přestup v Pařížské', () => {
   test.use({ hasTouch: true, viewport: { width: 844, height: 390 } });
   test('E60 – z autobusu 33 pěšky k předním dveřím trolejbusu 49', async ({ page }, info) => {
-    test.setTimeout(150_000);
+    test.setTimeout(testTimeout(150_000));
     await boot(page, 'quality=low');
     await action(page, 'KeyM');
     await page.getByRole('searchbox').fill(TROLLEY_TRIP);

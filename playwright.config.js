@@ -1,12 +1,13 @@
 import { defineConfig } from '@playwright/test';
 import { webglFlags, webgpuFlags } from './tests/e2e/browser-flags.js';
+import { testTimeout } from './tests/e2e/test-timeout.js';
 
 const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined;
 
 export default defineConfig({
   testDir: './tests/e2e',
   workers: 1,
-  timeout: 90_000,
+  timeout: testTimeout(),
   use: {
     baseURL: 'http://127.0.0.1:4173',
     viewport: { width: 960, height: 600 },
