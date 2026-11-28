@@ -696,3 +696,40 @@ test('Božkovská – při dlouhé frontě v Železniční zvolí řidič volné
   });
   expect(result).toEqual({ full: true, next: 29309, free: true });
 });
+
+test('E75 – na zelenou chodec počká na zadní nárazník a po uvolnění zebry vykročí', async ({ page }, info) => {
+  await boot(page, '&date=2026-11-09&hour=10&quality=low&adapt=0');
+  const result = await page.evaluate(async () => {
+    const g = __game, w = g.world, t = w.traffic;
+    const c = t.controls.find(head => head.id === 3073913683 && head.kind === 'signal').group.crossings[0];
+    for (t.time = 0; t.time < 200 && t.phase(c.group) !== 'walk'; t.time += 0.25) {}
+    const green = t.phase(c.group) === 'walk';
+    const walker = g.peds.spawnAt(...c.a, Math.atan2(c.dx, c.dz));
+    g.player.place(c.a[0] - 18 * c.dx, c.a[1] - 18 * c.dz);
+    for (let i = 0; i < 60; i++) {
+      g.chunks.update(c.x, c.z, 340, 60, g.player.y);
+      await new Promise(resolve => setTimeout(resolve, 10));
+    }
+    g.peds.timer = Infinity;
+    walker.state = 'crossWait';
+    walker.crossing = { crossing: c, from: c.a, to: c.b, s: 0 };
+    g.transit.obstacles.length = 0;
+    const car = g.player.lastCar, dx = -c.dz, dz = c.dx;
+    const placeCar = tail => car.place(c.x + dx * (car.halfLen + tail), c.z + dz * (car.halfLen + tail), Math.atan2(dx, dz));
+    placeCar(0.8);
+    car.mode = 'ai';
+    car.sync();
+    for (let i = 0; i < 90; i++) g.peds.update(1 / 60, g.player, null, [car]);
+    const waited = walker.state === 'crossWait' && !t.users.has(walker) &&
+      Math.hypot(walker.x - c.a[0], walker.z - c.a[1]) < 0.01;
+    document.getElementById('hud').style.display = 'none';
+    const y = w.groundY(c.x, c.z, walker.y);
+    __view(c.x - c.dx * 9 - dx * 9, y + 6, c.z - c.dz * 9 - dz * 9, c.x, y + 0.5, c.z);
+    placeCar(1.7);
+    g.peds.update(1 / 60, g.player, null, [car]);
+    return { green, waited, entered: walker.state === 'crossing' && t.users.get(walker) === c,
+      street: w.roadNames[w.r.name[c.road]], id: c.id };
+  });
+  await page.screenshot({ path: info.outputPath('zelena.jpg'), quality: 87 });
+  expect(result, JSON.stringify(result)).toMatchObject({ green: true, waited: true, entered: true });
+});

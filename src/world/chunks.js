@@ -31,7 +31,7 @@ import { localGradeIndices } from './terrain-indices.js';
 import { approachHeight } from './underpasses.js';
 import { terrainGridStep } from '../physics/terrain.js';
 import { Earcut } from 'three/src/extras/Earcut.js';
-import { CHUNK, QUALITY, PARAMS, BK, BF, RC, RF, LC, DRIVABLE_MAX } from '../config.js';
+import { CHUNK, CROSSING_HALF_WIDTH, QUALITY, PARAMS, BK, BF, RC, RF, LC, DRIVABLE_MAX } from '../config.js';
 import { makeBuildingMaterial, makeDecalMaterial, makeAsphaltMaterial, makeSurfaceMaterial, makeTerrainMaterial, getPoolMaterial, env } from './materials.js';
 import { SURFACE } from './material-table.js';
 import { Parts, getDetailMaterial } from '../entities/models.js';
@@ -1110,7 +1110,7 @@ function drawTrafficMarkings(world, buf, traffic) {
     for (let i = 0; i < count; i++) {
       const d = 0.4 + (i + 0.5) * (length - 0.8) / count;
       const x = a[0] + dx * d, z = a[1] + dz * d;
-      strip([x - dz * 1.45, z + dx * 1.45], [x + dz * 1.45, z - dx * 1.45], 0.23);
+      strip([x - dz * CROSSING_HALF_WIDTH, z + dx * CROSSING_HALF_WIDTH], [x + dz * CROSSING_HALF_WIDTH, z - dx * CROSSING_HALF_WIDTH], 0.23);
     }
   }
 }

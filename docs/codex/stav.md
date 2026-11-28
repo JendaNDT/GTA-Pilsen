@@ -1,3 +1,7 @@
+# E75 · Chodci na zelenou čekají na volnou zebru
+
+Na větvi `etapa/E75` chodec při pěší zelené kontroluje celou šířku zebry včetně místa za posledním článkem MHD. Na původní revizi `60063d3` se na Klatovské podařilo zopakovat předčasný vstup do vozovky. Po opravě chodec počkal na uvolnění přechodu v obou grafických režimech. Prošlo sestavení, všech 435 testů JavaScriptu a 10 cílených prohlížečových zkoušek. Kontrolní jízda linkou 49 dosáhla 60 FPS. Zbývá vyzkoušení na fyzickém telefonu. [Zadání](E75.md) · [Přechod a zkoušky](../E75.md)
+
 # E74 · Od nádražních dveří na odjezdovou 49
 
 Na větvi `etapa/E74` funguje cesta na stanoviště 1 podle platného jízdního řádu, přecházení Šumavské a nástup do vybraného spoje. Běžná simulace odhalila překážející zaparkovaná auta. Po úpravě parkování cestující nastoupil do 49 směr Karlov. Prošlo sestavení, 434 testů JavaScriptu a všech 16 cílených prohlížečových zkoušek. Kontrolní jízda dosáhla 60 FPS. Zbývá vyzkoušení na fyzickém telefonu. [Zadání](E74.md) · [Trasa, snímky a výsledky](../E74.md)

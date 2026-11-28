@@ -1,5 +1,5 @@
 import { breakableId } from '../physics/breakables.js';
-import { COLL_CELL, RF } from '../config.js';
+import { COLL_CELL, CROSSING_HALF_WIDTH, RF } from '../config.js';
 
 const cell = (x, z) => Math.floor(x / COLL_CELL) * 8192 + Math.floor(z / COLL_CELL);
 const stopDistance = (distance, dt) => {
@@ -395,18 +395,27 @@ export class Traffic {
   }
 
   canWalk(crossing, cars = [], transit = [], person) {
-    if (crossing.group && !this.signalsOff(crossing.group)) return this.phase(crossing.group) === 'walk';
+    const controlled = crossing.group && !this.signalsOff(crossing.group);
+    if (controlled && this.phase(crossing.group) !== 'walk') return false;
     const occupied = car => {
-      if (car.mode === 'parked' || Math.abs(car.y - person?.y) > 3) return false;
-      const vx = car.vx || 0, vz = car.vz || 0;
-      const speed = Math.hypot(vx, vz);
+      if ((!controlled && car.mode === 'parked') || Math.abs(car.y - person?.y) > 3) return false;
       const dx = car.x - crossing.x, dz = car.z - crossing.z;
       const fx = Math.sin(car.yaw), fz = Math.cos(car.yaw);
       const half = car.halfLen ?? 2, width = car.radius ?? 1;
       const normal = Math.abs(fx * crossing.dz - fz * crossing.dx);
       const tangent = Math.abs(fx * crossing.dx + fz * crossing.dz);
-      if (Math.abs(dx * crossing.dz - dz * crossing.dx) < half * normal + width * tangent + 0.45 &&
-          Math.abs(dx * crossing.dx + dz * crossing.dz) < crossing.length / 2 + half * tangent + width * normal) return true;
+      const margin = controlled ? CROSSING_HALF_WIDTH : 0.45;
+      const halfCrossing = crossing.length / 2;
+      const overlaps = Math.abs(dx * crossing.dz - dz * crossing.dx) < half * normal + width * tangent + margin &&
+        Math.abs(dx * crossing.dx + dz * crossing.dz) < halfCrossing + half * tangent + width * normal;
+      if (controlled) {
+        // U šikmo natočeného vozu rozhodnou u kraje zebry také obě osy karoserie.
+        return overlaps && Math.abs(dx * fx + dz * fz) < half + halfCrossing * tangent + margin * normal &&
+          Math.abs(dx * fz - dz * fx) < width + halfCrossing * normal + margin * tangent;
+      }
+      if (overlaps) return true;
+      const vx = car.vx || 0, vz = car.vz || 0;
+      const speed = Math.hypot(vx, vz);
       if (speed < 0.35) return false;
       const horizon = Math.min(6, crossing.length / (person?.speed ?? 1.4));
       const reach = horizon + half / speed;

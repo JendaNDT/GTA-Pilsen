@@ -180,3 +180,25 @@ test('parkování u odjezdové jedničky ponechá volný prostor vozu a zachová
   assert.equal(blocksDeparturePlatform(719.91, 345.9, yaw, 4.5, 1.8), false);
   assert.equal(blocksDeparturePlatform(670, 357, yaw, 4.5, 1.8), false);
 });
+
+test('pěší zelená vyžaduje volnou celou zebru včetně místa za zadním článkem MHD', () => {
+  const t = Object.assign(Object.create(Traffic.prototype), { phase: () => 'walk' });
+  const c = { a: [-4, 0], b: [4, 0], x: 0, z: 0, dx: 1, dz: 0, length: 8, group: {} };
+  const p = { y: 0, speed: 1.3 };
+  const car = { x: 0, y: 0, z: 3.3, yaw: 0, halfLen: 2, radius: 1, speed: 3, vz: 3 };
+  const walk = (cars, transit = []) => t.canWalk(c, cars, transit, p);
+  assert.ok(!walk([car]));
+  assert.ok(!walk([{ ...car, mode: 'parked' }]));
+  assert.ok(walk([{ ...car, z: 3.5 }]));
+  assert.ok(walk([{ ...car, y: 5 }]));
+  assert.ok(walk([{ ...car, z: -10 }]));
+  assert.ok(walk([{ ...car, x: 5.5, z: 3.1, yaw: -Math.PI / 4 }]));
+  assert.ok(!walk([{ ...car, x: 4.2, z: 1.2, yaw: -Math.PI / 4 }]));
+  const rear = { ...car, halfLen: 6, z: 7.1 }, front = { ...rear, z: 19.1 };
+  assert.ok(!walk([], [front, rear]));
+  assert.ok(walk([], [front, { ...rear, z: 7.6 }]));
+  t.phase = () => 'red';
+  assert.ok(!walk([]));
+  t.signalsOff = () => true;
+  assert.ok(!walk([{ ...car, z: -6 }]));
+});

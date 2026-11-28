@@ -13,6 +13,8 @@ export const PARAMS = params;
 export const CHUNK = 256;            // velikost dlaždice světa v metrech
 export const COLL_CELL = 64;         // buňka kolizní mřížky
 
+export const CROSSING_HALF_WIDTH = 1.45; // půl šířky vyznačené zebry v metrech
+
 export let SAVED_GRAPHICS;
 export const QUALITY_OVERRIDE = Object.hasOwn(PROFILES, params.get('quality')) ? params.get('quality') : null;
 export const DEFAULT_QUALITY = IS_MOBILE ? 'low' : 'high';
