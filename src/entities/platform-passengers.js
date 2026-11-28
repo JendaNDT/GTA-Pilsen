@@ -1,4 +1,4 @@
-import { walksToStation } from './station-walk.js';
+import { departureHeading, walksToStation } from './station-walk.js';
 import { RC } from '../config.js';
 import { stepTo } from './pedestrian-walks.js';
 
@@ -17,7 +17,7 @@ function doorPoint(v, lateral, behind = 0) {
 
 export function passengerMatches(person, v) {
   const ticket = person.ticket;
-  return ticket && ticket.station === v.event.trip.stops[v.stopIndex]?.stop &&
+  return ticket && (!ticket.eventKey || ticket.eventKey === v.event.key) && ticket.station === v.event.trip.stops[v.stopIndex]?.stop &&
     ticket.ref === v.route.ref && ticket.kind === v.route.type && ticket.destination === v.destination;
 }
 
@@ -31,6 +31,16 @@ function sidewalk(world, point) {
   if (!route) return null;
   const side = (point.z - route.z) * route.tx - (point.x - route.x) * route.tz;
   return { edge: route.edge, s: route.s, side: Math.sign(side || 1) * (world.r.w[road.road] / 2 + 1.75) };
+}
+
+export function waitAtDeparturePlatform(person, world, now) {
+  const goal = { x: person.x, z: person.z, ...departureHeading };
+  const road = sidewalk(world, goal);
+  if (road) Object.assign(person, road);
+  person.stationWaypoint = undefined;
+  person.state = 'platform';
+  person.goal = goal;
+  person.timer = Math.max(1, person.ticket.time + 120 - now);
 }
 
 function gatherPassengers(manager, v, focus, capacity, queue) {

@@ -314,6 +314,7 @@ export class Game {
       this.transit.reset(this.clock, this.focus);
       this.placeTimer = 0;
       this.vehicles.spawnTimer = 0;
+      this.peds.resetStationDepartures();
       this.peds.timer = 0;
     }
     this.chunks.heritage.updateTime(this.hour, 0);

@@ -1,6 +1,6 @@
-import { nearStationPlatform, stepStationWalk } from './station-walk.js';
+import { nearStationPlatform, stationEntrance, stationTicket, stepStationWalk } from './station-walk.js';
 import { followParkTrip, parkCrossing, parkTrip } from './pedestrian-walks.js';
-import { servicePlatform, stepPassenger } from './platform-passengers.js';
+import { servicePlatform, stepPassenger, waitAtDeparturePlatform } from './platform-passengers.js';
 import { EDGE_MARGIN } from '../world/travel-bounds.js';
 import { sampleWater, waterWalking } from '../world/water-profile.js';
 // Hráč pěšky a chodci.
@@ -232,6 +232,28 @@ export class PedManager {
     this.peds.splice(i, 1);
   }
 
+  resetStationDepartures() {
+    this.lastDeparture = null;
+    this.nextDepartureCheck = 0;
+    for (let i = this.peds.length - 1; i >= 0; i--) {
+      if (this.peds[i].ticket?.eventKey) this.remove(i);
+    }
+  }
+
+  _startStationWalk(player, capacity) {
+    const [x, z] = stationEntrance;
+    const { clock, transit } = this.game;
+    if ((x - player.x) ** 2 + (z - player.z) ** 2 > 165 ** 2 || clock.now < this.nextDepartureCheck) return;
+    this.nextDepartureCheck = clock.now + 8;
+    this.departureStation ??= transit.timetable.stops.findIndex(stop => stop[3] === '53408/1');
+    const ticket = stationTicket(transit.timetable, this.departureStation, clock);
+    if (!ticket || ticket.eventKey === this.lastDeparture || this.peds.length >= capacity) return;
+    const p = this._person(x, z);
+    p.ticket = ticket;
+    p.stationWaypoint = 0;
+    this.lastDeparture = ticket.eventKey;
+  }
+
   _selectCrossing(p) {
     const list = this.world.traffic.crossingsByEdge.get(p.edge);
     if (!list) return;
@@ -266,7 +288,8 @@ export class PedManager {
       if (onRoad) {
         traffic.users.delete(p);
         p.state = 'walk'; p.crossing = null;
-        if (p.trip) p.trip.index += p.trip.direction;
+        if (p.stationWaypoint !== undefined) p.stationWaypoint++;
+        else if (p.trip) p.trip.index += p.trip.direction;
         else { p.s = plan.s + 0.2; p.side = -p.side; }
       } else {
         p.yaw = Math.atan2(plan.to[0] - p.x, plan.to[1] - p.z);
@@ -287,6 +310,7 @@ export class PedManager {
       const density = this.game.trafficRhythm.pedestrianWeight(player.x, player.z, this.game.clock);
       const target = Math.ceil(QUALITY.peds * (0.1 + 0.9 * density));
       for (const v of this.game.transit.vehicles) servicePlatform(this, v, player, target);
+      this._startStationWalk(player, target);
       const waitingForTransit = this.peds.some(p => p.state === 'platform');
       const localLimit = target - Number(nearStationPlatform(player.x, player.z));
       const streetTarget = Math.min(localLimit, target - Number(waitingForTransit));
@@ -355,11 +379,14 @@ export class PedManager {
         if (w.collideCircle(p.x, p.z, 0.35, p.y + 0.2, p.y + 1.7)) { p.x = w.hit.x; p.z = w.hit.z; }
         moving = sp;
         if (p.timer <= 0) {
-          if (p.edge < 0) { this.remove(i); continue; }
+          if (p.edge < 0 && p.stationWaypoint === undefined) { this.remove(i); continue; }
           p.state = 'walk';
         }
       } else if (p.stationWaypoint !== undefined) {
-        if (stepStationWalk(p, dt)) { this.remove(i); continue; }
+        if (stepStationWalk(p, dt)) {
+          if (!p.ticket) { this.remove(i); continue; }
+          waitAtDeparturePlatform(p, w, this.game.clock.now);
+        }
         moving = p.speed;
       } else if (p.trip) {
         p.crossing = parkCrossing(p.trip);

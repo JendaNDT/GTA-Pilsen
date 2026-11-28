@@ -1,3 +1,7 @@
+# E74 · Od nádražních dveří na odjezdovou 49
+
+Na větvi `etapa/E74` funguje cesta na stanoviště 1 podle platného jízdního řádu, přecházení Šumavské a nástup do vybraného spoje. Běžná simulace odhalila překážející zaparkovaná auta. Po úpravě parkování cestující nastoupil do 49 směr Karlov. Prošlo sestavení, 434 testů JavaScriptu a všech 16 cílených prohlížečových zkoušek. Kontrolní jízda dosáhla 60 FPS. Zbývá vyzkoušení na fyzickém telefonu. [Zadání](E74.md) · [Trasa, snímky a výsledky](../E74.md)
+
 # E73 · Cestující míří k nádražní budově
 
 Na větvi `etapa/E73` funguje souvislá pěší cesta po výstupu z linky 49 na stanovišti 2. Prošlo sestavení, 431 testů JavaScriptu a 12 cílených zkoušek v Chromiu. Kontrolní jízda linkou 49 dosáhla před změnou i po ní 60 FPS. Úplný běh 660 scénářů byl po třech úspěšných kontrolách přerušen pro nedostatek místa při zápisu na disk. Na skutečném telefonu zbývá projít trasu za cestujícím. [Zadání](E73.md) · [Trasa, snímky a ověření](../E73.md)

@@ -13,6 +13,8 @@ verze v Godotu zůstává ve stavu z 20. 11. 2026 a nové funkce ani obsah se do
 
 ## Co ve hře je
 
+- **Od vlaku na trolejbus.** Cestující od spodního nádražního vchodu si podle jízdního řádu vybere odjezdovou 49. V Šumavské počká na volnou vozovku a na stanovišti 1 nastoupí do svého spoje. [Trasa a ověření](docs/E74.md)
+
 - **Od trolejbusu k vlaku.** Na stanovišti 2 v Šumavské můžeš jít za cestujícím z příjezdové linky 49 až ke spodnímu vchodu hlavního nádraží. [Trasa a snímky](docs/E73.md)
 
 - Na Karlovarské, v Kaplířově a v Zahradní terén u okraje vozovky zakrýval asfalt. Výšková úprava vykreslení srovnává i místa mezi sousedními dlaždicemi. [Srovnání a ověření](docs/okraje-silnic.md)

@@ -1,3 +1,4 @@
+import { blocksDeparturePlatform } from './station-walk.js';
 import { canYieldAtPullout, pulloutGap } from '../game/bus-departure.js';
 import { updateCarWheels } from './car-wheels.js';
 import { EDGE_MARGIN } from '../world/travel-bounds.js';
@@ -1054,6 +1055,7 @@ export class VehicleManager {
     if (w.blocked(x, z, 2.3, 0.3, 1.5) || w.isWater(x, z)) return null;
     // Za rohem může být jiná ulice blíž nárazníku než středu zaparkovaného auta.
     const fx = Math.sin(yaw), fz = Math.cos(yaw), y = w.heightAt(x, z);
+    if (blocksDeparturePlatform(x, z, yaw, type.len, type.wid)) return null;
     if (w.blocksStreetCorner(w.edgeOfPt[k], x, z, yaw, type.len, type.wid)) return null;
     if (w.blocksTramTrack(x, z, y, yaw, type.len, type.wid)) return null;
     for (const along of [-type.len / 2, 0, type.len / 2]) for (const side of [-type.wid / 2, type.wid / 2]) {

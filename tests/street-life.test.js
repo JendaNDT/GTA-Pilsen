@@ -116,3 +116,67 @@ test('ke spodnímu vchodu míří jen cestující z příjezdové 49 na dvojce',
   assert.ok(done && distance > 300);
   assert.ok(Math.hypot(p.x - 727.01, p.z - 481.92) < 1);
 });
+
+test('cesta z nádraží vybere nejbližší včas dosažitelnou 49 a cestující pozná přesný spoj', async () => {
+  const { stationTicket } = await import('../src/entities/station-walk.js');
+  const { DAY_SECONDS } = await import('../src/game/clock.js');
+  const station = 2, day = 8, clock = { day, now: day * DAY_SECONDS + 3600 };
+  const trip = (id, ref, time, service = 1) => [service, {
+    id, route: { ref, type: 'trolleybus' }, destination: 'Karlov', times: [time, time],
+  }, 0];
+  const timetable = { profile: () => [1], maxOffset: 1, stopEntries: [[], [], [
+    trip('brzy', '49', 3800), trip('pozdě', '49', 4080), trip('jiná linka', '12', 3910),
+    trip('nejede', '49', 3906, 2), trip('druhý', '49', 3990), trip('první', '49', 3960),
+  ]] };
+  const ticket = stationTicket(timetable, station, clock);
+  assert.equal(ticket.eventKey, '8:první');
+  const v = { route: { ref: '49', type: 'trolleybus' }, destination: 'Karlov', stopIndex: 0,
+    event: { key: ticket.eventKey, trip: { stops: [{ stop: station }] } } };
+  assert.ok(passengerMatches({ ticket }, v));
+  assert.equal(passengerMatches({ ticket }, { ...v, event: { ...v.event, key: '8:druhý' } }), false);
+  assert.equal(passengerMatches({ ticket }, { ...v, destination: 'Areál FN' }), false);
+  assert.equal(stationTicket(timetable, -1, clock), null);
+  timetable.stopEntries[station] = [trip('po půlnoci', '49', 180)];
+  assert.equal(stationTicket(timetable, station, { day, now: (day + 1) * DAY_SECONDS - 180 }).eventKey, '9:po půlnoci');
+});
+
+test('cesta z nádraží respektuje počet postav, zakládá se jednou a po změně hodin se naplánuje znovu', async () => {
+  const { PedManager } = await import('../src/entities/player.js');
+  const { stationEntrance: [x, z] } = await import('../src/entities/station-walk.js');
+  const clock = { day: 0, now: 3600 };
+  const timetable = { stops: [['Hlavní nádraží', 708, 337, '53408/1']], profile: () => [1], maxOffset: 0,
+    stopEntries: [[[1, { id: '692185', route: { type: 'trolleybus', ref: '49' }, destination: 'Karlov', times: [3960, 3960] }, 0]]] };
+  const manager = new PedManager(null, null, { clock, transit: { timetable } });
+  const local = { state: 'walk' };
+  manager.peds.push(local);
+  manager._person = (px, pz) => {
+    const p = { x: px, z: pz };
+    manager.peds.push(p);
+    return p;
+  };
+  manager.remove = i => manager.peds.splice(i, 1);
+  manager._startStationWalk({ x, z }, 1);
+  assert.deepEqual(manager.peds, [local]);
+  clock.now += 9;
+  manager._startStationWalk({ x, z }, 3);
+  assert.equal(manager.peds[1].ticket.eventKey, '0:692185');
+  clock.now += 9;
+  manager._startStationWalk({ x, z }, 3);
+  assert.equal(manager.peds.length, 2);
+  manager.resetStationDepartures();
+  assert.deepEqual(manager.peds, [local]);
+  clock.now = 3600;
+  manager._startStationWalk({ x: x + 500, z }, 3);
+  assert.equal(manager.peds.length, 1);
+  manager._startStationWalk({ x, z }, 3);
+  assert.equal(manager.peds[1].ticket.eventKey, '0:692185');
+});
+
+test('parkování u odjezdové jedničky ponechá volný prostor vozu a zachová protější stranu ulice', async () => {
+  const { blocksDeparturePlatform } = await import('../src/entities/station-walk.js');
+  const yaw = -1.147;
+  assert.ok(blocksDeparturePlatform(713.83, 339.18, yaw, 4.5, 1.8));
+  assert.ok(blocksDeparturePlatform(699.3, 345.63, yaw, 4.5, 1.8));
+  assert.equal(blocksDeparturePlatform(719.91, 345.9, yaw, 4.5, 1.8), false);
+  assert.equal(blocksDeparturePlatform(670, 357, yaw, 4.5, 1.8), false);
+});
